@@ -1,0 +1,28 @@
+{
+    "versions": [
+        {
+            "version": "2016.03.03", 
+            "providers": [
+                {
+                    "url": "https://s3.amazonaws.com/elife-builder/boxes/elife-website-vagrant.box", 
+                    "checksum_type": "sha256", 
+                    "name": "virtualbox", 
+                    "checksum": "bb95d8983734aa96bc9d5578f50ac58833bfbd648f449637218b11edb97639c8"
+                }
+            ]
+        }, 
+        {
+            "version": "2015.11.02", 
+            "providers": [
+                {
+                    "url": "https://s3.amazonaws.com/elife-builder/boxes/elife-website-vagrant.box", 
+                    "checksum_type": "sha256", 
+                    "name": "virtualbox", 
+                    "checksum": "ab0bc5c62623f57e89abae91f5a26c8ff60c4a6d5266c2dd5f8d2c860a566990"
+                }
+            ]
+        }
+    ], 
+    "name": "elifesciences/elife-website", 
+    "description": "This box contains company secrets."
+}

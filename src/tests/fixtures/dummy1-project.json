@@ -1,0 +1,30 @@
+{
+    "repo": "ssh://git@github.com/elifesciences/dummy1", 
+    "meta": {
+        "description": "defaults for all projects"
+    },
+    "vagrant": {
+        "box": "elifesciences/basebox", 
+        "box-url": "s3://elife-builder/boxes/basebox-meta.json", 
+        "ip": "192.168.33.44", 
+        "ram": 1024, 
+        "cpus": 2, 
+        "cpucap": 50,
+        "ports": {
+            "1239": 80
+        }
+    }, 
+    "aws": {
+        "ami": "ami-9eaa1cf6", 
+        "region": "us-east-1", 
+        "subnet-id": "subnet-1d4eb46a", 
+        "cidr-ip": "0.0.0.0/0", 
+        "type": "t2.small", 
+        "ports": {
+            "22": 22
+        }, 
+        "vpc-id": "vpc-78a2071d"
+    }, 
+    "subdomain": "dummy1", 
+    "salt": "2015.8"
+}

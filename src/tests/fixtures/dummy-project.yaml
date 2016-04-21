@@ -1,0 +1,97 @@
+defaults:
+    salt: '2015.8'
+    subdomain: null
+    meta:
+        description: defaults for all projects
+    repo: None # projects with an explicit repo support branch deployments
+    aws:
+        # NOTE! the ami to use is determined in buildercore.bakery
+        ami: ami-9eaa1cf6   # Ubuntu 14.04
+        #ami: ami-34cc7a5c  # Ubuntu 12.04 (for elife-drupal)
+        #ami: ami-d05e75b8  # another Ubuntu 14.04 - was attached to elife-crm, but that was wrong
+        #ami: ami-31d5635a  # elife 'basebox.2015-08-17'
+        type: t2.small
+        region: us-east-1
+        vpc-id: vpc-78a2071d
+        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        cidr-ip: 0.0.0.0/0 # default access is 'everyone'
+        ports:
+            22: 22 # ssh is open on all instances
+        rds:
+            name: <defined at generation>
+            engine: postgres
+            version: '9.4'
+            type: db.t2.small
+            storage: 5 # GB
+            backup-retention: 28
+        ext:
+            size: 10 # GB
+            device: /dev/sdh
+    vagrant:
+        #box: ubuntu/trusty64 # Ubuntu 14.04
+        #box: ubuntu/precise64 # Ubuntu 12.04
+        box: elifesciences/basebox # derived from ubuntu/trusty64
+        box-url: s3://elife-builder/boxes/basebox-meta.json
+        ip: 192.168.33.44
+        ram: 1024
+        cpus: 2
+        cpucap: 50
+
+# basic vagrant and aws, no alternative config
+dummy1:
+    subdomain: dummy1 # dummy.elifesciences.org
+    repo: ssh://git@github.com/elifesciences/dummy1
+    aws:
+        ports:
+            22: 22
+    vagrant:
+        ports:
+            1239: 80
+
+# elaborate aws and vagrant, several alternate configs
+dummy2:
+    subdomain: dummy2 # dummy.elifesciences.org
+    repo: ssh://git@github.com/elifesciences/dummy2
+    meta:
+        description: "foo"
+    aws:
+        ports:
+            22: 22
+            80:
+                guest: 80
+                cidr-ip: 0.0.0.0/0
+        ami: ami-111111
+        rds:
+            storage: 10
+    aws-alt:
+        # uses an rds backend and different ami
+        alt-config1:
+            rds:
+                storage: 15
+                type: db.m4.huge
+            ami: ami-22222
+    vagrant:
+        ports:
+            1239: 80
+    vagrant-alt:
+        # a cut down instance
+        alt-config1:
+            ram: 256
+            cpus: 1
+            cpucap: 25
+
+# basic aws, no vagrant, alternate aws configs
+dummy3:
+    subdomain: dummy3
+    repo: ssh://git@github.com/elifesciences/dummy3
+    meta:
+        description: "foo"
+    aws:
+        ami: ami-111111
+    aws-alt:
+        # uses an rds backend and different ami
+        alt-config1:
+            ports:
+                80: 80
+            rds:
+                storage: 15

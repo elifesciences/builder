@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [ ! -d venv ]; then
+    source update.sh
+fi
+
+. venv/bin/activate
+
+# ad-hoc permissions if they exist
+if [ -f .aws-credentials.env ]; then
+    source ./.aws-credentials.env
+fi
+
+# a wrapper around fabric that activates the elife-builder virtualenv
+
+fabric=$(which fab)
+$fabric "$@" -f src/fabfile.py

@@ -1,0 +1,41 @@
+defaults:
+    salt: '2015.8'
+    subdomain: null
+    meta:
+        # TODO: junk meta, shift to top-level
+        description: defaults for all projects
+    repo: 
+        # projects with an explicit repo support branch deployments
+        None 
+    aws:
+        # NOTE! the ami to use is determined in buildercore.bakery
+        ami: ami-9eaa1cf6   # Ubuntu 14.04
+        type: t2.small
+        region: eu-west-1
+        vpc-id: None
+        subnet-id: None
+        cidr-ip: 0.0.0.0/0 # default access to EC2 is 'everyone'
+        rds:
+            # explicit database name overrides the one generated at template creation
+            name: None
+            engine: postgres
+            # ensure this matches the version you install on your server
+            version: '9.4'
+            type: db.t2.small
+            storage: 5 # GB
+            backup-retention: 28 # days
+        ext:
+            # external hdd
+            size: 10 # GB
+            device: /dev/sdh
+    aws-alt:
+        fresh:
+            description: uses a plain Ubuntu basebox instead of a ami
+            ami: ami-9eaa1cf6 # Ubuntu 14.04
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04
+        box-url: null # not needed for boxes hosted on Atlas 
+        ip: 192.168.33.44
+        ram: 1024
+        cpus: 2
+        cpucap: 100 # percent (vagrant default)
