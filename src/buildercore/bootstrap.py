@@ -186,6 +186,7 @@ def scp(direction, ffile, dest_fname, host=None, user=DEPLOY_USER):
         tem = "scp -i %(pem)s %(ssh-args)s %(file)s '%(user)s@%(host)s:%(dest)s'"
     return local(tem % kwargs)
 
+@osissue("embarassing code. refactor. replace with fabric's `get` and `put`")
 def download(dest, file_list, as_user=BOOTSTRAP_USER):
     download_user = DEPLOY_USER if as_user == config.ROOT_USER else as_user
     def _download(fname):

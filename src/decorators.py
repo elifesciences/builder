@@ -7,6 +7,8 @@ from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
 
+LOG = logging.getLogger(__name__)
+
 def deffile(fname):
     "returns the proper path to the given default file"
     return join(core.project_dir_path(), fname)
@@ -26,7 +28,7 @@ def rtask(*roles):
     return wrapper
 
 #pylint: disable=invalid-name
-admintask = rtask('admin')
+debugtask = rtask('debug')
 
 def requires_filtered_project(filterfn=None):
     def wrap1(func):

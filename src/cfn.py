@@ -5,14 +5,12 @@ from fabric.contrib import files
 from fabric.contrib.console import confirm
 import aws
 import utils
-from decorators import requires_project, requires_aws_stack, echo_output, deffile, setdefault, admintask
+from decorators import requires_project, requires_aws_stack, echo_output, deffile, setdefault, debugtask
 import os
 from os.path import join
 from functools import wraps
 from aws import deploy_user_pem, stack_conn
-
 from slugify import slugify
-
 from buildercore import config, core, cfngen, utils as core_utils, bootstrap, bakery
 from buildercore.utils import first
 from buildercore.config import ROOT_USER, DEPLOY_USER, BOOTSTRAP_USER
@@ -22,14 +20,11 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def clear_cache():
-    utils.CACHE = {}
-
 #
 # utils, decorators
 #
 
-@admintask
+@debugtask
 @echo_output
 def stack_list(project=None):
     "returns a list of CloudFormation files. accepts optional project name"
@@ -38,7 +33,7 @@ def stack_list(project=None):
         return filter(lambda stack: stack.startswith("%s-" % project), stacks)
     return stacks
 
-@admintask
+@debugtask
 def project_list():
     _, all_projects = core.read_projects()
     print all_projects.keys()
@@ -57,7 +52,7 @@ def requires_stack(func):
 # tasks
 #
 
-@admintask
+@debugtask
 @echo_output
 def aws_detailed_stack_list(project=None):
     all_stacks = dict([(i.stack_name, i.__dict__) for i in core.raw_aws_stacks()])
@@ -132,8 +127,6 @@ def aws_update_projects(pname):
     "calls state.highstate on ALL projects matching <projectname>-*"
     return aws_update_many_projects([pname])
     
-
-
 @task
 @requires_aws_stack
 def aws_update_template(stackname):
@@ -141,6 +134,7 @@ def aws_update_template(stackname):
 
 
 #@task
+@osissue("refactor. part of the shared-all strategy")
 def aws_remaster_minions():
     """when we create a new master-server, we need to:
     * tell the minions to connect to the new one.
@@ -175,7 +169,7 @@ def aws_remaster_minions():
 
     bootstrap.update_all()
 
-
+@osissue("move/refactor/delete. this is important and belongs in buildercore or rewritten. part of shared-all strategy")
 @requires_stack
 def aws_create_master(stackname):
     public_ip = aws.describe_stack(stackname)['instance']['ip_address']
@@ -248,7 +242,7 @@ def aws_create_stack(stackname):
     bootstrap.update_environment(stackname)
     return stackname
 
-@admintask
+@debugtask
 @requires_aws_stack
 def aws_update_env(stackname):
     "for debugging the bootstrap process"
@@ -267,7 +261,7 @@ def ssh(stackname, username=DEPLOY_USER):
     public_ip = aws.describe_stack(stackname)['instance']['ip_address']
     local("ssh %s@%s -i %s" % (username, public_ip, deploy_user_pem()))
 
-@admintask
+@debugtask
 @sync_stack
 def sync_stacks():
     "copies the stacks down from S3 and then uploads anything needed"
@@ -309,7 +303,7 @@ def create_stack(pname):
     return os.path.splitext(os.path.basename(out_fname))[0]
 
 
-@admintask
+@debugtask
 @requires_project
 def print_stack_template(project):
     default_instance_id = core_utils.ymd()
@@ -427,27 +421,14 @@ def upload_file(stackname, local_path, remote_path, overwrite=False):
             exit(1)
         put(local_path, remote_path)
 
-#
-# expiry date handling
-#
-
-def ec2_instance(iid):
-    import boto3
-    ec2 = boto3.resource("ec2")
-    return ec2.Instance(iid)
-
-def update_tag(iid, key, val):
-    i = ec2_instance(iid)
-    return i.create_tags(Tags=[{'Key': key, 'Value': val}])
-
-def set_expiry_date(iid, dt):
-    return update_tag(iid, 'Expires', dt.strftime("%Y-%m-%d"))
-
 def project_name_from_stackname(stackname):
+    '''
     x = core.project_list()
     y = zip(x, map(lambda p: stackname.startswith(p + "-"), x))
     z = filter(lambda p: p[1], y)
     return z[0][0]
+    '''
+    return core.project_name_from_stackname(stackname, careful=True)
 
 @task
 @sync_stack

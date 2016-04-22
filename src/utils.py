@@ -11,18 +11,21 @@ from fabric.api import run, sudo, local
 CACHE = {}
 
 # deprecated. use buildercore.utils.splitfilter
+@osissue("emabarassing code. remove/replace")
 def splitfilter(fn, lst):
     l1, l2 = [], []
     for x in lst:
         (l1 if fn(x) else l2).append(x)
     return l1, l2
 
+@osissue("duplicate code")
 def git_purge(as_sudo=False):
     cmd = 'git reset --hard && git clean -f -d'
     if as_sudo:
         return sudo(cmd)
     return run(cmd)
 
+@osissue("duplicate code")
 def git_update():
     cmd = 'git pull --rebase'
     run(cmd)
@@ -61,6 +64,7 @@ def errcho(x):
     sys.stderr.flush()
     return x
 
+@osissue("emabarassing code. remove/replace")
 def cached(func):
     @wraps(func)
     def wrapper(*args):
@@ -75,6 +79,7 @@ def cached(func):
         return result
     return wrapper
 
+@osissue("unusued/duplicate code. see `buildercore.utils:call_while`")
 def call_until(func, pred, sleep_duration=2, output_interval=5, msg=None):
     "calls `func` until pred(func()) is true. outputs time after every `output_interval`"
     start_time = time.time()
@@ -104,6 +109,7 @@ def call_until(func, pred, sleep_duration=2, output_interval=5, msg=None):
         time.sleep(sleep_duration)
     print
 
+@osissue("renamed from `_pick` to something. `choose` ?")
 def _pick(name, pick_list, default_file=None, helpfn=None):
     default = None
     if default_file:
@@ -157,9 +163,11 @@ def uin(param, default=0xDEADBEEF):
             continue
         return userin
 
+@osissue("references salt. refactor")    
 def salt_pillar_data():
     return cfngen.salt_pillar_data('salt/pillar/')
-    
+
+@osissue("refactor. one of about three implementations.")
 def getin(data, path):
     "allows dot-path access to nested dicts"
     path_bits = path.split('.')
@@ -181,29 +189,8 @@ def updatein(data, path, newval):
         return newval
     return updatein(data[bit], ".".join(rest), newval)
 
-def parse_ymd(ymdstr):
-    try:
-        if ymdstr:
-            return datetime.strptime(ymdstr.strip(), "%Y-%m-%d")
-    except ValueError:
-        pass
-    return None
-
-def when_expires(ymdstr):
-    "returns a timedelta between now and when the given ymdstr or None if ymdstr cannot be parsed"
-    future = parse_ymd(ymdstr)
-    if future:
-        #return datetime.now() - future
-        return future - datetime.now()
-    # no expiry date OR incorrect expiry date to really know
-    return None
-
-def has_expired(ymdstr):
-    "returns True if the given ymdstr has expired"
-    td = when_expires(ymdstr)
-    return td.days <= 0 if td else False
-
 def walk_nested_struct(val, fn):
+    "walks a potentially nested structure, calling `fn` on each value it encounters"
     if isinstance(val, dict):
         return {key: walk_nested_struct(i, fn) for key, i in val.items()}
     elif isinstance(val, list):
@@ -221,6 +208,7 @@ def mkdirp(path):
 def pwd():
     return os.path.dirname(os.path.realpath(__file__))
 
+@osissue("not being used. handy code reference though")
 def system(cmd):
     "executes given cmd as a subprocess, waits for cmd to finish and returns a triple of (return code, stdout, stderr)"
     print 'attempting to execute %r in %r' % (cmd, pwd())
