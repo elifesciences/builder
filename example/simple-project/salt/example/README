@@ -1,0 +1,11 @@
+The project is expected to package it's state files as a Saltstack formula.
+
+However, a formula is only expected to declare it's dependencies in a `readme`
+and offer no example of how it's state files might be used.
+
+Providing a formula and no way to build it independent of the Builder project 
+strikes me as being particularly developer-unfriendly.
+
+This example directory within the application's `salt` build directory should
+stand as a reference implementation for running the application independent
+of the Builder project.
