@@ -4,6 +4,7 @@ import md5
 from buildercore import utils as core_utils, cfngen
 from datetime import datetime
 from buildercore.utils import second, last
+from buildercore.decorators import osissue
 from fabric.api import run, sudo, local
 
 # totally is assigned :(
@@ -11,7 +12,7 @@ from fabric.api import run, sudo, local
 CACHE = {}
 
 # deprecated. use buildercore.utils.splitfilter
-@osissue("emabarassing code. remove/replace")
+@osissue("duplicate code. remove/replace")
 def splitfilter(fn, lst):
     l1, l2 = [], []
     for x in lst:

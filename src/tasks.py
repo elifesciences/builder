@@ -5,6 +5,7 @@ from fabric.api import sudo, run, local, task
 from decorators import echo_output, requires_aws_stack
 from aws import stack_conn
 import utils
+from buildercore.decorators import osissue, osissuefn
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"
@@ -28,6 +29,7 @@ def syslog_conf():
     return salt_master_cmd("'cat /etc/syslog-ng/syslog-ng.conf | grep use_fqdn'", minions=minions)
 
 @task
+@osissue("very specific code. possibly a once-off that can be deleted")
 def update_syslog():
     module = 'state.sls_id'
     cmd = "syslog-ng-hook base.syslog-ng test=True"
@@ -51,14 +53,6 @@ def fail2ban_running():
 #
 
 @task
-@sync_stack
-def sync_project_file():
-    """copies the project file to synced directory, syncs contents up to s3"
-    the synced directory `cfn`."""
-    return local("cp projects/elife.yaml cfn/elife.yaml")
-    
-
-@task
 def sync_logs():
     stackname = 'elife-ci-2015-11-04'
     with stack_conn(stackname):
@@ -66,8 +60,7 @@ def sync_logs():
             'mkdir -p /var/log/platformsh/',
             'ls -lahi /var/log/platformsh/',
             'rsync -avz -e ssh gzorsqexlzqta-master@ssh.eu.platform.sh:/tmp/log/ /var/log/platformsh/ --exclude "php.log" --inplace',
-            'ls -lahi /var/log/platformsh/',
-            
+            'ls -lahi /var/log/platformsh/',            
         ])
 
 #
@@ -89,6 +82,7 @@ def acme_enabled(url):
 @task
 @requires_aws_stack
 @echo_output
+@osissue("*very* useful task. improve with documentation.")
 def fetch_cert(stackname):
     try:    
         # replicates some logic in builder core
@@ -155,6 +149,7 @@ def fetch_cert(stackname):
 #
 
 @task
+@osissue("remove. very specific non-builder code.")
 def alm_ssh():
     "ssh into the alm server"
     cmd = "ssh elife@alm.svr.elifesciences.org -i payload/deploy-user.pem"
@@ -165,6 +160,7 @@ def alm_ssh():
 #
 
 #@task
+@osissue("consider removal. usefulness is unknown")
 def generate_project_config_json():
     "debug. writes all the project config to json files. useful for debugging"
     _, all_projects = core.read_projects()

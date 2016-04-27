@@ -20,10 +20,12 @@ import os, json, base64, copy
 from slugify import slugify
 from . import utils, trop, core, config
 from .config import STACK_DIR
+from .decorators import osissue, osissuefn
 
 # project names in projects file don't match the names found
 # in the pillar data. this describes the lookups so that key
 # replacement can happen. urgh. fix/remove/whatever.
+osissue("very specific to old builder. remove.")
 PILLAR_NAMES_TO_PROJECT_NAMES = {
     # pillar -> project
     'elife_website': 'elife-website',
@@ -79,15 +81,20 @@ def build_context(pname, project_file, salt_pillar_dir, **more_context):
     }
     context = copy.deepcopy(defaults)
     context.update(more_context)
-    
+
     assert context['instance_id'] != None, "an 'instance_id' wasn't provided."
 
     # alpha-numeric only
-    default_db_instance_id = slugify(context['instance_id'], separator="") 
+    default_db_instance_id = slugify(context['instance_id'], separator="")
 
+    # ll: master.lax
     hostname = core.mk_hostname(pname, context['instance_id'], project_file)
-    full_hostname = "%s.elifesciences.org" % hostname if hostname else None
-    project_hostname = "%s.elifesciences.org" % project_data.get('subdomain') if hostname else None
+    # ll: master.lax.elifesciences.org
+    full_hostname = "%(host)s.%(domain)s" % {'host': hostname if hostname else None,
+                                            'domain': project_data.get('domain')}
+    # ll: lax.elifesciences.org
+    project_hostname = "%(sub)s.%(domain)s" % {'sub': project_data.get('subdomain') if hostname else None,
+                                               'domain': project_data.get('domain')}
 
     # post-processing
     context.update({

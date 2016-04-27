@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 __author__ = ['Luke Skibinski <l.skibinski@elifesciences.org>']
 __copyright__ = 'eLife Sciences, 2016'
@@ -8,7 +8,9 @@ __description__ = "Handles synchronisation of project data with remote s3 bucket
 import os
 from buildercore import config
 from functools import wraps, partial
+from .decorators import osissue, osissuefn
 
+@osissue("refactor. deploy-user.pem ties this to the shared-everything strategy")
 def set_perms():
     "bit of a hack, creates sync dirs and sets permissions on minion private keys before sync"
     cmds = ["mkdir -p %s %s" % (config.SYNC_DIR, config.PRIVATE_DIR),

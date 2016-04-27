@@ -15,6 +15,7 @@ from buildercore import config, core, cfngen, utils as core_utils, bootstrap, ba
 from buildercore.utils import first
 from buildercore.config import ROOT_USER, DEPLOY_USER, BOOTSTRAP_USER
 from buildercore.sync import sync_stack, sync_stacks_down
+from buildercore.decorators import osissue, osissuefn
 
 import logging
 

@@ -6,6 +6,7 @@ from buildercore.utils import first
 from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
+import logging
 
 LOG = logging.getLogger(__name__)
 

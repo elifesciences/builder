@@ -5,10 +5,11 @@ We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
 from buildercore import core, utils
-from buildercore.utils import testme
 from fabric.contrib.files import exists
 from fabric.api import sudo
+from .decorators import osissue, osissuefn, testme
 
+@osissue("untested ...")
 def prep_stack(stackname):
     "prepare the given stack for an image to be created of it."
     to_be_deleted = [
@@ -26,6 +27,12 @@ def prep_stack(stackname):
         map(sudo, cmds_to_run)
 
 
+
+@testme
+def ami_name(stackname):
+    # elife-api.2015-12-31
+    return "%s.%s" % (core.project_name_from_stackname(stackname), utils.ymd())
+        
 @core.requires_active_stack
 def create_ami(stackname):
     "creates an AMI from the running stack"
@@ -59,11 +66,13 @@ def find_ami(projectname=None):
     # when filtered by project, most recent ami is the last item
     return sorted(results, key=lambda image: image.name)
 
+@osissue("only packer.py is using this. might be better off in there.")
 def basebox():
     "returns most recent basebox ami"
     return utils.last(find_ami("basebox"))
 
 @testme
+@osissue("nothing appears to be using this function")
 def project_ami(projectname, base_ami_override=None):
     """returns most recent project ami OR
     the base ami override if one has been specified OR

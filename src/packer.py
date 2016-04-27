@@ -4,10 +4,11 @@ from fabfile import PROJECT_DIR
 from fabric.api import task, local, settings
 import utils
 from utils import walk_nested_struct
-from decorators import requires_project, echo_output, admintask
+from decorators import requires_project, echo_output, debugtask
 from buildercore import config, core, utils as core_utils
 import os, json
 from datetime import datetime
+from buildercore.decorators import osissue, osissuefn
 
 TEMPLATE = {
     "builders": [
@@ -35,8 +36,7 @@ TEMPLATE = {
              ["sharedfolder", "add", "{{.Name}}", "--name", "vagrant", "--hostpath", PROJECT_DIR, "--readonly"],
              ["sharedfolder", "add", "{{.Name}}", "--name", "salt-state", "--hostpath", join(PROJECT_DIR, "salt/salt/"), "--readonly"],
              ["sharedfolder", "add", "{{.Name}}", "--name", "salt-pillar", "--hostpath", join(PROJECT_DIR, "salt/pillar/"), "--readonly"],
-             ["sharedfolder", "add", "{{.Name}}", "--name", "salt-dev-pillar", "--hostpath", join(PROJECT_DIR, "salt/dev-pillar/"), "--readonly"],
-             
+             ["sharedfolder", "add", "{{.Name}}", "--name", "salt-dev-pillar", "--hostpath", join(PROJECT_DIR, "salt/dev-pillar/"), "--readonly"],             
              ]
         }
     ],
@@ -88,15 +88,15 @@ def vagrant_path(boxname):
 
 def box_metadata_url(pname):
     metaname = os.path.basename(template_path(pname, "meta.json"))
-    return join("s3://elife-builder/boxes/", metaname)
+    return join(config.PACKER_BOX_S3_PATH, metaname)
 
 def box_url(pname):
     pname = prj(pname, 'vagrant.box').split('/')[-1]
     boxname = os.path.basename(template_path(pname, "vagrant.box"))
-    return join("s3://elife-builder/boxes/", boxname)
+    return join(config.PACKER_BOX_S3_PATH, boxname)
 
 def box_name(pname):
-    return "elifesciences/%s" % pname
+    return join(config.PACKER_BOX_PREFIX, pname) # ll: elifesciences/basebox
 
 def prj(pname, path):
     return core_utils.lookup(core.project_data(pname), path)
@@ -147,7 +147,7 @@ def sha256sum(pname):
 # 
 #
 
-@admintask
+@debugtask
 @requires_project
 def generate_meta(pname):
     """a .box file has metadata associated with it. this returns the necessary struct.
@@ -161,7 +161,7 @@ def generate_meta(pname):
             "version": datetime.now().strftime("%Y.%m.%d"),
             "providers": [{
                 "name": "virtualbox",
-                "url": "https://s3.amazonaws.com/elife-builder/boxes/%s" % vagrant_name,
+                "url": join(config.PACKER_BOX_S3_HTTP_PATH, vagrant_name),
                 "checksum_type": "sha256",
                 "checksum": sha256sum(pname),
                 }]
@@ -177,29 +177,29 @@ def generate_meta(pname):
     json.dump(meta, open(fname, 'w'), indent=4)
     print 'wrote',fname
 
-@admintask
+@debugtask
 @requires_project
 def generate_template(pname):
     render(pname)
     validate(pname)
 
-@admintask
+@debugtask
 @requires_project
 def upload_box(pname):
     "uploads the box and it's metadata to S3"
     box = template_path(pname, "vagrant.box")
-    cmd = "aws s3 cp %s s3://elife-builder/boxes/" % box
+    cmd = "aws s3 cp %s %s" % (box, config.PACKER_BOX_S3_PATH)
     print 'uploading box ...'
     print cmd
     assert os.system(cmd) == 0, "failed to upload box to s3"
 
     meta = template_path(pname, "meta.json")
-    cmd = "aws s3 cp %s s3://elife-builder/boxes/ --content-encoding application/json" % meta
+    cmd = "aws s3 cp %s %s --content-encoding application/json" % (meta, config.PACKER_BOX_S3_PATH)
     print 'uploading meta ...'
     print cmd
     assert os.system(cmd) == 0, "failed to upload meta to s3"
 
-@admintask
+@debugtask
 @requires_project
 def add_box(pname):
     "to build an image of a project we need it's box on the system, otherwise it dies :("
@@ -221,7 +221,7 @@ def remove_box(pname):
     cmd = 'vagrant box remove %s' % boxname
     os.system(cmd)
 
-@admintask
+@debugtask
 @requires_project
 def update_project_file(pname):
     "detects if a box exists for project, updates project file"
@@ -286,7 +286,7 @@ def download_box(pname):
     assert local(cmd).return_code == 0, "failed to successfully download %s" % boxurl
     return dest
 
-@admintask
+@debugtask
 @echo_output
 @requires_project
 def box_installed(pname):
@@ -315,6 +315,7 @@ def install_box(pname):
             local('rm -i %s' % dest)
 
 @task
+@osissue("this and a few other functions in packer.py really need to purged. they don't work as expected")
 def install_basebox():
     # any box that uses the elife basebox
     return install_box('elife-api')

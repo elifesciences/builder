@@ -2,6 +2,7 @@ import os
 from fabric.api import settings
 from fabfile import PROJECT_DIR
 from buildercore import core, config
+from buildercore.decorators import osissue, osissuefn
 import utils
 import boto
 from contextlib import contextmanager
@@ -32,6 +33,7 @@ def stack_list():
     "returns a list of realized stacks. does not include deleted stacks"
     return core.all_aws_stack_names()
 
+@osissue("duplicate code. I'm certain this is defined in bootstrap or core")
 def describe_stack(stackname):
     data = utils.just_one(boto_cfn_conn().describe_stacks(stackname)).__dict__
     if data.has_key('outputs'):

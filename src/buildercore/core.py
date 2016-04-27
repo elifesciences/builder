@@ -1,13 +1,14 @@
 import os, glob, json, inspect, re, copy
 from os.path import join
 from . import utils, config
-from .utils import first, testme, dictfilter
+from .utils import first, dictfilter
 from collections import OrderedDict
 from functools import wraps
 import boto
 from boto.exception import BotoServerError
 from contextlib import contextmanager
 from fabric.api import settings
+from .decorators import osissue, osissuefn, testme
 
 import logging
 
@@ -44,6 +45,7 @@ def find_ec2_volume(stackname):
     ec2_data = find_ec2_instance(stackname)[0]
     return find_ec2_volume_by_iid(ec2_data.id)
 
+@osissue("refactor. this implementation is tied to the shared-all strategy")
 def deploy_user_pem():
     return join(config.PRIVATE_DIR, 'deploy-user.pem')
 
@@ -142,6 +144,7 @@ def stack_triple(aws_stack):
 
 # lists of aws stacks
 
+@osissue("duplicate code/unclear differences. .list_stacks with filter vs .describe_stacks with stackname")
 @utils.cached
 def raw_aws_stacks():
     # I suspect the number of results returned is paginated
@@ -172,6 +175,7 @@ def all_aws_stack_names():
     "convenience. returns a list of names for all active stacks AS WELL AS inactive stacks for the last 90 days"
     return sorted(map(first, all_aws_stacks()))
 
+@osissue("that unclear difference again between describe_stacks and list_stacks")
 @utils.cached
 def all_active_stacks():
     "returns all active stacks as a triple of (stackname, status, data)"
@@ -230,6 +234,7 @@ def project_name_from_stackname(stackname, careful=False):
     return res[0]
 
 def normalize_stackname(stackname):
+    "removes any non-alphanumeric or hyphen characters"
     return re.sub(r'[^\w\-]', '', stackname)
 
 @testme
@@ -257,6 +262,13 @@ def mk_hostname(project, stackname, project_file=config.PROJECT_FILE):
 #
 #
 
+"""
+
+project handling.
+this will need to be shifted to another file
+
+"""
+
 @testme
 def all_projects(project_file=config.PROJECT_FILE):
     allp = utils.ordered_load(open(project_file))
@@ -265,6 +277,7 @@ def all_projects(project_file=config.PROJECT_FILE):
     return defaults, allp
 
 @testme
+@osissue("deprecated. we want to use `project_data` instead. any data from function, besides the project name, will be misleading")
 def read_projects(project_file=config.PROJECT_FILE, env_type='aws'):
     "reads the `project_file` and returns a pair of (defaults, project data)"
     env_type_list = ["aws", "vagrant"]
@@ -276,11 +289,13 @@ def read_projects(project_file=config.PROJECT_FILE, env_type='aws'):
             supported_projects[name].update(utils.exsubdict(data, env_type_list))
     return defaults, supported_projects
 
+@osissue("remove. derived from unreliable data")
 def filtered_projects(filterfn, *args, **kwargs):
     "returns a pair of (defaults, dict of projects filtered by given filterfn)"
     defaults, allp = read_projects(*args, **kwargs)
     return defaults, dictfilter(filterfn, allp)
 
+@osissue("remove. derived from unreliable data")
 def branch_deployable_projects(*args, **kwargs):
     "returns a pair of (defaults, dict of projects with a repo)"
     return filtered_projects(lambda k, v: v.has_key('repo'))

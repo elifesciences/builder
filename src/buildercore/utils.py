@@ -6,6 +6,8 @@ from datetime import datetime
 import yaml
 from collections import OrderedDict
 from fabric.api import run
+from .decorators import osissue, osissuefn, testme
+from os.path import join
 
 LOG = logging.getLogger(__name__)
 
@@ -87,14 +89,6 @@ def errcho(x):
     sys.stderr.flush()
     return x
 
-def testme(fn):
-    "a wrapper that emits an annoying message when a function is testable"
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        LOG.debug("%s is VERY testable ...", fn.__name__)
-        return fn(*args, **kwargs)
-    return wrapper
-
 @testme
 def nth(x, n):
     "returns the nth value in x or None"
@@ -137,14 +131,6 @@ def cached(func):
         result = func()
         setattr(func, ckey, result)
         return result
-    return wrapper
-
-def outret(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        retval = func(*args, **kwargs)
-        print "func:%s\nargs:%s\nkwargs:%s\n>>> %s\n\n" % (func.__name__, args, kwargs, retval)
-        return retval
     return wrapper
 
 def call_while(fn, interval=5, update_msg="waiting ...", done_msg="done."):
@@ -199,10 +185,6 @@ def gget(lst, i, data):
     except IndexError:
         return data
 
-def ymd(dt=None):
-    if not dt:
-        dt = datetime.now()
-    return dt.strftime("%Y-%m-%d")
 
 # http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
@@ -249,25 +231,25 @@ def git_purge():
     cmd = 'git reset --hard && git clean -f -d'
     run(cmd)
 
+def listfiles(path, ext_list=None):
+    "returns a list of absolute paths for given dir"
+    path_list = map(lambda fname: os.path.abspath(join(path, fname)), os.listdir(path))
+    if ext_list:
+        path_list = filter(lambda path: os.path.splitext(path)[1] in ext_list, path_list)
+    return filter(os.path.isfile, path_list)
+    
 def git_update():
     cmd = 'git pull --rebase'
     run(cmd)
 
-def files_with_ext(path, ext='.json', include_ext=False):
-    all_files = os.listdir(path)
-    f_files = filter(lambda fname: os.path.splitext(fname)[1].lower() == ext, all_files)
-    if not include_ext:
-        return map(lambda fname: os.path.splitext(fname)[0], f_files)
-    return f_files
+def ymd(dt=None):
+    "formats a datetime object to YYY-mm-dd format"
+    if not dt:
+        dt = datetime.now()
+    return dt.strftime("%Y-%m-%d")
 
-def getbototag(tags, tagname):
-    "given a list or dictionary of tags derived from either boto2 or boto3, return the value of the given tagname"
-    if isinstance(tags, dict):
-        # boto2 style tags {key: val}
-        return tags.get(tagname)
-    # boto3 style [{'Key': key, 'Value': val}, ...}]
-    return filter(lambda t: t['Key'] == tagname, tags)[0]['Value']
-
+'''
+# not being used?
 def parse_ymd(ymdstr):
     try:
         if ymdstr:
@@ -275,20 +257,7 @@ def parse_ymd(ymdstr):
     except ValueError:
         pass
     return None
-
-def when_expires(ymdstr):
-    "returns a timedelta between now and when the given ymdstr or None if ymdstr cannot be parsed"
-    future = parse_ymd(ymdstr)
-    if future:
-        #return datetime.now() - future
-        return future - datetime.now()
-    # no expiry date OR incorrect expiry date to really know
-    return None
-
-def has_expired(ymdstr):
-    "returns True if the given ymdstr has expired"
-    td = when_expires(ymdstr)
-    return td.days <= 0 if td else False
+'''
 
 def json_dumps(obj):
     def json_handler(obj):

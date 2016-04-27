@@ -4,13 +4,13 @@ import os
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__)) # elife-builder/src/
 
-# once called 'THIS_DIR', now deprecated. confusing. use PROJECT_DIR
+# once called 'THIS_DIR', now deprecated as confusing.
 PROJECT_DIR = os.path.dirname(SRC_DIR)    # elife-builder/
 
 from cfn import *
 
 import aws
-import metrics, report
+import metrics
 import packer
 import website
 import tasks

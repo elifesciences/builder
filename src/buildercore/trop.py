@@ -11,8 +11,11 @@ from . import utils
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, Base64, route53
 from functools import partial
 import logging
+from .decorators import osissue, osissuefn
 
 LOG = logging.getLogger(__name__)
+
+osissuefn("embarassing code. some of these constants should be pulled form project config or given better names.")
 
 SECURITY_GROUP_TITLE = "StackSecurityGroup"
 EC2_TITLE = 'EC2Instance'
@@ -70,6 +73,7 @@ def instance_tags(context):
         ec2.Tag('Project', context['project_name']),
     ]
 
+@osissue("deploy-user mention ties this to the shared-all strategy")
 def ec2instance(context):
     lu = partial(utils.lu, context)
     project_ec2 = {
@@ -79,8 +83,7 @@ def ec2instance(context):
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
         "SubnetId": "subnet-1d4eb46a",
         "Tags": instance_tags(context),
-        # `build_vars` is deprecated.
-        # use `context` instead.
+
         "UserData": Base64("""#!/bin/bash
 echo %(build_vars)s > /etc/build-vars.json.b64""" % context),
     }

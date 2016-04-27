@@ -29,7 +29,7 @@ def impose_ordering(branch_list):
 def deploy(pname):
     pdata = core.project_data(pname)
     branch_list = utils.git_remote_branches(pdata['repo'])
-    branch_list = impose_ordering(branch_list)    
+    branch_list = impose_ordering(branch_list)
     branch = utils._pick('branch', branch_list, deffile('.branch'))
     stackname = branch_stack_name(pname, branch)
     active_stacks = core.all_aws_stack_names()

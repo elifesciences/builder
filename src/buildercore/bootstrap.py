@@ -13,7 +13,7 @@ from .core import boto_cfn_conn, deploy_user_pem, stack_conn
 from .utils import first
 from .sync import sync_private, sync_stack, do_sync
 from .config import DEPLOY_USER, BOOTSTRAP_USER
-
+from .decorators import osissue, osissuefn
 from fabric.api import env, local, settings, run, sudo, cd, put
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
@@ -22,6 +22,19 @@ from boto.exception import BotoServerError
 
 import logging
 LOG = logging.getLogger(__name__)
+
+
+"""
+
+I see a bootstrap interface and the majority of this code 
+being shifted into a shared-everything strategy module with
+a more secure strategy also being available on a per-project
+basis ...
+
+
+"""
+
+
 
 @contextmanager
 def master_server(username=BOOTSTRAP_USER):
@@ -83,6 +96,7 @@ def update_master():
             utils.git_update()
             sudo('service salt-master restart')
 
+@osissue("remove. I this we should avoid updating cfn templates. extremely slow and can never tell when it's necessary.")
 def update_master_fully():
     "does a complete update of the master server, updating the template, the elife-builder and it's environment"
     # NOTE: the master is bootstrapped as the 'ubuntu' user before the deploy user ever exists.
