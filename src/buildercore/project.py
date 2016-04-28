@@ -1,4 +1,6 @@
-from . import core, utils
+from . import core, utils, config
+import logging
+LOG = logging.getLogger(__name__)
 
 class ProjectInterface(object):
     def __init__(self, path, host):
@@ -40,13 +42,17 @@ def _project_list(project_location_triple):
         #'ssh': RemoteBuilderProjects,
         #'https': RemoteBuilderProjects,
     }
-    assert protocol in x.keys(), "unknown protocol %r" % protocol
+    if not protocol in x.keys():
+        LOG.warn("unhandled protocol %r for %r" % (protocol, plt))
+        return {}
     inst = x[protocol](path, hostname)
     return inst.project_list()
 
 def project_list(project_locations_list=None):
     """returns a merged dictionary of organizations and their project lists.
     duplicate projects in the same organisation will be merged."""
+    if not project_locations_list:
+        project_locations_list = config.app()['project-locations']
     def merge(p1, p2):
         utils.deepmerge(p1, p2)
         return p1

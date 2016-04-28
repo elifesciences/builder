@@ -39,3 +39,12 @@ defaults:
         ram: 1024
         cpus: 2
         cpucap: 100 # percent (vagrant default)
+        
+project1:
+    aws:
+        ports:
+            80: 80
+            22: 22
+    vagrant:
+        ports:
+            8080: 80

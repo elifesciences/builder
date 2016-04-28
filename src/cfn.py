@@ -34,10 +34,12 @@ def stack_list(project=None):
         return filter(lambda stack: stack.startswith("%s-" % project), stacks)
     return stacks
 
-@debugtask
+@task
 def project_list():
-    _, all_projects = core.read_projects()
-    print all_projects.keys()
+    #_, all_projects = core.read_projects()
+    #print all_projects.keys()
+    from buildercore import project
+    print project.project_list()
 
 def requires_stack(func):
     "test that the stack exists in the STACKS dir"

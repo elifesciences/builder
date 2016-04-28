@@ -13,6 +13,7 @@ from the interface logic in the fabfile.
 
 from buildercore import utils
 from buildercore.utils import first, last, listfiles
+
 import logging
 import os
 from os.path import join
@@ -156,5 +157,3 @@ def parse(settings_data):
 
 def app(settings_path=SETTINGS_PATH):
     return parse(load(settings_path))
-
-app()
