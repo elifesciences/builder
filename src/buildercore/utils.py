@@ -4,12 +4,23 @@ from functools import wraps
 import logging
 from datetime import datetime
 import yaml
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 from fabric.api import run
 from .decorators import osissue, osissuefn, testme
 from os.path import join
+from more_itertools import unique_everseen
 
 LOG = logging.getLogger(__name__)
+
+def flatten(l):
+    "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
+    return [item for sublist in l for item in sublist]
+
+def unique(l):
+    return list(unique_everseen(l))
+
+def iterable(x):
+    return isinstance(x, Iterable)
 
 def conj(x, y):
     "performs a non-mutating update of dict a with the contents of dict b"
