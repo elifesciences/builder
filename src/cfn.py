@@ -66,7 +66,7 @@ def aws_stack_exists(stackname):
     "we may know about the stack on disk, but it might not have been pushed to aws yet..."
     return stackname in core.all_aws_stack_names()
 
-@task
+@debugtask
 @echo_output
 @requires_stack # @requires_inactive_stack
 def delete_stack_file(stackname):
@@ -128,13 +128,13 @@ def aws_update_projects(pname):
     "calls state.highstate on ALL projects matching <projectname>-*"
     return aws_update_many_projects([pname])
     
-@task
+@debugtask
 @requires_aws_stack
 def aws_update_template(stackname):
+    "updates the CloudFormation stack and then updates the environment"
     return bootstrap.update_template(stackname)
 
-
-#@task
+@debugtask
 @osissue("refactor. part of the shared-all strategy")
 def aws_remaster_minions():
     """when we create a new master-server, we need to:
@@ -403,7 +403,8 @@ def gather_a_config(stackname):
     return gather_config(stackname, single_config=True)
 
 
-@task
+@osissue("embarassing code. remove/improve")
+@debugtask
 @requires_aws_stack
 def download_file(stackname, path):
     fname = os.path.basename(path)
@@ -457,7 +458,7 @@ def create_ami(stackname):
 # rds tests
 #
 
-@task
+@debugtask
 @requires_aws_stack
 @echo_output
 def aws_rds_snapshots(stackname):
