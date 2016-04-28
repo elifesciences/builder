@@ -11,7 +11,8 @@ from os.path import join
 from functools import wraps
 from aws import deploy_user_pem, stack_conn
 from slugify import slugify
-from buildercore import config, core, cfngen, utils as core_utils, bootstrap, bakery
+import buildercore
+from buildercore import config, core, cfngen, utils as core_utils, bootstrap, bakery, project
 from buildercore.utils import first
 from buildercore.config import ROOT_USER, DEPLOY_USER, BOOTSTRAP_USER
 from buildercore.sync import sync_stack, sync_stacks_down
@@ -36,10 +37,11 @@ def stack_list(project=None):
 
 @task
 def project_list():
-    #_, all_projects = core.read_projects()
-    #print all_projects.keys()
-    from buildercore import project
-    print project.project_list()
+    for org, plist in project.project_list().items():
+        print org
+        for p in plist:
+            print '  ',p
+        print 
 
 def requires_stack(func):
     "test that the stack exists in the STACKS dir"
