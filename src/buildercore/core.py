@@ -265,7 +265,7 @@ def mk_hostname(project, stackname, project_file=config.PROJECT_FILE):
 """
 
 project handling.
-this will need to be shifted to another file
+
 
 """
 
@@ -276,6 +276,7 @@ def all_projects(project_file=config.PROJECT_FILE):
     del allp["defaults"]
     return defaults, allp
 
+'''
 @testme
 @osissue("deprecated. we want to use `project_data` instead. any data from function, besides the project name, will be misleading")
 def read_projects(project_file=config.PROJECT_FILE, env_type='aws'):
@@ -299,6 +300,7 @@ def filtered_projects(filterfn, *args, **kwargs):
 def branch_deployable_projects(*args, **kwargs):
     "returns a pair of (defaults, dict of projects with a repo)"
     return filtered_projects(lambda k, v: v.has_key('repo'))
+'''
 
 #
 # new-style project data handling
@@ -402,11 +404,14 @@ def find_snippets(project_file=config.PROJECT_FILE):
 #
 #
 
+# moved to projects.
+'''
 @testme
 def project_list(project_file=config.PROJECT_FILE):
     "returns a list of known project names from the given project file, excluding 'defaults'"
     _, all_projects = read_projects(project_file)
     return all_projects.keys()
+'''
 
 @testme
 def update_project_file(path, value, project_data=None, project_file=config.PROJECT_FILE):

@@ -1,15 +1,21 @@
-"""Configuration file for builder-core.
+"""Configuration file for `buildercore`.
+
+`buildercore.config` is a place to record assumptions really. 
+Settings that the users are encouraged to tweak should go into the 
+`settings.yml` file at the root of the project and incorporated here.
 
 builder-core was originally part of the builder, then separated out 
-into it's own module 'builder-core' and has now been re-integrated. 
-this transition means that src/builder-core/ is still self contained
-from the interface logic in the fabfile."""
+into it's own module 'buildercore' but has now been re-integrated. 
+This transition meant that `src/builder-core/` is still self contained
+from the interface logic in the fabfile.
 
+"""
+
+from buildercore import utils
 from buildercore.utils import first, last, listfiles
 import logging
 import os
 from os.path import join
-
 
 # these users should probably be specified in the project/org config file
 # as 'defaults'. deploy user especially
@@ -24,8 +30,6 @@ SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
 
 
 PILLAR_DIR = "salt/pillar"
-
-SEP = "-"
 
 # dirs are relative
 SYNC_DIR = "cfn"
@@ -75,8 +79,6 @@ LOG.addHandler(H2)
 PROJECTS_DIR = "projects"
 PROJECT_FILE_LIST = listfiles(PROJECTS_DIR, ['.yaml'])
 PROJECT_FILE = first(PROJECT_FILE_LIST)
-if not PROJECT_FILE:
-    LOG.warn("cannot find a project file! I looked in %r" % PROJECTS_DIR)
 
 #
 # remote 
@@ -88,3 +90,71 @@ PACKER_BOX_KEY = "boxes"
 # ll: s3://elife-builder/boxes
 PACKER_BOX_S3_PATH = "s3://%s" % join(PACKER_BOX_BUCKET, PACKER_BOX_KEY)
 PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PACKER_BOX_KEY)
+
+#
+# settings
+# believe it or not but buildercore.config is NOT the place to be putting settings
+#
+
+SETTINGS_FILE = 'settings.yml'
+SETTINGS_PATH = join(PROJECT_PATH, SETTINGS_FILE)
+
+
+#
+# logic
+#
+
+def load(settings_yaml_path):
+    "read the settings.yml file in from yaml"
+    return utils.ordered_load(open(settings_yaml_path, 'r'))
+
+def _parse_loc(loc):
+    "turn a project-location path into a triple of (protocol, hostname, path)"
+    bits = loc.split('://', 1)
+    if len(bits) == 2:
+        host, path = bits[1].split('/', 1)
+        # ll: (http, example.org, '/path/to/org/file/')
+        return (bits[0], host, '/' + path)
+    # ll: (file, None, '/path/to/org/file/')
+    path = os.path.abspath(os.path.expanduser(loc))
+    return 'file' if os.path.isfile(path) else 'dir', None, path
+
+def parse_loc_list(loc_list):
+    "wrangle the list of paths the user gave us. expand if they specify a directory, etc"
+    # give the convenient user form some structure
+    p_loc_list = map(_parse_loc, loc_list)
+    # do some post processing
+    def expand_dirs(triple):
+        protocol, host, path = triple
+        if protocol in ['dir', 'file'] and not os.path.exists(path):
+            LOG.warn("could not resolve %r, skipping" % path)
+            return None
+        if protocol == 'dir':
+            yaml_files = utils.listfiles(path, ['.yaml'])
+            return [('file', host, path) for path in yaml_files]
+        return [triple]    
+    # we don't want dirs, we want files
+    p_loc_list = utils.flatten(map(expand_dirs, p_loc_list))
+
+    # remove any bogus values
+    p_loc_list = filter(None, p_loc_list)
+    
+    # remove any duplicates. can happen when we expand dir => files
+    p_loc_list = utils.unique(p_loc_list)
+
+    return p_loc_list
+
+def parse(settings_data):
+    "iterate through the settings file and do any data coercion necessary"
+    print 'received',settings_data
+    processors = {
+        'project-locations': parse_loc_list,
+    }
+    for key, processor in processors.items():
+        settings_data[key] = processor(settings_data[key])
+    return settings_data
+
+def app(settings_path=SETTINGS_PATH):
+    return parse(load(settings_path))
+
+app()

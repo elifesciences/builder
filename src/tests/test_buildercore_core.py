@@ -93,6 +93,7 @@ class TestCoreProjectData(base.BaseCase):
 
     def test_just_branch_deployable_projects(self):
         "projects that are deployable by their branch are accurately filtered from the list of all projects"
+        assert(False), "this test is poorly self contained"
         all_defaults, all_projects = core.read_projects()
         bd_defaults, branch_deployable = core.branch_deployable_projects()
         self.assertTrue(len(all_projects) > len(branch_deployable))
