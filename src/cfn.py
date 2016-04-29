@@ -5,7 +5,7 @@ from fabric.contrib import files
 from fabric.contrib.console import confirm
 import aws
 import utils
-from decorators import requires_project, requires_aws_stack, echo_output, deffile, setdefault, debugtask
+from decorators import requires_project, requires_aws_stack, echo_output, deffile, setdefault, debugtask, timeit
 import os
 from os.path import join
 from functools import wraps
@@ -36,6 +36,7 @@ def stack_list(project=None):
     return stacks
 
 @task
+@timeit
 def project_list():
     for org, plist in project.org_project_map().items():
         print org

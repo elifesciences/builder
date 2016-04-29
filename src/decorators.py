@@ -10,6 +10,20 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+from time import time
+
+# http://stackoverflow.com/questions/1622943/timeit-versus-timing-decorator
+def timeit(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print 'func:%r args:[%r, %r] took: %2.4f sec' % \
+          (f.__name__, args, kw, te-ts)
+        return result
+    return wrap
+
 def deffile(fname):
     "returns the proper path to the given default file"
     return join(config.TEMP_PATH, fname)
