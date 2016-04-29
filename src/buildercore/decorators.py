@@ -8,9 +8,10 @@ def osissuefn(issue):
 
 def osissue(issue):
     def wrap1(func):
+        aissue = "`%s` %s" % (func.__name__, issue)
         @wraps(func)
         def wrap2(*args, **kwargs):
-            osissuefn(issue)
+            osissuefn(aissue)
             return func(*args, **kwargs)
         return wrap2
     return wrap1

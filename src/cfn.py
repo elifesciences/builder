@@ -37,7 +37,7 @@ def stack_list(project=None):
 
 @task
 def project_list():
-    for org, plist in project.project_list().items():
+    for org, plist in project.org_project_map().items():
         print org
         for p in plist:
             print '  ',p

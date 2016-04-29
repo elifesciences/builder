@@ -1,4 +1,5 @@
 from . import core, utils, config
+from .utils import unique, flatten
 import logging
 LOG = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def _project_list(project_location_triple):
     inst = x[protocol](path, hostname)
     return inst.project_list()
 
-def project_list(project_locations_list=None):
+def org_project_map(project_locations_list=None):
     """returns a merged dictionary of organizations and their project lists.
     duplicate projects in the same organisation will be merged."""
     if not project_locations_list:
@@ -58,3 +59,8 @@ def project_list(project_locations_list=None):
         return p1
     data = map(_project_list, project_locations_list)
     return reduce(merge, data)
+
+def project_list(project_locations_list=None):
+    "returns a single list of projects, ignoring which organization the project belongs to, removing any duplicates"
+    opm = org_project_map(project_locations_list)
+    return unique(flatten(opm.values()))

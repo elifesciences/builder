@@ -4,9 +4,9 @@
 Settings that the users are encouraged to tweak should go into the 
 `settings.yml` file at the root of the project and incorporated here.
 
-builder-core was originally part of the builder, then separated out 
-into it's own module 'buildercore' but has now been re-integrated. 
-This transition meant that `src/builder-core/` is still self contained
+buildercore was originally part of the builder, then separated out 
+into it's own project 'builder-core' but has now been re-integrated. 
+This transition meant that `src/buildercore/` is still neatly separated
 from the interface logic in the fabfile.
 
 """
@@ -147,7 +147,6 @@ def parse_loc_list(loc_list):
 
 def parse(settings_data):
     "iterate through the settings file and do any data coercion necessary"
-    print 'received',settings_data
     processors = {
         'project-locations': parse_loc_list,
     }
