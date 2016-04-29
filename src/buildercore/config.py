@@ -10,13 +10,13 @@ This transition meant that `src/buildercore/` is still neatly separated
 from the interface logic in the fabfile.
 
 """
+import os
+from os.path import join
 
 from buildercore import utils
 from buildercore.utils import first, last, listfiles
 
 import logging
-import os
-from os.path import join
 
 # these users should probably be specified in the project/org config file
 # as 'defaults'. deploy user especially
@@ -25,10 +25,10 @@ BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
 
 
-
 PROJECT_PATH = os.getcwdu() # ll: /path/to/elife-builder/
 SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
 
+TEMP_PATH = "/tmp/"
 
 PILLAR_DIR = "salt/pillar"
 
@@ -71,15 +71,6 @@ H2.setFormatter(FORMAT)
 
 LOG.addHandler(H1)
 LOG.addHandler(H2)
-
-
-#
-#
-#
-
-PROJECTS_DIR = "projects"
-PROJECT_FILE_LIST = listfiles(PROJECTS_DIR, ['.yaml'])
-PROJECT_FILE = first(PROJECT_FILE_LIST)
 
 #
 # remote 
