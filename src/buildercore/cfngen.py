@@ -18,7 +18,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 
 import os, json, base64, copy
 from slugify import slugify
-from . import utils, trop, core, config
+from . import utils, trop, core, config, project
 from .config import STACK_DIR
 from .decorators import osissue, osissuefn
 
@@ -56,14 +56,15 @@ def build_context(pname, project_file, salt_pillar_dir, **more_context):
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
 
-    defaults, supported_projects = core.read_projects(project_file)
+    #_, supported_projects = core.read_projects(project_file)
+    supported_projects = project.project_list()
     assert pname in supported_projects, "Unknown project %r" % pname
 
     pillar_data = salt_pillar_data(salt_pillar_dir)
-    project_data = core.project_data(pname, project_file)
+    project_data = project.project_data(pname, project_file)
 
     if 'alt-config' in more_context:
-        project_data = core.set_project_alt(project_data, 'aws', more_context['alt-config'])
+        project_data = project.set_project_alt(project_data, 'aws', more_context['alt-config'])
     
     defaults = {
         'pillar': pillar_data, # all pillar data
@@ -88,7 +89,7 @@ def build_context(pname, project_file, salt_pillar_dir, **more_context):
     default_db_instance_id = slugify(context['instance_id'], separator="")
 
     # ll: master.lax
-    hostname = core.mk_hostname(pname, context['instance_id'], project_file)
+    hostname = core.mk_hostname(context['instance_id'])
     # ll: master.lax.elifesciences.org
     full_hostname = "%(host)s.%(domain)s" % {'host': hostname if hostname else None,
                                             'domain': project_data.get('domain')}
@@ -127,7 +128,7 @@ def write_template(stackname, contents):
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
-
+'''
 def quick_render(project, **more_context):
     "generates a representative Cloudformation template for given project with dummy values"
     # set a dummy instance id if one hasn't been set.
@@ -137,8 +138,9 @@ def quick_render(project, **more_context):
 
 def quick_render_all(**more_context):
     "generates a representative Cloudformation template for all projects with dummy values"
-    return [(project, quick_render(project, **more_context)) for project in core.project_list()]
-
+    #return [(project, quick_render(project, **more_context)) for project in core.project_list()]
+    return [(project, quick_render(project, **more_context)) for project in project.project_list()]
+'''
 #
 #
 #

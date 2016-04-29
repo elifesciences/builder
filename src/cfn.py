@@ -178,7 +178,7 @@ def aws_remaster_minions():
 @requires_stack
 def aws_create_master(stackname):
     public_ip = aws.describe_stack(stackname)['instance']['ip_address']
-    pdata = core.project_data(stackname)
+    pdata = project.project_data(stackname)
     with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=deploy_user_pem()):
         cmds = [
             "wget -O /tmp/install_salt.sh https://bootstrap.saltstack.com",
@@ -286,7 +286,7 @@ def create_stack(pname):
     }
 
     # prompt user for alternate configurations
-    pdata = core.project_data(pname)
+    pdata = project.project_data(pname)
     if pdata.has_key('aws-alt'):
         def helpfn(altkey):
             try:
@@ -308,6 +308,7 @@ def create_stack(pname):
     return os.path.splitext(os.path.basename(out_fname))[0]
 
 
+'''
 @debugtask
 @requires_project
 def print_stack_template(project):
@@ -317,12 +318,13 @@ def print_stack_template(project):
     ])
     context = cfngen.build_context(project, config.PROJECT_FILE, config.PILLAR_DIR, **more_context)
     print cfngen.render_template(context)
+'''
 
 @task
 @requires_project
 @echo_output
 def print_project_config(pname):
-    return core_utils.remove_ordereddict(core.project_data(pname))
+    return core_utils.remove_ordereddict(project.project_data(pname))
     
 #
 #
@@ -451,8 +453,8 @@ def create_ami(stackname):
     path = pname + '.aws.ami'
     # wait until ami finished creating?
     #core.update_project_file(pname + ".aws.ami", amiid)
-    new_project_file = core.update_project_file(path, amiid)
-    core.write_project_file(new_project_file)
+    new_project_file = project.update_project_file(path, amiid)
+    project.write_project_file(new_project_file)
     print '\n' * 4
     print 'wrote', config.PROJECT_FILE
     print 'updated project file with new ami. these changes must be merged and committed manually'

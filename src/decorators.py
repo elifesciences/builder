@@ -1,8 +1,8 @@
 import os
 from os.path import join
 import utils
-from buildercore import core
-from buildercore.utils import first
+from buildercore import core, project
+from buildercore.utils import first, remove_ordereddict
 from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
@@ -12,7 +12,7 @@ LOG = logging.getLogger(__name__)
 
 def deffile(fname):
     "returns the proper path to the given default file"
-    return join(core.project_dir_path(), fname)
+    return join(config.TEMP_PATH, fname)
 
 def setdefault(fname, value):
     "writes the given value to the given default file"
@@ -37,7 +37,7 @@ def requires_filtered_project(filterfn=None):
         def wrap2(project=None, *args, **kwargs):
             project = os.environ.get('PROJECT', project)
             if not project or not project.strip():
-                _, project_list = core.filtered_projects(filterfn)
+                project_list = project.filtered_projects(filterfn)
                 project = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
             return func(project, *args, **kwargs)
         return wrap2
@@ -104,7 +104,7 @@ def echo_output(func):
             if isinstance(res, str) or isinstance(res, unicode):
                 print res
             else:
-                print pformat(res)
+                print pformat(remove_ordereddict(res))
             return res
         return func(*args, **kwargs)
     return _wrapper

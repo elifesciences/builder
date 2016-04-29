@@ -10,24 +10,6 @@ class TestCoreUtils(base.BaseCase):
     def tearDown(self):
         pass
 
-    def test_normalize_stackname(self):
-        valid_stacknames = [
-            'master',
-            'production',
-            'foo',
-            'bar',
-            'foo-bar',
-            'foo-bar-baz',
-        ]
-        self.assertAllEqual(core.normalize_stackname, valid_stacknames)
-
-    def test_normalize_invalid_stacknames(self):
-        invalid_stacknames = [
-            r'master.blaster',
-            r'in.valid/stack\name*'
-        ]
-        self.assertAllNotEqual(core.normalize_stackname, invalid_stacknames)
-
     def test_mk_hostname(self):
         expected_triples = [
             ('elife-lax', 'elife-lax-develop', 'develop.lax'),
@@ -36,7 +18,7 @@ class TestCoreUtils(base.BaseCase):
             ('master-server', 'master-develop', None), # no subdomain
         ]
         for project, stackname, expected in expected_triples:
-            actual = core.mk_hostname(project, stackname)
+            actual = core.mk_hostname(stackname)
             try:
                 self.assertEqual(expected, actual)
             except AssertionError:

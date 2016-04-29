@@ -100,13 +100,14 @@ def errcho(x):
     sys.stderr.flush()
     return x
 
-@testme
 def nth(x, n):
     "returns the nth value in x or None"
     try:
         return x[n]
     except (KeyError, IndexError):
         return None
+    except TypeError:
+        raise
 
 def first(x):
     "returns the first value in x"

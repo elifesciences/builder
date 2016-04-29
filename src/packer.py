@@ -5,7 +5,7 @@ from fabric.api import task, local, settings
 import utils
 from utils import walk_nested_struct
 from decorators import requires_project, echo_output, debugtask
-from buildercore import config, core, utils as core_utils
+from buildercore import config, core, utils as core_utils, project
 import os, json
 from datetime import datetime
 from buildercore.decorators import osissue, osissuefn
@@ -238,7 +238,7 @@ def update_project_file(pname):
         ]
     project_data = core_utils.ordered_load(open(config.PROJECT_FILE, 'r'))
     for path, new_val in updates:
-        project_data = core.update_project_file(path, new_val, project_data)
+        project_data = project.update_project_file(path, new_val, project_data)
     core.write_project_file(project_data)
     print 'wrote',config.PROJECT_FILE
     return project_data

@@ -9,6 +9,30 @@ class TestBuildercoreUtils(base.BaseCase):
     def tearDown(self):
         pass
 
+    def test_nth(self):
+        expected_vals = [
+            ('a', 0, 'a'),
+            ('ab', 0, 'a'),
+            ('ab', 1, 'b'),
+            ('abc', 2, 'c'),
+            ([1,2,3], 0, 1),
+            ([1,2,3], 1, 2),
+
+            
+        ]
+        for data, n, expected in expected_vals:
+            self.assertEqual(expected, utils.nth(data, n))
+
+    def test_wonky_nths(self):
+        vals = [
+            ('a', 1),
+            ([], 1),
+            ({}, 'a'),
+        ]
+        expected = None
+        for data, n in vals:
+            self.assertEqual(expected, utils.nth(data, n))
+
     def test_lu(self):
         data = {
             'a': {
