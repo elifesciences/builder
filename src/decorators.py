@@ -48,12 +48,13 @@ debugtask = rtask('debug')
 def requires_filtered_project(filterfn=None):
     def wrap1(func):
         @wraps(func)
-        def wrap2(project=None, *args, **kwargs):
-            project = os.environ.get('PROJECT', project)
-            if not project or not project.strip():
+        def wrap2(_pname=None, *args, **kwargs):
+            pname = os.environ.get('PROJECT', _pname)
+            if not pname or not pname.strip():
                 project_list = project.filtered_projects(filterfn)
-                project = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
-            return func(project, *args, **kwargs)
+                #project_list = project.project_list()
+                pname = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
+            return func(pname, *args, **kwargs)
         return wrap2
     return wrap1
 
