@@ -33,7 +33,7 @@ BOTH_CHECKS = [
      
     ('vagrant',
      {'osx': 'brew cask install vagrant'}),
-    ('fooo', {}),           
+
     ('ssh credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f ~/.ssh/id_rsa && test -f ~/.ssh/id_rsa.pub'),
