@@ -74,6 +74,7 @@ def check_cmd(cmd):
         found = 'found'
         if version_checker:
             found = version_checker(c_cmd)
+        sys.stdout.write(found)
         ret = True
     else:
         sys.stdout.write('NOT found.')
