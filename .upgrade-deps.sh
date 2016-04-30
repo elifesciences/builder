@@ -12,4 +12,5 @@ pip install pip-review
 pip-review --pre # preview the upgrades
 echo "[any key to continue ...]"
 read -p "$*"
+echo "updating ..."
 pip-review --auto --pre # update everything
