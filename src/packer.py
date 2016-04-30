@@ -99,7 +99,7 @@ def box_name(pname):
     return join(config.PACKER_BOX_PREFIX, pname) # ll: elifesciences/basebox
 
 def prj(pname, path):
-    return core_utils.lookup(core.project_data(pname), path)
+    return core_utils.lookup(project.project_data(pname), path)
 
 
 
@@ -236,6 +236,7 @@ def update_project_file(pname):
             ('defaults.vagrant.box', box_name(pname)),
             ('defaults.vagrant.box-url', box_metadata_url(pname))
         ]
+    
     project_data = core_utils.ordered_load(open(config.PROJECT_FILE, 'r'))
     for path, new_val in updates:
         project_data = project.update_project_file(path, new_val, project_data)

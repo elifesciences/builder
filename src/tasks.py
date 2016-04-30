@@ -1,5 +1,5 @@
 import requests
-from buildercore import core, cfngen, config
+from buildercore import core, cfngen, config, project
 from buildercore.sync import sync_stack
 from fabric.api import sudo, run, local, task
 from decorators import echo_output, requires_aws_stack
@@ -86,14 +86,14 @@ def acme_enabled(url):
 def fetch_cert(stackname):
     try:    
         # replicates some logic in builder core
-        project = core.project_name_from_stackname(stackname)
-        _, all_project_data = core.read_projects()
-        project_data = all_project_data[project]
+        pname = core.project_name_from_stackname(stackname)
+        all_project_data = project.project_data(pname)
+        project_data = all_project_data[pname]
 
         pillar_data = cfngen.salt_pillar_data(config.PILLAR_DIR)
         assert project_data.has_key('subdomain'), "project subdomain not found. quitting"
 
-        instance_id = stackname[len(project + "-"):]
+        instance_id = stackname[len(pname + "-"):]
         is_prod = instance_id in ['master', 'production']
 
         # we still have some instances that are the production/master
@@ -154,15 +154,3 @@ def alm_ssh():
     "ssh into the alm server"
     cmd = "ssh elife@alm.svr.elifesciences.org -i payload/deploy-user.pem"
     local(cmd)
-
-#
-#
-#
-
-#@task
-@osissue("consider removal. usefulness is unknown")
-def generate_project_config_json():
-    "debug. writes all the project config to json files. useful for debugging"
-    _, all_projects = core.read_projects()
-    for pname in all_projects.keys():
-        print 'wrote',core.write_project_data(pname)

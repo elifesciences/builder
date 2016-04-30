@@ -3,7 +3,7 @@
 from fabric.api import task
 from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile
 import utils
-from buildercore import core, bootstrap, cfngen
+from buildercore import core, bootstrap, cfngen, project
 
 import logging
 
@@ -27,7 +27,7 @@ def impose_ordering(branch_list):
 @requires_branch_deployable_project
 @echo_output
 def deploy(pname):
-    pdata = core.project_data(pname)
+    pdata = project.project_data(pname)
     branch_list = utils.git_remote_branches(pdata['repo'])
     branch_list = impose_ordering(branch_list)
     branch = utils._pick('branch', branch_list, deffile('.branch'))
@@ -43,7 +43,7 @@ def deploy(pname):
             'branch': branch,
         }
         # tie branch names to alternate configurations
-        if branch in core.project_alt_config_names(pdata):
+        if branch in project.project_alt_config_names(pdata):
             LOG.info("using alternate AWS configuration %r", branch)
             more_context['alt-config'] = branch
         cfngen.generate_stack(pname, **more_context)

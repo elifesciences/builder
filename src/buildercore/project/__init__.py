@@ -39,6 +39,7 @@ def set_project_alt(pdata, env, altkey):
 def update_project_file(*args, **kwargs):
     raise NotImplementedError()
 
+@osissue("how is this different from `update_project_file`?")
 def write_project_file(new_project_file):
     raise NotImplementedError()
 
@@ -96,4 +97,17 @@ def project_list(project_locations_list=None):
     return project_map(project_locations_list).keys()
 
 def project_data(pname, project_locations_list=None):
+    "returns the data for a single project"
     return project_map(project_locations_list)[pname]
+
+#
+#
+#
+
+def filtered_projects(filterfn, *args, **kwargs):
+    "returns a dict of projects filtered by given filterfn)"
+    return utils.dictfilter(filterfn, project_map(*args, **kwargs))
+
+def branch_deployable_projects(*args, **kwargs):
+    "returns a pair of (defaults, dict of projects with a repo)"
+    return filtered_projects(lambda pname, pdata: pdata.has_key('repo'))
