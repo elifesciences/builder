@@ -33,7 +33,7 @@ BOTH_CHECKS = [
      
     ('vagrant',
      {'osx': 'brew cask install vagrant'}),
-    ('fooo', {}),           
+
     ('ssh credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f ~/.ssh/id_rsa && test -f ~/.ssh/id_rsa.pub'),
@@ -74,6 +74,7 @@ def check_cmd(cmd):
         found = 'found'
         if version_checker:
             found = version_checker(c_cmd)
+        sys.stdout.write(found)
         ret = True
     else:
         sys.stdout.write('NOT found.')

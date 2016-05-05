@@ -23,11 +23,14 @@ else
     echo "* the no-vagrant-s3auth flag has been set. skipping check."
 fi
 
-# so ssh doesn't complain
-#chmod 400 payload/deploy-user.pem
-
 # so we can do ./bldr ...
 chmod +x bldr
+
+# generate a settings file if one doesn't exist
+if [ ! -e settings.yml ]; then
+    echo "* settings.yml not found, creating"
+    cat example.settings.yml | grep -Ev '\w*##' > settings.yml
+fi
 
 # activate the venv, recreating if neccessary
 source .activate-venv.sh
@@ -35,7 +38,7 @@ source .activate-venv.sh
 # download the basebox from s3 if vagrant is installed
 if [ ! -f .no-install-basebox.flag ]; then
     if which vagrant; then
-        ./bldr packer.install_basebox
+        vagrant add box s3://elife-builder/boxes/ elifesciences/basebox
     fi
 else
     echo "* the no-install-basebox flag is set. skipping check"

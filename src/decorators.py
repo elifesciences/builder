@@ -1,7 +1,7 @@
 import os
 from os.path import join
 import utils
-from buildercore import core, project
+from buildercore import core, project, config
 from buildercore.utils import first, remove_ordereddict
 from functools import wraps
 from fabric.api import env, task
@@ -48,12 +48,13 @@ debugtask = rtask('debug')
 def requires_filtered_project(filterfn=None):
     def wrap1(func):
         @wraps(func)
-        def wrap2(project=None, *args, **kwargs):
-            project = os.environ.get('PROJECT', project)
-            if not project or not project.strip():
+        def wrap2(_pname=None, *args, **kwargs):
+            pname = os.environ.get('PROJECT', _pname)
+            if not pname or not pname.strip():
                 project_list = project.filtered_projects(filterfn)
-                project = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
-            return func(project, *args, **kwargs)
+                #project_list = project.project_list()
+                pname = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
+            return func(pname, *args, **kwargs)
         return wrap2
     return wrap1
 
@@ -64,7 +65,7 @@ requires_project = requires_filtered_project(None)
 
 def requires_aws_project_stack(*plist):
     if not plist:
-        plist = [utils._pick("project", core.project_list(), default_file=deffile('.project'))]
+        plist = [utils._pick("project", project.project_list(), default_file=deffile('.project'))]
     def wrap1(func):
         @wraps(func)
         def _wrapper(stackname=None, *args, **kwargs):

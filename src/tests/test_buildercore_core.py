@@ -1,7 +1,7 @@
 import json
 from os.path import join
 from . import base
-from buildercore import core, utils
+from buildercore import core, utils, project
 
 class TestCoreUtils(base.BaseCase):
     def setUp(self):
@@ -76,12 +76,11 @@ class TestCoreProjectData(base.BaseCase):
     def test_just_branch_deployable_projects(self):
         "projects that are deployable by their branch are accurately filtered from the list of all projects"
         assert(False), "this test is poorly self contained"
-        all_defaults, all_projects = core.read_projects()
-        bd_defaults, branch_deployable = core.branch_deployable_projects()
+        all_projects = project.project_list() # maybe?
+        branch_deployable = project.branch_deployable_projects()
         self.assertTrue(len(all_projects) > len(branch_deployable))
         self.assertTrue(len(branch_deployable) > 0)
         self.assertTrue(branch_deployable.has_key('elife-api'))
-        self.assertEqual(all_defaults, bd_defaults)
 
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):
@@ -99,7 +98,7 @@ class TestCoreNewProjectData(base.BaseCase):
         for pname, expected_path in expected:
             try:
                 expected_data = json.load(open(expected_path, 'r'))
-                project_data = core.project_data(pname, project_file=self.project_config)
+                project_data = project.project_data(pname, project_file=self.project_config)
                 project_data = utils.remove_ordereddict(project_data)
                 self.assertEqual(expected_data, project_data)
             except AssertionError:
@@ -114,7 +113,7 @@ class TestCoreNewProjectData(base.BaseCase):
         snippet = {'defaults':
                        {'vagrant': {
                            'cpus': 999}}}
-        project_data = core.project_data('dummy1', self.project_config, [snippet])
+        project_data = project.project_data('dummy1', self.project_config, [snippet])
         project_data = utils.remove_ordereddict(project_data)
         
         expected_data = json.load(open(self.dummy1_config, 'r'))
@@ -133,7 +132,7 @@ class TestCoreNewProjectData(base.BaseCase):
                         {'vagrant': {
                             'cpucap': 111}}}
         snippet_list = [snippet, snippet2]
-        project_data = core.project_data('dummy1', self.project_config, snippet_list)
+        project_data = project.project_data('dummy1', self.project_config, snippet_list)
         project_data = utils.remove_ordereddict(project_data)
         
         expected_data = json.load(open(self.dummy1_config, 'r'))

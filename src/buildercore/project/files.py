@@ -112,12 +112,6 @@ def project_dir_path(project_file):
         os.mkdir(path)
     return path
 
-def write_project_data(pname, project_file, *args, **kwargs):
-    data = project_data(pname, *args, **kwargs)
-    path = join(project_dir_path(project_file), pname + ".json")
-    json.dump(data, open(path, 'w'), indent=4)
-    return path
-
 def find_snippets(project_file):
     path = project_dir_path(project_file)
     path_list = map(lambda fname: join(path, fname), os.listdir(path))
