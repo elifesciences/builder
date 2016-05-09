@@ -1,3 +1,4 @@
+import json
 from functools import wraps
 import logging
 
@@ -22,4 +23,13 @@ def testme(fn):
     def wrapper(*args, **kwargs):
         LOG.debug("%s is VERY testable ...", fn.__name__)
         return fn(*args, **kwargs)
+    return wrapper
+
+def spy(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        LOG.info("func %r called with args %r and kwargs %r", fn.__name__, args, kwargs)
+        retval = fn(*args, **kwargs)
+        LOG.info("func %r returned with value:\n%s", fn.__name__, json.dumps(retval, indent=4))
+        return retval
     return wrapper
