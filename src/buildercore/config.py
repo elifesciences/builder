@@ -55,9 +55,9 @@ assert os.path.isdir(LOG_PATH), "log directory couldn't be created: %s" % LOG_PA
 assert os.access(LOG_PATH, os.W_OK | os.X_OK), "log directory isn't writable: %s" % LOG_PATH
 
 # http://docs.python.org/2/howto/logging-cookbook.html
-LOG = logging.getLogger("") # important! this is the *root LOG*
+ROOTLOG = logging.getLogger() # important! this is the *root LOG*
                             # all other LOGs are derived from this one
-LOG.setLevel(logging.DEBUG) # *default* output level for all LOGs
+ROOTLOG.setLevel(logging.DEBUG) # *default* output level for all LOGs
 
 # StreamHandler sends to stderr by default
 H1 = logging.StreamHandler()
@@ -69,8 +69,11 @@ H2 = logging.FileHandler(LOG_FILE)
 H2.setLevel(logging.WARN) # change to INFO if code is less-than-stable
 H2.setFormatter(FORMAT)
 
-LOG.addHandler(H1)
-LOG.addHandler(H2)
+# root logger sends *everything* to file
+ROOTLOG.addHandler(H1)
+ROOTLOG.addHandler(H2) 
+
+LOG = logging.getLogger(__name__)
 
 #
 # remote 

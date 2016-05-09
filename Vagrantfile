@@ -2,7 +2,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-['yaml', 'fileutils'].each{| mod | require mod }
+['yaml', 'fileutils', 'pp'].each{| mod | require mod }
 
 def prn(out="", nl=true)
     STDERR.print out
@@ -32,8 +32,8 @@ end
 VAGRANTFILE_API_VERSION = "2"
 VAGRANT_COMMAND = ARGV[0]
 VAGRANT_VERSION = %x(vagrant --version).gsub(/[^\d\.]/, "") # looks like: 1.7.4
-ALL_PROJECTS = YAML.load_file("projects/elife.yaml")
-ALL_PROJECTS.delete("defaults")
+# all *VAGRANT* projects
+ALL_PROJECTS = YAML.load(IO.popen("/bin/bash -c \"source venv/bin/activate && ./.project.py --env=vagrant\"").read)
 
 # essentially gives vagrant a project to use to prevent the prompt
 if ['box'].include? VAGRANT_COMMAND
@@ -44,9 +44,7 @@ end
 # create a dev instance of all available projects
 SUPPORTED_PROJECTS = {}
 ALL_PROJECTS.each do |key, data|
-    if data.has_key?('vagrant')
-        SUPPORTED_PROJECTS[key + "-dev"] = data['vagrant']
-    end
+    SUPPORTED_PROJECTS[key + "-dev"] = key
 end
 
 if not ENV['PROJECT']
@@ -124,7 +122,6 @@ end
 cmd = "/bin/bash -c \"source venv/bin/activate && ./.project.py #{PROJECT_NAME.chomp('-dev')}\""
 PRJ = YAML.load(IO.popen(cmd).read)
 
-#require 'pp'
 #PP.pp PRJ
 #abort
 

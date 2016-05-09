@@ -61,7 +61,7 @@ def find_project(project_location_triple):
         #'https': RemoteBuilderProjects,
     }
     if not protocol in fnmap.keys():
-        LOG.warn("unhandled protocol %r for %r" % (protocol, plt))
+        LOG.info("unhandled protocol %r for %r" % (protocol, plt))
         return {} #OrderedDict({})
     return fnmap[protocol](path, hostname)
 
