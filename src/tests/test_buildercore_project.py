@@ -45,15 +45,14 @@ class TestMultiProjects(base.BaseCase):
                 join(self.fixtures_dir, 'dummy-project2.yaml'),
             ]
         }
-        self.parsed_config = config.parse(loaded_config)
+        self.parsed_config = config.parse(loaded_config)['project-locations']
 
     def tearDown(self):
         pass
 
     def test_project_list_from_multiple_files(self):
-        prj_loc_lst = self.parsed_config['project-locations']
         expected = [
             'dummy1', 'dummy2', 'dummy3',
             'yummy1'
         ]
-        self.assertEqual(project.project_list(prj_loc_lst), expected)
+        self.assertEqual(project.project_list(self.parsed_config), expected)

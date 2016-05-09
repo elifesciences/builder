@@ -90,7 +90,10 @@ def project_map(project_locations_list=None):
     # ll: [{'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}}], {'example': {}}]
     data = opm.values()
     # ll: {'lax': {...}, 'metrics': {...}, 'example': {...}}
-    return reduce(utils.deepmerge, data)
+    def merge(p1, p2):
+        utils.deepmerge(p1, p2)
+        return p1
+    return reduce(merge, data)
 
 def project_list(project_locations_list=None):
     "returns a single list of projects, ignoring organization and project data"
