@@ -1,0 +1,43 @@
+defaults:
+    salt: '2017.9'
+    subdomain: null
+    meta:
+        description: defaults for all projects
+    repo: None # projects with an explicit repo support branch deployments
+    aws:
+        ami: ami-9eaa1cf6   # Ubuntu 14.04
+        type: t2.small
+        region: us-east-1
+        vpc-id: vpc-78a2071d
+        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        cidr-ip: 0.0.0.0/0 # default access is 'everyone'
+        ports:
+            22: 22 # ssh is open on all instances
+        rds:
+            name: <defined at generation>
+            engine: postgres
+            version: '9.4'
+            type: db.t2.small
+            storage: 5 # GB
+            backup-retention: 28
+        ext:
+            size: 10 # GB
+            device: /dev/sdh
+    vagrant:
+        box: elifesciences/basebox # derived from ubuntu/trusty64
+        box-url: s3://elife-builder/boxes/basebox-meta.json
+        ip: 192.168.33.44
+        ram: 1024
+        cpus: 2
+        cpucap: 50
+
+# basic vagrant and aws, no alternative config
+yummy1:
+    subdomain: yummy1
+    repo: ssh://git@github.com/elifesciences/yummy1
+    aws:
+        ports:
+            222: 222
+    vagrant:
+        ports:
+            123: 321

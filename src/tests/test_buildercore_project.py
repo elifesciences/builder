@@ -3,6 +3,7 @@ import os
 from os.path import join
 from buildercore import config, project
 from collections import OrderedDict
+
 class TestProject(base.BaseCase):
     def setUp(self):
         self.project_file = join(self.fixtures_dir, 'dummy-project.yaml')
@@ -31,5 +32,28 @@ class TestProject(base.BaseCase):
         prj_loc_lst = self.parsed_config['project-locations']
         expected = [
             'dummy1', 'dummy2', 'dummy3'
+        ]
+        self.assertEqual(project.project_list(prj_loc_lst), expected)
+
+
+
+class TestMultiProjects(base.BaseCase):
+    def setUp(self):
+        loaded_config = {
+            'project-locations': [
+                join(self.fixtures_dir, 'dummy-project.yaml'),
+                join(self.fixtures_dir, 'dummy-project2.yaml'),
+            ]
+        }
+        self.parsed_config = config.parse(loaded_config)
+
+    def tearDown(self):
+        pass
+
+    def test_project_list_from_multiple_files(self):
+        prj_loc_lst = self.parsed_config['project-locations']
+        expected = [
+            'dummy1', 'dummy2', 'dummy3',
+            'yummy1'
         ]
         self.assertEqual(project.project_list(prj_loc_lst), expected)
