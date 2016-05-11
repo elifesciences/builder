@@ -36,7 +36,6 @@ bootstrap:
 ## authorization
 
 it's not practical to have a sysadmin authorize the creation of all new minions
-- in some cases it might be, but not this one
 
 we need something with a little bit of logic between master and minion
 - that knows which users are allowed to create which minion (project) types
