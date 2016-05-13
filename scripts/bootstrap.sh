@@ -5,7 +5,9 @@
 # https://github.com/mitchellh/vagrant/issues/5973#issuecomment-126082024
 
 set -e
-start_seconds="$(date +%s)"
+
+echo "-----------------------------"
+
 version=$1
 
 if [ -n "$SALT_VERSION" ]; then
@@ -36,8 +38,3 @@ if ! (salt-call --version | grep $version); then
 else
     echo "Skipping bootstrap, found: $(salt-call --version)"
 fi
-
-echo "-----------------------------"
-
-end_seconds="$(date +%s)"
-echo "Salt installation complete in "$(expr $end_seconds - $start_seconds)" seconds"

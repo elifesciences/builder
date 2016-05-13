@@ -1,0 +1,25 @@
+file_client: local
+
+# default is warn
+log_level: info
+
+fileserver_backend:
+    - roots
+    - git
+
+gitfs_provider: GitPython
+gitfs_remotes:
+    # all minions will have this available to them
+    #- git://github.com/elifesciences/elife-salt-formulas.git
+    - git://github.com/saltstack-formulas/apache-formula.git
+
+file_roots:
+    base:
+        - /srv/salt/
+
+pillar_roots:
+    base:
+        - /srv/pillar
+
+extension_modules: 
+    /srv/salt/modules/

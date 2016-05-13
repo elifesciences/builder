@@ -2,9 +2,12 @@
 # copied into the virtual machine and executed after bootstrap.sh. 
 # DO NOT run on your host machine.
 
-start_seconds="$(date +%s)"
+set -e
 
-sudo cp /vagrant/salt/vagrant-minion /etc/salt/minion
+echo "-----------------------------"
+
+sudo cp /vagrant/scripts/salt/minion /etc/salt/minion
+sudo cp /vagrant/scripts/salt/srv-pillar-top.sls /srv/pillar/top.sls
 echo "Restarting salt-minion"
 sudo salt-minion -d # TODO: necessary?
 sudo service salt-minion restart
@@ -18,7 +21,4 @@ sudo salt-call state.highstate || {
     echo "Error provisioning, state.highstate returned: ${status}"
 }
 
-echo "-----------------------------"
 
-end_seconds="$(date +%s)"
-echo "Provisioning complete in "$(expr $end_seconds - $start_seconds)" seconds"
