@@ -16,7 +16,9 @@ class TestBuildercoreTrop(base.BaseCase):
             'instance_id': 'dummy3-test',
             'alt-config': 'alt-config1'
         }
-        context = cfngen.build_context('dummy3', self.project_config, config.PILLAR_DIR, **extra)
+        #context = cfngen.build_context('dummy3', self.project_config, config.PILLAR_DIR, **extra)
+        #context = cfngen.build_context('dummy3', self.project_config, **extra)
+        context = cfngen.build_context('dummy3', **extra)
         self.assertTrue(context['project']['aws'].has_key('rds'))
         data = json.loads(trop.render(context))
         #pprint(data)

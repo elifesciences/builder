@@ -352,8 +352,8 @@ VARYING_CONFIG = {
         "/var/lib/jenkins/.gitconfig",
 
         # jenkins projects, pulled from salt pillar data
-        lambda: map(lambda pname: "/var/lib/jenkins/jobs/%s/config.xml" % pname, \
-                    utils.salt_pillar_data()['ci']['jenkins']['projects']),
+        #lambda: map(lambda pname: "/var/lib/jenkins/jobs/%s/config.xml" % pname, \
+        #            utils.salt_pillar_data()['ci']['jenkins']['projects']),
 
         # jira integration
         "/var/lib/jenkins/hudson.plugins.jira.JiraProjectProperty.xml",
@@ -455,9 +455,9 @@ def create_ami(stackname):
     # wait until ami finished creating?
     #core.update_project_file(pname + ".aws.ami", amiid)
     new_project_file = project.update_project_file(path, amiid)
-    project.write_project_file(new_project_file)
+    output_file = project.write_project_file(new_project_file)
     print '\n' * 4
-    print 'wrote', config.PROJECT_FILE
+    print 'wrote', output_file
     print 'updated project file with new ami. these changes must be merged and committed manually'
     print '\n' * 4
 

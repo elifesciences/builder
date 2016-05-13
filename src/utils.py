@@ -164,10 +164,6 @@ def uin(param, default=0xDEADBEEF):
             continue
         return userin
 
-@osissue("references salt. refactor")    
-def salt_pillar_data():
-    return cfngen.salt_pillar_data('salt/pillar/')
-
 @osissue("refactor. one of about three implementations.")
 def getin(data, path):
     "allows dot-path access to nested dicts"

@@ -236,17 +236,20 @@ def update_project_file(pname):
             ('defaults.vagrant.box', box_name(pname)),
             ('defaults.vagrant.box-url', box_metadata_url(pname))
         ]
-    
-    project_data = core_utils.ordered_load(open(config.PROJECT_FILE, 'r'))
+
+    project_file = 'asdf'
+            
+    project_data = core_utils.ordered_load(open(project_file, 'r'))
     for path, new_val in updates:
         project_data = project.update_project_file(path, new_val, project_data)
-    core.write_project_file(project_data)
-    print 'wrote',config.PROJECT_FILE
+    project.write_project_file(project_data)
+    print 'wrote',project_file
     return project_data
 
 @task
 def add_all_boxes():
-    _, projects = core.all_projects()
+    #_, projects = core.all_projects()
+    projects = project.project_list()
     # kinda gross because everything is keyed to the project, but works nicely
     boxes = {prj(pname, 'vagrant.box'): pname for pname in projects.keys()}
     return map(add_box, boxes.values())

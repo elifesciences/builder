@@ -90,7 +90,6 @@ def fetch_cert(stackname):
         all_project_data = project.project_data(pname)
         project_data = all_project_data[pname]
 
-        pillar_data = cfngen.salt_pillar_data(config.PILLAR_DIR)
         assert project_data.has_key('subdomain'), "project subdomain not found. quitting"
 
         instance_id = stackname[len(pname + "-"):]
@@ -116,9 +115,14 @@ def fetch_cert(stackname):
         print '\nthese hosts will be targeted:'
         print '* ' + '\n* '.join(domain_names)
 
+        #pillar_data = cfngen.salt_pillar_data(config.PILLAR_DIR)
+        #server = {
+        #    'staging': pillar_data['sys']['webserver']['acme_staging_server'],
+        #    'live': pillar_data['sys']['webserver']['acme_server'],
+        #}
         server = {
-            'staging': pillar_data['sys']['webserver']['acme_staging_server'],
-            'live': pillar_data['sys']['webserver']['acme_server'],
+            'staging': "https://acme-staging.api.letsencrypt.org/directory",
+            'live': "https://acme-v01.api.letsencrypt.org/directory",
         }
 
         certtype = utils._pick("certificate type", ['staging', 'live'])

@@ -1,11 +1,13 @@
 """
-trop.py is a module that uses the Troposphere library to build up a AWS Cloudformation (CFN) template dynamically, using values from the projects file, pillar values from Salt's salt/pillar/*.sls files and a bunch of sensible defaults.
+trop.py is a module that uses the Troposphere library to build up 
+a AWS Cloudformation (CFN) template dynamically, using values from 
+the projects file and a bunch of sensible defaults.
 
-It's job is to return the correct CFN JSON given a dictionary of data called a `context`.
+It's job is to return the correct CFN JSON given a dictionary of 
+data called a `context`.
 
-`cfngen.py` is in charge of constructing this data struct and writing it to the correct file etc.
-
-"""
+`cfngen.py` is in charge of constructing this data struct and writing 
+it to the correct file etc."""
 
 from . import utils
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, Base64, route53
@@ -28,8 +30,6 @@ R53_EXT_TITLE = "ExtDNS"
 R53_EXT_HOSTED_ZONE = "elifesciences.org."
 R53_INT_TITLE = "IntDNS"
 R53_INT_HOSTED_ZONE = "elife.internal."
-
-
 
 def sg_rule(from_port, to_port=None, cidr_ip='0.0.0.0/0', ip_protocol='tcp'):
     if not to_port:
@@ -130,7 +130,8 @@ def rdsinstance(context):
 
     # db instance
     data = {
-        'DBName': lu('project_pillar.db.name', 'db_instance_id'),
+        #'DBName': lu('project.project_pillar.db.name', 'db_instance_id'),
+        'DBName': lu('db_instance_id'), # dbname generated from instance id
         'DBInstanceIdentifier': lu('instance_id'), # ll: elife-lax-2015-12-31
         'PubliclyAccessible': False,
         'AllocatedStorage': lu('project.aws.rds.storage'), # 'defaults.aws.rds.storage'),
@@ -140,9 +141,9 @@ def rdsinstance(context):
         'DBSubnetGroupName': Ref(rsn),
         'DBInstanceClass': lu('project.aws.rds.type'), # 'defaults.aws.rds.type'),
         'Engine': lu('project.aws.rds.engine'), # 'defaults.aws.rds.engine'),
-        'MasterUsername': lu('pillar.sys.db_root.username'), #, 'db_username'), # we can now guarantee pillar data available
-        'MasterUserPassword': lu('pillar.sys.db_root.password'), # 'db_password'),
-        'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'), 
+        'MasterUsername': lu('project.rds.root.username'), # pillar data is now UNavailable
+        'MasterUserPassword': lu('project.rds.root.password'),
+        'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'),
         'DeletionPolicy': 'Snapshot',
         "Tags": instance_tags(context),
         "AllowMajorVersionUpgrade": False, # default? not specified.
