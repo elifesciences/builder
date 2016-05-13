@@ -34,7 +34,7 @@ current method is:
 * a single file_mount in `salt/` for 'salt' and 'pillar' directories
 * ALL projects using the same `top.sls` files
 
-if the master has no static `top.sls` file, and insteads generates one based on the given `minion_id` (https://github.com/saltstack/salt/blob/develop/salt/tops/cobbler.py#L47) we could derive the project name from the minion ID and return something customised just for that project
+if the master has no static `top.sls` file, and instead generates one based on the given `minion_id` (https://github.com/saltstack/salt/blob/develop/salt/tops/cobbler.py#L47) we could derive the project name from the minion ID and return something customised just for that project
 
 might be able to generate a top file 
 
