@@ -6,7 +6,10 @@ defaults:
         description: defaults for all projects
     repo: 
         # projects with an explicit repo support branch deployments
-        None 
+        null
+    # the repository containing the build instructions for this project
+    # may be different from the project repository
+    formula-repo: null
     aws:
         # NOTE! the ami to use is determined in buildercore.bakery
         ami: ami-9eaa1cf6   # Ubuntu 14.04
@@ -39,8 +42,12 @@ defaults:
         ram: 1024
         cpus: 2
         cpucap: 100 # percent (vagrant default)
-        
+ 
+basebox:
+   vagrant: {}
+       
 project1:
+    formula-repo: https://github.com/elifesciences/example-project
     aws:
         ports:
             80: 80
