@@ -1,4 +1,5 @@
 *.pyc
+cloned-projects/*
 settings.yml
 *~
 .vagrant*
