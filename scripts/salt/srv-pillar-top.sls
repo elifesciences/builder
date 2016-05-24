@@ -1,3 +1,0 @@
-base:
-    '*':
-        - example.pillar
