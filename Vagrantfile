@@ -11,6 +11,10 @@ def prn(out="", nl=true)
     nil
 end
 
+def runcmd(cmd)
+    return IO.popen(cmd).read
+end
+
 def runningvms()
     begin
         v = %x(vboxmanage list runningvms 2> .vagrant-error)
@@ -60,6 +64,7 @@ if not ENV['PROJECT']
         default_project = fh.read()
         fh.close()
     end
+    DEFAULT_AVAILABLE = SUPPORTED_PROJECTS.include?(default_project)
     
     vmlist = runningvms()
     
@@ -74,7 +79,7 @@ if not ENV['PROJECT']
                 end
             end
             
-            if default_project
+            if DEFAULT_AVAILABLE
                 prn "> (" + default_project + ")"
             else
                 prn "> ", false
@@ -83,8 +88,8 @@ if not ENV['PROJECT']
             opt = Integer(opt) rescue false
             prn
             if not opt
-                if default_project
-                    PROJECT_NAME = default_project
+                if DEFAULT_AVAILABLE
+                    INSTANCE_NAME = default_project
                     break
                 end
                 prn "a number is required"
@@ -94,14 +99,14 @@ if not ENV['PROJECT']
                 next
             end
             
-            PROJECT_NAME = KEYED[opt]
+            INSTANCE_NAME = KEYED[opt] # ll: elife-lax-dev
             break
         end
         
         # remember the selected project
         FileUtils.mkdir_p('projects/elife/')
         fh = File.open('projects/elife/.vproject', 'w')
-        fh.write(PROJECT_NAME)
+        fh.write(INSTANCE_NAME)
         fh.close()
         
     rescue Interrupt
@@ -109,21 +114,33 @@ if not ENV['PROJECT']
     end
 
 elsif
-    PROJECT_NAME = ENV['PROJECT']
+    INSTANCE_NAME = ENV['PROJECT']
 end
 
+PROJECT_NAME = SUPPORTED_PROJECTS[INSTANCE_NAME]  # ll: elife-lax
+
 # necessary because we allow passing a project's name in via an ENV var
-if not SUPPORTED_PROJECTS.has_key? PROJECT_NAME
-    prn "unknown project '#{PROJECT_NAME}'"
+if not SUPPORTED_PROJECTS.has_key? INSTANCE_NAME
+    prn "unknown project '#{INSTANCE_NAME}'"
     prn "known projects: " + SUPPORTED_PROJECTS.keys.join(', ')
     abort 
 end
 
-cmd = "/bin/bash -c \"source venv/bin/activate && ./.project.py #{PROJECT_NAME.chomp('-dev')}\""
+cmd = "/bin/bash -c \"source venv/bin/activate && ./.project.py #{PROJECT_NAME}\""
 PRJ = YAML.load(IO.popen(cmd).read)
 
 #PP.pp PRJ
 #abort
+
+# every project needs to tell us where to find it's formula for building it
+if not PRJ.key?("formula-repo")
+    prn "project data for '#{PROJECT_NAME}' has no key 'formula-repo'."
+    prn "this value is used to clone the formula repository and build the project."
+    prn
+    prn "your `settings.yml` file contains project configuration locations"
+    prn
+    exit 1
+end
 
 def prj(key, default=nil)
     PRJ['vagrant'].fetch(key, default)
@@ -131,7 +148,7 @@ end
 
 # if provisioning died before the custom ssh user (deploy user) can be created,
 # set this to false and it will log-in as the default 'vagrant' user.
-CUSTOM_SSH_USER = true
+CUSTOM_SSH_USER = false
 CUSTOM_SSH_USERNAME = "elife"
 if ENV.fetch("CUSTOM_SSH_USER", nil)
     CUSTOM_SSH_USER = (true if ENV.fetch("CUSTOM_SSH_USER") =~ /^true$/i) || false
@@ -156,11 +173,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         config.vm.synced_folder(d["host"], d["guest"], **d.fetch("opts", {}))
     }
 
-    config.vm.define PROJECT_NAME do |project|
+    config.vm.define INSTANCE_NAME do |project|
         project.vm.box = prj("box")
         project.vm.box_url = prj("box-url")
-        project.vm.host_name = PROJECT_NAME
-        prn " [info] hostname is #{PROJECT_NAME} (this affects Salt configuration)"
+        project.vm.host_name = INSTANCE_NAME
+        prn " [info] hostname is #{INSTANCE_NAME} (this affects Salt configuration)"
         project.vm.network :private_network, ip: prj("ip")
       
         # setup any port forwarding
@@ -192,16 +209,29 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             vb.customize ["modifyvm", :id, "--cpuexecutioncap", prj("cpucap")]
         end
 
-        # mount salt directories
-        project.vm.synced_folder "salt/salt/", "/srv/salt/"
-        project.vm.synced_folder "salt/dev-pillar/", "/srv/dev-pillar/"
-        project.vm.synced_folder "salt/pillar/", "/srv/pillar/"
+        if not File.exists?("cloned-projects/#{PROJECT_NAME}")
+            FileUtils.mkdir_p("cloned-projects/#{PROJECT_NAME}/")
+        end
+        
+        # it's possible a formula repo was defined but explicitly nullified
+        repo = PRJ.fetch("formula-repo", nil)
+        if repo 
+            # clone the repo if it doesn't exist. user is in charge of keeping this updated.
+            if not File.exists?("cloned-projects/#{PROJECT_NAME}/.git")
+                prn runcmd("git clone #{repo} cloned-projects/#{PROJECT_NAME}/")
+            end
+            # mount salt directories
+            project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/salt/", "/srv/salt/"
+            project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/salt/pillar/", "/srv/pillar/"
+        end
 
         # global shared folder
         project.vm.synced_folder "public/", "/srv/public/", :mount_options => [ "dmode=777", "fmode=777" ]
 
-        # bootstrap
+        # bootstrap Saltstack
         project.vm.provision "shell", path: "scripts/bootstrap.sh", args: [PRJ["salt"]], privileged: false
+        
+        # configure Salt, call highstate
         project.vm.provision "shell", path: "scripts/init-minion.sh", privileged: false
 
     end # ends project configure

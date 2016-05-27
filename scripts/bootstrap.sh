@@ -1,4 +1,5 @@
 #!/bin/bash
+# VAGRANT AND AWS
 # copied into the virtual machine and executed. DO NOT run on your host machine.
 
 # stolen from

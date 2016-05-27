@@ -10,12 +10,19 @@ fileserver_backend:
 gitfs_provider: GitPython
 gitfs_remotes:
     # all minions will have this available to them
-    #- git://github.com/elifesciences/elife-salt-formulas.git
-    - git://github.com/saltstack-formulas/apache-formula.git
+    - ssh://git@github.com/elifesciences/elife-base-formula.git
 
 file_roots:
     base:
         - /srv/salt/
+
+git_pillar_provider: GitPython
+ext_pillar:
+    - git: 
+        - master ssh://git@github.com/elifesciences/elife-base-formula.git:
+            # possibly redundant
+            - root: pillar
+            - env: base
 
 pillar_roots:
     base:
