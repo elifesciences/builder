@@ -37,7 +37,7 @@ source .activate-venv.sh
 
 # download the basebox from s3 if vagrant is installed
 if [ ! -f .no-install-basebox.flag ]; then
-    if which vagrant; then
+    if [ type vagrant &> /dev/null ]; then
         vagrant add box s3://elife-builder/boxes/ elifesciences/basebox
     fi
 else
