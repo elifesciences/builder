@@ -8,24 +8,30 @@ fileserver_backend:
     - git
 
 gitfs_provider: GitPython
-gitfs_remotes:
-    # all minions will have this available to them
-    - ssh://git@github.com/elifesciences/elife-base-formula.git
+
+# desirable remotely
+#gitfs_remotes:
+    # this is possible, but doesn't use modified files, defeating purpose
+    #- file:///vagrant/cloned-projects/elife-base-formula
+#    - ssh://git@github.com/elifesciences/elife-base-formula.git
 
 file_roots:
     base:
+        - /vagrant/cloned-projects/elife-base-formula
         - /srv/salt/
 
 git_pillar_provider: GitPython
-ext_pillar:
-    - git: 
-        - master ssh://git@github.com/elifesciences/elife-base-formula.git:
-            # possibly redundant
-            - root: pillar
-            - env: base
+# desirable remotely
+#ext_pillar:
+#    - git: 
+#        - master ssh://git@github.com/elifesciences/elife-base-formula.git:
+#            # possibly redundant
+#            - root: pillar
+#            - env: base
 
 pillar_roots:
     base:
+        - /vagrant/cloned-projects/elife-base-formula/pillar/
         - /srv/pillar
 
 extension_modules: 
