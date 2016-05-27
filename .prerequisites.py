@@ -8,7 +8,10 @@ def sh(cmd):
 
 def shs(cmd):
     from subprocess import Popen, PIPE
-    stdout, stderr = Popen(cmd.split(), stdout=PIPE).communicate()
+    try:
+        stdout, stderr = Popen(cmd.split(), stdout=PIPE).communicate()
+    except OSError as e:
+        raise RuntimeError("Cannot run command `{0}`".format(cmd), e)
     if stderr:
         raise RuntimeError(stderr)
     return stdout.decode('utf-8').strip()
@@ -22,7 +25,7 @@ def dumb_version_check(cmd):
 def osx():
     return sh("test $(uname) == 'Darwin'")
 
-BOTH_CHECKS = [
+both_checks = [
     ('git',
      {'osx': 'brew install git'}),
      
@@ -33,19 +36,24 @@ BOTH_CHECKS = [
      
     ('vagrant',
      {'osx': 'brew cask install vagrant'}),
-
+     
     ('ssh credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f ~/.ssh/id_rsa && test -f ~/.ssh/id_rsa.pub'),
      None), # do not check version
 
+    ('ssh-agent',
+     {'all': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc"},
+     lambda x: sh('ps aux | grep ssh-agent$ > /dev/null'),
+     None),
+     
     ('aws credentials',
      {'all': 'do `aws configure` after installing elife-builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
      None), # do not check version
 ]
 
-MAC_CHECKS = [
+mac_checks = [
     ('brew',
      {'osx': 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'}),
      
@@ -55,49 +63,36 @@ MAC_CHECKS = [
     ),
 ]
 
-def check_cmd(cmd):
-    installed_checker = dumb_install_check
-    version_checker = dumb_version_check
+def run_checks(check_list):
+    for cmd in check_list:
+        installed_checker = dumb_install_check
+        version_checker = dumb_version_check
+        
+        if len(cmd) == 2:
+            cmd, install_suggestions = cmd
+        elif len(cmd) == 3:
+            cmd, install_suggestions, installed_checker = cmd
+        elif len(cmd) == 4:
+            cmd, install_suggestions, installed_checker, version_checker = cmd
 
-    if len(cmd) == 2:
-        cmd, install_suggestions = cmd
-    elif len(cmd) == 3:
-        cmd, install_suggestions, installed_checker = cmd
-    elif len(cmd) == 4:
-        cmd, install_suggestions, installed_checker, version_checker = cmd
-
-    c_cmd = cmd.replace(' ', '_')
-
-    sys.stdout.write('* %r ... ' % cmd)
-    ret = False
-    if installed_checker(c_cmd):
-        found = 'found'
-        if version_checker:
-            found = version_checker(c_cmd)
-        sys.stdout.write(found)
-        ret = True
-    else:
-        sys.stdout.write('NOT found.')
-        suggestions = install_suggestions.items() if install_suggestions else None
-        if suggestions:
-            sys.stdout.write(' Try:\n')
+        sys.stdout.write('* %r ... ' % cmd)
+        if installed_checker(cmd):
+            found = 'found'
+            if version_checker:
+                found = version_checker(cmd)
+            sys.stdout.write(found + '\n')
+        else:
+            sys.stdout.write('NOT found. Try:\n')
             for opsys, suggestion in install_suggestions.items():
                 print('   %s: %s' % (opsys, suggestion))
-    sys.stdout.write('\n')
-    sys.stdout.flush()
-    return cmd, ret
-    
-def run_checks(check_list):
-    return [check_cmd(cmd) for cmd in check_list]
+        sys.stdout.flush()
 
 def main():
-    checks = BOTH_CHECKS
+    checks = both_checks
     if osx():
         print('OSX detected')
-        checks += MAC_CHECKS
-    if False in map(lambda p: p[1], run_checks(checks)):
-        exit(1)
-    exit(0)
+        checks = mac_checks + checks
+    run_checks(checks)
 
 if __name__ == '__main__':
     main()
