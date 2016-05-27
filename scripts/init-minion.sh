@@ -12,12 +12,16 @@ echo "-----------------------------"
 #sudo apt-get install python-git -y
 sudo apt-get install python-setuptools python-dev libgit2-dev libffi-dev python-git -y
 
+# ensure salt can talk to github without host verification failures
+#ssh-keygen -R github.com # removes any matching keys
+sudo cp /vagrant/scripts/etc-known_hosts /etc/ssh/ssh_known_hosts
+
 sudo cp /vagrant/scripts/salt/minion /etc/salt/minion
 
 # project's `salt` file is mounted at `/srv/salt/` within the guest
 # by default the project's top.sls and pillar data is disabled by file naming.
 # hook that up now
-ln -sf /srv/salt/example.top /srv/salt/top.sls
+cd /srv/salt/ && ln -sf example.top top.sls && cd ../../
 if [ ! -e /srv/pillar ]; then sudo ln -sf /srv/salt/pillar/ /srv/pillar; fi
 
 echo "Restarting salt-minion"
@@ -27,7 +31,7 @@ sudo service salt-minion restart
 sudo rm -f /etc/salt/minion_id
 
 echo "Executing salt highstate (provisioning)"
-sudo salt-call state.highstate || {
+sudo salt-call state.highstate -l debug || {
     status=$?
     echo "Error provisioning, state.highstate returned: ${status}"
 }
