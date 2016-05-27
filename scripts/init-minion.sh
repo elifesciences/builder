@@ -16,7 +16,13 @@ sudo apt-get install python-setuptools python-dev libgit2-dev libffi-dev python-
 #ssh-keygen -R github.com # removes any matching keys
 sudo cp /vagrant/scripts/etc-known_hosts /etc/ssh/ssh_known_hosts
 
+# configure vagrant
 sudo cp /vagrant/scripts/salt/minion /etc/salt/minion
+
+# get the elife base formula
+if [ ! -d /vagrant/cloned-projects/elife-base-formula/.git ]; then
+    git clone ssh://git@github.com/elifesciences/elife-base-formula /vagrant/cloned-projects/elife-base-formula
+fi
 
 # project's `salt` file is mounted at `/srv/salt/` within the guest
 # by default the project's top.sls and pillar data is disabled by file naming.
@@ -31,7 +37,7 @@ sudo service salt-minion restart
 sudo rm -f /etc/salt/minion_id
 
 echo "Executing salt highstate (provisioning)"
-sudo salt-call state.highstate -l debug || {
+sudo salt-call state.highstate || {
     status=$?
     echo "Error provisioning, state.highstate returned: ${status}"
 }
