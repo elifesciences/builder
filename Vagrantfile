@@ -217,7 +217,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         repo = PRJ.fetch("formula-repo", nil)
         if repo 
             # clone the repo if it doesn't exist. user is in charge of keeping this updated.
-            if not File.exists?("cloned-projects/#{PROJECT_NAME}/.git")
+            if File.exists?("cloned-projects/#{PROJECT_NAME}/.git")
+                prn runcmd("cd cloned-projects/#{PROJECT_NAME}/ && git pull")
+            else
                 prn runcmd("git clone #{repo} cloned-projects/#{PROJECT_NAME}/")
             end
             # mount salt directories
@@ -226,6 +228,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         # global shared folder
+        runcmd("mkdir -p ./public/")
         project.vm.synced_folder "public/", "/srv/public/", :mount_options => [ "dmode=777", "fmode=777" ]
 
         # bootstrap Saltstack
