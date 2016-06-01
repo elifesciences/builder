@@ -1,4 +1,4 @@
-#from . import core # DONT import core. this module should be relatively independent
+#from . import core # DONT import core. this project module should be relatively independent
 from buildercore import utils, config
 from buildercore.utils import unique, flatten
 from buildercore.decorators import osissue, osissuefn, testme
