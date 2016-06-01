@@ -24,35 +24,37 @@ ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
 
-
 PROJECT_PATH = os.getcwdu() # ll: /path/to/elife-builder/
 SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
 
 TEMP_PATH = "/tmp/"
 
-PILLAR_DIR = "salt/pillar"
-
 # dirs are relative
+# paths are absolute
+# a file is an absolute path to a file
+# filenames are names of files without any other context
+
 SYNC_DIR = "cfn"
 STACK_DIR = join(SYNC_DIR, "stacks") # ll: cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
+KEYPAIR_DIR = "ec2-keypairs"
 
-# paths are absolute
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/
-SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # /.../scripts/
+SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # ll: /.../scripts/
+KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # ll: /.../ec2-keypairs/
+
+# create all necessary paths and ensure they are writable
+map(utils.mkdir_p, [TEMP_PATH, STACK_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
 
 ## logging
 
 LOG_DIR = "logs"
 LOG_PATH = join(PROJECT_PATH, LOG_DIR) # /.../logs/
 LOG_FILE = join(LOG_PATH, "app.log") # /.../logs/app.log
+utils.mkdir_p(LOG_PATH)
 
 FORMAT = logging.Formatter("%(created)f - %(levelname)s - %(processName)s - %(name)s - %(message)s")
-
-os.system("mkdir -p %s" % LOG_PATH)
-assert os.path.isdir(LOG_PATH), "log directory couldn't be created: %s" % LOG_PATH
-assert os.access(LOG_PATH, os.W_OK | os.X_OK), "log directory isn't writable: %s" % LOG_PATH
 
 # http://docs.python.org/2/howto/logging-cookbook.html
 ROOTLOG = logging.getLogger() # important! this is the *root LOG*
@@ -91,17 +93,16 @@ PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PA
 # believe it or not but buildercore.config is NOT the place to be putting settings
 #
 
-SETTINGS_FILE = 'settings.yml'
-SETTINGS_PATH = join(PROJECT_PATH, SETTINGS_FILE)
+SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
 
 
 #
 # logic
 #
 
-def load(settings_yaml_path):
+def load(settings_yaml_file):
     "read the settings.yml file in from yaml"
-    return utils.ordered_load(open(settings_yaml_path, 'r'))
+    return utils.ordered_load(open(settings_yaml_file, 'r'))
 
 def _parse_loc(loc):
     "turn a project-location path into a triple of (protocol, hostname, path)"
@@ -148,5 +149,5 @@ def parse(settings_data):
         settings_data[key] = processor(settings_data[key])
     return settings_data
 
-def app(settings_path=SETTINGS_PATH):
+def app(settings_path=SETTINGS_FILE):
     return parse(load(settings_path))

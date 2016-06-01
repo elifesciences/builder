@@ -34,7 +34,36 @@ basis ...
 
 """
 
+#
+#
+#
 
+def create_keypair(stackname):
+    expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
+    assert not os.path.exists(expected_key), \
+      "refusing to create %r - keypair already exists at %r" % (stackname, expected_key)
+    ec2 = core.connect_aws(stackname, 'ec2')
+    key = ec2.create_key_pair(stackname)
+    key.save(config.KEYPAIR_PATH) # exclude the filename
+    
+    # also write to s3!
+    
+    return expected_key
+
+def delete_keypair(stackname):
+    expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
+    ec2 = core.connect_aws(stackname, 'ec2')
+    ec2.delete_key_pair(stackname)
+    # assert key not in ec2.get_all_key_pairs() ...
+
+    # delete from s3!
+    
+    return expected_key
+
+#
+#
+#
+#
 
 @contextmanager
 def master_server(username=BOOTSTRAP_USER):
@@ -51,6 +80,7 @@ def create_stack(stackname):
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
     try:
+        create_keypair(stackname)
         if core.old_stack(stackname):
             # TODO: once all stacks are updated, remove this
             boto_cfn_conn().create_stack(stackname, stack_body, parameters=[('KeyName', 'deploy-user')])
@@ -64,6 +94,8 @@ def create_stack(stackname):
         if err.message.endswith(' already exists'):
             LOG.debug(err.message)
             return False
+        # don't delete the keypair if the error is that the stack already exists!
+        delete_keypair(stackname)
         raise
 
 #@requires_stack_file
@@ -96,15 +128,6 @@ def update_master():
             utils.git_update()
             sudo('service salt-master restart')
 
-@osissue("remove. I this we should avoid updating cfn templates. extremely slow and can never tell when it's necessary.")
-def update_master_fully():
-    "does a complete update of the master server, updating the template, the elife-builder and it's environment"
-    # NOTE: the master is bootstrapped as the 'ubuntu' user before the deploy user ever exists.
-    master_template = core.find_master()
-    update_template(master_template)
-    update_master()
-    update_environment(master_template)
-
 def update_all():
     "updates *all* minions talking to the master. this is *really* not recommended."
     update_master()
@@ -135,40 +158,6 @@ def master_data():
 
 def master(key):
     return getattr(master_data(), key)
-
-'''
-# TODO: delete? this function is *so* clever but isn't actually being used?? wtf luke.
-@core.requires_active_stack
-def run_commands(stackname, cmd_list, continue_on_fail=False):
-
-    
-    def rc(cmds, continue_on_fail=False):
-        "recursively run a series of commands. if the command is a 'cd' command, it sets up a context manager"
-        fcmd = first(cmds)
-        rcmds = rest(cmds)
-        if fcmd.lstrip().startswith('cd ') and rcmds:
-            with cd(fcmd.lstrip('cd ')):
-                # run the rest of the command within this context
-                return rc(rcmds, continue_on_fail)
-        
-        retobj = sudo(fcmd)
-        retval = retobj.return_code
-        if retval != 0:
-            LOG.warn("command failed: %r", fcmd)
-            if not continue_on_fail:
-                LOG.error("a command has failed and all commands must pass. not continue.")
-        
-        if rcmds:
-            return rc(rcmds, continue_on_fail)
-        
-        return retval
-
-    ec2 = ec2_instance_data(stackname)    
-    with settings(user=config.DEPLOY_USER, host_string=ec2.ip_address, key_filename=deploy_user_pem()):
-        with settings(warn_only=True): # prevent Fabric raising SystemExit
-            return rc(cmd_list, continue_on_fail)
-'''
-
 
 #
 # bootstrap stack
@@ -441,6 +430,7 @@ def delete_stack(stackname):
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), update_msg='Waiting for AWS to finish deleting stack ...')
         delete_stack_file(stackname)
+        delete_keypair(stackname)
         LOG.info("stack %r deleted", stackname)
     except BotoServerError as err:
         LOG.exception("[%s: %s] %s (request-id: %s)", err.status, err.reason, err.message, err.request_id)

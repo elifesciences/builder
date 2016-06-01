@@ -9,7 +9,7 @@ from boto.exception import BotoServerError
 from contextlib import contextmanager
 from fabric.api import settings
 from .decorators import osissue, osissuefn, testme
-
+import importlib
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -20,6 +20,17 @@ class PredicateException(Exception):
 #
 # 
 #
+
+def connect_aws(stackname, service, **overrides):
+    "connects to given service using the region in the "
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    kwargs = {'region': region}
+    kwargs.update(overrides)
+    region = kwargs.get('region')
+    del kwargs['region']
+    conn = importlib.import_module('boto.%s' % service)
+    return conn.connect_to_region(region, **kwargs)
 
 @utils.cached
 def boto_cfn_conn():
@@ -277,7 +288,7 @@ def branch_deployable_projects(*args, **kwargs):
 
 
 #
-#
+# shift these into project/__init__.py ?
 #
 
 def project_name_from_stackname(stackname, careful=True):
@@ -286,17 +297,11 @@ def project_name_from_stackname(stackname, careful=True):
     # so, if we're not being careful, "lax-nonrds" would be picked over "lax" for "lax-nonrds-develop"
     plist = sorted(project.project_list(), cmp=lambda v1, v2: len(v2) - len(v1))
     res = [p for p in plist if str(stackname).startswith(p + "-")]
-    if careful:
-        assert len(res) == 1, "more than one result returned for %s! %s" % (stackname, ", ".join(res))
     if not res:
         raise ValueError("could not find a project name from stackname %r" % stackname)
+    if careful:
+        assert len(res) == 1, "more than one result returned for %r: %s" % (stackname, ", ".join(res))
     return res[0]
-
-
-
-#
-#
-#
 
 def project_data_for_stackname(stackname, *args, **kwargs):
     pname = project_name_from_stackname(stackname, careful=True)

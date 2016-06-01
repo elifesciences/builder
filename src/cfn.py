@@ -180,6 +180,7 @@ def aws_remaster_minions():
 def aws_create_master(stackname):
     public_ip = aws.describe_stack(stackname)['instance']['ip_address']
     pdata = project.project_data(stackname)
+    # this has all been replaced with the generic scripts/bootstrap.sh script
     with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=deploy_user_pem()):
         cmds = [
             "wget -O /tmp/install_salt.sh https://bootstrap.saltstack.com",
@@ -237,6 +238,16 @@ def aws_create_master(stackname):
             [sudo(cmd) for cmd in cmds]
 
 
+@debugtask
+def create_kp():
+    kp = utils.uin("keypair")
+    bootstrap.create_keypair(kp)
+
+@debugtask
+def delete_kp():
+    kp = utils.uin("keypair")
+    bootstrap.delete_keypair(kp)
+    
 @task
 @requires_stack
 def aws_create_stack(stackname):
