@@ -9,6 +9,9 @@ import os
 from buildercore import config
 from functools import wraps, partial
 from .decorators import osissue, osissuefn
+import logging
+
+LOG = logging.getLogger(__name__)
 
 @osissue("refactor. deploy-user.pem ties this to the shared-everything strategy")
 def set_perms():
@@ -18,6 +21,16 @@ def set_perms():
             "chmod 400 %s/deploy-user.pem" % config.PRIVATE_DIR]
     return map(os.system, cmds)
 
+def require_syncing(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not config.SYNC_ENABLED:
+            LOG.info("syncing has been disabled")
+            return
+        return fn(*args, **kwargs)
+    return wrapper
+
+@require_syncing
 def sync_down(destructive=False, sync_dir=config.SYNC_DIR):
     """copies files in remote dir down to local dir
     that have changed or don't exist. if destructive, files
@@ -26,13 +39,14 @@ def sync_down(destructive=False, sync_dir=config.SYNC_DIR):
     # --exact-timestamps
     # if syncing from s3 to local, and both local and remote have the
     # same filesize, s3 won't sync unless you tell it to look at the timestamps.
-    cmd = "aws s3 sync s3://elife-builder/%s/ %s --exact-timestamps" % (sync_dir, sync_dir)
+    cmd = "aws s3 sync s3://%s/%s/ %s --exact-timestamps" % (config.SYNC_BUCKET, sync_dir, sync_dir)
     if destructive:
         cmd += " --delete"
     retval = os.system(cmd)
     set_perms()
     return retval
 
+@require_syncing
 def sync_up(destructive=False, sync_dir=config.SYNC_DIR):
     """copies files in local dir up to remote dir that have
     changed or don't exist. if destructive, files that don't
@@ -51,6 +65,7 @@ def sync_up(destructive=False, sync_dir=config.SYNC_DIR):
 #pylint: disable=global-variable-not-assigned
 _SYNCED = {}
 
+@require_syncing
 def do_sync(acallable=None, sync_dir=config.SYNC_DIR):
     """does a sync down and then a destructive sync up, 
     calling `acallable` in between if given and returning it's 
@@ -94,6 +109,10 @@ def _sync_dir(sync_dir=config.SYNC_DIR):
     def wrap1(func):
         @wraps(func)
         def wrap2(*args, **kwargs):
+            # if syncing disabled, call wrapped function and return results
+            if not config.SYNC_ENABLED:
+                return func(*args, **kwargs)
+            # ... otherwise, soft sync down, call func, hard sync up, return func results
             return do_sync(partial(func, *args, **kwargs), sync_dir)
         return wrap2
     return wrap1

@@ -5,6 +5,7 @@ coverage==4.1b2
 Fabric==1.11.1
 Flask==0.10.1
 ipython==4.2.0
+kids.cache==0.0.4
 more-itertools==2.2
 pylint==1.5.5
 python-slugify==1.2.0

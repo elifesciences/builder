@@ -14,4 +14,5 @@ import metrics
 import packer
 import tasks
 import lax
+import master
 from deploy import deploy

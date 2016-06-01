@@ -44,7 +44,7 @@ def create_ami(stackname):
         'no_reboot': True,
         #'dry_run': True
     }
-    conn = core.boto_ec2_conn()
+    conn = core.connect_aws_with_stack(stackname, 'ec2')
     ami_id = conn.create_image(**kwargs)
 
     # image.__dict__ == {'root_device_type': u'ebs', 'ramdisk_id': None, 'id': u'ami-6bc99d0e', 'owner_alias': None, 'billing_products': [], 'tags': {}, 'platform': None, 'state': u'pending', 'location': u'512686554592/elife-lax.2015-10-15', 'type': u'machine', 'virtualization_type': u'hvm', 'sriov_net_support': u'simple', 'architecture': u'x86_64', 'description': None, 'block_device_mapping': {}, 'kernel_id': None, 'owner_id': u'512686554592', 'is_public': False, 'instance_lifecycle': None, 'creationDate': u'2015-10-15T16:07:21.000Z', 'name': u'elife-lax.2015-10-15', 'hypervisor': u'xen', 'region': RegionInfo:us-east-1, 'item': u'\n        ', 'connection': EC2Connection:ec2.us-east-1.amazonaws.com, 'root_device_name': None, 'ownerId': u'512686554592', 'product_codes': []}
@@ -62,7 +62,10 @@ def find_ami(projectname=None):
     }
     if projectname:
         kwargs['filters']['name'] = '%s.*' % projectname
-    results = core.boto_ec2_conn().get_all_images(**kwargs)
+
+    conn = core.connect_aws_with_pname(projectname, 'ec2')
+    results = conn.get_all_images(**kwargs)
+    
     # when filtered by project, most recent ami is the last item
     return sorted(results, key=lambda image: image.name)
 

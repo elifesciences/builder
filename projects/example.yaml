@@ -10,6 +10,8 @@ defaults:
     # the repository containing the build instructions for this project
     # may be different from the project repository
     formula-repo: null
+    # default branch to use when deploying
+    default-branch: master
     aws:
         # NOTE! the ami to use is determined in buildercore.bakery
         ami: ami-9eaa1cf6   # Ubuntu 14.04

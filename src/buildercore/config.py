@@ -18,6 +18,13 @@ from buildercore.utils import first, last, listfiles
 
 import logging
 
+
+# dirs are relative
+# paths are absolute
+# a file is an absolute path to a file
+# filenames are names of files without any other context
+
+
 # these users should probably be specified in the project/org config file
 # as 'defaults'. deploy user especially
 ROOT_USER = 'root'
@@ -29,12 +36,11 @@ SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
 
 TEMP_PATH = "/tmp/"
 
-# dirs are relative
-# paths are absolute
-# a file is an absolute path to a file
-# filenames are names of files without any other context
-
+# shift these into the settings.yaml file
 SYNC_DIR = "cfn"
+SYNC_BUCKET = 'elife-builder'
+SYNC_ENABLED = False
+
 STACK_DIR = join(SYNC_DIR, "stacks") # ll: cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"

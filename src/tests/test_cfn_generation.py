@@ -7,7 +7,7 @@ LOG = logging.getLogger(__name__)
 
 class TestTrop(base.BaseCase):
     def setUp(self):
-        pass
+        self.test_region = 'us-east-1'
 
     def tearDown(self):
         pass
@@ -16,7 +16,7 @@ class TestTrop(base.BaseCase):
         cfngen.quick_render_all()
 
     def test_validation(self):
-        conn = core.boto_cfn_conn()
+        conn = core.boto_cfn_conn(self.test_region)
         for pname, template in cfngen.quick_render_all():
             LOG.info('validating %s', pname)
             conn.validate_template(template)

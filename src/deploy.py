@@ -32,8 +32,10 @@ def deploy(pname):
     branch_list = impose_ordering(branch_list)
     branch = utils._pick('branch', branch_list, deffile('.branch'))
     stackname = branch_stack_name(pname, branch)
-    active_stacks = core.all_aws_stack_names()
-    bootstrap.update_master()
+
+    region = pdata['aws']['region']
+    active_stacks = core.all_aws_stack_names(region)
+    bootstrap.update_master(region)
     if stackname in active_stacks:
         LOG.info("stack %r exists, skipping creation", stackname)
     else:

@@ -1,7 +1,7 @@
 import os, glob, json, inspect, re, copy
 from os.path import join
 from . import utils, config, project
-from .utils import first, dictfilter
+from .utils import first, second, dictfilter
 from collections import OrderedDict
 from functools import wraps
 import boto
@@ -11,50 +11,64 @@ from fabric.api import settings
 from .decorators import osissue, osissuefn, testme
 import importlib
 import logging
+from kids.cache import cache as cached
 
 LOG = logging.getLogger(__name__)
 
 class PredicateException(Exception):
     pass
 
+class NoMasterException(Exception):
+    pass
+
 #
 # 
 #
 
-def connect_aws(stackname, service, **overrides):
+def connect_aws(service, region):
     "connects to given service using the region in the "
-    pdata = project_data_for_stackname(stackname)
-    region = pdata['aws']['region']
-    kwargs = {'region': region}
-    kwargs.update(overrides)
-    region = kwargs.get('region')
-    del kwargs['region']
+    aliases = {
+        'cfn': 'cloudformation'
+    }
+    service = service if service not in aliases else aliases[service]
     conn = importlib.import_module('boto.%s' % service)
-    return conn.connect_to_region(region, **kwargs)
+    return conn.connect_to_region(region)
 
-@utils.cached
-def boto_cfn_conn():
-    "returns a AWS CloudFormation connection"
-    return boto.connect_cloudformation()
+@cached
+def boto_cfn_conn(region):
+    return connect_aws('cloudformation', region)
 
-@utils.cached
-def boto_ec2_conn():
-    return boto.connect_ec2()
+@cached
+def boto_ec2_conn(region):
+    return connect_aws('ec2', region)
+
+@cached
+def connect_aws_with_pname(pname, service):
+    "convenience"
+    pdata = project.project_data(pname)
+    region = pdata['aws']['region']
+    return connect_aws(service, region)
+
+def connect_aws_with_stack(stackname, service):
+    "convenience"
+    pname = project_name_from_stackname(stackname)
+    return connect_aws_with_pname(pname, service)
 
 def find_ec2_instance(stackname):
     "returns ec2 instance data for a *specific* stackname"
     # filters: http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-    return boto_ec2_conn().get_only_instances(filters={'tag:Name':[stackname],
-                                                       # introduced 2015-12-03
-                                                       'instance-state-name': ['running']})
-
-def find_ec2_volume_by_iid(iid):
-    #http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
-    return boto_ec2_conn().get_all_volumes(filters={'attachment.instance-id': iid})
+    kwargs = {
+        'filters': {
+            'tag:Name':[stackname],
+            'instance-state-name': ['running']}}
+    return connect_aws_with_stack(stackname, 'ec2').get_only_instances(**kwargs)
 
 def find_ec2_volume(stackname):
     ec2_data = find_ec2_instance(stackname)[0]
-    return find_ec2_volume_by_iid(ec2_data.id)
+    iid = ec2_data.id
+    #http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
+    kwargs = {'filters': {'attachment.instance-id': iid}}
+    return connect_aws_with_stack(stackname, 'ec2').get_all_volumes(**kwargs)
 
 @osissue("refactor. this implementation is tied to the shared-all strategy")
 def deploy_user_pem():
@@ -68,27 +82,46 @@ def stack_conn(stackname, username=config.DEPLOY_USER):
         yield
 
 #
-# stack file wrangling
-# 'stack files' are the things on the file system in the `cfn/` dir.
-#
+# stackname wrangling
+#    
 
+def parse_stackname(stackname):
+    "returns a triple of project, instance and cluster ids"
+    pname = instance_id = cluster_id = None
+    bits = stackname.split('--')
+    if len(bits) == 1:
+        raise ValueError("could not parse given stackname %r" % stackname)
+    elif len(bits) == 2:
+        pname, instance_id = bits
+    elif len(bits) == 3:
+        pname, instance_id, cluster_id = bits
+    return pname, instance_id, cluster_id
+        
+def project_name_from_stackname(stackname):
+    "returns just the project name from the given stackname"
+    return first(parse_stackname(stackname))
+
+def instanceid_from_stackname(stackname):
+    "returns a pair of (project name, id) where id is the  "
+    return second(parse_stackname(stackname))
+    
 def is_master_server_stack(stackname):
-    return 'master-server-' in stackname
+    return 'master-server--' in stackname
+
+#
+# stack file wrangling
+# stack 'files' are the things on the file system in the `cfn/` dir.
+#
 
 def parse_stack_file_name(stack_filename):
     "returns just the stackname sans leading dirs and trailing extensions given a path to a stack"
     stack = os.path.basename(stack_filename) # just the file
     return os.path.splitext(stack)[0] # just the filename
 
-# lists of stacks
-
 def stack_files():
     "returns a list of manually created cloudformation stacknames"
     stacks = glob.glob("%s/*.json" % config.STACK_PATH)
     return map(parse_stack_file_name, stacks)
-
-
-#
 
 def stack_path(stackname, relative=False):
     "returns the full path to a stack JSON file given a stackname"
@@ -104,11 +137,6 @@ def stack_json(stackname, parse=False):
         return json.load(fp)
     return fp.read()
 
-def old_stack(stackname):
-    "predicate. returns True if the given stack is an 'old' stack (uses Parameters)"
-    return stack_json(stackname, parse=True).has_key("Parameters")
-
-
 #
 # aws stack wrangling
 # 'aws stacks' are stack files that have been given to AWS and provisioned.
@@ -117,7 +145,7 @@ def old_stack(stackname):
 # DO NOT CACHE. use sparingly
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
-    return first(boto_cfn_conn().describe_stacks(stackname))
+    return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 
 # TODO: rename or something
 def stack_data(stackname):
@@ -156,8 +184,8 @@ def stack_triple(aws_stack):
 # lists of aws stacks
 
 @osissue("duplicate code/unclear differences. .list_stacks with filter vs .describe_stacks with stackname")
-@utils.cached
-def raw_aws_stacks():
+@cached
+def raw_aws_stacks(region):
     # I suspect the number of results returned is paginated
     status_filters = [
         #'CREATE_IN_PROGRESS',
@@ -175,26 +203,28 @@ def raw_aws_stacks():
         #'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS',
         #'UPDATE_ROLLBACK_COMPLETE',
     ]
-    return boto_cfn_conn().list_stacks(status_filters)
+    return boto_cfn_conn(region).list_stacks(status_filters)
 
-@utils.cached
-def all_aws_stacks():
+@cached
+def all_aws_stacks(region):
     "returns a stack triple of all active stacks *from the last 90 days*."
-    return map(stack_triple, raw_aws_stacks())
+    return map(stack_triple, raw_aws_stacks(region))
 
-def all_aws_stack_names():
+def all_aws_stack_names(region):
     "convenience. returns a list of names for all active stacks AS WELL AS inactive stacks for the last 90 days"
-    return sorted(map(first, all_aws_stacks()))
+    return sorted(map(first, all_aws_stacks(region)))
 
 @osissue("that unclear difference again between describe_stacks and list_stacks")
-@utils.cached
-def all_active_stacks():
+@cached
+def all_active_stacks(region):
     "returns all active stacks as a triple of (stackname, status, data)"
-    return map(stack_triple, boto_cfn_conn().describe_stacks())
+    return map(stack_triple, boto_cfn_conn(region).describe_stacks())
 
-def find_master():
+def find_master(region):
     "returns the most recent aws master-server it can find. assumes instances have YMD names"
-    sl = all_active_stacks()
+    sl = all_active_stacks(region)
+    if not sl:
+        raise NoMasterException("no master servers found in region %r" % region)
     msl = filter(lambda triple: is_master_server_stack(first(triple)), sl)
     msl = map(first, msl) # just stack names
     master_server_ymd_instance_id = lambda x: ''.join(x.split('-')[2:])
@@ -228,11 +258,9 @@ def requires_stack_file(func):
     msg = "I couldn't find a cloudformation stack file for %(stackname)r!"
     return _requires_fn_stack(func, lambda stackname: stackname in stack_files(), msg)
 
-def instanceid_from_stackname(stackname):
-    "returns a pair of (project name, id) where id is the  "
-    pname = project_name_from_stackname(stackname)
-    instance_id = stackname[len(pname + "-"):]
-    return pname, instance_id
+#
+#
+#
 
 @testme
 def mk_hostname(stackname):
@@ -249,62 +277,9 @@ def mk_hostname(stackname):
         LOG.info("%s does not have a subdomain to create a hostname from. ignoring.", pname)
         return None
 
-#
-#
-#
-
-"""
-
-project handling.
-
-
-"""
-
-'''
-@testme
-@osissue("deprecated. we want to use `project_data` instead. any data from function, besides the project name, will be misleading")
-def read_projects(project_file=config.PROJECT_FILE, env_type='aws'):
-    "reads the `project_file` and returns a pair of (defaults, project data)"
-    env_type_list = ["aws", "vagrant"]
-    defaults, allp = all_projects(project_file)
-    supported_projects = OrderedDict([(name, data[env_type]) for name, data in allp.items() if data.has_key(env_type)])
-    # shifts anything not in 'aws' or 'vagrant' into the project data as top level keys
-    for name, data in allp.items():
-        if data.has_key(env_type):
-            supported_projects[name].update(utils.exsubdict(data, env_type_list))
-    return defaults, supported_projects
-
-@osissue("remove. derived from unreliable data")
-def filtered_projects(filterfn, *args, **kwargs):
-    "returns a pair of (defaults, dict of projects filtered by given filterfn)"
-    defaults, allp = read_projects(*args, **kwargs)
-    return defaults, dictfilter(filterfn, allp)
-
-@osissue("remove. derived from unreliable data")
-def branch_deployable_projects(*args, **kwargs):
-    "returns a pair of (defaults, dict of projects with a repo)"
-    return filtered_projects(lambda k, v: v.has_key('repo'))
-'''
-
-
-#
-# shift these into project/__init__.py ?
-#
-
-def project_name_from_stackname(stackname, careful=True):
-    "returns the project from the given stackname"
-    # project names are sorted from longest to shortest.
-    # so, if we're not being careful, "lax-nonrds" would be picked over "lax" for "lax-nonrds-develop"
-    plist = sorted(project.project_list(), cmp=lambda v1, v2: len(v2) - len(v1))
-    res = [p for p in plist if str(stackname).startswith(p + "-")]
-    if not res:
-        raise ValueError("could not find a project name from stackname %r" % stackname)
-    if careful:
-        assert len(res) == 1, "more than one result returned for %r: %s" % (stackname, ", ".join(res))
-    return res[0]
 
 def project_data_for_stackname(stackname, *args, **kwargs):
-    pname = project_name_from_stackname(stackname, careful=True)
+    pname = project_name_from_stackname(stackname)
     return project.project_data(pname, *args, **kwargs)
 
 @testme

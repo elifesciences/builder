@@ -7,6 +7,7 @@ from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
 import logging
+import aws
 
 LOG = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ def rtask(*roles):
     return wrapper
 
 #pylint: disable=invalid-name
-debugtask = rtask('debug')
+debugtask = rtask('admin')
 
 def requires_filtered_project(filterfn=None):
     def wrap1(func):
@@ -69,7 +70,8 @@ def requires_aws_project_stack(*plist):
     def wrap1(func):
         @wraps(func)
         def _wrapper(stackname=None, *args, **kwargs):
-            asl = core.all_aws_stack_names()
+            region = aws.find_region(stackname)
+            asl = core.all_aws_stack_names(region)
             if not asl:
                 print '\nno AWS stacks exist, cannot continue.'
                 return
@@ -87,7 +89,8 @@ def requires_aws_project_stack(*plist):
 def requires_aws_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
-        asl = core.all_aws_stack_names()
+        region = aws.find_region()
+        asl = core.all_aws_stack_names(region)
         stackname = first(args)
         if not asl:
             print '\nno AWS stacks exist, cannot continue.'

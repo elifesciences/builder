@@ -4,12 +4,12 @@ from buildercore.sync import sync_stack
 from fabric.api import sudo, run, local, task
 from decorators import echo_output, requires_aws_stack
 from aws import stack_conn
-import utils
+import utils, aws
 from buildercore.decorators import osissue, osissuefn
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"
-    with stack_conn(core.find_master()):
+    with stack_conn(core.find_master(aws.find_region())):
         sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
 
 @task
@@ -147,14 +147,3 @@ def fetch_cert(stackname):
         print "* " + str(ex)
         print
         exit(1)
-
-#
-#
-#
-
-@task
-@osissue("remove. very specific non-builder code.")
-def alm_ssh():
-    "ssh into the alm server"
-    cmd = "ssh elife@alm.svr.elifesciences.org -i payload/deploy-user.pem"
-    local(cmd)

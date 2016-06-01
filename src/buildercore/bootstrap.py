@@ -9,7 +9,7 @@ from os.path import join
 from functools import partial
 from StringIO import StringIO
 from . import core, utils, config
-from .core import boto_cfn_conn, deploy_user_pem, stack_conn
+from .core import connect_aws_with_stack, deploy_user_pem, stack_conn, project_data_for_stackname
 from .utils import first
 from .sync import sync_private, sync_stack, do_sync
 from .config import DEPLOY_USER, BOOTSTRAP_USER
@@ -19,6 +19,7 @@ import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from contextlib import contextmanager
 from boto.exception import BotoServerError
+from kids.cache import cache as cached
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -30,7 +31,6 @@ I see a bootstrap interface and the majority of this code
 being shifted into a shared-everything strategy module with
 a more secure strategy also being available on a per-project
 basis ...
-
 
 """
 
@@ -63,11 +63,10 @@ def delete_keypair(stackname):
 #
 #
 #
-#
 
 @contextmanager
-def master_server(username=BOOTSTRAP_USER):
-    with settings(user=username, host_string=master('ip_address'), key_filename=deploy_user_pem()):
+def master_server(region, username=BOOTSTRAP_USER):
+    with settings(user=username, host_string=master(region, 'ip_address'), key_filename=deploy_user_pem()):
         yield
 
 #
@@ -81,11 +80,8 @@ def create_stack(stackname):
     stack_body = core.stack_json(stackname)
     try:
         create_keypair(stackname)
-        if core.old_stack(stackname):
-            # TODO: once all stacks are updated, remove this
-            boto_cfn_conn().create_stack(stackname, stack_body, parameters=[('KeyName', 'deploy-user')])
-        else:
-            boto_cfn_conn().create_stack(stackname, stack_body)
+        conn = connect_aws_with_stack(stackname, 'cfn')
+        conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
         def is_updating(stackname):
             return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
         utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
@@ -105,10 +101,8 @@ def update_template(stackname):
     LOG.info("updating stack %s", stackname)
     try:
         stackbody = core.stack_json(stackname)
-        if core.old_stack(stackname):
-            boto_cfn_conn().update_stack(stackname, stackbody, parameters=[('KeyName', 'deploy-user')])
-        else:
-            boto_cfn_conn().update_stack(stackname, stackbody)
+        conn = connect_aws_with_stack(stackname, 'cfn')
+        conn.update_stack(stackname, stackbody, parameters=[('KeyName', stackname)])
         def is_updating(stackname):
             return core.describe_stack(stackname).stack_status in \
               ['UPDATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS_CLEANUP_IN_PROGRESS']
@@ -120,18 +114,18 @@ def update_template(stackname):
             LOG.exception("unhandled exception attempting to update stack")
             raise
 
-def update_master():
+def update_master(region):
     "updates the elife-builder on the master and restarts the salt-master"
-    with master_server(username=config.DEPLOY_USER):
+    with master_server(region, username=config.DEPLOY_USER):
         with cd('/opt/elife/elife-builder/'):
             utils.git_purge()
             utils.git_update()
             sudo('service salt-master restart')
 
-def update_all():
+def update_all(region):
     "updates *all* minions talking to the master. this is *really* not recommended."
-    update_master()
-    with master_server(username=config.DEPLOY_USER):
+    update_master(region)
+    with master_server(region, username=config.DEPLOY_USER):
         run("service salt-minion restart")
         run(r"salt \* state.highstate")
 
@@ -143,21 +137,22 @@ def update_all():
 @core.requires_active_stack
 def stack_resources(stackname):
     "returns a list of resources provisioned by the given stack"
-    return boto_cfn_conn().describe_stack_resources(stackname)
+    return connect_aws_with_stack(stackname, 'cfn').describe_stack_resources(stackname)
 
 def ec2_instance_data(stackname):
     "returns the ec2 instance data from the first ec2 instance the stack has"
     ec2 = first([r for r in stack_resources(stackname) if r.resource_type == "AWS::EC2::Instance"])
-    ec2conn = core.boto_ec2_conn()
-    return ec2conn.get_only_instances([ec2.physical_resource_id])[0]
+    conn = connect_aws_with_stack(stackname, 'ec2')
+    return conn.get_only_instances([ec2.physical_resource_id])[0]
 
-@utils.cached
-def master_data():
+@cached
+def master_data(region):
     "returns the ec2 instance data for the master-server"
-    return ec2_instance_data(core.find_master())
+    stackname = core.find_master(region)
+    return ec2_instance_data(stackname)
 
-def master(key):
-    return getattr(master_data(), key)
+def master(region, key):
+    return getattr(master_data(region), key)
 
 #
 # bootstrap stack
@@ -211,7 +206,8 @@ def download(dest, file_list, as_user=BOOTSTRAP_USER):
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
-    data = core.boto_cfn_conn().describe_stacks(stackname)[0].__dict__
+    conn = connect_aws_with_stack(stackname, 'cfn')
+    data = conn.describe_stacks(stackname)[0].__dict__
     data['outputs'] = reduce(utils.conj, map(lambda o: {o.key: o.value}, data['outputs']))
     return utils.exsubdict(data, ['connection', 'parameters'])
 
@@ -221,7 +217,9 @@ def template_info(stackname):
 
 def remote_stack_key_exist(stackname):
     "ask master if the key for the given stack exists."
-    with master_server():
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    with master_server(region):
         # /etc/salt/pki/master/minions/master-server-2015-31-12.pub
         return files.exists('/etc/salt/pki/master/minions/%s' % stackname, use_sudo=True)
 
@@ -248,7 +246,9 @@ def generate_stack_keys(stackname):
     A public and private key-pair are generated on the master server.
     The public key is copied into the master's directory of known minion public keys.
     The keys are then downloaded and live alongside the stack template json files."""
-    with master_server():
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    with master_server(region):
         kwargs = {'stackname': stackname, 'bootstrap_user': BOOTSTRAP_USER}
         # remember, stackname == minion-id
         cmds = [
@@ -300,7 +300,7 @@ def write_environment_info(stackname):
         return put(StringIO(infr_config), "/etc/cfn-info.json", use_sudo=True)
     LOG.info('cfn-outputs found, skipping')
     return []
-        
+
 #
 #
 #
@@ -316,9 +316,11 @@ def update_environment(stackname):
     (the given `stackname`), the address of the master server """
     pdata = core.project_data_for_stackname(stackname)
     public_ip = ec2_instance_data(stackname).ip_address
-
+    region = pdata['aws']['region']
+    is_master = core.is_master_server_stack(stackname)
+    
     # not necessary on update, but best to check.
-    generate_stack_keys_if_necessary(stackname)
+    #generate_stack_keys_if_necessary(stackname)
 
     # we have an issue where the stack is created, however the security group
     # hasn't been attached or similar, or ssh isn't running and we can't get in.
@@ -345,54 +347,38 @@ def update_environment(stackname):
         
         # overwrite stale minion data in ami created instances
         LOG.info("replacing minion file")
+
+        # who is your daddy and where does he live?
+        master_ip = '127.0.0.1' if is_master else master(region, 'ip_address')
+        
         map(sudo, [
-            "echo 'master: %s' > /etc/salt/minion" % master('ip_address'), 
+            "echo 'master: %s' > /etc/salt/minion" % master_ip,
             "echo 'id: %s' >> /etc/salt/minion" % stackname,
         ])
 
         # write out environment config so Salt can read CFN outputs
         write_environment_info(stackname)
 
-        # only upload keys if we can't find them
-        if not files.exists("/etc/salt/pki/minion/minion.pem") \
-          or not files.exists("/etc/salt/pki/minion/minion.pub"):
+        sudo('service salt-minion restart')
+    
+        #
+        # politely ask the master server to add this minion.
+        # is already master, skip.
+        #
 
-            LOG.info("minion doesn't look like it can talk to master yet. configuring.")
+        master_added = True
 
-            # create and upload payload
-            stack_path = os.path.dirname(core.stack_path(stackname, relative=True))
-            kwargs = {'private_dir': config.PRIVATE_DIR, 'stack_dir': stack_path, 'stackname': stackname}
-            local('tar cvzf /tmp/private.tar.gz %(private_dir)s/ %(stack_dir)s/%(stackname)s.p*' % kwargs)
-            put("/tmp/private.tar.gz", remote_path="~/")
-            local('rm /tmp/private.tar.gz')
+        # ... ?
+        # PROFIT!
 
-            # remotely unpack payload and move files to their new homes 
-            run('tar xvzf private.tar.gz')
-            # give the root and bootstrap (ubuntu) users the deploy-user's private key. BAD
-            sudo('cp -f /home/%s/private/deploy-user.pem /root/.ssh/id_rsa && chmod 400 /root/.ssh/id_rsa' % BOOTSTRAP_USER)
-            run('mv -f private/deploy-user.pem .ssh/id_rsa && chmod 400 .ssh/id_rsa')
-
-            # distribute minion's keys
-            sudo('mv -f %(stack_dir)s/%(stackname)s.pem /etc/salt/pki/minion/minion.pem' % kwargs)
-            sudo('mv -f %(stack_dir)s/%(stackname)s.pub /etc/salt/pki/minion/minion.pub' % kwargs)
-
-            # destroy the payload
-            run('rm -rf %(private_dir)s/ %(stack_dir)s payload.tar.gz' % kwargs)
-
-        else:
-            LOG.info("found minion keys, skipping uploading to master.")
-
-        # tell the instance to update itself
-        map(sudo, [
-            'service salt-minion restart',
-            'salt-call state.highstate', # this will tell the machine to update itself
-        ])
+        sudo('salt-call state.highstate') # this will tell the machine to update itself
 
 def update_stack(stackname):
     "convenience. updates the master with the latest builder code, then updates the specified instance"
-    update_master()
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    update_master(region)
     return update_environment(stackname)
-
 
 @core.requires_stack_file
 @sync_stack
@@ -420,7 +406,7 @@ def delete_stack_file(stackname):
 
 def delete_stack(stackname):
     try:
-        boto_cfn_conn().delete_stack(stackname)
+        connect_aws_with_stack(stackname, 'cfn').delete_stack(stackname)
         def is_deleting(stackname):
             try:
                 return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']

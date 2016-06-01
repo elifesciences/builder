@@ -1,10 +1,9 @@
-from fabric.api import task, local, cd, lcd, settings, run, sudo, put
+from fabric.api import task, local, cd, lcd, settings, run, sudo, put, get
 from fabric.contrib.files import exists
 from fabfile import PROJECT_DIR
 from fabric.contrib import files
 from fabric.contrib.console import confirm
-import aws
-import utils
+import aws, utils
 from decorators import requires_project, requires_aws_stack, echo_output, deffile, setdefault, debugtask, timeit
 import os
 from os.path import join
@@ -22,21 +21,33 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-#
-# utils, decorators
-#
-
 @debugtask
 @echo_output
-def stack_list(project=None):
-    "returns a list of CloudFormation files. accepts optional project name"
+def stack_files(project=None):
+    "returns a list of CloudFormation TEMPLATE FILES. accepts optional project name"
     stacks = sorted(core.stack_files())
     if project:
         return filter(lambda stack: stack.startswith("%s-" % project), stacks)
     return stacks
 
+def requires_stack_file(func):
+    "test that the stack exists in the STACKS dir"
+    @wraps(func)
+    def _wrapper(stackname=None, *args, **kwargs):
+        flist = stack_files()
+        if not flist:
+            print 'no stack files exist!'
+            return
+        if not stackname or stackname not in flist:
+            stackname = utils._pick("stack", flist, default_file=deffile('.stack'))
+        return func(stackname, *args, **kwargs)
+    return _wrapper
+
+#
+# tasks
+#
+
 @task
-@timeit
 def project_list():
     for org, plist in project.org_project_map().items():
         print org
@@ -44,41 +55,32 @@ def project_list():
             print '  ',p
         print 
 
-def requires_stack(func):
-    "test that the stack exists in the STACKS dir"
-    @wraps(func)
-    def _wrapper(stackname=None, *args, **kwargs):
-        if not stackname or stackname not in stack_list():
-            stackname = utils._pick("stack", stack_list(), default_file=deffile('.stack'))
-        return func(stackname, *args, **kwargs)
-    return _wrapper
-
-
-#
-# tasks
-#
-
 @debugtask
 @echo_output
 def aws_detailed_stack_list(project=None):
-    all_stacks = dict([(i.stack_name, i.__dict__) for i in core.raw_aws_stacks()])
+    region = aws.find_region()
+    all_stacks = dict([(i.stack_name, i.__dict__) for i in core.raw_aws_stacks(region)])
     if project:
         return {k: v for k, v in all_stacks.items() if k.startswith("%s-" % project)}
     return all_stacks
 
-@requires_stack
+@debugtask
+@requires_stack_file
 def aws_stack_exists(stackname):
     "we may know about the stack on disk, but it might not have been pushed to aws yet..."
-    return stackname in core.all_aws_stack_names()
+    pdata = core.project_data_for_stackname(stackname)
+    print pdata
+    region = pdata['aws']['region']
+    return stackname in core.all_aws_stack_names(region)
 
 @debugtask
-@echo_output
-@requires_stack # @requires_inactive_stack
+@requires_stack_file # @requires_inactive_stack
 def delete_stack_file(stackname):
     logging.getLogger('boto').setLevel(logging.CRITICAL)
     files_removed = bootstrap.delete_stack_file
     return files_removed
 
+@task
 @sync_stack
 @requires_aws_stack
 def delete_stack(stackname, confirmed):
@@ -120,122 +122,12 @@ def aws_update_stack(stackname):
     """
     return bootstrap.update_stack(stackname)
 
-@echo_output
-def aws_update_many_projects(pname_list):
-    minions = ' or '.join(map(lambda pname: pname + "-*", pname_list))
-    bootstrap.update_master()
-    with stack_conn(core.find_master()):
-        sudo("salt -C '%s' state.highstate" % minions)
-
-@task
-@requires_project
-def aws_update_projects(pname):
-    "calls state.highstate on ALL projects matching <projectname>-*"
-    return aws_update_many_projects([pname])
-    
 @debugtask
 @requires_aws_stack
 def aws_update_template(stackname):
     "updates the CloudFormation stack and then updates the environment"
     return bootstrap.update_template(stackname)
 
-@debugtask
-@osissue("refactor. part of the shared-all strategy")
-def aws_remaster_minions():
-    """when we create a new master-server, we need to:
-    * tell the minions to connect to the new one.
-    * accept their keys
-    * give the minions an update
-    """
-    sl = core.all_active_stacks()
-    minion_list = filter(lambda triple: not first(triple).startswith('master-server-'), sl)
-    minion_list = map(first, minion_list) # just stack names
-    master_ip = bootstrap.master('public_ip')
-    for stackname in minion_list:
-        print 'remaster-ing %r' % stackname
-        public_ip = bootstrap.ec2_instance_data(stackname).ip_address
-        with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=deploy_user_pem()):
-            cmds = [
-                "echo 'master: %s' > /etc/salt/minion" % master_ip,
-                "echo 'id: %s' >> /etc/salt/minion" % stackname,
-                "rm /etc/salt/pki/minion/minion_master.pub",  # destroy the old master key we have
-                "service salt-minion restart",
-            ]
-            [sudo(cmd) for cmd in cmds]
-
-    with settings(user=BOOTSTRAP_USER, host_string=master_ip, key_filename=deploy_user_pem()):
-        cmds = [
-            #'service salt-master restart',
-            # accept all minion's keys (potentially dangerous without review, should just be the new master)
-            #'sleep 5', # I have no idea why this works.
-            'salt-key -L',
-            'salt-key -Ay',
-        ]
-        [sudo(cmd) for cmd in cmds]
-
-    bootstrap.update_all()
-
-@osissue("move/refactor/delete. this is important and belongs in buildercore or rewritten. part of shared-all strategy")
-@requires_stack
-def aws_create_master(stackname):
-    public_ip = aws.describe_stack(stackname)['instance']['ip_address']
-    pdata = project.project_data(stackname)
-    # this has all been replaced with the generic scripts/bootstrap.sh script
-    with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=deploy_user_pem()):
-        cmds = [
-            "wget -O /tmp/install_salt.sh https://bootstrap.saltstack.com",
-            "sh /tmp/install_salt.sh -M -P git %s" % pdata['salt'],
-            "echo 'master: 127.0.0.1' > /etc/salt/minion",
-            "echo 'id: %s' >> /etc/salt/minion" % stackname,
-        ]
-        [sudo(cmd) for cmd in cmds]
-
-    # create and upload payload to new master
-    with lcd(PROJECT_DIR):
-        local('tar cvzf payload.tar.gz payload/')
-        local('scp -i %s payload.tar.gz %s@%s:' % (deploy_user_pem(), BOOTSTRAP_USER, public_ip))
-
-    # unpack payload and move files to their new homes
-    with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=deploy_user_pem()):
-        cmds = [
-            # upload and unpack payload
-            'tar xvzf ~/payload.tar.gz',
-            'mv -f ~/payload/deploy-user.pem ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa',
-            # destroy the payload
-            'rm -rf ~/payload/ ~/payload.tar.gz'
-        ]
-        [run(cmd) for cmd in cmds]
-
-        sudo('mkdir -p /opt/elife && chown %s /opt/elife' % BOOTSTRAP_USER)
-
-        # clone/update repo
-        if files.exists('/opt/elife/elife-builder'):
-            with cd('/opt/elife/elife-builder/'):
-                utils.git_purge()
-                utils.git_update()
-        else:
-            run('git clone git@github.com:elifesciences/elife-builder.git /opt/elife/elife-builder')
-
-        # configure Salt (already installed)
-        cmds = [
-            # 'mount' the salt directories in /srv
-            'ln -sfT /opt/elife/elife-builder/salt/pillar /srv/pillar',
-            'ln -sfT /opt/elife/elife-builder/salt/salt /srv/salt',
-
-            # restart master and minion
-            'service salt-master restart',
-
-            # accept all minion's keys (potentially dangerous without review, should just be the new master)
-            'sleep 5',  # I have no idea why this works.
-            'salt-key -L',
-            'salt-key -Ay',
-
-            'service salt-minion restart',
-            # provision minions (self)
-            'salt-call state.highstate',        # this will tell the machine to update itself.
-        ]
-        with settings(warn_only=True):
-            [sudo(cmd) for cmd in cmds]
 
 
 @debugtask
@@ -249,12 +141,14 @@ def delete_kp():
     bootstrap.delete_keypair(kp)
     
 @task
-@requires_stack
+@requires_stack_file
 def aws_create_stack(stackname):
     if core.stack_is_active(stackname):
         print 'stack exists and is active, cannot create'
         return
-    bootstrap.update_master()
+    pdata = core.project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    bootstrap.update_master(region)
     bootstrap.create_stack(stackname)
     bootstrap.update_environment(stackname)
     return stackname
@@ -269,7 +163,8 @@ def aws_update_env(stackname):
 @echo_output
 def aws_stack_list():
     "returns a list of realized stacks. does not include deleted stacks"
-    return core.all_aws_stack_names()
+    region = aws.find_region()
+    return core.all_aws_stack_names(region)
 
 @task
 @requires_aws_stack
@@ -294,7 +189,7 @@ def create_stack(pname):
     """creates a new CloudFormation template for the given project."""
     default_instance_id = core_utils.ymd()
     more_context = {
-        'instance_id': slugify(pname + "-" + utils.uin("instance id", default_instance_id)),
+        'instance_id': slugify(pname + "--" + utils.uin("instance id", default_instance_id)),
     }
 
     # prompt user for alternate configurations
@@ -346,109 +241,28 @@ def print_project_config(pname):
 @sync_stack
 @requires_project
 def aws_launch_instance(project):
-    stackname = aws_create_stack(create_stack(project))
-    if stackname:
-        setdefault('.active-stack', stackname)
-
-#
-# configuration management
-#
-
-VARYING_CONFIG = {
-    'elife-ci': [
-        # jenkins config
-        "/var/lib/jenkins/config.xml",
-        "/var/lib/jenkins/users/admin/config.xml",
-        "/var/lib/jenkins/hudson.tasks.Mailer.xml",  # mail config, password encrypted
-        "/var/lib/jenkins/.gitconfig",
-
-        # jenkins projects, pulled from salt pillar data
-        #lambda: map(lambda pname: "/var/lib/jenkins/jobs/%s/config.xml" % pname, \
-        #            utils.salt_pillar_data()['ci']['jenkins']['projects']),
-
-        # jira integration
-        "/var/lib/jenkins/hudson.plugins.jira.JiraProjectProperty.xml",
-        "/var/lib/jenkins/jenkins-jira-plugin.xml",
-
-        # thin backup
-        "/var/lib/jenkins/thinBackup.xml",
-
-        # GOCD config
-        #"/etc/go/cruise-config.xml",
-    ],
-
-    'elife-arges': [
-        "/etc/nginx/sites-available/arges.elifesciences.org",
-        "/usr/share/nginx/html/editor-search.html",
-    ],
-}
-
+    try:
+        stackname = aws_create_stack(create_stack(project))
+        if stackname:
+            setdefault('.active-stack', stackname)
+    except core.NoMasterException, e:
+        LOG.warn(e.message)
+        print "\n%s\ntry `./bldr master.create`'" % e.message
 
 @task
 @requires_aws_stack
-def gather_config(stackname, single_config=False):
-    """Some configuration for applications is modified as we go along, so what we have within Salt does not accurately reflect what we want remotely. Hunting down each of these files is a huge PITA, so here is a task bundling them altogther and downloading them at once."""
-    project_name = core.project_name_from_stackname(stackname)
-    file_list = VARYING_CONFIG[project_name]
-
-    # call anything callable
-    callables, file_list = utils.splitfilter(callable, file_list)
-    map(lambda c: file_list.extend(c() or []), callables)
-
-    if single_config:
-        file_list = [utils._pick("config", file_list, default_file=deffile('.project-config'))]
-
-    # map files to be downloaded to a version of their original selves
-    def mangle(fname):
-        return fname.lstrip('/').replace('/', '-').replace(r'\ ', '-')
-
-    #with settings(user=DEPLOY_USER, host_string=public_ip, key_filename=deploy_user_pem()):
+def download_file(stackname, *args, **kwargs):
     with stack_conn(stackname):
-        f_file_list = filter(exists, file_list)
-        if len(f_file_list) != len(file_list):
-            print 'WARNING: some files not found (or not accessible) and were excluded:'
-            print '  ' + '\n  '.join(set(file_list) - set(f_file_list))
-
-        # download the files
-        dest_dir = join(PROJECT_DIR, 'salt/salt/%s/config/' % project_name)
-        # FIXME: urrrrgh.
-        map(lambda f: bootstrap.download(dest_dir, [f], as_user=ROOT_USER), zip(f_file_list, map(mangle, f_file_list)))
-
+        get(*args, **kwargs)
 
 @task
 @requires_aws_stack
-def gather_a_config(stackname):
-    return gather_config(stackname, single_config=True)
-
-
-@osissue("embarassing code. remove/improve")
-@debugtask
-@requires_aws_stack
-def download_file(stackname, path):
-    fname = os.path.basename(path)
-    utils.mkdirp('downloads')
-    with stack_conn(stackname):
-        pair = (path, fname)  # must be a tuple!
-        bootstrap.download('downloads', [pair], as_user=ROOT_USER)
-
-@task
-@requires_aws_stack
-@echo_output
 def upload_file(stackname, local_path, remote_path, overwrite=False):
     with stack_conn(stackname):
         if files.exists(remote_path) and not overwrite:
             print 'remote file exists, not overwriting'
             exit(1)
         put(local_path, remote_path)
-
-def project_name_from_stackname(stackname):
-    '''
-    x = core.project_list()
-    y = zip(x, map(lambda p: stackname.startswith(p + "-"), x))
-    z = filter(lambda p: p[1], y)
-    return z[0][0]
-    '''
-    return core.project_name_from_stackname(stackname, careful=True)
 
 @task
 @sync_stack

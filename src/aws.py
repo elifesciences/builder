@@ -1,7 +1,8 @@
 import os
 from fabric.api import settings
 from fabfile import PROJECT_DIR
-from buildercore import core, config
+from buildercore import core, config, project
+from buildercore.utils import lookup
 from buildercore.decorators import osissue, osissuefn
 import utils
 import boto
@@ -14,36 +15,50 @@ LOG = logging.getLogger(__name__)
 # perhaps these should live in their own file?
 #
 
-
-def boto_cfn_conn():
-    #return boto.cloudformation.connect_to_region('us-west-2')
-    return boto.connect_cloudformation()
-
-def boto_ec2_conn():
-    return boto.connect_ec2()
-
-def get_instance(iid):
-    ec2 = boto_ec2_conn()
-    return ec2.get_only_instances([iid])[0]
+from buildercore.core import boto_cfn_conn, boto_ec2_conn, connect_aws_with_stack
 
 def deploy_user_pem():
     return os.path.join(PROJECT_DIR, 'payload/deploy-user.pem')
 
-def stack_list():
-    "returns a list of realized stacks. does not include deleted stacks"
-    return core.all_aws_stack_names()
+def find_region(stackname=None):
+    """used when we haven't got a stack and need to know about stacks in a particular region.
+    if a stack is provided, it uses the one provided in it's configuration.
+    otherwise, generates a list of used regions from project data
 
-@osissue("duplicate code. I'm certain this is defined in bootstrap or core")
+    if more than one region available, it will raise an EnvironmentError. 
+    until we have some means of supporting multiple regions, this is the best solution"""
+    region = None
+    if stackname:
+        pdata = core.project_data_for_stackname(stackname)
+        return pdata['aws']['region']
+
+    all_projects = project.project_map()
+    all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
+    region_list = list(set(filter(None, all_regions))) # remove any Nones, make unique, make a list
+    if not region_list:
+        raise EnvironmentError("no regions available at all!")
+    if len(region_list) > 1:
+        raise EnvironmentError("multiple regions available but not yet supported!: %s" % region_list)
+    return region_list[0]
+
+def stack_list(region=None):
+    "returns a list of realized stacks. does not include deleted stacks"
+    if not region:
+        region = find_region()
+    return core.all_aws_stack_names(region)
+
+@osissue("duplicate code. this is partially defined in buildercore/core.py")
 def describe_stack(stackname):
-    data = utils.just_one(boto_cfn_conn().describe_stacks(stackname)).__dict__
+    conn = connect_aws_with_stack(stackname, 'ec2')
+    data = utils.just_one(conn.describe_stacks(stackname)).__dict__
     if data.has_key('outputs'):
         data['indexed_output'] = {row.key: row.value for row in data['outputs']}
     try:
         # TODO: is there someway to go straight to the instance ID ?
         # a CloudFormation's outputs go stale! because we can't trust the data it
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
-        inst_id = data['indexed_output']['InstanceId']
-        inst = get_instance(inst_id)
+        iid = data['indexed_output']['InstanceId']
+        inst = conn.get_only_instances([iid])[0]
         data['instance'] = inst.__dict__
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')

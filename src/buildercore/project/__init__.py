@@ -2,6 +2,7 @@
 from buildercore import utils, config
 from buildercore.utils import unique, flatten
 from buildercore.decorators import osissue, osissuefn, testme
+from kids.cache import cache
 from . import files
 
 import copy
@@ -81,6 +82,7 @@ def org_map(project_locations_list=None):
     opm = org_project_map(project_locations_list)
     return {org: pdata.keys() for org, pdata in opm.items()}
 
+@cache
 def project_map(project_locations_list=None):
     """returns a single map of all projects and their data, ignoring organizations
     overwriting any duplicates"""
