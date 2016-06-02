@@ -19,6 +19,7 @@ packer_cache/*
 downloads
 .coverage
 projects/*/
+ec2-keypairs/*
 
 .no-install-basebox.flag
 .no-vagrant-s3auth.flag
