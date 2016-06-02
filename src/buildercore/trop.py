@@ -83,7 +83,7 @@ def ec2instance(context):
         "InstanceType": lu('project.aws.type'), # t2.small, m1.medium, etc
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
-        "SubnetId": "subnet-1d4eb46a",
+        "SubnetId": lu('project.aws.subnet-id'), # ll: "subnet-1d4eb46a"
         "Tags": instance_tags(context),
 
         "UserData": Base64("""#!/bin/bash
@@ -115,10 +115,7 @@ def rdsinstance(context):
     # db subnet
     rsn = rds.DBSubnetGroup(DBSUBNETGROUP_TITLE, **{
         "DBSubnetGroupDescription": "database subnet description here",
-        "SubnetIds": [
-            "subnet-8eea67d7", # elife-db-subnet-1
-            "subnet-dbc471f0" # elife-db-subnet-2
-        ]
+        "SubnetIds": lu('project.aws.rds.subnets'),
     })
 
     # rds security group. uses the ec2 security group

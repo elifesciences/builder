@@ -146,9 +146,13 @@ def aws_create_stack(stackname):
     if core.stack_is_active(stackname):
         print 'stack exists and is active, cannot create'
         return
-    pdata = core.project_data_for_stackname(stackname)
-    region = pdata['aws']['region']
-    bootstrap.update_master(region)
+    if not core.is_master_server_stack(stackname):
+        # this just pulls down the latest changes in the
+        # builder on the master server and restarts salt there.
+        # if we're creating a new master, it can be safely skipped
+        pdata = core.project_data_for_stackname(stackname)
+        region = pdata['aws']['region']
+        bootstrap.update_master(region)
     bootstrap.create_stack(stackname)
     bootstrap.update_environment(stackname)
     return stackname
@@ -185,12 +189,13 @@ def sync_stacks():
 
 @task
 @requires_project
+@echo_output
 def create_stack(pname):
     """creates a new CloudFormation template for the given project."""
-    default_instance_id = core_utils.ymd()
-    more_context = {
-        'instance_id': slugify(pname + "--" + utils.uin("instance id", default_instance_id)),
-    }
+    default_instance_id, cluster_id = core_utils.ymd(), None
+    inst_id = utils.uin("instance id", default_instance_id)
+    stackname = core.mk_stackname(pname, inst_id, cluster_id)
+    more_context = {'instance_id': stackname}
 
     # prompt user for alternate configurations
     pdata = project.project_data(pname)
@@ -212,7 +217,8 @@ def create_stack(pname):
     print 'CloudFormation template written to:', out_fname
     print 'use `fab cfn.aws_create_stack` next'
     print
-    return os.path.splitext(os.path.basename(out_fname))[0]
+    
+    return stackname
 
 
 '''
@@ -242,7 +248,19 @@ def print_project_config(pname):
 @requires_project
 def aws_launch_instance(project):
     try:
-        stackname = aws_create_stack(create_stack(project))
+        stackname = create_stack(project)
+        pdata = core.project_data_for_stackname(stackname)
+
+        print 'attempting to create stack:'
+        print '  stackname: ' + stackname
+        print '  region:    ' + pdata['aws']['region']
+        print '  vpc:       ' + pdata['aws']['vpc-id']
+        print '  subnet:    ' + pdata['aws']['subnet-id']
+        print
+        if not confirm('continue?', default=True):
+            exit()
+
+        stackname = aws_create_stack(stackname)
         if stackname:
             setdefault('.active-stack', stackname)
     except core.NoMasterException, e:

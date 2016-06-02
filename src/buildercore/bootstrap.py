@@ -9,12 +9,12 @@ from os.path import join
 from functools import partial
 from StringIO import StringIO
 from . import core, utils, config
-from .core import connect_aws_with_stack, deploy_user_pem, stack_conn, project_data_for_stackname
+from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
 from .utils import first
 from .sync import sync_private, sync_stack, do_sync
 from .config import DEPLOY_USER, BOOTSTRAP_USER
 from .decorators import osissue, osissuefn
-from fabric.api import env, local, settings, run, sudo, cd, put
+from fabric.api import env, local, settings, run, sudo, cd, put, get
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from contextlib import contextmanager
@@ -39,10 +39,8 @@ basis ...
 #
 
 def create_keypair(stackname):
-    expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
-    assert not os.path.exists(expected_key), \
-      "refusing to create %r - keypair already exists at %r" % (stackname, expected_key)
-    ec2 = core.connect_aws(stackname, 'ec2')
+    expected_key = core.stack_pem(stackname, die_if_exists=True)
+    ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     key = ec2.create_key_pair(stackname)
     key.save(config.KEYPAIR_PATH) # exclude the filename
     
@@ -51,12 +49,15 @@ def create_keypair(stackname):
     return expected_key
 
 def delete_keypair(stackname):
-    expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
-    ec2 = core.connect_aws(stackname, 'ec2')
+    expected_key = core.stack_pem(stackname)
+    ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     ec2.delete_key_pair(stackname)
+    os.unlink(expected_key)
+    
     # assert key not in ec2.get_all_key_pairs() ...
-
+    
     # delete from s3!
+    # delete from fs!
     
     return expected_key
 
@@ -64,9 +65,29 @@ def delete_keypair(stackname):
 #
 #
 
+'''
+# another day perhaps
+def stack(stackname, key=None):
+    data = ec2_instance_data(stackname)
+    if key:
+        return getattr(data, key)
+    return data
+
+def master(any_stackname, key):
+    return stack(core.find_master_for_stack(any_stackname), key)
+'''
+
 @contextmanager
 def master_server(region, username=BOOTSTRAP_USER):
-    with settings(user=username, host_string=master(region, 'ip_address'), key_filename=deploy_user_pem()):
+    """connects to the master server in the specified region. 
+
+    you can only connect to the master server if you have access 
+    to the master server  private key or you're in it's authorized 
+    users list"""
+    # should you *really* be trying to access the master?
+    master_stackname = core.find_master(region)
+    key = stack_pem(master_stackname, die_if_doesnt_exist=True)
+    with settings(user=username, host_string=master(region, 'ip_address'), key_filename=key):
         yield
 
 #
@@ -91,6 +112,9 @@ def create_stack(stackname):
             LOG.debug(err.message)
             return False
         # don't delete the keypair if the error is that the stack already exists!
+        delete_keypair(stackname)
+        raise
+    except:
         delete_keypair(stackname)
         raise
 
@@ -158,6 +182,8 @@ def master(region, key):
 # bootstrap stack
 #
 
+
+"""
 def copy(src, dest, use_sudo=False, unsafe=False):
     with settings(user=DEPLOY_USER, host_string=env.host_string, key_filename=deploy_user_pem()):
         cmd = "cp %s %s" % (src, dest)
@@ -202,6 +228,7 @@ def download(dest, file_list, as_user=BOOTSTRAP_USER):
             local("mkdir -p %s" % dest_dir)
         scp('down', fname, dest_fname, user=download_user)
     return map(_download, file_list)
+"""
 
 @core.requires_active_stack
 def template_info(stackname):
@@ -267,7 +294,12 @@ def generate_stack_keys(stackname):
         stack_stub = join(stack_dir, stackname) # ll: /foo/bar/stackname  (with no ext)
         # download the public and private keys and make private key read-only
         local("rm -f %s.p*" % stack_stub) # nuke any existing keys
-        download(stack_dir, [stackname+'.pub', stackname+'.pem'])
+        
+        # UNTESTED. all that download code had to go though
+        #download(stack_dir, [stackname+'.pub', stackname+'.pem'])
+        files_to_download = [stackname+'.pub', stackname+'.pem']
+        map(get, files_to_download)
+        
         local("chmod 640 %s.pem" % stack_stub)
 
 #pylint: disable=invalid-name
@@ -317,6 +349,7 @@ def update_environment(stackname):
     pdata = core.project_data_for_stackname(stackname)
     public_ip = ec2_instance_data(stackname).ip_address
     region = pdata['aws']['region']
+
     is_master = core.is_master_server_stack(stackname)
     
     # not necessary on update, but best to check.
@@ -327,7 +360,7 @@ def update_environment(stackname):
     # this waits until a connection can be made and a file is found before continuing.
     def is_resourcing():
         try:
-            with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=deploy_user_pem()):
+            with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=stack_pem(stackname)):
                 # calluntil file exists
                 return not files.exists(join('/home', BOOTSTRAP_USER))
         except fabric_exceptions.NetworkError:

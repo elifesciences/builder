@@ -12,10 +12,14 @@ from .decorators import osissue, osissuefn, testme
 import importlib
 import logging
 from kids.cache import cache as cached
+from slugify import slugify
 
 LOG = logging.getLogger(__name__)
 
 class PredicateException(Exception):
+    pass
+
+class DeprecationException(Exception):
     pass
 
 class NoMasterException(Exception):
@@ -70,20 +74,36 @@ def find_ec2_volume(stackname):
     kwargs = {'filters': {'attachment.instance-id': iid}}
     return connect_aws_with_stack(stackname, 'ec2').get_all_volumes(**kwargs)
 
-@osissue("refactor. this implementation is tied to the shared-all strategy")
-def deploy_user_pem():
-    return join(config.PRIVATE_DIR, 'deploy-user.pem')
+def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
+    """returns the path to the private key on the local filesystem. 
+
+    helpfully dies in different ways if you ask it to"""
+    expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
+    # for when we really need it to exist
+    if die_if_doesnt_exist and not os.path.exists(expected_key):
+        raise EnvironmentError("keypair %r not found at %r" % (stackname, expected_key))
+    # for when we don't want to accidentally overwrite it
+    if die_if_exists and os.path.exists(expected_key):
+        raise EnvironmentError("keypair %r found at %r" % (stackname, expected_key))
+    return expected_key
+
+def deploy_user_pem()
+    #return join(config.PRIVATE_DIR, 'deploy-user.pem')
+    raise DeprecationError("`deploy_user_pem` is DEPRECATED. use `stack_pem`")
 
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER):
     data = stack_data(stackname)
     public_ip = data['instance']['ip_address']
-    with settings(user=username, host_string=public_ip, key_filename=deploy_user_pem()):
+    with settings(user=username, host_string=public_ip, key_filename=stack_pem(stackname)):
         yield
 
 #
 # stackname wrangling
 #    
+
+def mk_stackname(*bits):
+    return "--".join(map(slugify, filter(None, bits)))
 
 def parse_stackname(stackname):
     "returns a triple of project, instance and cluster ids"
@@ -108,7 +128,8 @@ def instanceid_from_stackname(stackname):
     return parse_stackname(stackname)[:2]
     
 def is_master_server_stack(stackname):
-    return 'master-server--' in stackname
+    return 'master-server--' in str(stackname)
+
 
 #
 # stack file wrangling
@@ -222,16 +243,33 @@ def all_active_stacks(region):
     "returns all active stacks as a triple of (stackname, status, data)"
     return map(stack_triple, boto_cfn_conn(region).describe_stacks())
 
+@testme
+def _find_master(sl):
+    if len(sl) > 1:
+        LOG.warn("more than one master server found. this state should only ever be temporary.")
+    elif len(sl) == 1:
+        # first item (stackname) of first (and only) result
+        return first(first(sl))
+    
+    msl = filter(lambda triple: is_master_server_stack(first(triple)), sl)
+    msl = map(first, msl) # just stack names
+    # this all assumes master servers with YMD instance ids
+    #master_server_ymd_instance_id = lambda x: ''.join(x.split('--')[2:])
+    #msl = sorted(msl, key=master_server_ymd_instance_id, reverse=True)
+    msl = sorted(msl, key=instanceid_from_stackname, reverse=True)
+    return first(msl)
+
 def find_master(region):
     "returns the most recent aws master-server it can find. assumes instances have YMD names"
     sl = all_active_stacks(region)
     if not sl:
         raise NoMasterException("no master servers found in region %r" % region)
-    msl = filter(lambda triple: is_master_server_stack(first(triple)), sl)
-    msl = map(first, msl) # just stack names
-    master_server_ymd_instance_id = lambda x: ''.join(x.split('-')[2:])
-    msl = sorted(msl, key=master_server_ymd_instance_id, reverse=True)
-    return first(msl)
+    return _find_master(sl)
+
+def find_master_for_stack(stackname):
+    "convenience. finds the master server for the same region as given stack"
+    pdata = project_data_for_stackname(stackname)
+    return find_master(pdata['aws']['region'])
 
 #
 # decorators

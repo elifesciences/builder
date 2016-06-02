@@ -4,13 +4,14 @@ from . import base
 from buildercore import core, utils, project
 from unittest import skip
 
-class TestCoreUtils(base.BaseCase):
+class SimpleCases(base.BaseCase):
     def setUp(self):
         pass
 
     def tearDown(self):
         pass
 
+    @skip("relies on actual project data")
     def test_mk_hostname(self):
 
         # this test needs fixtures!!
@@ -29,6 +30,19 @@ class TestCoreUtils(base.BaseCase):
                 print 'expected %r got %r' % (expected, actual)
                 raise
 
+    def test_mk_stackname(self):
+        cases = [
+            (['lax', 'develop'], 'lax--develop'),
+            (['elife-lax', 'develop'], 'elife-lax--develop'),
+            (['master-server-2', 'master'], 'master-server-2--master'),
+
+            # with a cluster id
+            (['lax', 'develop', 'ci'], 'lax--develop--ci'),
+            (['master-server-2', 'master', 'testing-2'], 'master-server-2--master--testing-2')
+        ]
+        for bits, expected in cases:
+            self.assertEqual(core.mk_stackname(*bits), expected)
+            
     def test_project_name_from_stackname(self):
         expected = [
             ('central-logging--2014-01-14', 'central-logging'),
@@ -51,8 +65,7 @@ class TestCoreUtils(base.BaseCase):
             ('elife-website--non-article-content-updating', 'elife-website'),
             ('lagotto--2015-03-30', 'lagotto'),
             ('lagotto--testing-2015-05-12', 'lagotto'),
-            ('master-server--2014-12-24', 'master-server'),
-            
+            ('master-server--2014-12-24', 'master-server'),            
         ]
         self.assertAllPairsEqual(core.project_name_from_stackname, expected)
 
@@ -68,7 +81,29 @@ class TestCoreUtils(base.BaseCase):
         ]
         for expected in expected_error:
             self.assertRaises(ValueError, core.project_name_from_stackname, expected)
+
+    def test_master_server_identified(self):
+        true_cases = [
+            'master-server--master',
+            'master-server--2016-01-01',
+            'master-server--master--ci',
+        ]
+        results = map(core.is_master_server_stack, true_cases)
+        if False in results:
+            print zip(true_cases, results)
+        self.assertTrue(all(results))
+
+    def test_master_server_identified_false_cases(self):
+        false_cases = [
+            'master-server', # *stack* names not project names
+            '', None, 123, {}, [], self
+        ]
+        results = map(core.is_master_server_stack, false_cases)
+        if False in results:
+            print zip(false_cases, results)
+        self.assertFalse(all(results))
         
+            
 
 # 
 # these might be better off in the test_buildercore_project 

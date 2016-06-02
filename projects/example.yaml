@@ -13,22 +13,25 @@ defaults:
     # default branch to use when deploying
     default-branch: master
     aws:
-        # NOTE! the ami to use is determined in buildercore.bakery
+        # http://cloud-images.ubuntu.com/releases/
         ami: ami-9eaa1cf6   # Ubuntu 14.04
         type: t2.small
-        region: eu-west-1
-        vpc-id: None
-        subnet-id: None
-        cidr-ip: 0.0.0.0/0 # default access to EC2 is 'everyone'
+        region: null
+        vpc-id: null
+        subnet-id: null
         rds:
             # explicit database name overrides the one generated at template creation
-            name: None
+            name: null
             engine: postgres
             # ensure this matches the version you install on your server
             version: '9.4'
             type: db.t2.small
             storage: 5 # GB
             backup-retention: 28 # days
+            subnets: 
+                # two are required
+                - null
+                - null
         ext:
             # external hdd
             size: 10 # GB
@@ -47,13 +50,28 @@ defaults:
  
 basebox:
    vagrant: {}
-       
+
+# you'll need a master server to tell your minions what to do
+master-server:
+    formula-repo: https://github.com/elifesciences/example-project
+    aws:
+        ports:
+            22: 22
+
+# just an example! 
+# look at the formula-repo for how to setup dependant projects
 project1:
     formula-repo: https://github.com/elifesciences/example-project
     aws:
         ports:
             80: 80
             22: 22
+            # more complex example
+            25826: # incoming collectd
+                guest: 25826
+                protocol: udp
+                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
     vagrant:
         ports:
+            # host: guest
             8080: 80
