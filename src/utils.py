@@ -213,3 +213,8 @@ def system(cmd):
     child = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = child.communicate()
     return child.returncode, stdout, stderr
+
+def table(rows, keys):
+    for row in rows:
+        print ', '.join([getattr(row, key) for key in keys])
+            

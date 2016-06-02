@@ -2,10 +2,49 @@ import requests
 from buildercore import core, cfngen, config, project
 from buildercore.sync import sync_stack
 from fabric.api import sudo, run, local, task
-from decorators import echo_output, requires_aws_stack
+from decorators import echo_output, requires_aws_stack, requires_project
 from aws import stack_conn
 import utils, aws
 from buildercore.decorators import osissue, osissuefn
+
+@task
+@requires_project
+def ami_for_project(pname):
+    "finds a bunch of "
+    conn = core.connect_aws_with_pname(pname, 'ec2')
+    kwargs = {
+        # https://cloud-images.ubuntu.com/locator/ec2/
+        # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html#query-DescribeImages-filters
+        'filters': {
+            #'root-device-type': 'ebs',
+            #'virtualization_type': 'hvm',
+            'architecture': 'x86_64',
+            #'name': 'ubuntu/images/*',
+            'name': 'ubuntu/images/*/*14.04*201605*',
+            'state': 'available',
+            'root-device-name': '/dev/sda1',
+        },
+        'owners': ['099720109477'] # Canonical
+    }
+    results = conn.get_all_images(**kwargs)
+
+    print results
+    
+    print len(results),"results"
+
+    utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
+
+    # good for figuring out filters 
+    #print results[0].__dict__
+    
+
+
+
+
+#
+#
+#
+
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"
