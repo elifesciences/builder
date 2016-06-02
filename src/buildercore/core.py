@@ -87,6 +87,8 @@ def stack_conn(stackname, username=config.DEPLOY_USER):
 
 def parse_stackname(stackname):
     "returns a triple of project, instance and cluster ids"
+    if not stackname or not isinstance(stackname, basestring):
+        raise ValueError("stackname must look like <pname>--<inst-id>[--<cluster-id>], got: %r" % stackname)
     pname = instance_id = cluster_id = None
     bits = stackname.split('--')
     if len(bits) == 1:
@@ -103,7 +105,7 @@ def project_name_from_stackname(stackname):
 
 def instanceid_from_stackname(stackname):
     "returns a pair of (project name, id) where id is the  "
-    return second(parse_stackname(stackname))
+    return parse_stackname(stackname)[:2]
     
 def is_master_server_stack(stackname):
     return 'master-server--' in stackname

@@ -12,11 +12,14 @@ class TestCoreUtils(base.BaseCase):
         pass
 
     def test_mk_hostname(self):
+
+        # this test needs fixtures!!
+        
         expected_triples = [
-            ('elife-lax', 'elife-lax-develop', 'develop.lax'),
-            ('elife-lax', 'elife-lax-feature-asdf', 'feature-asdf.lax'),
-            ('elife-lax', 'elife-lax-master', 'master.lax'),
-            ('master-server', 'master-develop', None), # no subdomain
+            ('elife-lax', 'elife-lax--develop', 'develop.lax'),
+            ('elife-lax', 'elife-lax--feature-asdf', 'feature-asdf.lax'),
+            ('elife-lax', 'elife-lax--master', 'master.lax'),
+            ('master-server', 'master--develop', None), # no subdomain
         ]
         for project, stackname, expected in expected_triples:
             actual = core.mk_hostname(stackname)
@@ -28,27 +31,27 @@ class TestCoreUtils(base.BaseCase):
 
     def test_project_name_from_stackname(self):
         expected = [
-            ('central-logging-2014-01-14', 'central-logging'),
-            ('elife-api-2015-03-10-lsh', 'elife-api'),
-            ('elife-api-dummy', 'elife-api'),
-            ('elife-api-prod-candidate', 'elife-api'),
-            ('elife-arges-2015-03-20', 'elife-arges'),
-            ('elife-bot-2015-04-29', 'elife-bot'),
-            ('elife-bot-2015-05-11v2', 'elife-bot'),
-            ('elife-bot-large-gnott-again-2015-12-13', 'elife-bot'),
-            ('elife-ci-2015-03-13', 'elife-ci'),
-            ('elife-civiapi-2015-02-13', 'elife-civiapi'),
-            ('elife-crm-2015-08-18', 'elife-crm'),
-            ('elife-dashboard-2016-01-26', 'elife-dashboard'),
-            ('elife-jira-2015-06-02', 'elife-jira'),
-            ('elife-lax-2015-10-15-develop', 'elife-lax'),
-            ('elife-metrics-2015-09-25', 'elife-metrics'),
-            ('elife-metrics-prod-candidate', 'elife-metrics'),
-            ('elife-website-2015-11-12', 'elife-website'),
-            ('elife-website-non-article-content-updating', 'elife-website'),
-            ('lagotto-2015-03-30', 'lagotto'),
-            ('lagotto-testing-2015-05-12', 'lagotto'),
-            ('master-server-2014-12-24', 'master-server'),
+            ('central-logging--2014-01-14', 'central-logging'),
+            ('elife-api--2015-03-10-lsh', 'elife-api'),
+            ('elife-api--dummy', 'elife-api'),
+            ('elife-api--prod-candidate', 'elife-api'),
+            ('elife-arges--2015-03-20', 'elife-arges'),
+            ('elife-bot--2015-04-29', 'elife-bot'),
+            ('elife-bot--2015-05-11v2', 'elife-bot'),
+            ('elife-bot--large-gnott-again-2015-12-13', 'elife-bot'),
+            ('elife-ci--2015-03-13', 'elife-ci'),
+            ('elife-civiapi--2015-02-13', 'elife-civiapi'),
+            ('elife-crm--2015-08-18', 'elife-crm'),
+            ('elife-dashboard--2016-01-26', 'elife-dashboard'),
+            ('elife-jira--2015-06-02', 'elife-jira'),
+            ('elife-lax--2015-10-15-develop', 'elife-lax'),
+            ('elife-metrics--2015-09-25', 'elife-metrics'),
+            ('elife-metrics--prod-candidate', 'elife-metrics'),
+            ('elife-website--2015-11-12', 'elife-website'),
+            ('elife-website--non-article-content-updating', 'elife-website'),
+            ('lagotto--2015-03-30', 'lagotto'),
+            ('lagotto--testing-2015-05-12', 'lagotto'),
+            ('master-server--2014-12-24', 'master-server'),
             
         ]
         self.assertAllPairsEqual(core.project_name_from_stackname, expected)
@@ -66,6 +69,10 @@ class TestCoreUtils(base.BaseCase):
         for expected in expected_error:
             self.assertRaises(ValueError, core.project_name_from_stackname, expected)
         
+
+# 
+# these might be better off in the test_buildercore_project 
+# 
             
 class TestCoreProjectData(base.BaseCase):
     def setUp(self):

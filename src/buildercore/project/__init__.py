@@ -103,7 +103,10 @@ def project_list(project_locations_list=None):
 
 def project_data(pname, project_locations_list=None):
     "returns the data for a single project"
-    return project_map(project_locations_list)[pname]
+    try:
+        return project_map(project_locations_list)[pname]
+    except KeyError:
+        raise ValueError("unknown project %r", pname)
 
 #
 #
@@ -115,4 +118,7 @@ def filtered_projects(filterfn, *args, **kwargs):
 
 def branch_deployable_projects(*args, **kwargs):
     "returns a pair of (defaults, dict of projects with a repo)"
-    return filtered_projects(lambda pname, pdata: pdata.has_key('repo'))
+    return filtered_projects(lambda pname, pdata: pdata.has_key('repo'), *args, **kwargs)
+
+def aws_projects(*args, **kwargs):
+    return filtered_projects(lambda pname, pdata: pdata.has_key('aws'), *args, **kwargs)

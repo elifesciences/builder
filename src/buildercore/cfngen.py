@@ -41,6 +41,7 @@ def build_context(pname, **more_context):
         'author': os.environ.get("LOGNAME") or os.getlogin(),
         'date_rendered': utils.ymd(),
 
+        # when this was first introduced, instance_id was synonmous with stackname
         'instance_id': None, # must be provided by whatever is calling this
         'db_instance_id': None, # generated from the instance_id
         'branch': project_data['default-branch'],
@@ -52,9 +53,10 @@ def build_context(pname, **more_context):
     assert context['instance_id'] != None, "an 'instance_id' wasn't provided."
 
     # alpha-numeric only
+    # TODO: investigate possibility of ambiguous RDS naming here
     default_db_instance_id = slugify(context['instance_id'], separator="")
 
-    # wrangle hostname data    
+    # wrangle hostname data
     hostname_context = {'hostname': None, 'full_hostname': None, 'project_hostname': None}
     if project_data.get('subdomain'):
         # ll: master.lax
@@ -85,29 +87,39 @@ def build_context(pname, **more_context):
     context['build_vars'] = base64.b64encode(json.dumps(context))
 
     return context
+
 #
 #
 #
 
-def render_template(context):
-    return trop.render(context)
+def render_template(context, template_type='aws'):
+    pname = context['project_name']
+    if not context['project'].has_key(template_type):
+        raise ValueError("could not render an %r template for %r: no %r context found" % \
+                             (template_type, pname, template_type))
+    if template_type == 'aws':
+        return trop.render(context)
 
 def write_template(stackname, contents):
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
 
+def validate_aws_template(pname, rendered_template):
+    conn = core.connect_aws_with_pname(pname, 'cfn')
+    return conn.validate_template(rendered_template)
+
+
+#
+# 
+#
+
 def quick_render(project, **more_context):
     "generates a representative Cloudformation template for given project with dummy values"
     # set a dummy instance id if one hasn't been set.
-    more_context['instance_id'] = more_context.get('instance_id', project + '-dummy')
+    more_context['instance_id'] = more_context.get('instance_id', project + '--dummy')
     context = build_context(project, **more_context)
     return render_template(context)
-
-def quick_render_all(**more_context):
-    "generates a representative Cloudformation template for all projects with dummy values"
-    #return [(project, quick_render(project, **more_context)) for project in core.project_list()]
-    return [(project, quick_render(project, **more_context)) for project in project.project_list()]
 
 #
 #

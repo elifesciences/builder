@@ -10,7 +10,7 @@ data called a `context`.
 it to the correct file etc."""
 
 from . import utils
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, Base64, route53
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, Base64, route53, Parameter
 from functools import partial
 import logging
 from .decorators import osissue, osissuefn
@@ -30,6 +30,8 @@ R53_EXT_TITLE = "ExtDNS"
 R53_EXT_HOSTED_ZONE = "elifesciences.org."
 R53_INT_TITLE = "IntDNS"
 R53_INT_HOSTED_ZONE = "elife.internal."
+
+KEYPAIR = "KeyName"
 
 def sg_rule(from_port, to_port=None, cidr_ip='0.0.0.0/0', ip_protocol='tcp'):
     if not to_port:
@@ -79,7 +81,7 @@ def ec2instance(context):
     project_ec2 = {
         "ImageId": lu('project.aws.ami'),
         "InstanceType": lu('project.aws.type'), # t2.small, m1.medium, etc
-        "KeyName": "deploy-user",
+        "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
         "SubnetId": "subnet-1d4eb46a",
         "Tags": instance_tags(context),
@@ -211,6 +213,11 @@ def render(context):
     template.add_resource(secgroup)
     template.add_resource(instance)
 
+    keyname = template.add_parameter(Parameter(KEYPAIR, **{
+        "Type": "String",
+        "Description": "EC2 KeyPair that enables SSH access to this instance",
+    }))
+    
     cfn_outputs = outputs()
 
     if context['project']['aws'].has_key('rds'):
