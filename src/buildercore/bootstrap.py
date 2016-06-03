@@ -63,7 +63,9 @@ def delete_keypair(stackname):
     utils.mkdir_p(delete_path)
     shutil.move(expected_key, delete_path)
     #os.unlink(expected_key)
-    assert not os.path.exists(expected_key), "the private key for %r was not deleted"
+    # TODO: this check needs to become part of a checklist of things after deletion
+    if not os.path.exists(expected_key):
+        LOG.warn("private key %r not deleted: found %r" % (stackname, expected_key))
 
 #
 #
@@ -394,7 +396,9 @@ def update_environment(stackname):
         # if a master is updating itself, restart and accept it's own key
         # accept own key is part of bootstrap
         if is_master:
-            sudo('service salt-master restart')
+            # restart the server and wait a few seconds.
+            # sometimes the unaccepted keys don't show up immediately
+            sudo('service salt-master restart && sleep 5 # pause for master to come up fully')
             # accept our own key if it hasn't already
             sudo('salt-key --accept=%s --yes || echo no unaccepted keys for \'%s\'' % (stackname, stackname))
         
