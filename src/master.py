@@ -75,11 +75,9 @@ def create(stackname):
     bootstrap.create_stack(stackname)
     bootstrap.update_environment(stackname)
 
-    
     # this has only been used once and not updated since.
-    
 
-    public_ip = aws.describe_stack(stackname)['instance']['ip_address']
+    public_ip = core.stack_data(stackname)['instance']['ip_address']
     pdata = project.project_data(stackname)
     # this has all been replaced with the generic scripts/bootstrap.sh script
     with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.stack_pem(stackname)):

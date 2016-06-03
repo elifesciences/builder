@@ -43,20 +43,3 @@ def stack_list(region=None):
     if not region:
         region = find_region()
     return core.all_aws_stack_names(region)
-
-@osissue("duplicate code. this is partially defined in buildercore/core.py")
-def describe_stack(stackname):
-    conn = connect_aws_with_stack(stackname, 'ec2')
-    data = utils.just_one(conn.describe_stacks(stackname)).__dict__
-    if data.has_key('outputs'):
-        data['indexed_output'] = {row.key: row.value for row in data['outputs']}
-    try:
-        # TODO: is there someway to go straight to the instance ID ?
-        # a CloudFormation's outputs go stale! because we can't trust the data it
-        # gives us, we sometimes take it's instance-id and talk to the instance directly.
-        iid = data['indexed_output']['InstanceId']
-        inst = conn.get_only_instances([iid])[0]
-        data['instance'] = inst.__dict__
-    except Exception:
-        LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
-    return data
