@@ -41,7 +41,7 @@ def aws_remaster_minions():
     for stackname in minion_list:
         print 'remaster-ing %r' % stackname
         public_ip = bootstrap.ec2_instance_data(stackname).ip_address
-        with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.deploy_user_pem()):
+        with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.stack_pem(stackname)):
             cmds = [
                 "echo 'master: %s' > /etc/salt/minion" % master_ip,
                 "echo 'id: %s' >> /etc/salt/minion" % stackname,
@@ -50,7 +50,7 @@ def aws_remaster_minions():
             ]
             [sudo(cmd) for cmd in cmds]
 
-    with settings(user=config.BOOTSTRAP_USER, host_string=master_ip, key_filename=core.deploy_user_pem()):
+    with settings(user=config.BOOTSTRAP_USER, host_string=master_ip, key_filename=core.stack_pem(stackname)):
         cmds = [
             #'service salt-master restart',
             # accept all minion's keys (potentially dangerous without review, should just be the new master)
@@ -82,7 +82,7 @@ def create(stackname):
     public_ip = aws.describe_stack(stackname)['instance']['ip_address']
     pdata = project.project_data(stackname)
     # this has all been replaced with the generic scripts/bootstrap.sh script
-    with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.deploy_user_pem()):
+    with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.stack_pem(stackname)):
         cmds = [
             "wget -O /tmp/install_salt.sh https://bootstrap.saltstack.com",
             "sh /tmp/install_salt.sh -M -P git %s" % pdata['salt'],
@@ -94,10 +94,10 @@ def create(stackname):
     # create and upload payload to new master
     with lcd(config.PROJECT_PATH):
         local('tar cvzf payload.tar.gz payload/')
-        local('scp -i %s payload.tar.gz %s@%s:' % (core.deploy_user_pem(), config.BOOTSTRAP_USER, public_ip))
+        local('scp -i %s payload.tar.gz %s@%s:' % (core.stack_pem(stackname), config.BOOTSTRAP_USER, public_ip))
 
     # unpack payload and move files to their new homes
-    with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.deploy_user_pem()):
+    with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.stack_pem(stackname)):
         cmds = [
             # upload and unpack payload
             'tar xvzf ~/payload.tar.gz',

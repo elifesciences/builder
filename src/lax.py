@@ -1,6 +1,6 @@
 from fabric.api import run, task, get, local
 from decorators import requires_aws_project_stack
-from aws import stack_conn
+from buildercore.core import stack_conn
 
 @task
 @requires_aws_project_stack('elife-lax')

@@ -87,10 +87,6 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
         raise EnvironmentError("keypair %r found at %r" % (stackname, expected_key))
     return expected_key
 
-def deploy_user_pem()
-    #return join(config.PRIVATE_DIR, 'deploy-user.pem')
-    raise DeprecationError("`deploy_user_pem` is DEPRECATED. use `stack_pem`")
-
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER):
     data = stack_data(stackname)

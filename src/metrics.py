@@ -1,5 +1,5 @@
 from fabric.api import task, cd, settings, run
-from aws import stack_conn
+from buildercore.core import stack_conn
 from decorators import requires_aws_project_stack
 from buildercore.config import DEPLOY_USER
 

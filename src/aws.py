@@ -17,9 +17,6 @@ LOG = logging.getLogger(__name__)
 
 from buildercore.core import boto_cfn_conn, boto_ec2_conn, connect_aws_with_stack
 
-def deploy_user_pem():
-    return os.path.join(PROJECT_DIR, 'payload/deploy-user.pem')
-
 def find_region(stackname=None):
     """used when we haven't got a stack and need to know about stacks in a particular region.
     if a stack is provided, it uses the one provided in it's configuration.
@@ -63,9 +60,3 @@ def describe_stack(stackname):
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
     return data
-
-@contextmanager
-def stack_conn(stackname, username=config.DEPLOY_USER):
-    public_ip = describe_stack(stackname)['instance']['ip_address']
-    with settings(user=username, host_string=public_ip, key_filename=deploy_user_pem()):
-        yield

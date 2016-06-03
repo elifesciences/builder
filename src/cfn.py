@@ -8,10 +8,10 @@ from decorators import requires_project, requires_aws_stack, echo_output, deffil
 import os
 from os.path import join
 from functools import wraps
-from aws import deploy_user_pem, stack_conn
 from slugify import slugify
 import buildercore
 from buildercore import config, core, cfngen, utils as core_utils, bootstrap, bakery, project
+from buildercore.core import stack_conn, stack_pem
 from buildercore.utils import first
 from buildercore.config import ROOT_USER, DEPLOY_USER, BOOTSTRAP_USER
 from buildercore.sync import sync_stack, sync_stacks_down
@@ -175,7 +175,7 @@ def aws_stack_list():
 def ssh(stackname, username=DEPLOY_USER):
     #public_ip = aws_describe_stack(stackname)['indexed_output']['PublicIP']
     public_ip = aws.describe_stack(stackname)['instance']['ip_address']
-    local("ssh %s@%s -i %s" % (username, public_ip, deploy_user_pem()))
+    local("ssh %s@%s -i %s" % (username, public_ip, stack_pem(stackname)))
 
 @debugtask
 @sync_stack

@@ -3,7 +3,7 @@ from buildercore import core, cfngen, config, project
 from buildercore.sync import sync_stack
 from fabric.api import sudo, run, local, task
 from decorators import echo_output, requires_aws_stack, requires_project
-from aws import stack_conn
+from buildercore.core import stack_conn
 import utils, aws
 from buildercore.decorators import osissue, osissuefn
 
