@@ -4,7 +4,7 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os
+import os, shutil
 from os.path import join
 from functools import partial
 from StringIO import StringIO
@@ -42,40 +42,32 @@ def create_keypair(stackname):
     expected_key = core.stack_pem(stackname, die_if_exists=True)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     key = ec2.create_key_pair(stackname)
+    # write to fs
     key.save(config.KEYPAIR_PATH) # exclude the filename
-    
-    # also write to s3!
+
+    # TODO: write to s3!
     
     return expected_key
 
 def delete_keypair(stackname):
     expected_key = core.stack_pem(stackname)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
+    # delete from aws
     ec2.delete_key_pair(stackname)
-    os.unlink(expected_key)
-    
-    # assert key not in ec2.get_all_key_pairs() ...
-    
-    # delete from s3!
-    # delete from fs!
-    
-    return expected_key
+
+    # TODO: assert key not exists on aws
+
+    # delete from fs
+    # while debugging, move the deleted key to a 'deleted' dir
+    delete_path = join(config.KEYPAIR_PATH, "deleted")
+    utils.mkdir_p(delete_path)
+    shutil.move(expected_key, delete_path)
+    #os.unlink(expected_key)
+    assert os.path.exists(expected_key), "the private key for %r was not deleted"
 
 #
 #
 #
-
-'''
-# another day perhaps
-def stack(stackname, key=None):
-    data = ec2_instance_data(stackname)
-    if key:
-        return getattr(data, key)
-    return data
-
-def master(any_stackname, key):
-    return stack(core.find_master_for_stack(any_stackname), key)
-'''
 
 @contextmanager
 def master_server(region, username=BOOTSTRAP_USER):
@@ -86,8 +78,13 @@ def master_server(region, username=BOOTSTRAP_USER):
     users list"""
     # should you *really* be trying to access the master?
     master_stackname = core.find_master(region)
-    key = stack_pem(master_stackname, die_if_doesnt_exist=True)
-    with settings(user=username, host_string=master(region, 'ip_address'), key_filename=key):
+    kwargs = {
+        'user': username,
+        'host_string': master(region, 'ip_address'),
+        'key_filename': stack_pem(master_stackname, die_if_doesnt_exist=True),
+        'abort_on_prompts': True,
+    }
+    with settings(**kwargs):
         yield
 
 #
@@ -374,7 +371,9 @@ def update_environment(stackname):
         local_script = open(join(config.SCRIPTS_PATH, 'bootstrap.sh'), 'r')
         put(local_script, remote_script)
         # run it with the project's specified version of Salt
-        sudo("/bin/bash %s %s" % (remote_script, pdata['salt']))
+        cmd = ["/bin/bash", remote_script, pdata['salt'], "install-master" if is_master else ""]
+        sudo(" ".join(cmd))
+        #sudo("/bin/bash %s %s" % (remote_script, pdata['salt']))
 
         LOG.info("salt is now installed")
         
@@ -392,6 +391,13 @@ def update_environment(stackname):
         # write out environment config so Salt can read CFN outputs
         write_environment_info(stackname)
 
+        # if a master is updating itself, restart and accept it's own key
+        # accept own key is part of bootstrap
+        if is_master:
+            sudo('service salt-master restart')
+            # accept our own key if it hasn't already
+            sudo('salt-key --accept=%s --yes || echo no unaccepted keys for \'%s\'' % (stackname, stackname))
+        
         sudo('service salt-minion restart')
     
         #

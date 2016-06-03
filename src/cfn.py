@@ -110,16 +110,13 @@ def aws_delete_stack(stackname):
         exit(1)
     return delete_stack(stackname, confirmed=True)
 
-
 @task
 @sync_stack
 @requires_aws_stack
 def aws_update_stack(stackname):
-    """
-    Updates the CloudFormation stack with any changes, updates the master and then updates the stack software.
+    """Updates the master and then updates the stack software.
     Only run update commands if salt has successfully been installed.
-    Update commands require that the salt deploy user `DEPLOY_USER` exists.
-    """
+    Update commands require that the salt deploy user `DEPLOY_USER` exists."""
     return bootstrap.update_stack(stackname)
 
 @debugtask
@@ -127,8 +124,6 @@ def aws_update_stack(stackname):
 def aws_update_template(stackname):
     "updates the CloudFormation stack and then updates the environment"
     return bootstrap.update_template(stackname)
-
-
 
 @debugtask
 def create_kp():
@@ -139,6 +134,12 @@ def create_kp():
 def delete_kp():
     kp = utils.uin("keypair")
     bootstrap.delete_keypair(kp)
+
+@debugtask
+@requires_aws_stack
+def aws_bootstrap(stackname):
+    "for debugging the bootstrap process"
+    bootstrap.update_environment(stackname)
     
 @task
 @requires_stack_file
@@ -157,12 +158,6 @@ def aws_create_stack(stackname):
     bootstrap.update_environment(stackname)
     return stackname
 
-@debugtask
-@requires_aws_stack
-def aws_update_env(stackname):
-    "for debugging the bootstrap process"
-    bootstrap.update_environment(stackname)
-
 @task
 @echo_output
 def aws_stack_list():
@@ -176,6 +171,12 @@ def ssh(stackname, username=DEPLOY_USER):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
     local("ssh %s@%s -i %s" % (username, public_ip, stack_pem(stackname)))
 
+@task
+@requires_aws_stack
+def owner_ssh(stackname):
+    "just like `ssh`, but assumes the owner (creator) of the stack has the keys on the file system."
+    return ssh(stackname, config.BOOTSTRAP_USER)
+    
 @debugtask
 @sync_stack
 def sync_stacks():

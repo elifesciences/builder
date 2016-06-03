@@ -161,13 +161,16 @@ def stack_json(stackname, parse=False):
 # 'aws stacks' are stack files that have been given to AWS and provisioned.
 #
 
-# DO NOT CACHE. use sparingly
+# DO NOT CACHE. 
+# this function is polled to get the state of the stack when creating/updating/deleting.
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 
 # TODO: rename or something
 def stack_data(stackname):
+    """like `describe_stack`, but returns a dictionary with the Cloudformation 'outputs' 
+    indexed by key and ec2 data under the key 'instance'"""
     stack = describe_stack(stackname)
     data = stack.__dict__
     if data.has_key('outputs'):
