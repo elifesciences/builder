@@ -396,13 +396,14 @@ def update_environment(stackname):
         # if a master is updating itself, restart and accept it's own key
         # accept own key is part of bootstrap
         if is_master:
-            # restart the server and wait a few seconds.
-            # sometimes the unaccepted keys don't show up immediately
-            sudo('service salt-master restart && sleep 5 # pause for master to come up fully')
-            # accept our own key if it hasn't already
-            sudo('salt-key --accept=%s --yes || echo no unaccepted keys for \'%s\'' % (stackname, stackname))
-        
-        sudo('service salt-minion restart')
+            # the 'salt-minion restart' here generates the minion keypair we're after
+            sudo('service salt-master restart')
+            if not files.exists("/etc/salt/pki/master/minions/" + stackname):
+                # master hasn't accepted it's own key yet
+                sudo("mkdir -p /etc/salt/pki/master/minions/")
+                sudo("cp /etc/salt/pki/minion/minion.pub /etc/salt/pki/master/minions/%s" % stackname)
+        else:
+            sudo('service salt-minion restart')
     
         #
         # politely ask the master server to add this minion.

@@ -55,3 +55,9 @@ if [ -n "$install_master" ]; then
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
 fi
+
+# ensure this minion has a key
+if [ ! -f /etc/salt/pki/minion/minion.pub ]; then
+    echo "no minion pub key found, generating"
+    salt-key --gen-keys /etc/salt/pki/minion/minion
+fi
