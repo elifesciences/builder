@@ -63,7 +63,7 @@ def delete_keypair(stackname):
     utils.mkdir_p(delete_path)
     shutil.move(expected_key, delete_path)
     #os.unlink(expected_key)
-    assert os.path.exists(expected_key), "the private key for %r was not deleted"
+    assert not os.path.exists(expected_key), "the private key for %r was not deleted"
 
 #
 #
