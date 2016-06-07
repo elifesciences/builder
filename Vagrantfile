@@ -22,7 +22,7 @@ def runningvms()
         x = []
         running.each do |raw_line|
             # ll:
-            # "builder_elife-lax-dev_1436877493449_44526" {4fdd43b7-5732-4d14-8f0d-cef087a5e650}
+            # "builder_elife-lax--vagrant_1436877493449_44526" {4fdd43b7-5732-4d14-8f0d-cef087a5e650}
             bits = raw_line.split("_")
             x.push(bits[1])
         end
@@ -42,13 +42,13 @@ ALL_PROJECTS = YAML.load(IO.popen("/bin/bash -c \"source venv/bin/activate && ./
 # essentially gives vagrant a project to use to prevent the prompt
 if ['box'].include? VAGRANT_COMMAND
     prn "using default project 'basebox'"
-    ENV['PROJECT'] = 'basebox-dev'
+    ENV['PROJECT'] = 'basebox--vagrant'
 end
 
 # create a dev instance of all available projects
 SUPPORTED_PROJECTS = {}
 ALL_PROJECTS.each do |key, data|
-    SUPPORTED_PROJECTS[key + "-dev"] = key
+    SUPPORTED_PROJECTS[key + "--vagrant"] = key
 end
 
 if not ENV['PROJECT']
@@ -99,7 +99,7 @@ if not ENV['PROJECT']
                 next
             end
             
-            INSTANCE_NAME = KEYED[opt] # ll: elife-lax-dev
+            INSTANCE_NAME = KEYED[opt] # ll: elife-lax--vagrant
             break
         end
         
