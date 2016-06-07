@@ -8,7 +8,7 @@ set -e
 echo "-----------------------------"
 
 # ensure the gitfs backend deps are installed
-# this only needs to be done on the master or masterless minions
+# this only needs to be done on the master or masterless (vagrant) minions
 #sudo apt-get install python-git -y
 sudo apt-get install python-setuptools python-dev libgit2-dev libffi-dev python-git -y
 
