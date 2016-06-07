@@ -1,5 +1,5 @@
 #!/bin/bash
-# VAGRANT AND AWS
+# VAGRANT AND AWS bootstrap.sh
 # copied into the virtual machine and executed. DO NOT run on your host machine.
 
 # stolen from
@@ -61,3 +61,8 @@ if [ ! -f /etc/salt/pki/minion/minion.pub ]; then
     echo "no minion pub key found, generating"
     salt-key --gen-keys /etc/salt/pki/minion/minion
 fi
+
+# ensure the gitfs backend deps are installed
+# this is only needed on the master or masterless (vagrant) minions
+#sudo apt-get install python-git -y
+sudo apt-get install python-setuptools python-dev libgit2-dev libffi-dev python-git -y
