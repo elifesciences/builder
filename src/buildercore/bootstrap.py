@@ -367,15 +367,18 @@ def update_environment(stackname):
             return True
     utils.call_while(is_resourcing, interval=3, update_msg='waiting for /home/ubuntu to be detected ...')
 
-    with stack_conn(stackname, username=BOOTSTRAP_USER):
-        # upload bootstrap script
-        remote_script = '/tmp/.bootstrap.sh'
-        local_script = open(join(config.SCRIPTS_PATH, 'bootstrap.sh'), 'r')
+    def run_script(script_path, *script_params):
+        "uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params"
+        local_script = join(config.SCRIPTS_PATH, script_path)
+        remote_script = join('/tmp', os.path.basename(script_path))
         put(local_script, remote_script)
-        # run it with the project's specified version of Salt
-        cmd = ["/bin/bash", remote_script, pdata['salt'], "install-master" if is_master else ""]
-        sudo(" ".join(cmd))
-        #sudo("/bin/bash %s %s" % (remote_script, pdata['salt']))
+        cmd = ["/bin/bash", remote_script] + list(script_params)
+        return sudo(" ".join(cmd))
+    
+    with stack_conn(stackname, username=BOOTSTRAP_USER):
+        salt_version = pdata['salt']
+        install_master_flag = "install-master" if is_master else ""
+        run_script('bootstrap.sh', salt_version, install_master_flag)
 
         LOG.info("salt is now installed")
         
@@ -384,7 +387,7 @@ def update_environment(stackname):
 
         # who is your daddy and where does he live?
         master_ip = '127.0.0.1' if is_master else master(region, 'ip_address')
-        
+
         map(sudo, [
             "echo 'master: %s' > /etc/salt/minion" % master_ip,
             "echo 'id: %s' >> /etc/salt/minion" % stackname,
@@ -396,12 +399,10 @@ def update_environment(stackname):
         # if a master is updating itself, restart and accept it's own key
         # accept own key is part of bootstrap
         if is_master:
-            # the 'salt-minion restart' here generates the minion keypair we're after
             sudo('service salt-master restart')
-            if not files.exists("/etc/salt/pki/master/minions/" + stackname):
-                # master hasn't accepted it's own key yet
-                sudo("mkdir -p /etc/salt/pki/master/minions/")
-                sudo("cp /etc/salt/pki/minion/minion.pub /etc/salt/pki/master/minions/%s" % stackname)
+            # configure the master server
+            run_script('init-aws-master.sh', stackname)
+
         else:
             sudo('service salt-minion restart')
     
