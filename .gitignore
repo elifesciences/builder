@@ -1,4 +1,5 @@
 *.pyc
+.tox/
 cloned-projects/*
 settings.yml
 *~
