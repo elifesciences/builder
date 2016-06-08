@@ -1,7 +1,5 @@
-import time
-import os, sys, copy, json
+import os, sys, copy, json, time, random, string
 from functools import wraps
-import logging
 from datetime import datetime
 import yaml
 from collections import OrderedDict, Iterable
@@ -9,7 +7,7 @@ from fabric.api import run
 from .decorators import osissue, osissuefn, testme
 from os.path import join
 from more_itertools import unique_everseen
-
+import logging
 LOG = logging.getLogger(__name__)
 
 def flatten(l):
@@ -197,6 +195,9 @@ def gget(lst, i, data):
     except IndexError:
         return data
 
+def random_alphanumeric(length=32):
+    rand = random.SystemRandom()
+    return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 # http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
