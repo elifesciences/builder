@@ -373,7 +373,9 @@ def update_environment(stackname):
         remote_script = join('/tmp', os.path.basename(script_path))
         put(local_script, remote_script)
         cmd = ["/bin/bash", remote_script] + list(script_params)
-        return sudo(" ".join(cmd))
+        retval = sudo(" ".join(cmd))
+        sudo("rm " + remote_script) # remove the script after executing it
+        return retval
     
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         salt_version = pdata['salt']
