@@ -403,7 +403,7 @@ def update_environment(stackname):
         if is_master:
             sudo('service salt-master restart')
             # configure the master server
-            run_script('init-aws-master.sh', stackname)
+            run_script('init-aws-master.sh', stackname, pdata['formula-repo'])
 
         else:
             sudo('service salt-minion restart')

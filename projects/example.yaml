@@ -1,29 +1,29 @@
 defaults:
-    salt: '2015.8'
+    description: defaults for all projects in this file
+    salt: '2015.8' # the version of salt these project use
     subdomain: null
-    meta:
-        # TODO: junk meta, shift to top-level
-        description: defaults for all projects
-    repo: 
-        # projects with an explicit repo support branch deployments
-        null
-    # the repository containing the build instructions for this project
-    # may be different from the project repository
+    # projects with an explicit `repo` attribute support branch deployments with
+    # ./bldr deploy
+    repo: null
+    # repository containing build instructions for this project
     formula-repo: null
     # default branch to use when deploying
     default-branch: master
     aws:
-        # http://cloud-images.ubuntu.com/releases/
-        ami: ami-9eaa1cf6   # Ubuntu 14.04
-        type: t2.small
-        region: null
-        vpc-id: null
+        # find more here: http://cloud-images.ubuntu.com/releases/
+        ami: ami-9eaa1cf6  # Ubuntu 14.04
+        type: t2.small  # ~ $20/mo
+        region: us-east-1
+        vpc-id: null  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: null
         rds:
+            # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
+            # TODO: is this even used??
             name: null
+            multi-az: False
             engine: postgres
-            # ensure this matches the version you install on your server
+            # ensure this matches the version of Postgres you install on server!
             version: '9.4'
             type: db.t2.small
             storage: 5 # GB
@@ -53,7 +53,10 @@ basebox:
 
 # you'll need a master server to tell your minions what to do
 master-server:
-    formula-repo: https://github.com/elifesciences/example-project
+    # formula-repo for the 'master-server' project should contain the 
+    # confidential pillar data, master config and master top file.
+    # TODO: link to further docs
+    formula-repo: https://github.com/elifesciences/builder-private
     aws:
         ports:
             22: 22

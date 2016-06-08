@@ -129,19 +129,18 @@ def rdsinstance(context):
 
     # db instance
     data = {
-        #'DBName': lu('project.project_pillar.db.name', 'db_instance_id'),
-        'DBName': lu('db_instance_id'), # dbname generated from instance id
-        'DBInstanceIdentifier': lu('instance_id'), # ll: elife-lax-2015-12-31
+        'DBName': lu('rds_instance_id'), # dbname generated from instance id
+        'DBInstanceIdentifier': lu('instance_id'), # ll: elife-lax--2015-12-31
         'PubliclyAccessible': False,
-        'AllocatedStorage': lu('project.aws.rds.storage'), # 'defaults.aws.rds.storage'),
+        'AllocatedStorage': lu('project.aws.rds.storage'),
         'StorageType': 'Standard',
-        'MultiAZ': True,
+        'MultiAZ': lu('project.aws.rds.multi-az'),
         "DBSecurityGroups": [Ref(rdssg)],
         'DBSubnetGroupName': Ref(rsn),
-        'DBInstanceClass': lu('project.aws.rds.type'), # 'defaults.aws.rds.type'),
-        'Engine': lu('project.aws.rds.engine'), # 'defaults.aws.rds.engine'),
-        'MasterUsername': lu('project.rds.root.username'), # pillar data is now UNavailable
-        'MasterUserPassword': lu('project.rds.root.password'),
+        'DBInstanceClass': lu('project.aws.rds.type'),
+        'Engine': lu('project.aws.rds.engine'),
+        'MasterUsername': lu('rds_username'), # pillar data is now UNavailable
+        'MasterUserPassword': lu('rds_password'),
         'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'),
         'DeletionPolicy': 'Snapshot',
         "Tags": instance_tags(context),

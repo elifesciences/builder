@@ -43,7 +43,11 @@ def build_context(pname, **more_context):
 
         # when this was first introduced, instance_id was synonmous with stackname
         'instance_id': None, # must be provided by whatever is calling this
-        'db_instance_id': None, # generated from the instance_id
+
+        'rds_instance_id': None, # generated from the instance_id
+        'rds_username': 'root', # could possibly live in the project data, but really no need.
+        'rds_password': utils.random_alphanumeric(length=32), # will be saved to buildvars.json
+
         'branch': project_data['default-branch'],
         'revision': None, # may be used in future to checkout a specific revision of project
     }
@@ -75,7 +79,7 @@ def build_context(pname, **more_context):
 
     # post-processing
     context.update({
-        'db_instance_id': context['db_instance_id'] or default_db_instance_id,
+        'rds_instance_id': context['rds_instance_id'] or default_db_instance_id,
         'is_prod_instance': context['instance_id'].split('-')[-1] in ['master', 'production'],
     })
     context.update(hostname_context)
