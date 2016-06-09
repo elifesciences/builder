@@ -11,7 +11,7 @@ from StringIO import StringIO
 from . import core, utils, config
 from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
 from .utils import first
-from .sync import sync_private, sync_stack, do_sync
+from .sync import sync_stack, do_sync
 from .config import DEPLOY_USER, BOOTSTRAP_USER
 from .decorators import osissue, osissuefn
 from fabric.api import env, local, settings, run, sudo, cd, put, get

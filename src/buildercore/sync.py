@@ -6,7 +6,7 @@ __licence__ = None # private repo
 __description__ = "Handles synchronisation of project data with remote s3 bucket"
 
 import os
-from buildercore import config
+from buildercore import config, utils
 from functools import wraps, partial
 from .decorators import osissue, osissuefn
 import logging
@@ -14,12 +14,8 @@ import logging
 LOG = logging.getLogger(__name__)
 
 @osissue("refactor. deploy-user.pem ties this to the shared-everything strategy")
-def set_perms():
-    "bit of a hack, creates sync dirs and sets permissions on minion private keys before sync"
-    cmds = ["mkdir -p %s %s" % (config.SYNC_DIR, config.PRIVATE_DIR),
-            "chmod 644 %s/stacks/*.pem" % config.SYNC_DIR,
-            "chmod 400 %s/deploy-user.pem" % config.PRIVATE_DIR]
-    return map(os.system, cmds)
+def init():
+    utils.mkdir_p(config.SYNC_DIR)
 
 def require_syncing(fn):
     @wraps(fn)
@@ -43,7 +39,7 @@ def sync_down(destructive=False, sync_dir=config.SYNC_DIR):
     if destructive:
         cmd += " --delete"
     retval = os.system(cmd)
-    set_perms()
+    init()
     return retval
 
 @require_syncing
@@ -51,7 +47,7 @@ def sync_up(destructive=False, sync_dir=config.SYNC_DIR):
     """copies files in local dir up to remote dir that have
     changed or don't exist. if destructive, files that don't
     exist locally that DO exist remotely will be deleted."""
-    set_perms()
+    init()
     print "syncing '%s' to S3 %s ..." % (sync_dir, 'DESTRUCTIVELY' if destructive else '')
     cmd = "aws s3 sync %s s3://elife-builder/%s/" % (sync_dir, sync_dir)
     if destructive:
@@ -119,8 +115,6 @@ def _sync_dir(sync_dir=config.SYNC_DIR):
 
 #pylint: disable=invalid-name
 sync_stack = _sync_dir()
-#pylint: disable=invalid-name
-sync_private = _sync_dir(sync_dir=config.PRIVATE_DIR)
 
 def sync_stacks_down(func):
     "ensure we have all stacks available to us before calling this func. DOES NOT COPY BACK UP"
