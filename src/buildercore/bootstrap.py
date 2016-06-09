@@ -338,7 +338,10 @@ def update_environment(stackname):
         LOG.info("salt is now installed")
         
         # who is your daddy and where does he live?
-        master_ip = '127.0.0.1' if is_master else master(region, 'ip_address')
+        #master_ip = '127.0.0.1' if is_master else master(region, 'ip_address')
+        #LOG.info("master data %s", master_data(region).__dict__)
+        #master_ip = master(region, 'ip_address')
+        master_ip = master(region, 'private_ip_address')
 
         map(sudo, [
             "echo 'master: %s' > /etc/salt/minion" % master_ip,

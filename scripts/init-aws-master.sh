@@ -54,6 +54,6 @@ ln -sf /opt/builder-private/salt/
 cp /opt/builder-private/etc-salt-master /etc/salt/master
 # set the ip address
 ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
-sed -i "s/<<ip-address>>/$ipaddr/g" /etc/salt/master
+sed -i "s/<<private-ip-address>>/$ipaddr/g" /etc/salt/master
 
 service salt-master restart

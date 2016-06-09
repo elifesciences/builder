@@ -54,12 +54,19 @@ basebox:
 # you'll need a master server to tell your minions what to do
 master-server:
     # formula-repo for the 'master-server' project should contain the 
-    # confidential pillar data, master config and master top file.
+    # confidential pillar data, master config and state top file.
     # TODO: link to further docs
     formula-repo: ssh://git@github.com/elifesciences/builder-private
     aws:
         ports:
             22: 22
+            4506: # salt publish port
+                guest: 4506
+                # CIDR of subnet this master will server
+                cidr-ip: 172.31.16.0/20 # access via VPC ip range only
+            4505: # salt return port
+                guest: 4505
+                cidr-ip: 172.31.16.0/20
 
 # just an example! 
 # look at the formula-repo for how to setup dependant projects
@@ -69,11 +76,6 @@ project1:
         ports:
             80: 80
             22: 22
-            # more complex example
-            25826: # incoming collectd
-                guest: 25826
-                protocol: udp
-                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
     vagrant:
         ports:
             # host: guest
