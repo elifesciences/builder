@@ -88,10 +88,16 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     return expected_key
 
 @contextmanager
-def stack_conn(stackname, username=config.DEPLOY_USER):
+def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     data = stack_data(stackname)
     public_ip = data['instance']['ip_address']
-    with settings(user=username, host_string=public_ip, key_filename=stack_pem(stackname)):
+    params = {
+        'user': username,
+        'host_string': public_ip,
+        'key_filename': stack_pem(stackname),
+    }
+    params.update(kwargs)
+    with settings(**params):
         yield
 
 #

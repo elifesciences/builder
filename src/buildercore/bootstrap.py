@@ -181,54 +181,6 @@ def master(region, key):
 # bootstrap stack
 #
 
-
-"""
-def copy(src, dest, use_sudo=False, unsafe=False):
-    with settings(user=DEPLOY_USER, host_string=env.host_string, key_filename=deploy_user_pem()):
-        cmd = "cp %s %s" % (src, dest)
-        func = sudo if use_sudo else run
-        func(cmd)
-        if unsafe:
-            # make world-readable
-            sudo("chmod +r %s" % dest)
-        return dest
-
-def scp(direction, ffile, dest_fname, host=None, user=DEPLOY_USER):
-    "scp a list of files up and down between the client and the given destination "
-    assert direction in ['up', 'down'], LOG.error("unknown direction %r", direction)
-    kwargs = {'pem': deploy_user_pem(),
-              'user': user,
-              'host': host or env.host_string,
-              'file': ffile,
-              'dest': dest_fname,
-              'ssh-args': " ".join(["-o StrictHostKeyChecking=no",
-                                    "-o UserKnownHostsFile=/dev/null"])}
-    if direction == 'down':
-        tem = "scp -i %(pem)s %(ssh-args)s '%(user)s@%(host)s:%(file)s' %(dest)s"
-    else:
-        tem = "scp -i %(pem)s %(ssh-args)s %(file)s '%(user)s@%(host)s:%(dest)s'"
-    return local(tem % kwargs)
-
-@osissue("embarassing code. refactor. replace with fabric's `get` and `put`")
-def download(dest, file_list, as_user=BOOTSTRAP_USER):
-    download_user = DEPLOY_USER if as_user == config.ROOT_USER else as_user
-    def _download(fname):
-        dest_fname = fname
-        if isinstance(fname, tuple):
-            # given destination can be overriden if filename is a tuple of (src, dest) 
-            fname, dest_fname = fname
-        if as_user == config.ROOT_USER:
-            # copy the file (as root) to a dir that can be read for downloading
-            # looks like: /tmp/bar.xml
-            fname = copy(fname, join("/tmp/", os.path.basename(fname)), use_sudo=True, unsafe=True)
-        dest_fname = join(dest, dest_fname)
-        dest_dir = os.path.dirname(dest_fname)
-        if not os.path.exists(dest_dir):
-            local("mkdir -p %s" % dest_dir)
-        scp('down', fname, dest_fname, user=download_user)
-    return map(_download, file_list)
-"""
-
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
@@ -376,17 +328,15 @@ def update_environment(stackname):
         retval = sudo(" ".join(cmd))
         sudo("rm " + remote_script) # remove the script after executing it
         return retval
-    
-    with stack_conn(stackname, username=BOOTSTRAP_USER):
+
+    # forward-agent == ssh -A
+    with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
         salt_version = pdata['salt']
         install_master_flag = "install-master" if is_master else ""
         run_script('bootstrap.sh', salt_version, install_master_flag)
 
         LOG.info("salt is now installed")
         
-        # overwrite stale minion data in ami created instances
-        LOG.info("replacing minion file")
-
         # who is your daddy and where does he live?
         master_ip = '127.0.0.1' if is_master else master(region, 'ip_address')
 
@@ -399,24 +349,14 @@ def update_environment(stackname):
         write_environment_info(stackname)
 
         # if a master is updating itself, restart and accept it's own key
-        # accept own key is part of bootstrap
         if is_master:
             sudo('service salt-master restart')
-            # configure the master server
+            # init/update the master server
             run_script('init-aws-master.sh', stackname, pdata['formula-repo'])
 
         else:
+            # causes minion to send it's key to master and ask for acceptance
             sudo('service salt-minion restart')
-    
-        #
-        # politely ask the master server to add this minion.
-        # is already master, skip.
-        #
-
-        master_added = True
-
-        # ... ?
-        # PROFIT!
 
         sudo('salt-call state.highstate') # this will tell the machine to update itself
 

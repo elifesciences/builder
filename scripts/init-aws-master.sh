@@ -35,20 +35,25 @@ fi
 # this value is in the 'defaults' section of the project data and can be 
 # overriden on a per-master basis.
 
-mkdir -p /srv/salt
-
 # clone private repo (whatever it's name is) into /opt/builder-private/
 # TODO: REQUIRES CREDENTIALS!
-cd /opt
-git clone $pillar_repo
+if [ ! -d /opt/builder-private ]; then
+    cd /opt
+    git clone $pillar_repo builder-private
+else
+    cd /opt/builder-private
+    git reset --hard
+    git pull
+fi
 
 cd /srv
-ln -s /opt/builder-private/pillar/
-ln -s /opt/builder-private/salt/
+ln -sf /opt/builder-private/pillar/
+ln -sf /opt/builder-private/salt/
 
 # replace the master config, if it exists, with the builder-private copy
-cd /etc/salt
-rm -f master 
-ln -s /opt/builder-private/etc-salt-master master
+cp /opt/builder-private/etc-salt-master /etc/salt/master
+# set the ip address
+ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
+sed -i "s/<<ip-address>>/$ipaddr/g" /etc/salt/master
 
 service salt-master restart
