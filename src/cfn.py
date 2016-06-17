@@ -169,7 +169,9 @@ def aws_stack_list():
 @requires_aws_stack
 def ssh(stackname, username=DEPLOY_USER):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
-    local("ssh %s@%s -i %s" % (username, public_ip, stack_pem(stackname)))
+    # -i identify file
+    # -A forwarding of authentication agent connection
+    local("ssh %s@%s -i %s -A" % (username, public_ip, stack_pem(stackname)))
 
 @task
 @requires_aws_stack
