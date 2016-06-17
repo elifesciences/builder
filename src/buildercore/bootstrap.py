@@ -39,7 +39,7 @@ basis ...
 #
 
 def create_keypair(stackname):
-    expected_key = core.stack_pem(stackname, die_if_exists=True)
+    expected_key = stack_pem(stackname, die_if_exists=True)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     key = ec2.create_key_pair(stackname)
     # write to fs
@@ -50,7 +50,7 @@ def create_keypair(stackname):
     return expected_key
 
 def delete_keypair(stackname):
-    expected_key = core.stack_pem(stackname)
+    expected_key = stack_pem(stackname)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     # delete from aws
     ec2.delete_key_pair(stackname)
@@ -350,6 +350,13 @@ def update_environment(stackname):
 
         # write out environment config so Salt can read CFN outputs
         write_environment_info(stackname)
+
+        # upload the private key if present
+        if not files.exists("/root/.ssh/id_rsa"):
+            # if this file doesn't exist remotely, upload it.
+            # if it also doesn't exist on the filesystem, die horribly.
+            # regular updates shouldn't have to deal with this.
+            put(stack_pem(stackname, die_if_doesnt_exist=True), "/root/.ssh/id_rsa", use_sudo=True)
 
         # if a master is updating itself, restart and accept it's own key
         if is_master:

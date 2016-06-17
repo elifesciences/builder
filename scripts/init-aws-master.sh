@@ -1,5 +1,6 @@
 #!/bin/bash
-# AWS MASTER MINIONS ONLY
+# * AWS MASTER MINIONS ONLY
+# * run as ROOT
 # this script is uploaded to master servers and called with the required params
 # AFTER bootstrap.sh has been called. It performs a few further steps required 
 # to configure a salt master on AWS prior to calling `highstate`
@@ -14,6 +15,14 @@ echo "bootstrapping master-minion $stackname"
 # no idea what creates this file or why it hangs around
 # remove it if we find it so there is no ambiguity
 rm -f /etc/salt/minion_id
+
+# generate/overwrite the pubkey
+# the pubkey is uploaded in the 
+# -y read pemkey, print pubkey to stdout
+# -f path to pemkey
+ssh-keygen -y -f /root/.ssh/id_rsa > /root/.ssh/id_rsa.pub
+chmod 600 /root/.ssh/id_rsa # read/write for owner
+chmod 644 /root/.ssh/id_rsa.pub # read/write for owner, world readable
 
 if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     # master hasn't accepted it's own key yet
@@ -46,12 +55,17 @@ else
     git pull
 fi
 
-cd /srv
-ln -sf /opt/builder-private/pillar/
-ln -sf /opt/builder-private/salt/
+# this is one way of configuring the master ...
+#cd /srv
+#ln -sf /opt/builder-private/pillar/
+#ln -sf /opt/builder-private/salt/
+
+# ... another approach is using gitfs remotes
+# https://docs.saltstack.com/en/latest/topics/tutorials/gitfs.html
 
 # replace the master config, if it exists, with the builder-private copy
 cp /opt/builder-private/etc-salt-master /etc/salt/master
+
 # set the ip address
 ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
 sed -i "s/<<private-ip-address>>/$ipaddr/g" /etc/salt/master
