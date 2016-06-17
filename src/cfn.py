@@ -263,6 +263,13 @@ def aws_launch_instance(project):
             exit()
 
         stackname = aws_create_stack(stackname)
+
+        if stackname.startswith('master-server--'):
+            print
+            print "`master-server` projects must create a deploy key in it's `formula-repo` project"
+            print 
+            print
+        
         if stackname:
             setdefault('.active-stack', stackname)
     except core.NoMasterException, e:
