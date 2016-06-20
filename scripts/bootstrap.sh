@@ -56,12 +56,6 @@ if [ -n "$install_master" ]; then
     fi
 fi
 
-# ensure this minion has a key
-if [ ! -f /etc/salt/pki/minion/minion.pub ]; then
-    echo "no minion pub key found, generating"
-    salt-key --gen-keys /etc/salt/pki/minion/minion
-fi
-
 # ensure the gitfs backend deps are installed
 # this is only needed on the master or masterless (vagrant) minions
 #sudo apt-get install python-git -y
