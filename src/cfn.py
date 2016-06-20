@@ -121,6 +121,18 @@ def aws_update_stack(stackname):
 
 @debugtask
 @requires_aws_stack
+def highstate(stackname):
+    with stack_conn(stackname, username=BOOTSTRAP_USER):
+        sudo('salt-call state.highstate')
+
+@debugtask
+@requires_aws_stack
+def pillar(stackname):
+    with stack_conn(stackname, username=BOOTSTRAP_USER):
+        sudo('salt-call pillar.items')
+
+@debugtask
+@requires_aws_stack
 def aws_update_template(stackname):
     "updates the CloudFormation stack and then updates the environment"
     return bootstrap.update_template(stackname)
@@ -162,16 +174,18 @@ def aws_stack_list():
 @requires_aws_stack
 def ssh(stackname, username=DEPLOY_USER):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
-    # -i identify file
     # -A forwarding of authentication agent connection
-    local("ssh %s@%s -i %s -A" % (username, public_ip, stack_pem(stackname)))
+    local("ssh %s@%s -A" % (username, public_ip))
 
 @task
 @requires_aws_stack
 def owner_ssh(stackname):
-    "just like `ssh`, but assumes the owner (creator) of the stack has the keys on the file system."
-    return ssh(stackname, config.BOOTSTRAP_USER)
-    
+    "maintainence ssh. uses the pem key and the bootstrap user to login."
+    public_ip = core.stack_data(stackname)['instance']['ip_address']
+    # -i identify file
+    # -A forwarding of authentication agent connection
+    local("ssh %s@%s -i %s -A" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+
 @debugtask
 @sync_stack
 def sync_stacks():
