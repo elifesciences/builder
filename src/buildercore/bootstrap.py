@@ -137,17 +137,8 @@ def update_template(stackname):
             LOG.exception("unhandled exception attempting to update stack")
             raise
 
-def update_master(region):
-    "updates the elife-builder on the master and restarts the salt-master"
-    with master_server(region, username=config.DEPLOY_USER):
-        with cd('/opt/elife/elife-builder/'):
-            utils.git_purge()
-            utils.git_update()
-            sudo('service salt-master restart')
-
 def update_all(region):
     "updates *all* minions talking to the master. this is *really* not recommended."
-    update_master(region)
     with master_server(region, username=config.DEPLOY_USER):
         run("service salt-minion restart")
         run(r"salt \* state.highstate")
@@ -289,7 +280,7 @@ def write_environment_info(stackname):
 #
 
 @core.requires_active_stack
-def update_environment(stackname):
+def update_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     once AWS has finished creating an EC2 instance for us, we need to install 
@@ -369,13 +360,6 @@ def update_environment(stackname):
             sudo('service salt-minion restart')
 
         sudo('salt-call state.highstate') # this will tell the machine to update itself
-
-def update_stack(stackname):
-    "convenience. updates the master with the latest builder code, then updates the specified instance"
-    pdata = project_data_for_stackname(stackname)
-    region = pdata['aws']['region']
-    update_master(region)
-    return update_environment(stackname)
 
 @core.requires_stack_file
 @sync_stack

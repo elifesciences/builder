@@ -35,7 +35,6 @@ def deploy(pname):
 
     region = pdata['aws']['region']
     active_stacks = core.all_aws_stack_names(region)
-    bootstrap.update_master(region)
     if stackname in active_stacks:
         LOG.info("stack %r exists, skipping creation", stackname)
     else:
@@ -50,5 +49,5 @@ def deploy(pname):
             more_context['alt-config'] = branch
         cfngen.generate_stack(pname, **more_context)
         bootstrap.create_stack(stackname)
-    bootstrap.update_environment(stackname)
+    bootstrap.update_stack(stackname)
     setdefault('.active-stack', stackname)

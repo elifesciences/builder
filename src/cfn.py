@@ -139,23 +139,16 @@ def delete_kp():
 @requires_aws_stack
 def aws_bootstrap(stackname):
     "for debugging the bootstrap process"
-    bootstrap.update_environment(stackname)
+    bootstrap.update_stack(stackname)
     
-@task
+@debugtask
 @requires_stack_file
-def aws_create_stack(stackname):
-    if core.stack_is_active(stackname):
-        print 'stack exists and is active, cannot create'
-        return
-    if not core.is_master_server_stack(stackname):
-        # this just pulls down the latest changes in the
-        # builder on the master server and restarts salt there.
-        # if we're creating a new master, it can be safely skipped
-        pdata = core.project_data_for_stackname(stackname)
-        region = pdata['aws']['region']
-        bootstrap.update_master(region)
-    bootstrap.create_stack(stackname)
-    bootstrap.update_environment(stackname)
+def aws_create_update_stack(stackname):
+    if not core.stack_is_active(stackname):
+        print 'stack does not exist, creating'
+        bootstrap.create_stack(stackname)
+    print 'updating stack'
+    bootstrap.update_stack(stackname)
     return stackname
 
 @task
@@ -217,7 +210,7 @@ def create_stack(pname):
 
     print
     print 'CloudFormation template written to:', out_fname
-    print 'use `fab cfn.aws_create_stack` next'
+    print 'use `fab cfn.aws_create_update_stack` next'
     print
     
     return stackname
@@ -262,7 +255,7 @@ def aws_launch_instance(project):
         if not confirm('continue?', default=True):
             exit()
 
-        stackname = aws_create_stack(stackname)
+        stackname = aws_create_update_stack(stackname)
 
         if stackname.startswith('master-server--'):
             print
