@@ -19,9 +19,9 @@ sudo cp /vagrant/scripts/etc-known_hosts /etc/ssh/ssh_known_hosts
 # configure vagrant
 sudo cp /vagrant/scripts/salt/minion /etc/salt/minion
 
-# get the elife base formula
-if [ ! -d /vagrant/cloned-projects/elife-base-formula/.git ]; then
-    git clone ssh://git@github.com/elifesciences/elife-base-formula /vagrant/cloned-projects/elife-base-formula
+# get the builder base formula
+if [ ! -d /vagrant/cloned-projects/builder-base-formula/.git ]; then
+    git clone ssh://git@github.com/elifesciences/builder-base-formula /vagrant/cloned-projects/builder-base-formula
 fi
 
 # project's `salt` file is mounted at `/srv/salt/` within the guest

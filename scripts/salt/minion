@@ -12,26 +12,26 @@ gitfs_provider: GitPython
 # desirable remotely
 #gitfs_remotes:
     # this is possible, but doesn't use modified files, defeating purpose
-    #- file:///vagrant/cloned-projects/elife-base-formula
-#    - ssh://git@github.com/elifesciences/elife-base-formula.git
+    #- file:///vagrant/cloned-projects/builder-base-formula
+#    - ssh://git@github.com/elifesciences/builder-base-formula.git
 
 file_roots:
     base:
-        - /vagrant/cloned-projects/elife-base-formula
+        - /vagrant/cloned-projects/builder-base-formula
         - /srv/salt/
 
 git_pillar_provider: GitPython
 # desirable remotely
 #ext_pillar:
 #    - git: 
-#        - master ssh://git@github.com/elifesciences/elife-base-formula.git:
+#        - master ssh://git@github.com/elifesciences/builder-base-formula.git:
 #            # possibly redundant
 #            - root: pillar
 #            - env: base
 
 pillar_roots:
     base:
-        - /vagrant/cloned-projects/elife-base-formula/pillar/
+        - /vagrant/cloned-projects/builder-base-formula/pillar/
         - /srv/pillar
 
 extension_modules: 
