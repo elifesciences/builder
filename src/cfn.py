@@ -123,8 +123,15 @@ def aws_update_stack(stackname):
 @requires_aws_stack
 def highstate(stackname):
     with stack_conn(stackname, username=BOOTSTRAP_USER):
+        sudo('salt-call saltutil.refresh_pillar') # not sure if this even does anything ...
         sudo('salt-call state.highstate')
 
+@debugtask
+@requires_aws_stack
+def refresh_pillar(stackname):
+    with stack_conn(stackname, username=BOOTSTRAP_USER):
+        sudo('salt-call saltutil.refresh_pillar')
+        
 @debugtask
 @requires_aws_stack
 def pillar(stackname):
