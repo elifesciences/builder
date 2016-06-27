@@ -1,0 +1,93 @@
+#
+# builder-managed projects at eLife
+#
+
+defaults:
+    description: defaults for all projects in this file
+    salt: '2015.8' # the version of salt these project use
+    subdomain: null
+    # projects with an explicit `repo` attribute support branch deployments with
+    # ./bldr deploy
+    repo: null
+    # repository containing build instructions for this project
+    formula-repo: null
+    # default branch to use when deploying
+    default-branch: master
+    aws:
+        # find more here: http://cloud-images.ubuntu.com/releases/
+        ami: ami-9eaa1cf6  # Ubuntu 14.04
+        type: t2.small  # ~ $20/mo
+        region: us-east-1
+        vpc-id: null  # vpc-id + subnet-id are peculiar to AWS account + region
+        subnet-id: null
+        rds:
+            # rds defaults only used if an `rds` section present in project
+            # explicit database name overrides the one generated at template creation
+            # TODO: is this even used??
+            name: null
+            multi-az: False
+            engine: postgres
+            # ensure this matches the version of Postgres you install on server!
+            version: '9.4'
+            type: db.t2.small
+            storage: 5 # GB
+            backup-retention: 28 # days
+            subnets: 
+                # two are required
+                - null
+                - null
+        ext:
+            # external hdd
+            size: 10 # GB
+            device: /dev/sdh
+    aws-alt:
+        fresh:
+            description: uses a plain Ubuntu basebox instead of a ami
+            ami: ami-9eaa1cf6 # Ubuntu 14.04
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04
+        box-url: null # not needed for boxes hosted on Atlas 
+        ip: 192.168.33.44
+        ram: 1024
+        cpus: 2
+        cpucap: 100 # percent (vagrant default)
+ 
+basebox:
+   vagrant: {}
+
+# you'll need a master server to tell your minions what to do
+master-server:
+    # formula-repo for the 'master-server' project should contain the 
+    # confidential pillar data, master config and state top file.
+    # TODO: link to further docs
+    formula-repo: ssh://git@github.com/elifesciences/builder-private
+    aws:
+        ports:
+            22: 22
+            4506: # salt publish port
+                guest: 4506
+                # CIDR of subnet this master will server
+                cidr-ip: 172.31.16.0/20 # access via VPC ip range only
+            4505: # salt return port
+                guest: 4505
+                cidr-ip: 172.31.16.0/20
+
+lax:
+    subdomain: lax # lax.elifesciences.org
+    repo: https://git@github.com/elifesciences/lax.git
+    formula-repo: https://git@github.com/elifesciences/lax-formula
+    aws:
+        ami: null
+        ports:
+            22: 22
+            443: 443
+            80: 80
+            5432: 5432 # not accessible from outside VPC
+    aws-alt:
+        master:
+            description: RDS backed
+            rds:
+                storage: 5
+    vagrant:
+        ports:
+            1239: 80
