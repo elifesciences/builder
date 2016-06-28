@@ -77,7 +77,6 @@ lax:
     repo: https://git@github.com/elifesciences/lax.git
     formula-repo: https://git@github.com/elifesciences/lax-formula
     aws:
-        ami: null
         ports:
             22: 22
             443: 443
