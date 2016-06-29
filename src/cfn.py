@@ -14,7 +14,6 @@ from buildercore import config, core, cfngen, utils as core_utils, bootstrap, ba
 from buildercore.core import stack_conn, stack_pem
 from buildercore.utils import first
 from buildercore.config import ROOT_USER, DEPLOY_USER, BOOTSTRAP_USER
-from buildercore.sync import sync_stack, sync_stacks_down
 from buildercore.decorators import osissue, osissuefn
 
 import logging
@@ -81,7 +80,6 @@ def delete_stack_file(stackname):
     return files_removed
 
 @task
-@sync_stack
 @requires_aws_stack
 def delete_stack(stackname, confirmed):
     try:
@@ -95,7 +93,6 @@ def delete_stack(stackname, confirmed):
         LOG.exception("attempting to delete stack %r and the json template is missing", stackname)
 
 @task
-@sync_stack
 @requires_aws_stack
 def aws_delete_stack(stackname):
     "tells aws to delete a stack. this doesn't delete the CloudFormation file from the stacks dir"
@@ -111,7 +108,6 @@ def aws_delete_stack(stackname):
     return delete_stack(stackname, confirmed=True)
 
 @task
-@sync_stack
 @requires_aws_stack
 def aws_update_stack(stackname):
     """Updates the master and then updates the stack software.
@@ -193,12 +189,6 @@ def owner_ssh(stackname):
     # -A forwarding of authentication agent connection
     local("ssh %s@%s -i %s -A" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
 
-@debugtask
-@sync_stack
-def sync_stacks():
-    "copies the stacks down from S3 and then uploads anything needed"
-    pass
-
 #
 # local template management
 #
@@ -260,7 +250,6 @@ def print_project_config(pname):
 #
 
 @task
-@sync_stack
 @requires_project
 def aws_launch_instance(project):
     try:
@@ -306,7 +295,6 @@ def upload_file(stackname, local_path, remote_path, overwrite=False):
         put(local_path, remote_path)
 
 @task
-@sync_stack
 @requires_aws_stack
 def create_ami(stackname):
     pname = core.project_name_from_stackname(stackname)

@@ -36,12 +36,7 @@ SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
 
 TEMP_PATH = "/tmp/"
 
-# shift these into the settings.yaml file
-SYNC_DIR = "cfn"
-SYNC_BUCKET = 'elife-builder'
-SYNC_ENABLED = False
-
-STACK_DIR = join(SYNC_DIR, "stacks") # ll: cfn/stacks
+STACK_DIR = join('cfn', "stacks") # ll: cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
 KEYPAIR_DIR = "ec2-keypairs"

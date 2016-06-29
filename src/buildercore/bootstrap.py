@@ -11,7 +11,6 @@ from StringIO import StringIO
 from . import core, utils, config
 from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
 from .utils import first
-from .sync import sync_stack, do_sync
 from .config import DEPLOY_USER, BOOTSTRAP_USER
 from .decorators import osissue, osissuefn
 from fabric.api import env, local, settings, run, sudo, cd, put, get
@@ -206,7 +205,6 @@ def local_stack_keys_exist(stackname):
     stack_path = os.path.dirname(core.stack_path(stackname))
     return all([os.path.exists(join(stack_path, fname)) for fname in fname_list])
 
-@sync_stack
 def generate_stack_keys(stackname):
     """pre-seeds minion keys on the master
 
@@ -362,7 +360,6 @@ def update_stack(stackname):
         sudo('salt-call state.highstate') # this will tell the machine to update itself
 
 @core.requires_stack_file
-@sync_stack
 def delete_stack_file(stackname):
     try:
         core.describe_stack(stackname) # triggers exception if NOT exists
