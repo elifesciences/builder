@@ -86,22 +86,6 @@ def fail2ban_running():
     #return salt_master_cmd("'ps aux | grep fail2ban-server'")
     return salt_master_cmd(r"'salt \* state.single service.running name=fail2ban'")
 
-
-#
-#
-#
-
-@task
-def sync_logs():
-    stackname = 'elife-ci-2015-11-04'
-    with stack_conn(stackname):
-        map(sudo, [
-            'mkdir -p /var/log/platformsh/',
-            'ls -lahi /var/log/platformsh/',
-            'rsync -avz -e ssh gzorsqexlzqta-master@ssh.eu.platform.sh:/tmp/log/ /var/log/platformsh/ --exclude "php.log" --inplace',
-            'ls -lahi /var/log/platformsh/',            
-        ])
-
 #
 #
 #
