@@ -11,7 +11,7 @@ stacks/*.json
 public/*
 venv/*
 *.swp
-cfn/*
+.cfn/
 logs/*
 private/*
 packer/*
@@ -20,7 +20,6 @@ packer_cache/*
 downloads
 .coverage
 projects/*/
-ec2-keypairs/*
 
 .no-install-basebox.flag
 .no-vagrant-s3auth.flag

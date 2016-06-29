@@ -135,7 +135,7 @@ def is_master_server_stack(stackname):
 
 #
 # stack file wrangling
-# stack 'files' are the things on the file system in the `cfn/` dir.
+# stack 'files' are the things on the file system in the `.cfn/stacks/` dir.
 #
 
 def parse_stack_file_name(stack_filename):

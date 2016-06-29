@@ -36,14 +36,16 @@ SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
 
 TEMP_PATH = "/tmp/"
 
-STACK_DIR = join('cfn', "stacks") # ll: cfn/stacks
+CFN = ".cfn"
+
+STACK_DIR = join(CFN, "stacks") # ll: ./.cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
-KEYPAIR_DIR = "ec2-keypairs"
+KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/
+KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # ll: /.../cfn/keypairs/
 SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # ll: /.../scripts/
-KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # ll: /.../ec2-keypairs/
 
 # create all necessary paths and ensure they are writable
 map(utils.mkdir_p, [TEMP_PATH, STACK_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
