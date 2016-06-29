@@ -136,6 +136,8 @@ def is_master_server_stack(stackname):
 #
 # stack file wrangling
 # stack 'files' are the things on the file system in the `.cfn/stacks/` dir.
+# TODO: consider shifting .cfn/stacks/ to /temp/stacks.
+# rendered files simply accumulate, are never consulted and JSON can be captured from AWS if needs be
 #
 
 def parse_stack_file_name(stack_filename):
