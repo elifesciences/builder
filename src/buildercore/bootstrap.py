@@ -393,8 +393,8 @@ def delete_stack(stackname):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), update_msg='Waiting for AWS to finish deleting stack ...')
-        delete_stack_file(stackname)
         delete_keypair(stackname)
+        delete_stack_file(stackname)
         LOG.info("stack %r deleted", stackname)
     except BotoServerError as err:
         LOG.exception("[%s: %s] %s (request-id: %s)", err.status, err.reason, err.message, err.request_id)
