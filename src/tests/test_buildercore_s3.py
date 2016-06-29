@@ -29,7 +29,10 @@ class SimpleCases(base.BaseCase):
         self.assertFalse(s3.exists(key))
         s3.write(key, "asdf")
         self.assertRaises(KeyError, s3.write, key, "fdsa")
+        s3.write(key, "fdsa", overwrite=True)
 
+        # TODO: test content was actually overwritten
+        
     def test_delete(self):
         key = "test/foo"
         s3.write(key, "asdf")

@@ -25,10 +25,10 @@ def builder_bucket():
 def exists(key):
     return builder_bucket().get_key(key) != None
 
-def write(key, something):
+def write(key, something, overwrite=False):
     "stream is a file-like object"
-    if exists(key):
-        raise KeyError("key %r exists. refusing to overwrite." % key)    
+    if exists(key) and not overwrite:
+        raise KeyError("key %r exists and overwrite==False. refusing to overwrite." % key)
     k = Key(builder_bucket())
     k.key = key
     if isinstance(something, basestring):
