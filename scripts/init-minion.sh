@@ -28,7 +28,11 @@ fi
 # by default the project's top.sls and pillar data is disabled by file naming.
 # hook that up now
 cd /srv/salt/ && ln -sf example.top top.sls && cd ../../
-if [ ! -e /srv/pillar ]; then sudo ln -sf /srv/salt/pillar/ /srv/pillar; fi
+if [ ! -e /srv/pillar ]; then 
+    sudo ln -sf /srv/salt/pillar/ /srv/pillar
+fi
+
+# TODO: CHECK ENVIRONMENT, FAIL NOISILY
 
 echo "Restarting salt-minion"
 sudo service salt-minion restart
