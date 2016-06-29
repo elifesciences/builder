@@ -23,7 +23,7 @@ def dumb_version_check(cmd):
     return shs(cmd + ' --version')
 
 def osx():
-    return sh("test $(uname) == 'Darwin'")
+    return sh('[ "$(uname)" = "Darwin" ]')
 
 both_checks = [
     ('git',

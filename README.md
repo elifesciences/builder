@@ -1,13 +1,11 @@
 # builder
 
-*TEMPORARY REPO WHILE ANY CREDENTIALS OR SENSITIVE INFORMATION IS CUT OUT*
-
 An attempt to centralize the configuration and building of application 
 environments, locally (Vagrant) and remotely (AWS).
 
 Test that you have the system prerequisites installed:
 
-    ./prerequisites.py
+    ./.prerequisites.py
     
 It's up to you to install/update/configure anything missing.
 
