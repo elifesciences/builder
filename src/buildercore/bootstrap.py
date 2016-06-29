@@ -8,7 +8,7 @@ import os, shutil
 from os.path import join
 from functools import partial
 from StringIO import StringIO
-from . import core, utils, config
+from . import core, utils, config, s3
 from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
 from .utils import first
 from .config import DEPLOY_USER, BOOTSTRAP_USER
@@ -37,27 +37,38 @@ basis ...
 #
 #
 
+def write_keypair_to_s3(stackname):
+    # this is the path to where .save() puts it
+    # http://boto.readthedocs.io/en/latest/ref/ec2.html#boto.ec2.keypair.KeyPair
+    path = stack_pem(stackname, die_if_doesnt_exist=True)
+    key = 'keypairs/' + stackname
+    s3.write(key, open(path, 'r'))
+    return s3.exists(key)
+        
 def create_keypair(stackname):
     expected_key = stack_pem(stackname, die_if_exists=True)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     key = ec2.create_key_pair(stackname)
     # write to fs
     key.save(config.KEYPAIR_PATH) # exclude the filename
-
-    # TODO: write to s3!
-    
+    # write to s3
+    write_keypair_to_s3(stackname)
     return expected_key
+
+def delete_keypair_from_s3(stackname):
+    key = 'keypairs/' + stackname
+    s3.delete(key)
+    return s3.exists(key)
 
 def delete_keypair(stackname):
     expected_key = stack_pem(stackname)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     # delete from aws
     ec2.delete_key_pair(stackname)
-
-    # TODO: assert key not exists on aws
-
+    # delete from s3
+    delete_keypair_from_s3(stackname)
     # delete from fs
-    # while debugging, move the deleted key to a 'deleted' dir
+    # just while debugging, move the deleted key to a 'deleted' dir
     delete_path = join(config.KEYPAIR_PATH, "deleted")
     utils.mkdir_p(delete_path)
     shutil.copy2(expected_key, delete_path)

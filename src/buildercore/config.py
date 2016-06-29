@@ -84,8 +84,12 @@ LOG = logging.getLogger(__name__)
 # remote 
 #
 
+# where the builder can write stuff that should persist across installations/users
+# like ec2 instance keypairs
+BUILDER_BUCKET = 'elife-builder'
+
 PACKER_BOX_PREFIX = "elifesciences" # the 'elifesciences' in 'elifesciences/basebox'
-PACKER_BOX_BUCKET = "elife-builder"
+PACKER_BOX_BUCKET = "builder-boxes"
 PACKER_BOX_KEY = "boxes"
 # ll: s3://elife-builder/boxes
 PACKER_BOX_S3_PATH = "s3://%s" % join(PACKER_BOX_BUCKET, PACKER_BOX_KEY)

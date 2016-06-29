@@ -22,7 +22,7 @@ def find_region(stackname=None):
     if a stack is provided, it uses the one provided in it's configuration.
     otherwise, generates a list of used regions from project data
 
-    if more than one region available, it will raise an EnvironmentError. 
+    if more than one region available, it will raise an EnvironmentError.
     until we have some means of supporting multiple regions, this is the best solution"""
     region = None
     if stackname:
@@ -35,6 +35,9 @@ def find_region(stackname=None):
     if not region_list:
         raise EnvironmentError("no regions available at all!")
     if len(region_list) > 1:
+        if True:
+            print "many possible regions found!"
+            return utils._pick(region, region_list)        
         raise EnvironmentError("multiple regions available but not yet supported!: %s" % region_list)
     return region_list[0]
 
