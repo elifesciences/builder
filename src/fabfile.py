@@ -15,4 +15,5 @@ import packer
 import tasks
 import lax
 import master
+import askmaster
 from deploy import deploy

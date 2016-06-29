@@ -1,3 +1,9 @@
+"""Miscellanious admin tasks.
+
+If you find certain 'types' of tasks accumulating, they might be 
+better off in their own module. This module really is for stuff
+that has no home."""
+
 import requests
 from buildercore import core, cfngen, config, project
 from buildercore.sync import sync_stack
@@ -36,55 +42,16 @@ def ami_for_project(pname):
 
     # good for figuring out filters 
     #print results[0].__dict__
-    
-
-
-
 
 #
 #
 #
-
-
-def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
-    "runs the given command on all aws instances. given command must escape double quotes"
-    with stack_conn(core.find_master(aws.find_region())):
-        sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
-
-@task
-@echo_output
-def cronjobs():
-    "list the cronjobs running as elife on all instances"
-    return salt_master_cmd("'crontab -l -u elife'")
-
-@task
-def daily_updates_enabled():
-    return salt_master_cmd("'crontab -l | grep daily-system-update'")
-
-@task
-@echo_output
-def syslog_conf():
-    minions = "-C 'elife-metrics-* or elife-lax-* or elife-api-*'"
-    return salt_master_cmd("'cat /etc/syslog-ng/syslog-ng.conf | grep use_fqdn'", minions=minions)
-
-@task
-@osissue("very specific code. possibly a once-off that can be deleted")
-def update_syslog():
-    module = 'state.sls_id'
-    cmd = "syslog-ng-hook base.syslog-ng test=True"
-    minions = 'elife-crm-production'
-    return salt_master_cmd(cmd, module, minions)
 
 @requires_aws_stack
 def _update_syslog(stackname):
     with stack_conn(stackname):
         cmd = "salt-call state.sls_id syslog-ng-hook base.syslog-ng test=True"
         return sudo(cmd)
-
-@task
-def fail2ban_running():
-    #return salt_master_cmd("'ps aux | grep fail2ban-server'")
-    return salt_master_cmd(r"'salt \* state.single service.running name=fail2ban'")
 
 #
 #

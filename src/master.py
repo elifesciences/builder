@@ -1,3 +1,7 @@
+"""Tasks we perform on the master server. 
+
+See `askmaster.py` for tasks that are run on minions."""
+
 import aws
 from fabric.contrib.files import exists
 from fabric.contrib import files
