@@ -9,9 +9,12 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def branch_stack_name(pname, branch):
+def build_stack_name(pname, branch, cluster=None):
     "given a project and a branch, returns an instance name"
-    return "%(pname)s-%(branch)s" % locals()
+    stack_name = "%(pname)s--%(branch)s" % locals()
+    if cluster:
+        stack_name = stack_name + "--" + cluster
+    return stack_name
 
 def impose_ordering(branch_list):
     branch_list, removed = utils.rmval(branch_list, 'master', 'develop')
@@ -26,12 +29,13 @@ def impose_ordering(branch_list):
 @task
 @requires_branch_deployable_project
 @echo_output
-def deploy(pname):
+def deploy(pname, branch=None, cluster=None):
     pdata = project.project_data(pname)
     branch_list = utils.git_remote_branches(pdata['repo'])
     branch_list = impose_ordering(branch_list)
-    branch = utils._pick('branch', branch_list, deffile('.branch'))
-    stackname = branch_stack_name(pname, branch)
+    if not branch:
+        branch = utils._pick('branch', branch_list, deffile('.branch'))
+    stackname = build_stack_name(pname, branch, cluster)
 
     region = pdata['aws']['region']
     active_stacks = core.all_aws_stack_names(region)

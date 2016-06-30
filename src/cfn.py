@@ -1,6 +1,5 @@
 from fabric.api import task, local, cd, lcd, settings, run, sudo, put, get
 from fabric.contrib.files import exists
-from fabfile import PROJECT_DIR
 from fabric.contrib import files
 from fabric.contrib.console import confirm
 import aws, utils
