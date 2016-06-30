@@ -4,7 +4,6 @@ from datetime import datetime
 import yaml
 from collections import OrderedDict, Iterable
 from fabric.api import run
-from .decorators import osissue, osissuefn, testme
 from os.path import join
 from more_itertools import unique_everseen
 import logging
@@ -160,7 +159,6 @@ def call_while_example():
     call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
 
 # deprecated in favour of `lookup` - I prefer `lookup` when no default specified
-@testme
 def getin(data, path):
     "allows dot-path access to nested dicts"
     assert isinstance(data, dict), "getin only works with dictionaries"
@@ -174,7 +172,6 @@ def getin(data, path):
     # end of path
     return data
 
-@testme
 def updatein(data, path, newval, create=False):
     """updates a value within a nested dict. use create=True
     to create the path if it doesn't already exist"""
@@ -188,7 +185,6 @@ def updatein(data, path, newval, create=False):
         data[bit] = {}
     return updatein(data[bit], ".".join(rest), newval, create)
 
-@testme
 def gget(lst, i, data):
     try:
         return lst[i]
