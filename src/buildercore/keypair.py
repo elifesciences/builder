@@ -12,18 +12,28 @@ LOG = logging.getLogger(__name__)
 # s3
 #
 
+def s3_keypair_key(stackname):
+    return config.KEYPAIR_PREFIX + stackname + ".pem"
+
 def write_keypair_to_s3(stackname):
     # this is the path to where .save() puts it
     # http://boto.readthedocs.io/en/latest/ref/ec2.html#boto.ec2.keypair.KeyPair
     path = stack_pem(stackname, die_if_doesnt_exist=True)
-    key = config.KEYPAIR_PREFIX + stackname + ".pem"
+    key = s3_keypair_key(stackname)
     s3.write(key, open(path, 'r'))
     return s3.exists(key)
 
 def delete_keypair_from_s3(stackname):
     key = config.KEYPAIR_PREFIX + stackname
+    key = s3_keypair_key(stackname)
     s3.delete(key)
     return s3.exists(key)
+
+def download_from_s3(stackname):
+    expected_path = stack_pem(stackname, die_if_exists=True)
+    s3.download(s3_keypair_key(stackname), expected_path)
+    stack_pem(stackname, die_if_doesnt_exist=True)
+    return expected_path
 
 #
 # 

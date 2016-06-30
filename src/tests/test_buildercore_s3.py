@@ -1,5 +1,5 @@
 """Tests concerning S3 interaction."""
-
+import os
 import time
 import json
 from os.path import join
@@ -10,9 +10,11 @@ from unittest import skip
 class SimpleCases(base.BaseCase):
     def setUp(self):
         s3.delete_contents("test/")
-        
+        os.system("mkdir -p /tmp/builder/")
+
     def tearDown(self):
         s3.delete_contents("test/")
+        os.system("rm -f /tmp/builder/*")
 
     def test_exists(self):
         key = "test/boo"
@@ -49,3 +51,12 @@ class SimpleCases(base.BaseCase):
         for key in keys:
             s3.write(key, 'asdf')
         self.assertEqual(sorted(keys), sorted(s3.simple_listing("test/")))
+
+    def test_download(self):
+        key = "test/baz"
+        expected_contents = "test content"
+        expected_output = '/tmp/builder/baz'
+        s3.write(key, expected_contents)
+        s3.download(key, expected_output)
+        self.assertTrue(os.path.exists(expected_output))
+        self.assertEqual(open(expected_output, 'r').read(), expected_contents)
