@@ -8,7 +8,7 @@ import os, shutil
 from os.path import join
 from functools import partial
 from StringIO import StringIO
-from . import core, utils, config, s3
+from . import core, utils, config, s3, keypair
 from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
 from .utils import first
 from .config import DEPLOY_USER, BOOTSTRAP_USER
@@ -22,60 +22,6 @@ from kids.cache import cache as cached
 
 import logging
 LOG = logging.getLogger(__name__)
-
-
-"""
-
-I see a bootstrap interface and the majority of this code 
-being shifted into a shared-everything strategy module with
-a more secure strategy also being available on a per-project
-basis ...
-
-"""
-
-#
-#
-#
-
-def write_keypair_to_s3(stackname):
-    # this is the path to where .save() puts it
-    # http://boto.readthedocs.io/en/latest/ref/ec2.html#boto.ec2.keypair.KeyPair
-    path = stack_pem(stackname, die_if_doesnt_exist=True)
-    key = 'keypairs/' + stackname
-    s3.write(key, open(path, 'r'))
-    return s3.exists(key)
-        
-def create_keypair(stackname):
-    expected_key = stack_pem(stackname, die_if_exists=True)
-    ec2 = core.connect_aws_with_stack(stackname, 'ec2')
-    key = ec2.create_key_pair(stackname)
-    # write to fs
-    key.save(config.KEYPAIR_PATH) # exclude the filename
-    # write to s3
-    write_keypair_to_s3(stackname)
-    return expected_key
-
-def delete_keypair_from_s3(stackname):
-    key = 'keypairs/' + stackname
-    s3.delete(key)
-    return s3.exists(key)
-
-def delete_keypair(stackname):
-    expected_key = stack_pem(stackname)
-    ec2 = core.connect_aws_with_stack(stackname, 'ec2')
-    # delete from aws
-    ec2.delete_key_pair(stackname)
-    # delete from s3
-    delete_keypair_from_s3(stackname)
-    # delete from fs
-    # just while debugging, move the deleted key to a 'deleted' dir
-    delete_path = join(config.KEYPAIR_PATH, "deleted")
-    utils.mkdir_p(delete_path)
-    shutil.copy2(expected_key, delete_path)
-    os.unlink(expected_key)
-    # TODO: this check needs to become part of a checklist of things after deletion
-    if not os.path.exists(expected_key):
-        LOG.warn("private key %r not deleted: found %r" % (stackname, expected_key))
 
 #
 #
@@ -109,7 +55,7 @@ def create_stack(stackname):
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
     try:
-        create_keypair(stackname)
+        keypair.create_keypair(stackname)
         conn = connect_aws_with_stack(stackname, 'cfn')
         conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
         def is_updating(stackname):
@@ -121,10 +67,10 @@ def create_stack(stackname):
             LOG.debug(err.message)
             return False
         # don't delete the keypair if the error is that the stack already exists!
-        delete_keypair(stackname)
+        keypair.delete_keypair(stackname)
         raise
     except:
-        delete_keypair(stackname)
+        keypair.delete_keypair(stackname)
         raise
 
 #@requires_stack_file
@@ -404,7 +350,7 @@ def delete_stack(stackname):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), update_msg='Waiting for AWS to finish deleting stack ...')
-        delete_keypair(stackname)
+        keypair.delete_keypair(stackname)
         delete_stack_file(stackname)
         LOG.info("stack %r deleted", stackname)
     except BotoServerError as err:

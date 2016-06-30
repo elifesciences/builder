@@ -1,6 +1,12 @@
+"""this module appears to be where I collect functionality 
+that is built upon by the more specialised parts of builder.
+
+suggestions for a better name than 'core' welcome."""
+
 import os, glob, json, inspect, re, copy
 from os.path import join
-from . import utils, config, project
+from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
+from .decorators import osissue, osissuefn, testme
 from .utils import first, second, dictfilter
 from collections import OrderedDict
 from functools import wraps
@@ -8,7 +14,6 @@ import boto
 from boto.exception import BotoServerError
 from contextlib import contextmanager
 from fabric.api import settings
-from .decorators import osissue, osissuefn, testme
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -74,9 +79,9 @@ def find_ec2_volume(stackname):
     kwargs = {'filters': {'attachment.instance-id': iid}}
     return connect_aws_with_stack(stackname, 'ec2').get_all_volumes(**kwargs)
 
+# should live in `keypair`, but I can't have `core` depend on `keypair` and viceversa
 def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     """returns the path to the private key on the local filesystem. 
-
     helpfully dies in different ways if you ask it to"""
     expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
     # for when we really need it to exist

@@ -87,6 +87,7 @@ LOG = logging.getLogger(__name__)
 # where the builder can write stuff that should persist across installations/users
 # like ec2 instance keypairs
 BUILDER_BUCKET = 'elife-builder'
+KEYPAIR_PREFIX = 'keypairs/'
 
 PACKER_BOX_PREFIX = "elifesciences" # the 'elifesciences' in 'elifesciences/basebox'
 PACKER_BOX_BUCKET = "builder-boxes"

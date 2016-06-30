@@ -2,15 +2,44 @@
 
 See `askmaster.py` for tasks that are run on minions."""
 
-import aws
+import os
+import aws, utils
 from fabric.contrib.files import exists
 from fabric.contrib import files
 from fabric.api import settings, sudo, task, local, run, lcd, cd
-from buildercore import core, bootstrap, config, project
+from buildercore import core, bootstrap, config, project, s3, keypair
 from decorators import debugtask, echo_output, requires_project
 from buildercore.decorators import osissue
 from buildercore.utils import first
-import utils
+
+#
+#
+#
+
+@debugtask
+def write_missing_keypairs_to_s3():
+    "uploads any missing ec2 keys to S3 if they're present locally"
+    remote_keys = keypair.all_in_s3()
+    local_paths = keypair.all_locally()
+    local_keys = map(os.path.basename, local_paths)
+    
+    to_upload = set(local_keys).difference(set(remote_keys))
+        
+    print 'remote:',remote_keys
+    print 'local:', local_keys
+    print 'to upload:', to_upload
+
+    def write(key):
+        stackname = os.path.splitext(key)[0]
+        keypair.write_keypair_to_s3(stackname)
+    
+    map(write, to_upload)
+
+
+#
+#
+#
+
 
 @echo_output
 def aws_update_many_projects(pname_list):
