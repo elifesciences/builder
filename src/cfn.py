@@ -141,16 +141,6 @@ def aws_update_template(stackname):
     return bootstrap.update_template(stackname)
 
 @debugtask
-def create_kp():
-    kp = utils.uin("keypair")
-    bootstrap.create_keypair(kp)
-
-@debugtask
-def delete_kp():
-    kp = utils.uin("keypair")
-    bootstrap.delete_keypair(kp)
-
-@debugtask
 @requires_aws_stack
 def aws_bootstrap(stackname):
     "for debugging the bootstrap process"
