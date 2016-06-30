@@ -4,7 +4,7 @@
 ## from these interfaces a list of organisations and their projects are made available
 project-locations:
     # 'projects' directory (relative to this builder instance)
-    - ./projects/
+    - ./projects/example.yaml
     ## specific file
     ##- ./projects/example.yaml
     ## path relative to user's home directory that will be expanded
