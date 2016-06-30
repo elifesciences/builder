@@ -63,7 +63,7 @@ mac_checks = [
     ),
 ]
 
-def run_checks(check_list):
+def run_checks(check_list, exclusions=[]):
     for cmd in check_list:
         installed_checker = dumb_install_check
         version_checker = dumb_version_check
@@ -75,6 +75,9 @@ def run_checks(check_list):
         elif len(cmd) == 4:
             cmd, install_suggestions, installed_checker, version_checker = cmd
 
+        if cmd in exclusions:
+            continue
+            
         sys.stdout.write('* %r ... ' % cmd)
         if installed_checker(cmd):
             found = 'found'
@@ -92,7 +95,13 @@ def main():
     if osx():
         print('OSX detected')
         checks = mac_checks + checks
-    run_checks(checks)
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--exclude', dest='exclusions', nargs='+', type=str, default=[])
+    args = parser.parse_args()
+
+    run_checks(checks, args.exclusions)
 
 if __name__ == '__main__':
     main()
