@@ -1,6 +1,6 @@
 # feature: write keypairs to s3
 
-This feature is *disabled* by default.
+This feature is *enabled* by default.
 
 When an ec2 instance is created a private+public keypair is also created that 
 will allow SSH access to that instance. This file is written to the 

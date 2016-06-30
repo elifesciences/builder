@@ -1,7 +1,12 @@
 # settings file for the Builder project
 # see `projects/example.yaml` for per-organisation settings
+
+## feature: enable/disable writing of ec2 keypairs to s3
+write-keypairs-to-s3: True
+
 ## where to look for organisation project data
 ## from these interfaces a list of organisations and their projects are made available
+
 project-locations:
     # 'projects' directory (relative to this builder instance)
     - ./projects/example.yaml

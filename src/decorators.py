@@ -102,6 +102,21 @@ def requires_aws_stack(func):
         return func(stackname, *args, **kwargs)
     return call
 
+def requires_feature(key, silent=False):
+    "very similar to `buildercore.if_required` but fails gently"
+    def wrap1(func):
+        @wraps(func)
+        def wrap2(*args, **kwargs):
+            if config.feature_enabled(key):
+                return func(*args, **kwargs)
+            print
+            print "feature %r is disabled." % key
+            print "you can enable it with \"%s: True\" in your `settings.yml` file" % key
+            print
+            exit(1)
+        return wrap2
+    return wrap1    
+
 def _sole_task(nom):
     task_list = env.tasks
     if len(task_list) > 0:

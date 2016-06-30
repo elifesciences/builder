@@ -1,8 +1,30 @@
 import json
 from functools import wraps
+from . import config
 import logging
 
 LOG = logging.getLogger(__name__)
+
+class FeatureDisabledException(Exception):
+    pass
+
+def if_enabled(key, silent=False):
+    settings = config.app()
+    assert settings.has_key(key), "no setting with value %r" % key
+    enabled = settings[key]
+    assert isinstance(enabled, bool), "expecting the value at %r to be a boolean" % key
+    def wrap1(func):
+        @wraps(func)
+        def wrap2(*args, **kwargs):
+            if enabled:
+                return func(*args, **kwargs)
+            if silent:
+                LOG.info("feature %r is disabled, returning silently", key)
+                return None
+            msg = "the feature %r is disabled. you can enable it with \"%s: True\" in your `settings.yml` file" % (key, key)
+            raise FeatureDisabledException(msg)
+        return wrap2
+    return wrap1    
 
 def osissuefn(issue):
     LOG.warn("TODO: " + issue)

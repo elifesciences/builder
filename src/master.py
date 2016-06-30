@@ -8,7 +8,7 @@ from fabric.contrib.files import exists
 from fabric.contrib import files
 from fabric.api import settings, sudo, task, local, run, lcd, cd
 from buildercore import core, bootstrap, config, project, s3, keypair
-from decorators import debugtask, echo_output, requires_project, requires_aws_stack
+from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from buildercore.decorators import osissue
 from buildercore.utils import first
 
@@ -17,6 +17,7 @@ from buildercore.utils import first
 #
 
 @debugtask
+@requires_feature('write-keypairs-to-s3')
 def write_missing_keypairs_to_s3():
     "uploads any missing ec2 keys to S3 if they're present locally"
     remote_keys = keypair.all_in_s3()
@@ -36,6 +37,7 @@ def write_missing_keypairs_to_s3():
     map(write, to_upload)
 
 @debugtask
+@requires_feature('write-keypairs-to-s3')
 @requires_aws_stack
 @echo_output
 def download_keypair(stackname):
