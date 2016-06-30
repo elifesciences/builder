@@ -63,3 +63,11 @@ def delete_contents(prefix):
     for key in builder_bucket().list(prefix=prefix):
         LOG.info("deleting key", extra={'key': key})
         key.delete()
+
+def listing(prefix):
+    "returns a list of Key objects starting with given prefix rooted in the builder bucket"
+    return builder_bucket().list(prefix=prefix)
+
+def simple_listing(prefix):
+    "returns a realized list of the names of the keys from the `list` function. "
+    return map(lambda key: key.name, listing(prefix))

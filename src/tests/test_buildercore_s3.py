@@ -39,3 +39,13 @@ class SimpleCases(base.BaseCase):
         self.assertTrue(s3.exists(key))
         s3.delete(key)
         self.assertFalse(s3.exists(key))
+
+    def test_list(self):
+        keys = [
+            "test/foo",
+            "test/bar",
+            "test/baz"
+        ]
+        for key in keys:
+            s3.write(key, 'asdf')
+        self.assertEqual(sorted(keys), sorted(s3.simple_listing("test/")))
