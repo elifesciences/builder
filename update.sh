@@ -43,3 +43,5 @@ if [ ! -f .no-install-basebox.flag ]; then
 else
     echo "* the no-install-basebox flag is set. skipping check"
 fi
+
+printf "\nall done\n\n"
