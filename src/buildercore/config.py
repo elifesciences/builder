@@ -15,7 +15,7 @@ from os.path import join
 
 from buildercore import utils
 from buildercore.utils import first, last, listfiles
-
+from kids.cache import cache as cached
 import logging
 
 
@@ -157,5 +157,9 @@ def parse(settings_data):
         settings_data[key] = processor(settings_data[key])
     return settings_data
 
+@cached
 def app(settings_path=SETTINGS_FILE):
     return parse(load(settings_path))
+
+def feature_enabled(feature):
+    return app().get(feature, False)
