@@ -90,3 +90,16 @@ lax:
     vagrant:
         ports:
             1239: 80
+
+journal:
+    subdomain: journal # journal.elifesciences.org
+    repo: https://github.com/elifesciences/journal
+    formula-repo: https://github.com/elifesciences/journal-formula
+    aws:
+        ports:
+            22: 22
+            443: 443
+            80: 80
+    vagrant:
+        ports:
+            1240: 80
