@@ -74,8 +74,8 @@ master-server:
 
 lax:
     subdomain: lax # lax.elifesciences.org
-    repo: https://git@github.com/elifesciences/lax.git
-    formula-repo: https://git@github.com/elifesciences/lax-formula
+    repo: https://github.com/elifesciences/lax.git
+    formula-repo: https://github.com/elifesciences/lax-formula
     aws:
         ports:
             22: 22
