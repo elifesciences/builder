@@ -1,8 +1,5 @@
-"interface to most common builder tasks."
-
-from fabric.api import task, local, cd, lcd, settings, run, sudo, put, get
+from fabric.api import task, local, cd, lcd, settings, run, sudo, put, get, abort
 from fabric.contrib.files import exists
-from fabfile import PROJECT_DIR
 from fabric.contrib import files
 from fabric.contrib.console import confirm
 import aws, utils
@@ -165,6 +162,15 @@ def ssh(stackname, username=DEPLOY_USER):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
     # -A forwarding of authentication agent connection
     local("ssh %s@%s -A" % (username, public_ip))
+
+@task
+@requires_aws_stack
+def cmd(stackname, command=None):
+    if command is None:
+        abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
+    with stack_conn(stackname):
+	with settings(abort_on_prompts=True):
+            run(command)
 
 @task
 @requires_aws_stack
