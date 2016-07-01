@@ -1,9 +1,9 @@
 # builder
 
-*TEMPORARY REPO WHILE ANY CREDENTIALS OR SENSITIVE INFORMATION IS CUT OUT*
+*TEMPORARY REPO WHILE CREDENTIALS AND SENSITIVE INFORMATION ARE CUT OUT*
 
 An attempt to centralize the configuration and building of application 
-environments, locally (Vagrant) and remotely (AWS).
+environments, locally (Vagrant) and remotely 
 
 Test that you have the system prerequisites installed:
 
