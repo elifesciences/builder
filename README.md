@@ -2,8 +2,7 @@
 
 *TEMPORARY REPO WHILE ANY CREDENTIALS OR SENSITIVE INFORMATION IS CUT OUT*
 
-An attempt to centralize the configuration and building of application 
-environments, locally (Vagrant) and remotely (AWS).
+An attempt to centralize the configuration and building of application environments at [eLife](https://elifesciences.org), locally (Vagrant) and remotely (AWS).
 
 # first
 
@@ -15,16 +14,14 @@ Install:
 
     ./update.sh
 
-Update:
-
-    git pull
-    ./update.sh
-
 Fix any missing pre-requisites and call `./update.sh` again until you see the happy
 
 > all done
 
-message.
+message. Updating in the future is as simple as:
+
+    git pull
+    ./update.sh
 
 ## Next
 
@@ -64,7 +61,9 @@ The other half of the `builder` project is the ability to create and manage AWS 
 
 Will list all `builder` tasks found in `src/`. These tasks are just Python functions.
 
-To launch a project backed by a code repository to AWS, use:
+A `master-server` instance must exist before project instances can be brought up. [See here](docs/master-server.md) for a walkthrough.
+
+To launch a project backed by a code repository to AWS:
 
     $ ./bldr deploy
 
