@@ -1,3 +1,5 @@
+"interface to most common builder tasks."
+
 from fabric.api import task, local, cd, lcd, settings, run, sudo, put, get
 from fabric.contrib.files import exists
 from fabfile import PROJECT_DIR
