@@ -4,33 +4,41 @@
 
 a master server must be created in order to tell minions what to do.
 
-the creation of the master server currently lives in `srv/cfn.py` as `aws_create_master`. It uses the deploy user in the shared-everything strategy, installs a copy of the elife-builder and bootstraps itself.
-
-convenient, yes, secure, no no no.
-
-I want:
-- any person to be able to create a master server
-- BUT, that master server to be limited in what it can do based on the author
-    - so it requires a creator with enough permissions to make it usable
-
-I see master server creation being the only hardcoded project in new builder.
-
 bootstrap:
 - author creates master server
 - builder generates and downloads ec2 keypair using boto
 - builder creates and launches master server cfn template
     - using the given keypair
-    - elastic IP
+    - TODO: elastic IP
 - builder connects using key
 - builder adds author's pub key to the ubuntu user's `allowed_users`
+    - Salt knows which users have access to which projects
+        - author always has access to the machines they have created
+            - even if their access to a project has been rescinded later
 - builder installs itself on master using author's git keys
+    - builder will be an open project
+    - credentials will *not* be
 - builder configures the master server
-    - your minion_id is `master`
+    - your minion_id is `master-...`
     - this is your config
     - these are your salt instructions
     - call highstate
         - starts web server running
 - master is now ready to start serving minions
+
+
+generate key-pair using instance-id as name
+download keypair to use for initial bootstrap
+write keypair to S3
+- DO NOT SHARE
+    - only instance creator has access
+    - only those in deploy user's allowed_keys has access.
+
+create instance using instance-id and keypair with instance-id
+once created:
+    bootstrap salt
+    set minion/master files
+    ... ?
 
 
 ## authorization

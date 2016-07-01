@@ -23,7 +23,7 @@ def dumb_version_check(cmd):
     return shs(cmd + ' --version')
 
 def osx():
-    return sh("test $(uname) == 'Darwin'")
+    return sh('[ "$(uname)" = "Darwin" ]')
 
 both_checks = [
     ('git',
@@ -48,7 +48,7 @@ both_checks = [
      None),
      
     ('aws credentials',
-     {'all': 'do `aws configure` after installing elife-builder'},
+     {'all': 'do `aws configure` after installing builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
      None), # do not check version
 ]

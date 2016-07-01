@@ -12,6 +12,5 @@ There are some manual steps required after the `aws_launch_instance` of a
 
 * copy the contents of /root/.ssh/id_rsa.pub into a new deploy key for the 
 repository in the master server's `formula-repo` repository.
+
 * run `aws_bootstrap` to complete the update
-
-
