@@ -25,13 +25,15 @@ message. Updating in the future is as simple as:
 
 ## Next
 
-Your `settings.yaml` file was created automatically and contains options for tweaking the behaviour of `builder`, like which projects it should be looking at.
+Your `settings.yaml` file was created automatically and contains options for tweaking the behaviour of `builder`, like the project file it should be using.
 
-By default it points to the `./projects/elife.yaml` project file. This file describes all eLife projects that can be built and some configuration for their environments.
+By default it points to the `./projects/elife.yaml` project file. This file describes all eLife projects that can be built and their environments.
 
-Project files and the `settings.yaml` file are the only two places where configuration is supported.
+Project files and the `settings.yaml` file are the **only** two places where configuration is _supported_.
 
-The first thing you should do if you are new to `builder` is bring up a Vagrant instance of a supported project. This is a good test that things are working correctly.
+> 'configuration' also exists in `./src/buildercore/config.py` if you're a `builder` dev.
+
+After successfully installing and configuring `builder`, launching a Vagrant instance is a good test that all is working correctly.
 
 ### Vagrant
 
