@@ -251,11 +251,11 @@ def git_update():
     cmd = 'git pull --rebase'
     run(cmd)
 
-def ymd(dt=None):
+def ymd(dt=None, fmt="%Y-%m-%d"):
     "formats a datetime object to YYY-mm-dd format"
     if not dt:
         dt = datetime.now()
-    return dt.strftime("%Y-%m-%d")
+    return dt.strftime(fmt)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
@@ -302,3 +302,6 @@ def lu(context, *paths, **kwargs):
     if not v:
         raise ValueError("no value available for paths %s" % ' and '.join(paths))
     return v
+
+def hasallkeys(ddict, key_list):
+    return all(map(ddict.has_key, key_list))

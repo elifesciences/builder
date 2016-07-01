@@ -16,4 +16,5 @@ import tasks
 import lax
 import master
 import askmaster
+import buildvars
 from deploy import deploy
