@@ -1,16 +1,24 @@
 # master-server
 
-The `builder` uses a master-minion configuration when used on AWS.
+The `builder` uses a master+minion configuration when used on AWS.
 
-A `master-server` project instance *must* exist in AWS before other minions can
+The `master-server` project instance *must* exist in AWS before other minions can
 be told what their configuration is.
 
 ## deploying a master server for the first time
 
-There are some manual steps required after the `aws_launch_instance` of a
-`master-server` project:
+Deploy a new `master-server` instance with:
 
-* copy the contents of /root/.ssh/id_rsa.pub into a new deploy key for the 
-repository in the master server's `formula-repo` repository.
+	PROJECT=master-server ./bldr deploy
 
-* run `aws_bootstrap` to complete the update
+It will prompt you for an identifier before proceeding.
+
+The master server needs access to clone your [builder-private](https://github.com/elifesciences/builder-private-example) repo. This is done using [Github deploy keys](https://developer.github.com/guides/managing-deploy-keys/#deploy-keys).
+
+Copy the contents of the master server's pubkey (`/root/.ssh/id_rsa.pub`) into a new deploy key for your `builder-private` repo.
+
+Run:
+
+	INSTANCE=master-server--yourinstanceid ./bldr aws_update_stack
+
+to complete the update.

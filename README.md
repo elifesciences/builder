@@ -1,34 +1,42 @@
 # builder
 
-*TEMPORARY REPO WHILE CREDENTIALS AND SENSITIVE INFORMATION ARE CUT OUT*
+*TEMPORARY REPO WHILE ANY CREDENTIALS OR SENSITIVE INFORMATION IS CUT OUT*
 
 An attempt to centralize the configuration and building of application 
-environments, locally (Vagrant) and remotely 
+environments, locally (Vagrant) and remotely (AWS).
 
-Test that you have the system prerequisites installed:
+# first
 
-    ./prerequisites.py
+Download:
 
-It's up to you to install/update/configure anything missing.
+	git clone ssh://git@github.com/elifesciences/builder
 
-It's assumed `brew` and `brew cask` are being used on OSX.
+Install:
 
-To install:
-
-    git clone ssh://git@github.com/elifesciences/builder
-    cd builder
     ./update.sh
 
-To update:
+Update:
 
     git pull
     ./update.sh
 
-To test:
+Fix any missing pre-requisites and call `./update.sh` again until you see the happy
 
-    ./test.sh
+> all done
 
-## Vagrant Usage
+message.
+
+## Next
+
+Your `settings.yaml` file was created automatically and contains options for tweaking the behaviour of `builder`, like which projects it should be looking at.
+
+By default it points to the `./projects/elife.yaml` project file. This file describes all eLife projects that can be built and some configuration for their environments.
+
+Project files and the `settings.yaml` file are the only two places where configuration is supported.
+
+The first thing you should do if you are new to `builder` is bring up a Vagrant instance of a supported project. This is a good test that things are working correctly.
+
+### Vagrant
 
 The `Vagrantfile` can build any project, you just need to tell it which one.
 
@@ -37,25 +45,24 @@ This is done by selecting the project from the menu:
     $ vagrant up
     You must select a project:
 
-    1 - elife-website-dev
-    2 - elife-crm-dev
+    1 - journal--vagrant
+    2 - api-gateway--vagrant
     3 - ...
-    > 
+    >
 
 ... or it can be done with environment variables:
 
-    $ PROJECT=elife-website--dev vagrant up
+    $ PROJECT=journal--vagrant vagrant up
 
-NOTE: the __dev__ suffix after the project name.
+The `--vagrant` suffix after the project name is the "instance-id" for that project and plays a larger role when bringing up project instances on AWS.
 
-## Amazon Web Services (AWS)
+### AWS (Amazon Web Services)
 
-The other half of the builder project is the ability to create and manage AWS 
-resources.
+The other half of the `builder` project is the ability to create and manage AWS resources. This is controlled with the "bldr" script:
 
-    $ ./bldr --list
-    
-Will list all builder tasks found in `src/`.
+    $ ./bldr -l
+
+Will list all `builder` tasks found in `src/`. These tasks are just Python functions.
 
 To launch a project backed by a code repository to AWS, use:
 
@@ -64,34 +71,6 @@ To launch a project backed by a code repository to AWS, use:
 To launch an ad-hoc instance of any project to AWS, use:
 
     $ ./bldr aws_launch_instance
-
-
-## CAVEATS
-
-####### caveats
-
-
-creating a master requires a token to clone the builder-private repo
-- this token requires a public key
--- upload private key to root user [done]
--- generate a pub key [done]
--- create a github deploy key [todo]
-
-builder-private must be kept synchronised with individual projects
-- might be solvable with dynamic top files
-
-builder-private pillar data is not always being updated
-- problem with a lock files
-    - https://github.com/saltstack/salt/issues/32888
-- possibly problem with minion cache
-    - https://github.com/saltstack/salt/issues/24050
-- probably waiting for refresh interval of ~60 seconds
-
-builder-base-formula pillar must be kept synchronized with the builder-private elife pillar
-
-master rejects minion keys if one already exists
-- this can be solved by running this on master
-    # salt-key -d minionid
 
 ## More!
 
