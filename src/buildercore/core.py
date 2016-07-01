@@ -99,8 +99,12 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     params = {
         'user': username,
         'host_string': public_ip,
-        'key_filename': stack_pem(stackname),
     }
+    pem = stack_pem(stackname)
+    if os.path.exists(pem):
+        params.update({
+            'key_filename': pem
+        })
     params.update(kwargs)
     with settings(**params):
         yield
