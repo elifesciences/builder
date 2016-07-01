@@ -1,6 +1,5 @@
 import os
 from fabric.api import settings
-from fabfile import PROJECT_DIR
 from buildercore import core, config, project
 from buildercore.utils import lookup
 from buildercore.decorators import osissue, osissuefn
