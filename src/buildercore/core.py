@@ -100,8 +100,10 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
         'user': username,
         'host_string': public_ip,
     }
+    # doesn't hurt, handles cases where we want to establish a connection to run a task
+    # when machine has failed to provision correctly.
     pem = stack_pem(stackname)
-    if os.path.exists(pem):
+    if os.path.exists(pem) and username == config.BOOTSTRAP_USER:
         params.update({
             'key_filename': pem
         })
