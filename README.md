@@ -71,32 +71,17 @@ To launch an ad-hoc instance of any project to AWS, use:
 
 ## More!
 
-Further documentation can be found
+General:
+* [project files](docs/projects.md)
 
-Use cases:
+AWS:
+* [feature: write keypairs to S3](docs/feature,write-keypairs-to-s3.md)
+* [creating a master server](docs/master-server.md)
+* [caveats](docs/caveats.md)
 
-* [Creating a new project for development](docs/basic-usage.md#creating-a-new-project-for-development)
-* [Deploying a project instance remotely](docs/basic-usage.md#deploying-a-new-project-remotely)
-
-Topics:
-
+Development
+* [technology](docs/tech.md)
 * [testing](docs/testing.md)
-* [technology](docs/1-tech.md)
-* [projects file](docs/projects.md)
-* [creating, launching & accessing AWS instances](docs/basic-usage.md)
-* [syncronising builder state](docs/syncing.md)
-* [using packer to create baseboxes](docs/packer.md)
-* [debugging errors](docs/errors.md)
-
-Per-project documentation (as it relates to `elife-builder`) can be found here:
-
-* [central-logging](docs/central-logging.md)
-* [elife-api](docs/elife-api.md)
-* [elife-bot](docs/elife-bot.md)
-* [elife-ci](docs/elife-ci.md)
-* [elife-civiapi](docs/elife-civiapi.md)
-* [elife-drupal](docs/elife-drupal.md)
-* [lagotto](docs/lagotto.md)
 
 ## Copyright & Licence
 
