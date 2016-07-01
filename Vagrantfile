@@ -51,7 +51,9 @@ ALL_PROJECTS.each do |key, data|
     SUPPORTED_PROJECTS[key + "--vagrant"] = key
 end
 
-if not ENV['PROJECT']
+if ENV['PROJECT']
+    INSTANCE_NAME = ENV['PROJECT'] + "--vagrant"
+elsif
     prn "You must select a project:"
     KEYED = {}
     SUPPORTED_PROJECTS.each_with_index do |k,i|
@@ -113,8 +115,6 @@ if not ENV['PROJECT']
         abort ".. interrupt caught, aborting"
     end
 
-elsif
-    INSTANCE_NAME = ENV['PROJECT']
 end
 
 PROJECT_NAME = SUPPORTED_PROJECTS[INSTANCE_NAME]  # ll: elife-lax
