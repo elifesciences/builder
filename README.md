@@ -37,9 +37,7 @@ After successfully installing and configuring `builder`, launching a Vagrant ins
 
 ### Vagrant
 
-The `Vagrantfile` can build any project, you just need to tell it which one.
-
-This is done by selecting the project from the menu:
+The `Vagrantfile` can build any project, you just need to tell it which one:
 
     $ vagrant up
     You must select a project:
@@ -51,9 +49,7 @@ This is done by selecting the project from the menu:
 
 ... or it can be done with environment variables:
 
-    $ PROJECT=journal--vagrant vagrant up
-
-The `--vagrant` suffix after the project name is the "instance-id" for that project and plays a larger role when bringing up project instances on AWS.
+    $ PROJECT=journal vagrant up
 
 ### AWS (Amazon Web Services)
 
