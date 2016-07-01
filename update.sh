@@ -2,7 +2,7 @@
 
 set -e # everything must pass
 
-python .prerequisites.py
+python .prerequisites.py $@
 
 # remove any old compiled python files
 find src/ -name '*.pyc' -delete
