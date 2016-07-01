@@ -139,12 +139,6 @@ def pillar(stackname):
 def aws_update_template(stackname):
     "updates the CloudFormation stack and then updates the environment"
     return bootstrap.update_template(stackname)
-
-@debugtask
-@requires_aws_stack
-def aws_bootstrap(stackname):
-    "for debugging the bootstrap process"
-    bootstrap.update_stack(stackname)
     
 @debugtask
 @requires_stack_file
