@@ -48,4 +48,4 @@ if which vagrant; then
     fi
 fi
 
-printf "\nall done\n\n"
+printf "\n   ◕ ‿‿ ◕   all done\n\n"
