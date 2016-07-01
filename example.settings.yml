@@ -9,7 +9,7 @@ write-keypairs-to-s3: True
 
 project-locations:
     # 'projects' directory (relative to this builder instance)
-    - ./projects/example.yaml
+    - ./projects/elife.yaml
     ## specific file
     ##- ./projects/example.yaml
     ## path relative to user's home directory that will be expanded
