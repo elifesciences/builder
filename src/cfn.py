@@ -273,9 +273,12 @@ def aws_launch_instance(project):
 
 @task
 @requires_aws_stack
-def download_file(stackname, *args, **kwargs):
+def download_file(stackname, path, destination):
+    fname = os.path.basename(path)
+    utils.mkdirp(destination)
     with stack_conn(stackname):
-        get(*args, **kwargs)
+        pair = (path, fname)  # must be a tuple!
+        get(path, destination, use_sudo=True)
 
 @task
 @requires_aws_stack
