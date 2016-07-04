@@ -114,6 +114,10 @@ def aws_update_stack(stackname):
     Update commands require that the salt deploy user `DEPLOY_USER` exists."""
     return bootstrap.update_stack(stackname)
 
+@task
+def update_master():
+    return bootstrap.update_stack(core.find_master(aws.find_region()))
+
 @debugtask
 @requires_aws_stack
 def highstate(stackname):
