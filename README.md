@@ -78,6 +78,7 @@ AWS:
 * [caveats](docs/caveats.md)
 
 Development
+* [adding projects](docs/adding-projects.md)
 * [technology](docs/tech.md)
 * [salt](docs/salt.md)
 * [testing](docs/testing.md)
