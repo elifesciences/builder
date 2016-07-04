@@ -277,7 +277,6 @@ def download_file(stackname, path, destination):
     fname = os.path.basename(path)
     utils.mkdirp(destination)
     with stack_conn(stackname):
-        pair = (path, fname)  # must be a tuple!
         get(path, destination, use_sudo=True)
 
 @task
