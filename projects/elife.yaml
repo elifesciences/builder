@@ -4,7 +4,7 @@
 
 defaults:
     description: defaults for all projects in this file
-    salt: '2015.8' # the version of salt these project use
+    salt: '2016.3' # the version of salt these project use
     subdomain: null
     # projects with an explicit `repo` attribute support branch deployments with
     # ./bldr deploy
