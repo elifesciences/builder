@@ -118,3 +118,23 @@ journal:
     vagrant:
         ports:
             1240: 80
+
+
+elife-metrics:
+    subdomain: metrics # metrics.elifesciences.org
+    repo: https://github.com/elifesciences/elife-metrics
+    formula-repo: https://github.com/elifesciences/elife-metrics-formula
+    aws:
+        ports:
+            22: 22
+            443: 443
+            80: 80
+            5432: 5432
+    aws-alt:
+        master:
+            description: production environment for metrics. RDS backed
+            rds:
+                storage: 5
+    vagrant:
+        ports:
+            1240: 80
