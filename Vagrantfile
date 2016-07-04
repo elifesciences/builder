@@ -53,7 +53,7 @@ end
 
 if ENV['PROJECT']
     INSTANCE_NAME = ENV['PROJECT'] + "--vagrant"
-elsif
+else
     prn "You must select a project:"
     KEYED = {}
     SUPPORTED_PROJECTS.each_with_index do |k,i|
