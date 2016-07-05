@@ -13,12 +13,13 @@ from buildercore.core import stack_conn
 import utils, aws
 from buildercore.decorators import osissue, osissuefn
 
-@task
+@debugtask
 @requires_project
 def ami_for_project(pname):
-    "finds a bunch of "
+    "returns possible AMIs suitable for given project"
     conn = core.connect_aws_with_pname(pname, 'ec2')
     kwargs = {
+        # you're better off just going here:
         # https://cloud-images.ubuntu.com/locator/ec2/
         # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html#query-DescribeImages-filters
         'filters': {
