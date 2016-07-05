@@ -11,7 +11,9 @@ from cfn import *
 
 import aws
 import metrics
-import packer
+if False:
+    # packer functionality not tested properly since going public
+    import packer
 import tasks
 import lax
 import master
