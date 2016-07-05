@@ -257,7 +257,7 @@ def update_stack(stackname):
     # this waits until a connection can be made and a file is found before continuing.
     def is_resourcing():
         try:
-            with settings(user=BOOTSTRAP_USER, host_string=public_ip, key_filename=stack_pem(stackname)):
+            with stack_conn(stackname, user=BOOTSTRAP_USER):
                 # calluntil file exists
                 return not files.exists(join('/home', BOOTSTRAP_USER))
         except fabric_exceptions.NetworkError:
@@ -298,7 +298,7 @@ def update_stack(stackname):
         write_environment_info(stackname)
 
         # upload the private key if present
-        if not files.exists("/root/.ssh/id_rsa"):
+        if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
             # if this file doesn't exist remotely, upload it.
             # if it also doesn't exist on the filesystem, die horribly.
             # regular updates shouldn't have to deal with this.
