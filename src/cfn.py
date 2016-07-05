@@ -173,7 +173,7 @@ def cmd(stackname, command=None):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
     with stack_conn(stackname):
-	with settings(abort_on_prompts=True):
+        with settings(abort_on_prompts=True):
             run(command)
 
 @task
