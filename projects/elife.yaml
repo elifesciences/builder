@@ -161,3 +161,17 @@ elife-bot:
     vagrant:
         ports:
             1231: 80
+
+
+journal-cms:
+    subdomain: journal-cms # journal-cms.elifesciences.org
+    repo: https://github.com/elifesciences/elife-2.0-website
+    formula-repo: https://github.com/elifesciences/journal-cms-formula
+    aws:
+        ports:
+            22: 22
+            443: 443
+            80: 80
+    vagrant:
+        ports:
+            1241: 80
