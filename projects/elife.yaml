@@ -138,3 +138,26 @@ elife-metrics:
     vagrant:
         ports:
             1240: 80
+
+
+elife-bot:
+    repo: https://github.com/elifesciences/elife-bot
+    formula-repo: ssh://git@github.com/elifesciences/elife-bot-formula
+    aws:
+        type: t2.medium
+        ports:
+            22: 22
+            80: 80
+        ext:
+            size: 30 # GB
+    aws-alt:
+        large:
+            description: intended to run temporarily
+            type: c4.4xlarge
+            ext:
+                size: 160 # GB
+                type: ssd
+                device: /dev/xvdh
+    vagrant:
+        ports:
+            1231: 80
