@@ -220,10 +220,11 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     kwds.update({'default_flow_style': default_flow_style, 'indent': indent, 'line_break': line_break})
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
-def remove_ordereddict(data):
-    "turns a nested OrderedDict dict into a regular dictionary"
+def remove_ordereddict(data, dangerous=True):
+    """turns a nested OrderedDict dict into a regular dictionary. 
+    dangerous=True will replace unserializable values with the string '[unserializable]' """
     # so nasty. 
-    return json.loads(json.dumps(data))
+    return json.loads(json_dumps(data, dangerous))
 
 def yaml_to_json(filename):
     "reads the contents of the given yaml file and returns json"
@@ -263,10 +264,14 @@ def mkdir_p(path):
     assert os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path
     return path
 
-def json_dumps(obj):
+def json_dumps(obj, dangerous=False):
+    """drop-in for json.dumps that handles datetime objects. 
+    dangerous=True will replace unserializable values with the string '[unserializable]' """
     def json_handler(obj):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
+        elif dangerous:
+            return '[unserializable]'
         else:
             raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
     return json.dumps(obj, default=json_handler)
