@@ -1,5 +1,5 @@
 import os
-from buildercore import core, config, project
+from buildercore import core, config, project, bakery
 from buildercore.utils import lookup
 from buildercore.decorators import osissue, osissuefn
 import utils
@@ -7,6 +7,7 @@ from decorators import requires_aws_stack, debugtask, echo_output
 import boto
 from buildercore.core import boto_cfn_conn, boto_ec2_conn, connect_aws_with_stack
 from fabric.api import settings, task
+from fabric.contrib.console import confirm
 from contextlib import contextmanager
 
 import logging
@@ -82,3 +83,12 @@ def rds_snapshots(stackname):
     objdata = conn.get_all_dbsnapshots(instance_id=instance.id)
     data = sorted(map(lambda ss: ss.__dict__, objdata), key=lambda i: i['snapshot_create_time'])
     return data
+
+@debugtask
+@echo_output
+def detailed_stack_list(project=None):
+    region = find_region()
+    all_stacks = dict([(i.stack_name, i.__dict__) for i in core.raw_aws_stacks(region)])
+    if project:
+        return {k: v for k, v in all_stacks.items() if k.startswith("%s-" % project)}
+    return all_stacks
