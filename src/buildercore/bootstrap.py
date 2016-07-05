@@ -248,7 +248,7 @@ def update_stack(stackname):
     region = pdata['aws']['region']
 
     is_master = core.is_master_server_stack(stackname)
-    
+
     # not necessary on update, but best to check.
     #generate_stack_keys_if_necessary(stackname)
 
@@ -257,8 +257,8 @@ def update_stack(stackname):
     # this waits until a connection can be made and a file is found before continuing.
     def is_resourcing():
         try:
-            with stack_conn(stackname, user=BOOTSTRAP_USER):
-                # calluntil file exists
+            with stack_conn(stackname, username=BOOTSTRAP_USER):
+                # call until file exists
                 return not files.exists(join('/home', BOOTSTRAP_USER))
         except fabric_exceptions.NetworkError:
             LOG.debug("failed to connect to server ...")
@@ -281,8 +281,6 @@ def update_stack(stackname):
         install_master_flag = "install-master" if is_master else ""
         run_script('bootstrap.sh', salt_version, install_master_flag)
 
-        LOG.info("salt is now installed")
-        
         # who is your daddy and where does he live?
         #master_ip = master(region, 'ip_address')
         master_ip = master(region, 'private_ip_address')

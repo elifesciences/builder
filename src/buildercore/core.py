@@ -94,6 +94,8 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
 
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
+    if 'user' in kwargs:
+        LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
     data = stack_data(stackname)
     public_ip = data['instance']['ip_address']
     params = {
