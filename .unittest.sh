@@ -8,7 +8,7 @@ fi
 export PYTHONPATH="src"
 green --run-coverage tests"$module"
 
-# only test coverage if we running complete set of tests
+# only report coverage if we're running a complete set of tests
 if [ -z "$module" ]; then
     # is only run if tests pass
     covered=$(coverage report | grep TOTAL | awk '{print $6}' | sed 's/%//')

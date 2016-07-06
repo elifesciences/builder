@@ -1,17 +1,16 @@
-#
-# builder-managed projects at eLife
-#
-
 defaults:
     description: defaults for all projects in this file
     salt: '2016.3' # the version of salt these project use
+    domain: elifesciences.org
+    intdomain: elife.internal
+    # 'lax', 'metrics', 'gateway', etc
     subdomain: null
     # projects with an explicit `repo` attribute support branch deployments with
     # ./bldr deploy
     repo: null
     # repository containing build instructions for this project
     formula-repo: null
-    # default branch to use when deploying
+    # default branch to use when creating new instances
     default-branch: master
     aws:
         # find more here: http://cloud-images.ubuntu.com/releases/
@@ -34,8 +33,9 @@ defaults:
             backup-retention: 28 # days
             subnets: 
                 # two are required
-                - null
-                - null
+                # WARN! the below are only correct in us-west-1
+                - subnet-8eea67d7 # elife-db-subnet-1
+                - subnet-dbc471f0 # elife-db-subnet-2
         ext:
             # external hdd
             size: 10 # GB

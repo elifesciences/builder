@@ -95,9 +95,12 @@ def fetch_cert(stackname):
         if not is_prod and stackname in old_prods:
             is_prod = True
 
-        domain_names = ["%s.%s.elifesciences.org" % (instance_id, project_data['subdomain'])]
+        hostname_data = core.hostname_struct(stackname)
+        #domain_names = ["%s.%s.elifesciences.org" % (instance_id, project_data['subdomain'])]
+        domain_names = [hostname_data['full_hostname']]
         if is_prod:
-            project_hostname = "%s.elifesciences.org" % project_data['subdomain']
+            #project_hostname = "%s.elifesciences.org" % project_data['subdomain']
+            project_hostname = hostname_data['project_hostname']
             if acme_enabled(project_hostname):
                 domain_names.append(project_hostname)
             else:

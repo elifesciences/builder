@@ -1,6 +1,7 @@
 import os
 from os.path import join
 from unittest import TestCase
+from buildercore import config, project
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -9,6 +10,19 @@ class BaseCase(TestCase):
     maxDiff = None
     this_dir = os.path.realpath(os.path.dirname(__file__))
     fixtures_dir = join(this_dir, 'fixtures')
+
+    def __init__(self, *args, **kwargs):
+        super(BaseCase, self).__init__(*args, **kwargs)
+        self.switch_in_test_settings()
+        
+    def switch_in_test_settings(self):
+        self.original_settings_file = config.SETTINGS_FILE
+        config.SETTINGS_FILE = join(self.fixtures_dir, 'dummy-settings.yaml')        
+        
+    def switch_out_test_settings(self):
+        # clear any caches and reload the config module
+        project.project_map.cache_clear()
+        reload(config)
 
     #pyline: disable=invalid-name
     def assertAllPairsEqual(self, fn, pair_lst):

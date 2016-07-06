@@ -27,7 +27,7 @@ DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
 EXT_TITLE = "ExtraStorage"
 EXT_MP_TITLE = "MountPoint"
 R53_EXT_TITLE = "ExtDNS"
-R53_EXT_HOSTED_ZONE = "elifesciences.org."
+#R53_EXT_HOSTED_ZONE = "elifesciences.org."
 R53_INT_TITLE = "IntDNS"
 R53_INT_HOSTED_ZONE = "elife.internal."
 
@@ -75,7 +75,6 @@ def instance_tags(context):
         ec2.Tag('Project', context['project_name']),
     ]
 
-@osissue("deploy-user mention ties this to the shared-all strategy")
 def ec2instance(context):
     lu = partial(utils.lu, context)
     project_ec2 = {
@@ -175,7 +174,8 @@ def ext_volume(context):
     return ec2v, ec2va
 
 def external_dns(context):
-    hostedzone = R53_EXT_HOSTED_ZONE # The DNS name of an existing Amazon Route 53 hosted zone    
+    #hostedzone = R53_EXT_HOSTED_ZONE # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['domain'] + "."
     dns_record = route53.RecordSetType(
         R53_EXT_TITLE,
         HostedZoneName=hostedzone,

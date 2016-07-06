@@ -22,6 +22,10 @@ from . import utils, trop, core, config, project
 from .config import STACK_DIR
 from .decorators import osissue, osissuefn
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 def build_context(pname, **more_context):
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
@@ -55,34 +59,20 @@ def build_context(pname, **more_context):
     context.update(more_context)
 
     assert context['instance_id'] != None, "an 'instance_id' wasn't provided."
+    stackname = context['instance_id']
 
     # alpha-numeric only
     # TODO: investigate possibility of ambiguous RDS naming here
-    default_db_instance_id = slugify(context['instance_id'], separator="")
+    default_db_instance_id = slugify(stackname, separator="")
 
-    # wrangle hostname data
-    hostname_context = {'hostname': None, 'full_hostname': None, 'project_hostname': None}
-    if project_data.get('subdomain'):
-        # ll: master.lax
-        hostname = core.mk_hostname(context['instance_id'])
-        # ll: master.lax.elifesciences.org
-        full_hostname = "%(host)s.%(domain)s" % {'host': hostname if hostname else None,
-                                                'domain': project_data.get('domain')}
-        # ll: lax.elifesciences.org
-        project_hostname = "%(sub)s.%(domain)s" % {'sub': project_data.get('subdomain') if hostname else None,
-                                                   'domain': project_data.get('domain')}
-        hostname_context = {
-            'hostname': hostname, # ll: develop.lax
-            'full_hostname': full_hostname, # ll: develop.lax.elifesciences.org
-            'project_hostname': project_hostname, # ll: lax.elifesciences.org
-        }
-
+    # hostname data
+    context.update(core.hostname_struct(stackname))
+    
     # post-processing
     context.update({
-        'rds_instance_id': context['rds_instance_id'] or default_db_instance_id,
-        'is_prod_instance': context['instance_id'].split('-')[-1] in ['master', 'production'],
+        'rds_instance_id': context.get('rds_instance_id') or default_db_instance_id, # must use 'or' here
+        'is_prod_instance': core.is_prod_stack(stackname),
     })
-    context.update(hostname_context)
 
     # the above context will reside on the server at /etc/build_vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
@@ -113,6 +103,34 @@ def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
     return conn.validate_template(rendered_template)
 
+def validate_project(pname, **extra):
+    import time, boto
+    LOG.info('validating %s', pname)
+    template = quick_render(pname)
+    pdata = project.project_data(pname)
+    try:
+        resp = validate_aws_template(pname, template)
+        # validate all alternative configurations
+        for altconfig in pdata.get('aws-alt', {}).keys():
+            LOG.info('validating %s, %s' % (pname, altconfig))
+            extra = {
+                'alt-config': altconfig
+            }
+            template = quick_render(pname, **extra)
+            validate_aws_template(pname, template)
+            time.sleep(0.25) # be nice, avoid any rate limiting
+
+    except boto.connection.BotoServerError:
+        msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
+        LOG.error(msg)
+        return False
+
+    except:
+        msg = "unhandled fail:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
+        LOG.exception(msg)
+        return False
+
+    return True
 
 #
 # 

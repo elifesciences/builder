@@ -1,45 +1,59 @@
 defaults:
-    salt: '2015.8'
+    description: defaults for all projects in this file
+    salt: '2016.3' # the version of salt these project use
+    domain: example.org
+    # addressing within VPC
+    intdomain: example.internal
     subdomain: null
-    meta:
-        description: defaults for all projects
-    repo: None # projects with an explicit repo support branch deployments
+    # projects with an explicit `repo` attribute support branch deployments with
+    # ./bldr deploy
+    repo: null
+    # repository containing build instructions for this project
+    formula-repo: null
+    # default branch to use when creating a new instance
+    default-branch: master
     aws:
-        # NOTE! the ami to use is determined in buildercore.bakery
-        ami: ami-9eaa1cf6   # Ubuntu 14.04
-        #ami: ami-34cc7a5c  # Ubuntu 12.04 (for elife-drupal)
-        #ami: ami-d05e75b8  # another Ubuntu 14.04 - was attached to elife-crm, but that was wrong
-        #ami: ami-31d5635a  # elife 'basebox.2015-08-17'
+        # find more here: http://cloud-images.ubuntu.com/releases/
+        ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
         region: us-east-1
-        vpc-id: vpc-78a2071d
-        subnet-id: subnet-1d4eb46a # elife-public-subnet
-        cidr-ip: 0.0.0.0/0 # default access is 'everyone'
-        ports:
-            22: 22 # ssh is open on all instances
+        vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
+        subnet-id: subnet-191919191
         rds:
+            # rds defaults only used if an `rds` section present in project
+            # explicit database name overrides the one generated at template creation
             name: <defined at generation>
+            multi-az: False
             engine: postgres
+            # ensure this matches the version of Postgres you install on server!
             version: '9.4'
             type: db.t2.small
             storage: 5 # GB
-            backup-retention: 28
+            backup-retention: 28 # days
+            subnets: 
+                # two are required
+                - subnet-foo
+                - subnet-bar
         ext:
+            # external hdd
             size: 10 # GB
             device: /dev/sdh
+    aws-alt:
+        fresh:
+            description: uses a plain Ubuntu basebox instead of a ami
+            ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
-        #box: ubuntu/trusty64 # Ubuntu 14.04
-        #box: ubuntu/precise64 # Ubuntu 12.04
-        box: elifesciences/basebox # derived from ubuntu/trusty64
-        box-url: s3://elife-builder/boxes/basebox-meta.json
+        box: ubuntu/trusty64 # Ubuntu 14.04
+        box-url: null # not needed for boxes hosted on Atlas 
         ip: 192.168.33.44
         ram: 1024
         cpus: 2
-        cpucap: 50
+        cpucap: 100 # percent (vagrant default)
 
 # basic vagrant and aws, no alternative config
 dummy1:
-    subdomain: dummy1 # dummy.elifesciences.org
+    # disabled so we can test subdomain-less projects
+    #subdomain: dummy1 # dummy.elifesciences.org
     repo: ssh://git@github.com/elifesciences/dummy1
     aws:
         ports:
@@ -88,6 +102,8 @@ dummy3:
         description: "foo"
     aws:
         ami: ami-111111
+        ports:
+            22: 22
     aws-alt:
         # uses an rds backend and different ami
         alt-config1:
@@ -95,3 +111,5 @@ dummy3:
                 80: 80
             rds:
                 storage: 15
+            ext:
+                size: 200

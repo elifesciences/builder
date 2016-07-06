@@ -128,7 +128,8 @@ def rest(x):
 
 def firstnn(x):
     "returns the first non-nil value in x"
-    return first(filter(None, x))
+    return first(filter(lambda v: v != None, x))
+    #return first(filter(None, x))
 
 def cached(func):
     "simple function caching, stores result of calling the function as an attribute. function cannot take args."
@@ -246,7 +247,7 @@ def listfiles(path, ext_list=None):
     path_list = map(lambda fname: os.path.abspath(join(path, fname)), os.listdir(path))
     if ext_list:
         path_list = filter(lambda path: os.path.splitext(path)[1] in ext_list, path_list)
-    return filter(os.path.isfile, path_list)
+    return sorted(filter(os.path.isfile, path_list))
     
 def git_update():
     cmd = 'git pull --rebase'
@@ -296,16 +297,17 @@ def lookup(data, path, default=0xDEADBEEF):
             raise
         return default
 
+# TODO: this function suffers from truthy-falsey problems.
 #pylint: disable=invalid-name
 def lu(context, *paths, **kwargs):
     """looks up many paths given the initial data, returning the first non-nil result.
-    if no data available a ValueError is raised"""
+    if no data available a ValueError is raised."""
     default=None
     if 'default' in kwargs:
         default = kwargs['default']
     v = firstnn(map(lambda path: lookup(context, path, default), paths))
-    if not v:
-        raise ValueError("no value available for paths %s" % ' and '.join(paths))
+    if v == None:
+        raise ValueError("no value available for paths %r. %s" % (paths, context))
     return v
 
 def hasallkeys(ddict, key_list):

@@ -15,11 +15,11 @@ class ParseConfig(base.BaseCase):
         loaded_config = config.load(self.settings_file_path)
         expected_config = OrderedDict([
             ('project-locations', [
-                './projects/',
-                './projects/example.yaml',
-                '~/dev/python/builder/',
-                'ssh://master.elifesciences.org/projects/',
-                'https://master.elifesciences.org/projects/'
+                './src/tests/fixtures/projects/',
+                './src/tests/fixtures/projects/dummy-project.yaml',
+                #'~/dev/python/builder/',
+                #'ssh://master.elifesciences.org/projects/',
+                #'https://master.elifesciences.org/projects/'
             ]),
         ])
         self.assertEqual(loaded_config, expected_config)
@@ -30,9 +30,10 @@ class ParseConfig(base.BaseCase):
         user_path = os.path.expanduser('~')
         expected_config = OrderedDict([
             ('project-locations', [
-                ('file', None, join(config.PROJECT_PATH, 'projects', 'example.yaml')),
-                ('ssh', 'master.elifesciences.org', '/projects/'),
-                ('https', 'master.elifesciences.org', '/projects/')
+                ('file', None, join(config.PROJECT_PATH, 'src/tests/fixtures/projects', 'dummy-project.yaml')),
+                ('file', None, join(config.PROJECT_PATH, 'src/tests/fixtures/projects', 'dummy-project2.yaml')),
+                #('ssh', 'master.elifesciences.org', '/projects/'),
+                #('https', 'master.elifesciences.org', '/projects/')
             ]),
         ])
         self.assertEqual(parsed_config, expected_config)

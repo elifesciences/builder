@@ -5,12 +5,12 @@
 # from these interfaces a list of organisations and their projects are made available
 project-locations:
     # 'projects' directory relative to this builder instance
-    - ./projects/
+    - ./src/tests/fixtures/projects/
     # specific file
-    - ./projects/example.yaml
+    - ./src/tests/fixtures/projects/dummy-project.yaml
     # path relative to user's home directory that will be expanded
-    - ~/dev/python/builder/
+    #- ~/dev/python/builder/
     # remote instance of builder's API requiring server access
-    - ssh://master.elifesciences.org/projects/
+    #- ssh://master.elifesciences.org/projects/
     # remote public instance of builder (not recommended)
-    - https://master.elifesciences.org/projects/
+    #- https://master.elifesciences.org/projects/

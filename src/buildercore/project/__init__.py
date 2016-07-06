@@ -103,10 +103,11 @@ def project_list(project_locations_list=None):
 
 def project_data(pname, project_locations_list=None):
     "returns the data for a single project"
+    data = project_map(project_locations_list)
     try:
-        return project_map(project_locations_list)[pname]
+        return data[pname]
     except KeyError:
-        raise ValueError("unknown project %r", pname)
+        raise ValueError("unknown project %r, known projects %r", pname, data.keys())
 
 #
 #
