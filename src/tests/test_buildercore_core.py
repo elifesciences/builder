@@ -12,27 +12,6 @@ class SimpleCases(base.BaseCase):
     def tearDown(self):
         config.SETTINGS_FILE = self.original_settings
 
-    '''
-    @skip("relies on actual project data")
-    def test_mk_hostname(self):
-
-        # this test needs fixtures!!
-        
-        expected_triples = [
-            ('elife-lax', 'elife-lax--develop', 'develop.lax'),
-            ('elife-lax', 'elife-lax--feature-asdf', 'feature-asdf.lax'),
-            ('elife-lax', 'elife-lax--master', 'master.lax'),
-            ('master-server', 'master--develop', None), # no subdomain
-        ]
-        for project, stackname, expected in expected_triples:
-            actual = core.mk_hostname(stackname)
-            try:
-                self.assertEqual(expected, actual)
-            except AssertionError:
-                print 'expected %r got %r' % (expected, actual)
-                raise
-    '''
-
     def test_hostname_struct_no_subdomain(self):
         expected = {
             'domain': "example.org",
@@ -118,8 +97,6 @@ class SimpleCases(base.BaseCase):
             
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):
-        self.project_config = join(self.fixtures_dir, "dummy-project.yaml")
-        
         self.dummy1_config = join(self.fixtures_dir, 'dummy1-project.json')
         self.dummy2_config = join(self.fixtures_dir, 'dummy2-project.json')
         self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
@@ -135,8 +112,7 @@ class TestCoreNewProjectData(base.BaseCase):
         ]
         for pname, expected_path in expected:
             expected_data = json.load(open(expected_path, 'r'))
-            #project_data = project.project_data(pname, project_file=self.project_config)
-            project_data = project.project_data(pname) #, project_file=self.project_config)
+            project_data = project.project_data(pname)
             project_data = utils.remove_ordereddict(project_data)
             self.assertEqual(expected_data, project_data, 'failed %s' % pname)
 
@@ -149,8 +125,7 @@ class TestCoreNewProjectData(base.BaseCase):
         snippet = {'defaults':
                        {'vagrant': {
                            'cpus': 999}}}
-        #project_data = project.project_data('dummy1', self.project_config, [snippet])
-        project_data = project.project_data('dummy1') #, self.project_config, [snippet])
+        project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
         
         expected_data = json.load(open(self.dummy1_config, 'r'))
@@ -170,8 +145,7 @@ class TestCoreNewProjectData(base.BaseCase):
                         {'vagrant': {
                             'cpucap': 111}}}
         snippet_list = [snippet, snippet2]
-        #project_data = project.project_data('dummy1', self.project_config, snippet_list)
-        project_data = project.project_data('dummy1') #, self.project_config, snippet_list)
+        project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
         
         expected_data = json.load(open(self.dummy1_config, 'r'))
