@@ -41,7 +41,7 @@ sudo service salt-minion restart
 sudo rm -f /etc/salt/minion_id
 
 echo "Executing salt highstate (provisioning)"
-sudo salt-call state.highstate || {
+sudo salt-call state.highstate --retcode-passthrough || {
     status=$?
     echo "Error provisioning, state.highstate returned: ${status}"
 }

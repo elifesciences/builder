@@ -97,7 +97,7 @@ def update_all(region):
     "updates *all* minions talking to the master. this is *really* not recommended."
     with master_server(region, username=config.DEPLOY_USER):
         run("service salt-minion restart")
-        run(r"salt \* state.highstate")
+        run(r"salt \* state.highstate --retcode-passthrough")
 
 
 #
@@ -310,7 +310,7 @@ def update_stack(stackname):
             # causes minion to send it's key to master and ask for acceptance
             sudo('service salt-minion restart')
 
-        sudo('salt-call state.highstate') # this will tell the machine to update itself
+        sudo('salt-call state.highstate --retcode-passthrough') # this will tell the machine to update itself
 
 @core.requires_stack_file
 def delete_stack_file(stackname):
