@@ -52,7 +52,8 @@ defaults:
 
 # basic vagrant and aws, no alternative config
 dummy1:
-    subdomain: dummy1 # dummy.elifesciences.org
+    # disabled so we can test subdomain-less projects
+    #subdomain: dummy1 # dummy.elifesciences.org
     repo: ssh://git@github.com/elifesciences/dummy1
     aws:
         ports:

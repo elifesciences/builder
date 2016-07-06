@@ -1,16 +1,18 @@
 import json
 from os.path import join
 from . import base
-from buildercore import core, utils, project
+from buildercore import core, utils, project, config
 from unittest import skip
 
 class SimpleCases(base.BaseCase):
     def setUp(self):
-        pass
+        self.original_settings = config.SETTINGS_FILE
+        config.SETTINGS_FILE = join(self.fixtures_dir, 'dummy-settings.yaml')
 
     def tearDown(self):
-        pass
+        config.SETTINGS_FILE = self.original_settings
 
+    '''
     @skip("relies on actual project data")
     def test_mk_hostname(self):
 
@@ -29,20 +31,30 @@ class SimpleCases(base.BaseCase):
             except AssertionError:
                 print 'expected %r got %r' % (expected, actual)
                 raise
+    '''
 
-    def test_mk_stackname(self):
-        cases = [
-            (['lax', 'develop'], 'lax--develop'),
-            (['elife-lax', 'develop'], 'elife-lax--develop'),
-            (['master-server-2', 'master'], 'master-server-2--master'),
+    def test_hostname_struct_no_subdomain(self):
+        expected = {
+            'domain': "example.org",
+            'subdomain': None,
+            'project_hostname': None,
+            'hostname': None,
+            'full_hostname': None,
+        }
+        stackname = 'dummy1--test'
+        self.assertEqual(core.hostname_struct(stackname), expected)
 
-            # with a cluster id
-            (['lax', 'develop', 'ci'], 'lax--develop--ci'),
-            (['master-server-2', 'master', 'testing-2'], 'master-server-2--master--testing-2')
-        ]
-        for bits, expected in cases:
-            self.assertEqual(core.mk_stackname(*bits), expected)
-            
+    def test_hostname_struct(self):
+        expected = {
+            'domain': "example.org",
+            'subdomain': 'dummy2',
+            'project_hostname': 'dummy2.example.org',
+            'hostname': 'test.dummy2',
+            'full_hostname': 'test.dummy2.example.org',
+        }
+        stackname = 'dummy2--test'
+        self.assertEqual(core.hostname_struct(stackname), expected)
+    
     def test_project_name_from_stackname(self):
         expected = [
             ('central-logging--2014-01-14', 'central-logging'),
@@ -104,34 +116,17 @@ class SimpleCases(base.BaseCase):
         self.assertFalse(all(results))
         
             
-
-# 
-# these might be better off in the test_buildercore_project 
-# 
-            
-class TestCoreProjectData(base.BaseCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    def test_just_branch_deployable_projects(self):
-        "projects that are deployable by their branch are accurately filtered from the list of all projects"
-        assert(False), "this test is poorly self contained"
-        all_projects = project.project_list() # maybe?
-        branch_deployable = project.branch_deployable_projects()
-        self.assertTrue(len(all_projects) > len(branch_deployable))
-        self.assertTrue(len(branch_deployable) > 0)
-        self.assertTrue(branch_deployable.has_key('elife-api'))
-
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):
         self.project_config = join(self.fixtures_dir, "dummy-project.yaml")
+        
         self.dummy1_config = join(self.fixtures_dir, 'dummy1-project.json')
         self.dummy2_config = join(self.fixtures_dir, 'dummy2-project.json')
         self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
 
+    def tearDown(self):
+        pass
+        
     def test_configurations(self):
         expected = [
             ('dummy1', self.dummy1_config),
@@ -139,15 +134,11 @@ class TestCoreNewProjectData(base.BaseCase):
             ('dummy3', self.dummy3_config),
         ]
         for pname, expected_path in expected:
-            try:
-                expected_data = json.load(open(expected_path, 'r'))
-                #project_data = project.project_data(pname, project_file=self.project_config)
-                project_data = project.project_data(pname) #, project_file=self.project_config)
-                project_data = utils.remove_ordereddict(project_data)
-                self.assertEqual(expected_data, project_data)
-            except AssertionError:
-                print 'failed',pname
-                raise
+            expected_data = json.load(open(expected_path, 'r'))
+            #project_data = project.project_data(pname, project_file=self.project_config)
+            project_data = project.project_data(pname) #, project_file=self.project_config)
+            project_data = utils.remove_ordereddict(project_data)
+            self.assertEqual(expected_data, project_data, 'failed %s' % pname)
 
     # snippets
 

@@ -1,41 +1,53 @@
 {
+    "description": "defaults for all projects in this file", 
+    "salt": "2016.3", 
+    "domain": "example.org", 
+    "intdomain": "example.internal", 
+    "subdomain": "dummy3", 
     "repo": "ssh://git@github.com/elifesciences/dummy3", 
-    "meta": {
-        "description": "foo"
-    },
+    "formula-repo": null, 
+    "default-branch": "master", 
     "aws": {
         "ami": "ami-111111", 
-        "cidr-ip": "0.0.0.0/0", 
-        "region": "us-east-1", 
         "type": "t2.small", 
-        "ports": {
-            "22": 22
-        }, 
-        "subnet-id": "subnet-1d4eb46a", 
-        "vpc-id": "vpc-78a2071d"
+        "region": "us-east-1", 
+        "vpc-id": null, 
+        "subnet-id": null
     }, 
-    "subdomain": "dummy3", 
-    "salt": "2015.8", 
     "aws-alt": {
+        "fresh": {
+            "ami": "ami-9eaa1cf6", 
+            "type": "t2.small", 
+            "region": "us-east-1", 
+            "vpc-id": null, 
+            "subnet-id": null, 
+            "description": "uses a plain Ubuntu basebox instead of a ami"
+        }, 
         "alt-config1": {
             "ami": "ami-111111", 
-            "cidr-ip": "0.0.0.0/0", 
-            "rds": {
-                "backup-retention": 28,
-                "engine": "postgres", 
-                "storage": 15, 
-                "version": "9.4", 
-                "type": "db.t2.small",
-                "name": "<defined at generation>"
-            }, 
-            "region": "us-east-1", 
             "type": "t2.small", 
-            "ports": {
-                "80": 80,
-                "22": 22
+            "region": "us-east-1", 
+            "vpc-id": null, 
+            "subnet-id": null, 
+            "rds": {
+                "name": "<defined at generation>", 
+                "multi-az": false, 
+                "engine": "postgres", 
+                "version": "9.4", 
+                "type": "db.t2.small", 
+                "storage": 15, 
+                "backup-retention": 28, 
+                "subnets": [
+                    null, 
+                    null
+                ]
             }, 
-            "subnet-id": "subnet-1d4eb46a", 
-            "vpc-id": "vpc-78a2071d"
+            "ports": {
+                "80": 80
+            }
         }
+    }, 
+    "meta": {
+        "description": "foo"
     }
 }
