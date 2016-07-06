@@ -17,8 +17,8 @@ defaults:
         ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
         region: us-east-1
-        vpc-id: null  # vpc-id + subnet-id are peculiar to AWS account + region
-        subnet-id: null
+        vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
+        subnet-id: subnet-191919191
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation

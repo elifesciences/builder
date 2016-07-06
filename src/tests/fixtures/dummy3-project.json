@@ -11,24 +11,24 @@
         "ami": "ami-111111", 
         "type": "t2.small", 
         "region": "us-east-1", 
-        "vpc-id": null, 
-        "subnet-id": null
+        "vpc-id": "vpc-0a0a0a0a", 
+        "subnet-id": "subnet-191919191"
     }, 
     "aws-alt": {
         "fresh": {
             "ami": "ami-9eaa1cf6", 
             "type": "t2.small", 
             "region": "us-east-1", 
-            "vpc-id": null, 
-            "subnet-id": null, 
+            "vpc-id": "vpc-0a0a0a0a", 
+            "subnet-id": "subnet-191919191", 
             "description": "uses a plain Ubuntu basebox instead of a ami"
         }, 
         "alt-config1": {
             "ami": "ami-111111", 
             "type": "t2.small", 
             "region": "us-east-1", 
-            "vpc-id": null, 
-            "subnet-id": null, 
+            "vpc-id": "vpc-0a0a0a0a", 
+            "subnet-id": "subnet-191919191", 
             "rds": {
                 "name": "<defined at generation>", 
                 "multi-az": false, 
