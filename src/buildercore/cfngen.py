@@ -22,6 +22,10 @@ from . import utils, trop, core, config, project
 from .config import STACK_DIR
 from .decorators import osissue, osissuefn
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 def build_context(pname, **more_context):
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
@@ -99,6 +103,34 @@ def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
     return conn.validate_template(rendered_template)
 
+def validate_project(pname, **extra):
+    import time, boto
+    LOG.info('validating %s', pname)
+    template = quick_render(pname)
+    pdata = project.project_data(pname)
+    try:
+        resp = validate_aws_template(pname, template)
+        # validate all alternative configurations
+        for altconfig in pdata.get('aws-alt', {}).keys():
+            LOG.info('validating %s, %s' % (pname, altconfig))
+            extra = {
+                'alt-config': altconfig
+            }
+            template = quick_render(pname, **extra)
+            validate_aws_template(pname, template)
+            time.sleep(0.25) # be nice, avoid any rate limiting
+
+    except boto.connection.BotoServerError:
+        msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
+        LOG.error(msg)
+        return False
+
+    except:
+        msg = "unhandled fail:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
+        LOG.exception(msg)
+        return False
+
+    return True
 
 #
 # 

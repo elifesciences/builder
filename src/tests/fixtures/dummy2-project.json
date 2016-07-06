@@ -22,8 +22,8 @@
             "storage": 10, 
             "backup-retention": 28, 
             "subnets": [
-                null, 
-                null
+                "subnet-foo", 
+                "subnet-bar"
             ]
         }, 
         "ports": {
@@ -50,8 +50,8 @@
                 "storage": 10, 
                 "backup-retention": 28, 
                 "subnets": [
-                    null, 
-                    null
+                    "subnet-foo", 
+                    "subnet-bar"
                 ]
             }, 
             "ports": {
@@ -78,8 +78,8 @@
                 "storage": 15, 
                 "backup-retention": 28, 
                 "subnets": [
-                    null, 
-                    null
+                    "subnet-foo", 
+                    "subnet-bar"
                 ]
             }, 
             "ports": {

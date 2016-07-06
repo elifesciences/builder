@@ -6,11 +6,10 @@ from unittest import skip
 
 class SimpleCases(base.BaseCase):
     def setUp(self):
-        self.original_settings = config.SETTINGS_FILE
-        config.SETTINGS_FILE = join(self.fixtures_dir, 'dummy-settings.yaml')
+        pass
 
     def tearDown(self):
-        config.SETTINGS_FILE = self.original_settings
+        pass
 
     def test_hostname_struct_no_subdomain(self):
         expected = {
@@ -80,9 +79,7 @@ class SimpleCases(base.BaseCase):
             'master-server--master--ci',
         ]
         results = map(core.is_master_server_stack, true_cases)
-        if False in results:
-            print zip(true_cases, results)
-        self.assertTrue(all(results))
+        self.assertTrue(all(results), "not all master servers identified: %r" % zip(true_cases, results))
 
     def test_master_server_identified_false_cases(self):
         false_cases = [
@@ -90,9 +87,7 @@ class SimpleCases(base.BaseCase):
             '', None, 123, {}, [], self
         ]
         results = map(core.is_master_server_stack, false_cases)
-        if False in results:
-            print zip(false_cases, results)
-        self.assertFalse(all(results))
+        self.assertFalse(all(results), "not all false cases identified: %r" % zip(false_cases, results))
         
             
 class TestCoreNewProjectData(base.BaseCase):

@@ -75,7 +75,6 @@ def instance_tags(context):
         ec2.Tag('Project', context['project_name']),
     ]
 
-@osissue("deploy-user mention ties this to the shared-all strategy")
 def ec2instance(context):
     lu = partial(utils.lu, context)
     project_ec2 = {

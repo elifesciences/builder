@@ -12,7 +12,10 @@
         "type": "t2.small", 
         "region": "us-east-1", 
         "vpc-id": "vpc-0a0a0a0a", 
-        "subnet-id": "subnet-191919191"
+        "subnet-id": "subnet-191919191", 
+        "ports": {
+            "22": 22
+        }
     }, 
     "aws-alt": {
         "fresh": {
@@ -21,6 +24,9 @@
             "region": "us-east-1", 
             "vpc-id": "vpc-0a0a0a0a", 
             "subnet-id": "subnet-191919191", 
+            "ports": {
+                "22": 22
+            }, 
             "description": "uses a plain Ubuntu basebox instead of a ami"
         }, 
         "alt-config1": {
@@ -38,11 +44,16 @@
                 "storage": 15, 
                 "backup-retention": 28, 
                 "subnets": [
-                    null, 
-                    null
+                    "subnet-foo", 
+                    "subnet-bar"
                 ]
             }, 
+            "ext": {
+                "size": 200, 
+                "device": "/dev/sdh"
+            }, 
             "ports": {
+                "22": 22, 
                 "80": 80
             }
         }

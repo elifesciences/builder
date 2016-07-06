@@ -32,8 +32,8 @@ defaults:
             backup-retention: 28 # days
             subnets: 
                 # two are required
-                - null
-                - null
+                - subnet-foo
+                - subnet-bar
         ext:
             # external hdd
             size: 10 # GB
@@ -102,6 +102,8 @@ dummy3:
         description: "foo"
     aws:
         ami: ami-111111
+        ports:
+            22: 22
     aws-alt:
         # uses an rds backend and different ami
         alt-config1:
@@ -109,3 +111,5 @@ dummy3:
                 80: 80
             rds:
                 storage: 15
+            ext:
+                size: 200

@@ -33,8 +33,9 @@ defaults:
             backup-retention: 28 # days
             subnets: 
                 # two are required
-                - null
-                - null
+                # WARN! the below are only correct in us-west-1
+                - subnet-8eea67d7 # elife-db-subnet-1
+                - subnet-dbc471f0 # elife-db-subnet-2
         ext:
             # external hdd
             size: 10 # GB
