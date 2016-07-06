@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 class TestProject(base.BaseCase):
     def setUp(self):
-        self.project_file = join(self.fixtures_dir, 'dummy-project.yaml')
+        self.project_file = join(self.fixtures_dir, 'projects', 'dummy-project.yaml')
         self.parsed_config = config.parse({
             'project-locations': [self.project_file]})
 
@@ -41,8 +41,8 @@ class TestMultiProjects(base.BaseCase):
     def setUp(self):
         loaded_config = {
             'project-locations': [
-                join(self.fixtures_dir, 'dummy-project.yaml'),
-                join(self.fixtures_dir, 'dummy-project2.yaml'),
+                join(self.fixtures_dir, 'projects', 'dummy-project.yaml'),
+                join(self.fixtures_dir, 'projects', 'dummy-project2.yaml'),
             ]
         }
         self.parsed_config = config.parse(loaded_config)['project-locations']
