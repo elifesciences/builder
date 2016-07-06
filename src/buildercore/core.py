@@ -145,6 +145,11 @@ def instanceid_from_stackname(stackname):
 def is_master_server_stack(stackname):
     return 'master-server--' in str(stackname)
 
+@testme
+def is_prod_stack(stackname):
+    pname, inst_id = instanceid_from_stackname(stackname)
+    return inst_id in ['master', 'production']
+
 
 #
 # stack file wrangling
@@ -322,21 +327,33 @@ def requires_stack_file(func):
 #
 #
 
-@testme
-def mk_hostname(stackname):
-    """given a project and a stackname, returns a hostname without the domain name
-    for example, 'develop.lax' or 'production.crm'"""
+def hostname_struct(stackname):
+    "returns a dictionary with convenient domain name information"
+    # wrangle hostname data
     pname, instance_id = instanceid_from_stackname(stackname)
-    data = project.project_data(pname)
-    try:
-        subdomain = data['subdomain']
-        # remove any non-alphanumeric or hyphen characters
-        instance_id = re.sub(r'[^\w\-]', '', instance_id)
-        return "%(instance_id)s.%(subdomain)s" % locals()
-    except KeyError:
-        LOG.info("%s does not have a subdomain to create a hostname from. ignoring.", pname)
-        return None
+    pdata = project.project_data(pname)
+    domain = pdata.get('domain')
+    subdomain = pdata.get('subdomain')
+    struct = {
+        'domain': domain, # elifesciences.org
+        'subdomain': subdomain, # gateway
+        'project_hostname': None, # gateway.elifesciences.org
+        'hostname': None, # temp.gateway
+        'full_hostname': None, # temp.gateway.elifesciences.org
+    }
+    if not subdomain:
+        # this project doesn't expect to be addressed
+        # return immediately with what we do have
+        return struct
 
+    # removes any non-alphanumeric or hyphen characters
+    instance_id = re.sub(r'[^\w\-]', '', instance_id)
+    hostname = instance_id + "." + subdomain
+
+    struct['hostname'] = hostname
+    struct['full_hostname'] = hostname + "." + pdata['domain']
+    struct['project_hostname'] = subdomain + "." + domain
+    return struct
 
 def project_data_for_stackname(stackname, *args, **kwargs):
     pname = project_name_from_stackname(stackname)

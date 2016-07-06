@@ -55,34 +55,20 @@ def build_context(pname, **more_context):
     context.update(more_context)
 
     assert context['instance_id'] != None, "an 'instance_id' wasn't provided."
+    stackname = context['instance_id']
 
     # alpha-numeric only
     # TODO: investigate possibility of ambiguous RDS naming here
-    default_db_instance_id = slugify(context['instance_id'], separator="")
+    default_db_instance_id = slugify(stackname, separator="")
 
-    # wrangle hostname data
-    hostname_context = {'hostname': None, 'full_hostname': None, 'project_hostname': None}
-    if project_data.get('subdomain'):
-        # ll: master.lax
-        hostname = core.mk_hostname(context['instance_id'])
-        # ll: master.lax.elifesciences.org
-        full_hostname = "%(host)s.%(domain)s" % {'host': hostname if hostname else None,
-                                                'domain': project_data.get('domain')}
-        # ll: lax.elifesciences.org
-        project_hostname = "%(sub)s.%(domain)s" % {'sub': project_data.get('subdomain') if hostname else None,
-                                                   'domain': project_data.get('domain')}
-        hostname_context = {
-            'hostname': hostname, # ll: develop.lax
-            'full_hostname': full_hostname, # ll: develop.lax.elifesciences.org
-            'project_hostname': project_hostname, # ll: lax.elifesciences.org
-        }
-
+    # hostname data
+    context.update(core.hostname_struct(stackname))
+    
     # post-processing
     context.update({
-        'rds_instance_id': context['rds_instance_id'] or default_db_instance_id,
-        'is_prod_instance': context['instance_id'].split('-')[-1] in ['master', 'production'],
+        'rds_instance_id': context.get('rds_instance_id', default_db_instance_id),
+        'is_prod_instance': core.is_prod_stack(stackname),
     })
-    context.update(hostname_context)
 
     # the above context will reside on the server at /etc/build_vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
