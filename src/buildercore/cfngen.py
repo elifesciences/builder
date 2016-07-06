@@ -66,7 +66,7 @@ def build_context(pname, **more_context):
     
     # post-processing
     context.update({
-        'rds_instance_id': context.get('rds_instance_id', default_db_instance_id),
+        'rds_instance_id': context.get('rds_instance_id') or default_db_instance_id, # must use 'or' here
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
