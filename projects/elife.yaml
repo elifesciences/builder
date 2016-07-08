@@ -175,3 +175,25 @@ journal-cms:
     vagrant:
         ports:
             1241: 80
+
+
+elife-dashboard:
+    subdomain: ppp-dash # ppp-dash.elifesciences.org
+    repo: ssh://git@github.com/elifesciences/elife-dashboard
+    formula-repo: https://github.com/elifesciences/elife-dashboard-formula
+    default-branch: develop
+    aws:
+        ports:
+            22: 22
+            80: 80
+            443: 443
+    aws-alt:
+        master:
+            description: production environment. backed by RDS
+            rds:
+                storage: 5
+    vagrant:
+        ports:
+            1324: 80
+            8080: 8080 # scheduler (blocked on AWS)
+
