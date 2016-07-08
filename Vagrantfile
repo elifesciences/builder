@@ -54,7 +54,7 @@ end
 if ENV['PROJECT']
     INSTANCE_NAME = ENV['PROJECT'] + "--vagrant"
 else
-    prn "You must select a project:"
+    prn "Select a project:"
     KEYED = {}
     SUPPORTED_PROJECTS.each_with_index do |k,i|
         KEYED[i+1] = k[0]
@@ -215,7 +215,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         
         # it's possible a formula repo was defined but explicitly nullified
         repo = PRJ.fetch("formula-repo", nil)
-        if repo 
+        if not repo 
+            prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'."
+            prn "check your project.yaml file inside ./projects/ and reload"
+            exit(1)
+        else
             # clone the repo if it doesn't exist. user is in charge of keeping this updated.
             if File.exists?("cloned-projects/#{PROJECT_NAME}/.git")
                 prn runcmd("cd cloned-projects/#{PROJECT_NAME}/ && git pull")
