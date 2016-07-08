@@ -1,0 +1,17 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt1439286039000",
+            "Effect": "Allow",
+            "Action": [
+                "s3:List*",
+                "s3:Get*"
+            ],
+            "Resource": [
+                "arn:aws:s3:::elife-app-backups",
+                "arn:aws:s3:::elife-app-backups/*"
+            ]
+        }
+    ]
+}

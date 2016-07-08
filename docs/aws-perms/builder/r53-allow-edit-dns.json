@@ -1,0 +1,30 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt1444749822000",
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Sid": "Stmt1444749822001",
+            "Effect": "Allow",
+            "Action": [
+                "route53:ChangeResourceRecordSets",
+                "route53:GetHostedZone",
+                "route53:GetChange",
+                "route53:ListResourceRecordSets"
+            ],
+            "Resource": [
+                "arn:aws:route53:::hostedzone/Z3URXB4RI4BD2U",
+                "arn:aws:route53:::hostedzone/Z3HFERG2TM91UK",
+                "arn:aws:route53:::change/*"
+            ]
+        }
+    ]
+}
