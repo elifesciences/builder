@@ -288,6 +288,7 @@ def update_stack(stackname):
         map(sudo, [
             "echo 'master: %s' > /etc/salt/minion" % master_ip,
             "echo 'id: %s' >> /etc/salt/minion" % stackname,
+            "echo 'log_level: info' >> /etc/salt/minion",
         ])
 
         # write out environment config so Salt can read CFN outputs
