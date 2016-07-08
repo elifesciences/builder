@@ -98,8 +98,7 @@ def requires_aws_stack(func):
             return
         if not stackname or stackname not in asl:
             stackname = utils._pick("stack", asl, default_file=deffile('.active-stack'))
-        else:
-            args = args[1:]
+        args = args[1:]
         return func(stackname, *args, **kwargs)
     return call
 
