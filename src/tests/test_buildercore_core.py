@@ -32,6 +32,17 @@ class SimpleCases(base.BaseCase):
         }
         stackname = 'dummy2--test'
         self.assertEqual(core.hostname_struct(stackname), expected)
+
+    def test_hostname_struct_with_cluster(self):
+        expected = {
+            'domain': "example.org",
+            'subdomain': 'dummy2',
+            'project_hostname': 'dummy2.example.org',
+            'hostname': 'develop--end2end.dummy2',
+            'full_hostname': 'develop--end2end.dummy2.example.org',
+        }
+        stackname = 'dummy2--develop--end2end'
+        self.assertEqual(core.hostname_struct(stackname), expected)
     
     def test_project_name_from_stackname(self):
         expected = [

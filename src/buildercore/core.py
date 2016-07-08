@@ -330,7 +330,13 @@ def requires_stack_file(func):
 def hostname_struct(stackname):
     "returns a dictionary with convenient domain name information"
     # wrangle hostname data
-    pname, instance_id = instanceid_from_stackname(stackname)
+
+    triple = parse_stackname(stackname)
+    if len(triple) == 3:
+        pname, instance_id, cluster = triple
+    else:
+        pname, instance_id = triple
+        cluster = None
     pdata = project.project_data(pname)
     domain = pdata.get('domain')
     subdomain = pdata.get('subdomain')
@@ -348,7 +354,10 @@ def hostname_struct(stackname):
 
     # removes any non-alphanumeric or hyphen characters
     instance_id = re.sub(r'[^\w\-]', '', instance_id)
-    hostname = instance_id + "." + subdomain
+    if cluster:
+        hostname = instance_id + "--" + cluster + "." + subdomain
+    else:
+        hostname = instance_id + "." + subdomain
 
     struct['hostname'] = hostname
     struct['full_hostname'] = hostname + "." + pdata['domain']
