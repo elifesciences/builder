@@ -3,6 +3,7 @@
 
 # where to look for organisation project data
 # from these interfaces a list of organisations and their projects are made available
+write-keypairs-to-s3: False
 project-locations:
     # 'projects' directory relative to this builder instance
     - ./src/tests/fixtures/projects/
