@@ -53,7 +53,7 @@ def aws_update_many_projects(pname_list):
     minions = ' or '.join(map(lambda pname: pname + "-*", pname_list))
     region = aws.find_region()
     with core.stack_conn(core.find_master(region)):
-        sudo("salt -C '%s' state.highstate" % minions)
+        sudo("salt -C '%s' state.highstate --retcode-passthrough" % minions)
 
 @debugtask
 @requires_project

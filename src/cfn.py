@@ -107,7 +107,7 @@ def highstate(stackname):
     "a fast update with many caveats. if you have the time, prefer aws_update_stack instead"
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         sudo('salt-call saltutil.refresh_pillar') # not sure if this even does anything ...
-        sudo('salt-call state.highstate')
+        sudo('salt-call state.highstate --retcode-passthrough')
         
 @debugtask
 @requires_aws_stack
