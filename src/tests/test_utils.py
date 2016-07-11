@@ -2,7 +2,7 @@ from . import base
 from mock import patch
 import utils
 
-class TestBuildercoreUtils(base.BaseCase):
+class TestUtils(base.BaseCase):
     def setUp(self):
         pass
 
@@ -49,6 +49,9 @@ class TestBuildercoreUtils(base.BaseCase):
     def test_uin_default(self, get_input):
         value = utils.uin('project', default='lax')
         self.assertEqual('lax', value)
+
+    def test_pwd(self):
+        self.assertRegexpMatches(utils.pwd(), "^/.*/src$")
 
     def test_table(self):
         class AnObject():
