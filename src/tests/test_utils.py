@@ -50,6 +50,9 @@ class TestUtils(base.BaseCase):
         value = utils.uin('project', default='lax')
         self.assertEqual('lax', value)
 
+    def test_mkdir(self):
+        utils.mkdirp(".")
+
     def test_pwd(self):
         self.assertRegexpMatches(utils.pwd(), "^/.*/src$")
 
