@@ -120,35 +120,27 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
 def mk_stackname(*bits):
     return "--".join(map(slugify, filter(None, bits)))
 
+#TODO: test these functions
 def parse_stackname(stackname):
-    "returns a triple of project, instance and cluster ids"
+    "returns a pair of project and cluster id"
     if not stackname or not isinstance(stackname, basestring):
-        raise ValueError("stackname must look like <pname>--<inst-id>[--<cluster-id>], got: %r" % stackname)
-    pname = instance_id = cluster_id = None
+        raise ValueError("stackname must look like <pname>--<cluster-id>, got: %r" % stackname)
+    pname = cluster_id = None
     bits = stackname.split('--')
-    if len(bits) == 1:
+    if len(bits) != 2:
         raise ValueError("could not parse given stackname %r" % stackname)
-    elif len(bits) == 2:
-        pname, instance_id = bits
-    elif len(bits) == 3:
-        pname, instance_id, cluster_id = bits
-    return pname, instance_id, cluster_id
+    return bits
         
 def project_name_from_stackname(stackname):
     "returns just the project name from the given stackname"
     return first(parse_stackname(stackname))
 
-def instanceid_from_stackname(stackname):
-    "returns a pair of (project name, id) where id is the  "
-    return parse_stackname(stackname)[:2]
-    
 def is_master_server_stack(stackname):
     return 'master-server--' in str(stackname)
 
-@testme
 def is_prod_stack(stackname):
-    pname, inst_id = instanceid_from_stackname(stackname)
-    return inst_id in ['master', 'production']
+    pname, cluster = parse_stackname(stackname)
+    return cluster in ['master', 'production', 'prod']
 
 
 #
@@ -281,7 +273,7 @@ def _find_master(sl):
     # this all assumes master servers with YMD instance ids
     #master_server_ymd_instance_id = lambda x: ''.join(x.split('--')[2:])
     #msl = sorted(msl, key=master_server_ymd_instance_id, reverse=True)
-    msl = sorted(msl, key=instanceid_from_stackname, reverse=True)
+    msl = sorted(msl, key=parse_stackname, reverse=True)
     return first(msl)
 
 def find_master(region):
@@ -331,12 +323,7 @@ def hostname_struct(stackname):
     "returns a dictionary with convenient domain name information"
     # wrangle hostname data
 
-    triple = parse_stackname(stackname)
-    if len(triple) == 3:
-        pname, instance_id, cluster = triple
-    else:
-        pname, instance_id = triple
-        cluster = None
+    pname, cluster = parse_stackname(stackname)
     pdata = project.project_data(pname)
     domain = pdata.get('domain')
     subdomain = pdata.get('subdomain')
@@ -353,11 +340,8 @@ def hostname_struct(stackname):
         return struct
 
     # removes any non-alphanumeric or hyphen characters
-    instance_id = re.sub(r'[^\w\-]', '', instance_id)
-    if cluster:
-        hostname = instance_id + "--" + cluster + "." + subdomain
-    else:
-        hostname = instance_id + "." + subdomain
+    subsubdomain = re.sub(r'[^\w\-]', '', cluster)
+    hostname = subsubdomain + "." + subdomain
 
     struct['hostname'] = hostname
     struct['full_hostname'] = hostname + "." + pdata['domain']

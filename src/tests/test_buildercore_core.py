@@ -22,7 +22,7 @@ class SimpleCases(base.BaseCase):
         stackname = 'dummy1--test'
         self.assertEqual(core.hostname_struct(stackname), expected)
 
-    def test_hostname_struct(self):
+    def test_hostname_struct_with_cluster_and_project_name_as_subdomain(self):
         expected = {
             'domain': "example.org",
             'subdomain': 'dummy2',
@@ -33,17 +33,6 @@ class SimpleCases(base.BaseCase):
         stackname = 'dummy2--test'
         self.assertEqual(core.hostname_struct(stackname), expected)
 
-    def test_hostname_struct_with_cluster(self):
-        expected = {
-            'domain': "example.org",
-            'subdomain': 'dummy2',
-            'project_hostname': 'dummy2.example.org',
-            'hostname': 'develop--end2end.dummy2',
-            'full_hostname': 'develop--end2end.dummy2.example.org',
-        }
-        stackname = 'dummy2--develop--end2end'
-        self.assertEqual(core.hostname_struct(stackname), expected)
-    
     def test_project_name_from_stackname(self):
         expected = [
             ('central-logging--2014-01-14', 'central-logging'),
@@ -69,6 +58,23 @@ class SimpleCases(base.BaseCase):
             ('master-server--2014-12-24', 'master-server'),            
         ]
         self.assertAllPairsEqual(core.project_name_from_stackname, expected)
+
+    def test_parse_stackname(self):
+        expected = [
+            ('lax--prod', ['lax', 'prod']),
+            ('journal-cms--end2end', ['journal-cms', 'end2end']),
+        ]
+        self.assertAllPairsEqual(core.parse_stackname, expected)
+
+    def test_master_server_stackname(self):
+        self.assertTrue(core.is_master_server_stack('master-server--temp'))
+        self.assertFalse(core.is_master_server_stack('master-some-project--end2end'))
+        self.assertFalse(core.is_master_server_stack('lax--end2end'))
+
+    def test_is_prod_stack(self):
+        self.assertTrue(core.is_prod_stack('lax--prod'))
+        self.assertFalse(core.is_prod_stack('lax--end2end'))
+        self.assertFalse(core.is_prod_stack('lax--ci'))
 
     def test_bad_pname_from_stackname(self):
         expected_error = [
