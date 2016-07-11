@@ -1,4 +1,5 @@
 from . import base
+from mock import patch
 import utils
 
 class TestBuildercoreUtils(base.BaseCase):
@@ -13,6 +14,13 @@ class TestBuildercoreUtils(base.BaseCase):
         self.assertIsInstance(branches, list)
         self.assertGreaterEqual(len(branches), 1)
         self.assertIn('master', branches)
+
+    @patch('sys.stderr')
+    def test_errcho(self, themock):
+        self.assertEqual(
+            'Hello, world',
+            utils.errcho('Hello, world')
+        )
 
     def test_rmval(self):
         expected_list = [
