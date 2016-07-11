@@ -7,7 +7,6 @@ from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
 import logging
-import aws
 
 LOG = logging.getLogger(__name__)
 
@@ -141,3 +140,5 @@ def echo_output(func):
             return res
         return func(*args, **kwargs)
     return _wrapper
+
+import aws
