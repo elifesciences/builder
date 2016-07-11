@@ -65,7 +65,7 @@ def _pick(name, pick_list, default_file=None, helpfn=None):
             default = pick_list[0]
         if default:
             prompt = '> (%r) ' % default
-        uinput = raw_input(prompt)
+        uinput = get_input(prompt)
         if not uinput or not uinput.lower().strip():
             if default:
                 return pick_list[pick_list.index(default)]
@@ -86,13 +86,16 @@ def uin(param, default=0xDEADBEEF):
             errcho("%s [%s]: " % (param, default))
         else:
             errcho(param + ':')
-        userin = raw_input('> ')
+        userin = get_input('> ')
         if not userin or not userin.strip():
             if default != 0xDEADBEEF:
                 return default
             errcho('input is required (ctrl-c to quit)')
             continue
         return userin
+
+def get_input(message):
+    return raw_input(message)
 
 @osissue("refactor. one of about three implementations.")
 def getin(data, path):

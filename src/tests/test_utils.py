@@ -35,3 +35,17 @@ class TestBuildercoreUtils(base.BaseCase):
         for data, tbr, expected in expected_list:
             self.assertEqual(utils.rmval(data, *tbr), expected)
             
+    @patch('utils.get_input', return_value='1')
+    def test_pick(self, get_input):
+        value = utils._pick('project', ['lax', 'bot'], '/tmp/cache')
+        self.assertEqual('lax', value)
+
+    @patch('utils.get_input', return_value='lax')
+    def test_uin(self, get_input):
+        value = utils.uin('project')
+        self.assertEqual('lax', value)
+
+    @patch('utils.get_input', return_value='')
+    def test_uin_default(self, get_input):
+        value = utils.uin('project', default='lax')
+        self.assertEqual('lax', value)
