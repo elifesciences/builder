@@ -12,7 +12,15 @@ def prn(out="", nl=true)
 end
 
 def runcmd(cmd)
-    return IO.popen(cmd).read
+    output = nil
+    IO.popen(cmd) do |io|
+        output = io.read
+    end
+    exit_status = $?.exitstatus
+    if exit_status != 0 
+      throw "Command '#{cmd}' exited with #{exit_status}"
+    end
+    return output
 end
 
 def runningvms()
