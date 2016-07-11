@@ -143,7 +143,7 @@ def is_master_server_stack(stackname):
 
 def is_prod_stack(stackname):
     pname, cluster = parse_stackname(stackname)
-    return cluster in ['master', 'production', 'prod']
+    return cluster in ['master', 'prod']
 
 
 #
