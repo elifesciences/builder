@@ -218,7 +218,11 @@ def stack_data(stackname):
 def stack_is_active(stackname):
     "returns True if the given stack is in a completed state"
     try:
-        return describe_stack(stackname).stack_status in ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        description = describe_stack(stackname)
+        result = description.stack_status in ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        if not result:
+            LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, vars(description))
+        return result
     except BotoServerError as err:
         if err.message.endswith('does not exist'):
             return False
