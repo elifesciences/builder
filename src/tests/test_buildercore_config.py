@@ -14,6 +14,7 @@ class ParseConfig(base.BaseCase):
     def test_load(self):
         loaded_config = config.load(self.settings_file_path)
         expected_config = OrderedDict([
+            ('write-keypairs-to-s3', False),
             ('project-locations', [
                 './src/tests/fixtures/projects/',
                 './src/tests/fixtures/projects/dummy-project.yaml',
@@ -29,6 +30,7 @@ class ParseConfig(base.BaseCase):
         parsed_config = config.parse(loaded_config)
         user_path = os.path.expanduser('~')
         expected_config = OrderedDict([
+            ('write-keypairs-to-s3', False),
             ('project-locations', [
                 ('file', None, join(config.PROJECT_PATH, 'src/tests/fixtures/projects', 'dummy-project.yaml')),
                 ('file', None, join(config.PROJECT_PATH, 'src/tests/fixtures/projects', 'dummy-project2.yaml')),
