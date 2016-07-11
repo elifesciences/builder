@@ -113,6 +113,8 @@ def pwd():
     return os.path.dirname(os.path.realpath(__file__))
 
 def table(rows, keys):
+    lines = []
     for row in rows:
-        print ', '.join([getattr(row, key) for key in keys])
+        lines.append(', '.join([getattr(row, key) for key in keys]))
+    return "\n".join(lines)
             

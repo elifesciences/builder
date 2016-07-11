@@ -49,3 +49,13 @@ class TestBuildercoreUtils(base.BaseCase):
     def test_uin_default(self, get_input):
         value = utils.uin('project', default='lax')
         self.assertEqual('lax', value)
+
+    def test_table(self):
+        class AnObject():
+            def __init__(self, project, cluster):
+                self.project = project
+                self.cluster = cluster
+
+        rows = [AnObject('lax', 'ci'), AnObject('bot', 'end2end')]
+        keys = ['project', 'cluster']
+        self.assertEqual("lax, ci\nbot, end2end", utils.table(rows, keys))

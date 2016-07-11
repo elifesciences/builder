@@ -39,7 +39,7 @@ def ami_for_project(pname):
     
     print len(results),"results"
 
-    utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
+    print utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
 
     # good for figuring out filters 
     #print results[0].__dict__
