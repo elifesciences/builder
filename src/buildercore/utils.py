@@ -132,20 +132,6 @@ def call_while_example():
         return not os.path.exists("/tmp/foo")
     call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
 
-# deprecated in favour of `lookup` - I prefer `lookup` when no default specified
-def getin(data, path):
-    "allows dot-path access to nested dicts"
-    assert isinstance(data, dict), "getin only works with dictionaries"
-    path_bits = path.split('.')
-    bit, rest = path_bits[0], path_bits[1:]
-    if bit:
-        if isinstance(data, dict) and not data.has_key(bit):
-            # data not found. return None instead of throwing a fit
-            return None
-        return getin(data[bit], ".".join(rest))
-    # end of path
-    return data
-
 def updatein(data, path, newval, create=False):
     """updates a value within a nested dict. use create=True
     to create the path if it doesn't already exist"""

@@ -97,28 +97,6 @@ def uin(param, default=0xDEADBEEF):
 def get_input(message):
     return raw_input(message)
 
-@osissue("refactor. one of about three implementations.")
-def getin(data, path):
-    "allows dot-path access to nested dicts"
-    path_bits = path.split('.')
-    bit, rest = path_bits[0],path_bits[1:]
-    if bit:
-        if isinstance(data, dict) and not data.has_key(bit):
-            # data not found. return None instead of throwing a fit
-            return None
-        return getin(data[bit], ".".join(rest))
-    # end of path
-    return data
-        
-def updatein(data, path, newval):
-    path_bits = path.split('.')
-    bit, rest = path_bits[0],path_bits[1:]
-    if not rest:
-        # we've come to the end of the path
-        data[bit] = newval
-        return newval
-    return updatein(data[bit], ".".join(rest), newval)
-
 def walk_nested_struct(val, fn):
     "walks a potentially nested structure, calling `fn` on each value it encounters"
     if isinstance(val, dict):
