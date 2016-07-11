@@ -11,11 +11,6 @@ from fabric.api import run, sudo, local
 #pylint: disable=global-variable-not-assigned
 CACHE = {}
 
-def git_remote_refs(url):
-    cmd = "git ls-remote --heads %s" % url
-    output = local(cmd, capture=True)
-    return map(lambda line: line.split(), output.splitlines())
-
 def rmval(lst, *vals):
     """removes each val in `vals` from `lst`, if it exists. 
     returns new `lst` and a list of removed values in the order they were removed."""
@@ -32,7 +27,12 @@ def rmval(lst, *vals):
 def git_remote_branches(url):
     # in: [('asdf', 'refs/heads/develop'), ('fdas', 'refs/heads/master',) ...]
     # out: ['develop', 'master', ...]
-    return map(lambda ref: last(second(ref).split('/')), git_remote_refs(url))
+    return map(lambda ref: last(second(ref).split('/')), _git_remote_refs(url))
+
+def _git_remote_refs(url):
+    cmd = "git ls-remote --heads %s" % url
+    output = local(cmd, capture=True)
+    return map(lambda line: line.split(), output.splitlines())
 
 def errcho(x):
     sys.stderr.write(x)

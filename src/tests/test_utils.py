@@ -8,6 +8,12 @@ class TestBuildercoreUtils(base.BaseCase):
     def tearDown(self):
         pass
 
+    def test_git_remote_branches(self):
+        branches = utils.git_remote_branches('https://github.com/elifesciences/builder')
+        self.assertIsInstance(branches, list)
+        self.assertGreaterEqual(len(branches), 1)
+        self.assertIn('master', branches)
+
     def test_rmval(self):
         expected_list = [
             ([1,2,3], [2], ([1,3], [2])),
