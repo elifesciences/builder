@@ -71,6 +71,7 @@ master-server:
             4505: # salt return port
                 guest: 4505
                 cidr-ip: 172.31.16.0/20
+    vagrant: {}
 
 lax:
     subdomain: lax # lax.elifesciences.org

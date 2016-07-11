@@ -4,13 +4,10 @@
 # DO NOT run on your host machine.
 
 set -e
+is_master=$1
 
-echo "-----------------------------"
-
-# ensure the gitfs backend deps are installed
-# this only needs to be done on the master or masterless (vagrant) minions
-#sudo apt-get install python-git -y
-sudo apt-get install python-setuptools python-dev libgit2-dev libffi-dev python-git -y
+# this file shouldn't exist but it does. leftover from installing salt? nfi.
+sudo rm -f /etc/salt/minion_id
 
 # ensure salt can talk to github without host verification failures
 #ssh-keygen -R github.com # removes any matching keys
@@ -24,10 +21,21 @@ if [ ! -d /vagrant/cloned-projects/builder-base-formula/.git ]; then
     git clone ssh://git@github.com/elifesciences/builder-base-formula /vagrant/cloned-projects/builder-base-formula
 fi
 
+if [ "$is_master" == "true" ]; then
+    echo "project is master-server, skipping formula configuration"
+    # generate a key for the master server. 
+    # this is uploaded to the server on AWS instances and moved into place.
+    # the init-master.sh script assumes it already exists
+    if ! sudo test -f /root/.ssh/id_rsa; then
+        sudo ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ''
+    fi
+    exit 0
+fi
+
 # project's `salt` file is mounted at `/srv/salt/` within the guest
 # by default the project's top.sls and pillar data is disabled by file naming.
 # hook that up now
-cd /srv/salt/ && ln -sf example.top top.sls && cd ../../
+cd /srv/salt/ && ln -sf example.top top.sls
 if [ ! -e /srv/pillar ]; then 
     sudo ln -sf /srv/salt/pillar/ /srv/pillar
 fi
@@ -36,9 +44,6 @@ fi
 
 echo "Restarting salt-minion"
 sudo service salt-minion restart
-
-# this file shouldn't exist but it does. leftover from installing salt? nfi.
-sudo rm -f /etc/salt/minion_id
 
 echo "Executing salt highstate (provisioning)"
 sudo salt-call state.highstate --retcode-passthrough || {

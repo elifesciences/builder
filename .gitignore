@@ -8,7 +8,6 @@ payload.tar.gz
 stacks/*.json
 *.orig
 *.log
-public/*
 venv/*
 *.swp
 .cfn/

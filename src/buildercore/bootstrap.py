@@ -278,7 +278,7 @@ def update_stack(stackname):
     # forward-agent == ssh -A
     with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
         salt_version = pdata['salt']
-        install_master_flag = "install-master" if is_master else ""
+        install_master_flag = str(is_master).lower()
         run_script('bootstrap.sh', salt_version, install_master_flag)
 
         # who is your daddy and where does he live?

@@ -5,7 +5,9 @@
 # AFTER bootstrap.sh has been called. It performs a few further steps required 
 # to configure a salt master on AWS prior to calling `highstate`
 
-set -e # everything must succeed
+set -e # everything must pass
+set -u # no unbound variables
+set -xv  # output the scripts and interpolated steps
 
 stackname=$1 # who am I? ll: master-server--2016-01-01
 pillar_repo=$2 # what secrets do I know?
@@ -36,9 +38,6 @@ if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     cp /etc/salt/pki/minion/minion.pub /etc/salt/pki/master/minions/$stackname
 fi
 
-# the minion properties are set in the `bootstrap.update_stack` function
-
-# set the master properties
 
 # we do need the organisation's secret pillar data
 # this value is in the 'defaults' section of the project data and can be 
@@ -55,13 +54,56 @@ else
     git pull
 fi
 
-# this is one way of configuring the master ...
-#cd /srv
-#ln -sf /opt/builder-private/pillar/
-#ln -sf /opt/builder-private/salt/
 
-# ... another approach is using gitfs remotes
-# https://docs.saltstack.com/en/latest/topics/tutorials/gitfs.html
+# install/update builder
+# the master will need to fetch a list of projects and create symlinks to 
+# formulas within /srv/salt and /srv/pillar
+
+# install builder dependencies for Ubuntu
+apt-get install python-dev python-pip -y
+pip install virtualenv
+
+# install builder
+#rm -rf /opt/builder
+if [ ! -d /opt/builder ]; then
+    cd /opt
+    git clone https://github.com/elifesciences/builder
+    cd builder
+    touch .no-vagrant-s3auth.flag
+    touch .no-install-basebox.flag
+    touch .no-delete-venv.flag
+
+    # hook!
+    # if you want your master server to look at your own projects, or multiple
+    # project files, or ...
+    if [ -e /opt/builder-private/master-server-settings.yml ]; then
+        rm settings.yml
+        ln -s /opt/builder-private/master-server-settings.yml settings.yml
+    fi
+
+else
+    cd /opt/builder
+    #git reset --hard
+    git pull
+fi
+
+
+# some vagrant wrangling for convenient development
+if [ -d /vagrant ]; then
+    # we're inside Vagrant!
+    if [ -d /opt/builder/src/ ]; then
+        # the src directory is still a directory.
+        # remove the installed builder's src directory
+        rm -rf /opt/builder/src
+        ln -s /vagrant/src src
+    fi
+fi
+
+# install the virtualenv but don't die if some userland deps don't exist
+./update.sh --exclude virtualbox vagrant
+
+# replace the master config, if it exists, with the builder-private copy
+cp /opt/builder-private/etc-salt-master /etc/salt/master
 
 # replace the master config, if it exists, with the builder-private copy
 cp /opt/builder-private/etc-salt-master /etc/salt/master
@@ -70,17 +112,21 @@ cp /opt/builder-private/etc-salt-master /etc/salt/master
 ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
 sed -i "s/<<private-ip-address>>/$ipaddr/g" /etc/salt/master
 
-# this needs more work.
-# restarting the salt-master appears to orphan lock files that prevents
-# remote pillars from being updated.
-# also seems to be having problems with multiple salt-master processes running.
-# this might be contributing to the lock problem.
+# this is one way of configuring the master ...
+cd /srv
+ln -sf /opt/builder-private/pillar/
+ln -sf /opt/builder-private/salt/
 
-# clear all lock files
-# this command doesn't require salt-master to be running
-salt-run cache.clear_git_lock git_pillar type=update || true
+# ... another approach is using gitfs remotes
+# https://docs.saltstack.com/en/latest/topics/tutorials/gitfs.html
 
-# only in rare cases where there are multiple salt-master processes running
-#sudo('killall salt-master -s 15')
+# we've found gitfs to be too magical and too unreliable. we prefer to:
+# * inspect the current state by looking at the filesystem
+# * avoid the problem with git lock files not being cleared
+
+# this runs the 'install_update_all_projects' task in the ./src/remote_master.py
+# module in the builder project. it clones/pulls all repos and creates symlinks.
+cd /opt/builder/
+BLDR_ROLE=master ./bldr remote_master.install_update_all_projects
 
 service salt-master restart

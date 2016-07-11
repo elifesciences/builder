@@ -126,6 +126,7 @@ else
 end
 
 PROJECT_NAME = SUPPORTED_PROJECTS[INSTANCE_NAME]  # ll: elife-lax
+IS_MASTER = PROJECT_NAME == "master-server"
 
 # necessary because we allow passing a project's name in via an ENV var
 if not SUPPORTED_PROJECTS.has_key? INSTANCE_NAME
@@ -217,37 +218,44 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             vb.customize ["modifyvm", :id, "--cpuexecutioncap", prj("cpucap")]
         end
 
-        if not File.exists?("cloned-projects/#{PROJECT_NAME}")
+        formula = PRJ.fetch("formula-repo", nil)
+        using_formula = formula == nil
+
+        if using_formula and not File.exists?("cloned-projects/#{PROJECT_NAME}")
             FileUtils.mkdir_p("cloned-projects/#{PROJECT_NAME}/")
         end
-        
-        # it's possible a formula repo was defined but explicitly nullified
-        repo = PRJ.fetch("formula-repo", nil)
-        if not repo 
-            prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'."
-            prn "check your project.yaml file inside ./projects/ and reload"
-            exit(1)
+
+        if not using_formula
+            # in some cases this is deliberate (master-server, ...?)
+            prn
+            prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'"
+            prn
         else
-            # clone the repo if it doesn't exist. user is in charge of keeping this updated.
+            # clone the formula repo if it doesn't exist. user is in charge of keeping this updated.
             if File.exists?("cloned-projects/#{PROJECT_NAME}/.git")
                 prn runcmd("cd cloned-projects/#{PROJECT_NAME}/ && git pull")
             else
-                prn runcmd("git clone #{repo} cloned-projects/#{PROJECT_NAME}/")
+                prn runcmd("git clone #{formula} cloned-projects/#{PROJECT_NAME}/")
             end
             # mount salt directories
             project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/salt/", "/srv/salt/"
             project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/salt/pillar/", "/srv/pillar/"
         end
 
-        # global shared folder
-        runcmd("mkdir -p ./public/")
-        project.vm.synced_folder "public/", "/srv/public/", :mount_options => [ "dmode=777", "fmode=777" ]
+        is_master_flag = String(IS_MASTER)
 
         # bootstrap Saltstack
-        project.vm.provision "shell", path: "scripts/bootstrap.sh", args: [PRJ["salt"]], privileged: false
+        project.vm.provision "shell", path: "scripts/bootstrap.sh", args: [PRJ["salt"], is_master_flag], privileged: false
         
         # configure Salt, call highstate
-        project.vm.provision "shell", path: "scripts/init-minion.sh", privileged: false
+        project.vm.provision "shell", path: "scripts/init-vagrant-minion.sh", args: [is_master_flag], privileged: false
+
+        if IS_MASTER
+            # configure the instance as if it were a master server. 
+            # script assumes root access
+            pillar_repo = "https://github.com/elifesciences/builder-private-example"
+            project.vm.provision "shell", path: "scripts/init-master.sh", args: [INSTANCE_NAME, pillar_repo], privileged: true
+        end
 
         if File.exist? "scripts/customize.sh"
             project.vm.provision "shell", path: "scripts/customize.sh", privileged: true

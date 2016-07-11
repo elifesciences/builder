@@ -19,4 +19,5 @@ import lax
 import master
 import askmaster
 import buildvars
+import remote_master
 from deploy import deploy

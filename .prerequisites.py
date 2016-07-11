@@ -29,6 +29,9 @@ both_checks = [
     ('git',
      {'osx': 'brew install git'}),
      
+    ('virtualenv',
+     {'all': 'sudo pip install virtualenv'}),
+     
     ('virtualbox',
      {'osx': 'brew cask install virtualbox'},
      dumb_install_check,

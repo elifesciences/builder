@@ -46,7 +46,7 @@ fi
 
 # master config
 
-if [ -n "$install_master" ]; then
+if [ "$install_master" == "true" ]; then
     # salt is not installed or the version installed is old
     if ! (type salt-master && salt-master --version | grep $version); then
         # master not installed
@@ -55,8 +55,3 @@ if [ -n "$install_master" ]; then
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
 fi
-
-# ensure the gitfs backend deps are installed
-# this is only needed on the master or masterless (vagrant) minions
-#sudo apt-get install python-git -y
-sudo apt-get install python-setuptools python-dev libgit2-dev libffi-dev python-git -y
