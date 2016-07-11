@@ -20,6 +20,7 @@ packer_cache/*
 downloads
 .coverage
 projects/*/
+scripts/customize.sh
 
 .no-install-basebox.flag
 .no-vagrant-s3auth.flag

@@ -241,6 +241,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # configure Salt, call highstate
         project.vm.provision "shell", path: "scripts/init-minion.sh", privileged: false
 
+        if File.exist? "scripts/customize.sh"
+            project.vm.provision "shell", path: "scripts/customize.sh", privileged: true
+        end
+
     end # ends project configure
 
 end # ends vagrant configure
