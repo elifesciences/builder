@@ -127,7 +127,10 @@ def parse_stackname(stackname):
         raise ValueError("stackname must look like <pname>--<cluster-id>, got: %r" % stackname)
     pname = cluster_id = None
     bits = stackname.split('--')
-    if len(bits) != 2:
+    # if len(bits) != 2:
+    # for backward compatibility let's accept 3 bits for existing machine
+    # in order to still be able to access them through ssh
+    if len(bits) == 1:
         raise ValueError("could not parse given stackname %r" % stackname)
     return bits
         
