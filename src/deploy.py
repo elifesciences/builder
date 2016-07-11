@@ -5,16 +5,13 @@ from decorators import requires_branch_deployable_project, echo_output, setdefau
 import utils
 from buildercore import core, bootstrap, cfngen, project
 
-import logging
+#import logging
 
-LOG = logging.getLogger(__name__)
+#LOG = logging.getLogger(__name__)
 
-def build_stack_name(pname, branch, cluster=None):
-    "given a project and a branch, returns an instance name"
-    stack_name = "%(pname)s--%(branch)s" % locals()
-    if cluster:
-        stack_name = stack_name + "--" + cluster
-    return stack_name
+def build_stack_name(pname, cluster):
+    "given a project and a cluster, returns an instance name"
+    return "%(pname)s--%(cluster)s" % locals()
 
 def impose_ordering(branch_list):
     branch_list, removed = utils.rmval(branch_list, 'master', 'develop')
@@ -29,7 +26,7 @@ def impose_ordering(branch_list):
 @task
 @requires_branch_deployable_project
 @echo_output
-def deploy(pname, branch=None, cluster=None):
+def deploy(pname, cluster=None, branch='master'):
     pdata = project.project_data(pname)
     branch_list = utils.git_remote_branches(pdata['repo'])
     branch_list = impose_ordering(branch_list)
