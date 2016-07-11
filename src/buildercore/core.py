@@ -348,7 +348,7 @@ def hostname_struct(stackname):
 
     # removes any non-alphanumeric or hyphen characters
     subsubdomain = re.sub(r'[^\w\-]', '', cluster)
-    hostname = subsubdomain + "." + subdomain
+    hostname = subsubdomain + "--" + subdomain
 
     struct['hostname'] = hostname
     struct['full_hostname'] = hostname + "." + pdata['domain']
