@@ -5,9 +5,9 @@ from decorators import requires_branch_deployable_project, echo_output, setdefau
 import utils
 from buildercore import core, bootstrap, cfngen, project
 
-#import logging
+import logging
 
-#LOG = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 def build_stack_name(pname, cluster):
     "given a project and a cluster, returns an instance name"
@@ -32,7 +32,7 @@ def deploy(pname, cluster=None, branch='master'):
     branch_list = impose_ordering(branch_list)
     if not branch:
         branch = utils._pick('branch', branch_list, deffile('.branch'))
-    stackname = build_stack_name(pname, branch, cluster)
+    stackname = build_stack_name(pname, cluster)
 
     region = pdata['aws']['region']
     active_stacks = core.all_aws_stack_names(region)
