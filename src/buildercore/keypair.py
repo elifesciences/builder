@@ -65,10 +65,13 @@ def delete_keypair(stackname):
     # delete from fs
     # TODO: shift this into own func
     # just while debugging, move the deleted key to a 'deleted' dir
-    delete_path = join(config.KEYPAIR_PATH, "deleted")
-    utils.mkdir_p(delete_path)
-    shutil.copy2(expected_key, delete_path)
-    os.unlink(expected_key)
+    if os.path.exists(expected_key):
+        delete_path = join(config.KEYPAIR_PATH, "deleted")
+        utils.mkdir_p(delete_path)
+        shutil.copy2(expected_key, delete_path)
+        os.unlink(expected_key)
+    else:
+        LOG.info("private key %r not present on this machine" % expected_key)
     # TODO: this check needs to become part of a checklist of things after deletion
     if not os.path.exists(expected_key):
         LOG.warn("private key %r not deleted: found %r" % (stackname, expected_key))
