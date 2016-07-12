@@ -277,23 +277,6 @@ def update_stack(stackname):
 
     # forward-agent == ssh -A
     with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
-        salt_version = pdata['salt']
-        install_master_flag = str(is_master).lower()
-        run_script('bootstrap.sh', salt_version, install_master_flag)
-
-        # who is your daddy and where does he live?
-        #master_ip = master(region, 'ip_address')
-        master_ip = master(region, 'private_ip_address')
-
-        map(sudo, [
-            "echo 'master: %s' > /etc/salt/minion" % master_ip,
-            "echo 'id: %s' >> /etc/salt/minion" % stackname,
-            "echo 'log_level: info' >> /etc/salt/minion",
-        ])
-
-        # write out environment config so Salt can read CFN outputs
-        write_environment_info(stackname)
-
         # upload the private key if present
         if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
             # if this file doesn't exist remotely, upload it.
@@ -301,14 +284,16 @@ def update_stack(stackname):
             # regular updates shouldn't have to deal with this.
             put(stack_pem(stackname, die_if_doesnt_exist=True), "/root/.ssh/id_rsa", use_sudo=True)
 
-        # if a master is updating itself, restart and accept it's own key
-        if is_master:
-            # init/update the master server
-            run_script('init-aws-master.sh', stackname, pdata['formula-repo'])
+        # write out environment config so Salt can read CFN outputs
+        write_environment_info(stackname)
 
-        else:
-            # causes minion to send it's key to master and ask for acceptance
-            sudo('service salt-minion restart')
+        salt_version = pdata['salt']
+        install_master_flag = str(is_master).lower()
+        master_ip = master(region, 'private_ip_address')
+
+        run_script('bootstrap.sh', salt_version, stackname, install_master_flag, master_ip)
+        if is_master:
+            run_script('init-master.sh', stackname, pdata['formula-repo'])
 
         sudo('salt-call state.highstate --retcode-passthrough') # this will tell the machine to update itself
 

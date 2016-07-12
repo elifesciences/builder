@@ -219,7 +219,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         formula = PRJ.fetch("formula-repo", nil)
-        using_formula = formula == nil
+        using_formula = formula == false
 
         if using_formula and not File.exists?("cloned-projects/#{PROJECT_NAME}")
             FileUtils.mkdir_p("cloned-projects/#{PROJECT_NAME}/")
@@ -242,20 +242,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/salt/pillar/", "/srv/pillar/"
         end
 
-        is_master_flag = String(IS_MASTER)
-
         # bootstrap Saltstack
-        project.vm.provision "shell", path: "scripts/bootstrap.sh", args: [PRJ["salt"], is_master_flag], privileged: false
+        project.vm.provision("shell", path: "scripts/bootstrap.sh", privileged: false, \
+            args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER), "noipfromhere"])
         
-        # configure Salt, call highstate
-        project.vm.provision "shell", path: "scripts/init-vagrant-minion.sh", args: [is_master_flag], privileged: false
-
-        if IS_MASTER
+        if not IS_MASTER
+            # configure Salt, call highstate
+            project.vm.provision("shell", path: "scripts/init-vagrant-minion.sh", privileged: false)
+        else
             # configure the instance as if it were a master server. 
             # script assumes root access
             pillar_repo = "https://github.com/elifesciences/builder-private-example"
-            project.vm.provision "shell", path: "scripts/init-master.sh", args: [INSTANCE_NAME, pillar_repo], privileged: true
+            project.vm.provision("shell", path: "scripts/init-master.sh", privileged: true, \
+                args: [INSTANCE_NAME, pillar_repo])
+            project.vm.provision("shell", path: "scripts/update-master.sh", privileged: true)
         end
+
+        # tell the machine to update itself
+        project.vm.provision("shell", path: "scripts/highstate.sh", privileged: true)
 
         if File.exist? "scripts/customize.sh"
             project.vm.provision "shell", path: "scripts/customize.sh", privileged: true

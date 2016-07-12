@@ -1,22 +1,22 @@
 #!/bin/bash
-# VAGRANT AND AWS bootstrap.sh
+# AWS and VAGRANT *MASTER AND MINIONS*
 # copied into the virtual machine and executed. DO NOT run on your host machine.
 
-# stolen from
+# significant parts taken from
 # https://github.com/mitchellh/vagrant/issues/5973#issuecomment-126082024
 
-set -e
+set -e # everything must pass
+set -u # no unbound variables
+set -xv  # output the scripts and interpolated steps
 
 echo "-----------------------------"
 
 version=$1
-install_master=$2
+stackname=$2
+install_master=$3
+master_ipaddr=$4
 
-if [ -n "$SALT_VERSION" ]; then
-    #echo "overriden salt version found:" $SALT_VERSION
-    version=$SALT_VERSION
-fi
-echo "salt version: " $version
+echo "salt version: $version"
 
 # minion config
 
@@ -29,10 +29,6 @@ sudo sh -c "echo 'Defaults>root env_keep+=SSH_AUTH_SOCK' > /etc/sudoers.d/00-ssh
 if ! (salt-minion --version | grep $version); then
     echo "Bootstrap salt $version"
     wget -O salt_bootstrap.sh https://bootstrap.saltstack.com --no-verbose
-
-    # accepts an envvar of SALT_VERSION. explicit parameter override envvar
-    version=$SALT_VERSION
-    if [ ! -z "$1" ]; then version=$1; fi
 
     # -P  Allow pip based installations.
     # -F  Allow copied files to overwrite existing(config, init.d, etc)
@@ -55,3 +51,19 @@ if [ "$install_master" == "true" ]; then
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
 fi
+
+# reset the minion config
+
+if [ -d /vagrant ]; then
+    # we're inside vagrant, ignore IP given and use the one we can detect
+    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
+fi
+
+# this file shouldn't exist but it does. leftover from installing salt? nfi.
+sudo rm -f /etc/salt/minion_id
+echo "
+master: $master_ipaddr
+id: $stackname
+log_level: info" | sudo tee /etc/salt/minion
+
+sudo service salt-minion restart

@@ -121,5 +121,8 @@ def branch_deployable_projects(*args, **kwargs):
     "returns a pair of (defaults, dict of projects with a repo)"
     return filtered_projects(lambda pname, pdata: pdata.has_key('repo'), *args, **kwargs)
 
+def projects_with_formulas(*args, **kwargs):
+    return filtered_projects(lambda pname, pdata: pdata.get('formula-repo'), *args, **kwargs)
+
 def aws_projects(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: pdata.has_key('aws'), *args, **kwargs)

@@ -12,6 +12,9 @@ defaults:
     formula-repo: null
     # default branch to use when creating new instances
     default-branch: master
+    # 
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
     aws:
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-9cee02f3 # Ubuntu 14.04
@@ -59,8 +62,8 @@ basebox:
 master-server:
     # formula-repo for the 'master-server' project should contain the 
     # confidential pillar data, master config and state top file.
-    # TODO: link to further docs
-    formula-repo: ssh://git@github.com/elifesciences/builder-private
+    # see: https://github.com/elifesciences/builder-private-example
+    #formula-repo: ssh://git@github.com/elifesciences/builder-private
     aws:
         ports:
             22: 22
@@ -144,7 +147,7 @@ elife-metrics:
 
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
-    formula-repo: ssh://git@github.com/elifesciences/elife-bot-formula
+    formula-repo: https://github.com/elifesciences/elife-bot-formula
     aws:
         type: t2.medium
         ports:

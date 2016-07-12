@@ -3,6 +3,7 @@
 cloned-projects/*
 settings.yml
 *~
+builder-private/
 .vagrant*
 payload.tar.gz
 stacks/*.json
