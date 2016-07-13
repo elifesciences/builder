@@ -202,3 +202,16 @@ elife-dashboard:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
 
+
+elife-api:
+    subdomain: api # api.elifesciences.org
+    repo: https://github.com/elifesciences/elife-api
+    formula-repo: https://github.com/elifesciences/elife-api-formula
+    aws:
+        ports:
+            22: 22
+            80: 80
+            443: 443
+    vagrant:
+        ports:
+            1233: 80
