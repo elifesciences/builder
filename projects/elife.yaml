@@ -10,6 +10,10 @@ defaults:
     repo: null
     # repository containing build instructions for this project
     formula-repo: null
+    # repo containing project pillar data (credentials typically)
+    # only the master-server will have a copy of this and only the master-server
+    # will need permissions to clone it
+    private-repo: ssh://github.com/elifesciences/builder-private
     # default branch to use when creating new instances
     default-branch: master
     # 
