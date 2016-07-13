@@ -42,9 +42,9 @@ def update_master():
 @requires_project
 def create_stack(pname):
     """creates a new CloudFormation template for the given project."""
-    default_instance_id, cluster_id = core_utils.ymd(), None
+    default_instance_id = core_utils.ymd(), None
     inst_id = utils.uin("instance id", default_instance_id)
-    stackname = core.mk_stackname(pname, inst_id, cluster_id)
+    stackname = core.mk_stackname(pname, inst_id)
     more_context = {'instance_id': stackname}
 
     # prompt user for alternate configurations

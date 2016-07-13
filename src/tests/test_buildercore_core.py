@@ -27,10 +27,10 @@ class SimpleCases(base.BaseCase):
             'domain': "example.org",
             'subdomain': 'dummy2',
             'project_hostname': 'dummy2.example.org',
-            'hostname': 'test.dummy2',
-            'full_hostname': 'test.dummy2.example.org',
+            'hostname': 'ci--dummy2',
+            'full_hostname': 'ci--dummy2.example.org',
         }
-        stackname = 'dummy2--test'
+        stackname = 'dummy2--ci'
         self.assertEqual(core.hostname_struct(stackname), expected)
 
     def test_project_name_from_stackname(self):
