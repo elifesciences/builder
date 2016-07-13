@@ -186,7 +186,7 @@ def update_stack(stackname):
         local_script = join(config.SCRIPTS_PATH, script_path)
         remote_script = join('/tmp', os.path.basename(script_path))
         put(local_script, remote_script)
-        cmd = ["/bin/bash", remote_script] + list(script_params)
+        cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
         retval = sudo(" ".join(cmd))
         sudo("rm " + remote_script) # remove the script after executing it
         return retval
@@ -209,9 +209,12 @@ def update_stack(stackname):
 
         run_script('bootstrap.sh', salt_version, stackname, install_master_flag, master_ip)
         if is_master:
-            run_script('init-master.sh', stackname, pdata['formula-repo'])
+            builder_private_repo = pdata['private-repo']
+            run_script('init-master.sh', stackname, builder_private_repo)
+            run_script('update-master.sh', stackname, builder_private_repo)
 
-        sudo('salt-call state.highstate --retcode-passthrough') # this will tell the machine to update itself
+        # this will tell the machine to update itself
+        run_script('highstate.sh')
 
 @core.requires_stack_file
 def delete_stack_file(stackname):
