@@ -36,7 +36,7 @@ def basic_file_roots():
     ]
 
 def formula_file_roots():
-    formula_path = lambda pname: os.path.join("/opt/builder/formulas/", pname, "salt")
+    formula_path = lambda pname: os.path.join("/opt/formulas/", pname, "salt")
     projects = project.projects_with_formulas().keys()
     return map(formula_path, projects)
 
