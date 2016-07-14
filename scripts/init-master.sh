@@ -90,7 +90,8 @@ if [ ! -d /opt/builder ]; then
 else
     cd /opt/builder
     git reset --hard
-    git pull
+    git clean -d --force
+    git pull --rebase
 fi
 
 # install the virtualenv but don't die if some userland deps don't exist
