@@ -11,14 +11,17 @@ cd /opt/builder/
 BLDR_ROLE=master ./bldr remote_master.refresh
 
 # kill any salt-thing that may be running
-sudo killall salt-master || true
-sudo killall salt-minion || true
+# why? encountering an issue where there are multiple salt-master processes
+# running, or a salt-call process waiting on a response from a dead master
+# it's such a hack.
 sudo killall salt-call   || true
+sudo killall salt-minion || true
+sudo killall salt-master || true
 
 sleep 1 # give them a moment to die
 
-service salt-master start
-service salt-minion start
+service salt-master restart
+service salt-minion restart
 
 # some health checking
 # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.saltutil.html#salt.modules.saltutil.sync_all
