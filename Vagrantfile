@@ -238,8 +238,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 prn runcmd("git clone #{formula} cloned-projects/#{PROJECT_NAME}/")
             end
             # mount salt directories
-            project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/salt/", "/srv/salt/"
-            project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/salt/pillar/", "/srv/pillar/"
+            project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/", "/project"
         end
 
         # bootstrap Saltstack

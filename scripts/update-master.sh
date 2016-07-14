@@ -1,5 +1,5 @@
 #!/bin/bash
-# run this regularly to install/reset project formulas, update the master config
+# called regularly to install/reset project formulas, update the master config
 # majority of logic lives in ./builder/src/remote_master.py
 
 set -e # everything must pass

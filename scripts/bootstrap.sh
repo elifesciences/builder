@@ -55,8 +55,12 @@ fi
 # reset the minion config
 
 if [ -d /vagrant ]; then
-    # we're inside vagrant, ignore IP given and use the one we can detect
+    # we're using Vagrant
+    # ignore IP given and use the one we can detect
     master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
+    sudo ln -sf /project/salt /srv/salt
+    sudo ln -sf /project/salt/pillar /srv/pillar
+    # if master-server, these links will be overwritten
 fi
 
 # this file shouldn't exist but it does. leftover from installing salt? nfi.
