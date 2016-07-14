@@ -12,6 +12,10 @@ from decorators import debugtask, echo_output, requires_project, requires_aws_st
 from buildercore.decorators import osissue
 from buildercore.utils import first
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 #
 #
 #
@@ -41,7 +45,10 @@ def write_missing_keypairs_to_s3():
 @requires_aws_stack
 @echo_output
 def download_keypair(stackname):
-    return keypair.download_from_s3(stackname)
+    try:
+        return keypair.download_from_s3(stackname)
+    except EnvironmentError as err:
+        LOG.info(err.message)
 
 #
 #
@@ -62,41 +69,21 @@ def aws_update_projects(pname):
     return aws_update_many_projects([pname])
 
 @debugtask
-@osissue("refactor. part of the shared-all strategy")
-def aws_remaster_minions():
-    """when we create a new master-server, we need to:
-    * tell the minions to connect to the new one.
-    * accept their keys
-    * give the minions an update
-    """
-
-    # this has only been used once and not updated since.
+@requires_aws_stack
+def remaster_minion(stackname):
+    """tell minion who their new master is. 
     
-    region = aws.find_region()
-    sl = core.all_active_stacks(region)
-    minion_list = filter(lambda triple: not first(triple).startswith('master-server-'), sl)
-    minion_list = map(first, minion_list) # just stack names
-    master_ip = bootstrap.master(region, 'public_ip')
-    for stackname in minion_list:
-        print 'remaster-ing %r' % stackname
-        public_ip = bootstrap.ec2_instance_data(stackname).ip_address
-        with settings(user=config.BOOTSTRAP_USER, host_string=public_ip, key_filename=core.stack_pem(stackname)):
-            cmds = [
-                "echo 'master: %s' > /etc/salt/minion" % master_ip,
-                "echo 'id: %s' >> /etc/salt/minion" % stackname,
-                "rm /etc/salt/pki/minion/minion_master.pub",  # destroy the old master key we have
-                "service salt-minion restart",
-            ]
-            [sudo(cmd) for cmd in cmds]
+    deletes the master's key on the minion
+    updates the minion, which re-writes the minion config and eventually calls highstate
 
-    with settings(user=config.BOOTSTRAP_USER, host_string=master_ip, key_filename=core.stack_pem(stackname)):
-        cmds = [
-            #'service salt-master restart',
-            # accept all minion's keys (potentially dangerous without review, should just be the new master)
-            #'sleep 5', # I have no idea why this works.
-            'salt-key -L',
-            'salt-key -Ay',
-        ]
-        [sudo(cmd) for cmd in cmds]
+    * assumes you don't have ssh access to the minion
+    * assumes writing keypairs to S3 is turned on"""
+    print 're-mastering',stackname
+    download_keypair(stackname)    
+    with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
+        sudo("rm /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
+    bootstrap.update_stack(stackname)    
 
-    bootstrap.update_all(region)
+@debugtask
+def remaster_minions():
+    map(remaster_minion, core.all_aws_stack_names(aws.find_region()))
