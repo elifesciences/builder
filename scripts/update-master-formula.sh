@@ -11,7 +11,8 @@ mkdir -p /opt/formulas
 if [ -d "/opt/formulas/$pname" ]; then
     cd /opt/formulas/$pname
     git reset --hard
-    git pull
+    git clean -d --force
+    git pull --rebase
 else
     cd /opt/formulas/
     git clone $formula $pname
