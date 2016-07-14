@@ -1,12 +1,14 @@
 """
 builder is installed on the remote master to keep things configured.
 
-this module contains tasks that help maintain configuration"""
+this module contains tasks that help maintain configuration.
+"""
+
 import os
 from buildercore import utils as core_utils
 from fabric.api import task, local, lcd, settings, run, sudo, put, get, abort
 from buildercore import project
-from decorators import echo_output
+from decorators import echo_output, mastertask
 
 def install_formula(pname, formula_url):
     return local("/bin/bash /opt/builder/scripts/update-master-formula.sh %s %s" % (pname, formula_url))
@@ -23,8 +25,6 @@ def install_update_formula_deps():
         name = os.path.basename(dep) # ll: 'some-formula' in 'https://github.com/elifesciences/some-formula
         install_formula(name, dep)
 
-@task
-@echo_output
 def private_ip():
     cmd = "ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://'"
     return str(local(cmd, capture=True))
@@ -40,7 +40,6 @@ def formula_file_roots():
     projects = project.projects_with_formulas().keys()
     return map(formula_path, projects)
 
-@task
 def refresh_config():
     with open('/etc/salt/master', 'r') as cfgfile:
         cfg = core_utils.ordered_load(cfgfile)
@@ -50,9 +49,10 @@ def refresh_config():
     with open('/etc/salt/master', 'w') as cfgfile:
         core_utils.ordered_dump(cfg, cfgfile)
 
-@task
+@mastertask
 def refresh():
-    install_update_formula_deps()
-    install_update_all_project_formulas()
-    refresh_config()
-
+    # called as part of the update-master.sh script with the 'master' BLDR ROLE
+    # shouldn't be called otherwise
+    install_update_formula_deps() # builder base
+    install_update_all_project_formulas() # website, journal, etc
+    refresh_config() # rewrite /etc/salt/master yaml
