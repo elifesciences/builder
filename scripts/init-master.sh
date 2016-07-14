@@ -116,8 +116,8 @@ fi
 cp /opt/builder-private/etc-salt-master /etc/salt/master
 
 cd /srv
-ln -sf /opt/builder-private/pillar/
-ln -sf /opt/builder-private/salt/
+ln -sf /opt/builder-private/pillar
+ln -sf /opt/builder-private/salt
 
 echo "master server configured"
 
