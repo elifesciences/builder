@@ -333,13 +333,22 @@ def hostname_struct(stackname):
     pname, cluster = parse_stackname(stackname)
     pdata = project.project_data(pname)
     domain = pdata.get('domain')
+    intdomain = pdata.get('intdomain')
     subdomain = pdata.get('subdomain')
+    
     struct = {
         'domain': domain, # elifesciences.org
+        'int_domain': intdomain, # elife.internal
+
         'subdomain': subdomain, # gateway
-        'project_hostname': None, # gateway.elifesciences.org
+        
         'hostname': None, # temp.gateway
-        'full_hostname': None, # temp.gateway.elifesciences.org
+
+        'project_hostname': None, # gateway.elifesciences.org
+        'int_project_hostname': None, # gateway.elife.internal
+        
+        'full_hostname': None, # gateway--temp.elifesciences.org
+        'int_full_hostname': None, # gateway--temp.elife.internal
     }
     if not subdomain:
         # this project doesn't expect to be addressed
@@ -350,9 +359,16 @@ def hostname_struct(stackname):
     subsubdomain = re.sub(r'[^\w\-]', '', cluster)
     hostname = subsubdomain + "--" + subdomain
 
-    struct['hostname'] = hostname
-    struct['full_hostname'] = hostname + "." + pdata['domain']
-    struct['project_hostname'] = subdomain + "." + domain
+    updates = {
+        'hostname': hostname,
+
+        'project_hostname': subdomain + "." + domain,
+        'int_project_hostname': subdomain + "." + intdomain,
+
+        'full_hostname': hostname + "." + domain,
+        'int_full_hostname': hostname + "." + intdomain,
+    }
+    struct.update(updates)
     return struct
 
 def project_data_for_stackname(stackname, *args, **kwargs):

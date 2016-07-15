@@ -27,9 +27,7 @@ DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
 EXT_TITLE = "ExtraStorage"
 EXT_MP_TITLE = "MountPoint"
 R53_EXT_TITLE = "ExtDNS"
-#R53_EXT_HOSTED_ZONE = "elifesciences.org."
 R53_INT_TITLE = "IntDNS"
-R53_INT_HOSTED_ZONE = "elife.internal."
 
 KEYPAIR = "KeyName"
 
@@ -174,13 +172,13 @@ def ext_volume(context):
     return ec2v, ec2va
 
 def external_dns(context):
-    #hostedzone = R53_EXT_HOSTED_ZONE # The DNS name of an existing Amazon Route 53 hosted zone
-    hostedzone = context['domain'] + "."
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
     dns_record = route53.RecordSetType(
         R53_EXT_TITLE,
         HostedZoneName=hostedzone,
-        #Comment = "DNS name for my instance.",
-        Name = context['hostname'] + "." + hostedzone,
+        Comment = "External DNS record",
+        Name = context['full_hostname'],
         Type = "A",
         TTL = "900",
         ResourceRecords=[GetAtt(EC2_TITLE, "PublicIp")],
@@ -188,12 +186,13 @@ def external_dns(context):
     return dns_record
 
 def internal_dns(context):
-    hostedzone = R53_INT_HOSTED_ZONE # The DNS name of an existing Amazon Route 53 hosted zone    
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
     dns_record = route53.RecordSetType(
         R53_INT_TITLE,
         HostedZoneName=hostedzone,
-        #Comment = "DNS name for my instance.",
-        Name = context['hostname'] + "." + hostedzone,
+        Comment = "Internal DNS record",
+        Name = context['int_full_hostname'],
         Type = "A",
         TTL = "900",
         ResourceRecords=[GetAtt(EC2_TITLE, "PrivateIp")],
