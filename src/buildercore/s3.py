@@ -48,7 +48,8 @@ def delete(key):
         LOG.warn(msg, extra={'key': key, 'protected': protected})
         raise ValueError(msg)
     LOG.info("deleting key", extra={'key': key})
-    builder_bucket().get_key(key).delete()
+    if exists(key):
+        builder_bucket().get_key(key).delete()
     return not exists(key)
     
 def delete_contents(prefix):
