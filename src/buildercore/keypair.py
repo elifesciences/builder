@@ -40,6 +40,25 @@ def download_from_s3(stackname):
     return expected_path
 
 #
+# fs
+#
+
+def delete_keypair_from_fs(stackname):
+    "returns True if the expected keypair for the given stackname can't be found on the filesystem"
+    expected_key = stack_pem(stackname)
+    if not os.path.exists(expected_key):
+        LOG.warn("private key %r not deleted: found %r" % (stackname, expected_key))
+        return True
+    try:
+        delete_path = join(config.KEYPAIR_PATH, "deleted")
+        utils.mkdir_p(delete_path)
+        shutil.copy2(expected_key, delete_path)
+        os.unlink(expected_key)
+        return True
+    except:
+        LOG.exception("unhandled exception attempting to delete keypair from filesystem")
+
+#
 # 
 #
 
@@ -65,13 +84,7 @@ def delete_keypair(stackname):
     # delete from fs
     # TODO: shift this into own func
     # just while debugging, move the deleted key to a 'deleted' dir
-    delete_path = join(config.KEYPAIR_PATH, "deleted")
-    utils.mkdir_p(delete_path)
-    shutil.copy2(expected_key, delete_path)
-    os.unlink(expected_key)
-    # TODO: this check needs to become part of a checklist of things after deletion
-    if not os.path.exists(expected_key):
-        LOG.warn("private key %r not deleted: found %r" % (stackname, expected_key))
+    delete_keypair_from_fs(stackname)
 
 #
 #
