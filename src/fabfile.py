@@ -9,6 +9,7 @@ PROJECT_DIR = os.path.dirname(SRC_DIR)    # elife-builder/
 
 from cfn import *
 
+# aws tasks are not working for some reason.. possibly circular dependency
 import aws
 import metrics
 if False:
