@@ -7,7 +7,7 @@ if [ ! -d venv ]; then
     source update.sh
 fi
 
-. venv/bin/activate
+source ./venv/bin/activate
 
 # ad-hoc permissions if they exist
 if [ -f .aws-credentials.env ]; then
