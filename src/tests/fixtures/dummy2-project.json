@@ -6,7 +6,11 @@
     "subdomain": "dummy2", 
     "repo": "ssh://git@github.com/elifesciences/dummy2", 
     "formula-repo": null, 
+    "private-repo": "ssh://github.com/exampleorg/builder-private-example", 
     "default-branch": "master", 
+    "formula-dependencies": [
+        "https://github.com/elifesciences/builder-base-formula"
+    ], 
     "aws": {
         "ami": "ami-111111", 
         "type": "t2.small", 

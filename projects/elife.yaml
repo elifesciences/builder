@@ -2,6 +2,7 @@ defaults:
     description: defaults for all projects in this file
     salt: '2016.3' # the version of salt these project use
     domain: elifesciences.org
+    # addressing within VPC
     intdomain: elife.internal
     # 'lax', 'metrics', 'gateway', etc
     subdomain: null
