@@ -2,7 +2,7 @@ from fabric.api import task, local, cd, settings, run, sudo, put, get, abort
 from fabric.contrib import files
 from fabric.contrib.console import confirm
 import aws, utils
-from decorators import requires_project, requires_aws_stack, echo_output, setdefault, debugtask
+from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
 import os
 from os.path import join
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project
@@ -13,9 +13,9 @@ import logging
 LOG = logging.getLogger(__name__)
 
 @task(alias='aws_delete_stack')
-@requires_aws_stack
+@requires_steady_stack
 def delete(stackname):
-    "tells aws to delete a stack. this doesn't delete the CloudFormation file from the stacks dir"
+    "tell aws to delete a stack."
     print 'this is a BIG DEAL. you cannot recover from this.'
     print 'type the name of the stack to continue or anything else to quit'
     uin = raw_input('> ')
@@ -30,9 +30,9 @@ def delete(stackname):
 @task(alias='aws_update_stack')
 @requires_aws_stack
 def update(stackname):
-    """Updates the master and then updates the stack software.
-    Only run update commands if salt has successfully been installed.
-    Update commands require that the salt deploy user `DEPLOY_USER` exists."""
+    """Updates the environment within the stack's ec2 instance. 
+
+    does *not* call Cloudformation's `update` command on the stack"""
     return bootstrap.update_stack(stackname)
 
 @task
@@ -121,7 +121,7 @@ def pillar(stackname):
 def aws_stack_list():
     "returns a list of realized stacks. does not include deleted stacks"
     region = aws.find_region()
-    return core.all_aws_stack_names(region)
+    return core.active_stack_names(region)
 
 @task
 @requires_aws_stack

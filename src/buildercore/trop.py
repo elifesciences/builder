@@ -109,30 +109,30 @@ def outputs():
 def rdsinstance(context):
     lu = partial(utils.lu, context)
 
-    # db subnet
+    # db subnet *group*
+    # it's expected the db subnets themselves are already created within the VPC
+    # you just need to plug their ids into the project file.
+    # not really sure if a subnet group is anything more meaningful than 'a collection of subnet ids'
     rsn = rds.DBSubnetGroup(DBSUBNETGROUP_TITLE, **{
-        "DBSubnetGroupDescription": "database subnet description here",
+        "DBSubnetGroupDescription": "a group of subnets for this rds instance.",
         "SubnetIds": lu('project.aws.rds.subnets'),
     })
 
     # rds security group. uses the ec2 security group
-    rdssg = rds.DBSecurityGroup(RDS_SG_ID, **{
-        "EC2VpcId": lu('project.aws.vpc-id'), # ll: vpc-78a2071d
-        "DBSecurityGroupIngress": [
-            {"EC2SecurityGroupId": GetAtt(SECURITY_GROUP_TITLE, "GroupId")},
-        ],
-        "GroupDescription": "RDS Security Group using an EC2 Security Group",
+    vpcdbsg = ec2.SecurityGroup("VPCSecurityGroup", **{
+        'GroupDescription': "Security group for RDS DB Instance.",
+        "VpcId": context['project']['aws']['vpc-id'],
     })
 
     # db instance
     data = {
         'DBName': lu('rds_instance_id'), # dbname generated from instance id
-        'DBInstanceIdentifier': lu('instance_id'), # ll: elife-lax--2015-12-31
+        'DBInstanceIdentifier': lu('db_instance_id'), # ll: elife-lax--2015-12-31
         'PubliclyAccessible': False,
         'AllocatedStorage': lu('project.aws.rds.storage'),
         'StorageType': 'Standard',
         'MultiAZ': lu('project.aws.rds.multi-az'),
-        "DBSecurityGroups": [Ref(rdssg)],
+        'VPCSecurityGroups': [Ref(vpcdbsg)],
         'DBSubnetGroupName': Ref(rsn),
         'DBInstanceClass': lu('project.aws.rds.type'),
         'Engine': lu('project.aws.rds.engine'),
@@ -147,7 +147,7 @@ def rdsinstance(context):
         "EngineVersion": str(lu('project.aws.rds.version')), # 'defaults.aws.rds.storage')),
     }
     rdbi = rds.DBInstance(RDS_TITLE, **data)
-    return rsn, rdbi, rdssg
+    return rsn, rdbi, vpcdbsg
 
 def ext_volume(context):
     lu = partial(utils.lu, context)

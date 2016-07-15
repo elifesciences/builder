@@ -41,7 +41,7 @@ def stack_list(region=None):
     "returns a list of realized stacks. does not include deleted stacks"
     if not region:
         region = find_region()
-    return core.all_aws_stack_names(region)
+    return core.active_stack_names(region)
 
 #
 #
@@ -88,7 +88,8 @@ def rds_snapshots(stackname):
 @echo_output
 def detailed_stack_list(project=None):
     region = find_region()
-    all_stacks = dict([(i.stack_name, i.__dict__) for i in core.raw_aws_stacks(region)])
+    results = core.active_aws_stacks(region, formatter=None)
+    all_stacks = dict([(i.stack_name, vars(i)) for i in results])
     if project:
         return {k: v for k, v in all_stacks.items() if k.startswith("%s-" % project)}
     return all_stacks

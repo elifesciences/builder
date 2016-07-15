@@ -63,14 +63,18 @@ def build_context(pname, **more_context):
 
     # alpha-numeric only
     # TODO: investigate possibility of ambiguous RDS naming here
-    default_db_instance_id = slugify(stackname, separator="")
+    default_rds_instance_id = slugify(stackname, separator="")
 
     # hostname data
     context.update(core.hostname_struct(stackname))
     
     # post-processing
     context.update({
-        'rds_instance_id': context.get('rds_instance_id') or default_db_instance_id, # must use 'or' here
+        # becomes 'dbname'
+        # TODO: rename rds_instance_id to 'dbname', possible use the one passed in from project
+        'rds_instance_id': context.get('rds_instance_id') or default_rds_instance_id, # must use 'or' here
+        # *completely* different to 'rds_instance_id'. 
+        'db_instance_id': slugify(stackname),
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
@@ -103,13 +107,30 @@ def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
     return conn.validate_template(rendered_template)
 
+def more_validation(json_template_str):
+    try:
+        data = json.loads(json_template_str)
+        # case: when "DBInstanceIdentifier" == "lax--temp2"
+        # The parameter Filter: db-instance-id is not a valid identifier. Identifiers must begin with a letter;
+        # must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens.
+        dbid = utils.lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
+        if dbid:
+            assert '--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid
+
+        return True
+    except:
+        LOG.exception("uncaught error attempting to validate cloudformation template")
+        raise
+
 def validate_project(pname, **extra):
     import time, boto
     LOG.info('validating %s', pname)
     template = quick_render(pname)
     pdata = project.project_data(pname)
+    altconfig = None
     try:
         resp = validate_aws_template(pname, template)
+        more_validation(template)
         # validate all alternative configurations
         for altconfig in pdata.get('aws-alt', {}).keys():
             LOG.info('validating %s, %s' % (pname, altconfig))

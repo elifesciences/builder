@@ -71,7 +71,7 @@ def requires_aws_project_stack(*plist):
         @wraps(func)
         def _wrapper(stackname=None, *args, **kwargs):
             region = aws.find_region(stackname)
-            asl = core.all_aws_stack_names(region)
+            asl = core.active_stack_names(region)
             if not asl:
                 print '\nno AWS stacks exist, cannot continue.'
                 return
@@ -90,16 +90,31 @@ def requires_aws_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
         region = aws.find_region()
-        asl = core.all_aws_stack_names(region)
-        env_stackname = os.environ.get('INSTANCE')
-        stackname = first(args) or env_stackname
+        asl = core.active_stack_names(region)
+        stackname = first(args) or os.environ.get('INSTANCE')
         if not asl:
-            print '\nno AWS stacks exist, cannot continue.'
+            print '\nno AWS stacks *in an active state* exist, cannot continue.'
             return
         if not stackname or stackname not in asl:
             stackname = utils._pick("stack", asl, default_file=deffile('.active-stack'))
         args = args[1:]
         return func(stackname, *args, **kwargs)
+    return call
+
+def requires_steady_stack(func):
+    @wraps(func)
+    def call(*args, **kwargs):
+        ss = core.steady_aws_stacks(aws.find_region())
+        keys = map(first, ss)
+        idx = dict(zip(keys, ss))
+        helpfn = lambda pick: idx[pick][1]
+        if not keys:
+            print '\nno AWS stacks *in a steady state* exist, cannot continue.'
+            return
+        stackname = first(args) or os.environ.get('INSTANCE')
+        if not stackname or stackname not in keys:
+            stackname = utils._pick("stack", keys, helpfn=helpfn, default_file=deffile('.active-stack'))
+        return func(stackname, *args[1:], **kwargs)
     return call
 
 def requires_feature(key, silent=False):
@@ -142,4 +157,6 @@ def echo_output(func):
         return func(*args, **kwargs)
     return _wrapper
 
+# avoid circular dependencies.
+# TODO: this is a design smell. refactor.
 import aws

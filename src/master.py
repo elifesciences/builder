@@ -86,4 +86,4 @@ def remaster_minion(stackname):
 
 @debugtask
 def remaster_minions():
-    map(remaster_minion, core.all_aws_stack_names(aws.find_region()))
+    map(remaster_minion, core.active_stack_names(aws.find_region()))

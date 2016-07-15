@@ -35,7 +35,7 @@ def deploy(pname, cluster=None, branch='master'):
     stackname = build_stack_name(pname, cluster)
 
     region = pdata['aws']['region']
-    active_stacks = core.all_aws_stack_names(region)
+    active_stacks = core.active_stack_names(region)
     if stackname in active_stacks:
         LOG.info("stack %r exists, skipping creation", stackname)
     else:

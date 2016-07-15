@@ -30,6 +30,45 @@ class DeprecationException(Exception):
 class NoMasterException(Exception):
     pass
 
+ALL_CFN_STATUS = [
+    'CREATE_IN_PROGRESS',
+    'CREATE_FAILED',
+    'CREATE_COMPLETE',
+    'ROLLBACK_IN_PROGRESS',
+    'ROLLBACK_FAILED',
+    'ROLLBACK_COMPLETE',
+    'DELETE_IN_PROGRESS',
+    'DELETE_FAILED',
+    'UPDATE_IN_PROGRESS',
+    'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS',
+    'UPDATE_COMPLETE',
+    'UPDATE_ROLLBACK_IN_PROGRESS',
+    'UPDATE_ROLLBACK_FAILED',
+    'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS',
+    'UPDATE_ROLLBACK_COMPLETE',
+]
+
+ACTIVE_CFN_STATUS = [
+    'CREATE_COMPLETE',
+    'UPDATE_COMPLETE',
+    'UPDATE_ROLLBACK_COMPLETE',
+]
+
+# non-transitioning 'steady states'
+STEADY_CFN_STATUS = [
+    'CREATE_FAILED',
+    'CREATE_COMPLETE',
+    'ROLLBACK_FAILED',
+    'ROLLBACK_COMPLETE',
+    'DELETE_FAILED',
+    #'DELETE_COMPLETE', # technically true, but we can't do anything with them
+    'UPDATE_COMPLETE',
+    'UPDATE_ROLLBACK_FAILED',
+    'UPDATE_ROLLBACK_COMPLETE',
+]
+    
+
+
 #
 # 
 #
@@ -228,44 +267,39 @@ def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."
     return (aws_stack.stack_name, aws_stack.stack_status, aws_stack)
 
+#
 # lists of aws stacks
-
-@osissue("duplicate code/unclear differences. .list_stacks with filter vs .describe_stacks with stackname")
-@cached
-def raw_aws_stacks(region):
-    # I suspect the number of results returned is paginated
-    status_filters = [
-        #'CREATE_IN_PROGRESS',
-        #'CREATE_FAILED',
-        'CREATE_COMPLETE',
-        #'ROLLBACK_IN_PROGRESS',
-        #'ROLLBACK_FAILED',
-        #'DELETE_IN_PROGRESS',
-        #'DELETE_FAILED',
-        #'UPDATE_IN_PROGRESS',
-        #'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS',
-        'UPDATE_COMPLETE',
-        #'UPDATE_ROLLBACK_IN_PROGRESS',
-        #'UPDATE_ROLLBACK_FAILED',
-        #'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS',
-        #'UPDATE_ROLLBACK_COMPLETE',
-    ]
-    return boto_cfn_conn(region).list_stacks(status_filters)
+#
 
 @cached
-def all_aws_stacks(region):
-    "returns a stack triple of all active stacks *from the last 90 days*."
-    return map(stack_triple, raw_aws_stacks(region))
+def aws_stacks(region, status=[], formatter=stack_triple):
+    "returns *all* stacks, even stacks deleted in the last 90 days"
+    # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
+    # use `.describe_stack` on specific stacks only
+    results = boto_cfn_conn(region).list_stacks(status)
+    if formatter:
+        return map(formatter, results)
+    return results
 
-def all_aws_stack_names(region):
-    "convenience. returns a list of names for all active stacks AS WELL AS inactive stacks for the last 90 days"
-    return sorted(map(first, all_aws_stacks(region)))
+def active_aws_stacks(region, *args, **kwargs):
+    "returns all stacks that are healthy"
+    return aws_stacks(region, ACTIVE_CFN_STATUS, *args, **kwargs)
 
-@osissue("that unclear difference again between describe_stacks and list_stacks")
-@cached
-def all_active_stacks(region):
-    "returns all active stacks as a triple of (stackname, status, data)"
-    return map(stack_triple, boto_cfn_conn(region).describe_stacks())
+def steady_aws_stacks(region):
+    "returns all stacks that are not in a transitionary state"
+    return aws_stacks(region, STEADY_CFN_STATUS)
+
+def stack_names(stack_list):
+    return sorted(map(first, stack_list))
+
+def active_stack_names(region):
+    "convenience. returns names of all active stacks"
+    return stack_names(active_aws_stacks(region))
+
+def steady_stack_names(region):
+    "convenience. returns names of all stacks in a non-transitory state"
+    return stack_names(steady_aws_stacks(region))
+
 
 @testme
 def _find_master(sl):
@@ -285,7 +319,7 @@ def _find_master(sl):
 
 def find_master(region):
     "returns the most recent aws master-server it can find. assumes instances have YMD names"
-    sl = all_active_stacks(region)
+    sl = active_aws_stacks(region)
     if not sl:
         raise NoMasterException("no master servers found in region %r" % region)
     return _find_master(sl)
