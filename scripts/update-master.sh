@@ -9,6 +9,7 @@ set -xv  # output the scripts and interpolated steps
 cd /opt/builder
 if [ ! -d /vagrant ]; then
     git reset --hard
+    touch .no-delete-venv.flag # not strictly necessary, but just in case
     # read from gitignore, remove dirs, yes! really!
     #git clean -xfd # enabling this removes ignored files as well :(
     git pull --rebase
