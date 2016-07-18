@@ -45,7 +45,6 @@ if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
         # master hasn't generated it's own keys yet!
         echo "no minion key for master detected, restarting salt-master"
         service salt-master restart
-        service salt-minion restart
     fi
     # minion keys for master should exist at this point
     mkdir -p /etc/salt/pki/master/minions/
