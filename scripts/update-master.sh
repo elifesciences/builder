@@ -36,8 +36,8 @@ service salt-master restart
 
 # some health checking
 # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.saltutil.html#salt.modules.saltutil.sync_all
-#salt-call saltutil.sync_all -l trace
-#if (! salt-call sys.list_modules | grep elife); then
-#    echo "couldn't find the 'elife' module. master server is in a bad state"
-#    exit 1
-#fi
+salt-call saltutil.sync_all -l trace
+if (! salt-call sys.list_modules | grep elife); then
+    echo "couldn't find the 'elife' module. master server is in a bad state"
+    exit 1
+fi
