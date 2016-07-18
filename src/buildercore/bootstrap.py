@@ -150,6 +150,17 @@ def write_environment_info(stackname):
 #
 #
 
+def run_script(stackname, script_path, *script_params):
+    "uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params"
+    with stack_conn(stackname, user=config.BOOTSTRAP_USER):
+        local_script = join(config.SCRIPTS_PATH, script_path)
+        remote_script = join('/tmp', os.path.basename(script_path))
+        put(local_script, remote_script)
+        cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
+        retval = sudo(" ".join(cmd))
+        sudo("rm " + remote_script) # remove the script after executing it
+        return retval
+
 @core.requires_active_stack
 def update_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.

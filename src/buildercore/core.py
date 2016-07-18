@@ -7,7 +7,7 @@ import os, glob, json, inspect, re, copy
 from os.path import join
 from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import osissue, osissuefn, testme
-from .utils import first, second, dictfilter
+from .utils import first, second, dictfilter, lookup
 from collections import OrderedDict
 from functools import wraps
 import boto
@@ -300,6 +300,35 @@ def steady_stack_names(region):
     "convenience. returns names of all stacks in a non-transitory state"
     return stack_names(steady_aws_stacks(region))
 
+#
+#
+#
+
+def find_region(stackname=None):
+    """used when we haven't got a stack and need to know about stacks in a particular region.
+    if a stack is provided, it uses the one provided in it's configuration.
+    otherwise, generates a list of used regions from project data
+
+    if more than one region available, it will raise an EnvironmentError.
+    until we have some means of supporting multiple regions, this is the best solution"""
+    region = None
+    if stackname:
+        pdata = project_data_for_stackname(stackname)
+        return pdata['aws']['region']
+
+    all_projects = project.project_map()
+    all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
+    region_list = list(set(filter(None, all_regions))) # remove any Nones, make unique, make a list
+    if not region_list:
+        raise EnvironmentError("no regions available at all!")
+    if len(region_list) > 1:
+        raise EnvironmentError("multiple regions available but not yet supported!: %s" % region_list)
+    return region_list[0]
+
+
+#
+#
+#
 
 @testme
 def _find_master(sl):
