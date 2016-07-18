@@ -18,7 +18,8 @@ class TestBuildercoreTrop(base.BaseCase):
             'alt-config': 'alt-config1'
         }
         context = cfngen.build_context('dummy3', **extra)
-        self.assertEqual(context['rds_instance_id'], "dummy3test")
+        self.assertEqual(context['rds_dbname'], "dummy3test")
+        self.assertEqual(context['rds_instance_id'], "dummy3-test")
         self.assertTrue(context['project']['aws'].has_key('rds'))
         cfn_template = trop.render(context)
         data = json.loads(trop.render(context))

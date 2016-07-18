@@ -145,8 +145,8 @@ def rdsinstance(context):
 
     # db instance
     data = {
-        'DBName': lu('rds_instance_id'), # dbname generated from instance id
-        'DBInstanceIdentifier': lu('db_instance_id'), # ll: elife-lax--2015-12-31
+        'DBName': lu('rds_dbname'), # dbname generated from instance id.
+        'DBInstanceIdentifier': lu('rds_instance_id'), # ll: 'lax-2015-12-31' from 'lax--2015-12-31'
         'PubliclyAccessible': False,
         'AllocatedStorage': lu('project.aws.rds.storage'),
         'StorageType': 'Standard',

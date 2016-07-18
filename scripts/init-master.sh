@@ -101,7 +101,6 @@ touch .no-delete-venv.flag
 # some vagrant wrangling for convenient development
 if [ -d /vagrant ]; then
     # we're inside Vagrant!
-
     # if there is a directory called builder-private, then use it's contents 
     if [ -d /vagrant/builder-private ]; then
         rsync -av /vagrant/builder-private/ /opt/builder-private/

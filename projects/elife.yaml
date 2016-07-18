@@ -31,8 +31,6 @@ defaults:
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
-            # TODO: is this even used??
-            name: null
             multi-az: False
             engine: postgres
             # ensure this matches the version of Postgres you install on server!

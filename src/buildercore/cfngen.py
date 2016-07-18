@@ -48,7 +48,7 @@ def build_context(pname, **more_context):
         # when this was first introduced, instance_id was synonmous with stackname
         'instance_id': None, # must be provided by whatever is calling this
 
-        'rds_instance_id': None, # generated from the instance_id
+        'rds_dbname': None, # generated from the instance_id
         'rds_username': 'root', # could possibly live in the project data, but really no need.
         'rds_password': utils.random_alphanumeric(length=32), # will be saved to buildvars.json
 
@@ -63,18 +63,16 @@ def build_context(pname, **more_context):
 
     # alpha-numeric only
     # TODO: investigate possibility of ambiguous RDS naming here
-    default_rds_instance_id = slugify(stackname, separator="")
+    default_rds_dbname = slugify(stackname, separator="")
 
     # hostname data
     context.update(core.hostname_struct(stackname))
     
     # post-processing
     context.update({
-        # becomes 'dbname'
-        # TODO: rename rds_instance_id to 'dbname', possible use the one passed in from project
-        'rds_instance_id': context.get('rds_instance_id') or default_rds_instance_id, # must use 'or' here
-        # *completely* different to 'rds_instance_id'. 
-        'db_instance_id': slugify(stackname),
+        'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
+        'rds_instance_id': slugify(stackname), # *completely* different to database name
+        
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
