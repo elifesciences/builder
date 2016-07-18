@@ -14,6 +14,7 @@ from troposphere import GetAtt, Output, Ref, Template, ec2, rds, Base64, route53
 from functools import partial
 import logging
 from .decorators import osissue, osissuefn
+from .utils import first
 
 LOG = logging.getLogger(__name__)
 
@@ -31,40 +32,61 @@ R53_INT_TITLE = "IntDNS"
 
 KEYPAIR = "KeyName"
 
-def sg_rule(from_port, to_port=None, cidr_ip='0.0.0.0/0', ip_protocol='tcp'):
-    if not to_port:
-        to_port = from_port
+def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
+    if not end_port:
+        end_port = port
     return ec2.SecurityGroupRule(**{
-        # this is not a NAT port mapping like Vagrant! is a range of ports
-        'FromPort': from_port,
-        'ToPort': to_port,
-        'IpProtocol': ip_protocol,
-        'CidrIp': cidr_ip
+        'FromPort': port,
+        'ToPort': end_port,
+        'IpProtocol': protocol,
+        'CidrIp': cidr
     })
 
-def security(context):
+def complex_ingress(struct):
+    # it's just not that simple
+    if not isinstance(struct, dict):
+        port = struct
+        return ingress(port)
+    assert len(struct.items()) == 1, "port mapping struct must contain a single key: %r" % struct
+    port, struct = first(struct.items())
+    default_end_port = port
     default_cidr_ip = '0.0.0.0/0'
     default_protocol = 'tcp'
-    ingress_ports = []
-    for host_port, guest_port in context['project']['aws']['ports'].items():
-        args = {'FromPort': host_port,
-                'ToPort': guest_port,
-                'IpProtocol': default_protocol,
-                'CidrIp': default_cidr_ip}
-        if isinstance(guest_port, dict):
-            # complex value
-            args['ToPort'] = guest_port['guest']
-            args['CidrIp'] = guest_port.get('cidr-ip', default_cidr_ip)
-            args['IpProtocol'] = guest_port.get('protocol', default_protocol)
-        
-        ingress_ports.append(ec2.SecurityGroupRule(**args))
-    
-    project_security = {
-        "GroupDescription": "Enable SSH access via port 22",
-        "VpcId": context['project']['aws']['vpc-id'],
-        "SecurityGroupIngress": ingress_ports
+    return ingress(port, **{
+        # TODO: rename 'guest' in project file to something less wrong
+        'end_port': struct.get('guest', default_end_port),
+        'protocol': struct.get('protocol', default_protocol),
+        'cidr': struct.get('cidr-ip', default_cidr_ip),
+    })
+
+def security_group(group_id, vpc_id, ingress_structs, description=""):
+    return ec2.SecurityGroup(group_id, **{
+        'GroupDescription': description or 'security group',
+        'VpcId': vpc_id,
+        'SecurityGroupIngress': map(complex_ingress, ingress_structs)
+    })
+
+def ec2_security(context):
+    return security_group(SECURITY_GROUP_TITLE, \
+       context['project']['aws']['vpc-id'],
+       context['project']['aws']['ports']) # list of strings or dicts
+
+def rds_security(context):
+    "returns a security group for the rds instance. this security group only allows access within the subnet"
+    engine_ports = {
+        'postgres': 5432,
+        'mysql': 3306
     }
-    return ec2.SecurityGroup(SECURITY_GROUP_TITLE, **project_security)
+    ingress_ports = [engine_ports[context['project']['aws']['rds']['engine']]]
+    return security_group("VPCSecurityGroup", \
+       context['project']['aws']['vpc-id'], \
+       ingress_ports, \
+       "RDS DB security group")
+
+#
+#
+#
+
 
 def instance_tags(context):
     return [
@@ -119,10 +141,7 @@ def rdsinstance(context):
     })
 
     # rds security group. uses the ec2 security group
-    vpcdbsg = ec2.SecurityGroup("VPCSecurityGroup", **{
-        'GroupDescription': "Security group for RDS DB Instance.",
-        "VpcId": context['project']['aws']['vpc-id'],
-    })
+    vpcdbsg = rds_security(context)
 
     # db instance
     data = {
@@ -201,7 +220,7 @@ def internal_dns(context):
     
 
 def render(context):
-    secgroup = security(context)
+    secgroup = ec2_security(context)
     instance = ec2instance(context)
 
     template = Template()

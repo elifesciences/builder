@@ -9,7 +9,7 @@
     "private-repo": "ssh://github.com/exampleorg/builder-private-example", 
     "default-branch": "master", 
     "formula-dependencies": [
-        "https://github.com/elifesciences/builder-base-formula"
+        "https://github.com/example/builder-base-formula"
     ], 
     "aws": {
         "ami": "ami-9eaa1cf6", 
@@ -17,9 +17,10 @@
         "region": "us-east-1", 
         "vpc-id": "vpc-0a0a0a0a", 
         "subnet-id": "subnet-191919191", 
-        "ports": {
-            "22": 22
-        }
+        "subnet-cidr": "172.31.16.0/20", 
+        "ports": [
+            22
+        ]
     }, 
     "vagrant": {
         "box": "ubuntu/trusty64", 

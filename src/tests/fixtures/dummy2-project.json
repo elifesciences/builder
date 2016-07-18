@@ -9,7 +9,7 @@
     "private-repo": "ssh://github.com/exampleorg/builder-private-example", 
     "default-branch": "master", 
     "formula-dependencies": [
-        "https://github.com/elifesciences/builder-base-formula"
+        "https://github.com/example/builder-base-formula"
     ], 
     "aws": {
         "ami": "ami-111111", 
@@ -17,6 +17,7 @@
         "region": "us-east-1", 
         "vpc-id": "vpc-0a0a0a0a", 
         "subnet-id": "subnet-191919191", 
+        "subnet-cidr": "172.31.16.0/20", 
         "rds": {
             "name": "<defined at generation>", 
             "multi-az": false, 
@@ -30,13 +31,15 @@
                 "subnet-bar"
             ]
         }, 
-        "ports": {
-            "22": 22, 
-            "80": {
-                "guest": 80, 
-                "cidr-ip": "0.0.0.0/0"
+        "ports": [
+            22, 
+            {
+                "80": {
+                    "guest": 80, 
+                    "cidr-ip": "0.0.0.0/0"
+                }
             }
-        }
+        ]
     }, 
     "aws-alt": {
         "fresh": {
@@ -45,6 +48,7 @@
             "region": "us-east-1", 
             "vpc-id": "vpc-0a0a0a0a", 
             "subnet-id": "subnet-191919191", 
+            "subnet-cidr": "172.31.16.0/20", 
             "rds": {
                 "name": "<defined at generation>", 
                 "multi-az": false, 
@@ -58,14 +62,16 @@
                     "subnet-bar"
                 ]
             }, 
-            "ports": {
-                "22": 22, 
-                "80": {
-                    "guest": 80, 
-                    "cidr-ip": "0.0.0.0/0"
+            "ports": [
+                22, 
+                {
+                    "80": {
+                        "guest": 80, 
+                        "cidr-ip": "0.0.0.0/0"
+                    }
                 }
-            }, 
-            "description": "uses a plain Ubuntu basebox instead of a ami"
+            ], 
+            "description": "uses a plain Ubuntu basebox instead of an ami"
         }, 
         "alt-config1": {
             "ami": "ami-22222", 
@@ -73,6 +79,7 @@
             "region": "us-east-1", 
             "vpc-id": "vpc-0a0a0a0a", 
             "subnet-id": "subnet-191919191", 
+            "subnet-cidr": "172.31.16.0/20", 
             "rds": {
                 "name": "<defined at generation>", 
                 "multi-az": false, 
@@ -86,13 +93,15 @@
                     "subnet-bar"
                 ]
             }, 
-            "ports": {
-                "22": 22, 
-                "80": {
-                    "guest": 80, 
-                    "cidr-ip": "0.0.0.0/0"
+            "ports": [
+                22, 
+                {
+                    "80": {
+                        "guest": 80, 
+                        "cidr-ip": "0.0.0.0/0"
+                    }
                 }
-            }
+            ]
         }
     }, 
     "vagrant": {

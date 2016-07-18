@@ -27,6 +27,7 @@ defaults:
         region: eu-central-1
         vpc-id: vpc-0a0ee863  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-29638240
+        subnet-cidr: '172.31.16.0/20'
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -44,7 +45,7 @@ defaults:
             subnets:
                 # two are required
                 # NOTE! the 'dbsubnet-' prefix is important to *builder*
-                # it tells us which subnets we can provision RDS within and
+                # it tells us which subnets we can provision RDS within
                 - subnet-3611e55e # dbsubnet-1
                 - subnet-78444403 # dbsubnet-2
 
@@ -75,13 +76,11 @@ master-server:
     formula-repo: ssh://git@github.com/elifesciences/master-server-formula
     aws:
         ports:
-            22: 22
-            4506: # salt publish port
-                guest: 4506
+            - 22
+            - 4506: # salt publish port
                 # CIDR of subnet this master will server
                 cidr-ip: 172.31.16.0/20 # access via VPC ip range only
-            4505: # salt return port
-                guest: 4505
+            - 4505: # salt return port
                 cidr-ip: 172.31.16.0/20
     vagrant: {}
 
@@ -91,10 +90,9 @@ lax:
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
         ports:
-            22: 22
-            443: 443
-            80: 80
-            5432: 5432 # not accessible from outside VPC
+            - 22
+            - 443
+            - 80
     aws-alt:
         master:
             description: RDS backed
@@ -110,11 +108,11 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ports:
-            22: 22
-            80: 80 # TODO: remove in favor of only 443? will require certificates for all environments
-            443: 443
-            # 8000: # possibly expose this to public. Kong uses this to *proxy* requests
-            # 8001: # don't ever expose to public. Kong uses this for API management
+            - 22
+            - 80 # TODO: remove in favor of only 443? will require certificates for all environments
+            - 443
+            # - 8000: # possibly expose this to public. Kong uses this to *proxy* requests
+            # - 8001: # don't ever expose to public. Kong uses this for API management
     vagrant:
         ports:
             1323: 80
@@ -126,9 +124,9 @@ journal:
     formula-repo: https://github.com/elifesciences/journal-formula
     aws:
         ports:
-            22: 22
-            443: 443
-            80: 80
+            - 22
+            - 443
+            - 80
     vagrant:
         ports:
             1240: 80
@@ -140,10 +138,10 @@ elife-metrics:
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
         ports:
-            22: 22
-            443: 443
-            80: 80
-            5432: 5432
+            - 22
+            - 443
+            - 80
+            - 5432
     aws-alt:
         master:
             description: production environment for metrics. RDS backed
@@ -160,8 +158,8 @@ elife-bot:
     aws:
         type: t2.medium
         ports:
-            22: 22
-            80: 80
+            - 22
+            - 80
         ext:
             size: 30 # GB
     aws-alt:
@@ -183,9 +181,9 @@ journal-cms:
     formula-repo: https://github.com/elifesciences/journal-cms-formula
     aws:
         ports:
-            22: 22
-            443: 443
-            80: 80
+            - 22
+            - 443
+            - 80
     vagrant:
         ports:
             1241: 80
@@ -198,9 +196,9 @@ elife-dashboard:
     default-branch: develop
     aws:
         ports:
-            22: 22
-            80: 80
-            443: 443
+            - 22
+            - 80
+            - 443
     aws-alt:
         master:
             description: production environment. backed by RDS
@@ -218,9 +216,9 @@ elife-api:
     formula-repo: https://github.com/elifesciences/elife-api-formula
     aws:
         ports:
-            22: 22
-            80: 80
-            443: 443
+            - 22
+            - 80
+            - 443
     vagrant:
         ports:
             1233: 80

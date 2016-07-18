@@ -10,8 +10,15 @@ defaults:
     repo: null
     # repository containing build instructions for this project
     formula-repo: null
-    # default branch to use when creating a new instance
+    # repo containing project pillar data (credentials typically)
+    # only the master-server will have a copy of this and only the master-server
+    # will need permissions to clone it
+    private-repo: ssh://example.org/exampleorg/builder-private-example
+    # default branch to use when creating new instances
     default-branch: master
+    # 
+    formula-dependencies:
+        - https://github.com/example2/builder-base-formula
     aws:
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-9eaa1cf6  # Ubuntu 14.04
@@ -19,6 +26,7 @@ defaults:
         region: us-east-1
         vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-191919191
+        subnet-cidr: '172.31.16.0/20'
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -30,7 +38,9 @@ defaults:
             type: db.t2.small
             storage: 5 # GB
             backup-retention: 28 # days
-            subnets: 
+            # two subnets are required in two different availability zones
+            # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
+            subnets:
                 # two are required
                 - subnet-foo
                 - subnet-bar
@@ -40,7 +50,7 @@ defaults:
             device: /dev/sdh
     aws-alt:
         fresh:
-            description: uses a plain Ubuntu basebox instead of a ami
+            description: uses a plain Ubuntu basebox instead of an ami
             ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
@@ -56,7 +66,7 @@ yummy1:
     repo: ssh://git@github.com/elifesciences/yummy1
     aws:
         ports:
-            222: 222
+            - 222
     vagrant:
         ports:
             123: 321
