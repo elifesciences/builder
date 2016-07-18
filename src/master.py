@@ -87,3 +87,7 @@ def remaster_minion(stackname):
 @debugtask
 def remaster_minions():
     map(remaster_minion, core.active_stack_names(aws.find_region()))
+
+@task
+def kick():
+    bootstrap.run_script(core.find_master(core.find_region()), 'kick-master.sh')
