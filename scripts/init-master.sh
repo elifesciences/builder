@@ -76,9 +76,6 @@ if [ ! -d /opt/builder ]; then
     cd /opt
     git clone https://github.com/elifesciences/builder
     cd builder
-    touch .no-vagrant-s3auth.flag
-    touch .no-install-basebox.flag
-    touch .no-delete-venv.flag
 
     # hook!
     # if you want your master server to look at your own projects, or multiple
@@ -94,9 +91,12 @@ else
     git pull --rebase
 fi
 
+touch .no-vagrant-s3auth.flag
+touch .no-install-basebox.flag
+touch .no-delete-venv.flag
+
 # install the virtualenv but don't die if some userland deps don't exist
 ./update.sh --exclude virtualbox vagrant
-
 
 # some vagrant wrangling for convenient development
 if [ -d /vagrant ]; then
