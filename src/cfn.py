@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 
 @task(alias='aws_delete_stack')
 @requires_steady_stack
-def delete(stackname):
+def destroy(stackname):
     "tell aws to delete a stack."
     print 'this is a BIG DEAL. you cannot recover from this.'
     print 'type the name of the stack to continue or anything else to quit'
