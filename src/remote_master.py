@@ -31,8 +31,8 @@ def private_ip():
 
 def basic_file_roots():
     return [
-        "/opt/formulas/builder-base-formula/",
         "/srv/salt/",
+        "/opt/formulas/builder-base-formula/",
     ]
 
 def formula_file_roots():
