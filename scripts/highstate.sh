@@ -6,4 +6,5 @@ echo "Executing salt highstate (provisioning)"
 sudo salt-call state.highstate -l info --retcode-passthrough || {
     status=$?
     echo "Error provisioning, state.highstate returned: ${status}"
+    exit $status
 }
