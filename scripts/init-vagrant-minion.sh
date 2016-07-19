@@ -3,7 +3,9 @@
 # copied into the virtual machine and executed after bootstrap.sh. 
 # DO NOT run on your host machine.
 
-set -e
+set -e # everything must pass
+set -u # no unbound variables
+set -xv  # output the scripts and interpolated steps
 
 # configure vagrant
 # overwrite the general purpose /etc/salt/minion file created in bootstrap.sh
