@@ -79,7 +79,9 @@ def remaster_minion(stackname):
     * assumes you don't have ssh access to the minion
     * assumes writing keypairs to S3 is turned on"""
     print 're-mastering',stackname
-    download_keypair(stackname)    
+    expected_key = core.stack_pem(stackname)
+    if not os.path.exists(expected_key):
+        download_keypair(stackname)
     with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
         sudo("rm /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
     bootstrap.update_stack(stackname)
