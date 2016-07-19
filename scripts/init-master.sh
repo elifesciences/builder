@@ -86,7 +86,7 @@ if [ ! -d /opt/builder ]; then
 else
     cd /opt/builder
     git reset --hard
-    git clean -d --force
+    #git clean -d --force # destroys the venv
     git pull --rebase
 fi
 
