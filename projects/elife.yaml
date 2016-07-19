@@ -228,3 +228,12 @@ elife-reporting:
         ram: 1024
         ports:
             1333: 80
+
+elife-libraries:
+    formula-repo: https://github.com/elifesciences/elife-libraries-formula
+    aws:
+        type: t2.small # 2GB of RAM
+        ports:
+            22: 22
+    vagrant:
+        ram: 2048
