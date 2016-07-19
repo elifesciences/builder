@@ -219,7 +219,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         formula = PRJ.fetch("formula-repo", nil)
-        using_formula = formula != false
+        using_formula = formula != nil and formula != ""
 
         if using_formula and not File.exists?("cloned-projects/#{PROJECT_NAME}")
             FileUtils.mkdir_p("cloned-projects/#{PROJECT_NAME}/")
