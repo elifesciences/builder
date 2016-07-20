@@ -77,5 +77,7 @@ def simple_listing(prefix):
 def download(key, output_path):
     assert not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path
     k = builder_bucket().get_key(key)
+    if k is None:
+        raise RuntimeError("Cannot find %s in bucket %s" % (key, builder_bucket()))
     k.get_contents_to_file(open(output_path, 'w'))
     return output_path
