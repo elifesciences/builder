@@ -33,7 +33,7 @@ def find_region(stackname=None):
     if len(region_list) > 1:
         if True:
             print "many possible regions found!"
-            return utils._pick(region, region_list)        
+            return utils._pick('region', region_list)        
         raise EnvironmentError("multiple regions available but not yet supported!: %s" % region_list)
     return region_list[0]
 
