@@ -237,3 +237,18 @@ elife-libraries:
             22: 22
     vagrant:
         ram: 2048
+
+elife-alfred:
+    subdomain: alfred
+    formula-repo: https://github.com/elifesciences/elife-alfred-formula
+    aws:
+        type: t2.medium
+        ports:
+            22: 22
+            80: 80
+            # Jenkins SSH port
+            16022: 16022
+    vagrant:
+        ram: 4096
+        ports:
+            1433: 80
