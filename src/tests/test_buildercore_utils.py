@@ -28,8 +28,6 @@ class TestBuildercoreUtils(base.BaseCase):
             ('abc', 2, 'c'),
             ([1,2,3], 0, 1),
             ([1,2,3], 1, 2),
-
-            
         ]
         for data, n, expected in expected_vals:
             self.assertEqual(expected, utils.nth(data, n))
