@@ -147,13 +147,19 @@ def fetch_cert(stackname):
 #
 
 @debugtask
-def diff_pillar_data():
+def diff_builder_config():
     "helps keep three"
     dev_dir = os.path.expanduser("~/dev/salt/")
-    files = [
-        "builder-private-example/pillar/elife.sls",
-        "builder-base-formula/pillar/elife.sls",
-        "builder-private/pillar/elife.sls"
+    file_sets = [
+        [
+            "./builder-private-example/pillar/elife.sls",
+            "./cloned-projects/builder-base-formula/pillar/elife.sls",
+            "./builder-private/pillar/elife.sls"
+        ],
+        [
+            "./projects/elife.yaml",
+            "./builder-private/projects/elife-private.yaml",
+        ]
     ]
-    files = map(os.path.abspath, map(lambda p: join(dev_dir, p), files))
-    local("meld " + " ".join(files))
+    for paths in file_sets:
+        local("meld " + " ".join(paths))

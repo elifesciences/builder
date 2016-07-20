@@ -1,9 +1,12 @@
 *.pyc
 .tox/
-cloned-projects/*
 settings.yml
 *~
+
+cloned-projects/
 builder-private/
+builder-private-example/
+
 .vagrant*
 payload.tar.gz
 stacks/*.json
