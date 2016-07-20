@@ -87,14 +87,6 @@ touch .no-vagrant-s3auth.flag
 touch .no-install-basebox.flag
 touch .no-delete-venv.flag
 
-# hook!
-# if you want your master server to look at your own projects, or multiple
-# project files, or ...
-if [ -e /opt/builder-private/master-server-settings.yml ]; then
-    rm settings.yml
-    ln -s /opt/builder-private/master-server-settings.yml settings.yml
-fi
-
 # install the virtualenv but don't die if some userland deps don't exist
 ./update.sh --exclude virtualbox vagrant
 
@@ -109,7 +101,6 @@ if [ -d /vagrant ]; then
     rsync -av /vagrant/scripts/ /opt/builder/scripts/
     rsync -av /vagrant/projects/ /opt/builder/projects/
 fi
-
 
 # replace the master config, if it exists, with the builder-private copy
 cp /opt/builder-private/etc-salt-master /etc/salt/master
