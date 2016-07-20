@@ -125,20 +125,20 @@ def _parse_loc(loc):
 
 def parse_loc_list(loc_list):
     "wrangle the list of paths the user gave us. expand if they specify a directory, etc"
-    # give the convenient user form some structure
+    # give the convenient user-form some structure
     p_loc_list = map(_parse_loc, loc_list)
     # do some post processing
     def expand_dirs(triple):
         protocol, host, path = triple
         if protocol in ['dir', 'file'] and not os.path.exists(path):
             LOG.warn("could not resolve %r, skipping" % path)
-            return None
+            return [None]
         if protocol == 'dir':
             yaml_files = utils.listfiles(path, ['.yaml'])
             return [('file', host, path) for path in yaml_files]
-        return [triple]    
+        return [triple]
     # we don't want dirs, we want files
-    p_loc_list = utils.flatten(map(expand_dirs, p_loc_list))
+    p_loc_list = utils.shallow_flatten(map(expand_dirs, p_loc_list))
 
     # remove any bogus values
     p_loc_list = filter(None, p_loc_list)

@@ -1,4 +1,5 @@
 from . import base
+from os.path import join
 from functools import partial
 from buildercore import utils
 
@@ -9,6 +10,16 @@ class TestBuildercoreUtils(base.BaseCase):
     def tearDown(self):
         pass
 
+    def test_shallow_flatten(self):
+        case_list = [
+            ([], []),
+            ([[1], [2], [3]], [1, 2, 3]),
+            ([[[1]], [2], [3]], [[1], 2, 3]),
+            ([[None]], [None]),
+        ]
+        for given, expected in case_list:
+            self.assertEqual(utils.shallow_flatten(given), expected)
+    
     def test_nth(self):
         expected_vals = [
             ('a', 0, 'a'),

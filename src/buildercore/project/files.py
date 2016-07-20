@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 #from . import core # DONT import core. this module should be relatively independent
 from buildercore import utils, config
-from buildercore.utils import unique, flatten, first, dictfilter
+from buildercore.utils import unique, first, dictfilter
 from buildercore.decorators import osissue, osissuefn, testme
 
 import logging

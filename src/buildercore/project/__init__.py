@@ -1,6 +1,6 @@
 #from . import core # DONT import core. this project module should be relatively independent
 from buildercore import utils, config
-from buildercore.utils import unique, flatten
+from buildercore.utils import unique
 from buildercore.decorators import osissue, osissuefn, testme
 from kids.cache import cache
 from . import files
@@ -53,7 +53,7 @@ def find_project(project_location_triple):
     "given a triple of (protocol, hostname, path) returns a map of {org => project data}"
     plt = project_location_triple
     assert utils.iterable(plt), "given triple must be a collection of three values"
-    assert len(project_location_triple) == 3, "triple must contain three values"
+    assert len(project_location_triple) == 3, "triple must contain three values. got: %r" % project_location_triple
     protocol, hostname, path = plt
     fnmap = {
         #'file': OrgFileProjects,

@@ -6,10 +6,12 @@ from collections import OrderedDict, Iterable
 from fabric.api import run
 from os.path import join
 from more_itertools import unique_everseen
+from StringIO import StringIO
 import logging
 LOG = logging.getLogger(__name__)
 
-def flatten(l):
+
+def shallow_flatten(l):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
     return [item for sublist in l for item in sublist]
 
@@ -196,7 +198,35 @@ def random_alphanumeric(length=32):
     rand = random.SystemRandom()
     return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
 
-# http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
+'''
+# works, but the !include function is unused
+def yaml_load(stream):
+    # http://stackoverflow.com/questions/528281/how-can-i-include-an-yaml-file-inside-another
+    # http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
+    class Loader(yaml.Loader):
+        def __init__(self, stream):
+            self._root = os.path.split(stream.name)[0]
+            super(Loader, self).__init__(stream)
+
+        def _include(self, node):
+            filename = join(self._root, self.construct_scalar(node))
+            with open(filename, 'r') as f:
+                return yaml.load(f, Loader)
+
+        def _construct_mapping(self, node):
+            self.flatten_mapping(node)
+            return OrderedDict(self.construct_pairs(node))
+
+    Loader.add_constructor('!include', Loader._include)
+    mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
+    Loader.add_constructor(mapping_tag, Loader._construct_mapping)
+
+    return yaml.load(stream, Loader)
+
+def yaml_loads(string):
+    return yaml_load(StringIO(string))
+'''
+
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
     #pylint: disable=no-member
     class OrderedLoader(loader_class):
