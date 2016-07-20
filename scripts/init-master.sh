@@ -59,6 +59,7 @@ if [ ! -d /opt/builder-private ]; then
     git clone $pillar_repo builder-private
 else
     cd /opt/builder-private
+    git clean -d --force # in vagrant, destroys any rsync'd files
     git reset --hard
     git pull
 fi
@@ -75,14 +76,6 @@ if [ ! -d /opt/builder ]; then
     cd /opt
     git clone https://github.com/elifesciences/builder
     cd builder
-
-    # hook!
-    # if you want your master server to look at your own projects, or multiple
-    # project files, or ...
-    if [ -e /opt/builder-private/master-server-settings.yml ]; then
-        rm settings.yml
-        ln -s /opt/builder-private/master-server-settings.yml settings.yml
-    fi
 else
     cd /opt/builder
     git reset --hard
@@ -93,6 +86,14 @@ fi
 touch .no-vagrant-s3auth.flag
 touch .no-install-basebox.flag
 touch .no-delete-venv.flag
+
+# hook!
+# if you want your master server to look at your own projects, or multiple
+# project files, or ...
+if [ -e /opt/builder-private/master-server-settings.yml ]; then
+    rm settings.yml
+    ln -s /opt/builder-private/master-server-settings.yml settings.yml
+fi
 
 # install the virtualenv but don't die if some userland deps don't exist
 ./update.sh --exclude virtualbox vagrant
