@@ -12,6 +12,7 @@ from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
 import logging
 LOG = logging.getLogger(__name__)
 
+# these aliases are deprecated
 @task(alias='aws_delete_stack')
 @requires_steady_stack
 def destroy(stackname):
@@ -27,6 +28,7 @@ def destroy(stackname):
         exit(1)
     return bootstrap.delete_stack(stackname)
 
+# these aliases are deprecated
 @task(alias='aws_update_stack')
 @requires_aws_stack
 def update(stackname):
@@ -71,6 +73,7 @@ def aws_create_update_stack(stackname):
     bootstrap.update_stack(stackname)
     return stackname
 
+# these aliases are deprecated
 @task(alias='aws_launch_instance')
 @requires_project
 def launch(project):
@@ -104,10 +107,9 @@ def launch(project):
 @debugtask
 @requires_aws_stack
 def highstate(stackname):
-    "a fast update with many caveats. if you have the time, prefer aws_update_stack instead"
+    "a fast update with many caveats. prefer `update` instead"
     with stack_conn(stackname, username=BOOTSTRAP_USER):
-        sudo('salt-call saltutil.refresh_pillar') # not sure if this even does anything ...
-        sudo('salt-call state.highstate --retcode-passthrough')
+        bootstrap.run_script('highstate.sh')
         
 @debugtask
 @requires_aws_stack

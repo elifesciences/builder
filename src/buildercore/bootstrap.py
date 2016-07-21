@@ -1,4 +1,4 @@
-__description__ = """Logic for provisioning and bootstrapping an automatically
+"""Logic for provisioning and bootstrapping an automatically
 created Cloudformation template.
 
 The "stackname" parameter these functions take is the name of the cfn template
@@ -24,8 +24,19 @@ import logging
 LOG = logging.getLogger(__name__)
 
 #
+# utils
 #
-#
+
+def run_script(script_path, *script_params):
+    """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
+    ASSUMES YOU ARE CONNECTED TO A STACK"""
+    local_script = join(config.SCRIPTS_PATH, script_path)
+    remote_script = join('/tmp', os.path.basename(script_path))
+    put(local_script, remote_script)
+    cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
+    retval = sudo(" ".join(cmd))
+    sudo("rm " + remote_script) # remove the script after executing it
+    return retval
 
 @contextmanager
 def master_server(region, username=BOOTSTRAP_USER):
@@ -93,13 +104,6 @@ def update_template(stackname):
             LOG.exception("unhandled exception attempting to update stack")
             raise
 
-def update_all(region):
-    "updates *all* minions talking to the master. this is *really* not recommended."
-    with master_server(region, username=config.DEPLOY_USER):
-        run("service salt-minion restart")
-        run(r"salt \* state.highstate --retcode-passthrough")
-
-
 #
 #  attached stack resources, ec2 data
 #
@@ -150,17 +154,6 @@ def write_environment_info(stackname):
 #
 #
 
-def run_script(stackname, script_path, *script_params):
-    "uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params"
-    with stack_conn(stackname, user=config.BOOTSTRAP_USER):
-        local_script = join(config.SCRIPTS_PATH, script_path)
-        remote_script = join('/tmp', os.path.basename(script_path))
-        put(local_script, remote_script)
-        cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
-        retval = sudo(" ".join(cmd))
-        sudo("rm " + remote_script) # remove the script after executing it
-        return retval
-
 @core.requires_active_stack
 def update_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
@@ -191,16 +184,6 @@ def update_stack(stackname):
             LOG.debug("failed to connect to server ...")
             return True
     utils.call_while(is_resourcing, interval=3, update_msg='waiting for /home/ubuntu to be detected ...')
-
-    def run_script(script_path, *script_params):
-        "uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params"
-        local_script = join(config.SCRIPTS_PATH, script_path)
-        remote_script = join('/tmp', os.path.basename(script_path))
-        put(local_script, remote_script)
-        cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
-        retval = sudo(" ".join(cmd))
-        sudo("rm " + remote_script) # remove the script after executing it
-        return retval
 
     # forward-agent == ssh -A
     with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):

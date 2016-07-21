@@ -23,6 +23,6 @@ Or, copy the output of the below command into the new deploy key (where 'somethi
 
 Then run:
 
-	INSTANCE=master-server--yourinstanceid ./bldr aws_update_stack
+	INSTANCE=master-server--yourinstanceid ./bldr update
 
 to complete the update.

@@ -92,4 +92,6 @@ def remaster_minions():
 
 @task
 def kick():
-    bootstrap.run_script(core.find_master(core.find_region()), 'kick-master.sh')
+    stackname = core.find_master(core.find_region())
+    with core.stack_conn(stackname, user=config.BOOTSTRAP_USER):
+        bootstrap.run_script('kick-master.sh')

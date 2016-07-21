@@ -1,3 +1,6 @@
+#!/bin/bash
+# only use this as a last resort
+
 set -e # everything must pass
 set -u # no unbound variables
 set -xv  # output the scripts and interpolated steps
