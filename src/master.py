@@ -83,7 +83,7 @@ def remaster_minion(stackname):
     if not os.path.exists(expected_key):
         download_keypair(stackname)
     with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
-    sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
+        sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
     bootstrap.update_stack(stackname)
 
 @debugtask
