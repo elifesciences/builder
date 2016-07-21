@@ -1,4 +1,4 @@
-import json
+import json, inspect
 from functools import wraps
 from . import config
 import logging
@@ -7,6 +7,23 @@ LOG = logging.getLogger(__name__)
 
 class FeatureDisabledException(Exception):
     pass
+
+class PredicateException(Exception):
+    pass
+
+def _requires_fn_stack(func, pred, message=None):
+    "meta decorator. returns a wrapped function that is executed if pred(stackname) is true"
+    @wraps(func)
+    def _wrapper(stackname=None, *args, **kwargs):
+        if stackname and pred(stackname):
+            return func(stackname, *args, **kwargs)
+        if message:
+            msg = message % {'stackname': stackname}
+        else:
+            msg = "\n\nfunction `%s()` failed predicate \"%s\" on stack '%s'\n" \
+              % (func.__name__, str(inspect.getsource(pred)).strip(), stackname)
+        raise PredicateException(msg)
+    return _wrapper
 
 def if_enabled(key, silent=False):
     settings = config.app()

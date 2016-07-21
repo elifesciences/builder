@@ -22,11 +22,10 @@ if [ ! -f /root/.ssh/id_rsa ]; then
 fi
 
 
-if [ -d /vagrant ]; then
-    # ensure salt can talk to github without host verification failures
-    #ssh-keygen -R github.com # removes any matching keys
-    sudo cp /vagrant/scripts/etc-known_hosts /etc/ssh/ssh_known_hosts
-fi
+# ensure salt can talk to github without host verification failures
+ssh-keygen -R github.com # removes any existingskeys
+# append this to the global known hosts file
+echo "github.com,192.30.252.128 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==" >> /etc/ssh/ssh_known_hosts
 
 
 # generate/overwrite the *pubkey*
@@ -53,10 +52,30 @@ fi
 
 
 # clone the private repo (whatever it's name is) into /opt/builder-private/
-# TODO: REQUIRES CREDENTIALS!
+# REQUIRES CREDENTIALS!
 if [ ! -d /opt/builder-private ]; then
     cd /opt
-    git clone $pillar_repo builder-private
+    git clone $pillar_repo builder-private || {
+        set +xv
+        pubkey=$(cat /root/.ssh/id_rsa.pub)
+        echo "
+----------
+
+could not clone your 'builder-private' repository:
+    $pillar_repo
+
+if this repository resides on github, we suggest creating a 'deploy key' by pasting in the public key below:
+
+    $pubkey
+
+complete this process by running builder's 'update' command:
+
+    INSTANCE=$stackname ./bldr update
+
+----------"
+
+        exit 1
+    }
 else
     cd /opt/builder-private
     git clean -d --force # in vagrant, destroys any rsync'd files

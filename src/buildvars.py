@@ -4,7 +4,7 @@ from fabric.api import env, sudo, run, local, task, get, put, hide
 from StringIO import StringIO
 from decorators import echo_output, requires_aws_stack, debugtask
 from buildercore.core import stack_conn
-from buildercore import utils as core_utils
+from buildercore import utils as core_utils, bootstrap
 import base64, json
 import utils
 import re

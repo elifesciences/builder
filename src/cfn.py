@@ -5,7 +5,7 @@ import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
 import os
 from os.path import join
-from buildercore import core, cfngen, utils as core_utils, bootstrap, project
+from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
 
@@ -65,7 +65,7 @@ def create_stack(pname):
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
-def aws_create_update_stack(stackname):
+def create_update(stackname):
     if not core.stack_is_active(stackname):
         print 'stack does not exist, creating'
         bootstrap.create_stack(stackname)
@@ -76,9 +76,9 @@ def aws_create_update_stack(stackname):
 # these aliases are deprecated
 @task(alias='aws_launch_instance')
 @requires_project
-def launch(project):
+def launch(pname):
     try:
-        stackname = create_stack(project)
+        stackname = create_stack(pname)
         pdata = core.project_data_for_stackname(stackname)
 
         print 'attempting to create stack:'
@@ -87,23 +87,22 @@ def launch(project):
         print '  vpc:       ' + pdata['aws']['vpc-id']
         print '  subnet:    ' + pdata['aws']['subnet-id']
         print
-        if not confirm('continue?', default=True):
-            exit()
 
-        stackname = aws_create_update_stack(stackname)
-
-        if stackname.startswith('master-server--'):
-            print
-            print "`master-server` projects must create a deploy key in it's `formula-repo` project"
-            print 
-            print
+        if core.is_master_server_stack(stackname):
+            if not checks.can_access_builder_private(pname):
+                print "failed to access your organisation's 'builder-private' repository:"
+                print '  ' + pdata['private-repo']
+                print "you'll need access to this repository to add a deploy key later"
+                print
+                return
         
+        stackname = create_update(stackname)        
         if stackname:
             setdefault('.active-stack', stackname)
     except core.NoMasterException, e:
         LOG.warn(e.message)
         print "\n%s\ntry `./bldr master.create`'" % e.message
-        
+
 @debugtask
 @requires_aws_stack
 def highstate(stackname):

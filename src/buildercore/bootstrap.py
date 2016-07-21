@@ -38,24 +38,6 @@ def run_script(script_path, *script_params):
     sudo("rm " + remote_script) # remove the script after executing it
     return retval
 
-@contextmanager
-def master_server(region, username=BOOTSTRAP_USER):
-    """connects to the master server in the specified region. 
-
-    you can only connect to the master server if you have access 
-    to the master server  private key or you're in it's authorized 
-    users list"""
-    # should you *really* be trying to access the master?
-    master_stackname = core.find_master(region)
-    kwargs = {
-        'user': username,
-        'host_string': master(region, 'ip_address'),
-        'key_filename': stack_pem(master_stackname, die_if_doesnt_exist=True),
-        'abort_on_prompts': True,
-    }
-    with settings(**kwargs):
-        yield
-
 #
 # provision stack
 #
@@ -74,13 +56,15 @@ def create_stack(stackname):
         utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
         return True
     except BotoServerError as err:
+        # don't delete the keypair if the error is that the stack already exists!
         if err.message.endswith(' already exists'):
             LOG.debug(err.message)
             return False
-        # don't delete the keypair if the error is that the stack already exists!
+        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
         keypair.delete_keypair(stackname)
         raise
     except:
+        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         keypair.delete_keypair(stackname)
         raise
 
@@ -140,14 +124,14 @@ def template_info(stackname):
     data['outputs'] = reduce(utils.conj, map(lambda o: {o.key: o.value}, data['outputs']))
     return utils.exsubdict(data, ['connection', 'parameters'])
 
-def write_environment_info(stackname):
+def write_environment_info(stackname, overwrite=False):
     """Looks for /etc/cfn-info.json and writes one if not found.
     Must be called with an active stack connection."""
-    if not files.exists("/etc/cfn-info.json"):
-        LOG.info('no cfn-outputs found, writing ...')
+    if not files.exists("/etc/cfn-info.json") or overwrite:
+        LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
         infr_config = utils.json_dumps(template_info(stackname))
         return put(StringIO(infr_config), "/etc/cfn-info.json", use_sudo=True)
-    LOG.info('cfn-outputs found, skipping')
+    LOG.debug('cfn outputs found, skipping')
     return []
 
 #
@@ -158,7 +142,7 @@ def write_environment_info(stackname):
 def update_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
 
-    once AWS has finished creating an EC2 instance for us, we need to install 
+    Once AWS has finished creating an EC2 instance for us, we need to install 
     Salt and get it talking to the master server. Salt comes with a bootstrap 
     script that can be downloaded from the web and then very conveniently 
     installs it's own dependencies. Once Salt is installed we give it an ID 
@@ -166,14 +150,10 @@ def update_stack(stackname):
     pdata = core.project_data_for_stackname(stackname)
     public_ip = ec2_instance_data(stackname).ip_address
     region = pdata['aws']['region']
-
     is_master = core.is_master_server_stack(stackname)
 
-    # not necessary on update, but best to check.
-    #generate_stack_keys_if_necessary(stackname)
-
     # we have an issue where the stack is created, however the security group
-    # hasn't been attached or similar, or ssh isn't running and we can't get in.
+    # hasn't been attached or ssh isn't running yet and we can't get in.
     # this waits until a connection can be made and a file is found before continuing.
     def is_resourcing():
         try:
@@ -187,18 +167,18 @@ def update_stack(stackname):
 
     # forward-agent == ssh -A
     with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
-        # upload the private key if present
+        # upload private key if not present remotely
         if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
-            # if this file doesn't exist remotely, upload it.
             # if it also doesn't exist on the filesystem, die horribly.
             # regular updates shouldn't have to deal with this.
-            put(stack_pem(stackname, die_if_doesnt_exist=True), "/root/.ssh/id_rsa", use_sudo=True)
+            pem = stack_pem(stackname, die_if_doesnt_exist=True)
+            put(pem, "/root/.ssh/id_rsa", use_sudo=True)
 
         # write out environment config so Salt can read CFN outputs
         write_environment_info(stackname)
 
         salt_version = pdata['salt']
-        install_master_flag = str(is_master).lower()
+        install_master_flag = str(is_master).lower() # ll: 'true' 
         master_ip = master(region, 'private_ip_address')
 
         run_script('bootstrap.sh', salt_version, stackname, install_master_flag, master_ip)

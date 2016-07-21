@@ -3,10 +3,11 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import os, glob, json, inspect, re, copy
+import os, glob, json, re, copy
 from os.path import join
 from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import osissue, osissuefn, testme
+import decorators
 from .utils import first, second, dictfilter, lookup
 from collections import OrderedDict
 from functools import wraps
@@ -18,11 +19,9 @@ import importlib
 import logging
 from kids.cache import cache as cached
 from slugify import slugify
+import requests
 
 LOG = logging.getLogger(__name__)
-
-class PredicateException(Exception):
-    pass
 
 class DeprecationException(Exception):
     pass
@@ -362,28 +361,14 @@ def find_master_for_stack(stackname):
 # decorators
 #
 
-def _requires_fn_stack(func, pred, message=None):
-    "meta decorator. returns a wrapped function that is executed if pred(stackname) is true"
-    @wraps(func)
-    def _wrapper(stackname=None, *args, **kwargs):
-        if stackname and pred(stackname):
-            return func(stackname, *args, **kwargs)
-        if message:
-            msg = message % {'stackname': stackname}
-        else:
-            msg = "\n\nfunction `%s()` failed predicate \"%s\" on stack '%s'\n" \
-              % (func.__name__, str(inspect.getsource(pred)).strip(), stackname)
-        raise PredicateException(msg)
-    return _wrapper
-
 def requires_active_stack(func):
     "requires a stack to exist in a successfully created/updated state"
-    return _requires_fn_stack(func, stack_is_active)
+    return decorators._requires_fn_stack(func, stack_is_active)
 
 def requires_stack_file(func):
     "requires a stack template to exist on disk"
     msg = "I couldn't find a cloudformation stack file for %(stackname)r!"
-    return _requires_fn_stack(func, lambda stackname: stackname in stack_files(), msg)
+    return decorators._requires_fn_stack(func, lambda stackname: stackname in stack_files(), msg)
 
 #
 #
@@ -434,9 +419,17 @@ def hostname_struct(stackname):
     struct.update(updates)
     return struct
 
+#
+#
+#
+
 def project_data_for_stackname(stackname, *args, **kwargs):
     pname = project_name_from_stackname(stackname)
     return project.project_data(pname, *args, **kwargs)
+
+#
+# might be better off in bakery.py?
+#
 
 @testme
 def ami_name(stackname):

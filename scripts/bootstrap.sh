@@ -56,11 +56,14 @@ fi
 
 if [ -d /vagrant ]; then
     # we're using Vagrant
-    # ignore IP given and use the one we can detect
+    
+    # ignore IP parameter and use the one we can detect
     master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
+    
+    # link up the project formula mounted at /project
     sudo ln -sf /project/salt /srv/salt
     sudo ln -sf /project/salt/pillar /srv/pillar
-    # if master-server, these links will be overwritten
+    # if a master-server instance, these links will be overwritten
 fi
 
 # this file shouldn't exist but it does. leftover from installing salt? nfi.
@@ -70,4 +73,5 @@ master: $master_ipaddr
 id: $stackname
 log_level: info" | sudo tee /etc/salt/minion
 
+# we've changed the minion's configuration, service restart necessary
 sudo service salt-minion restart
