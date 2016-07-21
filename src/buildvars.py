@@ -22,7 +22,8 @@ env.abort_exception = FabricException
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None):
     switch_revision(stackname, revision)
-    _run_salt(stackname)
+    with stack_conn(stackname):
+        return bootstrap.run_script('highstate.sh')
 
 @debugtask
 @requires_aws_stack
@@ -106,9 +107,6 @@ def _update_remote_bvars(stackname, bvars):
         put(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
         LOG.info("%r updated", stackname)            
 
-def _run_salt(stackname):
-    with stack_conn(stackname):
-        return sudo('salt-call state.highstate --retcode-passthrough')
 
 def _bvarstype(bvars):
     "return"
