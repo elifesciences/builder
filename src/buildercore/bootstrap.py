@@ -99,6 +99,7 @@ def stack_resources(stackname):
 
 def ec2_instance_data(stackname):
     "returns the ec2 instance data from the first ec2 instance the stack has"
+    assert stackname, "stackname must be valid, not None"
     ec2 = first([r for r in stack_resources(stackname) if r.resource_type == "AWS::EC2::Instance"])
     conn = connect_aws_with_stack(stackname, 'ec2')
     return conn.get_only_instances([ec2.physical_resource_id])[0]
@@ -107,6 +108,7 @@ def ec2_instance_data(stackname):
 def master_data(region):
     "returns the ec2 instance data for the master-server"
     stackname = core.find_master(region)
+    assert stackname, ("Cannot find the master in region %s" % region)
     return ec2_instance_data(stackname)
 
 def master(region, key):

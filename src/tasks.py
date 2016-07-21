@@ -15,6 +15,7 @@ from buildercore.decorators import osissue, osissuefn
 
 @debugtask
 @requires_project
+@echo_output
 def ami_for_project(pname):
     "returns possible AMIs suitable for given project"
     conn = core.connect_aws_with_pname(pname, 'ec2')
@@ -39,7 +40,7 @@ def ami_for_project(pname):
     
     print len(results),"results"
 
-    utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
+    return utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
 
     # good for figuring out filters 
     #print results[0].__dict__
