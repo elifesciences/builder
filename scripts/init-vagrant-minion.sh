@@ -9,11 +9,7 @@ set -xv  # output the scripts and interpolated steps
 
 # configure vagrant
 # overwrite the general purpose /etc/salt/minion file created in bootstrap.sh
-sudo cp /vagrant/scripts/salt/minion /etc/salt/minion
-
-# ensure salt can talk to github without host verification failures
-#ssh-keygen -R github.com # removes any matching keys
-sudo cp /vagrant/scripts/etc-known_hosts /etc/ssh/ssh_known_hosts
+cp /vagrant/scripts/salt/minion /etc/salt/minion
 
 # get the builder base formula
 if [ ! -d /vagrant/cloned-projects/builder-base-formula/.git ]; then
@@ -25,10 +21,10 @@ fi
 # hook that up now
 cd /srv/salt/ && ln -sf example.top top.sls
 if [ ! -e /srv/pillar ]; then 
-    sudo ln -sf /srv/salt/pillar/ /srv/pillar
+    ln -sf /srv/salt/pillar/ /srv/pillar
 fi
 
 # TODO: CHECK ENVIRONMENT, FAIL NOISILY
 
 echo "Restarting salt-minion"
-sudo service salt-minion restart
+service salt-minion restart

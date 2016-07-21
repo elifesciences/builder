@@ -242,12 +242,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         # bootstrap Saltstack
-        project.vm.provision("shell", path: "scripts/bootstrap.sh", keep_color: true, privileged: false, \
+        project.vm.provision("shell", path: "scripts/bootstrap.sh", keep_color: true, privileged: true, \
             args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER), "noipfromhere"])
         
         if not IS_MASTER
             # configure Salt, call highstate
-            project.vm.provision("shell", path: "scripts/init-vagrant-minion.sh", keep_color: true, privileged: false)
+            project.vm.provision("shell", path: "scripts/init-vagrant-minion.sh", keep_color: true, privileged: true)
         else
             # configure the instance as if it were a master server. 
             # script assumes root access

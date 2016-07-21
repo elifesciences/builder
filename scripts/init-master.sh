@@ -14,20 +14,6 @@ pillar_repo=$2 # what secrets do I know?
 
 echo "bootstrapping master-minion $stackname"
 
-# generate a key for the master server. 
-# in AWS this is uploaded to the server and moved into place prior to calling this script
-# in Vagrant it must be created
-if [ ! -f /root/.ssh/id_rsa ]; then
-    ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ''
-fi
-
-
-# ensure salt can talk to github without host verification failures
-ssh-keygen -R github.com # removes any existingskeys
-# append this to the global known hosts file
-echo "github.com,192.30.252.128 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==" >> /etc/ssh/ssh_known_hosts
-
-
 # generate/overwrite the *pubkey*
 if [ ! -f /root/.ssh/id_rsa.pub ]; then    
     # -y read pemkey, print pubkey to stdout
