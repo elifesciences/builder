@@ -33,24 +33,9 @@ def dictfilter(func, ddict):
         return ddict
     return {k:v for k, v in ddict.items() if func(k, v)}
 
-def dictmap(func, ddict):
-    "apply func over the key+vals of ddict. func should accept two params, key and val."
-    return {k:func(k, v) for k, v in ddict.items()}
-
-def subdict(ddict, key_list):
-    "returns a version of the given dictionary but only with the keys specified"
-    return {k:v for k, v in ddict.items() if k in key_list}
-
 def exsubdict(ddict, key_list):
     "returns a version of the given dictionary with all keys excluding the ones specified"
     return {k:v for k, v in ddict.items() if k not in key_list}
-
-def renkey(ddict, oldkey, newkey):
-    "renames a key in ddict from oldkey to newkey"
-    if ddict.has_key(oldkey):
-        ddict[newkey] = ddict[oldkey]
-        del ddict[oldkey]
-    return ddict
 
 def complement(pred):
     @wraps(pred)
@@ -133,18 +118,6 @@ def firstnn(x):
     return first(filter(lambda v: v != None, x))
     #return first(filter(None, x))
 
-def cached(func):
-    "simple function caching, stores result of calling the function as an attribute. function cannot take args."
-    @wraps(func)
-    def wrapper():
-        ckey = '_cache'
-        if hasattr(func, ckey) and not hasattr(func, '_nocache'):
-            return getattr(func, ckey)
-        result = func()
-        setattr(func, ckey, result)
-        return result
-    return wrapper
-
 def call_while(fn, interval=5, update_msg="waiting ...", done_msg="done."):
     "calls the given function `f` every `interval` until it returns False."
     while True:
@@ -161,20 +134,6 @@ def call_while_example():
         return not os.path.exists("/tmp/foo")
     call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
 
-# deprecated in favour of `lookup` - I prefer `lookup` when no default specified
-def getin(data, path):
-    "allows dot-path access to nested dicts"
-    assert isinstance(data, dict), "getin only works with dictionaries"
-    path_bits = path.split('.')
-    bit, rest = path_bits[0], path_bits[1:]
-    if bit:
-        if isinstance(data, dict) and not data.has_key(bit):
-            # data not found. return None instead of throwing a fit
-            return None
-        return getin(data[bit], ".".join(rest))
-    # end of path
-    return data
-
 def updatein(data, path, newval, create=False):
     """updates a value within a nested dict. use create=True
     to create the path if it doesn't already exist"""
@@ -187,12 +146,6 @@ def updatein(data, path, newval, create=False):
     if create and not data.has_key(bit):
         data[bit] = {}
     return updatein(data[bit], ".".join(rest), newval, create)
-
-def gget(lst, i, data):
-    try:
-        return lst[i]
-    except IndexError:
-        return data
 
 def random_alphanumeric(length=32):
     rand = random.SystemRandom()
@@ -257,21 +210,6 @@ def remove_ordereddict(data, dangerous=True):
     # so nasty. 
     return json.loads(json_dumps(data, dangerous))
 
-def yaml_to_json(filename):
-    "reads the contents of the given yaml file and returns json"
-    try:
-        return json.dumps(ordered_load(open(filename, 'r')), indent=4)
-    except yaml.scanner.ScannerError, ex:
-        errcho("Invalid YAML!")
-        raise ex
-
-def hasanykey(ddict, key_list):
-    return any(map(ddict.has_key, key_list))
-
-def git_purge():
-    cmd = 'git reset --hard && git clean -f -d'
-    run(cmd)
-
 def listfiles(path, ext_list=None):
     "returns a list of absolute paths for given dir"
     path_list = map(lambda fname: os.path.abspath(join(path, fname)), os.listdir(path))
@@ -279,10 +217,6 @@ def listfiles(path, ext_list=None):
         path_list = filter(lambda path: os.path.splitext(path)[1] in ext_list, path_list)
     return sorted(filter(os.path.isfile, path_list))
     
-def git_update():
-    cmd = 'git pull --rebase'
-    run(cmd)
-
 def ymd(dt=None, fmt="%Y-%m-%d"):
     "formats a datetime object to YYY-mm-dd format"
     if not dt:
