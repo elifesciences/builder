@@ -20,7 +20,6 @@ def find_region(stackname=None):
 
     if more than one region available, it will raise an EnvironmentError.
     until we have some means of supporting multiple regions, this is the best solution"""
-    region = None
     if stackname:
         pdata = core.project_data_for_stackname(stackname)
         return pdata['aws']['region']
