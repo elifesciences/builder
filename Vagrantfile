@@ -242,26 +242,26 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         # bootstrap Saltstack
-        project.vm.provision("shell", path: "scripts/bootstrap.sh", privileged: false, \
+        project.vm.provision("shell", path: "scripts/bootstrap.sh", keep_color: true, privileged: false, \
             args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER), "noipfromhere"])
         
         if not IS_MASTER
             # configure Salt, call highstate
-            project.vm.provision("shell", path: "scripts/init-vagrant-minion.sh", privileged: false)
+            project.vm.provision("shell", path: "scripts/init-vagrant-minion.sh", keep_color: true, privileged: false)
         else
             # configure the instance as if it were a master server. 
             # script assumes root access
             pillar_repo = "https://github.com/elifesciences/builder-private-example"
-            project.vm.provision("shell", path: "scripts/init-master.sh", privileged: true, \
+            project.vm.provision("shell", path: "scripts/init-master.sh", keep_color: true, privileged: true, \
                 args: [INSTANCE_NAME, pillar_repo])
-            project.vm.provision("shell", path: "scripts/update-master.sh", privileged: true)
+            project.vm.provision("shell", path: "scripts/update-master.sh", keep_color: true, privileged: true)
         end
 
         # tell the machine to update itself
-        project.vm.provision("shell", path: "scripts/highstate.sh", privileged: true)
+        project.vm.provision("shell", path: "scripts/highstate.sh", keep_color: true, privileged: true)
 
         if File.exist? "scripts/customize.sh"
-            project.vm.provision "shell", path: "scripts/customize.sh", privileged: true
+            project.vm.provision "shell", path: "scripts/customize.sh", keep_color: true, privileged: true
         end
 
     end # ends project configure
