@@ -1,5 +1,5 @@
 from . import base
-from mock import patch
+from mock import patch, call
 import utils
 
 class TestUtils(base.BaseCase):
@@ -16,11 +16,16 @@ class TestUtils(base.BaseCase):
         self.assertIn('master', branches)
 
     @patch('sys.stderr')
-    def test_errcho(self, themock):
+    def test_errcho(self, stderr):
         self.assertEqual(
             'Hello, world',
             utils.errcho('Hello, world')
         )
+        self.assertEqual(
+            [call('Hello, world'), call('\n')],
+            stderr.write.call_args_list
+        )
+        stderr.flush.assert_called_with()
 
     def test_rmval(self):
         expected_list = [
