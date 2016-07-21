@@ -12,9 +12,9 @@ green --run-coverage tests"$module"
 if [ -z "$module" ]; then
     # is only run if tests pass
     covered=$(coverage report | grep TOTAL | awk '{print $6}' | sed 's/%//')
-    if [ $covered -lt 50 ]; then
+    if [ $covered -lt 57 ]; then
         echo
-        echo "FAILED this project requires at least 50% coverage"
+        echo "FAILED this project requires at least 57% coverage"
         echo
         exit 1
     fi
