@@ -12,8 +12,12 @@ from .decorators import osissue, osissuefn, testme
 @osissue("untested ...")
 def prep_stack(stackname):
     "prepare the given stack for an image to be created of it."
+    # absolute paths only, please
     to_be_deleted = [
+        # cloudformation details at time of creation
         '/etc/cfn-info.json',
+        # master pub key
+        '/etc/salt/pki/minion/minion_master.pub',
     ]
     def delete_file(remote_path):
         if exists(remote_path):
