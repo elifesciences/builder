@@ -271,12 +271,3 @@ elife-website:
             1326: 8983 # Solr web gui
             3307: 3306 # mysql
             6379: 6379 # redis
-        shares:
-        -   host: ../elife-website/
-            guest: /srv/website
-            opts:
-                :owner: www-data
-                :group: www-data
-                :mount_options:
-                - dmode=777
-                - fmode=777
