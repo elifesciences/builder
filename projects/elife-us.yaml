@@ -1,0 +1,24 @@
+defaults:
+    aws:
+        ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
+        region: us-east-1
+        vpc-id: vpc-78a2071d
+        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        subnet-cidr: '10.0.2.0/24'
+
+master-server:
+    aws:
+        ports:
+            - 22
+            - 4506: # salt publish port
+                # CIDR of subnet this master will server
+                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
+            - 4505: # salt return port
+                cidr-ip: 10.0.2.0/24
+
+# projects need to be specified to inherit the defaults at the top of this file
+elife-libraries:
+    # aws needs to be a dictionary or defaults will not be merged in
+    aws:
+        something: null
+
