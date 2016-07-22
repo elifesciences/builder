@@ -125,9 +125,8 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     # for when we really need it to exist
     if die_if_doesnt_exist and not os.path.exists(expected_key):
         raise EnvironmentError("keypair %r not found at %r" % (stackname, expected_key))
-    # for when we don't want to accidentally overwrite it
     if die_if_exists and os.path.exists(expected_key):
-        raise EnvironmentError("keypair %r found at %r" % (stackname, expected_key))
+        raise EnvironmentError("keypair %r found at %r, don't want to accidentally overwrite it" % (stackname, expected_key))
     return expected_key
 
 @contextmanager

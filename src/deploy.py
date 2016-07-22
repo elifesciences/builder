@@ -28,6 +28,7 @@ def impose_ordering(branch_list):
 @echo_output
 def deploy(pname, cluster=None, branch='master'):
     pdata = project.project_data(pname)
+    assert pdata['repo'], ('The `deploy` task needs a `repo` to be specified in the project %s configuration' % pname)
     branch_list = utils.git_remote_branches(pdata['repo'])
     branch_list = impose_ordering(branch_list)
     if not branch:
