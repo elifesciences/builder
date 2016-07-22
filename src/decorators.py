@@ -89,9 +89,9 @@ def requires_aws_project_stack(*plist):
 def requires_aws_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
-        region = aws.find_region()
-        asl = core.active_stack_names(region)
         stackname = first(args) or os.environ.get('INSTANCE')
+        region = aws.find_region(stackname)
+        asl = core.active_stack_names(region)
         if not asl:
             print '\nno AWS stacks *in an active state* exist, cannot continue.'
             return
