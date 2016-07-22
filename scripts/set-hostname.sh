@@ -1,3 +1,3 @@
 #!/bin/bash
-sudo hostname $PROJECT
+sudo hostname "$PROJECT"
 sudo sh -c "echo ${PROJECT} > /etc/hostname"

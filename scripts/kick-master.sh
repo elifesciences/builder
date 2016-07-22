@@ -11,7 +11,7 @@ sudo killall salt-call   || true
 
 sleep 2
 
-ps aux | grep -i salt
+pgrep salt -l
 
 sudo killall salt-minion || true
 sudo killall salt-master || true

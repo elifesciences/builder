@@ -33,7 +33,7 @@ if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     fi
     # minion keys for master should exist at this point
     mkdir -p /etc/salt/pki/master/minions/
-    cp /etc/salt/pki/minion/minion.pub /etc/salt/pki/master/minions/$stackname
+    cp /etc/salt/pki/minion/minion.pub "/etc/salt/pki/master/minions/$stackname"
 fi
 
 
@@ -41,7 +41,7 @@ fi
 # REQUIRES CREDENTIALS!
 if [ ! -d /opt/builder-private ]; then
     cd /opt
-    git clone $pillar_repo builder-private || {
+    git clone "$pillar_repo" builder-private || {
         set +xv
         pubkey=$(cat /root/.ssh/id_rsa.pub)
         echo "

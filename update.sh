@@ -2,12 +2,12 @@
 
 set -e # everything must pass
 
-python .prerequisites.py $@
+python .prerequisites.py "$@"
 
 # remove any old compiled python files
 find src/ -name '*.pyc' -delete
 
-if which vagrant; then
+if command -v vagrant > /dev/null; then
     # installs s3 auth plugin so we can pull boxes from a private s3 bucket
     if [ ! -f .no-vagrant-s3auth.flag ]; then
         # vagrant plugin update ... doesn't work apparently
@@ -31,18 +31,16 @@ chmod +x bldr
 # generate a settings file if one doesn't exist
 if [ ! -e settings.yml ]; then
     echo "* settings.yml not found, creating"
-    cat example.settings.yml | grep -Ev '\w*##' > settings.yml
+    grep -Ev '\w*##' example.settings.yml > settings.yml
 fi
 
 # activate the venv, recreating if neccessary
-source .activate-venv.sh
+. .activate-venv.sh
 
 # download the basebox from s3 if vagrant is installed
-if which vagrant; then
+if command -v vagrant > /dev/null; then
     if [ ! -f .no-install-basebox.flag ]; then
-        if [ type vagrant &> /dev/null ]; then
-            vagrant add box s3://elife-builder/boxes/ elifesciences/basebox
-        fi
+        vagrant add box s3://elife-builder/boxes/ elifesciences/basebox
     else
         echo "* the no-install-basebox flag is set. skipping check"
     fi

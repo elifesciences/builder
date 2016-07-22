@@ -25,7 +25,7 @@ chmod -R 777 /tmp
 
 installing=false
 upgrading=false
-if ! which salt-minion; then
+if ! command -v salt-minion > /dev/null; then
     installing=true
 else
     if ! (salt-minion --version | grep "$version"); then
@@ -58,9 +58,9 @@ fi
 
 
 # salt-master
-if [ "$install_master" == "true" ]; then
+if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
-    if ! (type salt-master && salt-master --version | grep "$version"); then
+    if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
         sh salt_bootstrap.sh -P -F -M -c /tmp stable "$version"
     else
