@@ -22,3 +22,7 @@ elife-libraries:
     aws:
         something: null
 
+elife-alfred:
+    aws:
+        something: null
+
