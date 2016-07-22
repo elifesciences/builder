@@ -16,17 +16,33 @@ stackname=$2
 install_master=$3
 master_ipaddr=$4
 
-echo "salt version: $version"
-
-# minion config
-
 # ensures the SSH_AUTH_SOCK envvar is retained when we sudo to root
 # this allows the root user to talk to private git repos
 echo 'Defaults>root env_keep+=SSH_AUTH_SOCK' > /etc/sudoers.d/00-ssh-auth-sock-root
 chmod 440 /etc/sudoers.d/00-ssh-auth-sock-root
 chmod -R 777 /tmp
 
-if ! (salt-minion --version | grep $version); then
+
+installing=false
+upgrading=false
+if ! which salt-minion; then
+    installing=true
+else
+    if ! (salt-minion --version | grep "$version"); then
+        upgrading=true
+    fi
+fi
+
+
+# if we're installing for the first time but have a master pubkey hanging
+# around, delete it. almost certainly leftover from an old ami.
+if ($installing && test -e /etc/salt/pki/minion/minion_master.pub); then
+    rm /etc/salt/pki/minion/minion_master.pub
+fi
+
+
+# salt-minion
+if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
     wget -O salt_bootstrap.sh https://bootstrap.saltstack.com --no-verbose
 
@@ -35,54 +51,58 @@ if ! (salt-minion --version | grep $version); then
     # -c  Temporary configuration directory
     # -M  Also install master
     # https://github.com/saltstack/salt-bootstrap/blob/develop/bootstrap-salt.sh
-    sh salt_bootstrap.sh -P -F -c /tmp stable $version
+    sh salt_bootstrap.sh -P -F -c /tmp stable "$version"
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
 
-# master config
 
+# salt-master
 if [ "$install_master" == "true" ]; then
     # salt is not installed or the version installed is old
-    if ! (type salt-master && salt-master --version | grep $version); then
+    if ! (type salt-master && salt-master --version | grep "$version"); then
         # master not installed
-        sh salt_bootstrap.sh -P -F -M -c /tmp stable $version
+        sh salt_bootstrap.sh -P -F -M -c /tmp stable "$version"
     else
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
 fi
 
-# reset the minion config
 
+# record some basic provisioning info after the above successfully completes
+if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log; fi
+if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
+
+
+# reset the minion config
+rm -f /etc/salt/minion_id # no idea where this file comes from but it's not needed
 if [ -d /vagrant ]; then
-    # we're using Vagrant
-    
+    # we're using Vagrant    
     # ignore IP parameter and use the one we can detect
-    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
-    
+    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')    
     # link up the project formula mounted at /project
+    # NOTE: these links will be overwritten if this a master-server instance
     ln -sf /project/salt /srv/salt
     ln -sf /project/salt/pillar /srv/pillar
-    # if a master-server instance, these links will be overwritten
 fi
-
-# this file shouldn't exist but it does. leftover from installing salt? nfi.
-rm -f /etc/salt/minion_id
 echo "
 master: $master_ipaddr
 id: $stackname
 log_level: info" > /etc/salt/minion
 
-# we've changed the minion's configuration, service restart necessary
+
+#  service restart necessary as we've changed the minion's configuration
 service salt-minion restart
 
+
 # generate a key for the master server. 
-# in AWS this is uploaded to the server and moved into place prior to calling this script
-# in Vagrant it must be created
+# in AWS this is uploaded to the server and moved into place prior to calling 
+# this script. in Vagrant it must be created.
 if [ ! -f /root/.ssh/id_rsa ]; then
     ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ''
 fi
 touch /root/.ssh/known_hosts
+
 
 # ensure salt can talk to github without host verification failures
 ssh-keygen -R github.com # removes any existing keys
