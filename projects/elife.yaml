@@ -251,3 +251,15 @@ elife-alfred:
         ram: 4096
         ports:
             1433: 80
+
+elife-jira:
+    subdomain: jira # jira.elifesciences.org
+    formula-repo: https://github.com/elifesciences/elife-jira-formula
+    aws:
+        ports:
+            - 22
+            - 8080
+    vagrant:
+        ram: 3096
+        ports:
+            1325: 8080
