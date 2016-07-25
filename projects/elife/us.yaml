@@ -1,6 +1,3 @@
-defaults:
-    aws:
-
 master-server:
     aws:
         ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
