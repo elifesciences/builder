@@ -1,0 +1,102 @@
+defaults:
+    description: defaults for all projects in this file
+    salt: '2016.3' # the version of salt these project use
+    domain: elifesciences.org
+    # addressing within VPC
+    intdomain: elife.internal
+    # 'lax', 'metrics', 'gateway', etc
+    subdomain: null
+    # projects with an explicit `repo` attribute support branch deployments with
+    # ./bldr deploy
+    repo: null
+    # repository containing build instructions for this project
+    formula-repo: null
+    # repo containing project pillar data (credentials typically)
+    # only the master-server will have a copy of this and only the master-server
+    # will need permissions to clone it
+    private-repo: ssh://git@github.com/elifesciences/builder-private
+    # default branch to use when creating new instances
+    default-branch: master
+    # 
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+    aws:
+        # find more here: http://cloud-images.ubuntu.com/releases/
+        ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
+        region: us-east-1
+        vpc-id: vpc-78a2071d
+        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        subnet-cidr: '10.0.2.0/24'
+        type: t2.small  # ~ $20/mo
+        rds:
+            # rds defaults only used if an `rds` section present in project
+            # explicit database name overrides the one generated at template creation
+            multi-az: False
+            engine: postgres
+            # ensure this matches the version of Postgres you install on server!
+            version: '9.4'
+            type: db.t2.small
+            storage: 5 # GB
+            backup-retention: 28 # days
+            # two subnets are required in two different availability zones
+            # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
+            subnets:
+                # two are required
+                # NOTE! the 'dbsubnet-' prefix is important to *builder*
+                # it tells us which subnets we can provision RDS within
+                - subnet-3611e55e # dbsubnet-1
+                - subnet-78444403 # dbsubnet-2
+
+        ext:
+            # external hdd
+            size: 10 # GB
+            device: /dev/sdh
+    aws-alt:
+        fresh:
+            description: uses a plain Ubuntu basebox instead of an ami
+            ami: ami-9eaa1cf6 # Ubuntu 14.04
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04
+        box-url: null # not needed for boxes hosted on Atlas 
+        ip: 192.168.33.44
+        ram: 1024
+        cpus: 2
+        cpucap: 100 # percent (vagrant default)
+ 
+basebox:
+   vagrant: {}
+
+master-server:
+    formula-repo: ssh://git@github.com/elifesciences/master-server-formula
+    aws:
+        ports:
+            - 22
+            - 4506: # salt publish port
+                # CIDR of subnet this master will server
+                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
+            - 4505: # salt return port
+                cidr-ip: 10.0.2.0/24
+    vagrant: {}
+
+elife-libraries:
+    formula-repo: https://github.com/elifesciences/elife-libraries-formula
+    aws:
+        type: t2.small # 2GB of RAM
+        ports:
+            - 22
+    vagrant:
+        ram: 2048
+
+elife-alfred:
+    subdomain: alfred
+    formula-repo: https://github.com/elifesciences/elife-alfred-formula
+    aws:
+        type: t2.medium
+        ports:
+            - 22
+            - 80
+            - 16022 # Jenkins SSH port
+    vagrant:
+        ram: 4096
+        ports:
+            1433: 80
