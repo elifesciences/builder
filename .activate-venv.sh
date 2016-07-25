@@ -21,5 +21,5 @@ fi
 # 'ARCHFLAGS' fixes a problem with OSX refusing to compile a dependency
 export ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future"
 
-source venv/bin/activate
+. ./venv/bin/activate
 pip install -r requirements.txt
