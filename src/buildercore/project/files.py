@@ -42,7 +42,8 @@ def write_project_file(new_project_data, project_file):
 @testme
 def all_projects(project_file): #, project_file=config.PROJECT_FILE):
     allp = utils.ordered_load(open(project_file))
-    assert allp is not None, ("Project file %s seems to be empty" % project_file)
+    if allp is None:
+        return ({}, [])
     assert "defaults" in allp, ("Project file %s does not seem to have a `default` key" % project_file)
     defaults = allp["defaults"]
     del allp["defaults"]
