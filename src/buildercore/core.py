@@ -161,7 +161,7 @@ def mk_stackname(*bits):
 def parse_stackname(stackname):
     "returns a pair of project and cluster id"
     if not stackname or not isinstance(stackname, basestring):
-        raise ValueError("stackname must look like <pname>--<cluster-id>, got: %r" % stackname)
+        raise ValueError("stackname must look like <pname>--<cluster-id>, got: %r" % str(stackname))
     pname = cluster_id = None
     bits = stackname.split('--')
     # if len(bits) != 2:
@@ -286,6 +286,13 @@ def active_aws_stacks(region, *args, **kwargs):
 def steady_aws_stacks(region):
     "returns all stacks that are not in a transitionary state"
     return aws_stacks(region, STEADY_CFN_STATUS)
+
+def active_aws_project_stacks(pname):
+    "returns all active stacks for a given project name"
+    pdata = project.project_data(pname)
+    region = pdata['aws']['region']
+    fn = lambda t: project_name_from_stackname(first(t)) == pname
+    return filter(fn, active_aws_stacks(region))
 
 def stack_names(stack_list):
     return sorted(map(first, stack_list))

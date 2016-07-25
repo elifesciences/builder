@@ -14,3 +14,5 @@ PyYAML==3.11
 requests==2.10.0
 troposphere==1.5.0
 mock==2.0.0
+python-dateutil<3.0.0,>=2.1
+pytz==2016.6.1
