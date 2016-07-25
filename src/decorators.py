@@ -51,16 +51,15 @@ def requires_filtered_project(filterfn=None):
         @wraps(func)
         def wrap2(_pname=None, *args, **kwargs):
             pname = os.environ.get('PROJECT', _pname)
-            if not pname or not pname.strip():
-                project_list = project.filtered_projects(filterfn)
-                #project_list = project.project_list()
+            project_list = project.filtered_projects(filterfn)
+            if not pname or not pname.strip() or pname not in project_list:
                 pname = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
             return func(pname, *args, **kwargs)
         return wrap2
     return wrap1
 
 #pylint: disable=invalid-name
-requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.has_key('repo'))
+requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.get_key('repo'))
 #pylint: disable=invalid-name
 requires_project = requires_filtered_project(None)
 
@@ -89,9 +88,9 @@ def requires_aws_project_stack(*plist):
 def requires_aws_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
-        region = aws.find_region()
-        asl = core.active_stack_names(region)
         stackname = first(args) or os.environ.get('INSTANCE')
+        region = aws.find_region(stackname)
+        asl = core.active_stack_names(region)
         if not asl:
             print '\nno AWS stacks *in an active state* exist, cannot continue.'
             return
