@@ -51,16 +51,15 @@ def requires_filtered_project(filterfn=None):
         @wraps(func)
         def wrap2(_pname=None, *args, **kwargs):
             pname = os.environ.get('PROJECT', _pname)
-            if not pname or not pname.strip():
-                project_list = project.filtered_projects(filterfn)
-                #project_list = project.project_list()
+            project_list = project.filtered_projects(filterfn)
+            if not pname or not pname.strip() or pname not in project_list:
                 pname = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
             return func(pname, *args, **kwargs)
         return wrap2
     return wrap1
 
 #pylint: disable=invalid-name
-requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.has_key('repo'))
+requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.has_key('repo') and project.get('repo'))
 #pylint: disable=invalid-name
 requires_project = requires_filtered_project(None)
 
