@@ -59,7 +59,7 @@ def requires_filtered_project(filterfn=None):
     return wrap1
 
 #pylint: disable=invalid-name
-requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.get_key('repo'))
+requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.get('repo'))
 #pylint: disable=invalid-name
 requires_project = requires_filtered_project(None)
 
