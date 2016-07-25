@@ -21,4 +21,5 @@ import master
 import askmaster
 import buildvars
 import remote_master
+import project
 from deploy import deploy

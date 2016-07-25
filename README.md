@@ -25,9 +25,10 @@ message. Updating in the future is as simple as:
 
 Your `settings.yaml` file was created automatically and contains options for tweaking the behaviour of `builder`, like the project file it should be using.
 
-By default it points to the `./projects/elife.yaml` project file. This file describes all eLife projects that can be built and their environments.
+By default it points to the `./projects/elife.yaml` project file. This file describes all eLife projects that can be built and their environments. [See here](docs/projects.md) for more 
+project file documentation.
 
-Project files and the `settings.yaml` file are the **only** two places where configuration is _supported_.
+Project files and the `settings.yml` file are the **only** two places where configuration is _supported_.
 
 > 'configuration' also exists in `./src/buildercore/config.py` if you're a `builder` dev.
 
