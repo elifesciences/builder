@@ -44,7 +44,7 @@ def all_projects(project_file): #, project_file=config.PROJECT_FILE):
     allp = utils.ordered_load(open(project_file))
     if allp is None:
         return ({}, [])
-    assert "defaults" in allp, ("Project file %s does not seem to have a `default` key" % project_file)
+    assert "defaults" in allp, ("Project file %s is missing a `default` section" % project_file)
     defaults = allp["defaults"]
     del allp["defaults"]
     return defaults, allp
