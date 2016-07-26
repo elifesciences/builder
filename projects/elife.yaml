@@ -252,6 +252,35 @@ elife-alfred:
         ports:
             1433: 80
 
+elife-website:
+    subdomain: v2 # v2.elifesciences.org
+    repo: ssh://git@github.com/elifesciences/elife-website
+    formula-repo: https://github.com/elifesciences/elife-website-formula
+    aws:
+        ports:
+            22: 22
+            80: 80
+    aws-alt:
+        large:
+            description: intended to run temporarily
+            type: m4.2xlarge
+    vagrant:
+        ram: 3072
+        ports:
+            1238: 80
+            1326: 8983 # Solr web gui
+            3307: 3306 # mysql
+            6379: 6379 # redis
+        shares:
+        -   host: ../elife-website/
+            guest: /srv/website
+            opts:
+                :owner: www-data
+                :group: www-data
+                :mount_options:
+                - dmode=777
+                - fmode=777
+
 elife-jira:
     subdomain: jira # jira.elifesciences.org
     formula-repo: https://github.com/elifesciences/elife-jira-formula
