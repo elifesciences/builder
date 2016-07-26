@@ -40,26 +40,7 @@ def run_script(script_path, *script_params):
 
 def prep_stack():
     """called after stack creation and before AMI creation"""
-    # absolute paths only, please
-    to_be_deleted = [
-        # build info written at time of creation
-        '/etc/cfn-info.json',
-        '/etc/build-vars.json.b64',
-        # master pub key
-        '/etc/salt/pki/minion/minion_master.pub',
-        # root pub/pem keys, known hosts, everything.
-        '/root/.ssh/*',
-        #'/home/ubuntu/.ssh/* # don't do this, we need that private key for owner_ssh
-        # salt event log
-        '/root/events.log',
-    ]
-    def delete_file(remote_path):
-        return remote_path, sudo('rm -f ' + remote_path)
-
-    cmds_to_run = []
-
-    map(delete_file, to_be_deleted)
-    map(sudo, cmds_to_run)
+    return run_script("prep-stack.sh")
 
 
 #
@@ -85,7 +66,7 @@ def create_stack(stackname):
         def is_resourcing():
             try:
                 # call until file exists
-                return not files.exists(join('/home', BOOTSTRAP_USER))
+                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys"))
             except fabric_exceptions.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
@@ -103,6 +84,12 @@ def create_stack(stackname):
         LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
         keypair.delete_keypair(stackname)
         raise
+
+    except KeyboardInterrupt:
+        # don't delete the keypair if the user manually cancelled stack creation
+        LOG.debug("caught keyboard interrupt, cancelling...")
+        return False
+    
     except:
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         keypair.delete_keypair(stackname)
