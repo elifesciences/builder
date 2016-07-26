@@ -100,3 +100,31 @@ elife-alfred:
         ram: 4096
         ports:
             1433: 80
+
+journal:
+    subdomain: journal # journal.elifesciences.org
+    repo: https://github.com/elifesciences/journal
+    formula-repo: https://github.com/elifesciences/journal-formula
+    aws:
+        ports:
+            - 22
+            - 443
+            - 80
+    vagrant:
+        ports:
+            1240: 80
+
+
+journal-cms:
+    subdomain: journal-cms # journal-cms.elifesciences.org
+    repo: https://github.com/elifesciences/elife-2.0-website
+    formula-repo: https://github.com/elifesciences/journal-cms-formula
+    aws:
+        ports:
+            - 22
+            - 443
+            - 80
+    vagrant:
+        ports:
+            1241: 80
+
