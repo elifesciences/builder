@@ -15,9 +15,11 @@ class BaseCase(TestCase):
         super(BaseCase, self).__init__(*args, **kwargs)
         self.switch_in_test_settings()
         
-    def switch_in_test_settings(self):
+    def switch_in_test_settings(self, new_settings='dummy-settings.yaml'):
         self.original_settings_file = config.SETTINGS_FILE
-        config.SETTINGS_FILE = join(self.fixtures_dir, 'dummy-settings.yaml')        
+        config.SETTINGS_FILE = join(self.fixtures_dir, new_settings)
+        project.project_map.cache_clear()
+        config.app.cache_clear()
         
     def switch_out_test_settings(self):
         # clear any caches and reload the config module
