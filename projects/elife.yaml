@@ -64,7 +64,10 @@ defaults:
         cpucap: 100 # percent (vagrant default)
  
 basebox:
-   vagrant: {}
+    aws:
+        ports:
+            - 22    
+    vagrant: {}
 
 # you'll need a master server to tell your minions what to do
 master-server:

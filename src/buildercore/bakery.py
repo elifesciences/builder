@@ -4,33 +4,10 @@ __description__ = """Module that deals with AMI baking!
 We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
-from buildercore import core, utils
+from buildercore import core, utils, bootstrap
 from fabric.contrib.files import exists
 from fabric.api import sudo
 from .decorators import osissue, osissuefn, testme
-
-@osissue("untested ...")
-def prep_stack(stackname):
-    "prepare the given stack for an image to be created of it."
-    # absolute paths only, please
-    to_be_deleted = [
-        # cloudformation details at time of creation
-        '/etc/cfn-info.json',
-        # master pub key
-        '/etc/salt/pki/minion/minion_master.pub',
-    ]
-    def delete_file(remote_path):
-        if exists(remote_path):
-            return remote_path, sudo('rm ' + remote_path)
-        return remote_path, False
-
-    cmds_to_run = []
-    
-    with core.stack_conn(stackname):
-        map(delete_file, to_be_deleted)
-        map(sudo, cmds_to_run)
-
-
 
 @testme
 def ami_name(stackname):
@@ -40,7 +17,8 @@ def ami_name(stackname):
 @core.requires_active_stack
 def create_ami(stackname):
     "creates an AMI from the running stack"
-    prep_stack(stackname)
+    with core.stack_conn(stackname):
+        bootstrap.prep_stack()
     ec2 = core.find_ec2_instance(stackname)[0]
     kwargs = {
         'instance_id': ec2.id,

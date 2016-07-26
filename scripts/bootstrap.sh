@@ -25,19 +25,15 @@ chmod -R 777 /tmp
 
 installing=false
 upgrading=false
-if ! command -v salt-minion > /dev/null; then
+if [ ! -e /root/events.log ]; then
+    # we're installing for the first time if: we can't find an event.log file.
+    # this file is deleted upon stack creation and populated after successful 
+    # salt installation
     installing=true
 else
     if ! (salt-minion --version | grep "$version"); then
         upgrading=true
     fi
-fi
-
-
-# if we're installing for the first time but have a master pubkey hanging
-# around, delete it. almost certainly leftover from an old ami.
-if ($installing && test -e /etc/salt/pki/minion/minion_master.pub); then
-    rm /etc/salt/pki/minion/minion_master.pub
 fi
 
 

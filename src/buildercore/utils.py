@@ -1,3 +1,4 @@
+import pytz
 import os, sys, copy, json, time, random, string
 from functools import wraps
 from datetime import datetime
@@ -7,9 +8,9 @@ from fabric.api import run
 from os.path import join
 from more_itertools import unique_everseen
 from StringIO import StringIO
+
 import logging
 LOG = logging.getLogger(__name__)
-
 
 def shallow_flatten(l):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
@@ -216,7 +217,11 @@ def listfiles(path, ext_list=None):
     if ext_list:
         path_list = filter(lambda path: os.path.splitext(path)[1] in ext_list, path_list)
     return sorted(filter(os.path.isfile, path_list))
-    
+
+def utcnow():
+    now = datetime.now()
+    return now.replace(tzinfo=pytz.UTC)
+
 def ymd(dt=None, fmt="%Y-%m-%d"):
     "formats a datetime object to YYY-mm-dd format"
     if not dt:
@@ -231,7 +236,9 @@ def mkdir_p(path):
 
 def json_dumps(obj, dangerous=False):
     """drop-in for json.dumps that handles datetime objects. 
-    dangerous=True will replace unserializable values with the string '[unserializable]' """
+    
+    dangerous=True will replace unserializable values with the string '[unserializable]'.
+    you should typically set this to True. it's False for legacy reasons."""
     def json_handler(obj):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
