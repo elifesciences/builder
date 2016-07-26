@@ -137,7 +137,7 @@ def validate_project(pname, **extra):
             }
             template = quick_render(pname, **extra)
             validate_aws_template(pname, template)
-            time.sleep(0.25) # be nice, avoid any rate limiting
+            time.sleep(0.5) # be nice, avoid any rate limiting
 
     except boto.connection.BotoServerError:
         msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
