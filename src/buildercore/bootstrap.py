@@ -38,6 +38,30 @@ def run_script(script_path, *script_params):
     sudo("rm " + remote_script) # remove the script after executing it
     return retval
 
+def prep_stack():
+    """called after stack creation and before AMI creation"""
+    # absolute paths only, please
+    to_be_deleted = [
+        # build info written at time of creation
+        '/etc/cfn-info.json',
+        '/etc/build-vars.json.b64',
+        # master pub key
+        '/etc/salt/pki/minion/minion_master.pub',
+        # root pub/pem keys, known hosts, everything.
+        '/root/.ssh/*',
+        #'/home/ubuntu/.ssh/* # don't do this, we need that private key for owner_ssh
+        # salt event log
+        '/root/events.log',
+    ]
+    def delete_file(remote_path):
+        return remote_path, sudo('rm -f ' + remote_path)
+
+    cmds_to_run = []
+
+    map(delete_file, to_be_deleted)
+    map(sudo, cmds_to_run)
+
+
 #
 # provision stack
 #
@@ -54,7 +78,23 @@ def create_stack(stackname):
         def is_updating(stackname):
             return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
         utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+
+        # we have an issue where the stack is created, however the security group
+        # hasn't been attached or ssh isn't running yet and we can't get in.
+        # this waits until a connection can be made and a file is found before continuing.
+        def is_resourcing():
+            try:
+                # call until file exists
+                return not files.exists(join('/home', BOOTSTRAP_USER))
+            except fabric_exceptions.NetworkError:
+                LOG.debug("failed to connect to server ...")
+                return True
+        with stack_conn(stackname, username=BOOTSTRAP_USER):
+            utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
+            prep_stack()
+
         return True
+
     except BotoServerError as err:
         # don't delete the keypair if the error is that the stack already exists!
         if err.message.endswith(' already exists'):
@@ -153,19 +193,6 @@ def update_stack(stackname):
     public_ip = ec2_instance_data(stackname).ip_address
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
-
-    # we have an issue where the stack is created, however the security group
-    # hasn't been attached or ssh isn't running yet and we can't get in.
-    # this waits until a connection can be made and a file is found before continuing.
-    def is_resourcing():
-        try:
-            with stack_conn(stackname, username=BOOTSTRAP_USER):
-                # call until file exists
-                return not files.exists(join('/home', BOOTSTRAP_USER))
-        except fabric_exceptions.NetworkError:
-            LOG.debug("failed to connect to server ...")
-            return True
-    utils.call_while(is_resourcing, interval=3, update_msg='waiting for /home/ubuntu to be detected ...')
 
     # forward-agent == ssh -A
     with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
