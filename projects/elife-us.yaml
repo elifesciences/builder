@@ -128,3 +128,17 @@ journal-cms:
         ports:
             1241: 80
 
+api-gateway:
+    subdomain: gateway # ll: gateway.elifesciences.org
+    formula-repo: https://github.com/elifesciences/api-gateway-formula
+    aws:
+        ports:
+            - 22
+            - 80 # TODO: remove in favor of only 443? will require certificates for all environments
+            - 443
+            # - 8000: # possibly expose this to public. Kong uses this to *proxy* requests
+            # - 8001: # don't ever expose to public. Kong uses this for API management
+    vagrant:
+        ports:
+            1323: 80
+
