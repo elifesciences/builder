@@ -26,7 +26,7 @@ def install_update_formula_deps():
         install_formula(name, dep)
 
 def private_ip():
-    cmd = "ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://'"
+    cmd = "/sbin/ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://'"
     return str(local(cmd, capture=True))
 
 def private_file_roots():
