@@ -65,6 +65,7 @@ defaults:
  
 basebox:
     aws:
+        ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22    
     vagrant: {}
