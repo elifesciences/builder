@@ -1,3 +1,4 @@
+# pylint: disable=no-member
 import ssl, socket
 from dateutil.parser import parse
 import utils, project, core
