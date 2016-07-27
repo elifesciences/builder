@@ -22,12 +22,12 @@ defaults:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         # find more here: http://cloud-images.ubuntu.com/releases/
-        ami: ami-9cee02f3 # Ubuntu 14.04
+        ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
+        region: us-east-1
+        vpc-id: vpc-78a2071d
+        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        subnet-cidr: '10.0.2.0/24'
         type: t2.small  # ~ $20/mo
-        region: eu-central-1
-        vpc-id: vpc-0a0ee863  # vpc-id + subnet-id are peculiar to AWS account + region
-        subnet-id: subnet-29638240
-        subnet-cidr: '172.31.16.0/20'
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -65,11 +65,11 @@ defaults:
  
 basebox:
     aws:
+        ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22    
     vagrant: {}
 
-# you'll need a master server to tell your minions what to do
 master-server:
     # formula-repo for the 'master-server' project should contain the 
     # confidential pillar data, master config and state top file.
@@ -80,9 +80,9 @@ master-server:
             - 22
             - 4506: # salt publish port
                 # CIDR of subnet this master will server
-                cidr-ip: 172.31.16.0/20 # access via VPC ip range only
+                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
             - 4505: # salt return port
-                cidr-ip: 172.31.16.0/20
+                cidr-ip: 10.0.2.0/24
     vagrant: {}
 
 lax:
@@ -102,7 +102,6 @@ lax:
     vagrant:
         ports:
             1239: 80
-
 
 api-gateway:
     subdomain: gateway # ll: gateway.elifesciences.org
@@ -266,3 +265,17 @@ elife-jira:
         ram: 3096
         ports:
             1325: 8080
+
+api-dummy:
+    subdomain: api-dummy
+    repo: https://github.com/elifesciences/api-dummy
+    formula-repo: https://github.com/elifesciences/api-dummy-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 443
+            - 80
+    vagrant:
+        ports:
+            1242: 80
