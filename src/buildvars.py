@@ -3,7 +3,7 @@ from buildercore import core
 from fabric.api import env, sudo, run, local, task, get, put, hide
 from StringIO import StringIO
 from decorators import echo_output, requires_aws_stack, debugtask
-from buildercore.core import stack_conn
+from buildercore.core import stack_conn, project_name_from_stackname
 from buildercore import utils as core_utils, bootstrap
 import base64, json
 import utils
@@ -75,6 +75,18 @@ def valid(stackname):
     except (ValueError, AssertionError), ex:
         LOG.exception(ex)
         raise
+
+@debugtask
+@requires_aws_stack
+@echo_output
+def fix(stackname):
+    bvarst, bvars = valid(stackname)
+    if bvarst == None:
+        LOG.info("no build vars found, adding defaults")
+        new_vars = {'branch': 'master', 'revision': None}
+        _update_remote_bvars(stackname, new_vars)
+    else:
+        LOG.info("valid bvars found (%s), no fix necessary", bvarst)
 
 def _retrieve_build_vars(stackname):
     pdata = core.project_data_for_stackname(stackname)
