@@ -8,10 +8,12 @@ fileserver_backend:
 
 file_roots:
     base:
+        - /srv/custom/salt/
         - /vagrant/cloned-projects/builder-base-formula
         - /srv/salt/
 
 pillar_roots:
     base:
+        - /srv/custom/pillar/
         - /vagrant/cloned-projects/builder-base-formula/pillar/
         - /srv/pillar

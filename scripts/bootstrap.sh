@@ -80,6 +80,7 @@ if [ -d /vagrant ]; then
     # NOTE: these links will be overwritten if this a master-server instance
     ln -sf /project/salt /srv/salt
     ln -sf /project/salt/pillar /srv/pillar
+    ln -sf /vagrant/custom-vagrant /srv/custom
 fi
 echo "
 master: $master_ipaddr
