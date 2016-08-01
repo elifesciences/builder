@@ -21,10 +21,6 @@ fi
 # by default the project's top.sls and pillar data is disabled by file naming.
 # hook that up now
 cd /srv/salt/ && ln -sf example.top top.sls
-# this seems redundant wrt bootstrap.sh, which creates /srv/pillar?
-#if [ ! -e /srv/pillar ]; then 
-#    ln -sf /srv/salt/pillar/ /srv/pillar
-#fi
 
 # TODO: CHECK ENVIRONMENT, FAIL NOISILY
 
