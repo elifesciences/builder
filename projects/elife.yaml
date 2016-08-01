@@ -44,8 +44,8 @@ defaults:
                 # two are required
                 # NOTE! the 'dbsubnet-' prefix is important to *builder*
                 # it tells us which subnets we can provision RDS within
-                - subnet-3611e55e # dbsubnet-1
-                - subnet-78444403 # dbsubnet-2
+                - subnet-8eea67d7 # elife-dbsubnet-1
+                - subnet-dbc471f0 # elife-dbsubnet-2
 
         ext:
             # external hdd
@@ -57,7 +57,8 @@ defaults:
             ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
-        box-url: null # not needed for boxes hosted on Atlas 
+        # box-url not needed for boxes hosted on Atlas 
+        box-url: null 
         ip: 192.168.33.44
         ram: 1024
         cpus: 2
