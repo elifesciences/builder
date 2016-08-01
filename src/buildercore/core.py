@@ -337,14 +337,14 @@ def find_region(stackname=None):
 
 @testme
 def _find_master(sl):
-    if len(sl) > 1:
-        LOG.warn("more than one master server found. this state should only ever be temporary.")
-    elif len(sl) == 1:
+    if len(sl) == 1:
         # first item (stackname) of first (and only) result
         return first(first(sl))
     
     msl = filter(lambda triple: is_master_server_stack(first(triple)), sl)
     msl = map(first, msl) # just stack names
+    if len(msl) > 1:
+        LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
     # this all assumes master servers with YMD instance ids
     #master_server_ymd_instance_id = lambda x: ''.join(x.split('--')[2:])
     #msl = sorted(msl, key=master_server_ymd_instance_id, reverse=True)
