@@ -25,6 +25,8 @@ downloads
 .coverage
 projects/*/
 scripts/customize.sh
+/custom-vagrant/salt/
+/custom-vagrant/pillar/
 
 .no-install-basebox.flag
 .no-vagrant-s3auth.flag
