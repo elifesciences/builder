@@ -240,8 +240,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         # makes the current user's pub key available within the guest.
         # Salt will pick up on it's existence and add it to the deploy user's
-        # `./ssh/authorised_keys` file allowing login. ssh-agent will then allow
-        # communication with github
+        # `./ssh/authorised_keys` file allowing login. 
+        # ssh-agent provides communication with Github
         if File.exists?(File.expand_path("~/.ssh/id_rsa.pub"))
             runcmd("cp ~/.ssh/id_rsa.pub custom-vagrant/id_rsa.pub")
         end
