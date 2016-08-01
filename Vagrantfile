@@ -165,7 +165,7 @@ end
 
 # finally! configure the beast
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-    # If true, then any SSH connections made will enable agent forwarding
+    # if true, then any SSH connections made will enable agent forwarding
     config.ssh.forward_agent = true # default: false
     config.ssh.insert_key = false
 
@@ -226,10 +226,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         if not using_formula
-            # in some cases this is deliberate (master-server, ...?)
-            prn
             prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'"
-            prn
         else
             # clone the formula repo if it doesn't exist. user is in charge of keeping this updated.
             if File.exists?("cloned-projects/#{PROJECT_NAME}/.git")
@@ -241,24 +238,28 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/", "/project"
         end
 
+        # makes the current user's pub key available within the guest.
+        # Salt will pick up on it's existence and add it to the deploy user's
+        # `./ssh/authorised_keys` file allowing login. ssh-agent will then allow
+        # communication with github
         if File.exists?(File.expand_path("~/.ssh/id_rsa.pub"))
             runcmd("cp ~/.ssh/id_rsa.pub custom-vagrant/id_rsa.pub")
         end
 
         # bootstrap Saltstack
-        project.vm.provision("shell", path: "scripts/bootstrap.sh", keep_color: true, privileged: true, \
+        project.vm.provision("shell", path: "scripts/bootstrap.sh", \
+            keep_color: true, privileged: true, \
             args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER), "noipfromhere"])
         
-        if not IS_MASTER
-            # configure Salt, call highstate
-            project.vm.provision("shell", path: "scripts/init-vagrant-minion.sh", keep_color: true, privileged: true)
-        else
-            # configure the instance as if it were a master server. 
-            # script assumes root access
+        # configure the instance as if it were a master server
+        if IS_MASTER
             pillar_repo = "https://github.com/elifesciences/builder-private-example"
-            project.vm.provision("shell", path: "scripts/init-master.sh", keep_color: true, privileged: true, \
-                args: [INSTANCE_NAME, pillar_repo])
-            project.vm.provision("shell", path: "scripts/update-master.sh", keep_color: true, privileged: true)
+            project.vm.provision("shell", path: "scripts/init-master.sh", \
+                keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo])
+
+            # this script is called regularly on master server to sync project formulas
+            project.vm.provision("shell", path: "scripts/update-master.sh", \
+                keep_color: true, privileged: true)
         end
 
         # tell the machine to update itself

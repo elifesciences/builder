@@ -70,22 +70,38 @@ if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log
 if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
 
 
-# reset the minion config
-rm -f /etc/salt/minion_id # no idea where this file comes from but it's not needed
+# reset the minion config and
+# put minion id in dedicated file else salt keeps recreating file
+echo "
+master: $master_ipaddr
+log_level: info" > /etc/salt/minion
+
+echo $stackname > /etc/salt/minion_id
 if [ -d /vagrant ]; then
     # we're using Vagrant    
+
     # ignore IP parameter and use the one we can detect
-    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')    
+    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
+
     # link up the project formula mounted at /project
     # NOTE: these links will be overwritten if this a master-server instance
     ln -sfn /project/salt /srv/salt
     ln -sfn /project/salt/pillar /srv/pillar
     ln -sfn /vagrant/custom-vagrant /srv/custom
+    
+    # by default the project's top.sls is disabled by file naming. hook that up here
+    cd /srv/salt/ && ln -sf example.top top.sls
+    
+    # install the builder base formula 
+    if [ ! -d /vagrant/cloned-projects/builder-base-formula/.git ]; then
+        git clone ssh://git@github.com/elifesciences/builder-base-formula \
+            /vagrant/cloned-projects/builder-base-formula
+    fi
+    
+    # overwrite the general purpose /etc/salt/minion file created above with 
+    # this more complex one for dev environments only
+    cp /vagrant/scripts/salt/minion /etc/salt/minion
 fi
-echo "
-master: $master_ipaddr
-id: $stackname
-log_level: info" > /etc/salt/minion
 
 
 #  service restart necessary as we've changed the minion's configuration
