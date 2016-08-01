@@ -6,6 +6,7 @@ settings.yml
 cloned-projects/
 builder-private/
 builder-private-example/
+custom-vagrant/
 
 .vagrant*
 payload.tar.gz

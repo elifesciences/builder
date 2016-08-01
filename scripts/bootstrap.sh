@@ -92,7 +92,7 @@ log_level: info" > /etc/salt/minion
 service salt-minion restart
 
 
-# generate a key for the master server. 
+# generate a key for the root user
 # in AWS this is uploaded to the server and moved into place prior to calling 
 # this script. in Vagrant it must be created.
 if [ ! -f /root/.ssh/id_rsa ]; then

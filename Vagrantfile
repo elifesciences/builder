@@ -157,7 +157,7 @@ end
 
 # if provisioning died before the custom ssh user (deploy user) can be created,
 # set this to false and it will log-in as the default 'vagrant' user.
-CUSTOM_SSH_USER = false
+CUSTOM_SSH_USER = File.exists?(File.expand_path("~/.ssh/id_rsa"))
 CUSTOM_SSH_USERNAME = "elife"
 if ENV.fetch("CUSTOM_SSH_USER", nil)
     CUSTOM_SSH_USER = (true if ENV.fetch("CUSTOM_SSH_USER") =~ /^true$/i) || false
@@ -171,7 +171,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     if CUSTOM_SSH_USER and ["ssh", "ssh-config"].include? VAGRANT_COMMAND
         config.ssh.username = CUSTOM_SSH_USERNAME
-        config.ssh.private_key_path = "payload/deploy-user.pem"
+        config.ssh.private_key_path = File.expand_path("~/.ssh/id_rsa")
     end
 
     # setup any shared folders
@@ -239,6 +239,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             end
             # mount salt directories
             project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/", "/project"
+        end
+
+        if File.exists?(File.expand_path("~/.ssh/id_rsa.pub"))
+            runcmd("cp ~/.ssh/id_rsa.pub custom-vagrant/id_rsa.pub")
         end
 
         # bootstrap Saltstack
