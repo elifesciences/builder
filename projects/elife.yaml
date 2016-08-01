@@ -44,8 +44,8 @@ defaults:
                 # two are required
                 # NOTE! the 'dbsubnet-' prefix is important to *builder*
                 # it tells us which subnets we can provision RDS within
-                - subnet-3611e55e # dbsubnet-1
-                - subnet-78444403 # dbsubnet-2
+                - subnet-8eea67d7 # elife-dbsubnet-1
+                - subnet-dbc471f0 # elife-dbsubnet-2
 
         ext:
             # external hdd
