@@ -78,9 +78,9 @@ if [ -d /vagrant ]; then
     master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')    
     # link up the project formula mounted at /project
     # NOTE: these links will be overwritten if this a master-server instance
-    ln -sf /project/salt /srv/salt
-    ln -sf /project/salt/pillar /srv/pillar
-    ln -sf /vagrant/custom-vagrant /srv/custom
+    ln -sfn /project/salt /srv/salt
+    ln -sfn /project/salt/pillar /srv/pillar
+    ln -sfn /vagrant/custom-vagrant /srv/custom
 fi
 echo "
 master: $master_ipaddr
