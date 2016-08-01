@@ -239,7 +239,9 @@ def stack_data(stackname):
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
         #inst_id = data['indexed_output']['InstanceId']
         #inst = get_instance(inst_id)
-        inst = find_ec2_instance(stackname)[0]
+        stacks = find_ec2_instance(stackname)
+        assert len(stacks) == 1, ("while looking for %s, found these stacks: %s" % (stackname, stacks))
+        inst = stacks[0]
         data['instance'] = inst.__dict__
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
