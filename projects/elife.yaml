@@ -57,7 +57,8 @@ defaults:
             ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
-        box-url: null # not needed for boxes hosted on Atlas 
+        # box-url not needed for boxes hosted on Atlas 
+        box-url: null 
         ip: 192.168.33.44
         ram: 1024
         cpus: 2
