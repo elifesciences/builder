@@ -8,7 +8,6 @@ set -xv  # output the scripts and interpolated steps
 
 rm -f \
     /etc/cfn-info.json \
-    /etc/build-vars.json.b64 \
     /etc/salt/pki/minion/minion_master.pub \
     /root/.ssh/* \
     /root/events.log
