@@ -76,7 +76,7 @@ echo "
 master: $master_ipaddr
 log_level: info" > /etc/salt/minion
 
-echo $stackname > /etc/salt/minion_id
+echo "$stackname" > /etc/salt/minion_id
 if [ -d /vagrant ]; then
     # we're using Vagrant    
 
