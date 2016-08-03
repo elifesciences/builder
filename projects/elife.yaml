@@ -96,7 +96,11 @@ lax:
             - 443
             - 80
     aws-alt:
-        master:
+        end2end:
+            description: RDS backed
+            rds:
+                storage: 5
+        prod:
             description: RDS backed
             rds:
                 storage: 5
@@ -201,7 +205,11 @@ elife-dashboard:
             - 80
             - 443
     aws-alt:
-        master:
+        end2end:
+            description: production-like environment. backed by RDS
+            rds:
+                storage: 5
+        prod:
             description: production environment. backed by RDS
             rds:
                 storage: 5
