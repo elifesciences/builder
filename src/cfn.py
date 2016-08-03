@@ -84,8 +84,6 @@ def launch(pname):
         print 'attempting to create stack:'
         print '  stackname: ' + stackname
         print '  region:    ' + pdata['aws']['region']
-        print '  vpc:       ' + pdata['aws']['vpc-id']
-        print '  subnet:    ' + pdata['aws']['subnet-id']
         print
 
         if core.is_master_server_stack(stackname):
