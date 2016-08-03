@@ -80,7 +80,6 @@ class TestProjectData(base.BaseCase):
 
     def test_deep_merge_default_snippet(self):
         "merging a snippet into the defaults ensures all projects get that new default, even if it's deeply nested"
-        # all projects now get 999 cpus. perfectly sane requirement.
         snippet = {'defaults':
                        {'aws': {
                            'rds': {
@@ -92,7 +91,26 @@ class TestProjectData(base.BaseCase):
         expected_data = json.load(open(self.dummy1_config, 'r'))
         expected_data['aws'].get('rds', {}).get('subnets', [''])[0] = 'subnet-baz'
         # ... then compare to actual
+        # HANG ON! dummy1 project HAS NO RDS. how is this passing???
+        assertTrue(False)
         self.assertEqual(project_data, expected_data)
+
+    def test_deep_merge_default_snippet_altconfig(self):
+        """merging a snippet into the defaults ensures all projects get that new default, 
+        even alternative configurations, even if it's deeply nested"""
+        snippet = {'defaults':
+                       {'aws': {
+                           'rds': {
+                               'subnets': ['subnet-baz']}}}}
+        project_data = project_files.project_data('dummy2', self.dummy_yaml, [snippet])
+        project_data = utils.remove_ordereddict(project_data)
+
+        # load up the expected fixture and switch the value ...
+        expected_data = json.load(open(self.dummy2_config, 'r'))
+        expected_data['aws']['rds']['subnets'] = ['subnet-baz']
+        expected_data['aws-alt']['alt-config1']['rds']['subnets'] = ['subnet-baz']
+        # ... then compare to actual
+        self.assertEqual(expected_data, project_data)
 
     def test_merge_multiple_default_snippets(self):
         """merging multiple overlapping snippets into the defaults 
