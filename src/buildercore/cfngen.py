@@ -73,11 +73,13 @@ def build_context(pname, **more_context):
     
     # post-processing
     context.update({
-        'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
-        'rds_instance_id': slugify(stackname), # *completely* different to database name
-        
         'is_prod_instance': core.is_prod_stack(stackname),
     })
+    if 'rds' in project_data['aws']:
+        context.update({
+            'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
+            'rds_instance_id': slugify(stackname), # *completely* different to database name
+        })
 
     # the above context will reside on the server at /etc/build_vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
