@@ -16,3 +16,12 @@ def requires_certificate(stackname):
 def certificate_requires_renewal(stackname):
     "True if the certificate on the given stack expires in less than 28 days"
     pass
+
+def vpc_id_exists(pname):
+    "returns True if the vpc_id for the given project exists"
+    pass
+
+def subnet_id_exists(pname):
+    "returns True if the subnet within the vpc exists"
+    pass
+
