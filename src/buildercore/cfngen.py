@@ -48,13 +48,16 @@ def build_context(pname, **more_context):
         # when this was first introduced, instance_id was synonmous with stackname
         'instance_id': None, # must be provided by whatever is calling this
 
-        'rds_dbname': None, # generated from the instance_id
-        'rds_username': 'root', # could possibly live in the project data, but really no need.
-        'rds_password': utils.random_alphanumeric(length=32), # will be saved to buildvars.json
 
         'branch': project_data['default-branch'],
         'revision': None, # may be used in future to checkout a specific revision of project
     }
+
+    if 'rds' in project_data['aws']:
+        defaults['rds_dbname'] = None # generated from the instance_id
+        defaults['rds_username'] = 'root' # could possibly live in the project data, but really no need.
+        defaults['rds_password'] = utils.random_alphanumeric(length=32) # will be saved to buildvars.json
+
     context = copy.deepcopy(defaults)
     context.update(more_context)
 
