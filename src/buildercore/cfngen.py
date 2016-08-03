@@ -69,10 +69,14 @@ def build_context(pname, **more_context):
     context.update(core.hostname_struct(stackname))
     
     # post-processing
+    if context['project']['aws'].has_key('rds'):
+        context.update({
+            'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
+            'rds_instance_id': slugify(stackname), # *completely* different to database name
+        })
+
+    # is this a production instance? if yes, then we'll do things like tweak the dns records ...
     context.update({
-        'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
-        'rds_instance_id': slugify(stackname), # *completely* different to database name
-        
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
