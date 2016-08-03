@@ -1,4 +1,6 @@
-"a collection of predicates that return either True or False"
+"""a collection of predicates that return either True or False
+
+these should compliment not replicate any project configuration validation."""
 
 from . import project
 from .project import repo
