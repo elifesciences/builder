@@ -92,7 +92,7 @@ class TestProjectData(base.BaseCase):
         expected_data['aws'].get('rds', {}).get('subnets', [''])[0] = 'subnet-baz'
         # ... then compare to actual
         # HANG ON! dummy1 project HAS NO RDS. how is this passing???
-        assertTrue(False)
+        self.assertTrue(False)
         self.assertEqual(project_data, expected_data)
 
     def test_deep_merge_default_snippet_altconfig(self):
