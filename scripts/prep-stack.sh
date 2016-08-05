@@ -18,5 +18,6 @@ rm -rf \
     /etc/salt/pki/minion/minion_master.pub \
     /etc/salt/minion \
     /root/.ssh/* \
+    /etc/certificates/* \
     /root/events.log \
     /var/cache/salt/minion
