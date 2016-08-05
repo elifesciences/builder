@@ -50,7 +50,7 @@ ALL_PROJECTS = YAML.load(IO.popen("/bin/bash -c \"source venv/bin/activate && ./
 # essentially gives vagrant a project to use to prevent the prompt
 if ['box'].include? VAGRANT_COMMAND
     prn "using default project 'basebox'"
-    ENV['PROJECT'] = 'basebox--vagrant'
+    ENV['PROJECT'] = 'basebox'
 end
 
 # create a dev instance of all available projects
