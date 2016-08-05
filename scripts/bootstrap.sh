@@ -37,6 +37,12 @@ else
 fi
 
 
+# install git
+if ! dpkg -l git &> /dev/null; then
+    apt-get install git -y
+fi
+
+
 # salt-minion
 if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
@@ -94,7 +100,7 @@ if [ -d /vagrant ]; then
     
     # install the builder base formula 
     if [ ! -d /vagrant/cloned-projects/builder-base-formula/.git ]; then
-        git clone ssh://git@github.com/elifesciences/builder-base-formula \
+        git clone https://github.com/elifesciences/builder-base-formula \
             /vagrant/cloned-projects/builder-base-formula
     fi
     
