@@ -297,6 +297,7 @@ elife-website:
         ports:
             - 22
             - 80
+            - 443
     aws-alt:
         large:
             description: intended to run temporarily
