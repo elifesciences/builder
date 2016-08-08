@@ -309,3 +309,12 @@ elife-website:
             1326: 8983 # Solr web gui
             3307: 3306 # mysql
             6379: 6379 # redis
+
+anonymous:
+    formula-repo: https://github.com/elifesciences/anonymous-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+    vagrant:
+        ram: 1024
