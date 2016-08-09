@@ -70,23 +70,30 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     default_overrides = _merge_snippets('defaults', snippets)
     
     global_defaults, project_list = all_projects(project_file)
-    
-    project_defaults = copy.deepcopy(global_defaults)
-    utils.deepmerge(project_defaults, default_overrides)
+    utils.deepmerge(global_defaults, default_overrides)
 
-    project_data = project_defaults
-    
     # exceptions.
     # these values *shouldn't* be merged if they *don't* exist in the project
     excluding = ['aws', 'vagrant', 'vagrant-alt', 'aws-alt', {'aws': ['rds', 'ext']}]
+    project_data = copy.deepcopy(global_defaults)
     utils.deepmerge(project_data, project_list[pname], excluding)
+
+    # merge in any per-project overrides
+    # DO NOT use exclusions here
+    project_overrides = _merge_snippets(pname, snippets)
+    utils.deepmerge(project_data, project_overrides)
 
     # handle the alternate configurations
     for altname, altdata in project_data.get('aws-alt', {}).items():
-        # take project's current aws state, merge in overrides, merge over top of original aws defaults
+        # take project's *current aws state*,
         project_aws = copy.deepcopy(project_data['aws'])
-        orig_defaults = copy.deepcopy(global_defaults['aws'])
+
+        # merge in any overrides
         utils.deepmerge(project_aws, altdata)
+
+        # merge this over top of original aws defaults
+        orig_defaults = copy.deepcopy(global_defaults['aws'])
+
         utils.deepmerge(orig_defaults, project_aws, ['rds', 'ext'])
         project_data['aws-alt'][altname] = orig_defaults
 
@@ -95,10 +102,6 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         utils.deepmerge(altdata, project_data['vagrant'])
         utils.deepmerge(altdata, orig)
 
-    # merge in any per-project overrides
-    project_overrides = _merge_snippets(pname, snippets)
-    utils.deepmerge(project_data, project_overrides)
-    
     return project_data
 
 def project_file_name(project_file):

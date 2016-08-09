@@ -150,6 +150,11 @@ def download_file(stackname, path, destination):
 @requires_aws_stack
 def upload_file(stackname, local_path, remote_path, overwrite=False):
     with stack_conn(stackname):
+        print 'stack:',stackname
+        print 'local:',local_path
+        print 'remote:',remote_path
+        print 'overwrite:',overwrite
+        raw_input('continue?')
         if files.exists(remote_path) and not overwrite:
             print 'remote file exists, not overwriting'
             exit(1)
