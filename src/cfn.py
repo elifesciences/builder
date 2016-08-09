@@ -125,13 +125,13 @@ def aws_stack_list():
 
 @task
 @requires_aws_stack
-def ssh(stackname, username=DEPLOY_USER, forward_agent=True):
+def ssh(stackname, username=DEPLOY_USER, forward_agent="True"):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
     local("ssh %s@%s %s" % (username, public_ip, _ssh_flags(forward_agent)))
 
 @task
 @requires_aws_stack
-def owner_ssh(stackname, forward_agent=True):
+def owner_ssh(stackname, forward_agent="True"):
     "maintainence ssh. uses the pem key and the bootstrap user to login."
     public_ip = core.stack_data(stackname)['instance']['ip_address']
     # -i identity file
