@@ -43,11 +43,12 @@ def deploy(pname, cluster=None, branch='master'):
         more_context = {
             'instance_id': stackname,
             'branch': branch,
+            'cluster': cluster,
         }
-        # tie branch names to alternate configurations
-        if branch in project.project_alt_config_names(pdata):
-            LOG.info("using alternate AWS configuration %r", branch)
-            more_context['alt-config'] = branch
+        # optionally select alternate configurations if it matches the cluster name
+        if cluster in project.project_alt_config_names(pdata):
+            LOG.info("using alternate AWS configuration %r", cluster)
+            more_context['alt-config'] = cluster
         cfngen.generate_stack(pname, **more_context)
         bootstrap.create_stack(stackname)
     bootstrap.update_stack(stackname)

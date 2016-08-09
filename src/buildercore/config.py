@@ -15,7 +15,7 @@ from os.path import join
 
 from buildercore import utils
 from buildercore.utils import first, last, listfiles
-from kids.cache import cache as cached
+from kids.cache import cache
 import logging
 
 
@@ -157,7 +157,7 @@ def parse(settings_data):
         settings_data[key] = processor(settings_data[key])
     return settings_data
 
-@cached
+@cache
 def app(settings_path=None):
     if not settings_path:
         # set default here so tests can change the value of SETTINGS_FILE

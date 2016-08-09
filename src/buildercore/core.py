@@ -307,18 +307,20 @@ def steady_stack_names(region):
     "convenience. returns names of all stacks in a non-transitory state"
     return stack_names(steady_aws_stacks(region))
 
-#
-#
-#
+class MultipleRegionsError(EnvironmentError):
+    def __init__(self, regions):
+        self._regions = regions
+
+    def regions(self):
+        return self._regions
 
 def find_region(stackname=None):
     """used when we haven't got a stack and need to know about stacks in a particular region.
     if a stack is provided, it uses the one provided in it's configuration.
     otherwise, generates a list of used regions from project data
 
-    if more than one region available, it will raise an EnvironmentError.
+    if more than one region available, it will raise an MultipleRegionsError.
     until we have some means of supporting multiple regions, this is the best solution"""
-    region = None
     if stackname:
         pdata = project_data_for_stackname(stackname)
         return pdata['aws']['region']
@@ -329,13 +331,8 @@ def find_region(stackname=None):
     if not region_list:
         raise EnvironmentError("no regions available at all!")
     if len(region_list) > 1:
-        raise EnvironmentError("multiple regions available but not yet supported!: %s" % region_list)
+        raise MultipleRegionsError(region_list)
     return region_list[0]
-
-
-#
-#
-#
 
 @testme
 def _find_master(sl):
