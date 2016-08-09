@@ -79,8 +79,7 @@ def fetch_cert(stackname):
     try:    
         # replicates some logic in builder core
         pname = core.project_name_from_stackname(stackname)
-        all_project_data = project.project_data(pname)
-        project_data = all_project_data[pname]
+        project_data = project.project_data(pname)
 
         assert project_data.has_key('subdomain'), "project subdomain not found. quitting"
 
