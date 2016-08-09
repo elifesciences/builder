@@ -6,7 +6,6 @@ from buildercore.project import files as project_files
 from collections import OrderedDict
 from unittest import skip
 
-
 class TestProject(base.BaseCase):
     def setUp(self):
         self.project_file = join(self.fixtures_dir, 'projects', 'dummy-project.yaml')
@@ -78,8 +77,28 @@ class TestProjectData(base.BaseCase):
         # ... then compare to actual
         self.assertEqual(project_data, expected_data)
 
-    def test_deep_merge_default_snippet(self):
-        "merging a snippet into the defaults ensures all projects get that new default, even if it's deeply nested"
+
+    def test_deep_merge_default_snippet_but_excluded(self):
+        """merging a snippet into the defaults ensures all projects get that new default. 
+        snippet is ignored if project is excluding that section"""
+        
+        cases = [
+            {'defaults': {'aws': {'rds': {'subnets': ['subnet-baz']}}}},
+            {'defaults': {'aws': {'ext': {'size': 999}}}},
+            {'defaults': {'aws-alt': {'rds': {'storage': 999}}}},
+            {'defaults': {'aws-alt': {'ext': {'size': 999}}}},
+        ]
+        for snippet in cases:
+            project_data = project_files.project_data('dummy1', self.dummy_yaml, [snippet])
+            project_data = utils.remove_ordereddict(project_data)
+            expected_data = json.load(open(self.dummy1_config, 'r'))
+            # dummy1 project has no rds, ext or alt-aws configs using those. nothing should have changed
+            self.assertEqual(project_data, expected_data)
+
+
+    def test_deep_merge_default_random_snippet(self):
+        """merging a snippet of un-ignored garbage into the defaults ensures all projects 
+        get that new default, even if it's deeply nested"""
         snippet = {'defaults':
                        {'foo': {
                            'bar': {
@@ -87,32 +106,19 @@ class TestProjectData(base.BaseCase):
         project_data = project_files.project_data('dummy1', self.dummy_yaml, [snippet])
         self.assertEqual(project_data['foo']['bar']['baz'][0], 'bup')
 
-    def test_deep_merge_default_snippet2(self):
-        "merging a snippet into the defaults ensures all projects get that new default, even if it's deeply nested"
-        snippet = {'defaults':
-                       {'aws': {
-                           'rds': {
-                               'subnets': ['subnet-baz']}}}}
-        project_data = project_files.project_data('dummy1', self.dummy_yaml, [snippet])
-        project_data = utils.remove_ordereddict(project_data)
-
-        expected_data = json.load(open(self.dummy1_config, 'r'))
-
-        # DUMMY1 HAS NO RDS SETTINGS WHATSOEVER, OVERRIDES SHOULD HAVE AFFECTED NOTHING
-        self.assertEqual(project_data, expected_data)
 
     def test_deep_merge_default_snippet2_project3(self):
-        "merging a snippet into the defaults ensures all projects get that new default, even if it's deeply nested"
+        """merging a snippet into the defaults ensures all projects and their alternative configuration 
+        also get that new default, even if it's deeply nested"""
         snippet = {'defaults':
                        {'aws': {
                            'rds': {
                                'subnets': ['subnet-baz']}}}}
         project_data = project_files.project_data('dummy3', self.dummy_yaml, [snippet])
         project_data = utils.remove_ordereddict(project_data)
-        # dummy3 default env has no rds
-        #self.assertEqual(project_data['aws']['rds']['subnets'][0], 'subnet-baz')
         self.assertEqual(project_data['aws-alt']['alt-config1']['rds']['subnets'][0], 'subnet-baz')
-        
+
+
     def test_deep_merge_default_snippet_altconfig(self):
         """merging a snippet into the defaults ensures all projects get that new default, 
         even alternative configurations, even if it's deeply nested"""
