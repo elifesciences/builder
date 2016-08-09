@@ -95,26 +95,6 @@ def create_stack(stackname):
         keypair.delete_keypair(stackname)
         raise
 
-#@requires_stack_file
-#@requires_active_stack
-def update_template(stackname):
-    "updates the CloudFormation stack and then updates the environment"
-    LOG.info("updating stack %s", stackname)
-    try:
-        stackbody = core.stack_json(stackname)
-        conn = connect_aws_with_stack(stackname, 'cfn')
-        conn.update_stack(stackname, stackbody, parameters=[('KeyName', stackname)])
-        def is_updating(stackname):
-            return core.describe_stack(stackname).stack_status in \
-              ['UPDATE_IN_PROGRESS', 'UPDATE_IN_PROGRESS_CLEANUP_IN_PROGRESS']
-        utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish updating stack')
-    except BotoServerError as err:
-        if err.message.endswith('No updates are to be performed.'):
-            print err.message
-        else:
-            LOG.exception("unhandled exception attempting to update stack")
-            raise
-
 #
 #  attached stack resources, ec2 data
 #
@@ -182,7 +162,7 @@ def update_stack(stackname):
     is_master = core.is_master_server_stack(stackname)
 
     # forward-agent == ssh -A
-    with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
+    with stack_conn(stackname, username=BOOTSTRAP_USER): #, forward_agent=True):
         # upload private key if not present remotely
         if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
             # if it also doesn't exist on the filesystem, die horribly.
