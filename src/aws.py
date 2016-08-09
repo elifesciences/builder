@@ -5,7 +5,7 @@ from buildercore.decorators import osissue, osissuefn
 import utils
 from decorators import requires_aws_stack, debugtask, echo_output
 import boto
-from buildercore.core import boto_cfn_conn, boto_ec2_conn, connect_aws_with_stack
+from buildercore.core import boto_cfn_conn, boto_ec2_conn, connect_aws_with_stack, MultipleRegionsError
 from fabric.api import settings, task
 from fabric.contrib.console import confirm
 from contextlib import contextmanager
@@ -14,27 +14,14 @@ import logging
 LOG = logging.getLogger(__name__)
 
 def find_region(stackname=None):
-    """used when we haven't got a stack and need to know about stacks in a particular region.
-    if a stack is provided, it uses the one provided in it's configuration.
-    otherwise, generates a list of used regions from project data
-
-    if more than one region available, it will raise an EnvironmentError.
-    until we have some means of supporting multiple regions, this is the best solution"""
-    if stackname:
-        pdata = core.project_data_for_stackname(stackname)
-        return pdata['aws']['region']
-
-    all_projects = project.project_map()
-    all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
-    region_list = list(set(filter(None, all_regions))) # remove any Nones, make unique, make a list
-    if not region_list:
-        raise EnvironmentError("no regions available at all!")
-    if len(region_list) > 1:
-        if True:
-            print "many possible regions found!"
-            return utils._pick('region', region_list)        
-        raise EnvironmentError("multiple regions available but not yet supported!: %s" % region_list)
-    return region_list[0]
+    """tries to find the region, but falls back to user input if there are multiple regions available.
+    
+    Uses stackname, if provided, to filter the available regions"""
+    try:
+        return core.find_region(stackname)
+    except MultipleRegionsError as e:
+        print "many possible regions found!"
+        return utils._pick('region', e.regions())
 
 def stack_list(region=None):
     "returns a list of realized stacks. does not include deleted stacks"

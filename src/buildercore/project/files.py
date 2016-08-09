@@ -39,7 +39,6 @@ def write_project_file(new_project_data, project_file):
 #
 #
 
-@testme
 def all_projects(project_file): #, project_file=config.PROJECT_FILE):
     allp = utils.ordered_load(open(project_file))
     if allp is None:

@@ -111,3 +111,73 @@ class SimpleCases(base.BaseCase):
         ]
         results = map(core.is_master_server_stack, false_cases)
         self.assertFalse(all(results), "not all false cases identified: %r" % zip(false_cases, results))
+
+    def test_find_region(self):
+        self.assertEqual(core.find_region(), "us-east-1")
+        
+    def test_find_region_when_more_than_one_is_available(self):
+        self.switch_in_test_settings('dummy-settings-multiple-regions.yaml')
+        try:
+            core.find_region()
+            self.fail("Shouldn't be able to choose a region")
+        except core.MultipleRegionsError as e:
+            self.assertEqual(["us-east-1", "eu-central-1"], e.regions())
+            
+class TestCoreNewProjectData(base.BaseCase):
+    def setUp(self):
+        self.dummy1_config = join(self.fixtures_dir, 'dummy1-project.json')
+        self.dummy2_config = join(self.fixtures_dir, 'dummy2-project.json')
+        self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
+
+    def tearDown(self):
+        pass
+        
+    def test_configurations(self):
+        expected = [
+            ('dummy1', self.dummy1_config),
+            ('dummy2', self.dummy2_config),
+            ('dummy3', self.dummy3_config),
+        ]
+        for pname, expected_path in expected:
+            expected_data = json.load(open(expected_path, 'r'))
+            project_data = project.project_data(pname)
+            project_data = utils.remove_ordereddict(project_data)
+            self.assertEqual(expected_data, project_data, 'failed %s' % pname)
+
+    # snippets
+
+    @skip("depends on old project config generation")
+    def test_merge_default_snippet(self):
+        "merging a snippet into the defaults ensures all projects get that new default"
+        # all projects now get 999 cpus. perfectly sane requirement.
+        snippet = {'defaults':
+                       {'vagrant': {
+                           'cpus': 999}}}
+        project_data = project.project_data('dummy1')
+        project_data = utils.remove_ordereddict(project_data)
+        
+        expected_data = json.load(open(self.dummy1_config, 'r'))
+        expected_data['vagrant']['cpus'] = 999
+        self.assertEqual(project_data, expected_data)
+        
+    @skip("depends on old project config generation")
+    def test_merge_multiple_default_snippets(self):
+        """merging multiple overlapping snippets into the defaults 
+        ensures all projects get the new defaults"""
+        # all projects now get 999 cpus. perfectly sane requirement.
+        snippet = {'defaults':
+                       {'vagrant': {
+                           'cpucap': 10,  # overriden by the override
+                           'cpus': 999}}}
+        snippet2 = {'defaults':
+                        {'vagrant': {
+                            'cpucap': 111}}}
+        snippet_list = [snippet, snippet2]
+        project_data = project.project_data('dummy1')
+        project_data = utils.remove_ordereddict(project_data)
+        
+        expected_data = json.load(open(self.dummy1_config, 'r'))
+        expected_data['vagrant']['cpus'] = 999
+        expected_data['vagrant']['cpucap'] = 111
+        
+        self.assertEqual(project_data, expected_data)

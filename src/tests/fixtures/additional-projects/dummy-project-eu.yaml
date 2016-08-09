@@ -1,0 +1,27 @@
+defaults:
+    description: defaults for all projects in this file
+    salt: '2016.3'
+    domain: example.org
+    intdomain: example.internal
+    subdomain: null
+    repo: null
+    formula-repo: null
+    private-repo: ssh://github.com/exampleorg/builder-private-example
+    default-branch: master
+    formula-dependencies:
+        - https://github.com/example/builder-base-formula
+    aws:
+        ami: ami-9eaa1cf6  # Ubuntu 14.04
+        type: t2.small
+        region: eu-central-1
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04
+
+dummy-eu:
+    repo: ssh://git@github.com/elifesciences/dummy1
+    aws:
+        ports:
+            - 22
+    vagrant:
+        ports:
+            1239: 80
