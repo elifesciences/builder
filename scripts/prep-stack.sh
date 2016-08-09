@@ -18,6 +18,8 @@ rm -rf \
     /etc/salt/pki/minion/minion_master.pub \
     /etc/salt/minion \
     /root/.ssh/* \
+    /home/elife/.ssh/* \
+    /home/ubuntu/.ssh/id_rsa* \
     /etc/certificates/* \
     /root/events.log \
     /var/cache/salt/minion
