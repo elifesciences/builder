@@ -39,6 +39,7 @@ fi
 
 # install git
 if ! dpkg -l git; then
+    apt-get update -y
     apt-get install git -y
 fi
 
