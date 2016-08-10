@@ -127,7 +127,7 @@ def aws_stack_list():
 def ssh(stackname, username=DEPLOY_USER):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
     # -A forwarding of authentication agent connection
-    local("ssh %s@%s -A" % (username, public_ip))
+    local("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
@@ -136,7 +136,7 @@ def owner_ssh(stackname):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
     # -i identify file
     # -A forwarding of authentication agent connection
-    local("ssh %s@%s -i %s -A" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+    local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
         
 @task
 @requires_aws_stack
