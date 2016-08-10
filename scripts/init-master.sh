@@ -54,9 +54,13 @@ if this repository resides on github, we suggest creating a 'deploy key' by past
 
     $pubkey
 
-complete this process by running builder's 'update' command:
+which you can retrieve with:
+    
+    ./bldr download_file:$stackname,/root/.ssh/id_rsa.pub,/tmp,use_bootstrap_user=True
 
-    INSTANCE=$stackname ./bldr update
+after the setup of the key, complete this process by running builder's 'update' command:
+
+    ./bldr update:$stackname
 
 ----------"
 
