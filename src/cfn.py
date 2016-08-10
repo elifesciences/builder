@@ -1,3 +1,4 @@
+from distutils.util import strtobool
 from fabric.api import task, local, cd, settings, run, sudo, put, get, abort
 from fabric.contrib import files
 from fabric.contrib.console import confirm
@@ -141,13 +142,23 @@ def owner_ssh(stackname):
         
 @task
 @requires_aws_stack
-def download_file(stackname, path, destination, allow_missing):
+def download_file(stackname, path, destination, allow_missing="False", use_bootstrap_user="False"):
+    """
+    Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
+
+    If `allow_missing` is "True", a not existing `path` will be skipped without errors.
+
+    If `use_bootstrap_user` is "True", the owner_ssh user will be used for connecting instead of the standard deploy user.
+
+    Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
+    """
     fname = os.path.basename(path)
     utils.mkdirp(destination)
-    with stack_conn(stackname):
-        if not files.exists(path) and strtobool(allow_missing):
+    with stack_conn(stackname, username=_user(use_bootstrap_user)):
+        if _should_be_skipped(path, allow_missing):
             return
         get(path, destination, use_sudo=True)
+
 
 @task
 @requires_aws_stack
@@ -162,6 +173,15 @@ def upload_file(stackname, local_path, remote_path, overwrite=False):
             print 'remote file exists, not overwriting'
             exit(1)
         put(local_path, remote_path)
+
+def _should_be_skipped(path, allow_missing):
+    return not files.exists(path) and strtobool(allow_missing)
+
+def _user(use_bootstrap_user):
+    if bool(strtobool(use_bootstrap_user)):
+        return BOOTSTRAP_USER
+    else:
+        return DEPLOY_USER
 
 #
 # these might need a better home
