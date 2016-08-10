@@ -5,6 +5,7 @@ import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
 import os
 from os.path import join
+from distutils.util import strtobool
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
@@ -124,19 +125,24 @@ def aws_stack_list():
 
 @task
 @requires_aws_stack
-def ssh(stackname, username=DEPLOY_USER):
+def ssh(stackname, username=DEPLOY_USER, forward_agent="True"):
     public_ip = core.stack_data(stackname)['instance']['ip_address']
-    # -A forwarding of authentication agent connection
-    local("ssh %s@%s -A" % (username, public_ip))
+    local("ssh %s@%s %s" % (username, public_ip, _ssh_flags(forward_agent)))
 
 @task
 @requires_aws_stack
-def owner_ssh(stackname):
+def owner_ssh(stackname, forward_agent="True"):
     "maintainence ssh. uses the pem key and the bootstrap user to login."
     public_ip = core.stack_data(stackname)['instance']['ip_address']
-    # -i identify file
+    # -i identity file
+    local("ssh %s@%s -i %s %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname), _ssh_flags(forward_agent)))
+
+def _ssh_flags(forward_agent):
     # -A forwarding of authentication agent connection
-    local("ssh %s@%s -i %s -A" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+    if strtobool(forward_agent):
+        return "-A"
+    else:
+        return ""
         
 @task
 @requires_aws_stack
