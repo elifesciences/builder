@@ -115,7 +115,7 @@ def mkoutput(title, desc, val):
         val = GetAtt(val[0], val[1])
     return Output(title, Description=desc, Value=val)
 
-def outputs():
+def _ec2_outputs():
     # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html
     return [
         mkoutput("AZ", "Availability Zone of the newly created EC2 instance", ("EC2Instance", "AvailabilityZone")),
@@ -220,27 +220,30 @@ def internal_dns(context):
     
 
 def render(context):
-    secgroup = ec2_security(context)
-    instance = ec2instance(context)
-
     template = Template()
-    template.add_resource(secgroup)
-    template.add_resource(instance)
+    cfn_outputs = []
 
-    keyname = template.add_parameter(Parameter(KEYPAIR, **{
-        "Type": "String",
-        "Description": "EC2 KeyPair that enables SSH access to this instance",
-    }))
-    
-    cfn_outputs = outputs()
+    if context['project']['aws']['ec2']:
+        secgroup = ec2_security(context)
+        instance = ec2instance(context)
 
+        template.add_resource(secgroup)
+        template.add_resource(instance)
+
+        keyname = template.add_parameter(Parameter(KEYPAIR, **{
+            "Type": "String",
+            "Description": "EC2 KeyPair that enables SSH access to this instance",
+        }))
+        cfn_outputs.extend(_ec2_outputs())
+
+    # TODO: this shouls be similar to 'ext', without has_key as the rds key should be None or False
     if context['project']['aws'].has_key('rds'):
         map(template.add_resource, rdsinstance(context))
         cfn_outputs.extend([
             mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
             mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),])
     
-    if context['project']['aws'].has_key('ext'):
+    if context['project']['aws']['ext']:
         map(template.add_resource, ext_volume(context))
 
     if context['full_hostname']:

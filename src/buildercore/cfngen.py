@@ -49,10 +49,11 @@ def build_context(pname, **more_context):
         'instance_id': None, # must be provided by whatever is calling this
 
 
-        'branch': project_data['default-branch'],
+        'branch': project_data.get('default-branch'),
         'revision': None, # may be used in future to checkout a specific revision of project
     }
 
+    # TODO: move into defaults as None
     if 'rds' in project_data['aws']:
         defaults['rds_dbname'] = None # generated from the instance_id
         defaults['rds_username'] = 'root' # could possibly live in the project data, but really no need.
@@ -92,7 +93,7 @@ def build_context(pname, **more_context):
     # this gives Salt all (most) of the data that was available at template compile time.
     # part of the bootstrap process writes a file called /etc/cfn-info.json
     # this gives Salt the outputs available at stack creation
-    context['build_vars'] = base64.b64encode(json.dumps(context))
+    context['build_vars'] = base64.b64encode(json.dumps(context)) if context['project']['aws']['ec2'] else None
 
     return context
 

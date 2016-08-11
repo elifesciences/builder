@@ -21,10 +21,10 @@ defaults:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
-        # this field will become a dictionary of all EC2-related configuration
+        # TODO: this field will become a dictionary of all EC2-related configuration
         # for now it is just a boolean, indicating whether the project has
         # an EC2 instance attached. By default, it has one
-        ec2: True
+        ec2: true
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
         region: us-east-1
@@ -51,6 +51,7 @@ defaults:
                 - subnet-8eea67d7 # elife-dbsubnet-1
                 - subnet-dbc471f0 # elife-dbsubnet-2
 
+        # TODO: this will be moved inside aws.ec2
         ext:
             # external hdd
             size: 10 # GB
@@ -369,5 +370,9 @@ search:
             - 80
 
 bus:
+    default-branch: null
+    domain: null
+    int_domain: null
     aws:
         ec2: false
+        ext: false
