@@ -51,13 +51,11 @@ def build_context(pname, **more_context):
 
         'branch': project_data.get('default-branch'),
         'revision': None, # may be used in future to checkout a specific revision of project
+        'rds_dbname': None, # generated from the instance_id when present
+        'rds_username': None, # could possibly live in the project data, but really no need.
+        'rds_password': None,
+        'rds_instance_id': None,
     }
-
-    # TODO: move into defaults as None
-    if 'rds' in project_data['aws']:
-        defaults['rds_dbname'] = None # generated from the instance_id
-        defaults['rds_username'] = 'root' # could possibly live in the project data, but really no need.
-        defaults['rds_password'] = utils.random_alphanumeric(length=32) # will be saved to buildvars.json
 
     context = copy.deepcopy(defaults)
     context.update(more_context)
@@ -67,14 +65,16 @@ def build_context(pname, **more_context):
 
     # alpha-numeric only
     # TODO: investigate possibility of ambiguous RDS naming here
-    default_rds_dbname = slugify(stackname, separator="")
 
     # hostname data
     context.update(core.hostname_struct(stackname))
     
     # post-processing
     if context['project']['aws'].has_key('rds'):
+        default_rds_dbname = slugify(stackname, separator="")
         context.update({
+            'rds_username': 'root',
+            'rds_password': utils.random_alphanumeric(length=32), # will be saved to buildvars.json
             'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
             'rds_instance_id': slugify(stackname), # *completely* different to database name
         })
@@ -83,11 +83,6 @@ def build_context(pname, **more_context):
     context.update({
         'is_prod_instance': core.is_prod_stack(stackname),
     })
-    if 'rds' in project_data['aws']:
-        context.update({
-            'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
-            'rds_instance_id': slugify(stackname), # *completely* different to database name
-        })
 
     # the above context will reside on the server at /etc/build_vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
