@@ -14,7 +14,7 @@ from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, Base64, ro
 
 from functools import partial
 import logging
-from .decorators import osissue, osissuefn
+from .decorators import osissuefn
 from .utils import first
 
 LOG = logging.getLogger(__name__)
@@ -68,9 +68,11 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    return security_group(SECURITY_GROUP_TITLE, \
-       context['project']['aws']['vpc-id'],
-       context['project']['aws']['ports']) # list of strings or dicts
+    return security_group(
+        SECURITY_GROUP_TITLE,
+        context['project']['aws']['vpc-id'],
+        context['project']['aws']['ports']
+    ) # list of strings or dicts
 
 def rds_security(context):
     "returns a security group for the rds instance. this security group only allows access within the subnet"
@@ -231,7 +233,7 @@ def render(context):
         template.add_resource(secgroup)
         template.add_resource(instance)
 
-        keyname = template.add_parameter(Parameter(KEYPAIR, **{
+        template.add_parameter(Parameter(KEYPAIR, **{
             "Type": "String",
             "Description": "EC2 KeyPair that enables SSH access to this instance",
         }))
