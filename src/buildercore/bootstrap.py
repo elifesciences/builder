@@ -190,6 +190,9 @@ def update_stack(stackname):
     # TODO: only EC2 parts can be updated at the moment
     if pdata['aws']['ec2']:
         update_ec2_stack(stackname)
+    else:
+        raise RuntimeError("%s does not contain an EC2 instance, the only thing we could update" % stackname")
+
 
 def update_ec2_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
