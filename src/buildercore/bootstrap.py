@@ -162,7 +162,7 @@ def update_stack(stackname):
     is_master = core.is_master_server_stack(stackname)
 
     # forward-agent == ssh -A
-    with stack_conn(stackname, username=BOOTSTRAP_USER): #, forward_agent=True):
+    with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
         # upload private key if not present remotely
         if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
             # if it also doesn't exist on the filesystem, die horribly.
