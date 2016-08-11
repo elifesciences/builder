@@ -4,19 +4,17 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os, shutil
+import os
 from os.path import join
 from functools import partial
 from StringIO import StringIO
-from . import core, utils, config, s3, keypair
+from . import core, utils, config, keypair
 from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
 from .utils import first
-from .config import DEPLOY_USER, BOOTSTRAP_USER
-from .decorators import osissue, osissuefn
-from fabric.api import env, local, settings, run, sudo, cd, put, get
+from .config import BOOTSTRAP_USER
+from fabric.api import sudo, put
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
-from contextlib import contextmanager
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
 
@@ -48,7 +46,7 @@ def prep_ec2_instance():
 #
 
 def create_stack(stackname):
-    pdata = core.project_data_for_stackname(stackname)
+    pdata = project_data_for_stackname(stackname)
     if pdata['aws']['ec2']:
         return create_ec2_stack(stackname)
     else:
@@ -122,7 +120,7 @@ def create_generic_stack(stackname):
 
         return True
 
-    except BotoServerError as err:
+    except BotoServerError:
         LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
         raise
     except KeyboardInterrupt:
@@ -186,7 +184,7 @@ def write_environment_info(stackname, overwrite=False):
 
 @core.requires_active_stack
 def update_stack(stackname):
-    pdata = core.project_data_for_stackname(stackname)
+    pdata = project_data_for_stackname(stackname)
     # TODO: only EC2 parts can be updated at the moment
     if pdata['aws']['ec2']:
         update_ec2_stack(stackname)
@@ -202,8 +200,7 @@ def update_ec2_stack(stackname):
     script that can be downloaded from the web and then very conveniently 
     installs it's own dependencies. Once Salt is installed we give it an ID 
     (the given `stackname`), the address of the master server """
-    pdata = core.project_data_for_stackname(stackname)
-    public_ip = ec2_instance_data(stackname).ip_address
+    pdata = project_data_for_stackname(stackname)
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
 
