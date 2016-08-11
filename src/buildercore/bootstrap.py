@@ -153,6 +153,11 @@ def write_environment_info(stackname, overwrite=False):
 
 @core.requires_active_stack
 def update_stack(stackname):
+    pdata = core.project_data_for_stackname(stackname)
+    # check pdata.aws.ec2
+    update_ec2_stack(stackname)
+
+def update_ec2_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install 
