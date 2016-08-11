@@ -25,7 +25,6 @@ defaults:
         # for now it is just a boolean, indicating whether the project has
         # an EC2 instance attached. By default, it has one
         ec2: true
-        sns: []
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
         region: us-east-1
@@ -54,9 +53,11 @@ defaults:
 
         # TODO: this will be moved inside aws.ec2
         ext:
+            # ext defaults only used if an `ext` section present in project
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        sns: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -376,6 +377,5 @@ bus:
     int_domain: null
     aws:
         ec2: false
-        ext: false
         sns:
             articles: null # possible configuration

@@ -244,7 +244,7 @@ def render(context):
             mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
             mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),])
     
-    if context['project']['aws']['ext']:
+    if context['project']['aws'].has_key('ext'):
         map(template.add_resource, ext_volume(context))
 
     for topic in context['project']['aws']['sns']:
