@@ -168,6 +168,8 @@ elife-bot:
         ext:
             size: 30 # GB
     aws-alt:
+        #prod:
+        #    eip: 54.164.145.166
         large:
             description: intended to run temporarily
             type: c4.4xlarge
