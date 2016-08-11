@@ -50,6 +50,6 @@ def deploy(pname, cluster=None, branch='master'):
             LOG.info("using alternate AWS configuration %r", cluster)
             more_context['alt-config'] = cluster
         cfngen.generate_stack(pname, **more_context)
-        bootstrap.create_stack(stackname)
+        bootstrap.create_ec2_stack(stackname)
     bootstrap.update_stack(stackname)
     setdefault('.active-stack', stackname)

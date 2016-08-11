@@ -48,7 +48,7 @@ def prep_stack():
 #
 
 #@requires_stack_file
-def create_stack(stackname):
+def create_ec2_stack(stackname):
     "simply creates the stack of resources on AWS. call `bootstrap_stack` to install/update software on the stack."
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
