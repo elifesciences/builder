@@ -18,9 +18,8 @@ A developer wants a temporary instance deployed for testing or debugging.
 
 import os, json, base64, copy
 from slugify import slugify
-from . import utils, trop, core, config, project
+from . import utils, trop, core, project
 from .config import STACK_DIR
-from .decorators import osissue, osissuefn
 
 import logging
 
@@ -135,11 +134,11 @@ def validate_project(pname, **extra):
     pdata = project.project_data(pname)
     altconfig = None
     try:
-        resp = validate_aws_template(pname, template)
+        validate_aws_template(pname, template)
         more_validation(template)
         # validate all alternative configurations
         for altconfig in pdata.get('aws-alt', {}).keys():
-            LOG.info('validating %s, %s' % (pname, altconfig))
+            LOG.info('validating %s, %s', pname, altconfig)
             extra = {
                 'alt-config': altconfig
             }
@@ -152,22 +151,17 @@ def validate_project(pname, **extra):
         LOG.error(msg)
         return False
 
-    except:
-        msg = "unhandled fail:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
-        LOG.exception(msg)
-        return False
-
     return True
 
 #
 # 
 #
 
-def quick_render(project, **more_context):
+def quick_render(project_name, **more_context):
     "generates a representative Cloudformation template for given project with dummy values"
     # set a dummy instance id if one hasn't been set.
-    more_context['instance_id'] = more_context.get('instance_id', project + '--dummy')
-    context = build_context(project, **more_context)
+    more_context['instance_id'] = more_context.get('instance_id', project_name + '--dummy')
+    context = build_context(project_name, **more_context)
     return render_template(context)
 
 #
