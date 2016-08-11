@@ -46,7 +46,9 @@ def write_missing_keypairs_to_s3():
 @echo_output
 def download_keypair(stackname):
     try:
-        return keypair.download_from_s3(stackname)
+        path = keypair.download_from_s3(stackname)
+        local('chmod 400 -R %s' % path)
+        return path
     except EnvironmentError as err:
         LOG.info(err.message)
 
