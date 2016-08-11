@@ -114,7 +114,8 @@ def create_generic_stack(stackname):
     stack_body = core.stack_json(stackname)
     try:
         conn = connect_aws_with_stack(stackname, 'cfn')
-        conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
+        parameters = []
+        conn.create_stack(stackname, stack_body, parameters=parameters)
         def is_updating(stackname):
             return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
         utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
@@ -122,7 +123,7 @@ def create_generic_stack(stackname):
         return True
 
     except BotoServerError as err:
-        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
+        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
         raise
     except KeyboardInterrupt:
         LOG.debug("caught keyboard interrupt, cancelling...")

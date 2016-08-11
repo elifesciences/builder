@@ -10,7 +10,8 @@ data called a `context`.
 it to the correct file etc."""
 
 from . import utils
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, Base64, route53, Parameter
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, Base64, route53, Parameter
+
 from functools import partial
 import logging
 from .decorators import osissue, osissuefn
@@ -245,6 +246,9 @@ def render(context):
     
     if context['project']['aws']['ext']:
         map(template.add_resource, ext_volume(context))
+
+    for topic in context['project']['aws']['sns']:
+        template.add_resource(sns.Topic(topic, TopicName=topic))
 
     if context['full_hostname']:
         template.add_resource(external_dns(context))
