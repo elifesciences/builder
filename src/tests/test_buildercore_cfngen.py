@@ -6,7 +6,7 @@ from buildercore import cfngen, project, config
 import logging
 LOG = logging.getLogger(__name__)
 
-class TestTrop(base.BaseCase):
+class TestBuildercoreCfngen(base.BaseCase):
     def setUp(self):
         self.test_region = 'us-east-1'
 
