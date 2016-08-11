@@ -127,3 +127,13 @@ dummy3:
                 storage: 15
             ext:
                 size: 200
+
+just-some-sns:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    meta:
+        description: "foo"
+    aws:
+        ec2: false
+        sns: 
+            widgets: null # no configuration for the topic yet
+
