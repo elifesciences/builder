@@ -38,7 +38,7 @@ def run_script(script_path, *script_params):
     sudo("rm " + remote_script) # remove the script after executing it
     return retval
 
-def prep_stack():
+def prep_ec2_instance():
     """called after stack creation and before AMI creation"""
     return run_script("prep-stack.sh")
 
@@ -83,7 +83,7 @@ def create_ec2_stack(stackname):
                 return True
         with stack_conn(stackname, username=BOOTSTRAP_USER):
             utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
-            prep_stack()
+            prep_ec2_instance()
 
         return True
 
