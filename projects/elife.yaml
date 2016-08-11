@@ -21,6 +21,10 @@ defaults:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
+        # this field will become a dictionary of all EC2-related configuration
+        # for now it is just a boolean, indicating whether the project has
+        # an EC2 instance attached. By default, it has one
+        ec2: True
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
         region: us-east-1
@@ -363,3 +367,7 @@ search:
         ports:
             - 22
             - 80
+
+bus:
+    aws:
+        ec2: false
