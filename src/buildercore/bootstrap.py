@@ -47,6 +47,13 @@ def prep_stack():
 # provision stack
 #
 
+def create_stack(stackname):
+    pdata = core.project_data_for_stackname(stackname)
+    if pdata['aws']['ec2']:
+        return create_ec2_stack(stackname)
+    else:
+        return create_generic_stack(stackname)
+
 #@requires_stack_file
 def create_ec2_stack(stackname):
     "simply creates the stack of resources on AWS. call `bootstrap_stack` to install/update software on the stack."
@@ -98,6 +105,11 @@ def create_ec2_stack(stackname):
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         keypair.delete_keypair(stackname)
         raise
+
+# TODO: implement by picking bits from create_ec2_stack()
+# hopefully this will become abstract enough to be used also for EC2
+def create_generic_stack(stackname):
+    pass
 
 #
 #  attached stack resources, ec2 data
@@ -154,8 +166,9 @@ def write_environment_info(stackname, overwrite=False):
 @core.requires_active_stack
 def update_stack(stackname):
     pdata = core.project_data_for_stackname(stackname)
-    # check pdata.aws.ec2
-    update_ec2_stack(stackname)
+    # TODO: only EC2 parts can be updated at the moment
+    if pdata['aws']['ec2']:
+        update_ec2_stack(stackname)
 
 def update_ec2_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
