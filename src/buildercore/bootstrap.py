@@ -109,7 +109,27 @@ def create_ec2_stack(stackname):
 # TODO: implement by picking bits from create_ec2_stack()
 # hopefully this will become abstract enough to be used also for EC2
 def create_generic_stack(stackname):
-    pass
+    "simply creates the stack of resources on AWS, talking to CloudFormation."
+    LOG.info('creating stack %r', stackname)
+    stack_body = core.stack_json(stackname)
+    try:
+        conn = connect_aws_with_stack(stackname, 'cfn')
+        conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
+        def is_updating(stackname):
+            return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
+        utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+
+        return True
+
+    except BotoServerError as err:
+        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
+        raise
+    except KeyboardInterrupt:
+        LOG.debug("caught keyboard interrupt, cancelling...")
+        return False
+    except:
+        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
+        raise
 
 #
 #  attached stack resources, ec2 data

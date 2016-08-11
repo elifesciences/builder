@@ -56,7 +56,7 @@ def update_master():
 
 @requires_project
 def create_stack(pname, instance_id=None):
-    """creates a new CloudFormation template for the given project."""
+    """creates a new CloudFormation file for the given project."""
     if not instance_id:
         default_instance_id = core_utils.ymd()
         instance_id = utils.uin("instance id", default_instance_id)
