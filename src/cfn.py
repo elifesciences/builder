@@ -8,6 +8,7 @@ from os.path import join
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
+from distutils.util import strtobool
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -140,10 +141,12 @@ def owner_ssh(stackname):
         
 @task
 @requires_aws_stack
-def download_file(stackname, path, destination):
+def download_file(stackname, path, destination, allow_missing):
     fname = os.path.basename(path)
     utils.mkdirp(destination)
     with stack_conn(stackname):
+        if not files.exists(path) and strtobool(allow_missing):
+            return
         get(path, destination, use_sudo=True)
 
 @task
