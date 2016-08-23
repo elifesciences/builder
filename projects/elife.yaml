@@ -336,6 +336,8 @@ medium:
     formula-repo: https://github.com/elifesciences/medium-formula
     vagrant:
         ram: 1024
+        ports:
+            1243: 80
     aws:
         type: t2.micro
         ports:
