@@ -243,12 +243,17 @@ def render(context):
     if context['project']['aws'].has_key('ext'):
         map(template.add_resource, ext_volume(context))
 
-    if context['hostname']: # None if one couldn't be generated
+    if context['full_hostname']:
         template.add_resource(external_dns(context))
-        template.add_resource(internal_dns(context))        
         cfn_outputs.extend([
             mkoutput("DomainName", "Domain name of the newly created EC2 instance", Ref(R53_EXT_TITLE)),
-            mkoutput("IntDomainName", "Domain name of the newly created EC2 instance", Ref(R53_INT_TITLE))])
+        ])
+
+    if context['int_full_hostname']:
+        template.add_resource(internal_dns(context))        
+        cfn_outputs.extend([
+            mkoutput("IntDomainName", "Domain name of the newly created EC2 instance", Ref(R53_INT_TITLE))
+        ])
 
     map(template.add_output, cfn_outputs)
     return template.to_json()

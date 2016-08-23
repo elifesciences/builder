@@ -332,6 +332,7 @@ jats4r:
             - 443
 
 medium:
+    domain: False
     subdomain: medium
     repo: https://github.com/elifesciences/medium
     formula-repo: https://github.com/elifesciences/medium-formula

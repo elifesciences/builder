@@ -415,13 +415,16 @@ def hostname_struct(stackname):
 
     updates = {
         'hostname': hostname,
-
-        'project_hostname': subdomain + "." + domain,
-        'int_project_hostname': subdomain + "." + intdomain,
-
-        'full_hostname': hostname + "." + domain,
-        'int_full_hostname': hostname + "." + intdomain,
     }
+
+    if domain:
+        updates['project_hostname'] = subdomain + "." + domain
+        updates['full_hostname'] = hostname + "." + domain
+
+    if intdomain:
+        updates['int_project_hostname'] = subdomain + "." + intdomain
+        updates['int_full_hostname'] = hostname + "." + intdomain
+
     struct.update(updates)
     return struct
 
