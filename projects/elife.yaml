@@ -330,3 +330,14 @@ jats4r:
             - 22
             - 80
             - 443
+
+medium:
+    repo: https://github.com/elifesciences/medium
+    formula-repo: https://github.com/elifesciences/medium-formula
+    vagrant:
+        ram: 1024
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 80
