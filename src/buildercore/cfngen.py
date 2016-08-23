@@ -67,6 +67,9 @@ def build_context(pname, **more_context):
 
     # hostname data
     context.update(core.hostname_struct(stackname))
+
+    (_, cluster) = core.parse_stackname(stackname)
+    context['cluster'] = cluster
     
     # post-processing
     if context['project']['aws'].has_key('rds'):

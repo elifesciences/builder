@@ -378,4 +378,5 @@ bus:
     aws:
         ec2: false
         sns:
-            articles: null # possible configuration
+            # articles-prod, articles-end2end, etc.
+            articles-{cluster}: null # possible configuration values

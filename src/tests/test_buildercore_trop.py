@@ -32,6 +32,6 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('just-some-sns', **extra)
         cfn_template = trop.render(context)
         data = json.loads(cfn_template)
-        self.assertEqual(['widgets'], data['Resources'].keys())
-        self.assertEqual({'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets'}}, data['Resources']['widgets'])
+        self.assertEqual(['widgetsprod'], data['Resources'].keys())
+        self.assertEqual({'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}}, data['Resources']['widgetsprod'])
 

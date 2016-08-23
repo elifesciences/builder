@@ -9,6 +9,7 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing 
 it to the correct file etc."""
 
+import re
 from . import utils
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, Base64, route53, Parameter
 
@@ -249,8 +250,11 @@ def render(context):
     if context['project']['aws'].has_key('ext'):
         map(template.add_resource, ext_volume(context))
 
-    for topic in context['project']['aws']['sns']:
-        template.add_resource(sns.Topic(topic, TopicName=topic))
+    for topic_template_name in context['project']['aws']['sns']:
+        topic = topic_template_name.format(cluster=context['cluster'])
+        def sanitize_title(string):
+            return re.sub('[_-]', '', string)
+        template.add_resource(sns.Topic(sanitize_title(topic), TopicName=topic))
 
     if context['full_hostname']:
         template.add_resource(external_dns(context))
