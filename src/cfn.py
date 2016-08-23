@@ -44,11 +44,12 @@ def update_master():
     return bootstrap.update_stack(core.find_master(aws.find_region()))
 
 @requires_project
-def create_stack(pname):
+def create_stack(pname, instance_id=None):
     """creates a new CloudFormation template for the given project."""
-    default_instance_id = core_utils.ymd()
-    inst_id = utils.uin("instance id", default_instance_id)
-    stackname = core.mk_stackname(pname, inst_id)
+    if not instance_id:
+        default_instance_id = core_utils.ymd()
+        instance_id = utils.uin("instance id", default_instance_id)
+    stackname = core.mk_stackname(pname, instance_id)
     more_context = {'instance_id': stackname}
 
     # prompt user for alternate configurations
@@ -78,9 +79,9 @@ def create_update(stackname):
 # these aliases are deprecated
 @task(alias='aws_launch_instance')
 @requires_project
-def launch(pname):
+def launch(pname, instance_id=None):
     try:
-        stackname = create_stack(pname)
+        stackname = create_stack(pname, instance_id)
         pdata = core.project_data_for_stackname(stackname)
 
         print 'attempting to create stack:'
