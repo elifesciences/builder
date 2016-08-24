@@ -8,6 +8,7 @@ import os
 from os.path import join
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem
+from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
 from distutils.util import strtobool
 
@@ -32,7 +33,13 @@ def destroy(stackname):
 
 @task
 def ensure_destroyed(stackname):
-    return bootstrap.delete_stack(stackname)
+    try:
+        return bootstrap.delete_stack(stackname)
+    except PredicateException as e:
+        if "I couldn't find a cloudformation stack" in str(e):
+            print "Not even the CloudFormation template exists anymore, exiting idempotently"
+            return
+        raise
 
 # these aliases are deprecated
 @task(alias='aws_update_stack')
