@@ -16,6 +16,10 @@ stackname=$2
 install_master=$3
 master_ipaddr=$4
 
+# ensures the SSH_AUTH_SOCK envvar is retained when we sudo to root
+# this allows the root user to talk to private git repos
+echo 'Defaults>root env_keep+=SSH_AUTH_SOCK' > /etc/sudoers.d/00-ssh-auth-sock-root
+chmod 440 /etc/sudoers.d/00-ssh-auth-sock-root
 chmod -R 777 /tmp
 
 
