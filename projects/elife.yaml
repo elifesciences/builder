@@ -259,6 +259,7 @@ elife-alfred:
         ports:
             - 22
             - 80
+            - 443
             - 16022 # Jenkins SSH port
     vagrant:
         ram: 4096
