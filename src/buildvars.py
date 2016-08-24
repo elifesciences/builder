@@ -112,8 +112,6 @@ def _update_remote_bvars(stackname, bvars):
         cmds = [
             # make a backup
             'if [ -f /etc/build-vars.json.b64 ]; then cp /etc/build-vars.json.b64 /tmp/build-vars.json.b64.%s; fi;' % fid,
-            # purge any mention of build vars
-            'rm -f /etc/build*vars.*',
         ]
         map(sudo, cmds)
         put(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
