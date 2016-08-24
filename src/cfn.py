@@ -30,6 +30,10 @@ def destroy(stackname):
         exit(1)
     return bootstrap.delete_stack(stackname)
 
+@task
+def ensure_destroyed(stackname):
+    return bootstrap.delete_stack(stackname)
+
 # these aliases are deprecated
 @task(alias='aws_update_stack')
 @requires_aws_stack
