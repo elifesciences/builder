@@ -184,13 +184,14 @@ elife-bot:
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org
-    repo: https://github.com/elifesciences/elife-2.0-website
+    repo: https://github.com/elifesciences/journal-cms
     formula-repo: https://github.com/elifesciences/journal-cms-formula
     aws:
         ports:
             - 22
             - 443
-            - 80
+            - 80: 
+                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
     vagrant:
         ports:
             1241: 80
