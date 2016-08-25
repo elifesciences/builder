@@ -19,7 +19,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 import os, json, base64, copy
 from slugify import slugify
 from . import utils, trop, core, project
-from .config import STACK_DIR
+from .config import STACK_DIR, CONTEXT_DIR
 
 import logging
 
@@ -111,6 +111,11 @@ def write_template(stackname, contents):
     open(output_fname, 'w').write(contents)
     return output_fname
 
+def write_context(stackname, contents):
+    output_fname = os.path.join(CONTEXT_DIR, stackname + ".json")
+    open(output_fname, 'w').write(contents)
+    return output_fname
+
 def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
     return conn.validate_template(rendered_template)
@@ -178,4 +183,5 @@ def generate_stack(pname, **more_context):
     template = render_template(context)
     stackname = context['instance_id']
     out_fname = write_template(stackname, template)
+    write_context(stackname, json.dumps(context))
     return context, out_fname
