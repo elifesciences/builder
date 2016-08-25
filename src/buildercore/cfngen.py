@@ -54,6 +54,8 @@ def build_context(pname, **more_context):
         'rds_username': None, # could possibly live in the project data, but really no need.
         'rds_password': None,
         'rds_instance_id': None,
+        'sns': [],
+        'sqs': {},
     }
 
     context = copy.deepcopy(defaults)
@@ -92,7 +94,24 @@ def build_context(pname, **more_context):
     # this gives Salt the outputs available at stack creation
     context['build_vars'] = base64.b64encode(json.dumps(context)) if context['project']['aws']['ec2'] else None
 
+    for topic_template_name in context['project']['aws']['sns']:
+        topic_name = _parameterize(topic_template_name, context)
+        context['sns'].append(topic_name)
+
+    for queue_template_name in context['project']['aws']['sqs']:
+        queue_name = _parameterize(queue_template_name, context)
+        queue_configuration = context['project']['aws']['sqs'][queue_template_name]
+        subscriptions = []
+        if 'subscriptions' in queue_configuration:
+            for topic_template_name in queue_configuration['subscriptions']:
+                subscriptions.append(_parameterize(topic_template_name, context))
+
+        context['sqs'][queue_name] = subscriptions
+
     return context
+
+def _parameterize(template_name, context):
+    return template_name.format(cluster=context['cluster'])
 
 #
 #
@@ -111,6 +130,7 @@ def write_template(stackname, contents):
     open(output_fname, 'w').write(contents)
     return output_fname
 
+# TODO: should stay together with context(), either there or here
 def write_context(stackname, contents):
     output_fname = os.path.join(CONTEXT_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
