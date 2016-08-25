@@ -51,6 +51,7 @@ defaults:
             size: 10 # GB
             device: /dev/sdh
         sns: []
+        sqs: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

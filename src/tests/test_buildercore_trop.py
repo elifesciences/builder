@@ -32,6 +32,32 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('just-some-sns', **extra)
         cfn_template = trop.render(context)
         data = json.loads(cfn_template)
-        self.assertEqual(['widgetsprod'], data['Resources'].keys())
-        self.assertEqual({'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}}, data['Resources']['widgetsprod'])
+        self.assertEqual(['WidgetsProdTopic'], data['Resources'].keys())
+        self.assertEqual(
+            {'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}}, 
+            data['Resources']['WidgetsProdTopic']
+        )
+        self.assertEqual(['WidgetsProdTopicArn'], data['Outputs'].keys())
+        self.assertEqual(
+            {'Value': {'Ref': 'WidgetsProdTopic'}}, 
+            data['Outputs']['WidgetsProdTopicArn']
+        )
+
+    def test_sqs_template(self):
+        extra = {
+            'instance_id': 'project-with-sqs--prod',
+        }
+        context = cfngen.build_context('project-with-sqs', **extra)
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        self.assertEqual(['ProjectWithSqsIncomingProdQueue'], data['Resources'].keys())
+        self.assertEqual(
+            {'Type': 'AWS::SQS::Queue', 'Properties': {'QueueName': 'project-with-sqs-incoming-prod'}}, 
+            data['Resources']['ProjectWithSqsIncomingProdQueue']
+        )
+        self.assertEqual(['ProjectWithSqsIncomingProdQueueArn'], data['Outputs'].keys())
+        self.assertEqual(
+            {'Value': {'Fn::GetAtt': ['ProjectWithSqsIncomingProdQueue', 'Arn']}},
+            data['Outputs']['ProjectWithSqsIncomingProdQueueArn']
+        )
 

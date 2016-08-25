@@ -52,6 +52,7 @@ defaults:
             size: 10 # GB
             device: /dev/sdh
         sns: []
+        sqs: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -136,4 +137,15 @@ just-some-sns:
         ec2: false
         sns: 
             widgets-{cluster}: null # no configuration for the topic yet
+
+project-with-sqs:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    meta:
+        description: "foo"
+    aws:
+        ec2: false
+        sqs: 
+            project-with-sqs-incoming-{cluster}: 
+                subscriptions:
+                    - widgets-{cluster}
 
