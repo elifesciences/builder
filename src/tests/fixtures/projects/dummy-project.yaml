@@ -136,7 +136,7 @@ just-some-sns:
     aws:
         ec2: false
         sns: 
-            widgets-{cluster}: null # no configuration for the topic yet
+            - widgets-{cluster}
 
 project-with-sqs:
     repo: ssh://git@github.com/elifesciences/dummy3

@@ -380,7 +380,7 @@ bus:
         ec2: false
         sns:
             # articles-prod, articles-end2end, etc.
-            articles-{cluster}: null # possible configuration values
+            - articles-{cluster}
 
 # will create EC2 instance later, let's start with SQS only
 search:
