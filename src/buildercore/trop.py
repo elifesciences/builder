@@ -250,19 +250,17 @@ def render(context):
     if context['project']['aws'].has_key('ext'):
         map(template.add_resource, ext_volume(context))
 
-    for topic_template_name in context['project']['aws']['sns']:
-        topic_name = _parameterize(topic_template_name, context)
+    for topic_name in context['sns']:
         topic = template.add_resource(sns.Topic(
             _sanitize_title(topic_name) + "Topic",
             TopicName=topic_name
         ))
         template.add_output(Output(
             _sanitize_title(topic_name) + "TopicArn",
-            Value=GetAtt(topic, "Arn")
+            Value=Ref(topic)
         ))
 
-    for queue_template_name in context['project']['aws']['sqs']:
-        queue_name = _parameterize(queue_template_name, context)
+    for queue_name in context['sqs']:
         queue = template.add_resource(sqs.Queue(
             _sanitize_title(queue_name) + "Queue", 
             QueueName=queue_name
@@ -286,9 +284,6 @@ def render(context):
 
     map(template.add_output, cfn_outputs)
     return template.to_json()
-
-def _parameterize(template_name, context):
-    return template_name.format(cluster=context['cluster'])
 
 def _sanitize_title(string):
     return "".join(map(str.capitalize, string.split("-")))
