@@ -10,6 +10,7 @@ This transition meant that `src/buildercore/` is still neatly separated
 from the interface logic in the fabfile.
 
 """
+import json
 import os
 from os.path import join
 
@@ -169,3 +170,7 @@ def app(settings_path=None):
 
 def feature_enabled(feature):
     return app().get(feature, False)
+
+def context(stackname):
+    with open(join(CONTEXT_PATH, stackname + '.json'), 'r') as context_file:
+        return json.load(context_file)

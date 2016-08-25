@@ -4,6 +4,7 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
+import json
 import os
 from os.path import join
 from functools import partial
@@ -47,6 +48,7 @@ def prep_ec2_instance():
 
 def create_stack(stackname):
     pdata = project_data_for_stackname(stackname)
+    # TODO: must create EC2 + SQS
     if pdata['aws']['ec2']:
         return create_ec2_stack(stackname)
     else:
@@ -117,6 +119,11 @@ def create_generic_stack(stackname):
         def is_updating(stackname):
             return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
         utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+        # TODO: after finishing the stack creation, there may be operation to perform
+        # for EC2: prep_stack
+        # for SQS: connection to topics
+        context = config.context(stackname)
+        setup_sqs(context['sqs'], stackname, context['project']['aws']['region'])
 
         return True
 
@@ -129,6 +136,41 @@ def create_generic_stack(stackname):
     except:
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         raise
+
+def setup_sqs(context_sqs, stackname, region):
+    sqs = core.boto_sqs_conn(region)
+    sns = core.boto_sns_conn(region)
+    for queue_name in context_sqs:
+        LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
+        queue = sqs.lookup(queue_name)
+        for topic_name in context_sqs[queue_name]:
+            LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
+            # TODO: too risky, may subscribe to a typo-filled topic name like 'aarticles'
+            # take the list and look it up instead, error on missing topic
+            topic_lookup = sns.create_topic(topic_name) # idempotent, works as lookup
+            topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
+            sns.subscribe_sqs_queue(topic_arn, queue)
+            LOG.info('Adding policy to %s for SNS topic %s to send messages', queue_name, topic_name, extra={'stackname': stackname})
+            policy = json.dumps({
+                'Version': '2012-10-17',
+                'Statement': [
+                    {
+                        "Sid": '%sTo%sPolicy' % (topic_name, queue_name),
+                        "Effect": "Allow",
+                #        "Principal": "*",
+                        "Action": "SQS:SendMessage",
+                        "Resource": queue.arn,
+                        "Condition": {
+                            "ArnEquals": {
+                                "aws:SourceArn": topic_arn
+                            }
+                        }
+                    }
+                ]
+            })
+            LOG.info('Policy is %s', policy, extra={'stackname': stackname})
+            sqs.set_queue_attribute(queue, 'Policy', policy)
+
 
 #
 #  attached stack resources, ec2 data
@@ -189,7 +231,8 @@ def update_stack(stackname):
     if pdata['aws']['ec2']:
         update_ec2_stack(stackname)
     else:
-        raise RuntimeError("%s does not contain an EC2 instance, the only thing we could update" % stackname)
+        # does not contain an EC2 instance, the only thing we could update
+        pass
 
 
 def update_ec2_stack(stackname):

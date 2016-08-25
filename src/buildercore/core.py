@@ -90,6 +90,14 @@ def boto_ec2_conn(region):
     return connect_aws('ec2', region)
 
 @cached
+def boto_sns_conn(region):
+    return connect_aws('sns', region)
+
+@cached
+def boto_sqs_conn(region):
+    return connect_aws('sqs', region)
+
+@cached
 def connect_aws_with_pname(pname, service):
     "convenience"
     pdata = project.project_data(pname)
