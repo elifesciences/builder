@@ -57,6 +57,7 @@ defaults:
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        sqs: []
         sns: []
     aws-alt:
         fresh:
@@ -380,3 +381,16 @@ bus:
         sns:
             # articles-prod, articles-end2end, etc.
             articles-{cluster}: null # possible configuration values
+
+# will create EC2 instance later, let's start with SQS only
+search:
+    default-branch: null
+    domain: null
+    int_domain: null
+    aws:
+        ec2: false
+        sqs:
+            # search-prod, search-end2end, etc.
+            search-{cluster}:
+                subscriptions:
+                    - articles-{cluster}
