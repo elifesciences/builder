@@ -65,8 +65,12 @@ def create_stack(stackname):
         # this waits until a connection can be made and a file is found before continuing.
         def is_resourcing():
             try:
-                # call until file exists
-                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys"))
+                # call until:
+                # - bootstrap user exists and we can access it through SSH
+                # - cloud-init has finished running
+                #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
+                #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running 
+                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) or not files.exists('/var/lib/cloud/instance/boot-finished')
             except fabric_exceptions.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
