@@ -55,6 +55,7 @@ def build_context(pname, **more_context):
         'rds_username': None, # could possibly live in the project data, but really no need.
         'rds_password': None,
         'rds_instance_id': None,
+        'ec2': False,
         'sns': [],
         'sqs': {},
     }
@@ -89,6 +90,7 @@ def build_context(pname, **more_context):
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
+    context['ec2'] = True if context['project']['aws']['ec2'] else False
     # the above context will reside on the server at /etc/build_vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
     # part of the bootstrap process writes a file called /etc/cfn-info.json

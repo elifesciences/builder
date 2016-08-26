@@ -64,27 +64,9 @@ def create_ec2_stack(stackname):
         keypair.create_keypair(stackname)
         conn = connect_aws_with_stack(stackname, 'cfn')
         conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
-        def is_updating(stackname):
-            return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
-        utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
-
-        # we have an issue where the stack is created, however the security group
-        # hasn't been attached or ssh isn't running yet and we can't get in.
-        # this waits until a connection can be made and a file is found before continuing.
-        def is_resourcing():
-            try:
-                # call until:
-                # - bootstrap user exists and we can access it through SSH
-                # - cloud-init has finished running
-                #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
-                #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running 
-                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) or not files.exists('/var/lib/cloud/instance/boot-finished')
-            except fabric_exceptions.NetworkError:
-                LOG.debug("failed to connect to server ...")
-                return True
-        with stack_conn(stackname, username=BOOTSTRAP_USER):
-            utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
-            prep_ec2_instance()
+        _wait_for_stack_creation_to_complete(stackname)
+        context = cfngen.context(stackname)
+        setup_ec2(stackname, context['ec2'])
 
         return True
 
@@ -117,14 +99,12 @@ def create_generic_stack(stackname):
         conn = connect_aws_with_stack(stackname, 'cfn')
         parameters = []
         conn.create_stack(stackname, stack_body, parameters=parameters)
-        def is_updating(stackname):
-            return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
-        utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+        _wait_for_stack_creation_to_complete(stackname)
         # TODO: after finishing the stack creation, there may be operation to perform
         # for EC2: prep_stack
         # for SQS: connection to topics
         context = cfngen.context(stackname)
-        setup_sqs(context['sqs'], stackname, context['project']['aws']['region'])
+        setup_sqs(stackname, context['sqs'], context['project']['aws']['region'])
 
         return True
 
@@ -137,6 +117,34 @@ def create_generic_stack(stackname):
     except:
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         raise
+
+def _wait_for_stack_creation_to_complete(stackname):
+    def is_updating(stackname):
+        return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
+    utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+
+def setup_ec2(stackname, context_ec2):
+    if not context_ec2:
+        return
+
+    with stack_conn(stackname, username=BOOTSTRAP_USER):
+        def is_resourcing():
+            try:
+                # we have an issue where the stack is created, however the security group
+                # hasn't been attached or ssh isn't running yet and we can't get in.
+                # this waits until a connection can be made and a file is found before continuing.
+                # moreover, call until:
+                # - bootstrap user exists and we can access it through SSH
+                # - cloud-init has finished running
+                #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
+                #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running 
+                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) or not files.exists('/var/lib/cloud/instance/boot-finished')
+            except fabric_exceptions.NetworkError:
+                LOG.debug("failed to connect to server ...")
+                return True
+        utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
+        prep_ec2_instance()
+
 
 def setup_sqs(context_sqs, stackname, region):
     """
