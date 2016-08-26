@@ -227,7 +227,7 @@ def render(context):
     template = Template()
     cfn_outputs = []
 
-    if context['project']['aws']['ec2']:
+    if context['ec2']:
         secgroup = ec2_security(context)
         instance = ec2instance(context)
 
@@ -240,8 +240,7 @@ def render(context):
         }))
         cfn_outputs.extend(_ec2_outputs())
 
-    # TODO: this shouls be similar to 'ext', without has_key as the rds key should be None or False
-    if context['project']['aws'].has_key('rds'):
+    if context['rds_instance_id']:
         map(template.add_resource, rdsinstance(context))
         cfn_outputs.extend([
             mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
