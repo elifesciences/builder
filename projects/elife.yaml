@@ -379,8 +379,16 @@ bus:
     aws:
         ec2: false
         sns:
-            # articles-prod, articles-end2end, etc.
-            - articles-{cluster}
+            # bus-articles-prod, bus-articles-end2end, etc.
+            - bus-articles--{cluster}
+            - bus-podcast-episodes--{cluster}
+            - bus-subjects--{cluster}
+            - bus-people--{cluster}
+            - bus-collections--{cluster}
+            - bus-events--{cluster}
+            - bus-interviews--{cluster}
+            - bus-blog-articles--{cluster}
+            - bus-annual-reports--{cluster}
 
 search:
     domain: False
@@ -401,4 +409,10 @@ search:
             # search-prod, search-end2end, etc.
             search-{cluster}:
                 subscriptions:
-                    - articles-{cluster}
+                    - bus-articles--{cluster}
+                    - bus-podcast-episodes--{cluster}
+                    - bus-subjects--{cluster}
+                    - bus-collections--{cluster}
+                    - bus-events--{cluster}
+                    - bus-interviews--{cluster}
+                    - bus-blog-articles--{cluster}
