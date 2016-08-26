@@ -17,9 +17,10 @@ A developer wants a temporary instance deployed for testing or debugging.
 """
 
 import os, json, base64, copy
+from os.path import join
 from slugify import slugify
 from . import utils, trop, core, project
-from .config import STACK_DIR, CONTEXT_DIR
+from .config import STACK_DIR, CONTEXT_DIR, CONTEXT_PATH
 
 import logging
 
@@ -130,11 +131,14 @@ def write_template(stackname, contents):
     open(output_fname, 'w').write(contents)
     return output_fname
 
-# TODO: should stay together with context(), either there or here
 def write_context(stackname, contents):
     output_fname = os.path.join(CONTEXT_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
+
+def context(stackname):
+    with open(join(CONTEXT_PATH, stackname + '.json'), 'r') as context_file:
+        return json.load(context_file)
 
 def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')

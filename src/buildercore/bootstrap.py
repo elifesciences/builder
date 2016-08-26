@@ -18,6 +18,7 @@ import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
+from buildercore import cfngen
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -122,7 +123,7 @@ def create_generic_stack(stackname):
         # TODO: after finishing the stack creation, there may be operation to perform
         # for EC2: prep_stack
         # for SQS: connection to topics
-        context = config.context(stackname)
+        context = cfngen.context(stackname)
         setup_sqs(context['sqs'], stackname, context['project']['aws']['region'])
 
         return True
