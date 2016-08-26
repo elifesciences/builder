@@ -22,6 +22,7 @@ defaults:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         # find more here: https://cloud-images.ubuntu.com/locator/ec2/
+        ec2: True
         ami: ami-d90d92ce   # Ubuntu 14.04 us-east-1 hvm:ebs
         region: us-east-1
         vpc-id: vpc-c23159a5  # vpc-id + subnet-id are peculiar to AWS account + region
@@ -46,7 +47,8 @@ defaults:
                 # it tells us which subnets we can provision RDS within
                 - subnet-6b6c6e41 # elife-dbsubnet-1
                 - subnet-dffe0c96 # elife-dbsubnet-2
-
+        sns: []
+        sqs: []
         ext:
             # external hdd
             size: 10 # GB
