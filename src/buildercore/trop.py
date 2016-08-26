@@ -172,15 +172,14 @@ def rdsinstance(context):
     rdbi = rds.DBInstance(RDS_TITLE, **data)
     return rsn, rdbi, vpcdbsg
 
-def ext_volume(context):
-    lu = partial(utils.lu, context)
-    vtype = lu('project.ext.type', default='standard')
+def ext_volume(context_ext):
+    vtype = context_ext.get('type', 'standard')
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
     if vtype == 'ssd':
         vtype = 'gp2'
     
     args = {
-        "Size": str(lu('project.aws.ext.size')),
+        "Size": str(context_ext['size']),
         "AvailabilityZone": GetAtt(EC2_TITLE, "AvailabilityZone"),
         "VolumeType": vtype,
     }
@@ -189,7 +188,7 @@ def ext_volume(context):
     args = {
         "InstanceId": Ref(EC2_TITLE),
         "VolumeId": Ref(ec2v),
-        "Device": lu('project.aws.ext.device'),
+        "Device": context_ext['device'],
     }
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE, **args)
     return ec2v, ec2va
@@ -246,8 +245,8 @@ def render(context):
             mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
             mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),])
     
-    if context['project']['aws'].has_key('ext'):
-        map(template.add_resource, ext_volume(context))
+    if context['ext']:
+        map(template.add_resource, ext_volume(context['ext']))
 
     for topic_name in context['sns']:
         topic = template.add_resource(sns.Topic(

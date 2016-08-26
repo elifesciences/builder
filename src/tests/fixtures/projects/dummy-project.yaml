@@ -131,8 +131,6 @@ dummy3:
 
 just-some-sns:
     repo: ssh://git@github.com/elifesciences/dummy3
-    meta:
-        description: "foo"
     aws:
         ec2: false
         sns: 
@@ -140,12 +138,17 @@ just-some-sns:
 
 project-with-sqs:
     repo: ssh://git@github.com/elifesciences/dummy3
-    meta:
-        description: "foo"
     aws:
         ec2: false
         sqs: 
             project-with-sqs-incoming-{cluster}: 
                 subscriptions:
                     - widgets-{cluster}
+
+project-with-ext:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2: false
+        ext: 
+            size: 200
 

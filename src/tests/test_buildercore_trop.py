@@ -61,3 +61,19 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Outputs']['ProjectWithSqsIncomingProdQueueArn']
         )
 
+    def test_ext_template(self):
+        extra = {
+            'instance_id': 'project-with-ext--prod',
+        }
+        context = cfngen.build_context('project-with-ext', **extra)
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        self.assertEqual(['MountPoint', 'ExtraStorage'], data['Resources'].keys())
+        self.assertEqual(
+            {
+                'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance', 'AvailabilityZone']},
+                'VolumeType': 'standard',
+                'Size': '200',
+            },
+            data['Resources']['ExtraStorage']['Properties']
+        )
