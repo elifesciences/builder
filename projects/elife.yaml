@@ -382,13 +382,20 @@ bus:
             # articles-prod, articles-end2end, etc.
             - articles-{cluster}
 
-# will create EC2 instance later, let's start with SQS only
 search:
-    default-branch: null
-    domain: null
-    int_domain: null
+    domain: False
+    subdomain: search
+    repo: https://github.com/elifesciences/search
+    formula-repo: https://github.com/elifesciences/search-formula
+    vagrant:
+        ram: 1024
+        ports:
+            1244: 80
     aws:
-        ec2: false
+        type: t2.micro
+        ports:
+            - 22
+            - 80
         sqs:
             # search-prod, search-end2end, etc.
             search-{cluster}:
