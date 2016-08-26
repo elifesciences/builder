@@ -17,6 +17,7 @@
         "type": "t2.small", 
         "region": "us-east-1", 
         "sns": [],
+        "sqs": [],
         "vpc-id": "vpc-0a0a0a0a", 
         "subnet-id": "subnet-191919191", 
         "subnet-cidr": "172.31.16.0/20", 
