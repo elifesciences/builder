@@ -139,6 +139,11 @@ def create_generic_stack(stackname):
         raise
 
 def setup_sqs(context_sqs, stackname, region):
+    """
+    Connects SQS queues created by Cloud Formation to SNS topics where 
+    necessary, adding both the subscription and the IAM policy to let the SNS 
+    topic write to the queue
+    """
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
     for queue_name in context_sqs:
@@ -146,11 +151,13 @@ def setup_sqs(context_sqs, stackname, region):
         queue = sqs.lookup(queue_name)
         for topic_name in context_sqs[queue_name]:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
-            # TODO: too risky, may subscribe to a typo-filled topic name like 'aarticles'
-            # take the list and look it up instead, error on missing topic
-            topic_lookup = sns.create_topic(topic_name) # idempotent, works as lookup
+            # idempotent, works as lookup
+            # risky, may subscribe to a typo-filled topic name like 'aarticles'
+            # there is no boto method to lookup a topic
+            topic_lookup = sns.create_topic(topic_name) 
             topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
             sns.subscribe_sqs_queue(topic_arn, queue)
+            # TODO: the policy may already be managed by subscribe_sqs_queue, try removing it
             LOG.info('Adding policy to %s for SNS topic %s to send messages', queue_name, topic_name, extra={'stackname': stackname})
             policy = json.dumps({
                 'Version': '2012-10-17',
