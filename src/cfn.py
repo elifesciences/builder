@@ -54,7 +54,7 @@ def update_master():
     return bootstrap.update_stack(core.find_master(aws.find_region()))
 
 @requires_project
-def create_stack(pname, instance_id=None):
+def generate_stack_from_input(pname, instance_id=None):
     """creates a new CloudFormation file for the given project."""
     if not instance_id:
         default_instance_id = core_utils.ymd()
@@ -91,7 +91,7 @@ def create_update(stackname):
 @requires_project
 def launch(pname, instance_id=None):
     try:
-        stackname = create_stack(pname, instance_id)
+        stackname = generate_stack_from_input(pname, instance_id)
         pdata = core.project_data_for_stackname(stackname)
 
         print 'attempting to create stack:'
