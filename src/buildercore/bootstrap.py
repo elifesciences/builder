@@ -62,7 +62,6 @@ def create_stack(stackname):
 
     return _create_generic_stack(stackname, parameters, on_start, on_error)
 
-#@requires_stack_file
 #def create_ec2_stack(stackname):
 #    "simply creates the stack of resources on AWS. call `bootstrap_stack` to install/update software on the stack."
 #    LOG.info('creating stack %r', stackname)
@@ -238,10 +237,8 @@ def update_stack(stackname):
     # TODO: only EC2 parts can be updated at the moment
     if pdata['aws']['ec2']:
         update_ec2_stack(stackname)
-    else:
-        # does not contain an EC2 instance, the only thing we could update
-        pass
 
+@core.requires_stack_file
 def create_update(stackname):
     if not core.stack_is_active(stackname):
         print 'stack does not exist, creating'
