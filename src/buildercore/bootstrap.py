@@ -242,6 +242,13 @@ def update_stack(stackname):
         # does not contain an EC2 instance, the only thing we could update
         pass
 
+def create_update(stackname):
+    if not core.stack_is_active(stackname):
+        print 'stack does not exist, creating'
+        create_stack(stackname)
+    print 'updating stack'
+    update_stack(stackname)
+    return stackname
 
 def update_ec2_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.

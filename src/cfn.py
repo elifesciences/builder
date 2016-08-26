@@ -78,14 +78,6 @@ def generate_stack_from_input(pname, instance_id=None):
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
-def create_update(stackname):
-    if not core.stack_is_active(stackname):
-        print 'stack does not exist, creating'
-        bootstrap.create_stack(stackname)
-    print 'updating stack'
-    bootstrap.update_stack(stackname)
-    return stackname
-
 # these aliases are deprecated
 @task(alias='aws_launch_instance')
 @requires_project
@@ -107,9 +99,8 @@ def launch(pname, instance_id=None):
                 print
                 return
         
-        stackname = create_update(stackname)        
-        if stackname:
-            setdefault('.active-stack', stackname)
+        bootstrap.create_update(stackname)        
+        setdefault('.active-stack', stackname)
     except core.NoMasterException, e:
         LOG.warn(e.message)
         print "\n%s\ntry `./bldr master.create`'" % e.message
