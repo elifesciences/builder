@@ -68,7 +68,8 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-ext', **extra)
         cfn_template = trop.render(context)
         data = json.loads(cfn_template)
-        self.assertEqual(['MountPoint', 'ExtraStorage'], data['Resources'].keys())
+        self.assertIn('MountPoint', data['Resources'].keys())
+        self.assertIn('ExtraStorage', data['Resources'].keys())
         self.assertEqual(
             {
                 'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance', 'AvailabilityZone']},

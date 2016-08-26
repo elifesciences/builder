@@ -148,7 +148,8 @@ project-with-sqs:
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
-        ec2: false
+        ports:
+            - 80
         ext: 
             size: 200
 

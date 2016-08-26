@@ -69,6 +69,8 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
+    assert 'ports' in context['project']['aws'], "Missing `ports` configuration in `aws`"
+
     return security_group(
         SECURITY_GROUP_TITLE,
         context['project']['aws']['vpc-id'],
