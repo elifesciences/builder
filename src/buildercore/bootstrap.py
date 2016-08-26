@@ -154,18 +154,22 @@ def setup_ec2(stackname, context_ec2):
         prep_ec2_instance()
 
 
-def setup_sqs(context_sqs, stackname, region):
+def setup_sqs(stackname, context_sqs, region):
     """
     Connects SQS queues created by Cloud Formation to SNS topics where 
     necessary, adding both the subscription and the IAM policy to let the SNS 
     topic write to the queue
     """
+    assert isinstance(context_sqs, dict), ("Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
+
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
     for queue_name in context_sqs:
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        for topic_name in context_sqs[queue_name]:
+        subscriptions = context_sqs[queue_name]
+        assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
+        for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
             # idempotent, works as lookup
             # risky, may subscribe to a typo-filled topic name like 'aarticles'
