@@ -62,39 +62,6 @@ def create_stack(stackname):
 
     return _create_generic_stack(stackname, parameters, on_start, on_error)
 
-#def create_ec2_stack(stackname):
-#    "simply creates the stack of resources on AWS. call `bootstrap_stack` to install/update software on the stack."
-#    LOG.info('creating stack %r', stackname)
-#    stack_body = core.stack_json(stackname)
-#    try:
-#        keypair.create_keypair(stackname)
-#        conn = connect_aws_with_stack(stackname, 'cfn')
-#        conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
-#        _wait_for_stack_creation_to_complete(stackname)
-#        context = cfngen.context(stackname)
-#        setup_ec2(stackname, context['ec2'])
-#
-#        return True
-#
-#    except BotoServerError as err:
-#        # don't delete the keypair if the error is that the stack already exists!
-#        if err.message.endswith(' already exists'):
-#            LOG.debug(err.message)
-#            return False
-#        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
-#        keypair.delete_keypair(stackname)
-#        raise
-#
-#    except KeyboardInterrupt:
-#        # don't delete the keypair if the user manually cancelled stack creation
-#        LOG.debug("caught keyboard interrupt, cancelling...")
-#        return False
-#    
-#    except:
-#        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
-#        keypair.delete_keypair(stackname)
-#        raise
-
 def _create_generic_stack(stackname, parameters=[], on_start=_noop, on_error=_noop):
     "simply creates the stack of resources on AWS, talking to CloudFormation."
     LOG.info('creating stack %r', stackname)
