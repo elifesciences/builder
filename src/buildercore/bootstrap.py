@@ -47,75 +47,83 @@ def prep_ec2_instance():
 # provision stack
 #
 
+def noop():
+    pass
+
 def create_stack(stackname):
     pdata = project_data_for_stackname(stackname)
-    # TODO: must create EC2 + SQS
+    parameters = []
+    on_start=noop
+    on_error=noop
     if pdata['aws']['ec2']:
-        return create_ec2_stack(stackname)
-    else:
-        return create_generic_stack(stackname)
+        parameters.append(('KeyName', stackname))
+        on_start = lambda: keypair.create_keypair(stackname)
+        on_error = lambda: keypair.delete_keypair(stackname)
+
+    return create_generic_stack(stackname, parameters, on_start, on_error)
 
 #@requires_stack_file
-def create_ec2_stack(stackname):
-    "simply creates the stack of resources on AWS. call `bootstrap_stack` to install/update software on the stack."
-    LOG.info('creating stack %r', stackname)
-    stack_body = core.stack_json(stackname)
-    try:
-        keypair.create_keypair(stackname)
-        conn = connect_aws_with_stack(stackname, 'cfn')
-        conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
-        _wait_for_stack_creation_to_complete(stackname)
-        context = cfngen.context(stackname)
-        setup_ec2(stackname, context['ec2'])
+#def create_ec2_stack(stackname):
+#    "simply creates the stack of resources on AWS. call `bootstrap_stack` to install/update software on the stack."
+#    LOG.info('creating stack %r', stackname)
+#    stack_body = core.stack_json(stackname)
+#    try:
+#        keypair.create_keypair(stackname)
+#        conn = connect_aws_with_stack(stackname, 'cfn')
+#        conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
+#        _wait_for_stack_creation_to_complete(stackname)
+#        context = cfngen.context(stackname)
+#        setup_ec2(stackname, context['ec2'])
+#
+#        return True
+#
+#    except BotoServerError as err:
+#        # don't delete the keypair if the error is that the stack already exists!
+#        if err.message.endswith(' already exists'):
+#            LOG.debug(err.message)
+#            return False
+#        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
+#        keypair.delete_keypair(stackname)
+#        raise
+#
+#    except KeyboardInterrupt:
+#        # don't delete the keypair if the user manually cancelled stack creation
+#        LOG.debug("caught keyboard interrupt, cancelling...")
+#        return False
+#    
+#    except:
+#        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
+#        keypair.delete_keypair(stackname)
+#        raise
 
-        return True
-
-    except BotoServerError as err:
-        # don't delete the keypair if the error is that the stack already exists!
-        if err.message.endswith(' already exists'):
-            LOG.debug(err.message)
-            return False
-        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
-        keypair.delete_keypair(stackname)
-        raise
-
-    except KeyboardInterrupt:
-        # don't delete the keypair if the user manually cancelled stack creation
-        LOG.debug("caught keyboard interrupt, cancelling...")
-        return False
-    
-    except:
-        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
-        keypair.delete_keypair(stackname)
-        raise
-
-# TODO: implement by picking bits from create_ec2_stack()
-# hopefully this will become abstract enough to be used also for EC2
-def create_generic_stack(stackname):
+def create_generic_stack(stackname, parameters=[], on_start=noop, on_error=noop):
     "simply creates the stack of resources on AWS, talking to CloudFormation."
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
     try:
+        on_start()
         conn = connect_aws_with_stack(stackname, 'cfn')
-        parameters = []
         conn.create_stack(stackname, stack_body, parameters=parameters)
         _wait_for_stack_creation_to_complete(stackname)
-        # TODO: after finishing the stack creation, there may be operation to perform
-        # for EC2: prep_stack
-        # for SQS: connection to topics
         context = cfngen.context(stackname)
+        # setup various resources after creation, where necessary
+        setup_ec2(stackname, context['ec2'])
         setup_sqs(stackname, context['sqs'], context['project']['aws']['region'])
 
         return True
-
-    except BotoServerError:
+    except BotoServerError as err:
+        if err.message.endswith(' already exists'):
+            LOG.debug(err.message)
+            return False
         LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
+        on_error()
         raise
     except KeyboardInterrupt:
         LOG.debug("caught keyboard interrupt, cancelling...")
         return False
     except:
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
+        on_error()
         raise
 
 def _wait_for_stack_creation_to_complete(stackname):
