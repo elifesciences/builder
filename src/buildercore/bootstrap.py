@@ -47,20 +47,20 @@ def prep_ec2_instance():
 # provision stack
 #
 
-def noop():
+def _noop():
     pass
 
 def create_stack(stackname):
     pdata = project_data_for_stackname(stackname)
     parameters = []
-    on_start=noop
-    on_error=noop
+    on_start=_noop
+    on_error=_noop
     if pdata['aws']['ec2']:
         parameters.append(('KeyName', stackname))
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    return create_generic_stack(stackname, parameters, on_start, on_error)
+    return _create_generic_stack(stackname, parameters, on_start, on_error)
 
 #@requires_stack_file
 #def create_ec2_stack(stackname):
@@ -96,7 +96,7 @@ def create_stack(stackname):
 #        keypair.delete_keypair(stackname)
 #        raise
 
-def create_generic_stack(stackname, parameters=[], on_start=noop, on_error=noop):
+def _create_generic_stack(stackname, parameters=[], on_start=_noop, on_error=_noop):
     "simply creates the stack of resources on AWS, talking to CloudFormation."
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
