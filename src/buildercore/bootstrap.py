@@ -156,28 +156,8 @@ def setup_sqs(context_sqs, stackname, region):
             # there is no boto method to lookup a topic
             topic_lookup = sns.create_topic(topic_name) 
             topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
+            # deals with both subscription and IAM policy
             sns.subscribe_sqs_queue(topic_arn, queue)
-            # TODO: the policy may already be managed by subscribe_sqs_queue, try removing it
-            LOG.info('Adding policy to %s for SNS topic %s to send messages', queue_name, topic_name, extra={'stackname': stackname})
-            policy = json.dumps({
-                'Version': '2012-10-17',
-                'Statement': [
-                    {
-                        "Sid": '%sTo%sPolicy' % (topic_name, queue_name),
-                        "Effect": "Allow",
-                #        "Principal": "*",
-                        "Action": "SQS:SendMessage",
-                        "Resource": queue.arn,
-                        "Condition": {
-                            "ArnEquals": {
-                                "aws:SourceArn": topic_arn
-                            }
-                        }
-                    }
-                ]
-            })
-            LOG.info('Policy is %s', policy, extra={'stackname': stackname})
-            sqs.set_queue_attribute(queue, 'Policy', policy)
 
 
 #
