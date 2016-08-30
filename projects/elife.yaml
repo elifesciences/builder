@@ -141,6 +141,7 @@ pattern-library:
     repo: https://github.com/elifesciences/pattern-library
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
+        type: t2.small
         ports:
             - 22
             - 443
