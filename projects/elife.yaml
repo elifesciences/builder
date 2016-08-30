@@ -136,6 +136,18 @@ journal:
         ports:
             1240: 80
 
+pattern-library:
+    subdomain: ui-patterns
+    repo: https://github.com/elifesciences/pattern-library
+    formula-repo: https://github.com/elifesciences/pattern-library-formula
+    aws:
+        ports:
+            - 22
+            - 443
+    vagrant:
+        ports:
+            1340: 80
+
 
 elife-metrics:
     subdomain: metrics # metrics.elifesciences.org
