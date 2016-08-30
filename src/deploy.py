@@ -28,9 +28,9 @@ def impose_ordering(branch_list):
 @echo_output
 def deploy(pname, cluster=None, branch='master'):
     pdata = project.project_data(pname)
-    branch_list = utils.git_remote_branches(pdata['repo'])
-    branch_list = impose_ordering(branch_list)
     if not branch:
+        branch_list = utils.git_remote_branches(pdata['repo'])
+        branch_list = impose_ordering(branch_list)
         branch = utils._pick('branch', branch_list, deffile('.branch'))
     stackname = build_stack_name(pname, cluster)
 
