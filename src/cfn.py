@@ -60,7 +60,7 @@ def generate_stack_from_input(pname, instance_id=None):
         default_instance_id = core_utils.ymd()
         instance_id = utils.uin("instance id", default_instance_id)
     stackname = core.mk_stackname(pname, instance_id)
-    more_context = {'instance_id': stackname}
+    more_context = {'stackname': stackname}
 
     # prompt user for alternate configurations
     pdata = project.project_data(pname)

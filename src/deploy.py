@@ -9,10 +9,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def build_stack_name(pname, cluster):
-    "given a project and a cluster, returns an instance name"
-    return "%(pname)s--%(cluster)s" % locals()
-
 def impose_ordering(branch_list):
     branch_list, removed = utils.rmval(branch_list, 'master', 'develop')
     branch_list.sort()
@@ -26,13 +22,13 @@ def impose_ordering(branch_list):
 @task
 @requires_branch_deployable_project
 @echo_output
-def deploy(pname, cluster=None, branch='master'):
+def deploy(pname, instance_id=None, branch='master'):
     pdata = project.project_data(pname)
     branch_list = utils.git_remote_branches(pdata['repo'])
     branch_list = impose_ordering(branch_list)
     if not branch:
         branch = utils._pick('branch', branch_list, deffile('.branch'))
-    stackname = build_stack_name(pname, cluster)
+    stackname = core.mk_stackname(pname, instance_id)
 
     region = pdata['aws']['region']
     active_stacks = core.active_stack_names(region)
@@ -41,14 +37,13 @@ def deploy(pname, cluster=None, branch='master'):
     else:
         LOG.info("stack %r doesn't exist, creating", stackname)
         more_context = {
-            'instance_id': stackname,
+            'stackname': stackname,
             'branch': branch,
-            'cluster': cluster,
         }
-        # optionally select alternate configurations if it matches the cluster name
-        if cluster in project.project_alt_config_names(pdata):
-            LOG.info("using alternate AWS configuration %r", cluster)
-            more_context['alt-config'] = cluster
+        # optionally select alternate configurations if it matches the instance name
+        if instance_id in project.project_alt_config_names(pdata):
+            LOG.info("using alternate AWS configuration %r", instance_id)
+            more_context['alt-config'] = instance_id
         cfngen.generate_stack(pname, **more_context)
 
     bootstrap.create_update(stackname)        

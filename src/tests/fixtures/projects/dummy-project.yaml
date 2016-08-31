@@ -134,16 +134,16 @@ just-some-sns:
     aws:
         ec2: false
         sns: 
-            - widgets-{cluster}
+            - widgets-{instance}
 
 project-with-sqs:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
         ec2: false
         sqs: 
-            project-with-sqs-incoming-{cluster}: 
+            project-with-sqs-incoming-{instance}: 
                 subscriptions:
-                    - widgets-{cluster}
+                    - widgets-{instance}
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3

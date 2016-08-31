@@ -14,7 +14,7 @@ class TestBuildercoreTrop(base.BaseCase):
 
     def test_rds_template_contains_rds(self):
         extra = {
-            'instance_id': 'dummy3--test',
+            'stackname': 'dummy3--test',
             'alt-config': 'alt-config1'
         }
         context = cfngen.build_context('dummy3', **extra)
@@ -27,7 +27,7 @@ class TestBuildercoreTrop(base.BaseCase):
 
     def test_sns_template(self):
         extra = {
-            'instance_id': 'just-some-sns--prod',
+            'stackname': 'just-some-sns--prod',
         }
         context = cfngen.build_context('just-some-sns', **extra)
         cfn_template = trop.render(context)
@@ -45,7 +45,7 @@ class TestBuildercoreTrop(base.BaseCase):
 
     def test_sqs_template(self):
         extra = {
-            'instance_id': 'project-with-sqs--prod',
+            'stackname': 'project-with-sqs--prod',
         }
         context = cfngen.build_context('project-with-sqs', **extra)
         cfn_template = trop.render(context)
@@ -63,7 +63,7 @@ class TestBuildercoreTrop(base.BaseCase):
 
     def test_ext_template(self):
         extra = {
-            'instance_id': 'project-with-ext--prod',
+            'stackname': 'project-with-ext--prod',
         }
         context = cfngen.build_context('project-with-ext', **extra)
         cfn_template = trop.render(context)

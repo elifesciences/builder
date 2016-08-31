@@ -45,9 +45,10 @@ def build_context(pname, **more_context):
         'author': os.environ.get("LOGNAME") or os.getlogin(),
         'date_rendered': utils.ymd(),
 
-        # when this was first introduced, instance_id was synonmous with stackname
-        'instance_id': None, # must be provided by whatever is calling this
-
+        # a stackname looks like: <pname>--<instance_id>[--<cluster-id>]
+        'stackname': None, # must be provided by whatever is calling this
+        'instance_id': None, # derived from the stackname
+        'cluster_id': None, # derived from the stackname
 
         'branch': project_data.get('default-branch'),
         'revision': None, # may be used in future to checkout a specific revision of project
@@ -64,24 +65,27 @@ def build_context(pname, **more_context):
     context = copy.deepcopy(defaults)
     context.update(more_context)
 
-    assert context['instance_id'] != None, "an 'instance_id' wasn't provided."
-    stackname = context['instance_id']
+    assert context['stackname'] != None, "a stackname wasn't provided."
+    stackname = context['stackname']
 
-    # alpha-numeric only
-    # TODO: investigate possibility of ambiguous RDS naming here
+    # stackname data
+    bit_keys = ['project_name', 'instance_id', 'cluster_id']
+    bits = dict(zip(bit_keys, core.parse_stackname(stackname, all_bits=True)))
+    assert bits['project_name'] == pname, \
+      "the project name derived from the `stackname` doesn't match the given project name"
+    context.update(bits)
 
     # hostname data
     context.update(core.hostname_struct(stackname))
 
-    (_, cluster) = core.parse_stackname(stackname)
-    context['cluster'] = cluster
-    
     # post-processing
     if context['project']['aws'].has_key('rds'):
         default_rds_dbname = slugify(stackname, separator="")
+        # alpha-numeric only
+        # TODO: investigate possibility of ambiguous RDS naming here
         context.update({
             'rds_username': 'root',
-            'rds_password': utils.random_alphanumeric(length=32), # will be saved to buildvars.json
+            'rds_password': utils.random_alphanumeric(length=32), # will be saved to build-vars.json
             'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
             'rds_instance_id': slugify(stackname), # *completely* different to database name
         })
@@ -94,31 +98,32 @@ def build_context(pname, **more_context):
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
-    context['ec2'] = True if context['project']['aws']['ec2'] else False
-    # the above context will reside on the server at /etc/build_vars.json.b64
+    #context['ec2'] = True if context['project']['aws']['ec2'] else False
+    context['ec2'] = context['project']['aws'].get('ec2', True)
+    # the above context will reside on the server at /etc/build-vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
     # part of the bootstrap process writes a file called /etc/cfn-info.json
     # this gives Salt the outputs available at stack creation
     context['build_vars'] = base64.b64encode(json.dumps(context)) if context['project']['aws']['ec2'] else None
 
+    def _parameterize(string):
+        return string.format(instance=context['instance_id'])
+    
     for topic_template_name in context['project']['aws']['sns']:
-        topic_name = _parameterize(topic_template_name, context)
+        topic_name = _parameterize(topic_template_name)
         context['sns'].append(topic_name)
 
     for queue_template_name in context['project']['aws']['sqs']:
-        queue_name = _parameterize(queue_template_name, context)
+        queue_name = _parameterize(queue_template_name)
         queue_configuration = context['project']['aws']['sqs'][queue_template_name]
         subscriptions = []
         if 'subscriptions' in queue_configuration:
             for topic_template_name in queue_configuration['subscriptions']:
-                subscriptions.append(_parameterize(topic_template_name, context))
-
+                subscriptions.append(_parameterize(topic_template_name))
         context['sqs'][queue_name] = subscriptions
 
     return context
 
-def _parameterize(template_name, context):
-    return template_name.format(cluster=context['cluster'])
 
 #
 #
@@ -198,7 +203,7 @@ def validate_project(pname, **extra):
 def quick_render(project_name, **more_context):
     "generates a representative Cloudformation template for given project with dummy values"
     # set a dummy instance id if one hasn't been set.
-    more_context['instance_id'] = more_context.get('instance_id', project_name + '--dummy')
+    more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
     context = build_context(project_name, **more_context)
     return render_template(context)
 
@@ -211,7 +216,7 @@ def generate_stack(pname, **more_context):
     stack file, writes it to file and returns a pair of (context, stackfilename)"""
     context = build_context(pname, **more_context)
     template = render_template(context)
-    stackname = context['instance_id']
+    stackname = context['stackname']
     out_fname = write_template(stackname, template)
     write_context(stackname, json.dumps(context))
     return context, out_fname

@@ -63,10 +63,10 @@ class TestUtils(base.BaseCase):
 
     def test_table(self):
         class AnObject():
-            def __init__(self, project, cluster):
+            def __init__(self, project, instance_id):
                 self.project = project
-                self.cluster = cluster
+                self.instance_id = instance_id
 
         rows = [AnObject('lax', 'ci'), AnObject('bot', 'end2end')]
-        keys = ['project', 'cluster']
+        keys = ['project', 'instance_id']
         self.assertEqual("lax, ci\nbot, end2end", utils.table(rows, keys))

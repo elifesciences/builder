@@ -380,15 +380,15 @@ bus:
         ec2: false
         sns:
             # bus-articles-prod, bus-articles-end2end, etc.
-            - bus-articles--{cluster}
-            - bus-podcast-episodes--{cluster}
-            - bus-subjects--{cluster}
-            - bus-people--{cluster}
-            - bus-collections--{cluster}
-            - bus-events--{cluster}
-            - bus-interviews--{cluster}
-            - bus-blog-articles--{cluster}
-            - bus-annual-reports--{cluster}
+            - bus-articles--{instance}
+            - bus-podcast-episodes--{instance}
+            - bus-subjects--{instance}
+            - bus-people--{instance}
+            - bus-collections--{instance}
+            - bus-events--{instance}
+            - bus-interviews--{instance}
+            - bus-blog-articles--{instance}
+            - bus-annual-reports--{instance}
 
 search:
     domain: False
@@ -407,12 +407,12 @@ search:
             - 80
         sqs:
             # search-prod, search-end2end, etc.
-            search-{cluster}:
+            search-{instance}:
                 subscriptions:
-                    - bus-articles--{cluster}
-                    - bus-podcast-episodes--{cluster}
-                    - bus-subjects--{cluster}
-                    - bus-collections--{cluster}
-                    - bus-events--{cluster}
-                    - bus-interviews--{cluster}
-                    - bus-blog-articles--{cluster}
+                    - bus-articles--{instance}
+                    - bus-podcast-episodes--{instance}
+                    - bus-subjects--{instance}
+                    - bus-collections--{instance}
+                    - bus-events--{instance}
+                    - bus-interviews--{instance}
+                    - bus-blog-articles--{instance}
