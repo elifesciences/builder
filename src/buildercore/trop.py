@@ -30,6 +30,7 @@ DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
 EXT_TITLE = "ExtraStorage"
 EXT_MP_TITLE = "MountPoint"
 R53_EXT_TITLE = "ExtDNS"
+R53_EXT_PROD_TITLE = "ExtDNSProd"
 R53_INT_TITLE = "IntDNS"
 
 KEYPAIR = "KeyName"
@@ -196,33 +197,45 @@ def ext_volume(context_ext):
     return ec2v, ec2va
 
 def external_dns(context):
+    dns_records = []
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
-    dns_record = route53.RecordSetType(
-        R53_EXT_TITLE,
-        HostedZoneName=hostedzone,
-        Comment = "External DNS record",
-        Name = context['full_hostname'],
-        Type = "A",
-        TTL = "900",
-        ResourceRecords=[GetAtt(EC2_TITLE, "PublicIp")],
-    )
-    return dns_record
+    if context['is_prod_instance']:
+        dns_records.append(_dns_a_record(
+            title=R53_EXT_PROD_TITLE,
+            hostname=context['project_hostname'],
+            hostedzone=hostedzone,
+            comment="External DNS record, canonical project hostname for production"
+        ))
+    dns_records.append(_dns_a_record(
+        title=R53_EXT_TITLE,
+        hostname=context['full_hostname'],
+        hostedzone=hostedzone,
+        comment="External DNS record"
+    ))
+    return dns_records
 
 def internal_dns(context):
+    # TODO: use _dns_a_record()
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
-    dns_record = route53.RecordSetType(
-        R53_INT_TITLE,
-        HostedZoneName=hostedzone,
-        Comment = "Internal DNS record",
-        Name = context['int_full_hostname'],
+    return _dns_a_record(
+        title= R53_INT_TITLE,
+        hostname = context['int_full_hostname'],
+        hostedzone = hostedzone,
+        comment = "Internal DNS record"
+    )
+    
+def _dns_a_record(title, hostname, hostedzone, comment=''):
+    return route53.RecordSetType(
+        title,
+        HostedZoneName = hostedzone,
+        Comment = comment,
+        Name = hostname,
         Type = "A",
         TTL = "900",
-        ResourceRecords=[GetAtt(EC2_TITLE, "PrivateIp")],
+        ResourceRecords = [GetAtt(EC2_TITLE, "PublicIp")],
     )
-    return dns_record
-    
 
 def render(context):
     template = Template()
@@ -271,9 +284,12 @@ def render(context):
         ))
 
     if context['full_hostname']:
-        template.add_resource(external_dns(context))
+        dns = external_dns(context)
+        for resource in dns:
+            template.add_resource(resource)
+            
         cfn_outputs.extend([
-            mkoutput("DomainName", "Domain name of the newly created EC2 instance", Ref(R53_EXT_TITLE)),
+            mkoutput("DomainName", "Domain name of the newly created EC2 instance", Ref(dns[0].title)),
         ])
 
     if context['int_full_hostname']:
