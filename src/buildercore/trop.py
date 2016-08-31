@@ -69,7 +69,7 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    assert 'ports' in context['project']['aws'], "Missing `ports` configuration in `aws`"
+    assert 'ports' in context['project']['aws'], "Missing `ports` configuration in `aws` for '%s'" % context['stackname']
 
     return security_group(
         SECURITY_GROUP_TITLE,
@@ -96,7 +96,7 @@ def rds_security(context):
 
 def instance_tags(context):
     return [
-        ec2.Tag('Name', context['instance_id']),
+        ec2.Tag('Name', context['stackname']),
         ec2.Tag('Owner', context['author']),
         ec2.Tag('Project', context['project_name']),
     ]
