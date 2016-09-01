@@ -329,6 +329,7 @@ elife-website:
             6379: 6379 # redis
 
 anonymous:
+    description: a server without any eLife credentials; if you log in here, you will be using the anonymous separate AWS account
     formula-repo: https://github.com/elifesciences/anonymous-formula
     aws:
         type: t2.micro
@@ -348,6 +349,7 @@ jats4r:
             - 443
 
 medium:
+    description: microservice that gives access to eLife posts on Medium.com
     domain: False
     subdomain: medium
     repo: https://github.com/elifesciences/medium
@@ -363,6 +365,7 @@ medium:
             - 80
 
 search:
+    description: service for indexing all of Elife 2.0 content
     domain: False
     subdomain: search
     repo: https://github.com/elifesciences/search
