@@ -56,7 +56,8 @@ def _update_syslog(stackname):
         return sudo(cmd)
 
 #
-#
+# LetsEncrypt + ACME client code
+# deprecated. this pair are no longer encouraged.
 #
 
 def acme_enabled(url):
@@ -76,7 +77,10 @@ def acme_enabled(url):
 @echo_output
 @osissue("*very* useful task. improve with documentation.")
 def fetch_cert(stackname):
-    try:    
+    # NOTE: this was ported from the old builder and won't work with new instances
+    # this isn't a problem because new instances shouldn't be using letsencrypt if
+    # they can avoid it.
+    try:
         # replicates some logic in builder core
         pname = core.project_name_from_stackname(stackname)
         project_data = project.project_data(pname)

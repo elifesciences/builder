@@ -25,7 +25,7 @@ class SimpleCases(base.BaseCase):
         stackname = 'dummy1--test'
         self.assertEqual(core.hostname_struct(stackname), expected)
 
-    def test_hostname_struct_with_cluster_and_project_name_as_subdomain(self):
+    def test_hostname_struct_with_subdomain(self):
         expected = {
             'domain': "example.org",
             'int_domain': "example.internal",
@@ -142,7 +142,7 @@ class TestCoreNewProjectData(base.BaseCase):
             expected_data = json.load(open(expected_path, 'r'))
             project_data = project.project_data(pname)
             project_data = utils.remove_ordereddict(project_data)
-            self.assertEqual(expected_data, project_data, 'failed %s' % pname)
+            self.assertEqual(expected_data, project_data)
 
     # snippets
 

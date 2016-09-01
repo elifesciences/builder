@@ -4,21 +4,21 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os, shutil
+import json
+import os
 from os.path import join
 from functools import partial
 from StringIO import StringIO
-from . import core, utils, config, s3, keypair
+from . import core, utils, config, keypair
 from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
 from .utils import first
-from .config import DEPLOY_USER, BOOTSTRAP_USER
-from .decorators import osissue, osissuefn
-from fabric.api import env, local, settings, run, sudo, cd, put, get
+from .config import BOOTSTRAP_USER
+from fabric.api import sudo, put
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
-from contextlib import contextmanager
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
+from buildercore import cfngen
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ def run_script(script_path, *script_params):
     sudo("rm " + remote_script) # remove the script after executing it
     return retval
 
-def prep_stack():
+def prep_ec2_instance():
     """called after stack creation and before AMI creation"""
     return run_script("prep-stack.sh")
 
@@ -47,25 +47,67 @@ def prep_stack():
 # provision stack
 #
 
-#@requires_stack_file
+def _noop():
+    pass
+
 def create_stack(stackname):
-    "simply creates the stack of resources on AWS. call `bootstrap_stack` to install/update software on the stack."
+    pdata = project_data_for_stackname(stackname)
+    parameters = []
+    on_start=_noop
+    on_error=_noop
+    if pdata['aws']['ec2']:
+        parameters.append(('KeyName', stackname))
+        on_start = lambda: keypair.create_keypair(stackname)
+        on_error = lambda: keypair.delete_keypair(stackname)
+
+    return _create_generic_stack(stackname, parameters, on_start, on_error)
+
+def _create_generic_stack(stackname, parameters=[], on_start=_noop, on_error=_noop):
+    "simply creates the stack of resources on AWS, talking to CloudFormation."
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
     try:
-        keypair.create_keypair(stackname)
+        on_start()
         conn = connect_aws_with_stack(stackname, 'cfn')
-        conn.create_stack(stackname, stack_body, parameters=[('KeyName', stackname)])
-        def is_updating(stackname):
-            return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
-        utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+        conn.create_stack(stackname, stack_body, parameters=parameters)
+        _wait_for_stack_creation_to_complete(stackname)
+        context = cfngen.context(stackname)
+        # setup various resources after creation, where necessary
+        setup_ec2(stackname, context['ec2'])
+        setup_sqs(stackname, context['sqs'], context['project']['aws']['region'])
 
-        # we have an issue where the stack is created, however the security group
-        # hasn't been attached or ssh isn't running yet and we can't get in.
-        # this waits until a connection can be made and a file is found before continuing.
+        return True
+    except BotoServerError as err:
+        if err.message.endswith(' already exists'):
+            LOG.debug(err.message)
+            return False
+        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
+        on_error()
+        raise
+    except KeyboardInterrupt:
+        LOG.debug("caught keyboard interrupt, cancelling...")
+        return False
+    except:
+        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
+        on_error()
+        raise
+
+def _wait_for_stack_creation_to_complete(stackname):
+    def is_updating(stackname):
+        return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
+    utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+
+def setup_ec2(stackname, context_ec2):
+    if not context_ec2:
+        return
+
+    with stack_conn(stackname, username=BOOTSTRAP_USER):
         def is_resourcing():
             try:
-                # call until:
+                # we have an issue where the stack is created, however the security group
+                # hasn't been attached or ssh isn't running yet and we can't get in.
+                # this waits until a connection can be made and a file is found before continuing.
+                # moreover, call until:
                 # - bootstrap user exists and we can access it through SSH
                 # - cloud-init has finished running
                 #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
@@ -74,30 +116,35 @@ def create_stack(stackname):
             except fabric_exceptions.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
-        with stack_conn(stackname, username=BOOTSTRAP_USER):
-            utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
-            prep_stack()
+        utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
+        prep_ec2_instance()
 
-        return True
 
-    except BotoServerError as err:
-        # don't delete the keypair if the error is that the stack already exists!
-        if err.message.endswith(' already exists'):
-            LOG.debug(err.message)
-            return False
-        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname})
-        keypair.delete_keypair(stackname)
-        raise
+def setup_sqs(stackname, context_sqs, region):
+    """
+    Connects SQS queues created by Cloud Formation to SNS topics where 
+    necessary, adding both the subscription and the IAM policy to let the SNS 
+    topic write to the queue
+    """
+    assert isinstance(context_sqs, dict), ("Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
 
-    except KeyboardInterrupt:
-        # don't delete the keypair if the user manually cancelled stack creation
-        LOG.debug("caught keyboard interrupt, cancelling...")
-        return False
-    
-    except:
-        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
-        keypair.delete_keypair(stackname)
-        raise
+    sqs = core.boto_sqs_conn(region)
+    sns = core.boto_sns_conn(region)
+    for queue_name in context_sqs:
+        LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
+        queue = sqs.lookup(queue_name)
+        subscriptions = context_sqs[queue_name]
+        assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
+        for topic_name in subscriptions:
+            LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
+            # idempotent, works as lookup
+            # risky, may subscribe to a typo-filled topic name like 'aarticles'
+            # there is no boto method to lookup a topic
+            topic_lookup = sns.create_topic(topic_name) 
+            topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
+            # deals with both subscription and IAM policy
+            sns.subscribe_sqs_queue(topic_arn, queue)
+
 
 #
 #  attached stack resources, ec2 data
@@ -153,6 +200,21 @@ def write_environment_info(stackname, overwrite=False):
 
 @core.requires_active_stack
 def update_stack(stackname):
+    pdata = project_data_for_stackname(stackname)
+    # TODO: only EC2 parts can be updated at the moment
+    if pdata['aws']['ec2']:
+        update_ec2_stack(stackname)
+
+@core.requires_stack_file
+def create_update(stackname):
+    if not core.stack_is_active(stackname):
+        print 'stack does not exist, creating'
+        create_stack(stackname)
+    print 'updating stack'
+    update_stack(stackname)
+    return stackname
+
+def update_ec2_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install 
@@ -160,8 +222,7 @@ def update_stack(stackname):
     script that can be downloaded from the web and then very conveniently 
     installs it's own dependencies. Once Salt is installed we give it an ID 
     (the given `stackname`), the address of the master server """
-    pdata = core.project_data_for_stackname(stackname)
-    public_ip = ec2_instance_data(stackname).ip_address
+    pdata = project_data_for_stackname(stackname)
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
 

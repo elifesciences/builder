@@ -94,7 +94,8 @@ bad-functions=
 # _=necessary to unpack but unused
 # fn=function
 # dt=datetime
-good-names=i,j,k,x,y,z,n,k,v,fn,dt,_
+# e=exception
+good-names=i,j,k,x,y,z,n,k,v,fn,dt,e,_
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,bup

@@ -90,6 +90,14 @@ def boto_ec2_conn(region):
     return connect_aws('ec2', region)
 
 @cached
+def boto_sns_conn(region):
+    return connect_aws('sns', region)
+
+@cached
+def boto_sqs_conn(region):
+    return connect_aws('sqs', region)
+
+@cached
 def connect_aws_with_pname(pname, service):
     "convenience"
     pdata = project.project_data(pname)
@@ -159,19 +167,17 @@ def mk_stackname(*bits):
     return "--".join(map(slugify, filter(None, bits)))
 
 #TODO: test these functions
-def parse_stackname(stackname):
-    "returns a pair of project and cluster id"
+def parse_stackname(stackname, all_bits=False):
+    "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
     if not stackname or not isinstance(stackname, basestring):
-        raise ValueError("stackname must look like <pname>--<cluster-id>, got: %r" % str(stackname))
-    pname = cluster_id = None
-    bits = stackname.split('--')
-    # if len(bits) != 2:
-    # for backward compatibility let's accept 3 bits for existing machine
-    # in order to still be able to access them through ssh
+        raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
+    pname = instance_id = None
+    # https://docs.python.org/2/library/stdtypes.html#str.split
+    bits = stackname.split('--',  -1 if all_bits else 1)
     if len(bits) == 1:
         raise ValueError("could not parse given stackname %r" % stackname)
     return bits
-        
+
 def project_name_from_stackname(stackname):
     "returns just the project name from the given stackname"
     return first(parse_stackname(stackname))
@@ -180,8 +186,8 @@ def is_master_server_stack(stackname):
     return 'master-server--' in str(stackname)
 
 def is_prod_stack(stackname):
-    pname, cluster = parse_stackname(stackname)
-    return cluster in ['master', 'prod']
+    _, instance_id = parse_stackname(stackname)
+    return instance_id in ['master', 'prod']
 
 
 #
@@ -384,7 +390,7 @@ def hostname_struct(stackname):
     "returns a dictionary with convenient domain name information"
     # wrangle hostname data
 
-    pname, cluster = parse_stackname(stackname)
+    pname, instance_id = parse_stackname(stackname)
     pdata = project.project_data(pname)
     domain = pdata.get('domain')
     intdomain = pdata.get('intdomain')
@@ -410,7 +416,7 @@ def hostname_struct(stackname):
         return struct
 
     # removes any non-alphanumeric or hyphen characters
-    subsubdomain = re.sub(r'[^\w\-]', '', cluster)
+    subsubdomain = re.sub(r'[^\w\-]', '', instance_id)
     hostname = subsubdomain + "--" + subdomain
 
     updates = {

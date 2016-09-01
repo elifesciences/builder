@@ -13,8 +13,11 @@
     ], 
     "aws": {
         "ami": "ami-111111", 
+        "ec2": true,
         "type": "t2.small", 
         "region": "us-east-1", 
+        "sns": [],
+        "sqs": [],
         "vpc-id": "vpc-0a0a0a0a", 
         "subnet-id": "subnet-191919191", 
         "subnet-cidr": "172.31.16.0/20", 
@@ -25,8 +28,11 @@
     "aws-alt": {
         "fresh": {
             "ami": "ami-9eaa1cf6", 
+            "ec2": true,
             "type": "t2.small", 
             "region": "us-east-1", 
+            "sns": [],
+            "sqs": [],
             "vpc-id": "vpc-0a0a0a0a", 
             "subnet-id": "subnet-191919191", 
             "subnet-cidr": "172.31.16.0/20", 
@@ -37,8 +43,11 @@
         }, 
         "alt-config1": {
             "ami": "ami-111111", 
+            "ec2": true,
             "type": "t2.small", 
             "region": "us-east-1", 
+            "sns": [],
+            "sqs": [],
             "vpc-id": "vpc-0a0a0a0a", 
             "subnet-id": "subnet-191919191", 
             "subnet-cidr": "172.31.16.0/20", 

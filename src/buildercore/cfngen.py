@@ -17,10 +17,10 @@ A developer wants a temporary instance deployed for testing or debugging.
 """
 
 import os, json, base64, copy
+from os.path import join
 from slugify import slugify
-from . import utils, trop, core, config, project
-from .config import STACK_DIR
-from .decorators import osissue, osissuefn
+from . import utils, trop, core, project
+from .config import STACK_DIR, CONTEXT_DIR, CONTEXT_PATH
 
 import logging
 
@@ -45,56 +45,85 @@ def build_context(pname, **more_context):
         'author': os.environ.get("LOGNAME") or os.getlogin(),
         'date_rendered': utils.ymd(),
 
-        # when this was first introduced, instance_id was synonmous with stackname
-        'instance_id': None, # must be provided by whatever is calling this
+        # a stackname looks like: <pname>--<instance_id>[--<cluster-id>]
+        'stackname': None, # must be provided by whatever is calling this
+        'instance_id': None, # derived from the stackname
+        'cluster_id': None, # derived from the stackname
 
-
-        'branch': project_data['default-branch'],
+        'branch': project_data.get('default-branch'),
         'revision': None, # may be used in future to checkout a specific revision of project
+        'rds_dbname': None, # generated from the instance_id when present
+        'rds_username': None, # could possibly live in the project data, but really no need.
+        'rds_password': None,
+        'rds_instance_id': None,
+        'ec2': False,
+        'sns': [],
+        'sqs': {},
+        'ext': None
     }
-
-    if 'rds' in project_data['aws']:
-        defaults['rds_dbname'] = None # generated from the instance_id
-        defaults['rds_username'] = 'root' # could possibly live in the project data, but really no need.
-        defaults['rds_password'] = utils.random_alphanumeric(length=32) # will be saved to buildvars.json
 
     context = copy.deepcopy(defaults)
     context.update(more_context)
 
-    assert context['instance_id'] != None, "an 'instance_id' wasn't provided."
-    stackname = context['instance_id']
+    assert context['stackname'] != None, "a stackname wasn't provided."
+    stackname = context['stackname']
 
-    # alpha-numeric only
-    # TODO: investigate possibility of ambiguous RDS naming here
-    default_rds_dbname = slugify(stackname, separator="")
+    # stackname data
+    bit_keys = ['project_name', 'instance_id', 'cluster_id']
+    bits = dict(zip(bit_keys, core.parse_stackname(stackname, all_bits=True)))
+    assert bits['project_name'] == pname, \
+      "the project name derived from the `stackname` doesn't match the given project name"
+    context.update(bits)
 
     # hostname data
     context.update(core.hostname_struct(stackname))
-    
+
     # post-processing
     if context['project']['aws'].has_key('rds'):
+        default_rds_dbname = slugify(stackname, separator="")
+        # alpha-numeric only
+        # TODO: investigate possibility of ambiguous RDS naming here
         context.update({
+            'rds_username': 'root',
+            'rds_password': utils.random_alphanumeric(length=32), # will be saved to build-vars.json
             'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
             'rds_instance_id': slugify(stackname), # *completely* different to database name
         })
+
+    if context['project']['aws'].has_key('ext'):
+        context['ext'] = context['project']['aws']['ext']
 
     # is this a production instance? if yes, then we'll do things like tweak the dns records ...
     context.update({
         'is_prod_instance': core.is_prod_stack(stackname),
     })
-    if 'rds' in project_data['aws']:
-        context.update({
-            'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
-            'rds_instance_id': slugify(stackname), # *completely* different to database name
-        })
 
-    # the above context will reside on the server at /etc/build_vars.json.b64
+    #context['ec2'] = True if context['project']['aws']['ec2'] else False
+    context['ec2'] = context['project']['aws'].get('ec2', True)
+    # the above context will reside on the server at /etc/build-vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
     # part of the bootstrap process writes a file called /etc/cfn-info.json
     # this gives Salt the outputs available at stack creation
-    context['build_vars'] = base64.b64encode(json.dumps(context))
+    context['build_vars'] = base64.b64encode(json.dumps(context)) if context['project']['aws']['ec2'] else None
+
+    def _parameterize(string):
+        return string.format(instance=context['instance_id'])
+    
+    for topic_template_name in context['project']['aws']['sns']:
+        topic_name = _parameterize(topic_template_name)
+        context['sns'].append(topic_name)
+
+    for queue_template_name in context['project']['aws']['sqs']:
+        queue_name = _parameterize(queue_template_name)
+        queue_configuration = context['project']['aws']['sqs'][queue_template_name]
+        subscriptions = []
+        if 'subscriptions' in queue_configuration:
+            for topic_template_name in queue_configuration['subscriptions']:
+                subscriptions.append(_parameterize(topic_template_name))
+        context['sqs'][queue_name] = subscriptions
 
     return context
+
 
 #
 #
@@ -112,6 +141,15 @@ def write_template(stackname, contents):
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
+
+def write_context(stackname, contents):
+    output_fname = os.path.join(CONTEXT_DIR, stackname + ".json")
+    open(output_fname, 'w').write(contents)
+    return output_fname
+
+def context(stackname):
+    with open(join(CONTEXT_PATH, stackname + '.json'), 'r') as context_file:
+        return json.load(context_file)
 
 def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
@@ -139,11 +177,11 @@ def validate_project(pname, **extra):
     pdata = project.project_data(pname)
     altconfig = None
     try:
-        resp = validate_aws_template(pname, template)
+        validate_aws_template(pname, template)
         more_validation(template)
         # validate all alternative configurations
         for altconfig in pdata.get('aws-alt', {}).keys():
-            LOG.info('validating %s, %s' % (pname, altconfig))
+            LOG.info('validating %s, %s', pname, altconfig)
             extra = {
                 'alt-config': altconfig
             }
@@ -156,22 +194,17 @@ def validate_project(pname, **extra):
         LOG.error(msg)
         return False
 
-    except:
-        msg = "unhandled fail:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
-        LOG.exception(msg)
-        return False
-
     return True
 
 #
 # 
 #
 
-def quick_render(project, **more_context):
+def quick_render(project_name, **more_context):
     "generates a representative Cloudformation template for given project with dummy values"
     # set a dummy instance id if one hasn't been set.
-    more_context['instance_id'] = more_context.get('instance_id', project + '--dummy')
-    context = build_context(project, **more_context)
+    more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
+    context = build_context(project_name, **more_context)
     return render_template(context)
 
 #
@@ -183,6 +216,7 @@ def generate_stack(pname, **more_context):
     stack file, writes it to file and returns a pair of (context, stackfilename)"""
     context = build_context(pname, **more_context)
     template = render_template(context)
-    stackname = context['instance_id']
+    stackname = context['stackname']
     out_fname = write_template(stackname, template)
+    write_context(stackname, json.dumps(context))
     return context, out_fname

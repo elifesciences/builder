@@ -20,6 +20,7 @@ defaults:
     formula-dependencies:
         - https://github.com/example2/builder-base-formula
     aws:
+        ec2: true
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
@@ -45,9 +46,12 @@ defaults:
                 - subnet-foo
                 - subnet-bar
         ext:
+            # ext defaults only used if an `ext` section present in project
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        sns: []
+        sqs: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

@@ -18,7 +18,7 @@ def ami_name(stackname):
 def create_ami(stackname):
     "creates an AMI from the running stack"
     with core.stack_conn(stackname):
-        bootstrap.prep_stack()
+        bootstrap.prep_ec2_instance()
     ec2 = core.find_ec2_instance(stackname)[0]
     kwargs = {
         'instance_id': ec2.id,

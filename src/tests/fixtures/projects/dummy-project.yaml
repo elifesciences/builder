@@ -21,6 +21,7 @@ defaults:
     formula-dependencies:
         - https://github.com/example/builder-base-formula
     aws:
+        ec2: true
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
@@ -46,9 +47,12 @@ defaults:
                 - subnet-foo
                 - subnet-bar
         ext:
+            # ext defaults only used if an `ext` section present in project
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        sns: []
+        sqs: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -124,3 +128,28 @@ dummy3:
                 storage: 15
             ext:
                 size: 200
+
+just-some-sns:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2: false
+        sns: 
+            - widgets-{instance}
+
+project-with-sqs:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2: false
+        sqs: 
+            project-with-sqs-incoming-{instance}: 
+                subscriptions:
+                    - widgets-{instance}
+
+project-with-ext:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ports:
+            - 80
+        ext: 
+            size: 200
+

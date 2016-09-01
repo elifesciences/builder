@@ -14,7 +14,7 @@ class TestBuildercoreTrop(base.BaseCase):
 
     def test_rds_template_contains_rds(self):
         extra = {
-            'instance_id': 'dummy3--test',
+            'stackname': 'dummy3--test',
             'alt-config': 'alt-config1'
         }
         context = cfngen.build_context('dummy3', **extra)
@@ -24,3 +24,57 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = json.loads(trop.render(context))
         self.assertTrue(isinstance(utils.lu(data, 'Resources.AttachedDB'), dict))
+
+    def test_sns_template(self):
+        extra = {
+            'stackname': 'just-some-sns--prod',
+        }
+        context = cfngen.build_context('just-some-sns', **extra)
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        self.assertEqual(['WidgetsProdTopic'], data['Resources'].keys())
+        self.assertEqual(
+            {'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}}, 
+            data['Resources']['WidgetsProdTopic']
+        )
+        self.assertEqual(['WidgetsProdTopicArn'], data['Outputs'].keys())
+        self.assertEqual(
+            {'Value': {'Ref': 'WidgetsProdTopic'}}, 
+            data['Outputs']['WidgetsProdTopicArn']
+        )
+
+    def test_sqs_template(self):
+        extra = {
+            'stackname': 'project-with-sqs--prod',
+        }
+        context = cfngen.build_context('project-with-sqs', **extra)
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        self.assertEqual(['ProjectWithSqsIncomingProdQueue'], data['Resources'].keys())
+        self.assertEqual(
+            {'Type': 'AWS::SQS::Queue', 'Properties': {'QueueName': 'project-with-sqs-incoming-prod'}}, 
+            data['Resources']['ProjectWithSqsIncomingProdQueue']
+        )
+        self.assertEqual(['ProjectWithSqsIncomingProdQueueArn'], data['Outputs'].keys())
+        self.assertEqual(
+            {'Value': {'Fn::GetAtt': ['ProjectWithSqsIncomingProdQueue', 'Arn']}},
+            data['Outputs']['ProjectWithSqsIncomingProdQueueArn']
+        )
+
+    def test_ext_template(self):
+        extra = {
+            'stackname': 'project-with-ext--prod',
+        }
+        context = cfngen.build_context('project-with-ext', **extra)
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        self.assertIn('MountPoint', data['Resources'].keys())
+        self.assertIn('ExtraStorage', data['Resources'].keys())
+        self.assertEqual(
+            {
+                'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance', 'AvailabilityZone']},
+                'VolumeType': 'standard',
+                'Size': '200',
+            },
+            data['Resources']['ExtraStorage']['Properties']
+        )

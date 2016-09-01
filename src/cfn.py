@@ -1,16 +1,15 @@
 from distutils.util import strtobool
-from fabric.api import task, local, cd, settings, run, sudo, put, get, abort
+from fabric.api import task, local, settings, run, sudo, put, get, abort
+from fabric.api import task, local, settings, run, sudo, put, get, abort
 from fabric.contrib import files
-from fabric.contrib.console import confirm
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
-import os
-from os.path import join
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
 from distutils.util import strtobool
+import os
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -55,13 +54,13 @@ def update_master():
     return bootstrap.update_stack(core.find_master(aws.find_region()))
 
 @requires_project
-def create_stack(pname, instance_id=None):
-    """creates a new CloudFormation template for the given project."""
+def generate_stack_from_input(pname, instance_id=None):
+    """creates a new CloudFormation file for the given project."""
     if not instance_id:
         default_instance_id = core_utils.ymd()
         instance_id = utils.uin("instance id", default_instance_id)
     stackname = core.mk_stackname(pname, instance_id)
-    more_context = {'instance_id': stackname}
+    more_context = {'stackname': stackname}
 
     # prompt user for alternate configurations
     pdata = project.project_data(pname)
@@ -79,20 +78,12 @@ def create_stack(pname, instance_id=None):
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
-def create_update(stackname):
-    if not core.stack_is_active(stackname):
-        print 'stack does not exist, creating'
-        bootstrap.create_stack(stackname)
-    print 'updating stack'
-    bootstrap.update_stack(stackname)
-    return stackname
-
 # these aliases are deprecated
 @task(alias='aws_launch_instance')
 @requires_project
 def launch(pname, instance_id=None):
     try:
-        stackname = create_stack(pname, instance_id)
+        stackname = generate_stack_from_input(pname, instance_id)
         pdata = core.project_data_for_stackname(stackname)
 
         print 'attempting to create stack:'
@@ -108,9 +99,8 @@ def launch(pname, instance_id=None):
                 print
                 return
         
-        stackname = create_update(stackname)        
-        if stackname:
-            setdefault('.active-stack', stackname)
+        bootstrap.create_update(stackname)        
+        setdefault('.active-stack', stackname)
     except core.NoMasterException, e:
         LOG.warn(e.message)
         print "\n%s\ntry `./bldr master.create`'" % e.message
@@ -210,8 +200,8 @@ def cmd(stackname, command=None):
 def project_list():
     for org, plist in project.org_project_map().items():
         print org
-        for p in plist:
-            print '  ',p
+        for project_name in plist:
+            print '  ', project_name
         print 
 
 @task

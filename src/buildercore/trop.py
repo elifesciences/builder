@@ -9,11 +9,13 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing 
 it to the correct file etc."""
 
+import re
 from . import utils
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, Base64, route53, Parameter
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
+
 from functools import partial
 import logging
-from .decorators import osissue, osissuefn
+from .decorators import osissuefn
 from .utils import first
 
 LOG = logging.getLogger(__name__)
@@ -67,9 +69,13 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    return security_group(SECURITY_GROUP_TITLE, \
-       context['project']['aws']['vpc-id'],
-       context['project']['aws']['ports']) # list of strings or dicts
+    assert 'ports' in context['project']['aws'], "Missing `ports` configuration in `aws` for '%s'" % context['stackname']
+
+    return security_group(
+        SECURITY_GROUP_TITLE,
+        context['project']['aws']['vpc-id'],
+        context['project']['aws']['ports']
+    ) # list of strings or dicts
 
 def rds_security(context):
     "returns a security group for the rds instance. this security group only allows access within the subnet"
@@ -90,7 +96,7 @@ def rds_security(context):
 
 def instance_tags(context):
     return [
-        ec2.Tag('Name', context['instance_id']),
+        ec2.Tag('Name', context['stackname']),
         ec2.Tag('Owner', context['author']),
         ec2.Tag('Project', context['project_name']),
     ]
@@ -115,7 +121,7 @@ def mkoutput(title, desc, val):
         val = GetAtt(val[0], val[1])
     return Output(title, Description=desc, Value=val)
 
-def outputs():
+def _ec2_outputs():
     # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html
     return [
         mkoutput("AZ", "Availability Zone of the newly created EC2 instance", ("EC2Instance", "AvailabilityZone")),
@@ -168,15 +174,14 @@ def rdsinstance(context):
     rdbi = rds.DBInstance(RDS_TITLE, **data)
     return rsn, rdbi, vpcdbsg
 
-def ext_volume(context):
-    lu = partial(utils.lu, context)
-    vtype = lu('project.ext.type', default='standard')
+def ext_volume(context_ext):
+    vtype = context_ext.get('type', 'standard')
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
     if vtype == 'ssd':
         vtype = 'gp2'
     
     args = {
-        "Size": str(lu('project.aws.ext.size')),
+        "Size": str(context_ext['size']),
         "AvailabilityZone": GetAtt(EC2_TITLE, "AvailabilityZone"),
         "VolumeType": vtype,
     }
@@ -185,7 +190,7 @@ def ext_volume(context):
     args = {
         "InstanceId": Ref(EC2_TITLE),
         "VolumeId": Ref(ec2v),
-        "Device": lu('project.aws.ext.device'),
+        "Device": context_ext['device'],
     }
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE, **args)
     return ec2v, ec2va
@@ -220,28 +225,50 @@ def internal_dns(context):
     
 
 def render(context):
-    secgroup = ec2_security(context)
-    instance = ec2instance(context)
-
     template = Template()
-    template.add_resource(secgroup)
-    template.add_resource(instance)
+    cfn_outputs = []
 
-    keyname = template.add_parameter(Parameter(KEYPAIR, **{
-        "Type": "String",
-        "Description": "EC2 KeyPair that enables SSH access to this instance",
-    }))
-    
-    cfn_outputs = outputs()
+    if context['ec2']:
+        secgroup = ec2_security(context)
+        instance = ec2instance(context)
 
-    if context['project']['aws'].has_key('rds'):
+        template.add_resource(secgroup)
+        template.add_resource(instance)
+
+        template.add_parameter(Parameter(KEYPAIR, **{
+            "Type": "String",
+            "Description": "EC2 KeyPair that enables SSH access to this instance",
+        }))
+        cfn_outputs.extend(_ec2_outputs())
+
+    if context['rds_instance_id']:
         map(template.add_resource, rdsinstance(context))
         cfn_outputs.extend([
             mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
             mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),])
     
-    if context['project']['aws'].has_key('ext'):
-        map(template.add_resource, ext_volume(context))
+    if context['ext']:
+        map(template.add_resource, ext_volume(context['ext']))
+
+    for topic_name in context['sns']:
+        topic = template.add_resource(sns.Topic(
+            _sanitize_title(topic_name) + "Topic",
+            TopicName=topic_name
+        ))
+        template.add_output(Output(
+            _sanitize_title(topic_name) + "TopicArn",
+            Value=Ref(topic)
+        ))
+
+    for queue_name in context['sqs']:
+        queue = template.add_resource(sqs.Queue(
+            _sanitize_title(queue_name) + "Queue", 
+            QueueName=queue_name
+        ))
+        template.add_output(Output(
+            _sanitize_title(queue_name) + "QueueArn",
+            Value=GetAtt(queue, "Arn")
+        ))
 
     if context['full_hostname']:
         template.add_resource(external_dns(context))
@@ -257,3 +284,6 @@ def render(context):
 
     map(template.add_output, cfn_outputs)
     return template.to_json()
+
+def _sanitize_title(string):
+    return "".join(map(str.capitalize, string.split("-")))

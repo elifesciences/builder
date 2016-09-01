@@ -39,16 +39,18 @@ TEMP_PATH = "/tmp/"
 CFN = ".cfn"
 
 STACK_DIR = join(CFN, "stacks") # ll: ./.cfn/stacks
+CONTEXT_DIR = join(CFN, "contexts") # ll: ./.cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
 KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/
+CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # ll: /.../cfn/contexts/
 KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # ll: /.../cfn/keypairs/
 SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # ll: /.../scripts/
 
 # create all necessary paths and ensure they are writable
-map(utils.mkdir_p, [TEMP_PATH, STACK_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
+map(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
 
 ## logging
 
@@ -167,3 +169,4 @@ def app(settings_path=None):
 
 def feature_enabled(feature):
     return app().get(feature, False)
+

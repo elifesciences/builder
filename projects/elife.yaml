@@ -21,6 +21,10 @@ defaults:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
+        # TODO: this field will become a dictionary of all EC2-related configuration
+        # for now it is just a boolean, indicating whether the project has
+        # an EC2 instance attached. By default, it has one
+        ec2: true
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
         region: us-east-1
@@ -47,10 +51,14 @@ defaults:
                 - subnet-8eea67d7 # elife-dbsubnet-1
                 - subnet-dbc471f0 # elife-dbsubnet-2
 
+        # TODO: this will be moved inside aws.ec2
         ext:
+            # ext defaults only used if an `ext` section present in project
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        sqs: []
+        sns: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -380,3 +388,48 @@ search:
         ports:
             - 22
             - 80
+
+bus:
+    default-branch: null
+    domain: null
+    int_domain: null
+    aws:
+        ec2: false
+        sns:
+            # bus-articles-prod, bus-articles-end2end, etc.
+            - bus-articles--{instance}
+            - bus-podcast-episodes--{instance}
+            - bus-subjects--{instance}
+            - bus-people--{instance}
+            - bus-collections--{instance}
+            - bus-events--{instance}
+            - bus-interviews--{instance}
+            - bus-blog-articles--{instance}
+            - bus-annual-reports--{instance}
+
+search:
+    domain: False
+    subdomain: search
+    repo: https://github.com/elifesciences/search
+    formula-repo: https://github.com/elifesciences/search-formula
+    vagrant:
+        ram: 1024
+        ports:
+            1244: 80
+    aws:
+        type: t2.small # 2 GB of RAM: once we know more about which software
+                       # will be installed, we can choose the right machine
+        ports:
+            - 22
+            - 80
+        sqs:
+            # search-prod, search-end2end, etc.
+            search-{instance}:
+                subscriptions:
+                    - bus-articles--{instance}
+                    - bus-podcast-episodes--{instance}
+                    - bus-subjects--{instance}
+                    - bus-collections--{instance}
+                    - bus-events--{instance}
+                    - bus-interviews--{instance}
+                    - bus-blog-articles--{instance}
