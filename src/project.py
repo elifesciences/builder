@@ -1,6 +1,7 @@
 from fabric.api import task, local, cd, settings, run, sudo, put, get, abort
 from buildercore import project, utils as core_utils
 from decorators import requires_project, echo_output
+import utils
 
 @task
 @requires_project
@@ -14,3 +15,10 @@ def data(pname, output_format=None):
     }
     formatter = formatters.get(output_format)
     return formatter(project.project_data(pname))
+
+@task
+def new():
+    "creates a new project formula"
+    pname = utils.uin('project name')
+    assert pname not in project.project_list(), "that project name already exists"
+    local('./scripts/new-project.sh %s' % pname)
