@@ -20,5 +20,5 @@ def data(pname, output_format=None):
 def new():
     "creates a new project formula"
     pname = utils.uin('project name')
-    assert pname not in project.project_list(), "that project name already exists"
+    #assert pname not in project.project_list(), "that project name already exists"
     local('./scripts/new-project.sh %s' % pname)
