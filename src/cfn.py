@@ -210,9 +210,3 @@ def project_list():
 def project_config(pname):
     return core_utils.remove_ordereddict(project.project_data(pname))
 
-@task
-@requires_aws_stack
-def repair_cfn_info(stackname):
-    with stack_conn(stackname):
-        bootstrap.write_environment_info(stackname, overwrite=True)
-

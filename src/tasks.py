@@ -6,7 +6,7 @@ that has no home."""
 import os
 from os.path import join
 import requests
-from buildercore import core, cfngen, config, project
+from buildercore import core, cfngen, config, project, bootstrap
 from fabric.api import sudo, run, local, task
 from decorators import echo_output, requires_aws_stack, requires_project, debugtask
 from buildercore.core import stack_conn
@@ -165,3 +165,9 @@ def diff_builder_config():
     ]
     for paths in file_sets:
         local("meld " + " ".join(paths))
+
+@task
+@requires_aws_stack
+def repair_cfn_info(stackname):
+    with stack_conn(stackname):
+        bootstrap.write_environment_info(stackname, overwrite=True)
