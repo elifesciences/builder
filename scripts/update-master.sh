@@ -1,5 +1,5 @@
 #!/bin/bash
-# executed as ROOT on AWS only
+# executed as ROOT on AWS and Vagrant
 # called regularly to install/reset project formulas, update the master config
 # python logic lives in ./builder/src/remote_master.py
 
