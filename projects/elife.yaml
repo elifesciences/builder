@@ -170,6 +170,14 @@ elife-metrics:
             - 80
             - 5432
     aws-alt:
+        end2end:
+            description: end2end environment for metrics. RDS backed
+            rds:
+                storage: 5
+        prod:
+            description: production environment for metrics. RDS backed
+            rds:
+                storage: 5
         master:
             description: production environment for metrics. RDS backed
             rds:
