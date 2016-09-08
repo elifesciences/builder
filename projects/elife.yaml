@@ -292,6 +292,9 @@ elife-alfred:
             - 80
             - 443
             - 16022 # Jenkins SSH port
+        ext:
+            size: 30 # GB
+            type: gp2
     vagrant:
         ram: 4096
         ports:
