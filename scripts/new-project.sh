@@ -66,11 +66,11 @@ rm .README.template
         - $appname" > ./pillar/top.sls
 )
 
+# render the readme template
+sed -i "s/\$appname/$appname/g" README.md
+
 # init the repo
 git init
 git add .
 git ci -am "initial commit"
-
-# render the readme template
-sed -i "s/\$appname/$appname/g" README.md
 

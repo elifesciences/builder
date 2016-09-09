@@ -444,3 +444,26 @@ search:
                     - bus-events--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
+
+jats4r-validator:
+    #domain: jats4r.org
+    subdomain: validator # validator.jats4r.org
+    repo: https://github.com/jats4r/validator
+    formula-repo: https://github.com/elifesciences/jats4r-validator-formula
+    aws:
+        ports:
+            - 22
+            - 80
+            - 443
+    aws-alt:
+        end2end:
+            description: RDS backed
+            rds:
+                storage: 5
+        prod:
+            description: RDS backed
+            rds:
+                storage: 5
+    vagrant:
+        ports:
+            1239: 80
