@@ -453,16 +453,6 @@ jats4r-validator:
         ports:
             - 22
             - 80
-            - 443
-    aws-alt:
-        end2end:
-            description: RDS backed
-            rds:
-                storage: 5
-        prod:
-            description: RDS backed
-            rds:
-                storage: 5
     vagrant:
         ports:
             1239: 80
