@@ -170,6 +170,14 @@ elife-metrics:
             - 80
             - 5432
     aws-alt:
+        end2end:
+            description: end2end environment for metrics. RDS backed
+            rds:
+                storage: 5
+        prod:
+            description: production environment for metrics. RDS backed
+            rds:
+                storage: 5
         master:
             description: production environment for metrics. RDS backed
             rds:
@@ -284,6 +292,9 @@ elife-alfred:
             - 80
             - 443
             - 16022 # Jenkins SSH port
+        ext:
+            size: 30 # GB
+            type: gp2
     vagrant:
         ram: 4096
         ports:
@@ -433,3 +444,26 @@ search:
                     - bus-events--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
+
+jats4r-validator:
+    #domain: jats4r.org
+    subdomain: validator # validator.jats4r.org
+    repo: https://github.com/jats4r/validator
+    formula-repo: https://github.com/elifesciences/jats4r-validator-formula
+    aws:
+        ports:
+            - 22
+            - 80
+            - 443
+    aws-alt:
+        end2end:
+            description: RDS backed
+            rds:
+                storage: 5
+        prod:
+            description: RDS backed
+            rds:
+                storage: 5
+    vagrant:
+        ports:
+            1239: 80
