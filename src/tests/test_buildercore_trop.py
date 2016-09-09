@@ -12,6 +12,52 @@ class TestBuildercoreTrop(base.BaseCase):
     def tearDown(self):
         pass
 
+    def test_dns_template_contains_external_and_internal_dns(self):
+        extra = {
+            'stackname': 'dummy2--test',
+        }
+        context = cfngen.build_context('dummy2', **extra)
+
+        self.assertEqual(context['project_hostname'], "dummy2.example.org")
+        self.assertEqual(context['full_hostname'], "test--dummy2.example.org")
+        self.assertEqual(context['int_full_hostname'], "test--dummy2.example.internal")
+        cfn_template = trop.render(context)
+        data = json.loads(trop.render(context))
+
+        self.assertIn('ExtDNS', data['Resources'])
+        ext_dns = data['Resources']['ExtDNS']['Properties']
+        self.assertEqual(ext_dns['Name'], 'test--dummy2.example.org')
+        self.assertEqual(ext_dns['HostedZoneName'], 'example.org.')
+        self.assertEqual(ext_dns['Type'], 'A')
+
+        self.assertIn('IntDNS', data['Resources'])
+        int_dns = data['Resources']['IntDNS']['Properties']
+        self.assertEqual(int_dns['Name'], 'test--dummy2.example.internal')
+        self.assertEqual(int_dns['HostedZoneName'], 'example.internal.')
+        self.assertEqual(int_dns['Type'], 'A')
+
+    def test_production_dns_template_has_a_canonical_and_a_consistent_hostname(self):
+        extra = {
+            'stackname': 'dummy2--prod',
+        }
+        context = cfngen.build_context('dummy2', **extra)
+
+        self.assertEqual(context['project_hostname'], "dummy2.example.org")
+        self.assertEqual(context['full_hostname'], "prod--dummy2.example.org")
+
+        cfn_template = trop.render(context)
+        data = json.loads(trop.render(context))
+
+        self.assertIn('ExtDNS', data['Resources'])
+        ext_dns = data['Resources']['ExtDNS']['Properties']
+        self.assertEqual(ext_dns['Name'], 'prod--dummy2.example.org')
+
+        self.assertIn('ExtDNSProd', data['Resources'])
+        ext_dns = data['Resources']['ExtDNSProd']['Properties']
+        self.assertEqual(ext_dns['Name'], 'dummy2.example.org')
+
+        self.assertEqual(data['Outputs']['DomainName']['Value'], {'Ref': 'ExtDNSProd'})
+
     def test_rds_template_contains_rds(self):
         extra = {
             'stackname': 'dummy3--test',
