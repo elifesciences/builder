@@ -178,6 +178,14 @@ def parse_stackname(stackname, all_bits=False):
         raise ValueError("could not parse given stackname %r" % stackname)
     return bits
 
+def stackname_parseable(stackname):
+    "returns true if the given stackname can be parsed"
+    try:
+        parse_stackname(stackname)
+        return True
+    except ValueError:
+        return False
+
 def project_name_from_stackname(stackname):
     "returns just the project name from the given stackname"
     return first(parse_stackname(stackname))
@@ -303,8 +311,11 @@ def active_aws_project_stacks(pname):
     fn = lambda t: project_name_from_stackname(first(t)) == pname
     return filter(fn, active_aws_stacks(region))
 
-def stack_names(stack_list):
-    return sorted(map(first, stack_list))
+def stack_names(stack_list, only_parseable=True):
+    results = sorted(map(first, stack_list))
+    if only_parseable:
+        return filter(stackname_parseable, results)
+    return results
 
 def active_stack_names(region):
     "convenience. returns names of all active stacks"
