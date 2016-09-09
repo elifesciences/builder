@@ -14,7 +14,7 @@ from functools import wraps
 import boto
 from boto.exception import BotoServerError
 from contextlib import contextmanager
-from fabric.api import settings
+from fabric.api import settings, execute
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -111,14 +111,23 @@ def connect_aws_with_stack(stackname, service):
     return connect_aws_with_pname(pname, service)
 
 def find_ec2_instance(stackname):
-    "returns ec2 instance data for a *specific* stackname"
+    "returns list of ec2 instances data for a *specific* stackname"
     # filters: http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-    kwargs = {
+    filter_by_cluster = {
         'filters': {
             'tag:Cluster':[stackname],
             'instance-state-name': ['running']}}
+    filter_by_name = {
+        'filters': {
+            'tag:Name':[stackname],
+            'instance-state-name': ['running']}}
     # TODO: may need a fallback
-    return connect_aws_with_stack(stackname, 'ec2').get_only_instances(**kwargs)
+    conn = connect_aws_with_stack(stackname, 'ec2')
+    cluster_result = conn.get_only_instances(**filter_by_cluster)
+    if cluster_result:
+        return cluster_result
+    else:
+        return conn.get_only_instances(**filter_by_name)
 
 def find_ec2_volume(stackname):
     ec2_data = find_ec2_instance(stackname)[0]
@@ -143,8 +152,10 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
 def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     if 'user' in kwargs:
         LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
-    data = stack_data(stackname)
+
+    data = stack_data(stackname, ensure_single_instance=True)
     public_ip = data['instance']['ip_address']
+
     params = {
         'user': username,
         'host_string': public_ip,
@@ -157,8 +168,10 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
             'key_filename': pem
         })
     params.update(kwargs)
+
     with settings(**params):
         yield
+
 
 #
 # stackname wrangling
@@ -234,26 +247,36 @@ def describe_stack(stackname):
     return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 
 # TODO: rename or something
-def stack_data(stackname):
+def stack_data(stackname, ensure_single_instance=False):
     """like `describe_stack`, but returns a dictionary with the Cloudformation 'outputs' 
-    indexed by key and ec2 data under the key 'instance'"""
+    indexed by key and ec2 data under the key 'instance'
+    
+    Returns a list if more than one result is found, but otherwise sticks
+    to a single dictionary for backward compatibility"""
     stack = describe_stack(stackname)
-    data = stack.__dict__
-    if data.has_key('outputs'):
-        data['indexed_output'] = {row.key: row.value for row in data['outputs']}
     try:
         # TODO: is there someway to go straight to the instance ID ?
         # a CloudFormation's outputs go stale! because we can't trust the data it
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
-        #inst_id = data['indexed_output']['InstanceId']
-        #inst = get_instance(inst_id)
+        # TODO: rename stacks to ec2s
         stacks = find_ec2_instance(stackname)
-        assert len(stacks) == 1, ("while looking for %s, found these stacks: %s" % (stackname, stacks))
-        inst = stacks[0]
-        data['instance'] = inst.__dict__
+        assert len(stacks) >= 1, ("while looking for %s, found no stacks" % stackname)
+        if len(stacks) == 1:
+            data = stack.__dict__
+            inst = stacks[0]
+            data['instance'] = inst.__dict__
+            return data
+        else:
+            data = []
+            for ec2 in stacks:
+                ec2_data = dict(stack.__dict__)
+                ec2_data['instance'] = ec2.__dict__
+                data.append(ec2_data)
+            if ensure_single_instance:
+                raise RuntimeError("Talking to multiple EC2 instances is not supported for this task yet: %s" % data)
+            return data
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
-    return data
 
 
 # DO NOT CACHE

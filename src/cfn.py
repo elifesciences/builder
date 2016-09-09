@@ -129,16 +129,17 @@ def aws_stack_list():
 @task
 @requires_aws_stack
 def ssh(stackname, username=DEPLOY_USER):
-    public_ip = core.stack_data(stackname)['instance']['ip_address']
+    public_ip = core.stack_data(stackname, ensure_single_instance=True)['instance']['ip_address']
     local("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
 def owner_ssh(stackname):
     "maintainence ssh. uses the pem key and the bootstrap user to login."
-    public_ip = core.stack_data(stackname)['instance']['ip_address']
+    public_ip = core.stack_data(stackname, ensure_single_instance=True)['instance']['ip_address']
     # -i identify file
     local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+
         
 @task
 @requires_aws_stack
@@ -193,6 +194,7 @@ def cmd(stackname, command=None):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
     with stack_conn(stackname):
+        print "Connecting to: %s" % stackname
         with settings(abort_on_prompts=True):
             run(command)
         
