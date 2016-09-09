@@ -53,7 +53,6 @@ defaults:
 
         # TODO: this will be moved inside aws.ec2
         ext:
-            # ext defaults only used if an `ext` section present in project
             # external hdd
             size: 10 # GB
             device: /dev/sdh
