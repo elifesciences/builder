@@ -433,3 +433,15 @@ search:
                     - bus-events--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
+
+observer:
+    subdomain: observer # observer.elifesciences.org
+    formula-repo: https://github.com/elifesciences/observer-formula
+    aws:
+        ports:
+            - 22
+            - 80
+            - 443
+    vagrant:
+        ports:
+            1245: 80
