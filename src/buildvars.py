@@ -32,8 +32,6 @@ def switch_revision(stackname, revision=None):
     if revision is None:
         revision = utils.uin('revision', None)
 
-    _ensure_revision_is_valid(revision)
-
     if 'revision' in bvars and revision == bvars['revision']:
         print 'FYI, the instance is already on that revision!'
         return
@@ -99,10 +97,6 @@ def _retrieve_build_vars(stackname):
     print
     return bvars
 
-def _ensure_revision_is_valid(revision):
-    if revision and not re.match('^[0-9a-f]+$', revision):
-        raise ValueError("'%s' is not a valid revision" % revision)
-    
 def _update_remote_bvars(stackname, bvars):
     LOG.info('updating %r with new vars %r',stackname, bvars)
     assert core_utils.hasallkeys(bvars, ['branch']) #, 'revision']) # we don't use 'revision'
