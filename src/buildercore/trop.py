@@ -100,9 +100,11 @@ def instance_tags(context, node=None):
     else:
         name = context['stackname']
     return [
-        ec2.Tag('Name', name),
         ec2.Tag('Owner', context['author']),
+        # hierarchically ordered
         ec2.Tag('Project', context['project_name']),
+        ec2.Tag('Cluster', context['stackname']),
+        ec2.Tag('Name', name),
     ]
 
 def ec2instance(context, node):

@@ -115,8 +115,9 @@ def find_ec2_instance(stackname):
     # filters: http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
     kwargs = {
         'filters': {
-            'tag:Name':[stackname],
+            'tag:Cluster':[stackname],
             'instance-state-name': ['running']}}
+    # TODO: may need a fallback
     return connect_aws_with_stack(stackname, 'ec2').get_only_instances(**kwargs)
 
 def find_ec2_volume(stackname):
