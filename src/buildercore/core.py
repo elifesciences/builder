@@ -3,15 +3,12 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import os, glob, json, re, copy
+import os, glob, json, re
 from os.path import join
 from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .decorators import osissue, osissuefn, testme
-import decorators
-from .utils import first, second, dictfilter, lookup
-from collections import OrderedDict
-from functools import wraps
-import boto
+from buildercore import decorators
+from buildercore.decorators import testme
+from .utils import first, lookup
 from boto.exception import BotoServerError
 from contextlib import contextmanager
 from fabric.api import settings, execute
@@ -19,7 +16,6 @@ import importlib
 import logging
 from kids.cache import cache as cached
 from slugify import slugify
-import requests
 
 LOG = logging.getLogger(__name__)
 
@@ -203,7 +199,6 @@ def parse_stackname(stackname, all_bits=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
     if not stackname or not isinstance(stackname, basestring):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
-    pname = instance_id = None
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--',  -1 if all_bits else 1)
     if len(bits) == 1:
@@ -284,14 +279,14 @@ def stack_data(stackname, ensure_single_instance=False):
             data['instance'] = inst.__dict__
             return data
         else:
-            data = []
+            nodes = []
             for ec2 in ec2_instances:
                 ec2_data = dict(stack.__dict__)
                 ec2_data['instance'] = ec2.__dict__
-                data.append(ec2_data)
+                nodes.append(ec2_data)
             if ensure_single_instance:
-                raise RuntimeError("Talking to multiple EC2 instances is not supported for this task yet: %s" % data)
-            return data
+                raise RuntimeError("Talking to multiple EC2 instances is not supported for this task yet: %s" % nodes)
+            return nodes
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
 
@@ -320,8 +315,10 @@ def stack_triple(aws_stack):
 #
 
 @cached
-def aws_stacks(region, status=[], formatter=stack_triple):
+def aws_stacks(region, status=None, formatter=stack_triple):
     "returns *all* stacks, even stacks deleted in the last 90 days"
+    if not status:
+        status = []
     # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
     # use `.describe_stack` on specific stacks only
     results = boto_cfn_conn(region).list_stacks(status)
@@ -357,6 +354,7 @@ def steady_stack_names(region):
 
 class MultipleRegionsError(EnvironmentError):
     def __init__(self, regions):
+        super(MultipleRegionsError, self).__init__()
         self._regions = regions
 
     def regions(self):
@@ -383,12 +381,12 @@ def find_region(stackname=None):
     return region_list[0]
 
 @testme
-def _find_master(sl):
-    if len(sl) == 1:
+def _find_master(stacks):
+    if len(stacks) == 1:
         # first item (stackname) of first (and only) result
-        return first(first(sl))
+        return first(first(stacks))
     
-    msl = filter(lambda triple: is_master_server_stack(first(triple)), sl)
+    msl = filter(lambda triple: is_master_server_stack(first(triple)), stacks)
     msl = map(first, msl) # just stack names
     if len(msl) > 1:
         LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
@@ -400,10 +398,10 @@ def _find_master(sl):
 
 def find_master(region):
     "returns the most recent aws master-server it can find. assumes instances have YMD names"
-    sl = active_aws_stacks(region)
-    if not sl:
+    stacks= active_aws_stacks(region)
+    if not stacks:
         raise NoMasterException("no master servers found in region %r" % region)
-    return _find_master(sl)
+    return _find_master(stacks)
 
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
