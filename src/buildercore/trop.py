@@ -95,17 +95,18 @@ def rds_security(context):
 
 
 def instance_tags(context, node=None):
-    if node:
-        name = '%s--%d' % (context['stackname'], node)
-    else:
-        name = context['stackname']
-    return [
+    tags = [
         ec2.Tag('Owner', context['author']),
         # hierarchically ordered
         ec2.Tag('Project', context['project_name']),
         ec2.Tag('Cluster', context['stackname']),
-        ec2.Tag('Name', name),
     ]
+    if node:
+        tags.append(ec2.Tag('Name', '%s--%d' % (context['stackname'], node)))
+        tags.append(ec2.Tag('Node', '%s' % node))
+    else:
+        tags.append(ec2.Tag('Name', context['stackname']))
+    return tags
 
 def ec2instance(context, node):
     lu = partial(utils.lu, context)
