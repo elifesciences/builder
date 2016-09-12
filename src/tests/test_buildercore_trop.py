@@ -73,7 +73,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('ExtraStorage', data['Resources'].keys())
         self.assertEqual(
             {
-                'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance', 'AvailabilityZone']},
+                'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance1', 'AvailabilityZone']},
                 'VolumeType': 'standard',
                 'Size': '200',
             },
