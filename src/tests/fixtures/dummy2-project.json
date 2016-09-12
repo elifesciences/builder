@@ -13,7 +13,9 @@
     ], 
     "aws": {
         "ami": "ami-111111", 
-        "ec2": true,
+        "ec2": {
+            "cluster-size": 1
+        },
         "type": "t2.small", 
         "region": "us-east-1", 
         "sns": [],
@@ -47,7 +49,9 @@
     "aws-alt": {
         "fresh": {
             "ami": "ami-9eaa1cf6", 
-            "ec2": true,
+            "ec2": {
+                "cluster-size": 1
+            },
             "type": "t2.small", 
             "region": "us-east-1", 
             "sns": [],
@@ -81,7 +85,9 @@
         }, 
         "alt-config1": {
             "ami": "ami-22222", 
-            "ec2": true,
+            "ec2": {
+                "cluster-size": 1
+            },
             "type": "t2.small", 
             "region": "us-east-1", 
             "sns": [],

@@ -20,7 +20,8 @@ defaults:
     formula-dependencies:
         - https://github.com/example2/builder-base-formula
     aws:
-        ec2: true
+        ec2:
+            cluster-size: 1
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
