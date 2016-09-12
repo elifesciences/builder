@@ -276,17 +276,16 @@ def stack_data(stackname, ensure_single_instance=False):
         # TODO: is there someway to go straight to the instance ID ?
         # a CloudFormation's outputs go stale! because we can't trust the data it
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
-        # TODO: rename stacks to ec2s
-        stacks = find_ec2_instance(stackname)
-        assert len(stacks) >= 1, ("while looking for %s, found no stacks" % stackname)
-        if len(stacks) == 1:
+        ec2_instances = find_ec2_instance(stackname)
+        assert len(ec2_instances) >= 1, ("while looking for %s, found no ec2 instances" % stackname)
+        if len(ec2_instances) == 1:
             data = stack.__dict__
-            inst = stacks[0]
+            inst = ec2_instances[0]
             data['instance'] = inst.__dict__
             return data
         else:
             data = []
-            for ec2 in stacks:
+            for ec2 in ec2_instances:
                 ec2_data = dict(stack.__dict__)
                 ec2_data['instance'] = ec2.__dict__
                 data.append(ec2_data)
