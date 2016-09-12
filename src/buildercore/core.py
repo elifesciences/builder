@@ -121,7 +121,6 @@ def find_ec2_instance(stackname):
         'filters': {
             'tag:Name':[stackname],
             'instance-state-name': ['running']}}
-    # TODO: may need a fallback
     conn = connect_aws_with_stack(stackname, 'ec2')
     cluster_result = conn.get_only_instances(**filter_by_cluster)
     if cluster_result:
