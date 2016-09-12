@@ -4,7 +4,7 @@ from fabric.api import env, sudo, run, local, task, get, put, hide
 from StringIO import StringIO
 from decorators import echo_output, requires_aws_stack, debugtask
 from buildercore.core import stack_conn, project_name_from_stackname
-from buildercore import utils as core_utils, bootstrap
+from buildercore import utils as core_utils
 import base64, json
 import utils
 import re
@@ -18,12 +18,6 @@ class FabricException(Exception):
 
 env.abort_exception = FabricException
 
-@task
-@requires_aws_stack
-def switch_revision_update_instance(stackname, revision=None):
-    switch_revision(stackname, revision)
-    with stack_conn(stackname):
-        return bootstrap.run_script('highstate.sh')
 
 @debugtask
 @requires_aws_stack
@@ -46,16 +40,19 @@ def switch_revision(stackname, revision=None):
 def read(stackname):
     "returns the unencoded build variables found on given instance"
     with stack_conn(stackname):
-        # due to a typo we now have two types of file naming in existence
-        # prefer hyphenated over underscores
-        for fname in ['build-vars.json.b64', 'build_vars.json.b64']:
-            try:
-                fd = StringIO()
-                get(join('/etc/', fname), fd)
-                return _decode_bvars(fd.getvalue())
-            except FabricException, ex:
-                # file not found
-                continue
+        return read_from_current_host()
+
+def read_from_current_host():
+    # due to a typo we now have two types of file naming in existence
+    # prefer hyphenated over underscores
+    for fname in ['build-vars.json.b64', 'build_vars.json.b64']:
+        try:
+            fd = StringIO()
+            get(join('/etc/', fname), fd)
+            return _decode_bvars(fd.getvalue())
+        except FabricException, ex:
+            # file not found
+            continue
 
 @debugtask
 @requires_aws_stack

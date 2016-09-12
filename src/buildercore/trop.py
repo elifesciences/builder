@@ -9,6 +9,8 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing 
 it to the correct file etc."""
 
+import base64
+import json
 import re
 from . import utils
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
@@ -110,8 +112,13 @@ def instance_tags(context, node=None):
 
 def ec2instance(context, node):
     lu = partial(utils.lu, context)
-    node_context = dict(context)
-    node_context['cluster_node'] = node
+    build_vars = dict(context)
+    build_vars['node'] = node
+    build_vars['nodename'] = "%s--%s" % (context['stackname'], node)
+    # the above context will reside on the server at /etc/build-vars.json.b64
+    # this gives Salt all (most) of the data that was available at template compile time.
+    build_vars_serialization = base64.b64encode(json.dumps(build_vars))
+
     project_ec2 = {
         "ImageId": lu('project.aws.ami'),
         "InstanceType": lu('project.aws.type'), # t2.small, m1.medium, etc
@@ -121,7 +128,7 @@ def ec2instance(context, node):
         "Tags": instance_tags(context, node),
 
         "UserData": Base64("""#!/bin/bash
-echo %(build_vars)s > /etc/build-vars.json.b64""" % node_context),
+echo %s > /etc/build-vars.json.b64""" % build_vars_serialization),
     }
     return ec2.Instance(EC2_TITLE % node, **project_ec2)
 

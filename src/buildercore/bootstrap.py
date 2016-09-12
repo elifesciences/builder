@@ -19,6 +19,7 @@ from fabric.contrib import files
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
 from buildercore import cfngen
+import buildvars
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -188,7 +189,11 @@ def template_info(stackname):
 
 def write_environment_info(stackname, overwrite=False):
     """Looks for /etc/cfn-info.json and writes one if not found.
-    Must be called with an active stack connection."""
+    Must be called with an active stack connection.
+    
+    This gives Salt the outputs available at stack creation, but that were not
+    available at template compilation time.
+    """
     if not files.exists("/etc/cfn-info.json") or overwrite:
         LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
         infr_config = utils.json_dumps(template_info(stackname))
@@ -245,7 +250,12 @@ def update_ec2_stack(stackname):
         install_master_flag = str(is_master).lower() # ll: 'true' 
         master_ip = master(region, 'private_ip_address')
 
-        run_script('bootstrap.sh', salt_version, stackname, install_master_flag, master_ip)
+        build_vars = buildvars.read_from_current_host()
+        if 'nodename' in build_vars:
+            minion_id = build_vars['nodename']
+        else:
+            minion_id = stackname
+        run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
         if is_master:
             builder_private_repo = pdata['private-repo']
             run_script('init-master.sh', stackname, builder_private_repo)
