@@ -279,17 +279,19 @@ def render(context):
             Value=GetAtt(queue, "Arn")
         ))
 
-    if context['full_hostname']:
-        template.add_resource(external_dns(context))
-        cfn_outputs.extend([
-            mkoutput("DomainName", "Domain name of the newly created EC2 instance", Ref(R53_EXT_TITLE)),
-        ])
+    # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
+    if context['ec2']['cluster-size'] == 1:
+        if context['full_hostname']:
+            template.add_resource(external_dns(context))
+            cfn_outputs.extend([
+                mkoutput("DomainName", "Domain name of the newly created EC2 instance", Ref(R53_EXT_TITLE)),
+            ])
 
-    if context['int_full_hostname']:
-        template.add_resource(internal_dns(context))        
-        cfn_outputs.extend([
-            mkoutput("IntDomainName", "Domain name of the newly created EC2 instance", Ref(R53_INT_TITLE))
-        ])
+        if context['int_full_hostname']:
+            template.add_resource(internal_dns(context))        
+            cfn_outputs.extend([
+                mkoutput("IntDomainName", "Domain name of the newly created EC2 instance", Ref(R53_INT_TITLE))
+            ])
 
     map(template.add_output, cfn_outputs)
     return template.to_json()

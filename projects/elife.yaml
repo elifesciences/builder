@@ -371,10 +371,7 @@ jats4r:
 medium:
     description: microservice that gives access to eLife posts on Medium.com
     domain: False
-    subdomain: False
-    # TODO: we'll need a way to override this, move into aws 
-    # it's not like Vagrant has domains or subdomains
-    #subdomain: medium
+    subdomain: medium
     repo: https://github.com/elifesciences/medium
     formula-repo: https://github.com/elifesciences/medium-formula
     vagrant:
