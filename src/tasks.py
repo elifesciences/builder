@@ -10,10 +10,10 @@ from buildercore import core, cfngen, config, project, bootstrap
 from fabric.api import sudo, run, local, task
 from fabric.contrib.console import confirm
 from decorators import echo_output, requires_aws_stack, requires_project, debugtask
+from buildercore import bakery
 from buildercore.core import stack_conn
 import utils, aws
 from buildercore.decorators import osissue, osissuefn
-import bakery
 
 @debugtask
 @requires_project
