@@ -194,12 +194,9 @@ def cmd(stackname, command=None, username=DEPLOY_USER):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
     print "Connecting to: %s" % stackname
-    def command_work():
-        run(command)
     stack_all_ec2_nodes(
         stackname,
-        #TODO lambda: run(command)
-        command_work, 
+        lambda: run(command),
         username=username,
         abort_on_prompts=True)
         
