@@ -156,21 +156,40 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     data = stack_data(stackname, ensure_single_instance=True)
     public_ip = data['instance']['ip_address']
 
+    params = _ec2_connection_params(stackname, username)
+    params['host_string'] = public_ip
+
+    with settings(**params):
+        yield
+
+def stack_all_ec2_nodes(stackname, work, username=config.DEPLOY_USER, **kwargs):
+    """Executes work on all the EC2 nodes of stackname.
+    
+    Optionally connects with the specified username or with additional settings
+    from kwargs"""
+    data = stack_data(stackname, ensure_single_instance=False)
+    if not isinstance(data, list):
+        data = [data]
+    public_ips = [ec2_data['instance']['ip_address'] for ec2_data in data]
+    params = _ec2_connection_params(stackname, username)
+    with settings(**params):
+        # TODO: decorate work to print what it is connecting only
+        execute(work, hosts=public_ips)
+    
+def _ec2_connection_params(stackname, username, **kwargs):
     params = {
         'user': username,
-        'host_string': public_ip,
     }
+    pem = stack_pem(stackname)
     # doesn't hurt, handles cases where we want to establish a connection to run a task
     # when machine has failed to provision correctly.
-    pem = stack_pem(stackname)
     if os.path.exists(pem) and username == config.BOOTSTRAP_USER:
         params.update({
             'key_filename': pem
         })
     params.update(kwargs)
+    return params
 
-    with settings(**params):
-        yield
 
 
 #

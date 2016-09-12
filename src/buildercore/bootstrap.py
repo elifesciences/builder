@@ -10,7 +10,7 @@ from os.path import join
 from functools import partial
 from StringIO import StringIO
 from . import core, utils, config, keypair
-from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
+from .core import connect_aws_with_stack, stack_pem, stack_conn, stack_all_ec2_nodes, project_data_for_stackname
 from .utils import first
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put
@@ -101,7 +101,7 @@ def setup_ec2(stackname, context_ec2):
     if not context_ec2:
         return
 
-    with stack_conn(stackname, username=BOOTSTRAP_USER):
+    def _setup_ec2_node():
         def is_resourcing():
             try:
                 # we have an issue where the stack is created, however the security group
@@ -118,6 +118,8 @@ def setup_ec2(stackname, context_ec2):
                 return True
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
         prep_ec2_instance()
+
+    stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
 
 def setup_sqs(stackname, context_sqs, region):
@@ -227,7 +229,8 @@ def update_ec2_stack(stackname):
     is_master = core.is_master_server_stack(stackname)
 
     # forward-agent == ssh -A
-    with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
+
+    def _update_ec2_node():
         # upload private key if not present remotely
         if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
             # if it also doesn't exist on the filesystem, die horribly.
@@ -250,6 +253,8 @@ def update_ec2_stack(stackname):
 
         # this will tell the machine to update itself
         run_script('highstate.sh')
+
+    stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, forward_agent=True)
 
 @core.requires_stack_file
 def delete_stack_file(stackname):

@@ -5,7 +5,7 @@ from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
-from buildercore.core import stack_conn, stack_pem
+from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
 from distutils.util import strtobool
@@ -190,13 +190,18 @@ def _user(use_bootstrap_user):
 
 @task
 @requires_aws_stack
-def cmd(stackname, command=None):
+def cmd(stackname, command=None, username=DEPLOY_USER):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
-    with stack_conn(stackname):
-        print "Connecting to: %s" % stackname
-        with settings(abort_on_prompts=True):
-            run(command)
+    print "Connecting to: %s" % stackname
+    def command_work():
+        run(command)
+    stack_all_ec2_nodes(
+        stackname,
+        #TODO lambda: run(command)
+        command_work, 
+        username=username,
+        abort_on_prompts=True)
         
 @task
 def project_list():
