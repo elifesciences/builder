@@ -10,7 +10,7 @@ from os.path import join
 from functools import partial
 from StringIO import StringIO
 from . import core, utils, config, keypair
-from .core import connect_aws_with_stack, stack_pem, stack_conn, stack_all_ec2_nodes, project_data_for_stackname
+from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
 from .utils import first
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put
