@@ -4,7 +4,6 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import json
 import os
 from os.path import join
 from functools import partial
@@ -63,15 +62,18 @@ def create_stack(stackname):
 
     return _create_generic_stack(stackname, parameters, on_start, on_error)
 
-def _create_generic_stack(stackname, parameters=[], on_start=_noop, on_error=_noop):
+def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "simply creates the stack of resources on AWS, talking to CloudFormation."
+    if not parameters:
+        parameters = []
+
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
     try:
         on_start()
         conn = connect_aws_with_stack(stackname, 'cfn')
         conn.create_stack(stackname, stack_body, parameters=parameters)
-        _wait_for_stack_creation_to_complete(stackname)
+        _wait_until_in_progress(stackname)
         context = cfngen.context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
@@ -93,7 +95,7 @@ def _create_generic_stack(stackname, parameters=[], on_start=_noop, on_error=_no
         on_error()
         raise
 
-def _wait_for_stack_creation_to_complete(stackname):
+def _wait_until_in_progress(stackname):
     def is_updating(stackname):
         return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
     utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
