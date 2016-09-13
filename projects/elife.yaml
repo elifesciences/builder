@@ -142,6 +142,7 @@ journal:
             - 443
             - 80
     vagrant:
+        ram: 4096
         ports:
             1240: 80
 
