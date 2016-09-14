@@ -108,21 +108,15 @@ def connect_aws_with_stack(stackname, service):
 
 def find_ec2_instance(stackname):
     "returns list of ec2 instances data for a *specific* stackname"
-    # filters: http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
     filter_by_cluster = {
-        'filters': {
-            'tag:Cluster':[stackname],
-            'instance-state-name': ['running']}}
-    filter_by_name = {
-        'filters': {
-            'tag:Name':[stackname],
-            'instance-state-name': ['running']}}
+        'tag-key': ['Cluster', 'Name'],
+        'tag-value': [stackname],
+        'instance-state-name': ['running'],
+    }
     conn = connect_aws_with_stack(stackname, 'ec2')
-    cluster_result = conn.get_only_instances(**filter_by_cluster)
-    if cluster_result:
-        return cluster_result
-    else:
-        return conn.get_only_instances(**filter_by_name)
+    cluster_result = conn.get_only_instances(filters=filter_by_cluster)
+    return cluster_result
 
 def find_ec2_volume(stackname):
     ec2_data = find_ec2_instance(stackname)[0]
