@@ -136,34 +136,6 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
         raise EnvironmentError("keypair %r found at %r, not overwriting." % (stackname, expected_key))
     return expected_key
 
-@contextmanager
-def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
-    if 'user' in kwargs:
-        LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
-
-    data = stack_data(stackname, ensure_single_instance=True)
-    public_ip = data['instance']['ip_address']
-
-    params = _ec2_connection_params(stackname, username)
-    params['host_string'] = public_ip
-
-    with settings(**params):
-        yield
-
-def stack_all_ec2_nodes(stackname, work, username=config.DEPLOY_USER, **kwargs):
-    """Executes work on all the EC2 nodes of stackname.
-    
-    Optionally connects with the specified username or with additional settings
-    from kwargs"""
-    data = stack_data(stackname, ensure_single_instance=False)
-    if not isinstance(data, list):
-        data = [data]
-    public_ips = [ec2_data['instance']['ip_address'] for ec2_data in data]
-    params = _ec2_connection_params(stackname, username)
-    with settings(**params):
-        # TODO: decorate work to print what it is connecting only
-        execute(work, hosts=public_ips)
-    
 def _ec2_connection_params(stackname, username, **kwargs):
     params = {
         'user': username,
@@ -177,6 +149,30 @@ def _ec2_connection_params(stackname, username, **kwargs):
         })
     params.update(kwargs)
     return params
+
+@contextmanager
+def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
+    if 'user' in kwargs:
+        LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
+
+    data = stack_data(stackname, ensure_single_instance=True)
+    public_ip = data['instance']['ip_address']
+    params = _ec2_connection_params(stackname, username, host_string=public_ip)
+
+    with settings(**params):
+        yield
+
+def stack_all_ec2_nodes(stackname, work, username=config.DEPLOY_USER, **kwargs):
+    """Executes work on all the EC2 nodes of stackname.    
+    Optionally connects with the specified username or with additional settings
+    from kwargs"""
+    public_ips = [ec2['instance']['ip_address'] for ec2 in stack_data(stackname)]
+    params = _ec2_connection_params(stackname, username)
+
+    with settings(**params):
+        # TODO: decorate work to print what it is connecting only
+        execute(work, hosts=public_ips)
+    
 
 
 
@@ -265,21 +261,17 @@ def stack_data(stackname, ensure_single_instance=False):
         # a CloudFormation's outputs go stale! because we can't trust the data it
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
         ec2_instances = find_ec2_instance(stackname)
-        assert len(ec2_instances) >= 1, ("while looking for %s, found no ec2 instances" % stackname)
-        if len(ec2_instances) == 1:
+
+        assert len(ec2_instances) >= 1, ("found no ec2 instances for %r" % stackname)
+        if ensure_single_instance:
+            raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
+
+        def do(ec2):
             data = stack.__dict__
-            inst = ec2_instances[0]
-            data['instance'] = inst.__dict__
+            data['instance'] = ec2.__dict__
             return data
-        else:
-            nodes = []
-            for ec2 in ec2_instances:
-                ec2_data = dict(stack.__dict__)
-                ec2_data['instance'] = ec2.__dict__
-                nodes.append(ec2_data)
-            if ensure_single_instance:
-                raise RuntimeError("Talking to multiple EC2 instances is not supported for this task yet: %s" % nodes)
-            return nodes
+        return map(do, ec2_instances)
+
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
 
