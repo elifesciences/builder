@@ -1,11 +1,11 @@
 from os.path import join
-from buildercore import core
+from buildercore import core, bvars
 from fabric.api import env, sudo, run, local, task, get, put, hide
 from StringIO import StringIO
 from decorators import echo_output, requires_aws_stack, debugtask
 from buildercore.core import stack_conn, project_name_from_stackname
 from buildercore import utils as core_utils
-import base64, json
+import json
 import utils
 import re
 import logging
@@ -40,19 +40,7 @@ def switch_revision(stackname, revision=None):
 def read(stackname):
     "returns the unencoded build variables found on given instance"
     with stack_conn(stackname):
-        return read_from_current_host()
-
-def read_from_current_host():
-    # due to a typo we now have two types of file naming in existence
-    # prefer hyphenated over underscores
-    for fname in ['build-vars.json.b64', 'build_vars.json.b64']:
-        try:
-            fd = StringIO()
-            get(join('/etc/', fname), fd)
-            return _decode_bvars(fd.getvalue())
-        except FabricException, ex:
-            # file not found
-            continue
+        return bvars.read_from_current_host()
 
 @debugtask
 @requires_aws_stack
@@ -98,7 +86,7 @@ def _update_remote_bvars(stackname, bvars):
     LOG.info('updating %r with new vars %r',stackname, bvars)
     assert core_utils.hasallkeys(bvars, ['branch']) #, 'revision']) # we don't use 'revision'
     with stack_conn(stackname):
-        encoded = _encode_bvars(bvars)
+        encoded = bvars.encode_bvars(bvars)
         fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
         cmds = [
             # make a backup
@@ -124,9 +112,3 @@ def _bvarstype(bvars):
         # we have the huge dump of vars
         return FULL
     raise ValueError("unknown buildvars: %r" % bvars)
-
-def _decode_bvars(contents):
-    return json.loads(base64.b64decode(contents))
-
-def _encode_bvars(contents):
-    return base64.b64encode(json.dumps(contents))

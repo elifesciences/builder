@@ -3,7 +3,8 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import os, glob, json, re
+from StringIO import StringIO
+import os, glob, json, re, base64
 from os.path import join
 from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from buildercore import decorators
@@ -11,7 +12,7 @@ from buildercore.decorators import testme
 from .utils import first, lookup
 from boto.exception import BotoServerError
 from contextlib import contextmanager
-from fabric.api import settings, execute
+from fabric.api import settings, execute, get
 import importlib
 import logging
 from kids.cache import cache as cached

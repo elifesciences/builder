@@ -12,7 +12,7 @@ it to the correct file etc."""
 import base64
 import json
 import re
-from . import utils
+from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
 
 from functools import partial
@@ -121,7 +121,7 @@ def ec2instance(context, node):
     build_vars['nodename'] = "%s--%s" % (context['stackname'], node)
     # the above context will reside on the server at /etc/build-vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
-    build_vars_serialization = base64.b64encode(json.dumps(build_vars))
+    build_vars_serialization = bvars.encode_bvars(build_vars)
 
     project_ec2 = {
         "ImageId": lu('project.aws.ami'),

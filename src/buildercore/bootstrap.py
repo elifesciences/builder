@@ -9,7 +9,7 @@ import os
 from os.path import join
 from functools import partial
 from StringIO import StringIO
-from . import core, utils, config, keypair
+from . import core, utils, config, keypair, bvars
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
 from .utils import first
 from .config import BOOTSTRAP_USER
@@ -19,7 +19,6 @@ from fabric.contrib import files
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
 from buildercore import cfngen
-import buildvars
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -253,7 +252,7 @@ def update_ec2_stack(stackname):
         install_master_flag = str(is_master).lower() # ll: 'true' 
         master_ip = master(region, 'private_ip_address')
 
-        build_vars = buildvars.read_from_current_host()
+        build_vars = bvars.read_from_current_host()
         if 'nodename' in build_vars:
             minion_id = build_vars['nodename']
         else:
