@@ -98,18 +98,21 @@ def rds_security(context):
 
 
 def instance_tags(context, node=None):
-    tags = [
-        ec2.Tag('Owner', context['author']),
-        # hierarchically ordered
-        ec2.Tag('Project', context['project_name']),
-        ec2.Tag('Cluster', context['stackname']),
-    ]
+    # NOTE: RDS instances also call this function
+    tags = {
+        'Owner': context['author'],
+        'Project': context['project_name'], # journal
+        # the name AWS Console uses to label an instance
+        'Name': context['stackname'] # ll: journal-prod
+    }
     if node:
-        tags.append(ec2.Tag('Name', '%s--%d' % (context['stackname'], node)))
-        tags.append(ec2.Tag('Node', '%s' % node))
-    else:
-        tags.append(ec2.Tag('Name', context['stackname']))
-    return tags
+        # this instance is part of a cluster
+        tags.update({
+            'Name': '%s--%d' % (context['stackname'], node), # ll: journal--prod--1
+            'Cluster': context['stackname'], # ll: journal--prod
+            'Node': node, # ll: 1
+        })
+    return [ec2.Tag(key, value) for key, value in tags.items()]
 
 def ec2instance(context, node):
     lu = partial(utils.lu, context)
@@ -246,6 +249,7 @@ def render(context):
     cfn_outputs = []
 
     if context['ec2']:
+        # all ec2 nodes in a cluster share the same security group
         secgroup = ec2_security(context)
         template.add_resource(secgroup)
 
@@ -254,6 +258,7 @@ def render(context):
             template.add_resource(instance)
             cfn_outputs.extend(_ec2_outputs(node))
 
+        # all ec2 nodes in a cluster share the same keypair
         template.add_parameter(Parameter(KEYPAIR, **{
             "Type": "String",
             "Description": "EC2 KeyPair that enables SSH access to this instance",
@@ -268,23 +273,26 @@ def render(context):
     if context['ext']:
         map(template.add_resource, ext_volume(context['ext']))
 
+    def sanitize_title(string):
+        return "".join(map(str.capitalize, string.split("-")))
+        
     for topic_name in context['sns']:
         topic = template.add_resource(sns.Topic(
-            _sanitize_title(topic_name) + "Topic",
+            sanitize_title(topic_name) + "Topic",
             TopicName=topic_name
         ))
         template.add_output(Output(
-            _sanitize_title(topic_name) + "TopicArn",
+            sanitize_title(topic_name) + "TopicArn",
             Value=Ref(topic)
         ))
 
     for queue_name in context['sqs']:
         queue = template.add_resource(sqs.Queue(
-            _sanitize_title(queue_name) + "Queue", 
+            sanitize_title(queue_name) + "Queue", 
             QueueName=queue_name
         ))
         template.add_output(Output(
-            _sanitize_title(queue_name) + "QueueArn",
+            sanitize_title(queue_name) + "QueueArn",
             Value=GetAtt(queue, "Arn")
         ))
 
@@ -296,6 +304,7 @@ def render(context):
                 mkoutput("DomainName", "Domain name of the newly created EC2 instance", Ref(R53_EXT_TITLE)),
             ])
 
+        # ec2 nodes in a cluster DONT get an internal hostname
         if context['int_full_hostname']:
             template.add_resource(internal_dns(context))        
             cfn_outputs.extend([
@@ -305,5 +314,3 @@ def render(context):
     map(template.add_output, cfn_outputs)
     return template.to_json()
 
-def _sanitize_title(string):
-    return "".join(map(str.capitalize, string.split("-")))
