@@ -115,8 +115,7 @@ def find_ec2_instance(stackname):
         'instance-state-name': ['running'],
     }
     conn = connect_aws_with_stack(stackname, 'ec2')
-    cluster_result = conn.get_only_instances(filters=filter_by_cluster)
-    return cluster_result
+    return conn.get_only_instances(filters=filter_by_cluster)
 
 def find_ec2_volume(stackname):
     ec2_data = find_ec2_instance(stackname)[0]
