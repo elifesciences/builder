@@ -1,6 +1,6 @@
 from os.path import join
 from buildercore import core, bvars
-from fabric.api import env, sudo, run, local, task, get, put, hide
+from fabric.api import sudo, run, local, task, get, put, hide
 from StringIO import StringIO
 from decorators import echo_output, requires_aws_stack, debugtask
 from buildercore.core import stack_conn, project_name_from_stackname
@@ -12,12 +12,6 @@ import logging
 LOG = logging.getLogger(__name__)
 
 OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
-
-class FabricException(Exception):
-    pass
-
-env.abort_exception = FabricException
-
 
 @debugtask
 @requires_aws_stack
