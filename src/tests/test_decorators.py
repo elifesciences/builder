@@ -3,11 +3,19 @@ from mock import patch
 import decorators
 
 class TestDecorators(base.BaseCase):
-    def test_timeit_smoke_test(self):
+    @patch('decorators.LOG.info')
+    def test_timeit_smoke_test(self, info):
         @decorators.timeit
-        def some_task():
+        def some_task(param, **kwargs):
             pass
-        some_task()
+        some_task(42, option='value')
+        (args, _) = info.call_args
+        self.assertIsInstance(args[0], str)
+        self.assertEqual(args[1], 'some_task')
+        self.assertEqual(args[2], (42,))
+        self.assertEqual(args[3], {'option': 'value'})
+        self.assertIsInstance(args[4], float)
+        self.assertGreater(args[4], 0.0)
 
     def test_deffile(self):
         self.assertEqual('/tmp/template.json', decorators.deffile('template.json'))
