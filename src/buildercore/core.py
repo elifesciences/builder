@@ -156,7 +156,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     if 'user' in kwargs:
         LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
 
-    data = stack_data(stackname, ensure_single_instance=True)
+    data = stack_data(stackname, ensure_single_instance=True)[0]
     public_ip = data['instance']['ip_address']
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
