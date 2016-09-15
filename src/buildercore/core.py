@@ -271,8 +271,9 @@ def stack_data(stackname, ensure_single_instance=False):
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
         ec2_instances = find_ec2_instance(stackname)
 
-        assert len(ec2_instances) >= 1, ("found no ec2 instances for %r" % stackname)
-        if ensure_single_instance:
+        if len(ec2_instances) < 1:
+            raise RuntimeError("found no ec2 instances for %r" % stackname)
+        elif len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
         def do(ec2):
