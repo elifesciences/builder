@@ -9,8 +9,8 @@ import os
 from os.path import join
 from functools import partial
 from StringIO import StringIO
-from . import core, utils, config, keypair
-from .core import connect_aws_with_stack, stack_pem, stack_conn, project_data_for_stackname
+from . import core, utils, config, keypair, bvars
+from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
 from .utils import first
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put
@@ -62,15 +62,18 @@ def create_stack(stackname):
 
     return _create_generic_stack(stackname, parameters, on_start, on_error)
 
-def _create_generic_stack(stackname, parameters=[], on_start=_noop, on_error=_noop):
+def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "simply creates the stack of resources on AWS, talking to CloudFormation."
+    if not parameters:
+        parameters = []
+
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
     try:
         on_start()
         conn = connect_aws_with_stack(stackname, 'cfn')
         conn.create_stack(stackname, stack_body, parameters=parameters)
-        _wait_for_stack_creation_to_complete(stackname)
+        _wait_until_in_progress(stackname)
         context = cfngen.context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
@@ -92,7 +95,7 @@ def _create_generic_stack(stackname, parameters=[], on_start=_noop, on_error=_no
         on_error()
         raise
 
-def _wait_for_stack_creation_to_complete(stackname):
+def _wait_until_in_progress(stackname):
     def is_updating(stackname):
         return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
     utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
@@ -101,7 +104,7 @@ def setup_ec2(stackname, context_ec2):
     if not context_ec2:
         return
 
-    with stack_conn(stackname, username=BOOTSTRAP_USER):
+    def _setup_ec2_node():
         def is_resourcing():
             try:
                 # we have an issue where the stack is created, however the security group
@@ -118,6 +121,8 @@ def setup_ec2(stackname, context_ec2):
                 return True
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
         prep_ec2_instance()
+
+    stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
 
 def setup_sqs(stackname, context_sqs, region):
@@ -186,7 +191,11 @@ def template_info(stackname):
 
 def write_environment_info(stackname, overwrite=False):
     """Looks for /etc/cfn-info.json and writes one if not found.
-    Must be called with an active stack connection."""
+    Must be called with an active stack connection.
+    
+    This gives Salt the outputs available at stack creation, but that were not
+    available at template compilation time.
+    """
     if not files.exists("/etc/cfn-info.json") or overwrite:
         LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
         infr_config = utils.json_dumps(template_info(stackname))
@@ -227,7 +236,8 @@ def update_ec2_stack(stackname):
     is_master = core.is_master_server_stack(stackname)
 
     # forward-agent == ssh -A
-    with stack_conn(stackname, username=BOOTSTRAP_USER, forward_agent=True):
+
+    def _update_ec2_node():
         # upload private key if not present remotely
         if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
             # if it also doesn't exist on the filesystem, die horribly.
@@ -242,7 +252,17 @@ def update_ec2_stack(stackname):
         install_master_flag = str(is_master).lower() # ll: 'true' 
         master_ip = master(region, 'private_ip_address')
 
-        run_script('bootstrap.sh', salt_version, stackname, install_master_flag, master_ip)
+        # TODO: this is a little gnarly. I think I'd prefer this logic in the script:
+        #       if [ cat /etc/build-vars.json | grep 'nodename' ]; then ... fi
+        # it will do for now, though.
+        build_vars = bvars.read_from_current_host()
+        if 'nodename' in build_vars:
+            minion_id = build_vars['nodename']
+        else:
+            minion_id = stackname
+        run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
+        # /TODO
+
         if is_master:
             builder_private_repo = pdata['private-repo']
             run_script('init-master.sh', stackname, builder_private_repo)
@@ -250,6 +270,8 @@ def update_ec2_stack(stackname):
 
         # this will tell the machine to update itself
         run_script('highstate.sh')
+
+    stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, forward_agent=True)
 
 @core.requires_stack_file
 def delete_stack_file(stackname):

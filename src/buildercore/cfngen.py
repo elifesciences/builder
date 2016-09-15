@@ -98,13 +98,7 @@ def build_context(pname, **more_context):
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
-    #context['ec2'] = True if context['project']['aws']['ec2'] else False
     context['ec2'] = context['project']['aws'].get('ec2', True)
-    # the above context will reside on the server at /etc/build-vars.json.b64
-    # this gives Salt all (most) of the data that was available at template compile time.
-    # part of the bootstrap process writes a file called /etc/cfn-info.json
-    # this gives Salt the outputs available at stack creation
-    context['build_vars'] = base64.b64encode(json.dumps(context)) if context['project']['aws']['ec2'] else None
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])

@@ -5,7 +5,7 @@ from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
-from buildercore.core import stack_conn, stack_pem
+from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
 from distutils.util import strtobool
@@ -129,16 +129,17 @@ def aws_stack_list():
 @task
 @requires_aws_stack
 def ssh(stackname, username=DEPLOY_USER):
-    public_ip = core.stack_data(stackname)['instance']['ip_address']
+    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['instance']['ip_address']
     local("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
 def owner_ssh(stackname):
     "maintainence ssh. uses the pem key and the bootstrap user to login."
-    public_ip = core.stack_data(stackname)['instance']['ip_address']
+    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['instance']['ip_address']
     # -i identify file
     local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+
         
 @task
 @requires_aws_stack
@@ -189,12 +190,15 @@ def _user(use_bootstrap_user):
 
 @task
 @requires_aws_stack
-def cmd(stackname, command=None):
+def cmd(stackname, command=None, username=DEPLOY_USER):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
-    with stack_conn(stackname):
-        with settings(abort_on_prompts=True):
-            run(command)
+    print "Connecting to: %s" % stackname
+    stack_all_ec2_nodes(
+        stackname,
+        lambda: run(command),
+        username=username,
+        abort_on_prompts=True)
         
 @task
 def project_list():

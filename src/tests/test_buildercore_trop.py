@@ -1,5 +1,6 @@
 from pprint import pprint
 from os.path import join
+import base64
 import json
 from . import base
 from buildercore import cfngen, trop, config, utils
@@ -72,9 +73,32 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('ExtraStorage', data['Resources'].keys())
         self.assertEqual(
             {
-                'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance', 'AvailabilityZone']},
+                'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance1', 'AvailabilityZone']},
                 'VolumeType': 'standard',
                 'Size': '200',
             },
             data['Resources']['ExtraStorage']['Properties']
         )
+
+    def test_clustered_template(self):
+        extra = {
+            'stackname': 'project-with-cluster--prod',
+        }
+        context = cfngen.build_context('project-with-cluster', **extra)
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        resources = data['Resources']
+        self.assertIn('EC2Instance1', resources.keys())
+        self.assertIn('EC2Instance2', resources.keys())
+        self.assertIn('StackSecurityGroup', resources.keys())
+        self.assertIn(
+            {
+                'Key': 'Name',
+                'Value': 'project-with-cluster--prod--1',
+            },
+            resources['EC2Instance1']['Properties']['Tags']
+        )
+        outputs = data['Outputs']
+        self.assertIn('InstanceId1', outputs.keys())
+        self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
+        self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])

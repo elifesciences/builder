@@ -7,6 +7,6 @@ elifePipeline {
         sh './update.sh --exclude virtualbox vagrant'
 
         stage 'Test'
-        sh './test.sh'
+        sh './project_tests.sh'
     }
 }

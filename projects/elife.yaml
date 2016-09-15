@@ -24,7 +24,8 @@ defaults:
         # TODO: this field will become a dictionary of all EC2-related configuration
         # for now it is just a boolean, indicating whether the project has
         # an EC2 instance attached. By default, it has one
-        ec2: true
+        ec2:
+            cluster-size: 1
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
         region: us-east-1
@@ -140,6 +141,7 @@ journal:
             - 443
             - 80
     vagrant:
+        ram: 4096
         ports:
             1240: 80
 
@@ -381,6 +383,10 @@ medium:
         ports:
             - 22
             - 80
+    aws-alt:
+        clustered:
+            ec2:
+                cluster-size: 2
 
 search:
     description: service for indexing all of Elife 2.0 content
