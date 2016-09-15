@@ -1,6 +1,5 @@
 import os
 import boto
-from boto.s3.connection import Location
 from boto.s3.key import Key
 from . import core, config
 from kids.cache import cache as cached

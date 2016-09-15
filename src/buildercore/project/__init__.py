@@ -1,7 +1,6 @@
 #from . import core # DONT import core. this project module should be relatively independent
 from buildercore import utils, config
-from buildercore.utils import unique
-from buildercore.decorators import osissue, osissuefn, testme
+from buildercore.decorators import osissue
 from kids.cache import cache
 from . import files
 

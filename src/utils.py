@@ -1,11 +1,7 @@
-import os, sys, time
-from functools import wraps
-import md5
-from buildercore import utils as core_utils, cfngen
-from datetime import datetime
+import os, sys
 from buildercore.utils import second, last
 from buildercore.decorators import osissue
-from fabric.api import run, sudo, local
+from fabric.api import local
 
 # totally is assigned :(
 #pylint: disable=global-variable-not-assigned

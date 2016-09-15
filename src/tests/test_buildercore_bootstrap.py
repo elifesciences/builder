@@ -1,6 +1,6 @@
 from . import base
 from buildercore import bootstrap
-from mock import patch, call, MagicMock
+from mock import patch, MagicMock
 
 class TestBuildercoreBootstrap(base.BaseCase):
     @patch('buildercore.core.boto_sqs_conn')

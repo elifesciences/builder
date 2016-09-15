@@ -3,7 +3,7 @@
 import os, shutil
 from os.path import join
 from . import core, utils, config, s3
-from .core import connect_aws_with_stack, stack_pem
+from .core import stack_pem
 from .decorators import if_enabled
 
 import logging
@@ -75,7 +75,6 @@ def create_keypair(stackname):
 
 def delete_keypair(stackname):
     "deletes the keypair from ec2, s3 and locally if it exists"
-    expected_key = stack_pem(stackname)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     # delete from aws
     ec2.delete_key_pair(stackname)

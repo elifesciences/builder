@@ -9,7 +9,6 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing 
 it to the correct file etc."""
 
-import re
 from . import utils
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
 

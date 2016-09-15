@@ -1,13 +1,11 @@
 from os.path import join
-from buildercore import core
-from fabric.api import env, sudo, run, local, task, get, put, hide
+from fabric.api import env, sudo, task, get, put, hide
 from StringIO import StringIO
 from decorators import echo_output, requires_aws_stack, debugtask
-from buildercore.core import stack_conn, project_name_from_stackname
+from buildercore.core import stack_conn
 from buildercore import utils as core_utils, bootstrap
 import base64, json
 import utils
-import re
 import logging
 LOG = logging.getLogger(__name__)
 
@@ -53,7 +51,7 @@ def read(stackname):
                 fd = StringIO()
                 get(join('/etc/', fname), fd)
                 return _decode_bvars(fd.getvalue())
-            except FabricException, ex:
+            except FabricException:
                 # file not found
                 continue
 
@@ -87,7 +85,7 @@ def fix(stackname):
         LOG.info("valid bvars found (%s), no fix necessary", bvarst)
 
 def _retrieve_build_vars(stackname):
-    pdata = core.project_data_for_stackname(stackname)
+    #pdata = core.project_data_for_stackname(stackname)
     print 'looking for build vars ...'
     with hide('everything'):
         bvarst, bvars = valid(stackname)

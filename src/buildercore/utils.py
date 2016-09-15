@@ -4,10 +4,8 @@ from functools import wraps
 from datetime import datetime
 import yaml
 from collections import OrderedDict, Iterable
-from fabric.api import run
 from os.path import join
 from more_itertools import unique_everseen
-from StringIO import StringIO
 
 import logging
 LOG = logging.getLogger(__name__)

@@ -4,7 +4,6 @@ these should compliment not replicate any project configuration validation."""
 
 from . import project
 from .project import repo
-import certs
 
 def can_access_builder_private(pname):
     "True if current user can access the private-repo for given project"

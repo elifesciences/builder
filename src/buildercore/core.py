@@ -3,15 +3,12 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import os, glob, json, re, copy
+import os, glob, json, re
 from os.path import join
 from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .decorators import osissue, osissuefn, testme
+from .decorators import testme
 import decorators
-from .utils import first, second, dictfilter, lookup
-from collections import OrderedDict
-from functools import wraps
-import boto
+from .utils import first, lookup
 from boto.exception import BotoServerError
 from contextlib import contextmanager
 from fabric.api import settings
@@ -19,7 +16,6 @@ import importlib
 import logging
 from kids.cache import cache as cached
 from slugify import slugify
-import requests
 
 LOG = logging.getLogger(__name__)
 
@@ -171,7 +167,6 @@ def parse_stackname(stackname, all_bits=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
     if not stackname or not isinstance(stackname, basestring):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
-    pname = instance_id = None
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--',  -1 if all_bits else 1)
     if len(bits) == 1:

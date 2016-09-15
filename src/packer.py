@@ -5,10 +5,10 @@ from fabric.api import task, local, settings
 import utils
 from utils import walk_nested_struct
 from decorators import requires_project, echo_output, debugtask
-from buildercore import config, core, utils as core_utils, project
+from buildercore import config, utils as core_utils, project
 import os, json
 from datetime import datetime
-from buildercore.decorators import osissue, osissuefn
+from buildercore.decorators import osissue
 
 TEMPLATE = {
     "builders": [

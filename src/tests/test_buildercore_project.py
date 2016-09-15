@@ -1,10 +1,9 @@
 from . import base
-import os, json
+import json
 from os.path import join
 from buildercore import config, project, utils
 from buildercore.project import files as project_files
 from collections import OrderedDict
-from unittest import skip
 
 class TestProject(base.BaseCase):
     def setUp(self):

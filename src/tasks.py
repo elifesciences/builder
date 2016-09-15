@@ -3,15 +3,13 @@
 If you find certain 'types' of tasks accumulating, they might be 
 better off in their own module. This module really is for stuff
 that has no home."""
-import os
-from os.path import join
 import requests
-from buildercore import core, cfngen, config, project, bootstrap
+from buildercore import core, project, bootstrap
 from fabric.api import sudo, run, local, task
 from decorators import echo_output, requires_aws_stack, requires_project, debugtask
 from buildercore.core import stack_conn
-import utils, aws
-from buildercore.decorators import osissue, osissuefn
+import utils
+from buildercore.decorators import osissue
 
 @debugtask
 @requires_project
@@ -151,7 +149,6 @@ def fetch_cert(stackname):
 @debugtask
 def diff_builder_config():
     "helps keep three"
-    dev_dir = os.path.expanduser("~/dev/salt/")
     file_sets = [
         [
             "./builder-private-example/pillar/elife.sls",

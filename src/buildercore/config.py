@@ -14,7 +14,6 @@ import os
 from os.path import join
 
 from buildercore import utils
-from buildercore.utils import first, last, listfiles
 from kids.cache import cache
 import logging
 
@@ -137,7 +136,7 @@ def parse_loc_list(loc_list):
             return [None]
         if protocol == 'dir':
             yaml_files = utils.listfiles(path, ['.yaml'])
-            return [('file', host, path) for path in yaml_files]
+            return [('file', host, ppath) for ppath in yaml_files]
         return [triple]
     # we don't want dirs, we want files
     p_loc_list = utils.shallow_flatten(map(expand_dirs, p_loc_list))
