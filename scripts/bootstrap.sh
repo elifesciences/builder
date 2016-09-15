@@ -12,7 +12,7 @@ set -xv  # output the scripts and interpolated steps
 echo "-----------------------------"
 
 version=$1
-stackname=$2
+minion_id=$2
 install_master=$3
 master_ipaddr=$4
 
@@ -83,7 +83,7 @@ echo "
 master: $master_ipaddr
 log_level: info" > /etc/salt/minion
 
-echo "$stackname" > /etc/salt/minion_id
+echo "$minion_id" > /etc/salt/minion_id
 if [ -d /vagrant ]; then
     # we're using Vagrant    
 

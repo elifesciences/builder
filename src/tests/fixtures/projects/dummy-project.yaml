@@ -21,14 +21,15 @@ defaults:
     formula-dependencies:
         - https://github.com/example/builder-base-formula
     aws:
-        ec2: true
+        ec2:
+            cluster-size: 1
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
         region: us-east-1
-        vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
-        subnet-id: subnet-191919191
-        subnet-cidr: '172.31.16.0/20'
+        vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
+        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        subnet-cidr: '10.0.2.0/24'
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -153,3 +154,10 @@ project-with-ext:
         ext: 
             size: 200
 
+project-with-cluster:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ports:
+            - 80
+        ec2:
+            cluster-size: 2

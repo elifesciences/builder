@@ -13,6 +13,7 @@ defaults:
     # default branch to use when creating new instances
     default-branch: master
     aws:
+        ec2: True
         # find more here: http://cloud-images.ubuntu.com/releases/
         ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small

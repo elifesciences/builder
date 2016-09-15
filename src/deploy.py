@@ -1,9 +1,10 @@
 """module concerns itself with tasks involving branch deployments of projects."""
 
 from fabric.api import task
-from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile
+from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile, requires_aws_stack
 import utils
 from buildercore import core, bootstrap, cfngen, project
+import buildvars
 
 import logging
 
@@ -48,3 +49,10 @@ def deploy(pname, instance_id=None, branch='master'):
 
     bootstrap.create_update(stackname)        
     setdefault('.active-stack', stackname)
+
+@task(name='switch_revision_update_instance')
+@requires_aws_stack
+def switch_revision_update_instance(stackname, revision=None):
+    buildvars.switch_revision(stackname, revision)
+    with core.stack_conn(stackname):
+        return bootstrap.run_script('highstate.sh')

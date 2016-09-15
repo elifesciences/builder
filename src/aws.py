@@ -1,9 +1,7 @@
-from buildercore import core, project, bakery
+from buildercore import core
 import utils
 from decorators import requires_aws_stack, debugtask, echo_output
 from buildercore.core import  MultipleRegionsError
-from fabric.api import task
-from fabric.contrib.console import confirm
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -27,27 +25,6 @@ def stack_list(region=None):
 #
 #
 #
-
-@task
-@requires_aws_stack
-def create_ami(stackname):
-    pname = core.project_name_from_stackname(stackname)
-    msg = "this will create a new AMI for the project %r. Continue?" % pname
-    if not confirm(msg, default=False):
-        print 'doing nothing'
-        return
-    amiid = bakery.create_ami(stackname)
-    #amiid = "ami-e9ff3682"
-    print 'AWS is now creating AMI with id', amiid
-    path = pname + '.aws.ami'
-    # wait until ami finished creating?
-    #core.update_project_file(pname + ".aws.ami", amiid)
-    new_project_file = project.update_project_file(path, amiid)
-    output_file = project.write_project_file(new_project_file)
-    print '\n' * 4
-    print 'wrote', output_file
-    print 'updated project file with new ami. these changes must be merged and committed manually'
-    print '\n' * 4
 
 #
 #

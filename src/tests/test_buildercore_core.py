@@ -122,6 +122,10 @@ class SimpleCases(base.BaseCase):
             self.fail("Shouldn't be able to choose a region")
         except core.MultipleRegionsError as e:
             self.assertEqual(["us-east-1", "eu-central-1"], e.regions())
+
+    def test_find_ec2_instance(self):
+        self.assertEquals([], core.find_ec2_instance('dummy1--prod'))
+
             
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):

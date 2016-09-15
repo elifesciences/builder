@@ -1,8 +1,8 @@
 #!/bin/bash
-set -e # causes script to exit immediately on error
+set -e
 
 . .activate-venv.sh
 . .lint.sh
 . .shell-lint.sh
-. .run-tests.sh
+. .run-tests.sh src/
 #./full-lint.sh

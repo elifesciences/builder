@@ -12,10 +12,18 @@ from the interface logic in the fabfile.
 """
 import os
 from os.path import join
-
+from fabric.api import env
 from buildercore import utils
 from kids.cache import cache
 import logging
+
+
+# no un-catchable errors from Fabric
+
+class FabricException(Exception):
+    pass
+
+env.abort_exception = FabricException
 
 
 # dirs are relative
