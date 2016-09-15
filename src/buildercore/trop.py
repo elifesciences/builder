@@ -121,7 +121,7 @@ def ec2instance(context, node):
     build_vars_serialization = bvars.encode_bvars(build_vars)
 
     project_ec2 = {
-        "ImageId": lu('project.aws.ami'),
+        "ImageId": lu('project.aws.ec2.ami'),
         "InstanceType": lu('project.aws.type'), # t2.small, m1.medium, etc
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],

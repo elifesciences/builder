@@ -12,9 +12,9 @@
         "https://github.com/example/builder-base-formula"
     ], 
     "aws": {
-        "ami": "ami-9eaa1cf6", 
         "ec2": {
-            "cluster-size": 1
+            "cluster-size": 1,
+            "ami": "ami-9eaa1cf6"
         },
         "type": "t2.small", 
         "region": "us-east-1", 

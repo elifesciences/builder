@@ -12,9 +12,9 @@
         "https://github.com/example/builder-base-formula"
     ], 
     "aws": {
-        "ami": "ami-111111", 
         "ec2": {
-            "cluster-size": 1
+            "cluster-size": 1,
+            "ami": "ami-111111"
         },
         "type": "t2.small", 
         "region": "us-east-1", 
@@ -29,9 +29,9 @@
     }, 
     "aws-alt": {
         "fresh": {
-            "ami": "ami-9eaa1cf6", 
             "ec2": {
-                "cluster-size": 1
+                "cluster-size": 1,
+                "ami": "ami-9eaa1cf6"
             },
             "type": "t2.small", 
             "region": "us-east-1", 
@@ -46,9 +46,9 @@
             "description": "uses a plain Ubuntu basebox instead of an ami"
         }, 
         "alt-config1": {
-            "ami": "ami-111111", 
             "ec2": {
                 "cluster-size": 1
+                "ami": "ami-111111"
             },
             "type": "t2.small", 
             "region": "us-east-1", 
