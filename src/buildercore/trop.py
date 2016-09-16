@@ -98,12 +98,7 @@ def rds_security(context):
 
 def instance_tags(context, node=None):
     # NOTE: RDS instances also call this function
-    tags = {
-        'Owner': context['author'],
-        'Project': context['project_name'], # journal
-        # the name AWS Console uses to label an instance
-        'Name': context['stackname'] # ll: journal-prod
-    }
+    tags = _generic_tags(context)
     if node:
         # this instance is part of a cluster
         tags.update({
@@ -112,6 +107,27 @@ def instance_tags(context, node=None):
             'Node': node, # ll: 1
         })
     return [ec2.Tag(key, value) for key, value in tags.items()]
+
+def elb_tags(context):
+    tags = _generic_tags(context)
+    tags.update({
+        'Name': '%s--elb' % context['stackname'], # ll: journal--prod--elb
+        'Cluster': context['stackname'], # ll: journal--prod
+    })
+    # intentional: ec2.Tag is just a dictionary
+    return [ec2.Tag(key, value) for key, value in tags.items()]
+
+def _generic_tags(context):
+    return {
+        'Owner': context['author'],
+        'Project': context['project_name'], # journal
+        # the name AWS Console uses to label an instance
+        'Name': context['stackname'] # ll: journal-prod
+    }
+
+
+
+
 
 def ec2instance(context, node):
     lu = partial(utils.lu, context)
@@ -367,8 +383,7 @@ def render(context):
             SecurityGroups=[Ref(SECURITY_GROUP_TITLE)],
             Scheme='internet-facing' if elb_is_public else 'internal',
             Subnets=context['elb']['subnets'],
-            # TODO add
-            #Tags=[]
+            Tags=elb_tags(context)
             ))
 
         if elb_is_public:

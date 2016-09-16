@@ -95,6 +95,13 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             resources['EC2Instance1']['Properties']['Tags']
         )
+        self.assertIn(
+            {
+                'Key': 'Cluster',
+                'Value': 'project-with-cluster--prod',
+            },
+            resources['EC2Instance1']['Properties']['Tags']
+        )
         outputs = data['Outputs']
         self.assertIn('InstanceId1', outputs.keys())
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
@@ -121,6 +128,20 @@ class TestBuildercoreTrop(base.BaseCase):
                 'LoadBalancerPort': '80',
                 'Protocol': 'HTTP',
             }
+        )
+        self.assertIn(
+            {
+                'Key': 'Name',
+                'Value': 'project-with-cluster--prod--elb',
+            },
+            resources['ElasticLoadBalancer']['Properties']['Tags']
+        )
+        self.assertIn(
+            {
+                'Key': 'Cluster',
+                'Value': 'project-with-cluster--prod',
+            },
+            resources['ElasticLoadBalancer']['Properties']['Tags']
         )
         self.assertNotIn('IntDNS', resources.keys())
         dns = resources['ExtDNS']['Properties']
