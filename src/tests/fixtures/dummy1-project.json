@@ -16,6 +16,7 @@
             "cluster-size": 1,
             "ami": "ami-9eaa1cf6"
         },
+        "elb": false,
         "type": "t2.small", 
         "region": "us-east-1", 
         "sns": [],

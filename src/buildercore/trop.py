@@ -11,6 +11,7 @@ it to the correct file etc."""
 
 from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
+from troposphere import elasticloadbalancing as elb
 
 from functools import partial
 import logging
@@ -24,6 +25,7 @@ osissuefn("embarassing code. some of these constants should be pulled form proje
 SECURITY_GROUP_TITLE = "StackSecurityGroup"
 EC2_TITLE = 'EC2Instance1'
 EC2_TITLE_NODE = 'EC2Instance%d'
+ELB_TITLE = 'ElasticLoadBalancer'
 RDS_TITLE = "AttachedDB"
 RDS_SG_ID = "DBSecurityGroup"
 DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
@@ -250,8 +252,10 @@ def render(context):
         secgroup = ec2_security(context)
         template.add_resource(secgroup)
 
+        ec2_instances = []
         for node in range(1, context['ec2']['cluster-size'] + 1):
             instance = ec2instance(context, node)
+            ec2_instances.append(instance)
             template.add_resource(instance)
             cfn_outputs.extend(_ec2_outputs(node))
 
@@ -294,7 +298,41 @@ def render(context):
         ))
 
     # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
-    if context['ec2'] and context['ec2']['cluster-size'] == 1:
+    if context['elb']:
+        template.add_resource(elb.LoadBalancer(
+            ELB_TITLE,
+            ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
+                Enabled=True,
+                Timeout=60,
+            ),
+            CrossZone=True,
+            Instances=[Ref(r) for r in ec2_instances],
+            # TODO: from configuration
+            Listeners=[
+                elb.Listener(
+                    LoadBalancerPort='80',
+                    InstancePort='80',
+                    Protocol='HTTP',
+                    ),
+                ],
+            # TODO: from configuration
+            #HealthCheck=elb.HealthCheck(
+            #    Target=Join('', ['HTTP:', Ref(webport_param), '/']),
+            #    HealthyThreshold='3',
+            #    UnhealthyThreshold='5',
+            #    Interval='30',
+            #    Timeout='5',
+            #    )
+            Scheme='internet-facing',
+            # TODO: useful only for internal load balancers
+            #Subnets=???
+            # TODO add
+            #Tags=[]
+            ))
+        # point the subdomain dnses to the ELB, maybe needs to be done later
+        # as its own DNS is generated and will come out in the Outputs
+    elif context['ec2']:
+        assert context['ec2']['cluster-size'] == 1, "If there is no load balancer, only a single EC2 instance can be actually assigned a DNS: %s" % context
         if context['full_hostname']:
             template.add_resource(external_dns(context))
             cfn_outputs.extend([

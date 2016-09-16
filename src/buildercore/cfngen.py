@@ -58,6 +58,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'rds_password': None,
         'rds_instance_id': None,
         'ec2': False,
+        'elb': False,
         'sns': [],
         'sqs': {},
         'ext': None
@@ -100,6 +101,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     })
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
+    context['elb'] = context['project']['aws'].get('elb')
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])

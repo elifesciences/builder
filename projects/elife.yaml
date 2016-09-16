@@ -389,6 +389,7 @@ medium:
         clustered:
             ec2:
                 cluster-size: 2
+            elb: True
 
 search:
     description: service for indexing all of Elife 2.0 content

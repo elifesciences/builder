@@ -99,3 +99,27 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('InstanceId1', outputs.keys())
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
+        self.assertIn('ElasticLoadBalancer', resources.keys())
+        elb = resources['ElasticLoadBalancer']['Properties']
+        self.assertEqual(elb['Scheme'], 'internet-facing')
+        self.assertEqual(1, len(elb['Listeners']))
+        self.assertEqual(
+            elb['Instances'],
+            [
+                {
+                    'Ref': 'EC2Instance1',
+                },
+                {
+                    'Ref': 'EC2Instance2',
+                }
+            ]
+        )
+        self.assertEqual(
+            elb['Listeners'][0],
+            {
+                'InstancePort': '80',
+                'LoadBalancerPort': '80',
+                'Protocol': 'HTTP',
+            }
+        )
+

@@ -26,6 +26,7 @@ defaults:
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
+        elb: False
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
@@ -160,8 +161,10 @@ project-with-ext:
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
     aws:
         ports:
             - 80
         ec2:
             cluster-size: 2
+        elb: True
