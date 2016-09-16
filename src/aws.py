@@ -1,14 +1,7 @@
-import os
-from buildercore import core, config, project
-from buildercore.utils import lookup
-from buildercore.decorators import osissue, osissuefn
+from buildercore import core
 import utils
 from decorators import requires_aws_stack, debugtask, echo_output
-import boto
-from buildercore.core import boto_cfn_conn, boto_ec2_conn, connect_aws_with_stack, MultipleRegionsError
-from fabric.api import settings, task
-from fabric.contrib.console import confirm
-from contextlib import contextmanager
+from buildercore.core import  MultipleRegionsError
 
 import logging
 LOG = logging.getLogger(__name__)

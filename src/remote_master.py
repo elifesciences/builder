@@ -6,9 +6,9 @@ this module contains tasks that help maintain configuration.
 
 import os
 from buildercore import utils as core_utils
-from fabric.api import task, local, lcd, settings, run, sudo, put, get, abort
+from fabric.api import local
 from buildercore import project
-from decorators import echo_output, mastertask
+from decorators import mastertask
 
 def install_formula(pname, formula_url):
     return local("/bin/bash /opt/builder/scripts/update-master-formula.sh %s %s" % (pname, formula_url))

@@ -5,9 +5,7 @@ We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
 from buildercore import core, utils, bootstrap
-from fabric.contrib.files import exists
-from fabric.api import sudo
-from .decorators import osissue, osissuefn, testme
+from .decorators import osissue, testme
 
 @testme
 def ami_name(stackname):

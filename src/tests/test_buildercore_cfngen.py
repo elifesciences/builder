@@ -1,7 +1,6 @@
-import os, boto
 from . import base
 from time import sleep
-from buildercore import cfngen, project, config
+from buildercore import cfngen, project
 
 import logging
 LOG = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 from . import base
 from cfn import ssh, owner_ssh
-from mock import patch, call, MagicMock
+from mock import patch
 
 class TestBuildercoreBootstrap(base.BaseCase):
     @patch('cfn.local')

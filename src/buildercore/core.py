@@ -3,16 +3,14 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-from StringIO import StringIO
-import os, glob, json, re, base64
+import os, glob, json, re
 from os.path import join
-from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from buildercore import decorators
-from buildercore.decorators import testme
+from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
+from .decorators import testme
 from .utils import first, lookup
 from boto.exception import BotoServerError
 from contextlib import contextmanager
-from fabric.api import settings, execute, get
+from fabric.api import settings, execute
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -276,14 +274,18 @@ def stack_data(stackname, ensure_single_instance=False):
         elif len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
-        def do(ec2):
+        def ec2data(ec2):
             data = stack.__dict__
             data['instance'] = ec2.__dict__
             return data
-        return map(do, ec2_instances)
+        return map(ec2data, ec2_instances)
+
+    except RuntimeError:
+        LOG.error("caught an unhandled error attempting to discover more information about this instance.")
 
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
+        raise 
 
 
 # DO NOT CACHE

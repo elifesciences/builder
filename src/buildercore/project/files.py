@@ -1,12 +1,10 @@
-import os, json, copy
+import os, copy
 from os.path import join
-from functools import wraps
 from collections import OrderedDict
 
 #from . import core # DONT import core. this module should be relatively independent
-from buildercore import utils, config
-from buildercore.utils import unique, first, dictfilter
-from buildercore.decorators import osissue, osissuefn, testme
+from buildercore import utils
+from buildercore.decorators import testme
 
 import logging
 LOG = logging.getLogger(__name__)

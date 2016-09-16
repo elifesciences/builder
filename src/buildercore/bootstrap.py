@@ -4,7 +4,6 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import json
 import os
 from os.path import join
 from functools import partial
@@ -74,7 +73,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         conn = connect_aws_with_stack(stackname, 'cfn')
         conn.create_stack(stackname, stack_body, parameters=parameters)
         _wait_until_in_progress(stackname)
-        context = cfngen.context(stackname)
+        context = cfngen.stack_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
         setup_sqs(stackname, context['sqs'], context['project']['aws']['region'])

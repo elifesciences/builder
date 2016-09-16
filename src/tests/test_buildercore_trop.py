@@ -1,9 +1,7 @@
-from pprint import pprint
 from os.path import join
-import base64
 import json
 from . import base
-from buildercore import cfngen, trop, config, utils
+from buildercore import cfngen, trop, utils
 
 class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
@@ -22,7 +20,6 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_dbname'], "dummy3test")
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
         self.assertTrue(context['project']['aws'].has_key('rds'))
-        cfn_template = trop.render(context)
         data = json.loads(trop.render(context))
         self.assertTrue(isinstance(utils.lu(data, 'Resources.AttachedDB'), dict))
 

@@ -1,5 +1,4 @@
 from . import base
-import os
 from os.path import join
 from buildercore import config
 from collections import OrderedDict
@@ -28,7 +27,6 @@ class ParseConfig(base.BaseCase):
     def test_parse(self):
         loaded_config = config.load(self.settings_file_path)
         parsed_config = config.parse(loaded_config)
-        user_path = os.path.expanduser('~')
         expected_config = OrderedDict([
             ('write-keypairs-to-s3', False),
             ('project-locations', [

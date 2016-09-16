@@ -3,14 +3,10 @@
 See `askmaster.py` for tasks that are run on minions."""
 
 import os
-import aws, utils
-from fabric.contrib.files import exists
-from fabric.contrib import files
-from fabric.api import settings, sudo, task, local, run, lcd, cd
-from buildercore import core, bootstrap, config, project, s3, keypair
+import aws
+from fabric.api import sudo, task, local
+from buildercore import core, bootstrap, config, keypair
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
-from buildercore.decorators import osissue
-from buildercore.utils import first
 
 import logging
 

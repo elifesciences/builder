@@ -1,11 +1,7 @@
 """Tests concerning S3 interaction."""
 import os
-import time
-import json
-from os.path import join
 from . import base
 from buildercore import s3
-from unittest import skip
 
 class SimpleCases(base.BaseCase):
     def setUp(self):

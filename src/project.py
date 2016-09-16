@@ -1,4 +1,4 @@
-from fabric.api import task, local, cd, settings, run, sudo, put, get, abort
+from fabric.api import task, local
 from buildercore import project, utils as core_utils
 from decorators import requires_project, echo_output
 import utils

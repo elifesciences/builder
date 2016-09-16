@@ -3,11 +3,11 @@
 Requires access to the master server."""
 
 from buildercore import core
-from fabric.api import sudo, run, local, task
-from decorators import echo_output, requires_aws_stack, requires_project
+from fabric.api import sudo, task
+from decorators import echo_output
 from buildercore.core import stack_conn
-import utils, aws
-from buildercore.decorators import osissue, osissuefn
+import aws
+from buildercore.decorators import osissue
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"

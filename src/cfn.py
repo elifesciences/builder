@@ -1,6 +1,5 @@
-from distutils.util import strtobool
-from fabric.api import task, local, settings, run, sudo, put, get, abort
-from fabric.api import task, local, settings, run, sudo, put, get, abort
+from distutils.util import strtobool #pylint: disable=import-error,no-name-in-module
+from fabric.api import task, local, run, sudo, put, get, abort
 from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
@@ -8,8 +7,6 @@ from buildercore import core, cfngen, utils as core_utils, bootstrap, project, c
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
-from distutils.util import strtobool
-import os
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -153,7 +150,6 @@ def download_file(stackname, path, destination, allow_missing="False", use_boots
 
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
-    fname = os.path.basename(path)
     utils.mkdirp(destination)
     with stack_conn(stackname, username=_user(use_bootstrap_user)):
         if _should_be_skipped(path, allow_missing):
