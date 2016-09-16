@@ -26,7 +26,8 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def build_context(pname, **more_context):
+# TODO: this function needs some TLC - it's getting fat.
+def build_context(pname, **more_context): # pylint: disable=too-many-locals
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
 
@@ -141,7 +142,7 @@ def write_context(stackname, contents):
     open(output_fname, 'w').write(contents)
     return output_fname
 
-def context(stackname):
+def stack_context(stackname):
     with open(join(CONTEXT_PATH, stackname + '.json'), 'r') as context_file:
         return json.load(context_file)
 

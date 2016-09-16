@@ -224,10 +224,16 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
         dt = datetime.now()
     return dt.strftime(fmt)
 
+def die(assertion, msg):
+    """intended as a convenient replacement for `assert` statements that 
+    get compiled away with -O flags"""
+    if not assertion:
+        raise RuntimeError(msg)
+
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
-    assert os.path.isdir(path), "directory couldn't be created: %s" % path
-    assert os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path
+    die(os.path.isdir(path), "directory couldn't be created: %s" % path)
+    die(os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path)
     return path
 
 def json_dumps(obj, dangerous=False):

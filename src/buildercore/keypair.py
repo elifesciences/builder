@@ -55,7 +55,7 @@ def delete_keypair_from_fs(stackname):
         shutil.copy2(expected_key, delete_path)
         os.unlink(expected_key)
         return True
-    except:
+    except (RuntimeError, IOError):
         LOG.exception("unhandled exception attempting to delete keypair from filesystem")
 
 #
