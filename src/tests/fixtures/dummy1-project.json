@@ -16,7 +16,7 @@
         "ec2": {
             "cluster-size": 1
         },
-        "type": "t2.small", 
+        "type": "t2.micro", 
         "region": "us-east-1", 
         "sns": [],
         "sqs": [],
