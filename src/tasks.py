@@ -90,7 +90,7 @@ def acme_enabled(url):
         if 'crm.elifesciences' in url:
             return resp.status_code == 404 # apache behaves differently to nginx
         return resp.status_code == 403 # forbidden rather than not found.
-    except:
+    except (requests.ConnectionError, requests.ConnectTimeout):
         # couldn't connect for whatever reason
         return False
 
