@@ -1,5 +1,6 @@
 from os.path import join
-from buildercore import core, bvars
+from buildercore import core
+from buildercore.bvars import encode_bvars, read_from_current_host
 from fabric.api import sudo, run, local, task, get, put, hide
 from StringIO import StringIO
 from decorators import echo_output, requires_aws_stack, debugtask
@@ -34,7 +35,7 @@ def switch_revision(stackname, revision=None):
 def read(stackname):
     "returns the unencoded build variables found on given instance"
     with stack_conn(stackname):
-        return bvars.read_from_current_host()
+        return read_from_current_host()
 
 @debugtask
 @requires_aws_stack
@@ -80,7 +81,7 @@ def _update_remote_bvars(stackname, bvars):
     LOG.info('updating %r with new vars %r',stackname, bvars)
     assert core_utils.hasallkeys(bvars, ['branch']) #, 'revision']) # we don't use 'revision'
     with stack_conn(stackname):
-        encoded = bvars.encode_bvars(bvars)
+        encoded = encode_bvars(bvars)
         fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
         cmds = [
             # make a backup
