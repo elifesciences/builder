@@ -5,4 +5,3 @@ set -e # causes script to exit immediately on error
 . .lint.sh
 . .shell-lint.sh
 . .run-tests.sh
-#./full-lint.sh
