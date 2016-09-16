@@ -406,6 +406,7 @@ search:
             - 80
 
 bus:
+    description: see https://github.com/elifesciences/bus
     default-branch: null
     domain: null
     int_domain: null
