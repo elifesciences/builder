@@ -296,23 +296,7 @@ def render(context):
     template = Template()
     cfn_outputs = []
 
-    if context['ec2']:
-        # all ec2 nodes in a cluster share the same security group
-        secgroup = ec2_security(context)
-        template.add_resource(secgroup)
-
-        ec2_instances = []
-        for node in range(1, context['ec2']['cluster-size'] + 1):
-            instance = ec2instance(context, node)
-            ec2_instances.append(instance)
-            template.add_resource(instance)
-            cfn_outputs.extend(_ec2_outputs(node))
-
-        # all ec2 nodes in a cluster share the same keypair
-        template.add_parameter(Parameter(KEYPAIR, **{
-            "Type": "String",
-            "Description": "EC2 KeyPair that enables SSH access to this instance",
-        }))
+    ec2_instances = render_ec2(context, template, cfn_outputs)
 
     if context['rds_instance_id']:
         map(template.add_resource, rdsinstance(context))
@@ -323,73 +307,13 @@ def render(context):
     if context['ext']:
         map(template.add_resource, ext_volume(context['ext']))
 
-    def sanitize_title(string):
-        return "".join(map(str.capitalize, string.split("-")))
         
-    for topic_name in context['sns']:
-        topic = template.add_resource(sns.Topic(
-            sanitize_title(topic_name) + "Topic",
-            TopicName=topic_name
-        ))
-        template.add_output(Output(
-            sanitize_title(topic_name) + "TopicArn",
-            Value=Ref(topic)
-        ))
-
-    for queue_name in context['sqs']:
-        queue = template.add_resource(sqs.Queue(
-            sanitize_title(queue_name) + "Queue", 
-            QueueName=queue_name
-        ))
-        template.add_output(Output(
-            sanitize_title(queue_name) + "QueueArn",
-            Value=GetAtt(queue, "Arn")
-        ))
+    render_sns(context, template)
+    render_sqs(context, template)
 
     # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
     if context['elb']:
-        if context['full_hostname']:
-            elb_is_public = True
-        elif context['int_full_hostname']:
-            elb_is_public = False
-        else:
-            raise RuntimeError("An ELB must have either an external or an internal DNS names")
-
-        template.add_resource(elb.LoadBalancer(
-            ELB_TITLE,
-            ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
-                Enabled=True,
-                Timeout=60,
-            ),
-            CrossZone=True,
-            Instances=[Ref(r) for r in ec2_instances],
-            # TODO: from configuration
-            Listeners=[
-                elb.Listener(
-                    LoadBalancerPort='80',
-                    InstancePort='80',
-                    Protocol='HTTP',
-                    ),
-                ],
-            # TODO: from configuration
-            # seems to default to opening a TCP connection on port 80
-            #HealthCheck=elb.HealthCheck(
-            #    Target=Join('', ['HTTP:', Ref(webport_param), '/']),
-            #    HealthyThreshold='3',
-            #    UnhealthyThreshold='5',
-            #    Interval='30',
-            #    Timeout='5',
-            #    )
-            SecurityGroups=[Ref(SECURITY_GROUP_TITLE)],
-            Scheme='internet-facing' if elb_is_public else 'internal',
-            Subnets=context['elb']['subnets'],
-            Tags=elb_tags(context)
-            ))
-
-        if elb_is_public:
-            template.add_resource(external_dns_elb(context))
-        else:
-            template.add_resource(internal_dns_elb(context))        
+        render_elb(context, template, ec2_instances)
 
     elif context['ec2']:
         assert context['ec2']['cluster-size'] == 1, "If there is no load balancer, only a single EC2 instance can be actually assigned a DNS: %s" % context
@@ -415,3 +339,91 @@ def render(context):
     map(template.add_output, cfn_outputs)
     return template.to_json()
 
+def render_ec2(context, template, cfn_outputs):
+    if context['ec2']:
+        # all ec2 nodes in a cluster share the same security group
+        secgroup = ec2_security(context)
+        template.add_resource(secgroup)
+
+        ec2_instances = []
+        for node in range(1, context['ec2']['cluster-size'] + 1):
+            instance = ec2instance(context, node)
+            ec2_instances.append(instance)
+            template.add_resource(instance)
+            cfn_outputs.extend(_ec2_outputs(node))
+
+        # all ec2 nodes in a cluster share the same keypair
+        template.add_parameter(Parameter(KEYPAIR, **{
+            "Type": "String",
+            "Description": "EC2 KeyPair that enables SSH access to this instance",
+        }))
+        return ec2_instances
+
+def render_sns(context, template):
+    for topic_name in context['sns']:
+        topic = template.add_resource(sns.Topic(
+            _sanitize_title(topic_name) + "Topic",
+            TopicName=topic_name
+        ))
+        template.add_output(Output(
+            _sanitize_title(topic_name) + "TopicArn",
+            Value=Ref(topic)
+        ))
+
+def render_sqs(context, template):
+    for queue_name in context['sqs']:
+        queue = template.add_resource(sqs.Queue(
+            _sanitize_title(queue_name) + "Queue", 
+            QueueName=queue_name
+        ))
+        template.add_output(Output(
+            _sanitize_title(queue_name) + "QueueArn",
+            Value=GetAtt(queue, "Arn")
+        ))
+
+def render_elb(context, template, ec2_instances):
+    if context['full_hostname']:
+        elb_is_public = True
+    elif context['int_full_hostname']:
+        elb_is_public = False
+    else:
+        raise RuntimeError("An ELB must have either an external or an internal DNS names")
+
+    template.add_resource(elb.LoadBalancer(
+        ELB_TITLE,
+        ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
+            Enabled=True,
+            Timeout=60,
+        ),
+        CrossZone=True,
+        Instances=[Ref(r) for r in ec2_instances],
+        # TODO: from configuration
+        Listeners=[
+            elb.Listener(
+                LoadBalancerPort='80',
+                InstancePort='80',
+                Protocol='HTTP',
+                ),
+            ],
+        # TODO: from configuration
+        # seems to default to opening a TCP connection on port 80
+        #HealthCheck=elb.HealthCheck(
+        #    Target=Join('', ['HTTP:', Ref(webport_param), '/']),
+        #    HealthyThreshold='3',
+        #    UnhealthyThreshold='5',
+        #    Interval='30',
+        #    Timeout='5',
+        #    )
+        SecurityGroups=[Ref(SECURITY_GROUP_TITLE)],
+        Scheme='internet-facing' if elb_is_public else 'internal',
+        Subnets=context['elb']['subnets'],
+        Tags=elb_tags(context)
+        ))
+
+    if elb_is_public:
+        template.add_resource(external_dns_elb(context))
+    else:
+        template.add_resource(internal_dns_elb(context))        
+
+def _sanitize_title(string):
+    return "".join(map(str.capitalize, string.split("-")))
