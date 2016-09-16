@@ -140,7 +140,7 @@ def parse_loc_list(loc_list):
     def expand_dirs(triple):
         protocol, host, path = triple
         if protocol in ['dir', 'file'] and not os.path.exists(path):
-            LOG.warn("could not resolve %r, skipping" % path)
+            LOG.warn("could not resolve %r, skipping", path)
             return [None]
         if protocol == 'dir':
             yaml_files = utils.listfiles(path, ['.yaml'])

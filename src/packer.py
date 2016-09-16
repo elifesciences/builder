@@ -113,12 +113,12 @@ def prj(pname, path):
 #    open(fname, 'w').write(x)
 #    print 'wrote',fname
 
-def render_template(project):
+def render_template(pname):
     "walk the TEMPLATE and call any callables"
     template = copy.deepcopy(TEMPLATE)
     def fn(x):
         if callable(x):
-            return x(project)
+            return x(pname)
         return x    
     return walk_nested_struct(template, fn)
 

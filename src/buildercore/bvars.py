@@ -16,9 +16,9 @@ def read_from_current_host():
     # prefer hyphenated over underscores
     for fname in ['build-vars.json.b64', 'build_vars.json.b64']:
         try:
-            buffer = StringIO()
-            get(join('/etc/', fname), buffer)
-            return decode_bvars(buffer.getvalue())
+            strbuffer = StringIO()
+            get(join('/etc/', fname), strbuffer)
+            return decode_bvars(strbuffer.getvalue())
         except FabricException:
             # file not found
             continue

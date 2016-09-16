@@ -10,12 +10,12 @@ from more_itertools import unique_everseen
 import logging
 LOG = logging.getLogger(__name__)
 
-def shallow_flatten(l):
+def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
-    return [item for sublist in l for item in sublist]
+    return [item for sublist in lst for item in sublist]
 
-def unique(l):
-    return list(unique_everseen(l))
+def unique(lst):
+    return list(unique_everseen(lst))
 
 def iterable(x):
     return isinstance(x, Iterable)
@@ -108,10 +108,6 @@ def last(x):
     "returns the last value in x"
     return nth(x, -1)
 
-def rest(x):
-    "returns all but the first value in x"
-    return x[1:]
-
 def firstnn(x):
     "returns the first non-nil value in x"
     return first(filter(lambda v: v != None, x))
@@ -180,7 +176,7 @@ def yaml_loads(string):
 '''
 
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
-    #pylint: disable=no-member
+    #pylint: disable=too-many-ancestors
     class OrderedLoader(loader_class):
         pass
     def construct_mapping(loader, node):
@@ -191,8 +187,10 @@ def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
 
-def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, indent=4, line_break='\n', **kwds):
-    #pylint: disable=no-member
+def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False,  **kwds):
+    indent=4
+    line_break='\n'
+    #pylint: disable=too-many-ancestors
     class OrderedDumper(dumper_class):
         pass
     def _dict_representer(dumper, data):
@@ -275,7 +273,7 @@ def lu(context, *paths, **kwargs):
     if 'default' in kwargs:
         default = kwargs['default']
     v = firstnn(map(lambda path: lookup(context, path, default), paths))
-    if v == None:
+    if v is None:
         raise ValueError("no value available for paths %r. %s" % (paths, context))
     return v
 

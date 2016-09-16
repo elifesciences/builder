@@ -1,7 +1,7 @@
 # pylint: disable=no-member
 import ssl, socket
 from dateutil.parser import parse
-import utils, project, core
+from . import utils, project, core
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -19,10 +19,10 @@ def cert_info(hostname, verbose=False):
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        s = ctx.wrap_socket(socket.socket(), server_hostname=hostname)
-        s.settimeout(timeout)
-        s.connect((hostname, 443))
-        cert = s.getpeercert()
+        sock = ctx.wrap_socket(socket.socket(), server_hostname=hostname)
+        sock.settimeout(timeout)
+        sock.connect((hostname, 443))
+        cert = sock.getpeercert()
         LOG.debug("got: %r", cert)
         if not cert:
             ret['results'] = 'no results'
@@ -49,7 +49,7 @@ def cert_info(hostname, verbose=False):
         return ret
 
     except socket.timeout as err:
-        LOG.error("failed to fetch certificate, connection timed out after %s seconds" % timeout)
+        LOG.error("failed to fetch certificate, connection timed out after %s seconds", timeout)
         ret['results'] = 'timed out'
 
     except socket.error:
@@ -88,5 +88,5 @@ def all_certificates(region=None):
 
 def certificate_report(region=None):
     certs = all_certificates(region)
-    d = utils.json_dumps(certs, dangerous=True)
-    open('/tmp/certs.report', 'w').write(d)
+    dump = utils.json_dumps(certs, dangerous=True)
+    open('/tmp/certs.report', 'w').write(dump)
