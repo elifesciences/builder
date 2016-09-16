@@ -1,4 +1,4 @@
-from distutils.util import strtobool
+from distutils.util import strtobool #pylint: disable=import-error,no-name-in-module
 from fabric.api import task, local, run, sudo, put, get, abort
 from fabric.contrib import files
 import aws, utils
