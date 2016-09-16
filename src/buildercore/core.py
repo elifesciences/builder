@@ -167,6 +167,7 @@ def stack_all_ec2_nodes(stackname, work, username=config.DEPLOY_USER, **kwargs):
     from kwargs"""
     public_ips = [ec2['instance']['ip_address'] for ec2 in stack_data(stackname)]
     params = _ec2_connection_params(stackname, username)
+    LOG.info("Executing %s on all ec2 nodes (%s)", work, public_ips)
 
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
@@ -275,7 +276,7 @@ def stack_data(stackname, ensure_single_instance=False):
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
         def ec2data(ec2):
-            data = stack.__dict__
+            data = stack.__dict__.copy()
             data['instance'] = ec2.__dict__
             return data
         return map(ec2data, ec2_instances)
