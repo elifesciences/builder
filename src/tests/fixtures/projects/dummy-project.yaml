@@ -31,6 +31,8 @@ defaults:
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
         subnet-cidr: '10.0.2.0/24'
+        redundant-subnet-id: subnet-1d4eb46a # elife-public-subnet-2
+        redundant-subnet-cidr: '10.0.2.0/24'
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -162,6 +164,8 @@ project-with-ext:
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
+    # no internal domain, while the public 'domain' is true by default
+    intdomain: false
     aws:
         ports:
             - 80

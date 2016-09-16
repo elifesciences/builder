@@ -101,7 +101,13 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     })
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
-    context['elb'] = context['project']['aws'].get('elb')
+    if context['project']['aws'].get('elb'):
+        context['elb'] = {
+            'subnets': [
+                context['project']['aws']['subnet-id'],
+                context['project']['aws']['redundant-subnet-id']
+            ]
+        }
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])

@@ -122,4 +122,9 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Protocol': 'HTTP',
             }
         )
+        self.assertNotIn('IntDNS', resources.keys())
+        dns = resources['ExtDNS']['Properties']
+        self.assertIn('AliasTarget', dns.keys())
+        self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
+        self.assertIn('DomainName', outputs.keys())
 

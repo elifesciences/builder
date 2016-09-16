@@ -214,13 +214,13 @@ def ext_volume(context_ext):
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE, **args)
     return ec2v, ec2va
 
-def external_dns(context):
+def external_dns_ec2(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
     dns_record = route53.RecordSetType(
         R53_EXT_TITLE,
         HostedZoneName=hostedzone,
-        Comment = "External DNS record",
+        Comment = "External DNS record for EC2",
         Name = context['full_hostname'],
         Type = "A",
         TTL = "900",
@@ -234,14 +234,47 @@ def internal_dns(context):
     dns_record = route53.RecordSetType(
         R53_INT_TITLE,
         HostedZoneName=hostedzone,
-        Comment = "Internal DNS record",
+        Comment = "Internal DNS record for EC2",
         Name = context['int_full_hostname'],
         Type = "A",
         TTL = "900",
         ResourceRecords=[GetAtt(EC2_TITLE, "PrivateIp")],
     )
     return dns_record
-    
+
+# TODO: remove duplication, but also unify with PR #46
+def external_dns_elb(context):
+    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_EXT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment = "External DNS record for ELB",
+        Name = context['full_hostname'],
+        Type = "A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ELB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
+
+def internal_dns_elb(context):
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_INT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment = "Internal DNS record for ELB",
+        Name = context['int_full_hostname'],
+        Type = "A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ELB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
 
 def render(context):
     template = Template()
@@ -299,6 +332,13 @@ def render(context):
 
     # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
     if context['elb']:
+        if context['full_hostname']:
+            elb_is_public = True
+        elif context['int_full_hostname']:
+            elb_is_public = False
+        else:
+            raise RuntimeError("An ELB must have either an external or an internal DNS names")
+
         template.add_resource(elb.LoadBalancer(
             ELB_TITLE,
             ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
@@ -316,6 +356,7 @@ def render(context):
                     ),
                 ],
             # TODO: from configuration
+            # seems to default to opening a TCP connection on port 80
             #HealthCheck=elb.HealthCheck(
             #    Target=Join('', ['HTTP:', Ref(webport_param), '/']),
             #    HealthyThreshold='3',
@@ -323,28 +364,38 @@ def render(context):
             #    Interval='30',
             #    Timeout='5',
             #    )
-            Scheme='internet-facing',
-            # TODO: useful only for internal load balancers
-            #Subnets=???
+            SecurityGroups=[Ref(SECURITY_GROUP_TITLE)],
+            Scheme='internet-facing' if elb_is_public else 'internal',
+            Subnets=context['elb']['subnets'],
             # TODO add
             #Tags=[]
             ))
-        # point the subdomain dnses to the ELB, maybe needs to be done later
-        # as its own DNS is generated and will come out in the Outputs
+
+        if elb_is_public:
+            template.add_resource(external_dns_elb(context))
+        else:
+            template.add_resource(internal_dns_elb(context))        
+
     elif context['ec2']:
         assert context['ec2']['cluster-size'] == 1, "If there is no load balancer, only a single EC2 instance can be actually assigned a DNS: %s" % context
         if context['full_hostname']:
-            template.add_resource(external_dns(context))
-            cfn_outputs.extend([
-                mkoutput("DomainName", "Domain name of the newly created EC2 instance", Ref(R53_EXT_TITLE)),
-            ])
+            template.add_resource(external_dns_ec2(context))
 
         # ec2 nodes in a cluster DONT get an internal hostname
         if context['int_full_hostname']:
             template.add_resource(internal_dns(context))        
-            cfn_outputs.extend([
-                mkoutput("IntDomainName", "Domain name of the newly created EC2 instance", Ref(R53_INT_TITLE))
-            ])
+
+    if context['full_hostname']:
+        assert R53_EXT_TITLE in template.resources.keys(), "You want an external DNS, but there is no resource configuring it: %s" % context
+        cfn_outputs.extend([
+            mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)),
+        ])
+
+    if context['int_full_hostname']:
+        assert R53_INT_TITLE in template.resources.keys(), "You want an internal DNS, but there is no resource configuring it: %s" % context
+        cfn_outputs.extend([
+            mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE))
+        ])
 
     map(template.add_output, cfn_outputs)
     return template.to_json()
