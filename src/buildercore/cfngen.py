@@ -194,7 +194,7 @@ def validate_project(pname, **extra):
 
     except boto.connection.BotoServerError:
         msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
-        LOG.error(msg)
+        LOG.exception(msg)
         return False
 
     return True
