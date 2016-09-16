@@ -24,6 +24,8 @@
         "vpc-id": "vpc-78a2071d", 
         "subnet-id": "subnet-1d4eb46a", 
         "subnet-cidr": "10.0.2.0/24", 
+        "redundant-subnet-id": "subnet-1d4eb46a", 
+        "redundant-subnet-cidr": "10.0.2.0/24", 
         "ports": [
             22
         ]
@@ -42,6 +44,8 @@
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
+            "redundant-subnet-id": "subnet-1d4eb46a", 
+            "redundant-subnet-cidr": "10.0.2.0/24", 
             "ports": [
                 22
             ], 
@@ -60,6 +64,8 @@
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
+            "redundant-subnet-id": "subnet-1d4eb46a", 
+            "redundant-subnet-cidr": "10.0.2.0/24", 
             "rds": {
                 "name": "<defined at generation>", 
                 "multi-az": false, 
