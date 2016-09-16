@@ -281,9 +281,6 @@ def stack_data(stackname, ensure_single_instance=False):
             return data
         return map(ec2data, ec2_instances)
 
-    except RuntimeError:
-        LOG.error("caught an unhandled error attempting to discover more information about this instance.")
-
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
         raise 
