@@ -10,14 +10,13 @@ data called a `context`.
 it to the correct file etc."""
 
 from . import utils, bvars
-from .utils import die
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
 from troposphere import elasticloadbalancing as elb
 
 from functools import partial
 import logging
 from .decorators import osissuefn
-from .utils import first
+from .utils import first, die
 
 LOG = logging.getLogger(__name__)
 
@@ -72,7 +71,8 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    assert 'ports' in context['project']['aws'], "Missing `ports` configuration in `aws` for '%s'" % context['stackname']
+    die('ports' in context['project']['aws'], \
+        "Missing `ports` configuration in `aws` for '%s'" % context['stackname'])
 
     return security_group(
         SECURITY_GROUP_TITLE,
@@ -97,6 +97,14 @@ def rds_security(context):
 #
 
 
+def _generic_tags(context):
+    return {
+        'Owner': context['author'],
+        'Project': context['project_name'], # journal
+        # the name AWS Console uses to label an instance
+        'Name': context['stackname'] # ll: journal-prod
+    }
+
 def instance_tags(context, node=None):
     # NOTE: RDS instances also call this function
     tags = _generic_tags(context)
@@ -115,20 +123,16 @@ def elb_tags(context):
         'Name': '%s--elb' % context['stackname'], # ll: journal--prod--elb
         'Cluster': context['stackname'], # ll: journal--prod
     })
-    # intentional: ec2.Tag is just a dictionary
     return [ec2.Tag(key, value) for key, value in tags.items()]
 
-def _generic_tags(context):
-    return {
-        'Owner': context['author'],
-        'Project': context['project_name'], # journal
-        # the name AWS Console uses to label an instance
-        'Name': context['stackname'] # ll: journal-prod
-    }
+def mkoutput(title, desc, val):
+    if isinstance(val, tuple):
+        val = GetAtt(val[0], val[1])
+    return Output(title, Description=desc, Value=val)
 
-
-
-
+#
+#
+#
 
 def ec2instance(context, node):
     lu = partial(utils.lu, context)
@@ -151,12 +155,6 @@ def ec2instance(context, node):
 echo %s > /etc/build-vars.json.b64""" % build_vars_serialization),
     }
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
-
-def mkoutput(title, desc, val):
-    if isinstance(val, tuple):
-        val = GetAtt(val[0], val[1])
-    return Output(title, Description=desc, Value=val)
-
 
 def rdsinstance(context, template):
     lu = partial(utils.lu, context)
@@ -196,7 +194,6 @@ def rdsinstance(context, template):
         "EngineVersion": str(lu('project.aws.rds.version')), # 'defaults.aws.rds.storage')),
     }
     rdbi = rds.DBInstance(RDS_TITLE, **data)
-
     map(template.add_resource, [rsn, rdbi, vpcdbsg])
 
     outputs = [
@@ -291,9 +288,12 @@ def internal_dns_elb(context):
 
 
 
+#
+# render_* funcs
+#
+
 def _sanitize_title(string):
     return "".join(map(str.capitalize, string.split("-")))
-
 
 def render_ec2(context, template):
     # all ec2 nodes in a cluster share the same security group
@@ -344,13 +344,11 @@ def render_sqs(context, template):
         ))
 
 def render_elb(context, template, ec2_instances):
-    if context['full_hostname']:
-        elb_is_public = True
-    elif context['int_full_hostname']:
-        elb_is_public = False
-    else:
-        raise RuntimeError("An ELB must have either an external or an internal DNS names")
+    die(any([context['full_hostname'], context['int_full_hostname']]), \
+        "An ELB must have either an external or an internal DNS entry")
 
+    elb_is_public = True if context['full_hostname'] else False
+    
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
@@ -358,15 +356,15 @@ def render_elb(context, template, ec2_instances):
             Timeout=60,
         ),
         CrossZone=True,
-        Instances=[Ref(r) for r in ec2_instances],
+        Instances=map(Ref, ec2_instances),
         # TODO: from configuration
         Listeners=[
             elb.Listener(
                 LoadBalancerPort='80',
                 InstancePort='80',
                 Protocol='HTTP',
-                ),
-            ],
+            ),
+        ],
         # TODO: from configuration
         # seems to default to opening a TCP connection on port 80
         #HealthCheck=elb.HealthCheck(
@@ -382,14 +380,11 @@ def render_elb(context, template, ec2_instances):
         Tags=elb_tags(context)
         ))
 
-    if elb_is_public:
-        template.add_resource(external_dns_elb(context))
-    else:
-        template.add_resource(internal_dns_elb(context))        
-
+    dns = external_dns_elb if elb_is_public else internal_dns_elb
+    template.add_resource(dns(context))
 
 #
-#
+# 
 #
 
 def render(context):
