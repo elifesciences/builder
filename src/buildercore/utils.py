@@ -221,14 +221,14 @@ def utcnow():
 def ymd(dt=None, fmt="%Y-%m-%d"):
     "formats a datetime object to YYY-mm-dd format"
     if not dt:
-        dt = datetime.now()
+        dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
 
 def die(assertion, msg):
     """intended as a convenient replacement for `assert` statements that 
     get compiled away with -O flags"""
     if not assertion:
-        raise RuntimeError(msg)
+        raise AssertionError(msg)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
