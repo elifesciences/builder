@@ -123,20 +123,30 @@ def aws_stack_list():
     region = aws.find_region()
     return core.active_stack_names(region)
 
+def _pick_node(instance_list, node):
+    num_instances = len(instance_list)
+    if num_instances > 1:
+        if not node:
+            node = utils._pick('node', range(1, num_instances+1))
+        node = int(node) - 1
+        return instance_list[int(node)]
+    return instance_list[0]
+
 @task
 @requires_aws_stack
-def ssh(stackname, username=DEPLOY_USER):
-    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['instance']['ip_address']
+def ssh(stackname, node=None, username=DEPLOY_USER):
+    instances = core.stack_data(stackname)
+    public_ip = _pick_node(instances, node)['instance']['ip_address']
     local("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
-def owner_ssh(stackname):
-    "maintainence ssh. uses the pem key and the bootstrap user to login."
-    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['instance']['ip_address']
+def owner_ssh(stackname, node=None):
+    "maintenance ssh. uses the pem key and the bootstrap user to login."
+    instances = core.stack_data(stackname)
+    public_ip = _pick_node(instances, node)['instance']['ip_address']
     # -i identify file
     local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
-
         
 @task
 @requires_aws_stack

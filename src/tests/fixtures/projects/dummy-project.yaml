@@ -23,13 +23,16 @@ defaults:
     aws:
         ec2:
             cluster-size: 1
-        # find more here: http://cloud-images.ubuntu.com/releases/
-        ami: ami-9eaa1cf6  # Ubuntu 14.04
+            # find more here: http://cloud-images.ubuntu.com/releases/
+            ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
+        elb: False
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
         subnet-cidr: '10.0.2.0/24'
+        redundant-subnet-id: subnet-1d4eb46a # elife-public-subnet-2
+        redundant-subnet-cidr: '10.0.2.0/24'
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -57,7 +60,8 @@ defaults:
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
-            ami: ami-9eaa1cf6 # Ubuntu 14.04
+            ec2:
+                ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         box-url: null # not needed for boxes hosted on Atlas 
@@ -90,7 +94,8 @@ dummy2:
             - 80:
                 guest: 80
                 cidr-ip: 0.0.0.0/0
-        ami: ami-111111
+        ec2:
+            ami: ami-111111
         rds:
             storage: 10
     aws-alt:
@@ -99,7 +104,8 @@ dummy2:
             rds:
                 storage: 15
                 type: db.m4.huge
-            ami: ami-22222
+            ec2:
+                ami: ami-22222
     vagrant:
         ports:
             1239: 80
@@ -117,11 +123,12 @@ dummy3:
     meta:
         description: "foo"
     aws:
-        ami: ami-111111
+        ec2:
+            ami: ami-111111
         ports:
             - 22
     aws-alt:
-        # uses an rds backend and different ami
+        # uses an rds backend
         alt-config1:
             ports:
                 - 80
@@ -156,8 +163,12 @@ project-with-ext:
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    # no internal domain, while the public 'domain' is true by default
+    intdomain: false
     aws:
         ports:
             - 80
         ec2:
             cluster-size: 2
+        elb: True

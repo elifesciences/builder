@@ -95,7 +95,57 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             resources['EC2Instance1']['Properties']['Tags']
         )
+        self.assertIn(
+            {
+                'Key': 'Cluster',
+                'Value': 'project-with-cluster--prod',
+            },
+            resources['EC2Instance1']['Properties']['Tags']
+        )
         outputs = data['Outputs']
         self.assertIn('InstanceId1', outputs.keys())
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
+        self.assertIn('ElasticLoadBalancer', resources.keys())
+        elb = resources['ElasticLoadBalancer']['Properties']
+        self.assertEqual(elb['Scheme'], 'internet-facing')
+        self.assertEqual(1, len(elb['Listeners']))
+        self.assertEqual(
+            elb['Instances'],
+            [
+                {
+                    'Ref': 'EC2Instance1',
+                },
+                {
+                    'Ref': 'EC2Instance2',
+                }
+            ]
+        )
+        self.assertEqual(
+            elb['Listeners'][0],
+            {
+                'InstancePort': '80',
+                'LoadBalancerPort': '80',
+                'Protocol': 'HTTP',
+            }
+        )
+        self.assertIn(
+            {
+                'Key': 'Name',
+                'Value': 'project-with-cluster--prod--elb',
+            },
+            resources['ElasticLoadBalancer']['Properties']['Tags']
+        )
+        self.assertIn(
+            {
+                'Key': 'Cluster',
+                'Value': 'project-with-cluster--prod',
+            },
+            resources['ElasticLoadBalancer']['Properties']['Tags']
+        )
+        self.assertNotIn('IntDNS', resources.keys())
+        dns = resources['ExtDNS']['Properties']
+        self.assertIn('AliasTarget', dns.keys())
+        self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
+        self.assertIn('DomainName', outputs.keys())
+

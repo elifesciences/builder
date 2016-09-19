@@ -58,6 +58,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'rds_password': None,
         'rds_instance_id': None,
         'ec2': False,
+        'elb': False,
         'sns': [],
         'sqs': {},
         'ext': None
@@ -100,6 +101,13 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     })
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
+    if context['project']['aws'].get('elb'):
+        context['elb'] = {
+            'subnets': [
+                context['project']['aws']['subnet-id'],
+                context['project']['aws']['redundant-subnet-id']
+            ]
+        }
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])
@@ -186,7 +194,7 @@ def validate_project(pname, **extra):
 
     except boto.connection.BotoServerError:
         msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
-        LOG.error(msg)
+        LOG.exception(msg)
         return False
 
     return True

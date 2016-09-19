@@ -12,10 +12,11 @@
         "https://github.com/example/builder-base-formula"
     ], 
     "aws": {
-        "ami": "ami-111111", 
         "ec2": {
-            "cluster-size": 1
+            "cluster-size": 1,
+            "ami": "ami-111111"
         },
+        "elb": false,
         "type": "t2.small", 
         "region": "us-east-1", 
         "sns": [],
@@ -23,16 +24,19 @@
         "vpc-id": "vpc-78a2071d", 
         "subnet-id": "subnet-1d4eb46a", 
         "subnet-cidr": "10.0.2.0/24", 
+        "redundant-subnet-id": "subnet-1d4eb46a", 
+        "redundant-subnet-cidr": "10.0.2.0/24", 
         "ports": [
             22
         ]
     }, 
     "aws-alt": {
         "fresh": {
-            "ami": "ami-9eaa1cf6", 
             "ec2": {
-                "cluster-size": 1
+                "cluster-size": 1,
+                "ami": "ami-9eaa1cf6"
             },
+            "elb": false,
             "type": "t2.small", 
             "region": "us-east-1", 
             "sns": [],
@@ -40,16 +44,19 @@
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
+            "redundant-subnet-id": "subnet-1d4eb46a", 
+            "redundant-subnet-cidr": "10.0.2.0/24", 
             "ports": [
                 22
             ], 
             "description": "uses a plain Ubuntu basebox instead of an ami"
         }, 
         "alt-config1": {
-            "ami": "ami-111111", 
             "ec2": {
-                "cluster-size": 1
+                "cluster-size": 1,
+                "ami": "ami-111111"
             },
+            "elb": false,
             "type": "t2.small", 
             "region": "us-east-1", 
             "sns": [],
@@ -57,6 +64,8 @@
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
+            "redundant-subnet-id": "subnet-1d4eb46a", 
+            "redundant-subnet-cidr": "10.0.2.0/24", 
             "rds": {
                 "name": "<defined at generation>", 
                 "multi-az": false, 

@@ -15,7 +15,7 @@ TEMPLATE = {
         # disabled. too fragile, time waster
         #{"type": "amazon-ebs",
         # "region": lambda p: prj(p, 'aws.region'),
-        # #"source_ami": lambda p: prj(p, 'aws.ami'),
+        # #"source_ami": lambda p: prj(p, 'aws.ec2.ami'),
         # "source_ami": "ami-9eaa1cf6",
         # "instance_type": lambda p: prj(p, 'aws.type'),
         # "ssh_username": "ubuntu",
