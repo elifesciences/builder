@@ -38,7 +38,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     if 'alt-config' in more_context:
         project_data = project.set_project_alt(project_data, 'aws', more_context['alt-config'])
-    
+   
     defaults = {
         'project_name': pname,
         'project': project_data,
@@ -101,13 +101,18 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     })
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
-    if context['project']['aws'].get('elb'):
-        context['elb'] = {
+
+    if context['project']['aws'].has_key('elb'):
+        if isinstance(context['project']['aws']['elb'], dict):
+            context['elb'] = context['project']['aws']['elb']
+        else:
+            context['elb'] = {}
+        context['elb'].update({
             'subnets': [
                 context['project']['aws']['subnet-id'],
                 context['project']['aws']['redundant-subnet-id']
             ]
-        }
+        })
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])

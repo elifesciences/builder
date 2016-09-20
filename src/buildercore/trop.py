@@ -348,7 +348,35 @@ def render_elb(context, template, ec2_instances):
         "An ELB must have either an external or an internal DNS entry")
 
     elb_is_public = True if context['full_hostname'] else False
-    
+
+    if context['elb']['stickiness']:
+        cookie_stickiness = [elb.LBCookieStickinessPolicy(
+            PolicyName="BrowserSessionLongCookieStickinessPolicy"
+        )]
+    else:
+        cookie_stickiness = []
+
+    if context['elb']['protocol'] == 'http':
+        listeners=[
+            elb.Listener(
+                InstanceProtocol='HTTP',
+                InstancePort='80',
+                LoadBalancerPort='80',
+                Protocol='HTTP',
+            ),
+        ]
+    elif context['elb']['protocol'] == 'http':
+        listeners=[
+            elb.Listener(
+                InstanceProtocol='HTTP',
+                InstancePort='80',
+                LoadBalancerPort='443',
+                Protocol='HTTPS',
+            ),
+        ]
+    else:
+        raise RuntimeError("Uknown procotol `%s`" % context['elb']['protocol'])
+
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
@@ -358,13 +386,8 @@ def render_elb(context, template, ec2_instances):
         CrossZone=True,
         Instances=map(Ref, ec2_instances),
         # TODO: from configuration
-        Listeners=[
-            elb.Listener(
-                LoadBalancerPort='80',
-                InstancePort='80',
-                Protocol='HTTP',
-            ),
-        ],
+        Listeners=listeners,
+        LBCookieStickinessPolicy=cookie_stickiness,
         # TODO: from configuration
         # seems to default to opening a TCP connection on port 80
         #HealthCheck=elb.HealthCheck(
