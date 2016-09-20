@@ -365,7 +365,7 @@ def render_elb(context, template, ec2_instances):
                 Protocol='HTTP',
             ),
         ]
-    elif context['elb']['protocol'] == 'http':
+    elif context['elb']['protocol'] == 'https':
         listeners=[
             elb.Listener(
                 InstanceProtocol='HTTP',
@@ -376,7 +376,7 @@ def render_elb(context, template, ec2_instances):
             ),
         ]
     else:
-        raise RuntimeError("Uknown procotol `%s`" % context['elb']['protocol'])
+        raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,

@@ -158,7 +158,7 @@ journal:
                 cluster-size: 2
             elb:
                 stickiness: True
-                procotol: https
+                protocol: https
     vagrant:
         ram: 4096
         ports:
