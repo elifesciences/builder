@@ -26,7 +26,6 @@ defaults:
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
-        elb: False
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
@@ -55,6 +54,9 @@ defaults:
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        elb:
+            # elb defaults only used if an 'elb' section present in project
+            stickiness: False
         sns: []
         sqs: []
     aws-alt:
@@ -171,4 +173,5 @@ project-with-cluster:
             - 80
         ec2:
             cluster-size: 2
-        elb: True
+        elb: 
+            protocol: http

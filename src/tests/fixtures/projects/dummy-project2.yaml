@@ -51,6 +51,9 @@ defaults:
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        elb:
+            # elb defaults only used if an 'elb' section present in project
+            stickiness: False
         sns: []
         sqs: []
     aws-alt:

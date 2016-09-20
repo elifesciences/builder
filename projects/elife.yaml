@@ -59,6 +59,10 @@ defaults:
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        elb:
+            # elb defaults only used if an 'elb' section present in project
+            stickiness: False
+            protocol: http
         sqs: []
         sns: []
     aws-alt:
@@ -144,6 +148,14 @@ journal:
             - 22
             - 443
             - 80
+    aws-alt:
+        end2end:
+            description: end2end environment for journal. ELB on top of multiple EC2 instances
+            ec2:
+                cluster-size: 2
+            elb:
+                stickiness: True
+                procotol: https
     vagrant:
         ram: 4096
         ports:
@@ -392,7 +404,8 @@ medium:
         clustered:
             ec2:
                 cluster-size: 2
-            elb: True
+            elb: 
+                protocol: http
 
 search:
     description: service for indexing all of Elife 2.0 content

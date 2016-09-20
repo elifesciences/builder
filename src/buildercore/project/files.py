@@ -72,7 +72,7 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
 
     # exceptions.
     # these values *shouldn't* be merged if they *don't* exist in the project
-    excluding = ['aws', 'vagrant', 'vagrant-alt', 'aws-alt', {'aws': ['rds', 'ext']}]
+    excluding = ['aws', 'vagrant', 'vagrant-alt', 'aws-alt', {'aws': ['rds', 'ext', 'elb']}]
     project_data = copy.deepcopy(global_defaults)
     utils.deepmerge(project_data, project_list[pname], excluding)
 
@@ -92,7 +92,7 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         # merge this over top of original aws defaults
         orig_defaults = copy.deepcopy(global_defaults['aws'])
 
-        utils.deepmerge(orig_defaults, project_aws, ['rds', 'ext'])
+        utils.deepmerge(orig_defaults, project_aws, ['rds', 'ext', 'elb'])
         project_data['aws-alt'][altname] = orig_defaults
 
     for altname, altdata in project_data.get('vagrant-alt', {}).items():
