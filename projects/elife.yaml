@@ -63,6 +63,8 @@ defaults:
             # elb defaults only used if an 'elb' section present in project
             stickiness: False
             protocol: http
+            idle_timeout: 60
+            certificate: ASCAIRXYIRFBOR5QSDP5M
         sqs: []
         sns: []
     aws-alt:
@@ -141,6 +143,7 @@ api-gateway:
 
 journal:
     subdomain: journal # journal.elifesciences.org
+    intdomain: null
     repo: https://github.com/elifesciences/journal
     formula-repo: https://github.com/elifesciences/journal-formula
     aws:
@@ -428,7 +431,7 @@ bus:
     description: see https://github.com/elifesciences/bus
     default-branch: null
     domain: null
-    int_domain: null
+    intdomain: null
     aws:
         ec2: false
         sns:

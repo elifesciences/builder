@@ -54,6 +54,8 @@ defaults:
         elb:
             # elb defaults only used if an 'elb' section present in project
             stickiness: False
+            protocol: http
+            idle_timeout: 60
         sns: []
         sqs: []
     aws-alt:
