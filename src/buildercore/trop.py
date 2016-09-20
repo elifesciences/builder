@@ -372,6 +372,7 @@ def render_elb(context, template, ec2_instances):
                 InstancePort='80',
                 LoadBalancerPort='443',
                 Protocol='HTTPS',
+                SSLCertificateId=context['elb']['certificate']
             ),
         ]
     else:
@@ -382,6 +383,9 @@ def render_elb(context, template, ec2_instances):
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
             Enabled=True,
             Timeout=60,
+        ),
+        ConnectionSettings=elb.ConnectionSettings(
+            IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
         Instances=map(Ref, ec2_instances),
