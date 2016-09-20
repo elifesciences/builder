@@ -20,9 +20,10 @@ defaults:
     formula-dependencies:
         - https://github.com/example2/builder-base-formula
     aws:
-        ec2: true
-        # find more here: http://cloud-images.ubuntu.com/releases/
-        ami: ami-9eaa1cf6  # Ubuntu 14.04
+        ec2:
+            cluster-size: 1
+            # find more here: http://cloud-images.ubuntu.com/releases/
+            ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
         region: us-east-1
         vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
@@ -55,7 +56,8 @@ defaults:
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
-            ami: ami-9eaa1cf6 # Ubuntu 14.04
+            ec2:
+                ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         box-url: null # not needed for boxes hosted on Atlas 

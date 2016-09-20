@@ -12,11 +12,18 @@ from the interface logic in the fabfile.
 """
 import os
 from os.path import join
-
+from fabric.api import env
 from buildercore import utils
-from buildercore.utils import first, last, listfiles
 from kids.cache import cache
 import logging
+
+
+# no un-catchable errors from Fabric
+
+class FabricException(Exception):
+    pass
+
+env.abort_exception = FabricException
 
 
 # dirs are relative
@@ -133,11 +140,11 @@ def parse_loc_list(loc_list):
     def expand_dirs(triple):
         protocol, host, path = triple
         if protocol in ['dir', 'file'] and not os.path.exists(path):
-            LOG.warn("could not resolve %r, skipping" % path)
+            LOG.warn("could not resolve %r, skipping", path)
             return [None]
         if protocol == 'dir':
             yaml_files = utils.listfiles(path, ['.yaml'])
-            return [('file', host, path) for path in yaml_files]
+            return [('file', host, ppath) for ppath in yaml_files]
         return [triple]
     # we don't want dirs, we want files
     p_loc_list = utils.shallow_flatten(map(expand_dirs, p_loc_list))

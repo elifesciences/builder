@@ -12,6 +12,7 @@ def prn(out="", nl=true)
 end
 
 def runcmd(cmd)
+    #prn "running command: " + cmd
     output = nil
     IO.popen(cmd) do |io|
         output = io.read
@@ -221,21 +222,24 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         formula = PRJ.fetch("formula-repo", nil)
         using_formula = formula != nil and formula != ""
 
-        if using_formula and not File.exists?("cloned-projects/#{PROJECT_NAME}")
-            FileUtils.mkdir_p("cloned-projects/#{PROJECT_NAME}/")
-        end
+        if using_formula
+            # split the formula into two bits using '/', starting from the right
+            _, formula_name = formula.split(/\/([^\/]*)$/)
+            formula_path = "cloned-projects/#{formula_name}"
+            if not File.exists?(formula_path)
+                FileUtils.mkdir_p(formula_path)
+            end
 
-        if not using_formula
-            prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'"
-        else
             # clone the formula repo if it doesn't exist. user is in charge of keeping this updated.
-            if File.exists?("cloned-projects/#{PROJECT_NAME}/.git")
-                prn runcmd("cd cloned-projects/#{PROJECT_NAME}/ && git pull")
+            if File.exists?(formula_path + "/.git")
+                prn runcmd("cd #{formula_path}/ && git pull")
             else
-                prn runcmd("git clone #{formula} cloned-projects/#{PROJECT_NAME}/")
+                prn runcmd("git clone #{formula} #{formula_path}/")
             end
             # mount salt directories
-            project.vm.synced_folder "cloned-projects/#{PROJECT_NAME}/", "/project"
+            project.vm.synced_folder formula_path, "/project"
+        else
+            prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'"
         end
 
         # makes the current user's pub key available within the guest.

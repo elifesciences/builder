@@ -22,8 +22,9 @@ defaults:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         # find more here: https://cloud-images.ubuntu.com/locator/ec2/
-        ec2: True
-        ami: ami-d90d92ce   # Ubuntu 14.04 us-east-1 hvm:ebs
+        ec2:
+            cluster-size: 1
+            ami: ami-d90d92ce   # Ubuntu 14.04 us-east-1 hvm:ebs
         region: us-east-1
         vpc-id: vpc-c23159a5  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-6b6c6e41 # elife-public-subnet

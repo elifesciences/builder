@@ -4,20 +4,18 @@ from functools import wraps
 from datetime import datetime
 import yaml
 from collections import OrderedDict, Iterable
-from fabric.api import run
 from os.path import join
 from more_itertools import unique_everseen
-from StringIO import StringIO
 
 import logging
 LOG = logging.getLogger(__name__)
 
-def shallow_flatten(l):
+def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
-    return [item for sublist in l for item in sublist]
+    return [item for sublist in lst for item in sublist]
 
-def unique(l):
-    return list(unique_everseen(l))
+def unique(lst):
+    return list(unique_everseen(lst))
 
 def iterable(x):
     return isinstance(x, Iterable)
@@ -110,10 +108,6 @@ def last(x):
     "returns the last value in x"
     return nth(x, -1)
 
-def rest(x):
-    "returns all but the first value in x"
-    return x[1:]
-
 def firstnn(x):
     "returns the first non-nil value in x"
     return first(filter(lambda v: v != None, x))
@@ -182,7 +176,7 @@ def yaml_loads(string):
 '''
 
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
-    #pylint: disable=no-member
+    #pylint: disable=too-many-ancestors
     class OrderedLoader(loader_class):
         pass
     def construct_mapping(loader, node):
@@ -193,8 +187,10 @@ def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
 
-def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, indent=4, line_break='\n', **kwds):
-    #pylint: disable=no-member
+def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False,  **kwds):
+    indent=4
+    line_break='\n'
+    #pylint: disable=too-many-ancestors
     class OrderedDumper(dumper_class):
         pass
     def _dict_representer(dumper, data):
@@ -225,13 +221,19 @@ def utcnow():
 def ymd(dt=None, fmt="%Y-%m-%d"):
     "formats a datetime object to YYY-mm-dd format"
     if not dt:
-        dt = datetime.now()
+        dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
+
+def die(assertion, msg):
+    """intended as a convenient replacement for `assert` statements that 
+    get compiled away with -O flags"""
+    if not assertion:
+        raise AssertionError(msg)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
-    assert os.path.isdir(path), "directory couldn't be created: %s" % path
-    assert os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path
+    die(os.path.isdir(path), "directory couldn't be created: %s" % path)
+    die(os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path)
     return path
 
 def json_dumps(obj, dangerous=False):
@@ -277,7 +279,7 @@ def lu(context, *paths, **kwargs):
     if 'default' in kwargs:
         default = kwargs['default']
     v = firstnn(map(lambda path: lookup(context, path, default), paths))
-    if v == None:
+    if v is None:
         raise ValueError("no value available for paths %r. %s" % (paths, context))
     return v
 

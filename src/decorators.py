@@ -13,14 +13,14 @@ LOG = logging.getLogger(__name__)
 from time import time
 
 # http://stackoverflow.com/questions/1622943/timeit-versus-timing-decorator
-def timeit(f):
-    @wraps(f)
+def timeit(fn):
+    @wraps(fn)
     def wrap(*args, **kw):
         ts = time()
-        result = f(*args, **kw)
+        result = fn(*args, **kw)
         te = time()
-        print 'func:%r args:[%r, %r] took: %2.4f sec' % \
-          (f.__name__, args, kw, te-ts)
+        LOG.info('func:%r args:[%r, %r] took: %2.4f sec', \
+          fn.__name__, args, kw, te-ts)
         return result
     return wrap
 

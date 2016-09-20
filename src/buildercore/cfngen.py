@@ -16,7 +16,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 
 """
 
-import os, json, base64, copy
+import os, json, copy
 from os.path import join
 from slugify import slugify
 from . import utils, trop, core, project
@@ -26,7 +26,8 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def build_context(pname, **more_context):
+# TODO: this function needs some TLC - it's getting fat.
+def build_context(pname, **more_context): # pylint: disable=too-many-locals
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
 
@@ -57,6 +58,7 @@ def build_context(pname, **more_context):
         'rds_password': None,
         'rds_instance_id': None,
         'ec2': False,
+        'elb': False,
         'sns': [],
         'sqs': {},
         'ext': None
@@ -98,13 +100,14 @@ def build_context(pname, **more_context):
         'is_prod_instance': core.is_prod_stack(stackname),
     })
 
-    #context['ec2'] = True if context['project']['aws']['ec2'] else False
     context['ec2'] = context['project']['aws'].get('ec2', True)
-    # the above context will reside on the server at /etc/build-vars.json.b64
-    # this gives Salt all (most) of the data that was available at template compile time.
-    # part of the bootstrap process writes a file called /etc/cfn-info.json
-    # this gives Salt the outputs available at stack creation
-    context['build_vars'] = base64.b64encode(json.dumps(context)) if context['project']['aws']['ec2'] else None
+    if context['project']['aws'].get('elb'):
+        context['elb'] = {
+            'subnets': [
+                context['project']['aws']['subnet-id'],
+                context['project']['aws']['redundant-subnet-id']
+            ]
+        }
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])
@@ -147,7 +150,7 @@ def write_context(stackname, contents):
     open(output_fname, 'w').write(contents)
     return output_fname
 
-def context(stackname):
+def stack_context(stackname):
     with open(join(CONTEXT_PATH, stackname + '.json'), 'r') as context_file:
         return json.load(context_file)
 
@@ -191,7 +194,7 @@ def validate_project(pname, **extra):
 
     except boto.connection.BotoServerError:
         msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
-        LOG.error(msg)
+        LOG.exception(msg)
         return False
 
     return True

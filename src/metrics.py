@@ -1,7 +1,6 @@
-from fabric.api import task, cd, settings, run
+from fabric.api import task, cd, run
 from buildercore.core import stack_conn
 from decorators import requires_aws_project_stack
-from buildercore.config import DEPLOY_USER
 
 @task
 @requires_aws_project_stack('elife-metrics')

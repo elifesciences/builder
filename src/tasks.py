@@ -3,15 +3,15 @@
 If you find certain 'types' of tasks accumulating, they might be 
 better off in their own module. This module really is for stuff
 that has no home."""
-import os
-from os.path import join
 import requests
-from buildercore import core, cfngen, config, project, bootstrap
+from buildercore import core, project, bootstrap
 from fabric.api import sudo, run, local, task
+from fabric.contrib.console import confirm
 from decorators import echo_output, requires_aws_stack, requires_project, debugtask
+from buildercore import bakery
 from buildercore.core import stack_conn
-import utils, aws
-from buildercore.decorators import osissue, osissuefn
+import utils
+from buildercore.decorators import osissue
 
 @debugtask
 @requires_project
@@ -45,6 +45,28 @@ def ami_for_project(pname):
     # good for figuring out filters 
     #print results[0].__dict__
 
+@task
+@requires_aws_stack
+def create_ami(stackname):
+    pname = core.project_name_from_stackname(stackname)
+    msg = "this will create a new AMI for the project %r. Continue?" % pname
+    if not confirm(msg, default=False):
+        print 'doing nothing'
+        return
+    amiid = bakery.create_ami(stackname)
+    #amiid = "ami-e9ff3682"
+    print 'AWS is now creating AMI with id', amiid
+    path = pname + '.aws.ec2.ami'
+    # wait until ami finished creating?
+    #core.update_project_file(pname + ".aws.ec2.ami", amiid)
+    new_project_file = project.update_project_file(path, amiid)
+    output_file = project.write_project_file(new_project_file)
+    print '\n' * 4
+    print 'wrote', output_file
+    print 'updated project file with new ami. these changes must be merged and committed manually'
+    print '\n' * 4
+
+
 #
 #
 #
@@ -68,7 +90,7 @@ def acme_enabled(url):
         if 'crm.elifesciences' in url:
             return resp.status_code == 404 # apache behaves differently to nginx
         return resp.status_code == 403 # forbidden rather than not found.
-    except:
+    except (requests.ConnectionError, requests.ConnectTimeout):
         # couldn't connect for whatever reason
         return False
 
@@ -151,7 +173,6 @@ def fetch_cert(stackname):
 @debugtask
 def diff_builder_config():
     "helps keep three"
-    dev_dir = os.path.expanduser("~/dev/salt/")
     file_sets = [
         [
             "./builder-private-example/pillar/elife.sls",

@@ -12,9 +12,8 @@ from cfn import *
 # aws tasks are not working for some reason.. possibly circular dependency
 import aws
 import metrics
-if False:
-    # packer functionality not tested properly since going public
-    import packer
+## packer functionality not tested properly since going public
+#import packer
 import tasks
 import lax
 import master
@@ -22,4 +21,4 @@ import askmaster
 import buildvars
 import remote_master
 import project
-from deploy import deploy
+from deploy import deploy, switch_revision_update_instance

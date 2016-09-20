@@ -3,7 +3,7 @@
 import os, shutil
 from os.path import join
 from . import core, utils, config, s3
-from .core import connect_aws_with_stack, stack_pem
+from .core import stack_pem
 from .decorators import if_enabled
 
 import logging
@@ -47,7 +47,7 @@ def delete_keypair_from_fs(stackname):
     "returns True if the expected keypair for the given stackname can't be found on the filesystem"
     expected_key = stack_pem(stackname)
     if not os.path.exists(expected_key):
-        LOG.warn("private key %r not deleted: found %r" % (stackname, expected_key))
+        LOG.warn("private key %r not deleted: found %r", stackname, expected_key)
         return True
     try:
         delete_path = join(config.KEYPAIR_PATH, "deleted")
@@ -55,7 +55,7 @@ def delete_keypair_from_fs(stackname):
         shutil.copy2(expected_key, delete_path)
         os.unlink(expected_key)
         return True
-    except:
+    except (RuntimeError, IOError):
         LOG.exception("unhandled exception attempting to delete keypair from filesystem")
 
 #
@@ -75,7 +75,6 @@ def create_keypair(stackname):
 
 def delete_keypair(stackname):
     "deletes the keypair from ec2, s3 and locally if it exists"
-    expected_key = stack_pem(stackname)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     # delete from aws
     ec2.delete_key_pair(stackname)

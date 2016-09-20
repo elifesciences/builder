@@ -1,5 +1,4 @@
 from . import base
-from os.path import join
 from functools import partial
 from buildercore import utils
 

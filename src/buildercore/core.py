@@ -3,23 +3,18 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import os, glob, json, re, copy
+import os, glob, json, re
 from os.path import join
-from . import utils, config, project # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .decorators import osissue, osissuefn, testme
-import decorators
-from .utils import first, second, dictfilter, lookup
-from collections import OrderedDict
-from functools import wraps
-import boto
+from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
+from .decorators import testme
+from .utils import first, lookup
 from boto.exception import BotoServerError
 from contextlib import contextmanager
-from fabric.api import settings
+from fabric.api import settings, execute
 import importlib
 import logging
 from kids.cache import cache as cached
 from slugify import slugify
-import requests
 
 LOG = logging.getLogger(__name__)
 
@@ -111,13 +106,15 @@ def connect_aws_with_stack(stackname, service):
     return connect_aws_with_pname(pname, service)
 
 def find_ec2_instance(stackname):
-    "returns ec2 instance data for a *specific* stackname"
-    # filters: http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-    kwargs = {
-        'filters': {
-            'tag:Name':[stackname],
-            'instance-state-name': ['running']}}
-    return connect_aws_with_stack(stackname, 'ec2').get_only_instances(**kwargs)
+    "returns list of ec2 instances data for a *specific* stackname"
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+    filter_by_cluster = {
+        'tag-key': ['Cluster', 'Name'],
+        'tag-value': [stackname],
+        'instance-state-name': ['running'],
+    }
+    conn = connect_aws_with_stack(stackname, 'ec2')
+    return conn.get_only_instances(filters=filter_by_cluster)
 
 def find_ec2_volume(stackname):
     ec2_data = find_ec2_instance(stackname)[0]
@@ -138,26 +135,46 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
         raise EnvironmentError("keypair %r found at %r, not overwriting." % (stackname, expected_key))
     return expected_key
 
-@contextmanager
-def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
-    if 'user' in kwargs:
-        LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
-    data = stack_data(stackname)
-    public_ip = data['instance']['ip_address']
+def _ec2_connection_params(stackname, username, **kwargs):
     params = {
         'user': username,
-        'host_string': public_ip,
     }
+    pem = stack_pem(stackname)
     # doesn't hurt, handles cases where we want to establish a connection to run a task
     # when machine has failed to provision correctly.
-    pem = stack_pem(stackname)
     if os.path.exists(pem) and username == config.BOOTSTRAP_USER:
         params.update({
             'key_filename': pem
         })
     params.update(kwargs)
+    return params
+
+@contextmanager
+def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
+    if 'user' in kwargs:
+        LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
+
+    data = stack_data(stackname, ensure_single_instance=True)[0]
+    public_ip = data['instance']['ip_address']
+    params = _ec2_connection_params(stackname, username, host_string=public_ip)
+
     with settings(**params):
         yield
+
+def stack_all_ec2_nodes(stackname, work, username=config.DEPLOY_USER, **kwargs):
+    """Executes work on all the EC2 nodes of stackname.    
+    Optionally connects with the specified username or with additional settings
+    from kwargs"""
+    public_ips = [ec2['instance']['ip_address'] for ec2 in stack_data(stackname)]
+    params = _ec2_connection_params(stackname, username)
+    LOG.info("Executing %s on all ec2 nodes (%s)", work, public_ips)
+
+    with settings(**params):
+        # TODO: decorate work to print what it is connecting only
+        execute(work, hosts=public_ips)
+    
+
+
 
 #
 # stackname wrangling
@@ -171,12 +188,19 @@ def parse_stackname(stackname, all_bits=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
     if not stackname or not isinstance(stackname, basestring):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
-    pname = instance_id = None
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--',  -1 if all_bits else 1)
     if len(bits) == 1:
         raise ValueError("could not parse given stackname %r" % stackname)
     return bits
+
+def stackname_parseable(stackname):
+    "returns true if the given stackname can be parsed"
+    try:
+        parse_stackname(stackname)
+        return True
+    except ValueError:
+        return False
 
 def project_name_from_stackname(stackname):
     "returns just the project name from the given stackname"
@@ -233,26 +257,33 @@ def describe_stack(stackname):
     return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 
 # TODO: rename or something
-def stack_data(stackname):
+def stack_data(stackname, ensure_single_instance=False):
     """like `describe_stack`, but returns a dictionary with the Cloudformation 'outputs' 
-    indexed by key and ec2 data under the key 'instance'"""
+    indexed by key and ec2 data under the key 'instance'
+    
+    Returns a list if more than one result is found, but otherwise sticks
+    to a single dictionary for backward compatibility"""
     stack = describe_stack(stackname)
-    data = stack.__dict__
-    if data.has_key('outputs'):
-        data['indexed_output'] = {row.key: row.value for row in data['outputs']}
     try:
         # TODO: is there someway to go straight to the instance ID ?
         # a CloudFormation's outputs go stale! because we can't trust the data it
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
-        #inst_id = data['indexed_output']['InstanceId']
-        #inst = get_instance(inst_id)
-        stacks = find_ec2_instance(stackname)
-        assert len(stacks) == 1, ("while looking for %s, found these stacks: %s" % (stackname, stacks))
-        inst = stacks[0]
-        data['instance'] = inst.__dict__
+        ec2_instances = find_ec2_instance(stackname)
+
+        if len(ec2_instances) < 1:
+            raise RuntimeError("found no ec2 instances for %r" % stackname)
+        elif len(ec2_instances) > 1 and ensure_single_instance:
+            raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
+
+        def ec2data(ec2):
+            data = stack.__dict__.copy()
+            data['instance'] = ec2.__dict__
+            return data
+        return map(ec2data, ec2_instances)
+
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
-    return data
+        raise 
 
 
 # DO NOT CACHE
@@ -279,8 +310,10 @@ def stack_triple(aws_stack):
 #
 
 @cached
-def aws_stacks(region, status=[], formatter=stack_triple):
+def aws_stacks(region, status=None, formatter=stack_triple):
     "returns *all* stacks, even stacks deleted in the last 90 days"
+    if not status:
+        status = []
     # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
     # use `.describe_stack` on specific stacks only
     results = boto_cfn_conn(region).list_stacks(status)
@@ -303,8 +336,11 @@ def active_aws_project_stacks(pname):
     fn = lambda t: project_name_from_stackname(first(t)) == pname
     return filter(fn, active_aws_stacks(region))
 
-def stack_names(stack_list):
-    return sorted(map(first, stack_list))
+def stack_names(stack_list, only_parseable=True):
+    results = sorted(map(first, stack_list))
+    if only_parseable:
+        return filter(stackname_parseable, results)
+    return results
 
 def active_stack_names(region):
     "convenience. returns names of all active stacks"
@@ -316,6 +352,7 @@ def steady_stack_names(region):
 
 class MultipleRegionsError(EnvironmentError):
     def __init__(self, regions):
+        super(MultipleRegionsError, self).__init__()
         self._regions = regions
 
     def regions(self):
@@ -342,12 +379,12 @@ def find_region(stackname=None):
     return region_list[0]
 
 @testme
-def _find_master(sl):
-    if len(sl) == 1:
+def _find_master(stacks):
+    if len(stacks) == 1:
         # first item (stackname) of first (and only) result
-        return first(first(sl))
+        return first(first(stacks))
     
-    msl = filter(lambda triple: is_master_server_stack(first(triple)), sl)
+    msl = filter(lambda triple: is_master_server_stack(first(triple)), stacks)
     msl = map(first, msl) # just stack names
     if len(msl) > 1:
         LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
@@ -359,10 +396,10 @@ def _find_master(sl):
 
 def find_master(region):
     "returns the most recent aws master-server it can find. assumes instances have YMD names"
-    sl = active_aws_stacks(region)
-    if not sl:
+    stacks= active_aws_stacks(region)
+    if not stacks:
         raise NoMasterException("no master servers found in region %r" % region)
-    return _find_master(sl)
+    return _find_master(stacks)
 
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"

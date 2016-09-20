@@ -22,15 +22,18 @@ defaults:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         # TODO: this field will become a dictionary of all EC2-related configuration
-        # for now it is just a boolean, indicating whether the project has
-        # an EC2 instance attached. By default, it has one
-        ec2: true
-        # find more here: http://cloud-images.ubuntu.com/releases/
-        ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
+        ec2:
+            # how many EC2 instance per stack instance
+            cluster-size: 1
+            # find more here: http://cloud-images.ubuntu.com/releases/
+            ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
         subnet-cidr: '10.0.2.0/24'
+        # only necessary for ELB
+        redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
+        redundant-subnet-cidr: '10.0.3.0/24'
         type: t2.small  # ~ $20/mo
         rds:
             # rds defaults only used if an `rds` section present in project
@@ -53,7 +56,6 @@ defaults:
 
         # TODO: this will be moved inside aws.ec2
         ext:
-            # ext defaults only used if an `ext` section present in project
             # external hdd
             size: 10 # GB
             device: /dev/sdh
@@ -62,7 +64,8 @@ defaults:
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
-            ami: ami-9eaa1cf6 # Ubuntu 14.04
+            ec2:
+                ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas 
@@ -74,7 +77,8 @@ defaults:
  
 basebox:
     aws:
-        ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
+        ec2:
+            ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22    
     vagrant: {}
@@ -141,6 +145,7 @@ journal:
             - 443
             - 80
     vagrant:
+        ram: 4096
         ports:
             1240: 80
 
@@ -170,6 +175,14 @@ elife-metrics:
             - 80
             - 5432
     aws-alt:
+        end2end:
+            description: end2end environment for metrics. RDS backed
+            rds:
+                storage: 5
+        prod:
+            description: production environment for metrics. RDS backed
+            rds:
+                storage: 5
         master:
             description: production environment for metrics. RDS backed
             rds:
@@ -284,6 +297,9 @@ elife-alfred:
             - 80
             - 443
             - 16022 # Jenkins SSH port
+        ext:
+            size: 30 # GB
+            type: gp2
     vagrant:
         ram: 4096
         ports:
@@ -349,7 +365,8 @@ anonymous:
 # used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
 jats4r:
     aws:
-        ami: ami-c60b90d1 # us-east-1 xenial 16.04 LTS amd64 hvm:ebs-ssd 20160815 hvm  
+        ec2:
+            ami: ami-c60b90d1 # us-east-1 xenial 16.04 LTS amd64 hvm:ebs-ssd 20160815 hvm  
         type: t2.micro
         ports:
             - 22
@@ -371,6 +388,11 @@ medium:
         ports:
             - 22
             - 80
+    aws-alt:
+        clustered:
+            ec2:
+                cluster-size: 2
+            elb: True
 
 search:
     description: service for indexing all of Elife 2.0 content
@@ -390,6 +412,7 @@ search:
             - 80
 
 bus:
+    description: see https://github.com/elifesciences/bus
     default-branch: null
     domain: null
     int_domain: null

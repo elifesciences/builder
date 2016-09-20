@@ -1,15 +1,12 @@
-from distutils.util import strtobool
-from fabric.api import task, local, settings, run, sudo, put, get, abort
-from fabric.api import task, local, settings, run, sudo, put, get, abort
+from distutils.util import strtobool #pylint: disable=import-error,no-name-in-module
+from fabric.api import task, local, run, sudo, put, get, abort
 from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
-from buildercore.core import stack_conn, stack_pem
+from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
-from distutils.util import strtobool
-import os
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -126,17 +123,28 @@ def aws_stack_list():
     region = aws.find_region()
     return core.active_stack_names(region)
 
+def _pick_node(instance_list, node):
+    num_instances = len(instance_list)
+    if num_instances > 1:
+        if not node:
+            node = utils._pick('node', range(1, num_instances+1))
+        node = int(node) - 1
+        return instance_list[int(node)]
+    return instance_list[0]
+
 @task
 @requires_aws_stack
-def ssh(stackname, username=DEPLOY_USER):
-    public_ip = core.stack_data(stackname)['instance']['ip_address']
+def ssh(stackname, node=None, username=DEPLOY_USER):
+    instances = core.stack_data(stackname)
+    public_ip = _pick_node(instances, node)['instance']['ip_address']
     local("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
-def owner_ssh(stackname):
-    "maintainence ssh. uses the pem key and the bootstrap user to login."
-    public_ip = core.stack_data(stackname)['instance']['ip_address']
+def owner_ssh(stackname, node=None):
+    "maintenance ssh. uses the pem key and the bootstrap user to login."
+    instances = core.stack_data(stackname)
+    public_ip = _pick_node(instances, node)['instance']['ip_address']
     # -i identify file
     local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
         
@@ -152,7 +160,6 @@ def download_file(stackname, path, destination, allow_missing="False", use_boots
 
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
-    fname = os.path.basename(path)
     utils.mkdirp(destination)
     with stack_conn(stackname, username=_user(use_bootstrap_user)):
         if _should_be_skipped(path, allow_missing):
@@ -189,12 +196,15 @@ def _user(use_bootstrap_user):
 
 @task
 @requires_aws_stack
-def cmd(stackname, command=None):
+def cmd(stackname, command=None, username=DEPLOY_USER):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
-    with stack_conn(stackname):
-        with settings(abort_on_prompts=True):
-            run(command)
+    print "Connecting to: %s" % stackname
+    stack_all_ec2_nodes(
+        stackname,
+        lambda: run(command),
+        username=username,
+        abort_on_prompts=True)
         
 @task
 def project_list():

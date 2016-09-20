@@ -1,7 +1,7 @@
 import json
 from os.path import join
 from . import base
-from buildercore import core, utils, project, config
+from buildercore import core, utils, project
 from unittest import skip
 
 class SimpleCases(base.BaseCase):
@@ -122,6 +122,10 @@ class SimpleCases(base.BaseCase):
             self.fail("Shouldn't be able to choose a region")
         except core.MultipleRegionsError as e:
             self.assertEqual(["us-east-1", "eu-central-1"], e.regions())
+
+    def test_find_ec2_instance(self):
+        self.assertEquals([], core.find_ec2_instance('dummy1--prod'))
+
             
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):
@@ -150,9 +154,6 @@ class TestCoreNewProjectData(base.BaseCase):
     def test_merge_default_snippet(self):
         "merging a snippet into the defaults ensures all projects get that new default"
         # all projects now get 999 cpus. perfectly sane requirement.
-        snippet = {'defaults':
-                       {'vagrant': {
-                           'cpus': 999}}}
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
         
@@ -165,14 +166,6 @@ class TestCoreNewProjectData(base.BaseCase):
         """merging multiple overlapping snippets into the defaults 
         ensures all projects get the new defaults"""
         # all projects now get 999 cpus. perfectly sane requirement.
-        snippet = {'defaults':
-                       {'vagrant': {
-                           'cpucap': 10,  # overriden by the override
-                           'cpus': 999}}}
-        snippet2 = {'defaults':
-                        {'vagrant': {
-                            'cpucap': 111}}}
-        snippet_list = [snippet, snippet2]
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
         
