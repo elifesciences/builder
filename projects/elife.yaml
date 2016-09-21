@@ -64,7 +64,7 @@ defaults:
             stickiness: False
             protocol: http
             idle_timeout: 60
-            certificate: ASCAIRXYIRFBOR5QSDP5M
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
         sqs: []
         sns: []
     aws-alt:
