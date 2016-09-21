@@ -59,6 +59,12 @@ defaults:
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        elb:
+            # elb defaults only used if an 'elb' section present in project
+            stickiness: False
+            protocol: http
+            idle_timeout: 60
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
         sqs: []
         sns: []
     aws-alt:
@@ -137,6 +143,7 @@ api-gateway:
 
 journal:
     subdomain: journal # journal.elifesciences.org
+    intdomain: null
     repo: https://github.com/elifesciences/journal
     formula-repo: https://github.com/elifesciences/journal-formula
     aws:
@@ -144,6 +151,14 @@ journal:
             - 22
             - 443
             - 80
+    aws-alt:
+        end2end:
+            description: end2end environment for journal. ELB on top of multiple EC2 instances
+            ec2:
+                cluster-size: 2
+            elb:
+                stickiness: True
+                protocol: https
     vagrant:
         ram: 4096
         ports:
@@ -392,7 +407,8 @@ medium:
         clustered:
             ec2:
                 cluster-size: 2
-            elb: True
+            elb: 
+                protocol: http
 
 search:
     description: service for indexing all of Elife 2.0 content
@@ -415,7 +431,7 @@ bus:
     description: see https://github.com/elifesciences/bus
     default-branch: null
     domain: null
-    int_domain: null
+    intdomain: null
     aws:
         ec2: false
         sns:

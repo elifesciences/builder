@@ -54,5 +54,4 @@ def deploy(pname, instance_id=None, branch='master'):
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None):
     buildvars.switch_revision(stackname, revision)
-    with core.stack_conn(stackname):
-        return bootstrap.run_script('highstate.sh')
+    core.stack_all_ec2_nodes(stackname, lambda: bootstrap.run_script('highstate.sh'))

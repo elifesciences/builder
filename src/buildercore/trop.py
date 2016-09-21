@@ -348,23 +348,54 @@ def render_elb(context, template, ec2_instances):
         "An ELB must have either an external or an internal DNS entry")
 
     elb_is_public = True if context['full_hostname'] else False
-    
+    listeners_policy_names = []
+
+    if context['elb']['stickiness']:
+        cookie_stickiness = [elb.LBCookieStickinessPolicy(
+            PolicyName="BrowserSessionLongCookieStickinessPolicy"
+        )]
+        listeners_policy_names.append('BrowserSessionLongCookieStickinessPolicy')
+    else:
+        cookie_stickiness = []
+
+    if context['elb']['protocol'] == 'http':
+        listeners=[
+            elb.Listener(
+                InstanceProtocol='HTTP',
+                InstancePort='80',
+                LoadBalancerPort='80',
+                PolicyNames=listeners_policy_names,
+                Protocol='HTTP',
+            ),
+        ]
+    elif context['elb']['protocol'] == 'https':
+        listeners=[
+            elb.Listener(
+                InstanceProtocol='HTTP',
+                InstancePort='80',
+                LoadBalancerPort='443',
+                PolicyNames=listeners_policy_names,
+                Protocol='HTTPS',
+                SSLCertificateId=context['elb']['certificate']
+            ),
+        ]
+    else:
+        raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
+
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
             Enabled=True,
             Timeout=60,
         ),
+        ConnectionSettings=elb.ConnectionSettings(
+            IdleTimeout=context['elb']['idle_timeout']
+        ),
         CrossZone=True,
         Instances=map(Ref, ec2_instances),
         # TODO: from configuration
-        Listeners=[
-            elb.Listener(
-                LoadBalancerPort='80',
-                InstancePort='80',
-                Protocol='HTTP',
-            ),
-        ],
+        Listeners=listeners,
+        LBCookieStickinessPolicy=cookie_stickiness,
         # TODO: from configuration
         # seems to default to opening a TCP connection on port 80
         #HealthCheck=elb.HealthCheck(

@@ -125,7 +125,9 @@ class TestBuildercoreTrop(base.BaseCase):
             elb['Listeners'][0],
             {
                 'InstancePort': '80',
+                'InstanceProtocol': 'HTTP',
                 'LoadBalancerPort': '80',
+                'PolicyNames': [],
                 'Protocol': 'HTTP',
             }
         )
