@@ -127,6 +127,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'InstancePort': '80',
                 'InstanceProtocol': 'HTTP',
                 'LoadBalancerPort': '80',
+                'PolicyNames': [],
                 'Protocol': 'HTTP',
             }
         )

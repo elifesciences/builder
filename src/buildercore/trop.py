@@ -348,11 +348,13 @@ def render_elb(context, template, ec2_instances):
         "An ELB must have either an external or an internal DNS entry")
 
     elb_is_public = True if context['full_hostname'] else False
+    listeners_policy_names = []
 
     if context['elb']['stickiness']:
         cookie_stickiness = [elb.LBCookieStickinessPolicy(
             PolicyName="BrowserSessionLongCookieStickinessPolicy"
         )]
+        listeners_policy_names.append('BrowserSessionLongCookieStickinessPolicy')
     else:
         cookie_stickiness = []
 
@@ -362,6 +364,7 @@ def render_elb(context, template, ec2_instances):
                 InstanceProtocol='HTTP',
                 InstancePort='80',
                 LoadBalancerPort='80',
+                PolicyNames=listeners_policy_names,
                 Protocol='HTTP',
             ),
         ]
@@ -371,6 +374,7 @@ def render_elb(context, template, ec2_instances):
                 InstanceProtocol='HTTP',
                 InstancePort='80',
                 LoadBalancerPort='443',
+                PolicyNames=listeners_policy_names,
                 Protocol='HTTPS',
                 SSLCertificateId=context['elb']['certificate']
             ),
