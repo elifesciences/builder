@@ -147,7 +147,14 @@ def setup_sqs(stackname, context_sqs, region):
             topic_lookup = sns.create_topic(topic_name) 
             topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
             # deals with both subscription and IAM policy
-            sns.subscribe_sqs_queue(topic_arn, queue)
+            response = sns.subscribe_sqs_queue(topic_arn, queue)
+            assert 'SubscribeResponse' in response
+            assert 'SubscribeResult' in response['SubscribeResponse']
+            assert 'SubscriptionArn' in response['SubscribeResponse']['SubscribeResult']
+            subscription_arn = response['SubscribeResponse']['SubscribeResult']['SubscriptionArn']
+            LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
+            sns.set_raw_subscription_attribute(subscription_arn)
+
 
 
 #

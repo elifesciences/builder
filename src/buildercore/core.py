@@ -8,6 +8,7 @@ from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
 from .utils import first, lookup
+from boto import sns
 from boto.exception import BotoServerError
 from contextlib import contextmanager
 from fabric.api import settings, execute
@@ -61,6 +62,22 @@ STEADY_CFN_STATUS = [
     'UPDATE_ROLLBACK_COMPLETE',
 ]
     
+
+def _set_raw_subscription_attribute(sns_connection, subscription_arn):
+    """
+    Works around boto's lack of a SetSubscriptionAttributes call.
+
+    boto doesn't (yet) expose SetSubscriptionAttributes, so here's a
+    monkeypatch specifically for turning on the RawMessageDelivery attribute.
+    """
+    params = {
+        'AttributeName': 'RawMessageDelivery',
+        'AttributeValue': 'true',
+        'SubscriptionArn': subscription_arn
+    }
+    return sns_connection._make_request('SetSubscriptionAttributes', params)
+
+sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
 
 
 #
