@@ -466,5 +466,6 @@ observer:
             - 80
             - 443
     vagrant:
+        ram: 2048 # metabase, mostly
         ports:
             1245: 80
