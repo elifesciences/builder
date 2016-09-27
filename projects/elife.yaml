@@ -227,6 +227,9 @@ elife-bot:
                 size: 160 # GB
                 type: ssd
                 device: /dev/xvdh
+        end2end:
+            description: speeding up end2end tests
+            type: c4.xlarge
     vagrant:
         ports:
             1231: 80
