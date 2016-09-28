@@ -61,6 +61,7 @@ defaults:
             idle_timeout: 60
         sns: []
         sqs: []
+        s3: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
