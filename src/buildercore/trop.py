@@ -10,7 +10,7 @@ data called a `context`.
 it to the correct file etc."""
 
 from . import utils, bvars
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, s3, sns, sqs, Base64, route53, Parameter
 from troposphere import elasticloadbalancing as elb
 
 from functools import partial
@@ -344,6 +344,16 @@ def render_sqs(context, template):
             Value=GetAtt(queue, "Arn")
         ))
 
+def render_s3(context, template):
+    pass
+    # in the future, we will do this. Now there are too many buckets
+    # that have been created manually
+    #for bucket_name in context['s3']:
+    #    template.add_resource(s3.Bucket(
+    #        _sanitize_title(bucket_name) + "Bucket", 
+    #        BucketName=bucket_name
+    #    ))
+
 def render_elb(context, template, ec2_instances):
     ensure(any([context['full_hostname'], context['int_full_hostname']]), \
         "An ELB must have either an external or an internal DNS entry")
@@ -434,6 +444,7 @@ def render(context):
         
     render_sns(context, template)
     render_sqs(context, template)
+    render_s3(context, template)
 
     # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
     if context['elb']:
