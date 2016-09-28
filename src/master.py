@@ -36,6 +36,9 @@ def write_missing_keypairs_to_s3():
     
     map(write, to_upload)
 
+def write_missing_context_to_s3():
+    pass
+
 @debugtask
 @requires_feature('write-keypairs-to-s3')
 @requires_aws_stack

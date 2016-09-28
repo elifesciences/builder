@@ -1,7 +1,9 @@
 "handles the storage of context from AWS"
 
-import os, shutil
-from os.path import join
+import json
+import os
+import shutil
+from os.path import join, exists
 from . import core, utils, config, s3
 from .core import stack_pem
 from .decorators import if_enabled
@@ -13,17 +15,34 @@ def s3_context_key(stackname):
     return config.CONTEXT_PREFIX + stackname + ".json"
 
 def local_context_file(stackname):
-    return config.CONTEXT_PATH + "/" + stackname + ".json"
+    return os.path.join(config.CONTEXT_DIR, stackname + ".json")
 
+def load_context(stackname):
+    path = local_context_file(stackname)
+    if not exists(path):
+        download_from_s3(stackname)
+    with open(path, 'r') as context_file:
+        return json.loads(context_file.read())
+
+def write_context(stackname, contents):
+    write_context_locally(stackname, contents)
+    write_context_to_s3(stackname)
+
+def write_context_locally(stackname, contents):
+    open(local_context_file(stackname), 'w').write(contents)
+
+@if_enabled('write-contexts-to-s3', silent=True)
 def write_context_to_s3(stackname):
     path = local_context_file(stackname)
     key = s3_context_key(stackname)
     s3.write(key, open(path, 'r'))
 
+@if_enabled('write-contexts-to-s3', silent=True)
 def delete_context_from_s3(stackname):
     key = s3_context_key(stackname)
-    s3.delete(key)
+    return s3.delete(key)
     
+@if_enabled('write-contexts-to-s3', silent=True)
 def download_from_s3(stackname):
     expected_path = local_context_file(stackname)
     s3.download(s3_context_key(stackname), expected_path)

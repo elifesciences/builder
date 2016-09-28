@@ -74,7 +74,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         conn = connect_aws_with_stack(stackname, 'cfn')
         conn.create_stack(stackname, stack_body, parameters=parameters)
         _wait_until_in_progress(stackname)
-        context = cfngen.stack_context(stackname)
+        context = contexts.load_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
         # TODO: maybe we can move this in the update too
@@ -265,7 +265,7 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
 
 def update_s3_stack(stackname):
     pdata = project_data_for_stackname(stackname)
-    context = cfngen.stack_context(stackname)
+    context = contexts.load_context(stackname)
     setup_s3(stackname, context['s3'], pdata['aws']['region'], pdata['aws']['account_id'])
 
 

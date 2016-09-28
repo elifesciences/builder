@@ -46,8 +46,8 @@ def delete(key):
         msg = "you tried to delete a key with a protected prefix"
         LOG.warn(msg, extra={'key': key, 'protected': protected})
         raise ValueError(msg)
-    LOG.info("deleting key", extra={'key': key})
     if exists(key):
+        LOG.info("deleting key %s", key, extra={'key': key})
         builder_bucket().get_key(key).delete()
     return not exists(key)
     
