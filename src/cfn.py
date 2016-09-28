@@ -202,7 +202,7 @@ def cmd(stackname, command=None, username=DEPLOY_USER):
     print "Connecting to: %s" % stackname
     stack_all_ec2_nodes(
         stackname,
-        (parallel(lambda command: run(command)), {'command': command}),
+        (parallel(run), {'command': command}),
         username=username,
         abort_on_prompts=True)
 
