@@ -202,16 +202,10 @@ def cmd(stackname, command=None, username=DEPLOY_USER):
     print "Connecting to: %s" % stackname
     stack_all_ec2_nodes(
         stackname,
-        cmd_parallel_subtask,
+        (parallel(lambda command: run(command)), {'command': command}),
         username=username,
-        arguments={'command':command},
         abort_on_prompts=True)
 
-@parallel
-def cmd_parallel_subtask(command):
-    run(command)
-
-        
 @task
 def project_list():
     for org, plist in project.org_project_map().items():
