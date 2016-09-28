@@ -21,6 +21,7 @@ defaults:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
+        account_id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
             # how many EC2 instance per stack instance
@@ -67,6 +68,7 @@ defaults:
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
         sqs: []
         sns: []
+        s3: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -230,6 +232,17 @@ elife-bot:
         end2end:
             description: speeding up end2end tests
             type: c4.xlarge
+            s3:
+                end2end-elife-cdn:
+                    sqs-notifications:
+                        end2end-incoming-queue:
+                            prefix: elife-articles/
+                            suffix: .xml
+                end2end-elife-production-final:
+                    sqs-notifications:
+                        end2end-incoming-queue: True
+
+
     vagrant:
         ports:
             1231: 80

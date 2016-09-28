@@ -13,6 +13,7 @@ defaults:
     # default branch to use when creating new instances
     default-branch: master
     aws:
+        account_id: 512686554592
         ec2:
             cluster-size: 1
             ami: ami-9eaa1cf6  # Ubuntu 14.04
@@ -40,6 +41,7 @@ defaults:
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        s3: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of a ami

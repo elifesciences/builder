@@ -21,6 +21,7 @@ defaults:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
+        account_id: 531849302986
         # find more here: https://cloud-images.ubuntu.com/locator/ec2/
         ec2:
             cluster-size: 1
@@ -54,6 +55,7 @@ defaults:
             # external hdd
             size: 10 # GB
             device: /dev/sdh
+        s3: []
  
 master-server:
     # formula-repo for the 'master-server' project should contain the 
