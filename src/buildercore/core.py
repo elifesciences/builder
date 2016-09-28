@@ -10,6 +10,7 @@ from .decorators import testme
 from .utils import first, lookup
 from boto import sns
 from boto.exception import BotoServerError
+import boto3
 from contextlib import contextmanager
 from fabric.api import settings, execute, env
 import importlib
@@ -18,6 +19,7 @@ from kids.cache import cache as cached
 from slugify import slugify
 
 LOG = logging.getLogger(__name__)
+boto3.set_stream_logger(name='botocore')
 
 class DeprecationException(Exception):
     pass
@@ -108,6 +110,11 @@ def boto_sns_conn(region):
 @cached
 def boto_sqs_conn(region):
     return connect_aws('sqs', region)
+
+@cached
+def boto_s3_conn(region):
+    "This uses boto3 because it allows to set NotificationConfiguration for sending messages to SQS"
+    return boto3.client('s3', region)
 
 @cached
 def connect_aws_with_pname(pname, service):
