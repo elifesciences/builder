@@ -181,8 +181,9 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
 def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs):
     """Executes work on all the EC2 nodes of stackname.    
     Optionally connects with the specified username"""
+    work_kwargs = {}
     if isinstance(workfn, tuple):
-        workfn, work_kwargs = workfn        
+        workfn, work_kwargs = workfn
 
     public_ips = [ec2['instance']['ip_address'] for ec2 in stack_data(stackname)]
     params = _ec2_connection_params(stackname, username)
