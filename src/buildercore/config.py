@@ -97,6 +97,7 @@ LOG = logging.getLogger(__name__)
 # like ec2 instance keypairs
 BUILDER_BUCKET = 'elife-builder'
 KEYPAIR_PREFIX = 'keypairs/'
+CONTEXT_PREFIX = 'contexts/'
 
 PACKER_BOX_PREFIX = "elifesciences" # the 'elifesciences' in 'elifesciences/basebox'
 PACKER_BOX_BUCKET = "builder-boxes"

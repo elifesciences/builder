@@ -27,7 +27,6 @@ def write_keypair_to_s3(stackname):
 
 @if_enabled('write-keypairs-to-s3', silent=True)
 def delete_keypair_from_s3(stackname):
-    key = config.KEYPAIR_PREFIX + stackname
     key = s3_keypair_key(stackname)
     s3.delete(key)
     return s3.exists(key)
