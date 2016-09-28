@@ -4,6 +4,7 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
+import json
 import os
 from os.path import join
 from functools import partial
@@ -76,6 +77,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         context = cfngen.stack_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
+        # TODO: maybe we can move this in the update too
         setup_sqs(stackname, context['sqs'], context['project']['aws']['region'])
 
         return True
@@ -156,6 +158,117 @@ def setup_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
 
+def setup_s3(stackname, context_s3, region, account_id):
+    """
+    Connects S3 buckets (existing or created by Cloud Formation) to SQS queues
+    that will be notified of files being added there.
+
+    This function adds also a Statement to the Policy of the involved queue so that this bucket can send messages to it.
+    """
+    assert isinstance(context_s3, dict), ("Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
+
+    s3 = core.boto_s3_conn(region)
+    for bucket_name in context_s3:
+        LOG.info('Setting NotificationConfiguration for bucket %s', bucket_name, extra={'stackname': stackname})
+        if 'sqs-notifications' in context_s3[bucket_name]:
+            queues = context_s3[bucket_name]['sqs-notifications']
+            
+            queue_configurations = _queue_configurations(stackname, queues, bucket_name, region)
+            LOG.info('QueueConfigurations are %s', queue_configurations, extra={'stackname': stackname})
+            s3.put_bucket_notification_configuration(
+                Bucket=bucket_name,
+                NotificationConfiguration={
+                    'QueueConfigurations': queue_configurations
+                }
+            )
+
+def _queue_configurations(stackname, queues, bucket_name, region):
+    """Builds the QueueConfigurations element for configuring notifications coming from bucket_name"""
+    assert isinstance(queues, dict), ("Not a dictionary of queue names pointing to their notification specifications: %s" % queues)
+
+    queue_configurations = []
+    for queue_name in queues:
+        notification_specification = queues[queue_name]
+        assert isinstance(notification_specification, dict), ("Not a dictionary of queue specification parameters: %s" % queues)
+        queue_arn = _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region)
+        queue_configurations.append(_sqs_notification_configuration(queue_arn, notification_specification))
+    return queue_configurations
+
+def _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region):
+    """Loads the policy of queue_name, and adds a statement to let bucket_name
+    notify to it"""
+    # the only way to make this work is to add a new policy
+    # statement for each of the buckets
+    # - you cannot filter the AWS account by Principal (for some unknown reason)
+    # - you also cannot specify arn:aws:s3:*:{account_id}:* as the SourceArn (for some other unknown reason)
+    # Failure to set the right policy here won't make this call fail;
+    # instead, you will get an error when trying to set the
+    # NotificationConfiguration on the bucket later.
+    # This also has to be idempotent... basically we are reiventing CloudFormation in Python because they don't support creating a bucket, a queue and their connection in a single template (you have to create a template without the linkage and then edit it and update it.)
+    sqs = core.boto_sqs_conn(region)
+    queue = sqs.lookup(queue_name)
+    attributes = sqs.get_queue_attributes(queue, 'Policy')
+    if 'Policy' in attributes:
+        policy = json.loads(attributes['Policy'])
+    else:
+        policy = {
+            "Version": "2012-10-17",
+            "Id": queue.arn + "/SQSDefaultPolicy",
+            "Statement": []
+        }
+    statement_to_upsert = {
+        "Sid": queue.arn + "/SendMessageFromBucket/%s" % bucket_name,
+        "Effect": "Allow",
+        "Principal": '*',
+        "Action": "SQS:SendMessage",
+        "Resource": queue.arn,
+        "Condition": {
+            "ArnLike": {
+                "aws:SourceArn": "arn:aws:s3:*:*:%s" % bucket_name,
+            }
+        },
+    }
+    if statement_to_upsert not in policy['Statement']:
+        policy['Statement'].append(statement_to_upsert)
+    policy_json = json.dumps(policy)
+    LOG.info('Setting Policy for queue %s to allow SendMessage: %s', queue_name, policy_json, extra={'stackname': stackname})
+    sqs.set_queue_attribute(queue, 'Policy', policy_json)
+    return queue.arn
+
+def _sqs_notification_configuration(queue_arn, notification_specification):
+    filter_rules = []
+    if 'prefix' in notification_specification:
+        filter_rules.append({
+            'Name': 'prefix',
+            'Value': notification_specification['prefix'],
+        })
+    if 'suffix' in notification_specification:
+        filter_rules.append({
+            'Name': 'suffix',
+            'Value': notification_specification['suffix'],
+        })
+
+    queue_configuration = {
+        'QueueArn': queue_arn,
+        'Events': [
+            's3:ObjectCreated:*',
+        ],
+    }
+    if filter_rules:
+        queue_configuration['Filter'] = {
+            'Key': {
+                'FilterRules': filter_rules                        
+            }
+        }
+
+    return queue_configuration
+
+def update_s3_stack(stackname):
+    pdata = project_data_for_stackname(stackname)
+    context = cfngen.stack_context(stackname)
+    setup_s3(stackname, context['s3'], pdata['aws']['region'], pdata['aws']['account_id'])
+
+
 
 
 #
@@ -215,19 +328,29 @@ def write_environment_info(stackname, overwrite=False):
 #
 
 @core.requires_active_stack
-def update_stack(stackname):
+def update_stack(stackname, part_filter=None):
     pdata = project_data_for_stackname(stackname)
-    # TODO: only EC2 parts can be updated at the moment
+
+    parts = {}
     if pdata['aws']['ec2']:
-        update_ec2_stack(stackname)
+        parts['ec2'] = lambda: update_ec2_stack(stackname)
+    if pdata['aws']['s3']:
+        parts['s3'] = lambda: update_s3_stack(stackname)
+
+    if part_filter:
+        parts[part_filter]()
+    else:
+        for part in parts:
+            parts[part]()
+
 
 @core.requires_stack_file
-def create_update(stackname):
+def create_update(stackname, part_filter=None):
     if not core.stack_is_active(stackname):
         print 'stack does not exist, creating'
         create_stack(stackname)
     print 'updating stack'
-    update_stack(stackname)
+    update_stack(stackname, part_filter)
     return stackname
 
 def update_ec2_stack(stackname):

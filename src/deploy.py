@@ -24,7 +24,7 @@ def impose_ordering(branch_list):
 @requires_branch_deployable_project
 @echo_output
 @timeit
-def deploy(pname, instance_id=None, branch='master'):
+def deploy(pname, instance_id=None, branch='master', part_filter=None):
     pdata = project.project_data(pname)
     if not branch:
         branch_list = utils.git_remote_branches(pdata['repo'])
@@ -45,10 +45,12 @@ def deploy(pname, instance_id=None, branch='master'):
         # optionally select alternate configurations if it matches the instance name
         if instance_id in project.project_alt_config_names(pdata):
             LOG.info("using alternate AWS configuration %r", instance_id)
+            # TODO there must be a single place where alt-config is switched in
+            # hopefully as deep in the stack as possible to hide it away
             more_context['alt-config'] = instance_id
         cfngen.generate_stack(pname, **more_context)
 
-    bootstrap.create_update(stackname)        
+    bootstrap.create_update(stackname, part_filter)
     setdefault('.active-stack', stackname)
 
 @task

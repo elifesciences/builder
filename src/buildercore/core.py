@@ -453,6 +453,7 @@ def find_master(region):
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
     pdata = project_data_for_stackname(stackname)
+    
     return find_master(pdata['aws']['region'])
 
 #

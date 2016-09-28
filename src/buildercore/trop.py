@@ -10,7 +10,8 @@ data called a `context`.
 it to the correct file etc."""
 
 from . import utils, bvars
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, s3, sns, sqs, Base64, route53, Parameter
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
+#from troposphere import s3
 from troposphere import elasticloadbalancing as elb
 
 from functools import partial
