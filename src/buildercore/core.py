@@ -524,9 +524,14 @@ def hostname_struct(stackname):
 #
 #
 
-def project_data_for_stackname(stackname, *args, **kwargs):
-    pname = project_name_from_stackname(stackname)
-    return project.project_data(pname, *args, **kwargs)
+def project_data_for_stackname(stackname):
+    (pname, instance_id) = parse_stackname(stackname)
+    project_data = project.project_data(pname)
+
+    if 'aws-alt' in project_data and instance_id in project_data['aws-alt']:
+        project_data = project.set_project_alt(project_data, 'aws', instance_id)
+
+    return project_data
 
 #
 # might be better off in bakery.py?
