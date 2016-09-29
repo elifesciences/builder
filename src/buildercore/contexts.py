@@ -32,7 +32,7 @@ def write_context_locally(stackname, contents):
 def write_context_to_s3(stackname):
     path = local_context_file(stackname)
     key = s3_context_key(stackname)
-    s3.write(key, open(path, 'r'))
+    s3.write(key, open(path, 'r'), overwrite=True)
 
 @if_enabled('write-contexts-to-s3', silent=True)
 def delete_context_from_s3(stackname):
