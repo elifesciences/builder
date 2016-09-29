@@ -25,16 +25,14 @@ def _requires_fn_stack(func, pred, message=None):
         raise PredicateException(msg)
     return _wrapper
 
-# TODO: this is not seeing the switched context?
 def if_enabled(key, silent=False):
-    settings = config.app()
-    print settings
-    assert settings.has_key(key), "no setting with value %r" % key
-    enabled = settings[key]
-    assert isinstance(enabled, bool), "expecting the value at %r to be a boolean" % key
     def wrap1(func):
         @wraps(func)
         def wrap2(*args, **kwargs):
+            settings = config.app()
+            assert settings.has_key(key), "no setting with value %r" % key
+            enabled = settings[key]
+            assert isinstance(enabled, bool), "expecting the value at %r to be a boolean" % key
             if enabled:
                 return func(*args, **kwargs)
             if silent:

@@ -10,7 +10,6 @@ class TestBuildercoreContext(base.BaseCase):
     def test_storing_a_context_on_s3_and_retrieving_it_from_a_new_client(self):
         stackname = 'dummy1--prod'
         context = cfngen.build_context('dummy1', stackname=stackname)
-        # how is this using the settings that enable write-contexts-to-s3?
         contexts.write_context(stackname, json.dumps(context))
         expected = contexts.load_context(stackname)
 
