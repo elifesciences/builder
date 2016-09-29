@@ -17,10 +17,9 @@ A developer wants a temporary instance deployed for testing or debugging.
 """
 
 import os, json, copy
-from os.path import join
 from slugify import slugify
 from . import utils, trop, core, project, contexts
-from .config import STACK_DIR, CONTEXT_DIR, CONTEXT_PATH
+from .config import STACK_DIR
 
 import logging
 

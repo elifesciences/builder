@@ -18,7 +18,7 @@ import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
-from buildercore import cfngen
+from buildercore import contexts
 
 import logging
 LOG = logging.getLogger(__name__)

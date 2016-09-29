@@ -1,11 +1,8 @@
 "handles the storage of context from AWS"
 
 import json
-import os
-import shutil
 from os.path import join, exists
-from . import core, utils, config, s3
-from .core import stack_pem
+from . import config, s3
 from .decorators import if_enabled
 
 import logging
@@ -15,7 +12,7 @@ def s3_context_key(stackname):
     return config.CONTEXT_PREFIX + stackname + ".json"
 
 def local_context_file(stackname):
-    return os.path.join(config.CONTEXT_DIR, stackname + ".json")
+    return join(config.CONTEXT_DIR, stackname + ".json")
 
 def load_context(stackname):
     path = local_context_file(stackname)
