@@ -138,6 +138,7 @@ def mkoutput(title, desc, val):
 def ec2instance(context, node):
     lu = partial(utils.lu, context)
     build_vars = dict(context)
+    del build_vars['project']
     build_vars['node'] = node
     build_vars['nodename'] = "%s--%s" % (context['stackname'], node)
     # the above context will reside on the server at /etc/build-vars.json.b64
