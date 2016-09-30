@@ -224,20 +224,27 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         if using_formula
             # split the formula into two bits using '/', starting from the right
-            _, formula_name = formula.split(/\/([^\/]*)$/)
-            formula_path = "cloned-projects/#{formula_name}"
-            if not File.exists?(formula_path)
-                FileUtils.mkdir_p(formula_path)
-            end
+            all_formulas = PRJ.fetch("formula-dependencies") + [formula]
+            prn "formulas needed: #{all_formulas}"
+            formula_paths = all_formulas.map {| formula |
+                _, formula_name = formula.split(/\/([^\/]*)$/)
+                formula_path = "cloned-projects/#{formula_name}"
+                if not File.exists?(formula_path)
+                    FileUtils.mkdir_p(formula_path)
+                end
 
-            # clone the formula repo if it doesn't exist. user is in charge of keeping this updated.
-            if File.exists?(formula_path + "/.git")
-                prn runcmd("cd #{formula_path}/ && git pull")
-            else
-                prn runcmd("git clone #{formula} #{formula_path}/")
-            end
-            # mount salt directories
-            project.vm.synced_folder formula_path, "/project"
+                # clone the formula repo if it doesn't exist, else update it
+                if File.exists?(formula_path + "/.git")
+                    prn "Updating #{formula_path}..."
+                    prn runcmd("cd #{formula_path}/ && git pull")
+                else
+                    prn "Cloning #{formula_path}..."
+                    prn runcmd("git clone #{formula} #{formula_path}/")
+                end
+                formula_path
+            }
+            # mount formula as salt directory
+            project.vm.synced_folder formula_paths[-1], "/project"
         else
             prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'"
         end
