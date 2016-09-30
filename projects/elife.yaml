@@ -488,3 +488,15 @@ jats4r-validator:
     vagrant:
         ports:
             1239: 80
+            
+statusbase:
+    subdomain: statusbase
+    repo: https://github.com/ep320/statusbase
+    formula-repo: https://github.com/elifesciences/statusbase-formula
+    aws:
+        ports:
+            - 22
+            - 80
+    vagrant:
+        ports:
+            1246: 80

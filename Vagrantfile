@@ -230,12 +230,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 FileUtils.mkdir_p(formula_path)
             end
 
-            # clone the formula repo if it doesn't exist. user is in charge of keeping this updated.
-            if File.exists?(formula_path + "/.git")
-                prn runcmd("cd #{formula_path}/ && git pull")
-            else
-                prn runcmd("git clone #{formula} #{formula_path}/")
+            # no need to attempt a clone/pull when ssh'ing or stopping a machine ...
+            if ['up', 'provision'].include? VAGRANT_COMMAND
+                # clone the formula repo if it doesn't exist. user is in charge of keeping this updated.
+                if File.exists?(formula_path + "/.git")
+                    # TODO: only `pull` if we can find a remote origin,
+                    # otherwise, it's probably a brand new, unpushed formula
+                    prn runcmd("cd #{formula_path}/ && git pull")
+                else
+                    prn runcmd("git clone #{formula} #{formula_path}/")
+                end
             end
+
             # mount salt directories
             project.vm.synced_folder formula_path, "/project"
         else
