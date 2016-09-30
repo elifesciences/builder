@@ -114,7 +114,8 @@ def setup_ec2(stackname, context_ec2):
                 # - cloud-init has finished running
                 #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
                 #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running 
-                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) or not files.exists('/var/lib/cloud/instance/boot-finished')
+                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) \
+                  or not files.exists('/var/lib/cloud/instance/boot-finished')
             except fabric_exceptions.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True

@@ -178,17 +178,21 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     with settings(**params):
         yield
 
-def stack_all_ec2_nodes(stackname, work, username=config.DEPLOY_USER, **kwargs):
+def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs):
     """Executes work on all the EC2 nodes of stackname.    
-    Optionally connects with the specified username or with additional settings
-    from kwargs"""
+    Optionally connects with the specified username"""
+    work_kwargs = {}
+    if isinstance(workfn, tuple):
+        workfn, work_kwargs = workfn
+
     public_ips = [ec2['instance']['ip_address'] for ec2 in stack_data(stackname)]
     params = _ec2_connection_params(stackname, username)
-    LOG.info("Executing %s on all ec2 nodes (%s)", work, public_ips)
+    params.update(kwargs)
+    LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
 
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
-        execute(work, hosts=public_ips)
+        execute(workfn, hosts=public_ips, **work_kwargs)
     
 
 

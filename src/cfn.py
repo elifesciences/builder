@@ -1,5 +1,5 @@
 from distutils.util import strtobool #pylint: disable=import-error,no-name-in-module
-from fabric.api import task, local, run, sudo, put, get, abort
+from fabric.api import task, local, run, sudo, put, get, abort, parallel
 from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
@@ -202,10 +202,10 @@ def cmd(stackname, command=None, username=DEPLOY_USER):
     print "Connecting to: %s" % stackname
     stack_all_ec2_nodes(
         stackname,
-        lambda: run(command),
+        (parallel(run), {'command': command}),
         username=username,
         abort_on_prompts=True)
-        
+
 @task
 def project_list():
     for org, plist in project.org_project_map().items():
