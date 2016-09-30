@@ -12,7 +12,7 @@ from . import core, utils, config, keypair, bvars
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
 from .utils import first
 from .config import BOOTSTRAP_USER
-from fabric.api import sudo, put
+from fabric.api import sudo, put, parallel
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from boto.exception import BotoServerError
@@ -278,7 +278,7 @@ def update_ec2_stack(stackname):
         # this will tell the machine to update itself
         run_script('highstate.sh')
 
-    stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, forward_agent=True)
+    stack_all_ec2_nodes(stackname, parallel(_update_ec2_node), username=BOOTSTRAP_USER, forward_agent=True)
 
 @core.requires_stack_file
 def delete_stack_file(stackname):
