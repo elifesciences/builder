@@ -1,0 +1,13 @@
+ line contributions:
+   7125 author Luke Skibinski
+   1531 author Giorgio Sironi
+    123 author Anonymous
+      2 author Ian Mulvany
+      2 author Chris Wilkinson
+
+ commit contributions:
+   236	Luke Skibinski
+   218	Giorgio Sironi
+     2	Anonymous
+     1	Chris Wilkinson
+     1	Ian Mulvany
