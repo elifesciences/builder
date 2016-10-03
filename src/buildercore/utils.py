@@ -224,9 +224,7 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
         dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
 
-# TODO: this name is the opposite of assert, assertions read like "die if 1 == 1"
-# I'd try ensure(assertion, msg)
-def die(assertion, msg, *args):
+def ensure(assertion, msg, *args):
     """intended as a convenient replacement for `assert` statements that 
     get compiled away with -O flags"""
     if not assertion:
@@ -234,8 +232,8 @@ def die(assertion, msg, *args):
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
-    die(os.path.isdir(path), "directory couldn't be created: %s" % path)
-    die(os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path)
+    ensure(os.path.isdir(path), "directory couldn't be created: %s" % path)
+    ensure(os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path)
     return path
 
 def json_dumps(obj, dangerous=False):

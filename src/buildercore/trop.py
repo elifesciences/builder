@@ -16,7 +16,7 @@ from troposphere import elasticloadbalancing as elb
 from functools import partial
 import logging
 from .decorators import osissuefn
-from .utils import first, die
+from .utils import first, ensure
 
 LOG = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    die('ports' in context['project']['aws'], \
+    ensure('ports' in context['project']['aws'], \
         "Missing `ports` configuration in `aws` for '%s'" % context['stackname'])
 
     return security_group(
@@ -344,7 +344,7 @@ def render_sqs(context, template):
         ))
 
 def render_elb(context, template, ec2_instances):
-    die(any([context['full_hostname'], context['int_full_hostname']]), \
+    ensure(any([context['full_hostname'], context['int_full_hostname']]), \
         "An ELB must have either an external or an internal DNS entry")
 
     elb_is_public = True if context['full_hostname'] else False
@@ -441,7 +441,7 @@ def render(context):
         render_elb(context, template, ec2_instances)
 
     elif context['ec2']:
-        die(context['ec2']['cluster-size'] == 1, \
+        ensure(context['ec2']['cluster-size'] == 1, \
             "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
 
         if context['full_hostname']:
@@ -452,11 +452,11 @@ def render(context):
             template.add_resource(internal_dns(context))        
 
     if context['full_hostname']:
-        die(R53_EXT_TITLE in template.resources.keys(), "You want an external DNS entry but there is no resource configuring it: %s" % context)
+        ensure(R53_EXT_TITLE in template.resources.keys(), "You want an external DNS entry but there is no resource configuring it: %s" % context)
         template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
 
     if context['int_full_hostname']:
-        die(R53_INT_TITLE in template.resources.keys(), "You want an internal DNS entry but there is no resource configuring it: %s" % context)
+        ensure(R53_INT_TITLE in template.resources.keys(), "You want an internal DNS entry but there is no resource configuring it: %s" % context)
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
     return template.to_json()

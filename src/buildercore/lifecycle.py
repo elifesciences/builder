@@ -5,7 +5,7 @@ The primary reason for doing this is to save on costs."""
 from datetime import datetime
 import logging
 from .core import connect_aws_with_stack
-from .utils import call_while, die
+from .utils import call_while, ensure
 
 LOG = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def _wait_all_in_state(stackname, state, node_ids):
     call_while(some_node_is_still_not_compliant, interval=2, update_msg="waiting for states of nodes to be %s" % state, done_msg="all nodes in state %s" % state)
 
 def _ensure_valid_states(states, valid_states):
-    die(
+    ensure(
         set(states.values()).issubset(valid_states),
         "The states of EC2 nodes are not supported, manual recovery is needed: %s", states
     )
