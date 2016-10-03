@@ -122,6 +122,7 @@ def connect_aws_with_stack(stackname, service):
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service)
 
+# TODO: rename to find_ec2_instances
 def find_ec2_instance(stackname):
     "returns list of ec2 instances data for a *specific* stackname"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html

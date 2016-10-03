@@ -22,3 +22,4 @@ import buildvars
 import remote_master
 import project
 from deploy import deploy, switch_revision_update_instance
+from lifecycle import start, stop
