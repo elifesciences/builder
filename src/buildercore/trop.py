@@ -101,6 +101,7 @@ def _generic_tags(context):
     return {
         'Owner': context['author'],
         'Project': context['project_name'], # journal
+        'Environment': context['instance_id'], # stack instance id
         # the name AWS Console uses to label an instance
         'Name': context['stackname'] # ll: journal-prod
     }

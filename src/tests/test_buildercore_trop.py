@@ -97,6 +97,13 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertIn(
             {
+                'Key': 'Environment',
+                'Value': 'prod',
+            },
+            resources['EC2Instance1']['Properties']['Tags']
+        )
+        self.assertIn(
+            {
                 'Key': 'Cluster',
                 'Value': 'project-with-cluster--prod',
             },
