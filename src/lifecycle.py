@@ -6,12 +6,14 @@ from decorators import requires_aws_stack, timeit, echo_output
 @requires_aws_stack
 @timeit
 def start(stackname):
+    "Starts the nodes of 'stackname'. Idempotent"
     lifecycle.start(stackname)
 
 @task
 @requires_aws_stack
 @timeit
 def stop(stackname):
+    "Stops the nodes of 'stackname' without losing their state. Idempotent"
     lifecycle.stop(stackname)
 
 @task
