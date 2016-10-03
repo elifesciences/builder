@@ -1,3 +1,4 @@
+from datetime import datetime
 from subprocess import check_output
 from fabric.api import settings
 from tests import base
@@ -7,8 +8,9 @@ import cfn
 class TestProvisioning(base.BaseCase):
     def setUp(self):
         self.stacknames = []
-        # to avoid multiple people clashing while running their buils
-        self.environment = check_output('whoami').rstrip()
+        # to avoid multiple people clashing while running their builds
+        # and new builds clashing with older ones
+        self.environment = check_output('whoami').rstrip() + datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
     def tearDown(self):
         for stackname in self.stacknames:
