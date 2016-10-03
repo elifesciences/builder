@@ -293,7 +293,7 @@ def stack_data(stackname, ensure_single_instance=False):
         ec2_instances = find_ec2_instance(stackname)
 
         if len(ec2_instances) < 1:
-            raise RuntimeError("found no ec2 instances for %r" % stackname)
+            raise RuntimeError("found no running ec2 instances for %r" % stackname)
         elif len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
