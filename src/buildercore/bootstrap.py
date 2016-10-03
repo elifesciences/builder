@@ -346,9 +346,9 @@ def update_stack(stackname, part_filter=None):
 @core.requires_stack_file
 def create_update(stackname, part_filter=None):
     if not core.stack_is_active(stackname):
-        print 'stack does not exist, creating'
+        LOG.info('stack %s does not exist, creating', stackname)
         create_stack(stackname)
-    print 'updating stack'
+    LOG.info('updating stack %s', stackname)
     update_stack(stackname, part_filter)
     return stackname
 
