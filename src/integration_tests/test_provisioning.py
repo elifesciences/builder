@@ -2,7 +2,6 @@ from subprocess import check_output
 from fabric.api import settings
 from tests import base
 from buildercore import bootstrap, cfngen
-import buildvars
 import cfn
 
 class TestProvisioning(base.BaseCase):
