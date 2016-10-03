@@ -110,7 +110,10 @@ PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PA
 # believe it or not but buildercore.config is NOT the place to be putting settings
 #
 
-SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
+if 'SETTINGS_FILE' in os.environ:
+    SETTINGS_FILE = os.environ['SETTINGS_FILE']
+else:
+    SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
 
 
 #

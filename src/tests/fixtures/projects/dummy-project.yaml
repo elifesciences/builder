@@ -80,6 +80,7 @@ dummy1:
     #subdomain: dummy1 # dummy.elifesciences.org
     repo: ssh://git@github.com/elifesciences/dummy1
     aws:
+        type: t2.micro
         ports:
             - 22
     vagrant:

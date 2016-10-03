@@ -50,7 +50,7 @@ def deploy(pname, instance_id=None, branch='master'):
     bootstrap.create_update(stackname)        
     setdefault('.active-stack', stackname)
 
-@task(name='switch_revision_update_instance')
+@task
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None):
     buildvars.switch_revision(stackname, revision)

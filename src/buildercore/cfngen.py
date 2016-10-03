@@ -197,7 +197,7 @@ def validate_project(pname, **extra):
             validate_aws_template(pname, template)
             time.sleep(0.5) # be nice, avoid any rate limiting
 
-    except boto.connection.BotoServerError:
+    except boto.connection.BotoServerError as e:
         msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
         LOG.exception(msg)
         return False
