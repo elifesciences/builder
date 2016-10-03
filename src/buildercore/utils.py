@@ -117,11 +117,11 @@ def call_while(fn, interval=5, update_msg="waiting ...", done_msg="done."):
     "calls the given function `f` every `interval` until it returns False."
     while True:
         if fn():
-            print update_msg
+            LOG.info(update_msg)
             time.sleep(interval)
         else:
             break
-    print done_msg
+    LOG.info(done_msg)
 
 def call_while_example():
     "a simple example of how to use the `call_while` function. polls fs every two seconds until /tmp/foo is detected"
@@ -224,11 +224,13 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
         dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
 
-def die(assertion, msg):
+# TODO: this name is the opposite of assert, assertions read like "die if 1 == 1"
+# I'd try ensure(assertion, msg)
+def die(assertion, msg, *args):
     """intended as a convenient replacement for `assert` statements that 
     get compiled away with -O flags"""
     if not assertion:
-        raise AssertionError(msg)
+        raise AssertionError(msg % args)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
