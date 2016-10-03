@@ -4,7 +4,7 @@ The primary reason for doing this is to save on costs."""
 
 from datetime import datetime
 import logging
-from .core import connect_aws_with_stack
+from .core import connect_aws_with_stack, find_ec2_instances
 from .utils import call_while, ensure
 
 LOG = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def stop(stackname):
     _wait_all_in_state(stackname, 'stopped', to_be_stopped)
 
 def last_start_time(stackname):
-    nodes = _nodes(stackname, state='running')
+    nodes = find_ec2_instances(stackname)
     def _parse_datetime(value):
         return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
     return {node.id:_parse_datetime(node.launch_time) for node in nodes}
@@ -82,23 +82,7 @@ def _nodes_states(stackname, node_ids=None):
     """dictionary from instance id to a string state.
     
     e.g. {'i-6f727961': 'stopped'}"""
-    return {node.id:node.state for node in _nodes(stackname, node_ids=node_ids)}
-
-def _nodes(stackname, state=None, node_ids=None):
-    "returns list of ec2 instances data for a *specific* stackname"
-    conn = _connection(stackname)
-    return conn.get_only_instances(filters=_all_nodes_filter(stackname, state=state, node_ids=node_ids))
-
-def _all_nodes_filter(stackname, state, node_ids):
-    query = {
-        'tag-key': ['Cluster', 'Name'],
-        'tag-value': [stackname],
-    }
-    if state:
-        query['instance-state-name'] = [state]
-    if node_ids:
-        query['instance-id'] = node_ids
-    return query
+    return {node.id:node.state for node in find_ec2_instances(stackname, state=None, node_ids=node_ids)}
 
 def _connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
