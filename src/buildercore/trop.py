@@ -16,12 +16,11 @@ from troposphere import elasticloadbalancing as elb
 
 from functools import partial
 import logging
-from .decorators import osissuefn
 from .utils import first, ensure
 
 LOG = logging.getLogger(__name__)
 
-osissuefn("embarassing code. some of these constants should be pulled form project config or given better names.")
+# TODO: embarassing code. some of these constants should be pulled form project config or given better names.
 
 SECURITY_GROUP_TITLE = "StackSecurityGroup"
 EC2_TITLE = 'EC2Instance1'
