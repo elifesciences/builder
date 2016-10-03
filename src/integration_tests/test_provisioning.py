@@ -1,14 +1,16 @@
+from datetime import datetime
 from subprocess import check_output
 from fabric.api import settings
 from tests import base
-from buildercore import bootstrap, cfngen
+from buildercore import bootstrap, cfngen, lifecycle
 import cfn
 
 class TestProvisioning(base.BaseCase):
     def setUp(self):
         self.stacknames = []
-        # to avoid multiple people clashing while running their buils
-        self.environment = check_output('whoami').rstrip()
+        # to avoid multiple people clashing while running their builds
+        # and new builds clashing with older ones
+        self.environment = check_output('whoami').rstrip() + datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
     def tearDown(self):
         for stackname in self.stacknames:
@@ -27,3 +29,7 @@ class TestProvisioning(base.BaseCase):
 
             # TODO: hangs, not ready to test this. Will revisit in the future
             #buildvars.switch_revision(stackname, 'master')
+        
+            lifecycle.stop(stackname)
+            lifecycle.start(stackname)
+

@@ -122,19 +122,25 @@ def connect_aws_with_stack(stackname, service):
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service)
 
-def find_ec2_instance(stackname):
+def find_ec2_instances(stackname, state='running', node_ids=None):
     "returns list of ec2 instances data for a *specific* stackname"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-    filter_by_cluster = {
+    conn = connect_aws_with_stack(stackname, 'ec2')
+    return conn.get_only_instances(filters=_all_nodes_filter(stackname, state=state, node_ids=node_ids))
+
+def _all_nodes_filter(stackname, state, node_ids):
+    query = {
         'tag-key': ['Cluster', 'Name'],
         'tag-value': [stackname],
-        'instance-state-name': ['running'],
     }
-    conn = connect_aws_with_stack(stackname, 'ec2')
-    return conn.get_only_instances(filters=filter_by_cluster)
+    if state:
+        query['instance-state-name'] = [state]
+    if node_ids:
+        query['instance-id'] = node_ids
+    return query
 
 def find_ec2_volume(stackname):
-    ec2_data = find_ec2_instance(stackname)[0]
+    ec2_data = find_ec2_instances(stackname)[0]
     iid = ec2_data.id
     #http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
     kwargs = {'filters': {'attachment.instance-id': iid}}
@@ -289,10 +295,10 @@ def stack_data(stackname, ensure_single_instance=False):
         # TODO: is there someway to go straight to the instance ID ?
         # a CloudFormation's outputs go stale! because we can't trust the data it
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
-        ec2_instances = find_ec2_instance(stackname)
+        ec2_instances = find_ec2_instances(stackname)
 
         if len(ec2_instances) < 1:
-            raise RuntimeError("found no ec2 instances for %r" % stackname)
+            raise RuntimeError("found no running ec2 instances for %r" % stackname)
         elif len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
