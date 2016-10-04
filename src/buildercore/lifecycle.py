@@ -4,7 +4,10 @@ The primary reason for doing this is to save on costs."""
 
 from datetime import datetime
 import logging
-from .core import connect_aws_with_stack, find_ec2_instances
+from fabric.contrib import files
+import fabric.exceptions as fabric_exceptions
+from . import config
+from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id
 from .utils import call_while, ensure
 
 LOG = logging.getLogger(__name__)
@@ -23,6 +26,7 @@ def start(stackname):
     LOG.info("Nodes to be started: %s", to_be_started)
     _connection(stackname).start_instances(to_be_started)
     _wait_all_in_state(stackname, 'running', to_be_started)
+    stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
 
 def stop(stackname):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
@@ -74,9 +78,19 @@ def _ensure_valid_states(states, valid_states):
         "The states of EC2 nodes are not supported, manual recovery is needed: %s", states
     )
 
+def _wait_daemons():
+    node_id = current_ec2_node_id()
+    path = '/var/lib/cloud/instance/boot-finished'
+    def is_starting_daemons():
+        try:
+            return not files.exists(path)
+        except fabric_exceptions.NetworkError:
+            LOG.debug("failed to connect to %s...", node_id)
+            return True
+    call_while(is_starting_daemons, interval=3, update_msg='Waiting for %s to be detected on %s...' % (path, node_id))
+
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]
-
 
 def _nodes_states(stackname, node_ids=None):
     """dictionary from instance id to a string state.
