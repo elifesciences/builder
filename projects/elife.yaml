@@ -500,3 +500,16 @@ statusbase:
     vagrant:
         ports:
             1246: 80
+
+observer:
+    subdomain: observer # observer.elifesciences.org
+    formula-repo: https://github.com/elifesciences/observer-formula
+    aws:
+        ports:
+            - 22
+            - 80
+            - 443
+    vagrant:
+        ram: 2048 # metabase, mostly
+        ports:
+            1239: 80
