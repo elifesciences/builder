@@ -28,6 +28,7 @@ def start(stackname):
     _connection(stackname).start_instances(to_be_started)
     _wait_all_in_state(stackname, 'running', to_be_started)
     stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+    update_dns(stackname)
 
 def stop(stackname):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
@@ -89,6 +90,23 @@ def _wait_daemons():
             LOG.debug("failed to connect to %s...", node_id)
             return True
     call_while(is_starting_daemons, interval=3, update_msg='Waiting for %s to be detected on %s...' % (path, node_id))
+
+def update_dns(stackname):
+    nodes = find_ec2_instances(stackname)
+    if len(nodes) > 1:
+        # ELB has its own DNS, EC2 nodes will autoregister
+        return
+
+    context = load_context(stackname)
+    if context['full_hostname']:
+        for node in nodes:
+            _update_dns_a_record(stackname, context['domain'], context['full_hostname'], node.ip_address)
+
+def _update_dns_a_record(stackname, zone_name, name, value):
+    route53 = connect_aws_with_stack(stackname, 'route53')
+    zone = route53.get_zone(zone_name)
+    LOG.info("Updating DNS record %s to %s", name, value) 
+    zone.update_a(name, value)
 
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]
