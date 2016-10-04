@@ -11,7 +11,7 @@ from .utils import first, lookup
 from boto import sns
 from boto.exception import BotoServerError
 from contextlib import contextmanager
-from fabric.api import settings, execute
+from fabric.api import settings, execute, env
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -191,16 +191,31 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
     if isinstance(workfn, tuple):
         workfn, work_kwargs = workfn
 
-    public_ips = [ec2['instance']['ip_address'] for ec2 in stack_data(stackname)]
+    public_ips = {ec2['instance']['id']:ec2['instance']['ip_address'] for ec2 in stack_data(stackname)}
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
+    # custom for builder, these are available as fabric.api.env.public_ips
+    # inside workfn
+    params.update({'public_ips': public_ips})
     LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
 
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
-        execute(workfn, hosts=public_ips, **work_kwargs)
+        execute(workfn, hosts=public_ips.values(), **work_kwargs)
     
+def current_ec2_node_id():
+    """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
+    
+    Sticking to the 'node' terminology because 'instance' is too overloaded."""
 
+    assert env.host is not None, "This is supposed to be called with settings for connecting to an EC2 instance"
+    current_public_ip = env.host
+
+    assert 'public_ips' in env, "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration"
+    matching_instance_ids = [instance_id for (instance_id, public_ip) in env.public_ips.iteritems() if current_public_ip == public_ip]
+
+    assert len(matching_instance_ids) == 1, ("Too many instance ids (%s) pointing to this ip (%s)" % (matching_instance_ids, current_public_ip))
+    return matching_instance_ids[0]
 
 
 #
