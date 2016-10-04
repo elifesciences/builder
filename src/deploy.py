@@ -23,6 +23,7 @@ def impose_ordering(branch_list):
 @task
 @requires_branch_deployable_project
 @echo_output
+@timeit
 def deploy(pname, instance_id=None, branch='master'):
     pdata = project.project_data(pname)
     if not branch:

@@ -40,6 +40,7 @@ def ensure_destroyed(stackname):
 # these aliases are deprecated
 @task(alias='aws_update_stack')
 @requires_aws_stack
+@timeit
 def update(stackname):
     """Updates the environment within the stack's ec2 instance. 
 
