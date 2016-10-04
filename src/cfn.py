@@ -2,7 +2,7 @@ from distutils.util import strtobool #pylint: disable=import-error,no-name-in-mo
 from fabric.api import task, local, run, sudo, put, get, abort, parallel
 from fabric.contrib import files
 import aws, utils
-from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask
+from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException

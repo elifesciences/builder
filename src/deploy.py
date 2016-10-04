@@ -1,7 +1,7 @@
 """module concerns itself with tasks involving branch deployments of projects."""
 
 from fabric.api import task
-from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile, requires_aws_stack
+from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile, requires_aws_stack, timeit
 import utils
 from buildercore import core, bootstrap, cfngen, project
 import buildvars
