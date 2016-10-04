@@ -115,7 +115,8 @@ def _nodes_states(stackname, node_ids=None):
     """dictionary from instance id to a string state.
     
     e.g. {'i-6f727961': 'stopped'}"""
-    return {node.id:node.state for node in find_ec2_instances(stackname, state=None, node_ids=node_ids)}
+    # TODO: better filter for terminated instances, may mask errors
+    return {node.id:node.state for node in find_ec2_instances(stackname, state=None, node_ids=node_ids) if node.state != 'terminated'}
 
 def _connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
