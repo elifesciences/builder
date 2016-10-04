@@ -233,11 +233,6 @@ elife-bot:
             description: speeding up end2end tests
             type: c4.xlarge
             s3:
-                end2end-elife-cdn:
-                    sqs-notifications:
-                        end2end-incoming-queue:
-                            prefix: elife-articles/
-                            suffix: .xml
                 end2end-elife-production-final:
                     sqs-notifications:
                         end2end-incoming-queue: True
