@@ -9,6 +9,7 @@ import fabric.exceptions as fabric_exceptions
 from . import config
 from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id
 from .utils import call_while, ensure
+from .contexts import load_context
 
 LOG = logging.getLogger(__name__)
 

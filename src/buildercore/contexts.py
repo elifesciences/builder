@@ -15,6 +15,9 @@ def local_context_file(stackname):
     return join(config.CONTEXT_DIR, stackname + ".json")
 
 def load_context(stackname):
+    """Returns the store context data structure for 'stackname'.
+    
+    Downloads from S3 if missing on the local builder instance"""
     path = local_context_file(stackname)
     if not exists(path):
         download_from_s3(stackname)
