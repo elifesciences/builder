@@ -8,6 +8,7 @@ from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
 from .utils import first, lookup
+from boto import sns
 from boto.exception import BotoServerError
 from contextlib import contextmanager
 from fabric.api import settings, execute
@@ -62,6 +63,22 @@ STEADY_CFN_STATUS = [
 ]
     
 
+def _set_raw_subscription_attribute(sns_connection, subscription_arn):
+    """
+    Works around boto's lack of a SetSubscriptionAttributes call.
+
+    boto doesn't (yet) expose SetSubscriptionAttributes, so here's a
+    monkeypatch specifically for turning on the RawMessageDelivery attribute.
+    """
+    params = {
+        'AttributeName': 'RawMessageDelivery',
+        'AttributeValue': 'true',
+        'SubscriptionArn': subscription_arn
+    }
+    return sns_connection._make_request('SetSubscriptionAttributes', params)
+
+sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
+
 
 #
 # 
@@ -105,19 +122,25 @@ def connect_aws_with_stack(stackname, service):
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service)
 
-def find_ec2_instance(stackname):
+def find_ec2_instances(stackname, state='running', node_ids=None):
     "returns list of ec2 instances data for a *specific* stackname"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-    filter_by_cluster = {
+    conn = connect_aws_with_stack(stackname, 'ec2')
+    return conn.get_only_instances(filters=_all_nodes_filter(stackname, state=state, node_ids=node_ids))
+
+def _all_nodes_filter(stackname, state, node_ids):
+    query = {
         'tag-key': ['Cluster', 'Name'],
         'tag-value': [stackname],
-        'instance-state-name': ['running'],
     }
-    conn = connect_aws_with_stack(stackname, 'ec2')
-    return conn.get_only_instances(filters=filter_by_cluster)
+    if state:
+        query['instance-state-name'] = [state]
+    if node_ids:
+        query['instance-id'] = node_ids
+    return query
 
 def find_ec2_volume(stackname):
-    ec2_data = find_ec2_instance(stackname)[0]
+    ec2_data = find_ec2_instances(stackname)[0]
     iid = ec2_data.id
     #http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
     kwargs = {'filters': {'attachment.instance-id': iid}}
@@ -161,17 +184,21 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     with settings(**params):
         yield
 
-def stack_all_ec2_nodes(stackname, work, username=config.DEPLOY_USER, **kwargs):
+def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs):
     """Executes work on all the EC2 nodes of stackname.    
-    Optionally connects with the specified username or with additional settings
-    from kwargs"""
+    Optionally connects with the specified username"""
+    work_kwargs = {}
+    if isinstance(workfn, tuple):
+        workfn, work_kwargs = workfn
+
     public_ips = [ec2['instance']['ip_address'] for ec2 in stack_data(stackname)]
     params = _ec2_connection_params(stackname, username)
-    LOG.info("Executing %s on all ec2 nodes (%s)", work, public_ips)
+    params.update(kwargs)
+    LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
 
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
-        execute(work, hosts=public_ips)
+        execute(workfn, hosts=public_ips, **work_kwargs)
     
 
 
@@ -268,10 +295,10 @@ def stack_data(stackname, ensure_single_instance=False):
         # TODO: is there someway to go straight to the instance ID ?
         # a CloudFormation's outputs go stale! because we can't trust the data it
         # gives us, we sometimes take it's instance-id and talk to the instance directly.
-        ec2_instances = find_ec2_instance(stackname)
+        ec2_instances = find_ec2_instances(stackname)
 
         if len(ec2_instances) < 1:
-            raise RuntimeError("found no ec2 instances for %r" % stackname)
+            raise RuntimeError("found no running ec2 instances for %r" % stackname)
         elif len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 

@@ -43,6 +43,6 @@ service salt-master stop || true
 
 sleep 2
 
-sudo killall salt-master || true
+sudo killall -9 salt-master || true
 
 service salt-master start

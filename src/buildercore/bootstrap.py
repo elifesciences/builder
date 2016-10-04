@@ -114,7 +114,8 @@ def setup_ec2(stackname, context_ec2):
                 # - cloud-init has finished running
                 #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
                 #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running 
-                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) or not files.exists('/var/lib/cloud/instance/boot-finished')
+                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) \
+                  or not files.exists('/var/lib/cloud/instance/boot-finished')
             except fabric_exceptions.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
@@ -147,7 +148,14 @@ def setup_sqs(stackname, context_sqs, region):
             topic_lookup = sns.create_topic(topic_name) 
             topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
             # deals with both subscription and IAM policy
-            sns.subscribe_sqs_queue(topic_arn, queue)
+            response = sns.subscribe_sqs_queue(topic_arn, queue)
+            assert 'SubscribeResponse' in response
+            assert 'SubscribeResult' in response['SubscribeResponse']
+            assert 'SubscriptionArn' in response['SubscribeResponse']['SubscribeResult']
+            subscription_arn = response['SubscribeResponse']['SubscribeResult']['SubscriptionArn']
+            LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
+            sns.set_raw_subscription_attribute(subscription_arn)
+
 
 
 #

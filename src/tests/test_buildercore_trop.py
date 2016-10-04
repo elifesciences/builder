@@ -97,6 +97,13 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertIn(
             {
+                'Key': 'Environment',
+                'Value': 'prod',
+            },
+            resources['EC2Instance1']['Properties']['Tags']
+        )
+        self.assertIn(
+            {
                 'Key': 'Cluster',
                 'Value': 'project-with-cluster--prod',
             },
@@ -125,7 +132,9 @@ class TestBuildercoreTrop(base.BaseCase):
             elb['Listeners'][0],
             {
                 'InstancePort': '80',
+                'InstanceProtocol': 'HTTP',
                 'LoadBalancerPort': '80',
+                'PolicyNames': [],
                 'Protocol': 'HTTP',
             }
         )
