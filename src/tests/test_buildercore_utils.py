@@ -1,6 +1,7 @@
 from . import base
 from functools import partial
 from buildercore import utils
+from mock import patch, MagicMock
 
 class TestBuildercoreUtils(base.BaseCase):
     def setUp(self):
@@ -78,3 +79,20 @@ class TestBuildercoreUtils(base.BaseCase):
     def test_lu_invalid_path(self):
         data = {'a': {'b': {'c': [1,2,3]}}}
         self.assertRaises(ValueError, utils.lu, data, None)
+
+    @patch('time.sleep')
+    def test_call_while_happy_path(self, sleep):
+        check = MagicMock()
+        check.side_effect = [True, True, False]
+        utils.call_while(check, interval=5) 
+        self.assertEqual(2, len(sleep.mock_calls))
+
+    @patch('time.sleep')
+    def test_call_while_timeout(self, sleep):
+        check = MagicMock()
+        check.return_value = True
+        try:
+            utils.call_while(check, interval=5, timeout=15) 
+            self.fail("Should not return normally")
+        except:
+            self.assertEqual(3, len(sleep.mock_calls))

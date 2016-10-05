@@ -113,14 +113,17 @@ def firstnn(x):
     return first(filter(lambda v: v != None, x))
     #return first(filter(None, x))
 
-def call_while(fn, interval=5, update_msg="waiting ...", done_msg="done."):
+def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done."):
     "calls the given function `f` every `interval` until it returns False."
+    elapsed = 0
     while True:
-        if fn():
-            LOG.info(update_msg)
-            time.sleep(interval)
-        else:
+        if not fn():
             break
+        if elapsed >= timeout:
+            raise RuntimeError("Reached timeout %d while %s" % (timeout, update_msg))
+        LOG.info(update_msg)
+        time.sleep(interval)
+        elapsed = elapsed + interval
     LOG.info(done_msg)
 
 def call_while_example():
