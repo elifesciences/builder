@@ -137,8 +137,17 @@ def find_ec2_instances(stackname, state='running', node_ids=None):
 
 def _all_nodes_filter(stackname, state, node_ids):
     query = {
-        'tag-key': ['Cluster', 'Name'],
-        'tag-value': [stackname],
+        # tag-key+tag-value is misleading here:
+        # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+        #     tag-key - The key of a tag assigned to the resource. This filter is independent of the tag-value filter. For example, if you use both the filter "tag-key=Purpose" and the filter "tag-value=X", you get any resources assigned both the tag key Purpose (regardless of what the tag's value is), and the tag value X (regardless of what the tag's key is). If you want to list only resources where Purpose is X, see the tag:key=value filter.
+        #'tag-key': ['Cluster', 'Name'],
+        # we cannot use 'tag-Cluster' and 'tag-name', because:
+        # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Filtering.html
+        #     In many cases, you can granulate the results by using complementary search terms on different key fields, where the AND rule is automatically applied instead. If you search for tag: Name:=All values and tag:Instance State=running, you get search results that contain both those criteria.
+        # and that means we would be too selective, requiring *both* tags to be present when we wanted to select "at least one out of two"
+        # Therefore, we check for this documented tag automatically created by
+        # Cloudformation
+        'tag:aws:cloudformation:stack-name': [stackname],
     }
     if state:
         query['instance-state-name'] = [state]
