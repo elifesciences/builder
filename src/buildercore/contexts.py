@@ -4,7 +4,8 @@ import json
 from os.path import join, exists
 from . import config, s3
 from .decorators import if_enabled
-# temporary fallback
+
+# only needed for _fallback_download_context_from_ec2:
 from . import core, bvars
 
 import logging
