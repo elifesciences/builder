@@ -13,7 +13,7 @@ class ParseConfig(base.BaseCase):
     def test_load(self):
         loaded_config = config.load(self.settings_file_path)
         expected_config = OrderedDict([
-            ('write-contexts-to-s3', True),
+            ('write-context-to-s3', True),
             ('write-keypairs-to-s3', False),
             ('project-locations', [
                 './src/tests/fixtures/projects/',
@@ -29,7 +29,7 @@ class ParseConfig(base.BaseCase):
         loaded_config = config.load(self.settings_file_path)
         parsed_config = config.parse(loaded_config)
         expected_config = OrderedDict([
-            ('write-contexts-to-s3', True),
+            ('write-context-to-s3', True),
             ('write-keypairs-to-s3', False),
             ('project-locations', [
                 ('file', None, join(config.PROJECT_PATH, 'src/tests/fixtures/projects', 'dummy-project.yaml')),

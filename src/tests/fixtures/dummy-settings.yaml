@@ -3,7 +3,7 @@
 
 # where to look for organisation project data
 # from these interfaces a list of organisations and their projects are made available
-write-contexts-to-s3: True
+write-context-to-s3: True
 write-keypairs-to-s3: False
 project-locations:
     # 'projects' directory relative to this builder instance
