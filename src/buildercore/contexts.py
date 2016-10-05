@@ -8,7 +8,6 @@ from .decorators import if_enabled
 from . import core, bvars
 
 import logging
-# TODO: insert logs of movement between S3 and local if not present
 LOG = logging.getLogger(__name__)
 
 def s3_context_key(stackname):
@@ -25,17 +24,23 @@ def load_context(stackname):
     if not exists(path):
         was_on_s3 = download_from_s3(stackname)
         if not was_on_s3:
-            LOG.warn("Context for %s was not on S3, downloading it from EC2 and uploading it", stackname)
-            with core.stack_conn(stackname):
-                build_vars = bvars.read_from_current_host()
-                context = dict(build_vars)
-                for key in ['node', 'nodename']:
-                    if key in context:
-                        del context[key]
-                write_context(stackname, context)
+            _fallback_download_context_from_ec2(stackname)
 
     with open(path, 'r') as context_file:
         return json.loads(context_file.read())
+
+def _fallback_download_context_from_ec2(stackname):
+    LOG.warn("Context for %s was not on S3, downloading it from EC2 and uploading it", stackname)
+    with core.stack_conn(stackname):
+        build_vars = bvars.read_from_current_host()
+        context = dict(build_vars)
+        for key in ['node', 'nodename']:
+            if key in context:
+                del context[key]
+        # these keys must exist, even if None
+        for key in ['full_hostname', 'domain', 'int_full_hostname', 'int_domain']:
+            assert key in context, "Context is malformed, missing %s key (%s)" % (key, context)
+        write_context(stackname, context)
 
 def write_context(stackname, context):
     write_context_locally(stackname, json.dumps(context))
