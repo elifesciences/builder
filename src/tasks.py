@@ -12,6 +12,7 @@ from buildercore import bakery
 from buildercore.core import stack_conn
 import utils
 from buildercore.decorators import osissue
+from buildercore.context_handler import load_context
 
 @debugtask
 @requires_project
@@ -192,3 +193,9 @@ def diff_builder_config():
 def repair_cfn_info(stackname):
     with stack_conn(stackname):
         bootstrap.write_environment_info(stackname, overwrite=True)
+
+@task
+@requires_aws_stack
+def repair_context(stackname):
+    # triggers the workaround of downloading it from EC2 and persisting it
+    load_context(stackname)
