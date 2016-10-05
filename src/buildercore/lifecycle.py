@@ -125,29 +125,28 @@ def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]
 
 def _nodes_states(stackname, node_ids=None):
-    """dictionary from instance id to a string state.
-    
+    """dictionary from instance id to a string state.    
     e.g. {'i-6f727961': 'stopped'}"""
+
     def _by_node_name(ec2_data):
         "{'lax--end2end--1': [old_terminated_ec2, current_ec2]}"
         node_index = {}
         for node in ec2_data:
             name = node.tags['Name']
-            if name not in node_index:
-                node_index[name] = [node]
-            else:
-                node_index[name].append(node)
+            node_list = node_index.get(name, [])
+            node_list.append(node)
+            node_index[name] = node_list
         return node_index
+
     def _unify_node_information(nodes):
         excluding_terminated = [node for node in nodes if node.state != 'terminated']
-        assert len(excluding_terminated) == 1, "Nodes in %s have the same name, but a non-terminated state"
+        ensure(len(excluding_terminated) == 1, "Nodes in %s have the same name, but a non-terminated state")
         return excluding_terminated[0]
 
     ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
     by_node_name = _by_node_name(ec2_data)
     unified_nodes = {name:_unify_node_information(nodes) for name, nodes in by_node_name.iteritems()}
     return {node.id:node.state for name, node in unified_nodes.iteritems()}
-    
 
 def _connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
