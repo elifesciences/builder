@@ -321,7 +321,6 @@ def stack_data(stackname, ensure_single_instance=False):
     
     Returns a list if more than one result is found, but otherwise sticks
     to a single dictionary for backward compatibility"""
-    stack = describe_stack(stackname)
     try:
         # TODO: is there someway to go straight to the instance ID ?
         # a CloudFormation's outputs go stale! because we can't trust the data it
@@ -334,9 +333,7 @@ def stack_data(stackname, ensure_single_instance=False):
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
         def ec2data(ec2):
-            data = stack.__dict__.copy()
-            data['instance'] = ec2.__dict__
-            return data
+            return {'instance': ec2.__dict__}
         return map(ec2data, ec2_instances)
 
     except Exception:
