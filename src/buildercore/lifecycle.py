@@ -93,14 +93,27 @@ def _wait_daemons():
 
 def update_dns(stackname):
     nodes = find_ec2_instances(stackname)
+    LOG.info("Nodes found: %s", [node.id for node in nodes]) 
+    if len(nodes) == 0:
+        raise RuntimeError("No nodes found for %s, they be in a stopped state. They need to be running to have a (public, at least) ip address that can be mapped onto a DNS" % stackname)
+
     if len(nodes) > 1:
         # ELB has its own DNS, EC2 nodes will autoregister
         return
 
     context = load_context(stackname)
+    LOG.info("External full hostname: %s", context['full_hostname']) 
     if context['full_hostname']:
         for node in nodes:
             _update_dns_a_record(stackname, context['domain'], context['full_hostname'], node.ip_address)
+
+    # We don't strictly need to do this, as the private ip address
+    # inside a VPC should stay the same. For consistency we update all DNS 
+    # entries as the operation is idempotent
+    LOG.info("Internal full hostname: %s", context['int_full_hostname']) 
+    if context['int_full_hostname']:
+        for node in nodes:
+            _update_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'], node.private_ip_address)
 
 def _update_dns_a_record(stackname, zone_name, name, value):
     route53 = connect_aws_with_stack(stackname, 'route53')
