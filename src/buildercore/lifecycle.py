@@ -145,7 +145,6 @@ def _nodes_states(stackname, node_ids=None):
 
     ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
     by_node_name = _by_node_name(ec2_data)
-    print by_node_name
     unified_nodes = {name:_unify_node_information(nodes) for name, nodes in by_node_name.iteritems()}
     return {node.id:node.state for name, node in unified_nodes.iteritems()}
     
