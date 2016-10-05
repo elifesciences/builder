@@ -18,7 +18,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 
 import os, json, copy
 from slugify import slugify
-from . import utils, trop, core, project, contexts
+from . import utils, trop, core, project, context_handler
 from .config import STACK_DIR
 
 import logging
@@ -221,5 +221,5 @@ def generate_stack(pname, **more_context):
     template = render_template(context)
     stackname = context['stackname']
     out_fname = write_template(stackname, template)
-    contexts.write_context(stackname, context)
+    context_handler.write_context(stackname, context)
     return context, out_fname
