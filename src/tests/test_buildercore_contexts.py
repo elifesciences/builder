@@ -1,4 +1,3 @@
-import json
 from os import remove
 from . import base
 from buildercore import cfngen, contexts
@@ -10,7 +9,7 @@ class TestBuildercoreContext(base.BaseCase):
     def test_storing_a_context_on_s3_and_retrieving_it_from_a_new_client(self):
         stackname = 'dummy1--prod'
         context = cfngen.build_context('dummy1', stackname=stackname)
-        contexts.write_context(stackname, json.dumps(context))
+        contexts.write_context(stackname, context)
         expected = contexts.load_context(stackname)
 
         remove(contexts.local_context_file(stackname))

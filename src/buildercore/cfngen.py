@@ -221,5 +221,5 @@ def generate_stack(pname, **more_context):
     template = render_template(context)
     stackname = context['stackname']
     out_fname = write_template(stackname, template)
-    contexts.write_context(stackname, json.dumps(context))
+    contexts.write_context(stackname, context)
     return context, out_fname

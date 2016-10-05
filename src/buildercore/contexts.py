@@ -25,21 +25,20 @@ def load_context(stackname):
     if not exists(path):
         was_on_s3 = download_from_s3(stackname)
         if not was_on_s3:
-            LOG.warn("Context for %s was not on S3, downloading it from EC2 and uploading it" % stackname)
+            LOG.warn("Context for %s was not on S3, downloading it from EC2 and uploading it", stackname)
             with core.stack_conn(stackname):
                 build_vars = bvars.read_from_current_host()
                 context = dict(build_vars)
                 for key in ['node', 'nodename']:
                     if key in context:
                         del context[key]
-                write_context(stackname, json.dumps(context))
+                write_context(stackname, context)
 
     with open(path, 'r') as context_file:
         return json.loads(context_file.read())
 
-# TODO: this should take context (dict) not contents (string)
-def write_context(stackname, contents):
-    write_context_locally(stackname, contents)
+def write_context(stackname, context):
+    write_context_locally(stackname, json.dumps(context))
     write_context_to_s3(stackname)
 
 def write_context_locally(stackname, contents):
