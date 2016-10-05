@@ -80,10 +80,9 @@ H1.setFormatter(FORMAT)
 
 # FileHandler sends to a named file
 H2 = logging.FileHandler(LOG_FILE)
-H2.setLevel(logging.WARN) # change to INFO if code is less-than-stable
+H2.setLevel(logging.DEBUG) # root logger sends *everything* to file
 H2.setFormatter(FORMAT)
 
-# root logger sends *everything* to file
 ROOTLOG.addHandler(H1)
 ROOTLOG.addHandler(H2) 
 
