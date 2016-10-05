@@ -31,7 +31,7 @@ def write(key, something, overwrite=False):
         raise KeyError("key %r exists and overwrite==False. refusing to overwrite." % key)
     k = Key(builder_bucket())
     k.key = key
-    _log_for_key(key, "writing key %s")
+    LOG.info("writing key %s", key, extra={'key': key})
     if isinstance(something, basestring):
         k.set_contents_from_string(something)
     elif isinstance(something, file):
@@ -48,7 +48,7 @@ def delete(key):
         LOG.warn(msg, extra={'key': key, 'protected': protected})
         raise ValueError(msg)
     if exists(key):
-        _log_for_key(key, "deleting key %s")
+        LOG.info("deleting key %s", key, extra={'key': key})
         builder_bucket().get_key(key).delete()
     return not exists(key)
     
@@ -63,7 +63,7 @@ def delete_contents(prefix):
             raise ValueError("only prefixes starting with /test/ allowed: %r" % prefix)
     validate_prefix(prefix)
     for key in builder_bucket().list(prefix=prefix):
-        _log_for_key(key, "deleting key %s")
+        LOG.info("deleting key %s", key, extra={'key': key})
         key.delete()
 
 def listing(prefix):
@@ -78,10 +78,6 @@ def download(key, output_path):
     assert not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path
     k = builder_bucket().get_key(key)
     assert k, ("Cannot find %s in bucket %s" % (key, builder_bucket()))
-    _log_for_key(key, "downloading key %s")
+    LOG.info("downloading key %s", key, extra={'key': key})
     k.get_contents_to_file(open(output_path, 'w'))
     return output_path
-
-def _log_for_key(key, message):
-    "'message' must have a %s placeholder"
-    LOG.info(message, key, extra={'key': key})
