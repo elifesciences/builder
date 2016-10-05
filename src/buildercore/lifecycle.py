@@ -9,6 +9,7 @@ import fabric.exceptions as fabric_exceptions
 from . import config
 from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id
 from .utils import call_while, ensure
+from .context_handler import load_context
 
 LOG = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ def start(stackname):
     _connection(stackname).start_instances(to_be_started)
     _wait_all_in_state(stackname, 'running', to_be_started)
     stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+    update_dns(stackname)
 
 def stop(stackname):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
@@ -89,14 +91,62 @@ def _wait_daemons():
             return True
     call_while(is_starting_daemons, interval=3, update_msg='Waiting for %s to be detected on %s...' % (path, node_id))
 
+def update_dns(stackname):
+    nodes = find_ec2_instances(stackname)
+    LOG.info("Nodes found: %s", [node.id for node in nodes]) 
+    if len(nodes) == 0:
+        raise RuntimeError("No nodes found for %s, they be in a stopped state. They need to be running to have a (public, at least) ip address that can be mapped onto a DNS" % stackname)
+
+    if len(nodes) > 1:
+        # ELB has its own DNS, EC2 nodes will autoregister
+        return
+
+    context = load_context(stackname)
+    LOG.info("External full hostname: %s", context['full_hostname']) 
+    if context['full_hostname']:
+        for node in nodes:
+            _update_dns_a_record(stackname, context['domain'], context['full_hostname'], node.ip_address)
+
+    # We don't strictly need to do this, as the private ip address
+    # inside a VPC should stay the same. For consistency we update all DNS 
+    # entries as the operation is idempotent
+    LOG.info("Internal full hostname: %s", context['int_full_hostname']) 
+    if context['int_full_hostname']:
+        for node in nodes:
+            _update_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'], node.private_ip_address)
+
+def _update_dns_a_record(stackname, zone_name, name, value):
+    route53 = connect_aws_with_stack(stackname, 'route53')
+    zone = route53.get_zone(zone_name)
+    LOG.info("Updating DNS record %s to %s", name, value) 
+    zone.update_a(name, value)
+
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]
 
 def _nodes_states(stackname, node_ids=None):
-    """dictionary from instance id to a string state.
-    
+    """dictionary from instance id to a string state.    
     e.g. {'i-6f727961': 'stopped'}"""
-    return {node.id:node.state for node in find_ec2_instances(stackname, state=None, node_ids=node_ids)}
+
+    def _by_node_name(ec2_data):
+        "{'lax--end2end--1': [old_terminated_ec2, current_ec2]}"
+        node_index = {}
+        for node in ec2_data:
+            name = node.tags['Name']
+            node_list = node_index.get(name, [])
+            node_list.append(node)
+            node_index[name] = node_list
+        return node_index
+
+    def _unify_node_information(nodes):
+        excluding_terminated = [node for node in nodes if node.state != 'terminated']
+        ensure(len(excluding_terminated) == 1, "Nodes in %s have the same name, but a non-terminated state")
+        return excluding_terminated[0]
+
+    ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
+    by_node_name = _by_node_name(ec2_data)
+    unified_nodes = {name:_unify_node_information(nodes) for name, nodes in by_node_name.iteritems()}
+    return {node.id:node.state for name, node in unified_nodes.iteritems()}
 
 def _connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')

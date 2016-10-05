@@ -33,7 +33,7 @@ def dictfilter(func, ddict):
     return {k:v for k, v in ddict.items() if func(k, v)}
 
 def exsubdict(ddict, key_list):
-    "returns a version of the given dictionary with all keys excluding the ones specified"
+    "returns a version of the given dictionary excluding the keys specified"
     return {k:v for k, v in ddict.items() if k not in key_list}
 
 def complement(pred):
@@ -285,3 +285,7 @@ def lu(context, *paths, **kwargs):
 
 def hasallkeys(ddict, key_list):
     return all(map(ddict.has_key, key_list))
+
+def missingkeys(ddict, key_list):
+    "returns all keys in key_list that are not in given ddict"
+    return [key for key in key_list if not ddict.has_key(key)]

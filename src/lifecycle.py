@@ -1,6 +1,6 @@
 from fabric.api import task
 from buildercore import lifecycle
-from decorators import requires_aws_stack, timeit, echo_output
+from decorators import requires_aws_stack, timeit, echo_output, debugtask
 
 @task
 @requires_aws_stack
@@ -31,3 +31,8 @@ def stop_if_next_hour_is_imminent(stackname, minimum_minutes='55'):
     
     The assumption is that stacks where this command is used are not needed for long parts of the day/week, and that who needs them will call the start task first."""
     return lifecycle.stop_if_next_hour_is_imminent(stackname, int(minimum_minutes))
+
+@debugtask
+@requires_aws_stack
+def update_dns(stackname):
+    lifecycle.update_dns(stackname)

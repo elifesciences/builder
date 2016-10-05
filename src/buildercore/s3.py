@@ -31,6 +31,7 @@ def write(key, something, overwrite=False):
         raise KeyError("key %r exists and overwrite==False. refusing to overwrite." % key)
     k = Key(builder_bucket())
     k.key = key
+    LOG.info("writing key %s", key, extra={'key': key})
     if isinstance(something, basestring):
         k.set_contents_from_string(something)
     elif isinstance(something, file):
@@ -62,7 +63,7 @@ def delete_contents(prefix):
             raise ValueError("only prefixes starting with /test/ allowed: %r" % prefix)
     validate_prefix(prefix)
     for key in builder_bucket().list(prefix=prefix):
-        LOG.info("deleting key", extra={'key': key})
+        LOG.info("deleting key %s", key, extra={'key': key})
         key.delete()
 
 def listing(prefix):
@@ -77,5 +78,6 @@ def download(key, output_path):
     assert not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path
     k = builder_bucket().get_key(key)
     assert k, ("Cannot find %s in bucket %s" % (key, builder_bucket()))
+    LOG.info("downloading key %s", key, extra={'key': key})
     k.get_contents_to_file(open(output_path, 'w'))
     return output_path
