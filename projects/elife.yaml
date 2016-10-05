@@ -248,6 +248,7 @@ journal-cms:
     repo: https://github.com/elifesciences/journal-cms
     formula-repo: https://github.com/elifesciences/journal-cms-formula
     aws:
+        type: t2.small # explicitly 2GB RAM
         ports:
             - 22
             - 443
@@ -256,6 +257,7 @@ journal-cms:
     vagrant:
         ports:
             1241: 80
+        ram: 2048
 
 
 elife-dashboard:
