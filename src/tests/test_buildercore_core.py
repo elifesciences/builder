@@ -61,7 +61,7 @@ class SimpleCases(base.BaseCase):
             ('elife-website--non-article-content-updating', 'elife-website'),
             ('lagotto--2015-03-30', 'lagotto'),
             ('lagotto--testing-2015-05-12', 'lagotto'),
-            ('master-server--2014-12-24', 'master-server'),            
+            ('master-server--2014-12-24', 'master-server'),
         ]
         self.assertAllPairsEqual(core.project_name_from_stackname, expected)
 
@@ -114,7 +114,7 @@ class SimpleCases(base.BaseCase):
 
     def test_find_region(self):
         self.assertEqual(core.find_region(), "us-east-1")
-        
+
     def test_find_region_when_more_than_one_is_available(self):
         self.switch_in_test_settings('dummy-settings-multiple-regions.yaml')
         try:
@@ -126,7 +126,7 @@ class SimpleCases(base.BaseCase):
     def test_find_ec2_instances(self):
         self.assertEquals([], core.find_ec2_instances('dummy1--prod'))
 
-            
+
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):
         self.dummy1_config = join(self.fixtures_dir, 'dummy1-project.json')
@@ -135,7 +135,7 @@ class TestCoreNewProjectData(base.BaseCase):
 
     def tearDown(self):
         pass
-        
+
     def test_configurations(self):
         expected = [
             ('dummy1', self.dummy1_config),
@@ -156,21 +156,21 @@ class TestCoreNewProjectData(base.BaseCase):
         # all projects now get 999 cpus. perfectly sane requirement.
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
-        
+
         expected_data = json.load(open(self.dummy1_config, 'r'))
         expected_data['vagrant']['cpus'] = 999
         self.assertEqual(project_data, expected_data)
-        
+
     @skip("depends on old project config generation")
     def test_merge_multiple_default_snippets(self):
-        """merging multiple overlapping snippets into the defaults 
+        """merging multiple overlapping snippets into the defaults
         ensures all projects get the new defaults"""
         # all projects now get 999 cpus. perfectly sane requirement.
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
-        
+
         expected_data = json.load(open(self.dummy1_config, 'r'))
         expected_data['vagrant']['cpus'] = 999
         expected_data['vagrant']['cpucap'] = 111
-        
+
         self.assertEqual(project_data, expected_data)

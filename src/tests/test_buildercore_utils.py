@@ -19,15 +19,15 @@ class TestBuildercoreUtils(base.BaseCase):
         ]
         for given, expected in case_list:
             self.assertEqual(utils.shallow_flatten(given), expected)
-    
+
     def test_nth(self):
         expected_vals = [
             ('a', 0, 'a'),
             ('ab', 0, 'a'),
             ('ab', 1, 'b'),
             ('abc', 2, 'c'),
-            ([1,2,3], 0, 1),
-            ([1,2,3], 1, 2),
+            ([1, 2, 3], 0, 1),
+            ([1, 2, 3], 1, 2),
         ]
         for data, n, expected in expected_vals:
             self.assertEqual(expected, utils.nth(data, n))
@@ -55,7 +55,7 @@ class TestBuildercoreUtils(base.BaseCase):
         self.assertAllPairsEqual(partial(utils.lu, data), expected)
 
     def test_lu_with_default(self):
-        data = {'a': {'b': {'c': [1,2,3]}}}
+        data = {'a': {'b': {'c': [1, 2, 3]}}}
         expected_default = 'wtf?'
         expected = [
             ('a.b.z', expected_default),
@@ -65,7 +65,7 @@ class TestBuildercoreUtils(base.BaseCase):
         self.assertAllPairsEqual(partial(utils.lu, data, default=expected_default), expected)
 
     def test_lu_no_default(self):
-        data = {'a': {'b': {'c': [1,2,3]}}}
+        data = {'a': {'b': {'c': [1, 2, 3]}}}
         self.assertRaises(ValueError, utils.lu, data, 'x.y.z')
 
     def test_lu_no_context(self):
@@ -73,18 +73,18 @@ class TestBuildercoreUtils(base.BaseCase):
         self.assertRaises(ValueError, utils.lu, data, 'a.b.c')
 
     def test_lu_no_dict_context(self):
-        data = [1,2,3]
+        data = [1, 2, 3]
         self.assertRaises(ValueError, utils.lu, data, 'a.b.c')
 
     def test_lu_invalid_path(self):
-        data = {'a': {'b': {'c': [1,2,3]}}}
+        data = {'a': {'b': {'c': [1, 2, 3]}}}
         self.assertRaises(ValueError, utils.lu, data, None)
 
     @patch('time.sleep')
     def test_call_while_happy_path(self, sleep):
         check = MagicMock()
         check.side_effect = [True, True, False]
-        utils.call_while(check, interval=5) 
+        utils.call_while(check, interval=5)
         self.assertEqual(2, len(sleep.mock_calls))
 
     @patch('time.sleep')
@@ -92,7 +92,7 @@ class TestBuildercoreUtils(base.BaseCase):
         check = MagicMock()
         check.return_value = True
         try:
-            utils.call_while(check, interval=5, timeout=15) 
+            utils.call_while(check, interval=5, timeout=15)
             self.fail("Should not return normally")
         except:
             self.assertEqual(3, len(sleep.mock_calls))

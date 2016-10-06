@@ -1,4 +1,4 @@
-"""this module appears to be where I collect functionality 
+"""this module appears to be where I collect functionality
 that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
@@ -63,7 +63,7 @@ STEADY_CFN_STATUS = [
     'UPDATE_ROLLBACK_FAILED',
     'UPDATE_ROLLBACK_COMPLETE',
 ]
-    
+
 
 def _set_raw_subscription_attribute(sns_connection, subscription_arn):
     """
@@ -83,7 +83,7 @@ sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscript
 
 
 #
-# 
+#
 #
 
 def connect_aws(service, region):
@@ -121,7 +121,7 @@ def connect_aws_with_pname(pname, service):
     "convenience"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
-    print 'connecting to a',pname,'instance in region',region
+    print 'connecting to a', pname, 'instance in region', region
     return connect_aws(service, region)
 
 def connect_aws_with_stack(stackname, service):
@@ -158,13 +158,13 @@ def _all_nodes_filter(stackname, state, node_ids):
 def find_ec2_volume(stackname):
     ec2_data = find_ec2_instances(stackname)[0]
     iid = ec2_data.id
-    #http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
+    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
     kwargs = {'filters': {'attachment.instance-id': iid}}
     return connect_aws_with_stack(stackname, 'ec2').get_all_volumes(**kwargs)
 
 # should live in `keypair`, but I can't have `core` depend on `keypair` and viceversa
 def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
-    """returns the path to the private key on the local filesystem. 
+    """returns the path to the private key on the local filesystem.
     helpfully dies in different ways if you ask it to"""
     expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
     # for when we really need it to exist
@@ -201,13 +201,13 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
         yield
 
 def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs):
-    """Executes work on all the EC2 nodes of stackname.    
+    """Executes work on all the EC2 nodes of stackname.
     Optionally connects with the specified username"""
     work_kwargs = {}
     if isinstance(workfn, tuple):
         workfn, work_kwargs = workfn
 
-    public_ips = {ec2['instance']['id']:ec2['instance']['ip_address'] for ec2 in stack_data(stackname)}
+    public_ips = {ec2['instance']['id']: ec2['instance']['ip_address'] for ec2 in stack_data(stackname)}
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
     # custom for builder, these are available as fabric.api.env.public_ips
@@ -218,10 +218,10 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
         execute(workfn, hosts=public_ips.values(), **work_kwargs)
-    
+
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
-    
+
     Sticking to the 'node' terminology because 'instance' is too overloaded."""
 
     assert env.host is not None, "This is supposed to be called with settings for connecting to an EC2 instance"
@@ -236,18 +236,18 @@ def current_ec2_node_id():
 
 #
 # stackname wrangling
-#    
+#
 
 def mk_stackname(*bits):
     return "--".join(map(slugify, filter(None, bits)))
 
-#TODO: test these functions
+# TODO: test these functions
 def parse_stackname(stackname, all_bits=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
     if not stackname or not isinstance(stackname, basestring):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
     # https://docs.python.org/2/library/stdtypes.html#str.split
-    bits = stackname.split('--',  -1 if all_bits else 1)
+    bits = stackname.split('--', -1 if all_bits else 1)
     if len(bits) == 1:
         raise ValueError("could not parse given stackname %r" % stackname)
     return bits
@@ -308,7 +308,7 @@ def stack_json(stackname, parse=False):
 # 'aws stacks' are stack files that have been given to AWS and provisioned.
 #
 
-# DO NOT CACHE. 
+# DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
@@ -316,9 +316,9 @@ def describe_stack(stackname):
 
 # TODO: rename or something
 def stack_data(stackname, ensure_single_instance=False):
-    """like `describe_stack`, but returns a dictionary with the Cloudformation 'outputs' 
+    """like `describe_stack`, but returns a dictionary with the Cloudformation 'outputs'
     indexed by key and ec2 data under the key 'instance'
-    
+
     Returns a list if more than one result is found, but otherwise sticks
     to a single dictionary for backward compatibility"""
     stack = describe_stack(stackname)
@@ -341,7 +341,7 @@ def stack_data(stackname, ensure_single_instance=False):
 
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
-        raise 
+        raise
 
 
 # DO NOT CACHE
@@ -441,7 +441,7 @@ def _find_master(stacks):
     if len(stacks) == 1:
         # first item (stackname) of first (and only) result
         return first(first(stacks))
-    
+
     msl = filter(lambda triple: is_master_server_stack(first(triple)), stacks)
     msl = map(first, msl) # just stack names
     if len(msl) > 1:
@@ -454,7 +454,7 @@ def _find_master(stacks):
 
 def find_master(region):
     "returns the most recent aws master-server it can find. assumes instances have YMD names"
-    stacks= active_aws_stacks(region)
+    stacks = active_aws_stacks(region)
     if not stacks:
         raise NoMasterException("no master servers found in region %r" % region)
     return _find_master(stacks)
@@ -462,7 +462,7 @@ def find_master(region):
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
     pdata = project_data_for_stackname(stackname)
-    
+
     return find_master(pdata['aws']['region'])
 
 #
@@ -491,18 +491,18 @@ def hostname_struct(stackname):
     domain = pdata.get('domain')
     intdomain = pdata.get('intdomain')
     subdomain = pdata.get('subdomain')
-    
+
     struct = {
         'domain': domain, # elifesciences.org
         'int_domain': intdomain, # elife.internal
 
         'subdomain': subdomain, # gateway
-        
+
         'hostname': None, # temp.gateway
 
         'project_hostname': None, # gateway.elifesciences.org
         'int_project_hostname': None, # gateway.elife.internal
-        
+
         'full_hostname': None, # gateway--temp.elifesciences.org
         'int_full_hostname': None, # gateway--temp.elife.internal
     }

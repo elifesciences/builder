@@ -58,7 +58,7 @@ def delete_keypair_from_fs(stackname):
         LOG.exception("unhandled exception attempting to delete keypair from filesystem")
 
 #
-# 
+#
 #
 
 def create_keypair(stackname):

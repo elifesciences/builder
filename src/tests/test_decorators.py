@@ -44,4 +44,3 @@ class TestDecorators(base.BaseCase):
             return 'result'
 
         self.assertEqual(some_task('dummy1--end2end'), 'result')
-        

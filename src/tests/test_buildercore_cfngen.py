@@ -29,7 +29,7 @@ class TestBuildercoreCfngen(base.BaseCase):
         # HERE BE DRAGONS
         # resets the testing config.SETTINGS_FILE we set in the base.BaseCase class
         self.switch_out_test_settings()
-        
+
         for pname in project.aws_projects().keys():
             self.assertTrue(cfngen.validate_project(pname))
             sleep(0.25)

@@ -19,4 +19,3 @@ class TestBuildercoreLifecycle(base.BaseCase):
 
         find_ec2_instances.return_value = [old, new]
         self.assertEqual({'i-456': 'running'}, lifecycle._nodes_states('dummy1--test'))
-    

@@ -29,4 +29,3 @@ class TestBuildercoreBootstrap(base.BaseCase):
                 }
             }
         ]
-

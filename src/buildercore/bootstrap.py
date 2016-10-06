@@ -19,6 +19,7 @@ from fabric.contrib import files
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
 from buildercore import context_handler
+from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -53,8 +54,8 @@ def _noop():
 def create_stack(stackname):
     pdata = project_data_for_stackname(stackname)
     parameters = []
-    on_start=_noop
-    on_error=_noop
+    on_start = _noop
+    on_error = _noop
     if pdata['aws']['ec2']:
         parameters.append(('KeyName', stackname))
         on_start = lambda: keypair.create_keypair(stackname)
@@ -115,9 +116,9 @@ def setup_ec2(stackname, context_ec2):
                 # - bootstrap user exists and we can access it through SSH
                 # - cloud-init has finished running
                 #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
-                #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running 
+                #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running
                 return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) \
-                  or not files.exists('/var/lib/cloud/instance/boot-finished')
+                    or not files.exists('/var/lib/cloud/instance/boot-finished')
             except fabric_exceptions.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
@@ -129,8 +130,8 @@ def setup_ec2(stackname, context_ec2):
 
 def setup_sqs(stackname, context_sqs, region):
     """
-    Connects SQS queues created by Cloud Formation to SNS topics where 
-    necessary, adding both the subscription and the IAM policy to let the SNS 
+    Connects SQS queues created by Cloud Formation to SNS topics where
+    necessary, adding both the subscription and the IAM policy to let the SNS
     topic write to the queue
     """
     assert isinstance(context_sqs, dict), ("Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
@@ -147,7 +148,7 @@ def setup_sqs(stackname, context_sqs, region):
             # idempotent, works as lookup
             # risky, may subscribe to a typo-filled topic name like 'aarticles'
             # there is no boto method to lookup a topic
-            topic_lookup = sns.create_topic(topic_name) 
+            topic_lookup = sns.create_topic(topic_name)
             topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
             # deals with both subscription and IAM policy
             response = sns.subscribe_sqs_queue(topic_arn, queue)
@@ -172,7 +173,7 @@ def setup_s3(stackname, context_s3, region, account_id):
         LOG.info('Setting NotificationConfiguration for bucket %s', bucket_name, extra={'stackname': stackname})
         if 'sqs-notifications' in context_s3[bucket_name]:
             queues = context_s3[bucket_name]['sqs-notifications']
-            
+
             queue_configurations = _queue_configurations(stackname, queues, bucket_name, region)
             LOG.info('QueueConfigurations are %s', queue_configurations, extra={'stackname': stackname})
             s3.put_bucket_notification_configuration(
@@ -257,7 +258,7 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
     if filter_rules:
         queue_configuration['Filter'] = {
             'Key': {
-                'FilterRules': filter_rules                        
+                'FilterRules': filter_rules
             }
         }
 
@@ -267,8 +268,6 @@ def update_s3_stack(stackname):
     pdata = project_data_for_stackname(stackname)
     context = context_handler.load_context(stackname)
     setup_s3(stackname, context['s3'], pdata['aws']['region'], pdata['aws']['account_id'])
-
-
 
 
 #
@@ -312,7 +311,7 @@ def template_info(stackname):
 def write_environment_info(stackname, overwrite=False):
     """Looks for /etc/cfn-info.json and writes one if not found.
     Must be called with an active stack connection.
-    
+
     This gives Salt the outputs available at stack creation, but that were not
     available at template compilation time.
     """
@@ -356,10 +355,10 @@ def create_update(stackname, part_filter=None):
 def update_ec2_stack(stackname):
     """installs/updates the ec2 instance attached to the specified stackname.
 
-    Once AWS has finished creating an EC2 instance for us, we need to install 
-    Salt and get it talking to the master server. Salt comes with a bootstrap 
-    script that can be downloaded from the web and then very conveniently 
-    installs it's own dependencies. Once Salt is installed we give it an ID 
+    Once AWS has finished creating an EC2 instance for us, we need to install
+    Salt and get it talking to the master server. Salt comes with a bootstrap
+    script that can be downloaded from the web and then very conveniently
+    installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
     pdata = project_data_for_stackname(stackname)
     region = pdata['aws']['region']
@@ -379,7 +378,7 @@ def update_ec2_stack(stackname):
         write_environment_info(stackname)
 
         salt_version = pdata['salt']
-        install_master_flag = str(is_master).lower() # ll: 'true' 
+        install_master_flag = str(is_master).lower() # ll: 'true'
         master_ip = master(region, 'private_ip_address')
 
         # TODO: this is a little gnarly. I think I'd prefer this logic in the script:
@@ -409,7 +408,7 @@ def delete_stack_file(stackname):
         core.describe_stack(stackname) # triggers exception if NOT exists
         LOG.warning('stack %r still exists, refusing to delete stack files. delete active stack first.', stackname)
         return
-    except BotoServerError, ex:
+    except BotoServerError as ex:
         if not ex.message.endswith('does not exist'):
             LOG.exception("unhandled exception attempting to confirm if stack %r exists", stackname)
             raise
@@ -421,6 +420,7 @@ def delete_stack_file(stackname):
     ]
     paths = [join(config.STACK_DIR, stackname + ext) for ext in ext_list]
     paths = filter(os.path.exists, paths)
+
     def _unlink(path):
         os.unlink(path)
         return not os.path.exists(path)
@@ -429,6 +429,7 @@ def delete_stack_file(stackname):
 def delete_stack(stackname):
     try:
         connect_aws_with_stack(stackname, 'cfn').delete_stack(stackname)
+
         def is_deleting(stackname):
             try:
                 return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']

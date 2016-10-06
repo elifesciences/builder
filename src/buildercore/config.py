@@ -1,11 +1,11 @@
 """Configuration file for `buildercore`.
 
-`buildercore.config` is a place to record assumptions really. 
-Settings that the users are encouraged to tweak should go into the 
+`buildercore.config` is a place to record assumptions really.
+Settings that the users are encouraged to tweak should go into the
 `settings.yml` file at the root of the project and incorporated here.
 
-buildercore was originally part of the builder, then separated out 
-into it's own project 'builder-core' but has now been re-integrated. 
+buildercore was originally part of the builder, then separated out
+into it's own project 'builder-core' but has now been re-integrated.
 This transition meant that `src/buildercore/` is still neatly separated
 from the interface logic in the fabfile.
 
@@ -59,7 +59,7 @@ SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # ll: /.../scripts/
 # create all necessary paths and ensure they are writable
 map(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
 
-## logging
+# logging
 
 LOG_DIR = "logs"
 LOG_PATH = join(PROJECT_PATH, LOG_DIR) # /.../logs/
@@ -70,7 +70,7 @@ FORMAT = logging.Formatter("%(created)f - %(levelname)s - %(processName)s - %(na
 
 # http://docs.python.org/2/howto/logging-cookbook.html
 ROOTLOG = logging.getLogger() # important! this is the *root LOG*
-                            # all other LOGs are derived from this one
+# all other LOGs are derived from this one
 ROOTLOG.setLevel(logging.DEBUG) # *default* output level for all LOGs
 
 # StreamHandler sends to stderr by default
@@ -84,12 +84,12 @@ H2.setLevel(logging.INFO) # root logger sends *everything* to file
 H2.setFormatter(FORMAT)
 
 ROOTLOG.addHandler(H1)
-ROOTLOG.addHandler(H2) 
+ROOTLOG.addHandler(H2)
 
 LOG = logging.getLogger(__name__)
 
 #
-# remote 
+# remote
 #
 
 # where the builder can write stuff that should persist across installations/users
@@ -140,6 +140,7 @@ def parse_loc_list(loc_list):
     # give the convenient user-form some structure
     p_loc_list = map(_parse_loc, loc_list)
     # do some post processing
+
     def expand_dirs(triple):
         protocol, host, path = triple
         if protocol in ['dir', 'file'] and not os.path.exists(path):
@@ -154,7 +155,7 @@ def parse_loc_list(loc_list):
 
     # remove any bogus values
     p_loc_list = filter(None, p_loc_list)
-    
+
     # remove any duplicates. can happen when we expand dir => files
     p_loc_list = utils.unique(p_loc_list)
 
@@ -179,4 +180,3 @@ def app(settings_path=None):
 
 def feature_enabled(feature):
     return app().get(feature, False)
-

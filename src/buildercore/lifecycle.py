@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
-    
+
     states = _nodes_states(stackname)
     LOG.info("Current states: %s", states)
     _ensure_valid_states(states, {'stopped', 'pending', 'running'})
@@ -32,7 +32,7 @@ def start(stackname):
 
 def stop(stackname):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
-    
+
     states = _nodes_states(stackname)
     LOG.info("Current states: %s", states)
     _ensure_valid_states(states, {'running', 'stopping', 'stopped'})
@@ -47,14 +47,15 @@ def stop(stackname):
 
 def last_start_time(stackname):
     nodes = find_ec2_instances(stackname)
+
     def _parse_datetime(value):
         return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
-    return {node.id:_parse_datetime(node.launch_time) for node in nodes}
+    return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
 def stop_if_next_hour_is_imminent(stackname, minimum_minutes=55):
     maximum_minutes = 60
     starting_times = last_start_time(stackname)
-    running_times = {node_id:int((datetime.utcnow() - launch_time).total_seconds()) % (maximum_minutes * 60) for (node_id, launch_time) in starting_times.iteritems()}
+    running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) % (maximum_minutes * 60) for (node_id, launch_time) in starting_times.iteritems()}
     LOG.info("Hourly fraction running times: %s", running_times)
 
     minimum_running_time = minimum_minutes * 60
@@ -64,7 +65,7 @@ def stop_if_next_hour_is_imminent(stackname, minimum_minutes=55):
     to_be_stopped = [node_id for (node_id, running_time) in running_times.iteritems() if running_time >= minimum_running_time]
     LOG.info("Selected for stopping: %s", to_be_stopped)
     if to_be_stopped:
-        _connection(stackname).stop_instances(to_be_stopped) 
+        _connection(stackname).stop_instances(to_be_stopped)
         _wait_all_in_state(stackname, 'stopped', to_be_stopped)
 
 
@@ -85,6 +86,7 @@ def _ensure_valid_states(states, valid_states):
 def _wait_daemons():
     node_id = current_ec2_node_id()
     path = '/var/lib/cloud/instance/boot-finished'
+
     def is_starting_daemons():
         try:
             return not files.exists(path)
@@ -95,7 +97,7 @@ def _wait_daemons():
 
 def update_dns(stackname):
     nodes = find_ec2_instances(stackname)
-    LOG.info("Nodes found: %s", [node.id for node in nodes]) 
+    LOG.info("Nodes found: %s", [node.id for node in nodes])
     if len(nodes) == 0:
         raise RuntimeError("No nodes found for %s, they be in a stopped state. They need to be running to have a (public, at least) ip address that can be mapped onto a DNS" % stackname)
 
@@ -104,15 +106,15 @@ def update_dns(stackname):
         return
 
     context = load_context(stackname)
-    LOG.info("External full hostname: %s", context['full_hostname']) 
+    LOG.info("External full hostname: %s", context['full_hostname'])
     if context['full_hostname']:
         for node in nodes:
             _update_dns_a_record(stackname, context['domain'], context['full_hostname'], node.ip_address)
 
     # We don't strictly need to do this, as the private ip address
-    # inside a VPC should stay the same. For consistency we update all DNS 
+    # inside a VPC should stay the same. For consistency we update all DNS
     # entries as the operation is idempotent
-    LOG.info("Internal full hostname: %s", context['int_full_hostname']) 
+    LOG.info("Internal full hostname: %s", context['int_full_hostname'])
     if context['int_full_hostname']:
         for node in nodes:
             _update_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'], node.private_ip_address)
@@ -120,14 +122,14 @@ def update_dns(stackname):
 def _update_dns_a_record(stackname, zone_name, name, value):
     route53 = connect_aws_with_stack(stackname, 'route53')
     zone = route53.get_zone(zone_name)
-    LOG.info("Updating DNS record %s to %s", name, value) 
+    LOG.info("Updating DNS record %s to %s", name, value)
     zone.update_a(name, value)
 
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]
 
 def _nodes_states(stackname, node_ids=None):
-    """dictionary from instance id to a string state.    
+    """dictionary from instance id to a string state.
     e.g. {'i-6f727961': 'stopped'}"""
 
     def _by_node_name(ec2_data):
@@ -147,8 +149,8 @@ def _nodes_states(stackname, node_ids=None):
 
     ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
     by_node_name = _by_node_name(ec2_data)
-    unified_nodes = {name:_unify_node_information(nodes) for name, nodes in by_node_name.iteritems()}
-    return {node.id:node.state for name, node in unified_nodes.iteritems()}
+    unified_nodes = {name: _unify_node_information(nodes) for name, nodes in by_node_name.iteritems()}
+    return {node.id: node.state for name, node in unified_nodes.iteritems()}
 
 def _connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
