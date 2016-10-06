@@ -1,12 +1,12 @@
 """
-trop.py is a module that uses the Troposphere library to build up 
-a AWS Cloudformation (CFN) template dynamically, using values from 
+trop.py is a module that uses the Troposphere library to build up
+a AWS Cloudformation (CFN) template dynamically, using values from
 the projects file and a bunch of sensible defaults.
 
-It's job is to return the correct CFN JSON given a dictionary of 
+It's job is to return the correct CFN JSON given a dictionary of
 data called a `context`.
 
-`cfngen.py` is in charge of constructing this data struct and writing 
+`cfngen.py` is in charge of constructing this data struct and writing
 it to the correct file etc."""
 
 from . import utils, bvars
@@ -72,8 +72,8 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    ensure('ports' in context['project']['aws'], \
-        "Missing `ports` configuration in `aws` for '%s'" % context['stackname'])
+    ensure('ports' in context['project']['aws'],
+           "Missing `ports` configuration in `aws` for '%s'" % context['stackname'])
 
     return security_group(
         SECURITY_GROUP_TITLE,
@@ -88,10 +88,10 @@ def rds_security(context):
         'mysql': 3306
     }
     ingress_ports = [engine_ports[context['project']['aws']['rds']['engine']]]
-    return security_group("VPCSecurityGroup", \
-       context['project']['aws']['vpc-id'], \
-       ingress_ports, \
-       "RDS DB security group")
+    return security_group("VPCSecurityGroup",
+                          context['project']['aws']['vpc-id'],
+                          ingress_ports,
+                          "RDS DB security group")
 
 #
 #
@@ -210,14 +210,14 @@ def ext_volume(context, template):
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
     if vtype == 'ssd':
         vtype = 'gp2'
-    
+
     args = {
         "Size": str(context_ext['size']),
         "AvailabilityZone": GetAtt(EC2_TITLE, "AvailabilityZone"),
         "VolumeType": vtype,
     }
     ec2v = ec2.Volume(EXT_TITLE, **args)
-    
+
     args = {
         "InstanceId": Ref(EC2_TITLE),
         "VolumeId": Ref(ec2v),
@@ -232,10 +232,10 @@ def external_dns_ec2(context):
     dns_record = route53.RecordSetType(
         R53_EXT_TITLE,
         HostedZoneName=hostedzone,
-        Comment = "External DNS record for EC2",
-        Name = context['full_hostname'],
-        Type = "A",
-        TTL = "900",
+        Comment="External DNS record for EC2",
+        Name=context['full_hostname'],
+        Type="A",
+        TTL="900",
         ResourceRecords=[GetAtt(EC2_TITLE, "PublicIp")],
     )
     return dns_record
@@ -246,10 +246,10 @@ def internal_dns(context):
     dns_record = route53.RecordSetType(
         R53_INT_TITLE,
         HostedZoneName=hostedzone,
-        Comment = "Internal DNS record for EC2",
-        Name = context['int_full_hostname'],
-        Type = "A",
-        TTL = "900",
+        Comment="Internal DNS record for EC2",
+        Name=context['int_full_hostname'],
+        Type="A",
+        TTL="900",
         ResourceRecords=[GetAtt(EC2_TITLE, "PrivateIp")],
     )
     return dns_record
@@ -262,9 +262,9 @@ def external_dns_elb(context):
     dns_record = route53.RecordSetType(
         R53_EXT_TITLE,
         HostedZoneName=hostedzone,
-        Comment = "External DNS record for ELB",
-        Name = context['full_hostname'],
-        Type = "A",
+        Comment="External DNS record for ELB",
+        Name=context['full_hostname'],
+        Type="A",
         AliasTarget=route53.AliasTarget(
             GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
             GetAtt(ELB_TITLE, "DNSName")
@@ -278,16 +278,15 @@ def internal_dns_elb(context):
     dns_record = route53.RecordSetType(
         R53_INT_TITLE,
         HostedZoneName=hostedzone,
-        Comment = "Internal DNS record for ELB",
-        Name = context['int_full_hostname'],
-        Type = "A",
+        Comment="Internal DNS record for ELB",
+        Name=context['int_full_hostname'],
+        Type="A",
         AliasTarget=route53.AliasTarget(
             GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
             GetAtt(ELB_TITLE, "DNSName")
         )
     )
     return dns_record
-
 
 
 #
@@ -337,7 +336,7 @@ def render_sns(context, template):
 def render_sqs(context, template):
     for queue_name in context['sqs']:
         queue = template.add_resource(sqs.Queue(
-            _sanitize_title(queue_name) + "Queue", 
+            _sanitize_title(queue_name) + "Queue",
             QueueName=queue_name
         ))
         template.add_output(Output(
@@ -349,15 +348,15 @@ def render_s3(context, template):
     pass
     # in the future, we will do this. Now there are too many buckets
     # that have been created manually
-    #for bucket_name in context['s3']:
+    # for bucket_name in context['s3']:
     #    template.add_resource(s3.Bucket(
-    #        _sanitize_title(bucket_name) + "Bucket", 
+    #        _sanitize_title(bucket_name) + "Bucket",
     #        BucketName=bucket_name
     #    ))
 
 def render_elb(context, template, ec2_instances):
-    ensure(any([context['full_hostname'], context['int_full_hostname']]), \
-        "An ELB must have either an external or an internal DNS entry")
+    ensure(any([context['full_hostname'], context['int_full_hostname']]),
+           "An ELB must have either an external or an internal DNS entry")
 
     elb_is_public = True if context['full_hostname'] else False
     listeners_policy_names = []
@@ -371,7 +370,7 @@ def render_elb(context, template, ec2_instances):
         cookie_stickiness = []
 
     if context['elb']['protocol'] == 'http':
-        listeners=[
+        listeners = [
             elb.Listener(
                 InstanceProtocol='HTTP',
                 InstancePort='80',
@@ -381,7 +380,7 @@ def render_elb(context, template, ec2_instances):
             ),
         ]
     elif context['elb']['protocol'] == 'https':
-        listeners=[
+        listeners = [
             elb.Listener(
                 InstanceProtocol='HTTP',
                 InstancePort='80',
@@ -410,7 +409,7 @@ def render_elb(context, template, ec2_instances):
         LBCookieStickinessPolicy=cookie_stickiness,
         # TODO: from configuration
         # seems to default to opening a TCP connection on port 80
-        #HealthCheck=elb.HealthCheck(
+        # HealthCheck=elb.HealthCheck(
         #    Target=Join('', ['HTTP:', Ref(webport_param), '/']),
         #    HealthyThreshold='3',
         #    UnhealthyThreshold='5',
@@ -421,13 +420,13 @@ def render_elb(context, template, ec2_instances):
         Scheme='internet-facing' if elb_is_public else 'internal',
         Subnets=context['elb']['subnets'],
         Tags=elb_tags(context)
-        ))
+    ))
 
     dns = external_dns_elb if elb_is_public else internal_dns_elb
     template.add_resource(dns(context))
 
 #
-# 
+#
 #
 
 def render(context):
@@ -439,10 +438,10 @@ def render(context):
 
     if context['rds_instance_id']:
         rdsinstance(context, template)
-    
+
     if context['ext']:
         ext_volume(context, template)
-        
+
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
@@ -454,15 +453,15 @@ def render(context):
         render_elb(context, template, ec2_instances)
 
     elif context['ec2']:
-        ensure(context['ec2']['cluster-size'] == 1, \
-            "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
+        ensure(context['ec2']['cluster-size'] == 1,
+               "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
 
         if context['full_hostname']:
             template.add_resource(external_dns_ec2(context))
 
         # ec2 nodes in a cluster DONT get an internal hostname
         if context['int_full_hostname']:
-            template.add_resource(internal_dns(context))        
+            template.add_resource(internal_dns(context))
 
     if context['full_hostname']:
         ensure(R53_EXT_TITLE in template.resources.keys(), "You want an external DNS entry but there is no resource configuring it: %s" % context)

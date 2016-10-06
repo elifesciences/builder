@@ -14,10 +14,9 @@ class TestBuildercoreContext(base.BaseCase):
 
         remove(context_handler.local_context_file(stackname))
         downloaded = context_handler.load_context(stackname)
-        
+
         self.assertEqual(expected, downloaded)
 
     def _read_file(self, path):
         with open(path) as f:
             return f.read()
-

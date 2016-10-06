@@ -38,7 +38,7 @@ def cert_info(hostname, verbose=False):
             'issued_by': issuer['commonName'],
 
             'starts': starts,
-            'starts_offset': (now - starts).days,        
+            'starts_offset': (now - starts).days,
             'ends': ends,
             'ends_offset': (ends - now).days,
         }
@@ -55,11 +55,11 @@ def cert_info(hostname, verbose=False):
     except socket.error:
         LOG.error("failed to fetch certificate, connection was refused. possibly no SSL configured")
         ret['results'] = 'refused'
-        
+
     except ssl.SSLError as err:
         LOG.error("failed to fetch certificate for %r", hostname)
         ret['results'] = err.reason
-    
+
     except:
         LOG.exception("unhandled exception attempting to fetch certificate for hostname %r", hostname)
         raise

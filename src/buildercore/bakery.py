@@ -11,7 +11,7 @@ from .decorators import osissue, testme
 def ami_name(stackname):
     # elife-api.2015-12-31
     return "%s.%s" % (core.project_name_from_stackname(stackname), utils.ymd())
-        
+
 @core.requires_active_stack
 def create_ami(stackname):
     "creates an AMI from the running stack"
@@ -45,7 +45,7 @@ def find_ami(projectname=None):
 
     conn = core.connect_aws_with_pname(projectname, 'ec2')
     results = conn.get_all_images(**kwargs)
-    
+
     # when filtered by project, most recent ami is the last item
     return sorted(results, key=lambda image: image.name)
 

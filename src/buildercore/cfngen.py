@@ -37,7 +37,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     if 'alt-config' in more_context:
         project_data = project.set_project_alt(project_data, 'aws', more_context['alt-config'])
-   
+
     defaults = {
         'project_name': pname,
         'project': project_data,
@@ -66,21 +66,21 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     context = copy.deepcopy(defaults)
     context.update(more_context)
 
-    assert context['stackname'] != None, "a stackname wasn't provided."
+    assert context['stackname'] is not None, "a stackname wasn't provided."
     stackname = context['stackname']
 
     # stackname data
     bit_keys = ['project_name', 'instance_id', 'cluster_id']
     bits = dict(zip(bit_keys, core.parse_stackname(stackname, all_bits=True)))
     assert bits['project_name'] == pname, \
-      "the project name derived from the `stackname` doesn't match the given project name"
+        "the project name derived from the `stackname` doesn't match the given project name"
     context.update(bits)
 
     # hostname data
     context.update(core.hostname_struct(stackname))
 
     # post-processing
-    if context['project']['aws'].has_key('rds'):
+    if 'rds' in context['project']['aws']:
         default_rds_dbname = slugify(stackname, separator="")
         # alpha-numeric only
         # TODO: investigate possibility of ambiguous RDS naming here
@@ -91,7 +91,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
             'rds_instance_id': slugify(stackname), # *completely* different to database name
         })
 
-    if context['project']['aws'].has_key('ext'):
+    if 'ext' in context['project']['aws']:
         context['ext'] = context['project']['aws']['ext']
 
     # is this a production instance? if yes, then we'll do things like tweak the dns records ...
@@ -101,7 +101,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
 
-    if context['project']['aws'].has_key('elb'):
+    if 'elb' in context['project']['aws']:
         if isinstance(context['project']['aws']['elb'], dict):
             context['elb'] = context['project']['aws']['elb']
         else:
@@ -115,7 +115,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])
-    
+
     for topic_template_name in context['project']['aws']['sns']:
         topic_name = _parameterize(topic_template_name)
         context['sns'].append(topic_name)
@@ -143,9 +143,9 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
 def render_template(context, template_type='aws'):
     pname = context['project_name']
-    if not context['project'].has_key(template_type):
-        raise ValueError("could not render an %r template for %r: no %r context found" % \
-                             (template_type, pname, template_type))
+    if template_type not in context['project']:
+        raise ValueError("could not render an %r template for %r: no %r context found" %
+                         (template_type, pname, template_type))
     if template_type == 'aws':
         return trop.render(context)
 
@@ -200,7 +200,7 @@ def validate_project(pname, **extra):
     return True
 
 #
-# 
+#
 #
 
 def quick_render(project_name, **more_context):

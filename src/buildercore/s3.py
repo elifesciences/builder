@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 
 def connect_s3():
     # we'll need to deal with this assumption
-    return core.connect_aws('s3', 'us-east-1') #Location.USWest2)    
+    return core.connect_aws('s3', 'us-east-1')  # Location.USWest2)
 
 @cached
 def builder_bucket():
@@ -18,12 +18,12 @@ def builder_bucket():
         nom = config.BUILDER_BUCKET
         return connect_s3().get_bucket(nom)
     except boto.exception.S3ResponseError as err:
-        LOG.error("got an S3 error attempting to get the builder bucket. have you created it yet?", \
-                      extra={'bucket': nom, 'error': err.message})
+        LOG.error("got an S3 error attempting to get the builder bucket. have you created it yet?",
+                  extra={'bucket': nom, 'error': err.message})
         raise
 
 def exists(key):
-    return builder_bucket().get_key(key) != None
+    return builder_bucket().get_key(key) is not None
 
 def write(key, something, overwrite=False):
     "stream is a file-like object"
@@ -51,7 +51,7 @@ def delete(key):
         LOG.info("deleting key %s", key, extra={'key': key})
         builder_bucket().get_key(key).delete()
     return not exists(key)
-    
+
 def delete_contents(prefix):
     def validate_prefix(prefix):
         prefix = prefix.strip()

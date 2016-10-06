@@ -25,4 +25,3 @@ def vpc_id_exists(pname):
 def subnet_id_exists(pname):
     "returns True if the subnet within the vpc exists"
     pass
-

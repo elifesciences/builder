@@ -19,7 +19,7 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('dummy3', **extra)
         self.assertEqual(context['rds_dbname'], "dummy3test")
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
-        self.assertTrue(context['project']['aws'].has_key('rds'))
+        self.assertTrue('rds' in context['project']['aws'])
         data = json.loads(trop.render(context))
         self.assertTrue(isinstance(utils.lu(data, 'Resources.AttachedDB'), dict))
 
@@ -32,12 +32,12 @@ class TestBuildercoreTrop(base.BaseCase):
         data = json.loads(cfn_template)
         self.assertEqual(['WidgetsProdTopic'], data['Resources'].keys())
         self.assertEqual(
-            {'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}}, 
+            {'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}},
             data['Resources']['WidgetsProdTopic']
         )
         self.assertEqual(['WidgetsProdTopicArn'], data['Outputs'].keys())
         self.assertEqual(
-            {'Value': {'Ref': 'WidgetsProdTopic'}}, 
+            {'Value': {'Ref': 'WidgetsProdTopic'}},
             data['Outputs']['WidgetsProdTopicArn']
         )
 
@@ -50,7 +50,7 @@ class TestBuildercoreTrop(base.BaseCase):
         data = json.loads(cfn_template)
         self.assertEqual(['ProjectWithSqsIncomingProdQueue'], data['Resources'].keys())
         self.assertEqual(
-            {'Type': 'AWS::SQS::Queue', 'Properties': {'QueueName': 'project-with-sqs-incoming-prod'}}, 
+            {'Type': 'AWS::SQS::Queue', 'Properties': {'QueueName': 'project-with-sqs-incoming-prod'}},
             data['Resources']['ProjectWithSqsIncomingProdQueue']
         )
         self.assertEqual(['ProjectWithSqsIncomingProdQueueArn'], data['Outputs'].keys())
@@ -157,4 +157,3 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('AliasTarget', dns.keys())
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
         self.assertIn('DomainName', outputs.keys())
-

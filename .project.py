@@ -29,7 +29,7 @@ if args.pname:
 # project list
 else:
     if args.env: # vagrant/aws
-        output = project.filtered_projects(lambda pname, pdata: pdata.has_key(args.env)).keys()
+        output = project.filtered_projects(lambda pname, pdata: args.env in pdata).keys()
     else:
         output = project.project_list()
     output.sort()

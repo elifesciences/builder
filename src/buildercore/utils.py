@@ -30,11 +30,11 @@ def dictfilter(func, ddict):
     "return a subset of dictionary items where func(key, val) is True"
     if not func:
         return ddict
-    return {k:v for k, v in ddict.items() if func(k, v)}
+    return {k: v for k, v in ddict.items() if func(k, v)}
 
 def exsubdict(ddict, key_list):
     "returns a version of the given dictionary excluding the keys specified"
-    return {k:v for k, v in ddict.items() if k not in key_list}
+    return {k: v for k, v in ddict.items() if k not in key_list}
 
 def complement(pred):
     @wraps(pred)
@@ -68,10 +68,10 @@ def deepmerge(into, from_here, excluding=None):
     for key in exclusions:
         if key in into and key not in from_here:
             del into[key]
-    
+
     for key, val in from_here.items():
-        if into.has_key(key) and isinstance(into[key], dict) \
-          and isinstance(val, dict):
+        if key in into and isinstance(into[key], dict) \
+                and isinstance(val, dict):
             deepmerge(into[key], from_here[key], child_exclude.get(key, []))
         else:
             into[key] = val
@@ -110,8 +110,8 @@ def last(x):
 
 def firstnn(x):
     "returns the first non-nil value in x"
-    return first(filter(lambda v: v != None, x))
-    #return first(filter(None, x))
+    return first(filter(lambda v: v is not None, x))
+    # return first(filter(None, x))
 
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done."):
     "calls the given function `f` every `interval` until it returns False."
@@ -141,7 +141,7 @@ def updatein(data, path, newval, create=False):
         # we've come to the end of the path
         data[bit] = newval
         return newval
-    if create and not data.has_key(bit):
+    if create and bit not in data:
         data[bit] = {}
     return updatein(data[bit], ".".join(rest), newval, create)
 
@@ -179,9 +179,10 @@ def yaml_loads(string):
 '''
 
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
-    #pylint: disable=too-many-ancestors
+    # pylint: disable=too-many-ancestors
     class OrderedLoader(loader_class):
         pass
+
     def construct_mapping(loader, node):
         loader.flatten_mapping(node)
         return object_pairs_hook(loader.construct_pairs(node))
@@ -190,12 +191,14 @@ def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
 
-def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False,  **kwds):
-    indent=4
-    line_break='\n'
-    #pylint: disable=too-many-ancestors
+def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
+    indent = 4
+    line_break = '\n'
+    # pylint: disable=too-many-ancestors
+
     class OrderedDumper(dumper_class):
         pass
+
     def _dict_representer(dumper, data):
         return dumper.represent_mapping(
             yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
@@ -205,9 +208,9 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 def remove_ordereddict(data, dangerous=True):
-    """turns a nested OrderedDict dict into a regular dictionary. 
+    """turns a nested OrderedDict dict into a regular dictionary.
     dangerous=True will replace unserializable values with the string '[unserializable]' """
-    # so nasty. 
+    # so nasty.
     return json.loads(json_dumps(data, dangerous))
 
 def listfiles(path, ext_list=None):
@@ -228,7 +231,7 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
     return dt.strftime(fmt)
 
 def ensure(assertion, msg, *args):
-    """intended as a convenient replacement for `assert` statements that 
+    """intended as a convenient replacement for `assert` statements that
     get compiled away with -O flags"""
     if not assertion:
         raise AssertionError(msg % args)
@@ -240,8 +243,8 @@ def mkdir_p(path):
     return path
 
 def json_dumps(obj, dangerous=False):
-    """drop-in for json.dumps that handles datetime objects. 
-    
+    """drop-in for json.dumps that handles datetime objects.
+
     dangerous=True will replace unserializable values with the string '[unserializable]'.
     you should typically set this to True. it's False for legacy reasons."""
     def json_handler(obj):
@@ -250,7 +253,7 @@ def json_dumps(obj, dangerous=False):
         elif dangerous:
             return '[unserializable]'
         else:
-            raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
+            raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
     return json.dumps(obj, default=json_handler)
 
 def lookup(data, path, default=0xDEADBEEF):
@@ -274,11 +277,11 @@ def lookup(data, path, default=0xDEADBEEF):
         return default
 
 # TODO: this function suffers from truthy-falsey problems.
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 def lu(context, *paths, **kwargs):
     """looks up many paths given the initial data, returning the first non-nil result.
     if no data available a ValueError is raised."""
-    default=None
+    default = None
     if 'default' in kwargs:
         default = kwargs['default']
     v = firstnn(map(lambda path: lookup(context, path, default), paths))
@@ -291,4 +294,4 @@ def hasallkeys(ddict, key_list):
 
 def missingkeys(ddict, key_list):
     "returns all keys in key_list that are not in given ddict"
-    return [key for key in key_list if not ddict.has_key(key)]
+    return [key for key in key_list if key not in ddict]

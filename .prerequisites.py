@@ -28,18 +28,18 @@ def osx():
 both_checks = [
     ('git',
      {'osx': 'brew install git'}),
-     
+
     ('virtualenv',
      {'all': 'sudo pip install virtualenv'}),
-     
+
     ('virtualbox',
      {'osx': 'brew cask install virtualbox'},
      dumb_install_check,
      lambda x: shs('vboxmanage --version')),
-     
+
     ('vagrant',
      {'osx': 'brew cask install vagrant'}),
-     
+
     ('ssh credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f ~/.ssh/id_rsa && test -f ~/.ssh/id_rsa.pub'),
@@ -49,7 +49,7 @@ both_checks = [
      {'all': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc"},
      lambda x: sh('ps aux | grep ssh-agent$ > /dev/null'),
      None),
-     
+
     ('aws credentials',
      {'all': 'do `aws configure` after installing builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
@@ -59,18 +59,18 @@ both_checks = [
 mac_checks = [
     ('brew',
      {'osx': 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'}),
-     
+
     ('brew cask',
      {'osx': 'brew install caskroom/cask/brew-cask'},
      lambda x: sh('which brew &> /dev/null && brew list | grep brew-cask')
-    ),
+     ),
 ]
 
 def run_checks(check_list, exclusions=[]):
     for cmd in check_list:
         installed_checker = dumb_install_check
         version_checker = dumb_version_check
-        
+
         if len(cmd) == 2:
             cmd, install_suggestions = cmd
         elif len(cmd) == 3:
@@ -80,7 +80,7 @@ def run_checks(check_list, exclusions=[]):
 
         if cmd in exclusions:
             continue
-            
+
         sys.stdout.write('* %r ... ' % cmd)
         if installed_checker(cmd):
             found = 'found'

@@ -29,7 +29,6 @@ class TestProvisioning(base.BaseCase):
 
             # TODO: hangs, not ready to test this. Will revisit in the future
             #buildvars.switch_revision(stackname, 'master')
-        
+
             lifecycle.stop(stackname)
             lifecycle.start(stackname)
-

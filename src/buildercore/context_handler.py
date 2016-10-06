@@ -19,7 +19,7 @@ def local_context_file(stackname):
     return join(config.CONTEXT_DIR, stackname + ".json")
 
 def load_context(stackname):
-    """Returns the store context data structure for 'stackname'.    
+    """Returns the store context data structure for 'stackname'.
     Downloads from S3 if missing on the local builder instance"""
     path = local_context_file(stackname)
     if not os.path.exists(path):
@@ -33,8 +33,8 @@ def _fallback_download_context_from_ec2(stackname):
         build_vars = dict(bvars.read_from_current_host())
         context = exsubdict(build_vars, ['node', 'nodename'])
         required_keys = ['full_hostname', 'domain', 'int_full_hostname', 'int_domain']
-        ensure(hasallkeys(context, required_keys), "Context missing keys %s: %s" % \
-                   (missingkeys(context, required_keys) , context))
+        ensure(hasallkeys(context, required_keys), "Context missing keys %s: %s" %
+               (missingkeys(context, required_keys), context))
         write_context(stackname, context)
 
 def write_context(stackname, context):
@@ -54,7 +54,7 @@ def write_context_to_s3(stackname):
 def delete_context_from_s3(stackname):
     key = s3_context_key(stackname)
     return s3.delete(key)
-    
+
 @if_enabled('write-context-to-s3', silent=True)
 def download_from_s3(stackname):
     key = s3_context_key(stackname)
