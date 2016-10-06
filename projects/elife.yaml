@@ -116,8 +116,8 @@ lax:
             - 443
             - 80
         sqs:
-            bot-lax-{instance}-inc: True
-            bot-lax-{instance}-out: True
+            bot-lax-{instance}-inc: {}
+            bot-lax-{instance}-out: {}
     aws-alt:
         end2end:
             description: RDS backed
