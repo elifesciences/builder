@@ -235,7 +235,7 @@ def external_dns_ec2(context):
         Comment="External DNS record for EC2",
         Name=context['full_hostname'],
         Type="A",
-        TTL="900",
+        TTL="60",
         ResourceRecords=[GetAtt(EC2_TITLE, "PublicIp")],
     )
     return dns_record
@@ -249,7 +249,7 @@ def internal_dns(context):
         Comment="Internal DNS record for EC2",
         Name=context['int_full_hostname'],
         Type="A",
-        TTL="900",
+        TTL="60",
         ResourceRecords=[GetAtt(EC2_TITLE, "PrivateIp")],
     )
     return dns_record
