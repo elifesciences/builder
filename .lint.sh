@@ -12,4 +12,7 @@ if pyflakes src/ | grep -v src/fabfile.py; then exit 1; fi
 echo "* calling pylint" # (full lint)"
 . .full-lint.sh
 
+echo "* scrubbing"
+. .scrub.sh
+
 echo "* passed linting"
