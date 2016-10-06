@@ -283,6 +283,7 @@ elife-dashboard:
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
+        ram: 2048
 
 
 elife-api:
