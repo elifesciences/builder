@@ -7,4 +7,7 @@
 # E401 = don't put imports on separate lines
 # E309 = don't put a blank line after class declaration
 
-autopep8 --in-place --aggressive --ignore E501,E302,E261,E401,E309 ./.*.py ./src/**/* 2> /dev/null
+autopep8 \
+    --in-place --aggressive \
+    --ignore E501,E302,E261,E401,E309 \
+    ./.*.py ./src/*/*
