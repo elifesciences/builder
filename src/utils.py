@@ -37,7 +37,7 @@ def errcho(x):
     return x
 
 @osissue("renamed from `_pick` to something. `choose` ?")
-def _pick(name, pick_list, default_file=None, helpfn=None):
+def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
     default = None
     if default_file:
         try:
@@ -48,8 +48,7 @@ def _pick(name, pick_list, default_file=None, helpfn=None):
             # default value doesn't appear in pick list, ignore given default
             default = None
     while True:
-        print
-        print 'please pick a known %s:' % name
+        print "%s (%s)" % (message, name)
         for i, pick in enumerate(pick_list):
             print i+1,'-',pick
             if helpfn:

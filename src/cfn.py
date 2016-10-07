@@ -133,19 +133,36 @@ def _pick_node(instance_list, node):
         return instance_list[int(node)]
     return instance_list[0]
 
+def _check_want_to_be_running(stackname, instance_list):
+    num_instances = len(instance_list)
+    if num_instances >= 1:
+        return True
+
+    should_start = utils._pick('should_start', [True, False], message='Stack not running. Should it be started?')
+    if not should_start:
+        return False
+
+    from buildercore import lifecycle
+    lifecycle.start(stackname)
+    return True
+
 @task
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
-    instances = core.stack_data(stackname)
-    public_ip = _pick_node(instances, node)['ip_address']
+    instances = core.find_ec2_instances(stackname)
+    if not _check_want_to_be_running(stackname, instances):
+        return
+    public_ip = _pick_node(instances, node).ip_address
     local("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     "maintenance ssh. uses the pem key and the bootstrap user to login."
-    instances = core.stack_data(stackname)
-    public_ip = _pick_node(instances, node)['ip_address']
+    instances = core.find_ec2_instances(stackname)
+    if not _check_want_to_be_running(stackname, instances):
+        return
+    public_ip = _pick_node(instances, node).ip_address
     # -i identify file
     local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
         
