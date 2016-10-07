@@ -1,4 +1,4 @@
-#from . import core # DONT import core. this project module should be relatively independent
+# from . import core # DONT import core. this project module should be relatively independent
 from buildercore import utils, config
 from buildercore.decorators import osissue
 from kids.cache import cache
@@ -7,6 +7,7 @@ from . import files
 import copy
 
 import logging
+from functools import reduce
 LOG = logging.getLogger(__name__)
 
 #
@@ -22,7 +23,7 @@ def set_project_alt(pdata, env, altkey):
     "non-destructive update of given project data with the specified alternative configuration."
     assert env in ['vagrant', 'aws'], "'env' must be either 'vagrant' or 'aws'"
     env_key = env + '-alt'
-    assert pdata[env_key].has_key(altkey), "project has no alternative config %r" % altkey
+    assert altkey in pdata[env_key], "project has no alternative config %r" % altkey
     pdata_copy = copy.deepcopy(pdata) # don't modify the data given to us
     pdata_copy[env] = pdata[env_key][altkey]
     return pdata_copy
@@ -62,14 +63,15 @@ def find_project(project_location_triple):
     }
     if not protocol in fnmap.keys():
         LOG.info("unhandled protocol %r for %r" % (protocol, plt))
-        return {} #OrderedDict({})
+        return {}  # OrderedDict({})
     return fnmap[protocol](path, hostname)
 
 def org_project_map(project_locations_list=None):
-    """returns a merged map of {org => project data} after inspecting each location 
+    """returns a merged map of {org => project data} after inspecting each location
     in given list duplicate projects in the same organisation will be merged."""
     if not project_locations_list:
         project_locations_list = config.app()['project-locations']
+
     def merge(p1, p2):
         utils.deepmerge(p1, p2)
         return p1
@@ -91,6 +93,7 @@ def project_map(project_locations_list=None):
     # ll: [{'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}}], {'example': {}}]
     data = opm.values()
     # ll: {'lax': {...}, 'metrics': {...}, 'example': {...}}
+
     def merge(p1, p2):
         utils.deepmerge(p1, p2)
         return p1
@@ -118,10 +121,10 @@ def filtered_projects(filterfn, *args, **kwargs):
 
 def branch_deployable_projects(*args, **kwargs):
     "returns a pair of (defaults, dict of projects with a repo)"
-    return filtered_projects(lambda pname, pdata: pdata.has_key('repo'), *args, **kwargs)
+    return filtered_projects(lambda pname, pdata: 'repo' in pdata, *args, **kwargs)
 
 def projects_with_formulas(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: pdata.get('formula-repo'), *args, **kwargs)
 
 def aws_projects(*args, **kwargs):
-    return filtered_projects(lambda pname, pdata: pdata.has_key('aws'), *args, **kwargs)
+    return filtered_projects(lambda pname, pdata: 'aws' in pdata, *args, **kwargs)

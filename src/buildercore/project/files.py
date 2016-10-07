@@ -2,7 +2,7 @@ import os, copy
 from os.path import join
 from collections import OrderedDict
 
-#from . import core # DONT import core. this module should be relatively independent
+# from . import core # DONT import core. this module should be relatively independent
 from buildercore import utils
 from buildercore.decorators import testme
 
@@ -12,7 +12,7 @@ LOG = logging.getLogger(__name__)
 
 @testme
 def update_project_file(path, value, project_data, project_file):
-    #if not project_data:
+    # if not project_data:
     #    project_data = utils.ordered_load(open(project_file, 'r'))
     utils.updatein(project_data, path, value, create=True)
     return project_data
@@ -29,7 +29,7 @@ def write_project_file(new_project_data, project_file):
         lines.append(line)
     # all done. convert back to ordereddict
     #new_project_data = utils.ordered_load(StringIO("\n".join(lines)))
-    open(project_file, 'w').write("\n".join(lines)) #utils.ordered_dump(new_project_data))
+    open(project_file, 'w').write("\n".join(lines))  # utils.ordered_dump(new_project_data))
     return project_file
 
 
@@ -37,7 +37,7 @@ def write_project_file(new_project_data, project_file):
 #
 #
 
-def all_projects(project_file): #, project_file=config.PROJECT_FILE):
+def all_projects(project_file):  # , project_file=config.PROJECT_FILE):
     allp = utils.ordered_load(open(project_file))
     if allp is None:
         return ({}, [])
@@ -52,6 +52,7 @@ def all_projects(project_file): #, project_file=config.PROJECT_FILE):
 
 def _merge_snippets(pname, snippets):
     snippets = [{}] + snippets # so none of the snippets are mutated
+
     def mergedefs(snip1, snip2):
         utils.deepmerge(snip1, snip2)
         return snip1
@@ -63,10 +64,10 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
 
     if snippets == 0xDEADBEEF:
         snippets = find_snippets(project_file)
-    
+
     # merge all snippets providing a 'defaults' key first
     default_overrides = _merge_snippets('defaults', snippets)
-    
+
     global_defaults, project_list = all_projects(project_file)
     utils.deepmerge(global_defaults, default_overrides)
 
@@ -121,10 +122,8 @@ def find_snippets(project_file):
     fnames = filter(lambda fname: not fname.startswith('.'), fnames)
     fnames = filter(lambda fname: fname.endswith('.yaml'), fnames)
     path_list = map(lambda fname: join(path, fname), fnames)
-    path_list = filter(os.path.isfile, path_list)
-    path_list.sort() # your snippets need to be in a natural ordering
+    path_list = sorted(filter(os.path.isfile, path_list))
     return map(lambda p: utils.ordered_load(open(p, 'r')), path_list)
-
 
 
 #
