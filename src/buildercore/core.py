@@ -316,15 +316,9 @@ def describe_stack(stackname):
 
 # TODO: rename or something
 def stack_data(stackname, ensure_single_instance=False):
-    """like `describe_stack`, but returns a dictionary with the Cloudformation 'outputs'
-    indexed by key and ec2 data under the key 'instance'
+    """like `describe_stack`, but returns a list of dictionaries"""
 
-    Returns a list if more than one result is found, but otherwise sticks
-    to a single dictionary for backward compatibility"""
     try:
-        # TODO: is there someway to go straight to the instance ID ?
-        # a CloudFormation's outputs go stale! because we can't trust the data it
-        # gives us, we sometimes take it's instance-id and talk to the instance directly.
         ec2_instances = find_ec2_instances(stackname)
 
         if len(ec2_instances) < 1:
