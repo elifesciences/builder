@@ -36,10 +36,30 @@ else
     fi
 fi
 
+upgrade_python=false
+install_git=false
+# Python is such a hard dependency of Salt that we have to upgrade it outside of it to avoid changing it while it is running
+python_version=$(dpkg-query -W --showformat='${Version}' python2.7) # e.g. 2.7.5-5ubuntu3
+if dpkg --compare-versions $python_version lt 2.7.12; then
+    sudo add-apt-repository ppa:fkrull/deadsnakes-python2.7
+    upgrade_python=true
+fi
 
-# install git
 if ! dpkg -l git; then
+    install_git=true
+fi
+
+if ($upgrade_python || $install_git); then
     apt-get update -y
+fi
+
+if $upgrade_python; then
+    apt-get install python2.7 python2.7-dev -y
+    # virtual envs have to be recreated
+    rm -rf `find /srv /opt -type d -name venv`
+fi
+
+if $install_git; then
     apt-get install git -y
 fi
 
