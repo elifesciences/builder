@@ -19,8 +19,8 @@ def timeit(fn):
         ts = time()
         result = fn(*args, **kw)
         te = time()
-        LOG.info('func:%r args:[%r, %r] took: %2.4f sec', \
-          fn.__name__, args, kw, te-ts)
+        LOG.info('func:%r args:[%r, %r] took: %2.4f sec',
+                 fn.__name__, args, kw, te - ts)
         return result
     return wrap
 
@@ -42,7 +42,7 @@ def rtask(*roles):
         return func
     return wrapper
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 debugtask = rtask('admin')
 mastertask = rtask('master')
 
@@ -58,14 +58,15 @@ def requires_filtered_project(filterfn=None):
         return wrap2
     return wrap1
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.get('repo'))
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 requires_project = requires_filtered_project(None)
 
 def requires_aws_project_stack(*plist):
     if not plist:
         plist = [utils._pick("project", project.project_list(), default_file=deffile('.project'))]
+
     def wrap1(func):
         @wraps(func)
         def _wrapper(stackname=None, *args, **kwargs):
@@ -74,6 +75,7 @@ def requires_aws_project_stack(*plist):
             if not asl:
                 print '\nno AWS stacks exist, cannot continue.'
                 return
+
             def pname_startswith(stack):
                 for pname in plist:
                     if stack.startswith(pname):
@@ -129,7 +131,7 @@ def requires_feature(key, silent=False):
             print
             exit(1)
         return wrap2
-    return wrap1    
+    return wrap1
 
 def _sole_task(nom):
     task_list = env.tasks

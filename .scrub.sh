@@ -10,4 +10,4 @@
 autopep8 \
     --in-place --aggressive \
     --ignore E501,E302,E261,E401,E309 \
-    ./.*.py ./src/*/*
+    ./.*.py ./src/* ./src/*/*

@@ -12,7 +12,7 @@ from decorators import mastertask
 
 def install_formula(pname, formula_url):
     return local("/bin/bash /opt/builder/scripts/update-master-formula.sh %s %s" % (pname, formula_url))
-    
+
 def install_update_all_project_formulas():
     for pname in project.projects_with_formulas():
         pdata = project.project_data(pname)
@@ -49,7 +49,7 @@ def refresh_config():
         cfg = core_utils.ordered_load(cfgfile)
     cfg['file_roots']['base'] = private_file_roots() + formula_file_roots() + basic_file_roots()
     cfg['interface'] = private_ip()
-    
+
     with open('/etc/salt/master', 'w') as cfgfile:
         core_utils.ordered_dump(cfg, cfgfile)
 

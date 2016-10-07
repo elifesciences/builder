@@ -1,14 +1,14 @@
 from buildercore import core
 import utils
 from decorators import requires_aws_stack, debugtask, echo_output
-from buildercore.core import  MultipleRegionsError
+from buildercore.core import MultipleRegionsError
 
 import logging
 LOG = logging.getLogger(__name__)
 
 def find_region(stackname=None):
     """tries to find the region, but falls back to user input if there are multiple regions available.
-    
+
     Uses stackname, if provided, to filter the available regions"""
     try:
         return core.find_region(stackname)

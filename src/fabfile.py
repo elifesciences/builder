@@ -1,6 +1,6 @@
 import os
 
-#pylint: disable=unused-wildcard-import,unused-import,wildcard-import
+# pylint: disable=unused-wildcard-import,unused-import,wildcard-import
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__)) # elife-builder/src/
 
@@ -12,7 +12,7 @@ from cfn import *
 # aws tasks are not working for some reason.. possibly circular dependency
 import aws
 import metrics
-## packer functionality not tested properly since going public
+# packer functionality not tested properly since going public
 #import packer
 import tasks
 import lax

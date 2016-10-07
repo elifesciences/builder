@@ -1,4 +1,4 @@
-from distutils.util import strtobool #pylint: disable=import-error,no-name-in-module
+from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from fabric.api import task, local, run, sudo, put, get, abort, parallel
 from fabric.contrib import files
 import aws, utils
@@ -42,7 +42,7 @@ def ensure_destroyed(stackname):
 @requires_aws_stack
 @timeit
 def update(stackname):
-    """Updates the environment within the stack's ec2 instance. 
+    """Updates the environment within the stack's ec2 instance.
 
     does *not* call Cloudformation's `update` command on the stack"""
     return bootstrap.update_stack(stackname)
@@ -62,7 +62,7 @@ def generate_stack_from_input(pname, instance_id=None):
 
     # prompt user for alternate configurations
     pdata = project.project_data(pname)
-    if pdata.has_key('aws-alt'):
+    if 'aws-alt' in pdata:
         def helpfn(altkey):
             try:
                 return pdata['aws-alt'][altkey]['description']
@@ -96,10 +96,10 @@ def launch(pname, instance_id=None):
                 print "you'll need access to this repository to add a deploy key later"
                 print
                 return
-        
-        bootstrap.create_update(stackname)        
+
+        bootstrap.create_update(stackname)
         setdefault('.active-stack', stackname)
-    except core.NoMasterException, e:
+    except core.NoMasterException as e:
         LOG.warn(e.message)
         print "\n%s\ntry `./bldr master.create`'" % e.message
 
@@ -109,14 +109,14 @@ def highstate(stackname):
     "a fast update with many caveats. prefer `update` instead"
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         bootstrap.run_script('highstate.sh')
-        
+
 @debugtask
 @requires_aws_stack
 def pillar(stackname):
     "returns the pillar data a minion is using"
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         sudo('salt-call pillar.items')
-    
+
 @debugtask
 @echo_output
 def aws_stack_list():
@@ -128,7 +128,7 @@ def _pick_node(instance_list, node):
     num_instances = len(instance_list)
     if num_instances > 1:
         if not node:
-            node = utils._pick('node', range(1, num_instances+1))
+            node = utils._pick('node', range(1, num_instances + 1))
         node = int(node) - 1
         return instance_list[int(node)]
     return instance_list[0]
@@ -165,7 +165,7 @@ def owner_ssh(stackname, node=None):
     public_ip = _pick_node(instances, node).ip_address
     # -i identify file
     local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
-        
+
 @task
 @requires_aws_stack
 def download_file(stackname, path, destination, allow_missing="False", use_bootstrap_user="False"):
@@ -189,10 +189,10 @@ def download_file(stackname, path, destination, allow_missing="False", use_boots
 @requires_aws_stack
 def upload_file(stackname, local_path, remote_path, overwrite=False):
     with stack_conn(stackname):
-        print 'stack:',stackname
-        print 'local:',local_path
-        print 'remote:',remote_path
-        print 'overwrite:',overwrite
+        print 'stack:', stackname
+        print 'local:', local_path
+        print 'remote:', remote_path
+        print 'overwrite:', overwrite
         raw_input('continue?')
         if files.exists(remote_path) and not overwrite:
             print 'remote file exists, not overwriting'
@@ -230,11 +230,10 @@ def project_list():
         print org
         for project_name in plist:
             print '  ', project_name
-        print 
+        print
 
 @task
 @requires_project
 @echo_output
 def project_config(pname):
     return core_utils.remove_ordereddict(project.project_data(pname))
-
