@@ -137,7 +137,7 @@ def _pick_node(instance_list, node):
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
     instances = core.stack_data(stackname)
-    public_ip = _pick_node(instances, node)['instance']['ip_address']
+    public_ip = _pick_node(instances, node)['ip_address']
     local("ssh %s@%s" % (username, public_ip))
 
 @task
@@ -145,7 +145,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
 def owner_ssh(stackname, node=None):
     "maintenance ssh. uses the pem key and the bootstrap user to login."
     instances = core.stack_data(stackname)
-    public_ip = _pick_node(instances, node)['instance']['ip_address']
+    public_ip = _pick_node(instances, node)['ip_address']
     # -i identify file
     local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
         

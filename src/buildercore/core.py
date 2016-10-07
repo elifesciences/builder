@@ -194,7 +194,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
         LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
 
     data = stack_data(stackname, ensure_single_instance=True)[0]
-    public_ip = data['instance']['ip_address']
+    public_ip = data['ip_address']
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
     with settings(**params):
@@ -207,7 +207,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
     if isinstance(workfn, tuple):
         workfn, work_kwargs = workfn
 
-    public_ips = {ec2['instance']['id']: ec2['instance']['ip_address'] for ec2 in stack_data(stackname)}
+    public_ips = {ec2['id']: ec2['ip_address'] for ec2 in stack_data(stackname)}
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
     # custom for builder, these are available as fabric.api.env.public_ips
@@ -333,7 +333,7 @@ def stack_data(stackname, ensure_single_instance=False):
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
         def ec2data(ec2):
-            return {'instance': ec2.__dict__}
+            return ec2.__dict__
         return map(ec2data, ec2_instances)
 
     except Exception:
