@@ -41,7 +41,7 @@ install_git=false
 # Python is such a hard dependency of Salt that we have to upgrade it outside of it to avoid changing it while it is running
 python_version=$(dpkg-query -W --showformat='${Version}' python2.7) # e.g. 2.7.5-5ubuntu3
 if dpkg --compare-versions $python_version lt 2.7.12; then
-    sudo add-apt-repository ppa:fkrull/deadsnakes-python2.7
+    sudo add-apt-repository -y ppa:fkrull/deadsnakes-python2.7
     upgrade_python=true
 fi
 
