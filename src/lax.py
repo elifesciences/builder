@@ -21,7 +21,7 @@ def dumpdata(stackname):
 def loaddata():
     from_stack = None
     to_stack = None
-    
+
     backup = dumpdata(to_stack)
     rename(backup)
 

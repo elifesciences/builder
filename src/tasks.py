@@ -1,6 +1,6 @@
 """Miscellanious admin tasks.
 
-If you find certain 'types' of tasks accumulating, they might be 
+If you find certain 'types' of tasks accumulating, they might be
 better off in their own module. This module really is for stuff
 that has no home."""
 import requests
@@ -38,13 +38,13 @@ def ami_for_project(pname):
     results = conn.get_all_images(**kwargs)
 
     print results
-    
-    print len(results),"results"
+
+    print len(results), "results"
 
     return utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
 
-    # good for figuring out filters 
-    #print results[0].__dict__
+    # good for figuring out filters
+    # print results[0].__dict__
 
 @task
 @requires_aws_stack
@@ -108,7 +108,7 @@ def fetch_cert(stackname):
         pname = core.project_name_from_stackname(stackname)
         project_data = project.project_data(pname)
 
-        assert project_data.has_key('subdomain'), "project subdomain not found. quitting"
+        assert 'subdomain' in project_data, "project subdomain not found. quitting"
 
         instance_id = stackname[len(pname + "-"):]
         is_prod = instance_id in ['master', 'production']
@@ -135,7 +135,7 @@ def fetch_cert(stackname):
         print '* ' + '\n* '.join(domain_names)
 
         #pillar_data = cfngen.salt_pillar_data(config.PILLAR_DIR)
-        #server = {
+        # server = {
         #    'staging': pillar_data['sys']['webserver']['acme_staging_server'],
         #    'live': pillar_data['sys']['webserver']['acme_server'],
         #}
@@ -161,7 +161,7 @@ def fetch_cert(stackname):
             with stack_conn(stackname):
                 return run(" && ".join(cmds))
 
-    except AssertionError, ex:
+    except AssertionError as ex:
         print
         print "* " + str(ex)
         print

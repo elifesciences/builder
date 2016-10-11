@@ -4,11 +4,11 @@ from buildercore.decorators import osissue
 from fabric.api import local
 
 # totally is assigned :(
-#pylint: disable=global-variable-not-assigned
+# pylint: disable=global-variable-not-assigned
 CACHE = {}
 
 def rmval(lst, *vals):
-    """removes each val in `vals` from `lst`, if it exists. 
+    """removes each val in `vals` from `lst`, if it exists.
     returns new `lst` and a list of removed values in the order they were removed."""
     lst = lst[:]
     removed = []
@@ -37,7 +37,7 @@ def errcho(x):
     return x
 
 @osissue("renamed from `_pick` to something. `choose` ?")
-def _pick(name, pick_list, default_file=None, helpfn=None):
+def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
     default = None
     if default_file:
         try:
@@ -48,10 +48,9 @@ def _pick(name, pick_list, default_file=None, helpfn=None):
             # default value doesn't appear in pick list, ignore given default
             default = None
     while True:
-        print
-        print 'please pick a known %s:' % name
+        print "%s (%s)" % (message, name)
         for i, pick in enumerate(pick_list):
-            print i+1,'-',pick
+            print i + 1, '-', pick
             if helpfn:
                 helptext = helpfn(pick)
                 if helptext:
@@ -113,4 +112,3 @@ def table(rows, keys):
     for row in rows:
         lines.append(', '.join([getattr(row, key) for key in keys]))
     return "\n".join(lines)
-            

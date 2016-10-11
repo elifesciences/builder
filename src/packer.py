@@ -23,21 +23,22 @@ TEMPLATE = {
         # "vpc_id": lambda p: prj(p, 'aws.vpc-id'),
         # "subnet_id": lambda p: prj(p, 'aws.subnet-id'),
         #},
-        {"type": "virtualbox-ovf",
-         "source_path": lambda p: vagrant_path(prj(p, 'vagrant.box')),
-         "ssh_username": "vagrant",
-         "ssh_password": "vagrant",
-         "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
-         #"output_directory": "packer",
-         "headless": True,
-         "vboxmanage": [
-             ["modifyvm", "{{.Name}}", "--memory", "2048"],
-             ["modifyvm", "{{.Name}}", "--cpus", "2"],
-             ["sharedfolder", "add", "{{.Name}}", "--name", "vagrant", "--hostpath", PROJECT_DIR, "--readonly"],
-             ["sharedfolder", "add", "{{.Name}}", "--name", "salt-state", "--hostpath", join(PROJECT_DIR, "salt/salt/"), "--readonly"],
-             ["sharedfolder", "add", "{{.Name}}", "--name", "salt-pillar", "--hostpath", join(PROJECT_DIR, "salt/pillar/"), "--readonly"],
-             ["sharedfolder", "add", "{{.Name}}", "--name", "salt-dev-pillar", "--hostpath", join(PROJECT_DIR, "salt/dev-pillar/"), "--readonly"],             
-             ]
+        {
+            "type": "virtualbox-ovf",
+            "source_path": lambda p: vagrant_path(prj(p, 'vagrant.box')),
+            "ssh_username": "vagrant",
+            "ssh_password": "vagrant",
+            "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+            #"output_directory": "packer",
+            "headless": True,
+            "vboxmanage": [
+                ["modifyvm", "{{.Name}}", "--memory", "2048"],
+                ["modifyvm", "{{.Name}}", "--cpus", "2"],
+                ["sharedfolder", "add", "{{.Name}}", "--name", "vagrant", "--hostpath", PROJECT_DIR, "--readonly"],
+                ["sharedfolder", "add", "{{.Name}}", "--name", "salt-state", "--hostpath", join(PROJECT_DIR, "salt/salt/"), "--readonly"],
+                ["sharedfolder", "add", "{{.Name}}", "--name", "salt-pillar", "--hostpath", join(PROJECT_DIR, "salt/pillar/"), "--readonly"],
+                ["sharedfolder", "add", "{{.Name}}", "--name", "salt-dev-pillar", "--hostpath", join(PROJECT_DIR, "salt/dev-pillar/"), "--readonly"],
+            ]
         }
     ],
     "provisioners": [
@@ -50,16 +51,17 @@ TEMPLATE = {
         # "minion_config": lambda p: join(PROJECT_DIR, "packer/%s-packer.minion" % p),
         # "skip_bootstrap": True # base box should already be configured with salt
         #},
-        {"type": "shell",
-         "scripts": [
-             join(PROJECT_DIR, "scripts/mount-shared-folders.sh"),
-             join(PROJECT_DIR, "scripts/set-hostname.sh"), # hostname is used as the minion ID
-             join(PROJECT_DIR, "scripts/bootstrap.sh"),
-             join(PROJECT_DIR, "scripts/init-minion.sh"),
-             join(PROJECT_DIR, "scripts/packer-cleanup.sh")],
-         "environment_vars": lambda p: [
-             "SALT_VERSION=%s" % prj(p, 'salt'),
-             "PROJECT=%s-dev" % p],
+        {
+            "type": "shell",
+            "scripts": [
+                join(PROJECT_DIR, "scripts/mount-shared-folders.sh"),
+                join(PROJECT_DIR, "scripts/set-hostname.sh"), # hostname is used as the minion ID
+                join(PROJECT_DIR, "scripts/bootstrap.sh"),
+                join(PROJECT_DIR, "scripts/init-minion.sh"),
+                join(PROJECT_DIR, "scripts/packer-cleanup.sh")],
+            "environment_vars": lambda p: [
+                "SALT_VERSION=%s" % prj(p, 'salt'),
+                "PROJECT=%s-dev" % p],
         }
     ],
     "post-processors": [
@@ -74,7 +76,7 @@ def template_path(pname, suffix):
     #     .../packer/basebox-meta.json
     #     .../packer/basebox-vagrant.box
     if not suffix.startswith('.'):
-        suffix = "-"+suffix
+        suffix = "-" + suffix
     return join(PROJECT_DIR, 'packer', pname + suffix)
 
 def vagrant_path(boxname):
@@ -102,12 +104,11 @@ def prj(pname, path):
     return core_utils.lookup(project.project_data(pname), path)
 
 
-
 #
 #
 #
 
-#def minion_config(pname):
+# def minion_config(pname):
 #    x = "file_client: local\nid: %s-packer" % pname
 #    fname = 'packer/%s-packer.minion' % pname
 #    open(fname, 'w').write(x)
@@ -116,10 +117,11 @@ def prj(pname, path):
 def render_template(pname):
     "walk the TEMPLATE and call any callables"
     template = copy.deepcopy(TEMPLATE)
+
     def fn(x):
         if callable(x):
             return x(pname)
-        return x    
+        return x
     return walk_nested_struct(template, fn)
 
 def render(pname):
@@ -129,7 +131,7 @@ def render(pname):
     fname = template_path(pname, '.json')
     open(fname, 'w').write(out)
     print out
-    print 'wrote',fname
+    print 'wrote', fname
     return fname
 
 def validate(pname):
@@ -144,7 +146,7 @@ def sha256sum(pname):
     return ret.split(" ")[0]
 
 #
-# 
+#
 #
 
 @debugtask
@@ -164,9 +166,9 @@ def generate_meta(pname):
                 "url": join(config.PACKER_BOX_S3_HTTP_PATH, vagrant_name),
                 "checksum_type": "sha256",
                 "checksum": sha256sum(pname),
-                }]
             }]
-        }
+        }]
+    }
     fname = template_path(pname, 'meta.json')
     if os.path.exists(fname):
         old_meta = json.load(open(fname, 'r'))
@@ -175,7 +177,7 @@ def generate_meta(pname):
         old_versions = [ov for ov in old_meta['versions'] if ov['version'] != nv['version']]
         meta['versions'].extend(old_versions)
     json.dump(meta, open(fname, 'w'), indent=4)
-    print 'wrote',fname
+    print 'wrote', fname
 
 @debugtask
 @requires_project
@@ -238,12 +240,12 @@ def update_project_file(pname):
         ]
 
     project_file = 'asdf'
-            
+
     project_data = core_utils.ordered_load(open(project_file, 'r'))
     for path, new_val in updates:
         project_data = project.update_project_file(path, new_val, project_data)
     project.write_project_file(project_data)
-    print 'wrote',project_file
+    print 'wrote', project_file
     return project_data
 
 @task
@@ -280,7 +282,7 @@ def download_box(pname):
     "just download the vagrant .box for given project"
     boxurl = box_url(pname)
     if not boxurl.startswith('s3://'):
-        print 'this task only downloads from s3. unhandled url',boxurl
+        print 'this task only downloads from s3. unhandled url', boxurl
         exit(1)
     dest = join('/tmp', os.path.basename(boxurl))
     if os.path.exists(dest):

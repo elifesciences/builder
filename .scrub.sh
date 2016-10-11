@@ -8,6 +8,7 @@
 # E309 = don't put a blank line after class declaration
 
 autopep8 \
-    --in-place --aggressive \
+    --in-place --recursive --aggressive \
     --ignore E501,E302,E261,E401,E309 \
-    ./.*.py ./src/*/*
+    --exclude *.html \
+    src/

@@ -40,5 +40,5 @@ def update_syslog():
 
 @task
 def fail2ban_running():
-    #return salt_master_cmd("'ps aux | grep fail2ban-server'")
+    # return salt_master_cmd("'ps aux | grep fail2ban-server'")
     return salt_master_cmd(r"'salt \* state.single service.running name=fail2ban'")

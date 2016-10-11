@@ -1,4 +1,4 @@
-"""Tasks we perform on the master server. 
+"""Tasks we perform on the master server.
 
 See `askmaster.py` for tasks that are run on minions."""
 
@@ -23,17 +23,17 @@ def write_missing_keypairs_to_s3():
     remote_keys = keypair.all_in_s3()
     local_paths = keypair.all_locally()
     local_keys = map(os.path.basename, local_paths)
-    
+
     to_upload = set(local_keys).difference(set(remote_keys))
-        
-    print 'remote:',remote_keys
+
+    print 'remote:', remote_keys
     print 'local:', local_keys
     print 'to upload:', to_upload
 
     def write(key):
         stackname = os.path.splitext(key)[0]
         keypair.write_keypair_to_s3(stackname)
-    
+
     map(write, to_upload)
 
 def write_missing_context_to_s3():
@@ -72,14 +72,14 @@ def aws_update_projects(pname):
 @debugtask
 @requires_aws_stack
 def remaster_minion(stackname):
-    """tell minion who their new master is. 
-    
+    """tell minion who their new master is.
+
     deletes the master's key on the minion
     updates the minion, which re-writes the minion config and eventually calls highstate
 
     * assumes you don't have ssh access to the minion
     * assumes writing keypairs to S3 is turned on"""
-    print 're-mastering',stackname
+    print 're-mastering', stackname
     expected_key = core.stack_pem(stackname)
     if not os.path.exists(expected_key):
         download_keypair(stackname)

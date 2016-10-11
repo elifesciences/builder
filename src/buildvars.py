@@ -26,7 +26,7 @@ def switch_revision(stackname, revision=None):
 
         new_data = buildvars
         new_data['revision'] = revision
-        _update_remote_bvars(stackname, new_data)    
+        _update_remote_bvars(stackname, new_data)
 
     stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node)
 
@@ -47,11 +47,11 @@ def _validate():
         buildvars = read_from_current_host()
         bvarst = _bvarstype(buildvars)
         assert bvarst in [None, OLD, ABBREV, FULL], \
-          "the build vars found were structured unfamiliarly"
+            "the build vars found were structured unfamiliarly"
         LOG.debug('bvars (%s): %s', bvarst, buildvars)
         return bvarst, buildvars
 
-    except (ValueError, AssertionError), ex:
+    except (ValueError, AssertionError) as ex:
         LOG.exception(ex)
         raise
 
@@ -74,14 +74,14 @@ def _retrieve_build_vars():
     with hide('everything'):
         bvarst, buildvars = _validate()
     assert bvarst in [ABBREV, FULL], \
-      "the build-vars.json file for %r is not valid. use `./bldr buildvars.fix` to attempt to fix this."
+        "the build-vars.json file for %r is not valid. use `./bldr buildvars.fix` to attempt to fix this."
     print 'found build vars'
     print
     return buildvars
 
 def _update_remote_bvars(stackname, buildvars):
-    LOG.info('updating %r with new vars %r',stackname, buildvars)
-    assert core_utils.hasallkeys(buildvars, ['branch']) #, 'revision']) # we don't use 'revision'
+    LOG.info('updating %r with new vars %r', stackname, buildvars)
+    assert core_utils.hasallkeys(buildvars, ['branch'])  # , 'revision']) # we don't use 'revision'
 
     encoded = encode_bvars(buildvars)
     fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
