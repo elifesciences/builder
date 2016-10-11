@@ -44,11 +44,11 @@ def ensure_destroyed(stackname):
 @task(alias='aws_update_stack')
 @requires_aws_stack
 @timeit
-def update(stackname):
+def update(stackname, part_filter=None):
     """Updates the environment within the stack's ec2 instance.
 
     does *not* call Cloudformation's `update` command on the stack"""
-    return bootstrap.update_stack(stackname)
+    return bootstrap.update_stack(stackname, part_filter)
 
 @task
 def update_template(stackname):

@@ -78,8 +78,6 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
-        # TODO: maybe we can move this in the update too
-        setup_sqs(stackname, context['sqs'], context['project']['aws']['region'])
 
         return True
     except BotoServerError as err:
@@ -127,6 +125,11 @@ def setup_ec2(stackname, context_ec2):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
+
+def update_sqs_stack(stackname):
+    pdata = project_data_for_stackname(stackname)
+    context = context_handler.load_context(stackname)
+    setup_sqs(stackname, context['sqs'], pdata['aws']['region'])
 
 def setup_sqs(stackname, context_sqs, region):
     """
@@ -347,6 +350,9 @@ def update_stack(stackname, part_filter=None):
         parts['ec2'] = lambda: update_ec2_stack(stackname)
     if pdata['aws']['s3']:
         parts['s3'] = lambda: update_s3_stack(stackname)
+
+    if pdata['aws']['sqs']:
+        parts['sqs'] = lambda: update_sqs_stack(stackname)
 
     if part_filter:
         parts[part_filter]()
