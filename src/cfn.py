@@ -55,22 +55,12 @@ def update_template(stackname):
     """Limited update of the Cloudformation template.
     
     Resources can be added, but existing ones are immutable"""
-    # delegate to buildercore.* the update of the template?
 
-    # TODO: extract this boilerplate code
-    (pname, instance_id) = core.parse_stackname(stackname)
-    pdata = project.project_data(pname)
-    more_context = {
-        'stackname': stackname,
-    }
-    if instance_id in project.project_alt_config_names(pdata):
-        LOG.info("using alternate AWS configuration %r", instance_id)
-        # TODO there must be a single place where alt-config is switched in
-        # hopefully as deep in the stack as possible to hide it away
-        more_context['alt-config'] = instance_id
-
+    (pname, _) = core.parse_stackname(stackname)
     current_template = bootstrap.template(stackname)
     cfngen.write_template(stackname, json.dumps(current_template))
+
+    more_context = cfngen.choose_config(stackname)
     delta = cfngen.template_delta(pname, **more_context)
     LOG.info("%s", pformat(delta))
 

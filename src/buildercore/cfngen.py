@@ -137,6 +137,19 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     return context
 
 
+def choose_config(stackname):
+    (pname, instance_id) = core.parse_stackname(stackname)
+    pdata = project.project_data(pname)
+    more_context = {
+        'stackname': stackname,
+    }
+    if instance_id in project.project_alt_config_names(pdata):
+        LOG.info("using alternate AWS configuration %r", instance_id)
+        # TODO there must be a single place where alt-config is switched in
+        # hopefully as deep in the stack as possible to hide it away
+        more_context['alt-config'] = instance_id
+
+    return more_context
 #
 #
 #
