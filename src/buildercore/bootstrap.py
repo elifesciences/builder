@@ -300,7 +300,7 @@ def master(region, key):
 # bootstrap stack
 #
 
-def template(stackname):
+def current_template(stackname):
     conn = connect_aws_with_stack(stackname, 'cfn')
     return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
 

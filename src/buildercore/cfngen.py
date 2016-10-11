@@ -169,8 +169,8 @@ def write_template(stackname, contents):
 
 def read_template(stackname):
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
-    with open(output_fname, 'r') as f:
-        return json.loads(f.read())
+    with open(output_fname, 'r') as template_file:
+        return json.loads(template_file.read())
 
 def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
@@ -250,8 +250,8 @@ def template_delta(pname, **more_context):
     context = build_context(pname, **more_context)
     template = json.loads(render_template(context))
     return {
-        'Outputs': {title:o for (title, o) in template['Outputs'].iteritems() if title not in old_template['Outputs']},
-        'Resources': {title:r for (title, r) in template['Resources'].iteritems() if title not in old_template['Resources']}
+        'Outputs': {title: o for (title, o) in template['Outputs'].iteritems() if title not in old_template['Outputs']},
+        'Resources': {title: r for (title, r) in template['Resources'].iteritems() if title not in old_template['Resources']}
     }
 
 def merge_delta(stackname, delta):
@@ -259,8 +259,6 @@ def merge_delta(stackname, delta):
     template = read_template(stackname)
     for component in delta:
         assert component in ["Resources", "Outputs"]
-        for title in delta[component]:
-            template[component].update(delta[component])
+        template[component].update(delta[component])
     write_template(stackname, json.dumps(template))
     return template
-

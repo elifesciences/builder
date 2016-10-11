@@ -57,7 +57,7 @@ def update_template(stackname):
     Resources can be added, but existing ones are immutable"""
 
     (pname, _) = core.parse_stackname(stackname)
-    current_template = bootstrap.template(stackname)
+    current_template = bootstrap.current_template(stackname)
     cfngen.write_template(stackname, json.dumps(current_template))
 
     more_context = cfngen.choose_config(stackname)
