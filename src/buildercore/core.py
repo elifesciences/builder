@@ -338,17 +338,28 @@ def stack_data(stackname, ensure_single_instance=False):
 # DO NOT CACHE
 def stack_is_active(stackname):
     "returns True if the given stack is in a completed state"
+    return stack_is(stackname, ['CREATE_COMPLETE', 'UPDATE_COMPLETE'])
+
+def stack_is(stackname, acceptable_states, terminal_states=None):
+    "returns True if the given stack is in one of acceptable_states"
+    if terminal_states is None:
+        terminal_states = []
     try:
         description = describe_stack(stackname)
-        result = description.stack_status in ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        if description.stack_status in terminal_states:
+            LOG.error("stack_status is '%s', cannot move from that\nDescription: %s", description.stack_status, vars(description))
+            raise RuntimeError("stack status is '%s'" % description.stack_status)
+        result = description.stack_status in acceptable_states
         if not result:
             LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, vars(description))
         return result
     except BotoServerError as err:
         if err.message.endswith('does not exist'):
             return False
-        LOG.warning("unhandled exception testing active state of stack %r", stackname)
+        LOG.warning("unhandled exception testing state of stack %r", stackname)
         raise
+
+
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."

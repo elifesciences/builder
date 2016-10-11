@@ -11,7 +11,7 @@ from functools import partial
 from StringIO import StringIO
 from . import core, utils, config, keypair, bvars
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
-from .utils import first
+from .utils import first, call_while
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put, parallel
 import fabric.exceptions as fabric_exceptions
@@ -314,6 +314,9 @@ def update_template(stackname, template):
     if pdata['aws']['ec2']:
         parameters.append(('KeyName', stackname))
     conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+    def stack_is_updating():
+        return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
+    call_while(stack_is_updating, interval=2, update_msg="waiting for template of %s to be updated" % stackname, done_msg="template of %s is in state UPDATE_COMPLETE" % stackname)
 
 @core.requires_active_stack
 def template_info(stackname):
