@@ -300,6 +300,18 @@ def master(region, key):
 # bootstrap stack
 #
 
+def template(stackname):
+    conn = connect_aws_with_stack(stackname, 'cfn')
+    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
+
+def update_template(stackname, template):
+    conn = connect_aws_with_stack(stackname, 'cfn')
+    parameters = []
+    pdata = project_data_for_stackname(stackname)
+    if pdata['aws']['ec2']:
+        parameters.append(('KeyName', stackname))
+    conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
