@@ -1,4 +1,5 @@
 from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
+from pprint import pformat
 from fabric.api import task, local, run, sudo, put, get, abort, parallel
 from fabric.contrib import files
 import aws, utils
@@ -7,6 +8,8 @@ from buildercore import core, cfngen, utils as core_utils, bootstrap, project, c
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
+# TODO: avoid when cfngen has new signature
+import json
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -46,6 +49,36 @@ def update(stackname):
 
     does *not* call Cloudformation's `update` command on the stack"""
     return bootstrap.update_stack(stackname)
+
+@task
+def update_template(stackname):
+    """Limited update of the Cloudformation template.
+    
+    Resources can be added, but existing ones are immutable"""
+    # delegate to buildercore.* the update of the template?
+
+    # TODO: extract this boilerplate code
+    (pname, instance_id) = core.parse_stackname(stackname)
+    pdata = project.project_data(pname)
+    more_context = {
+        'stackname': stackname,
+    }
+    if instance_id in project.project_alt_config_names(pdata):
+        LOG.info("using alternate AWS configuration %r", instance_id)
+        # TODO there must be a single place where alt-config is switched in
+        # hopefully as deep in the stack as possible to hide it away
+        more_context['alt-config'] = instance_id
+
+    current_template = bootstrap.template(stackname)
+    cfngen.write_template(stackname, json.dumps(current_template))
+    delta = cfngen.template_delta(pname, **more_context)
+    LOG.info("%s", pformat(delta))
+
+    new_template = cfngen.merge_delta(stackname, delta)
+    bootstrap.update_template(stackname, new_template)
+
+    update(stackname)
+
 
 @task
 def update_master():
