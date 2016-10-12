@@ -121,7 +121,7 @@ def connect_aws_with_pname(pname, service):
     "convenience"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
-    print 'connecting to a', pname, 'instance in region', region
+    LOG.info('connecting to a %s instance in region %s', pname, region)
     return connect_aws(service, region)
 
 def connect_aws_with_stack(stackname, service):

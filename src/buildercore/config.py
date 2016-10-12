@@ -66,7 +66,7 @@ LOG_PATH = join(PROJECT_PATH, LOG_DIR) # /.../logs/
 LOG_FILE = join(LOG_PATH, "app.log") # /.../logs/app.log
 utils.mkdir_p(LOG_PATH)
 
-FORMAT = logging.Formatter("%(created)f - %(levelname)s - %(processName)s - %(name)s - %(message)s")
+FORMAT = logging.Formatter("%(asctime)s - %(levelname)s - %(processName)s - %(name)s - %(message)s")
 
 # http://docs.python.org/2/howto/logging-cookbook.html
 ROOTLOG = logging.getLogger() # important! this is the *root LOG*
