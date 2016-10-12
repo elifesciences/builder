@@ -130,13 +130,17 @@ def _pick_node(instance_list, node):
         if not node:
             node = utils._pick('node', range(1, num_instances + 1))
         node = int(node) - 1
-        return instance_list[int(node)]
-    return instance_list[0]
+        instance = instance_list[int(node)]
+    else:
+        instance = instance_list[0]
+    core_utils.ensure(instance.ip_address is not None, "Selected instance does not have a public ip address, are you sure it's running?")
+    return instance
 
-def _check_want_to_be_running(stackname, instance_list):
+def _check_want_to_be_running(stackname):
+    instance_list = core.find_ec2_instances(stackname)
     num_instances = len(instance_list)
     if num_instances >= 1:
-        return True
+        return instance_list
 
     should_start = utils._pick('should_start', [True, False], message='Stack not running. Should it be started?')
     if not should_start:
@@ -144,13 +148,15 @@ def _check_want_to_be_running(stackname, instance_list):
 
     from buildercore import lifecycle
     lifecycle.start(stackname)
-    return True
+    # to get the ip addresses that are assigned to the now-running instances
+    # and that weren't there before
+    return core.find_ec2_instances(stackname)
 
 @task
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
-    instances = core.find_ec2_instances(stackname)
-    if not _check_want_to_be_running(stackname, instances):
+    instances = _check_want_to_be_running(stackname)
+    if not instances:
         return
     public_ip = _pick_node(instances, node).ip_address
     local("ssh %s@%s" % (username, public_ip))
@@ -159,8 +165,8 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     "maintenance ssh. uses the pem key and the bootstrap user to login."
-    instances = core.find_ec2_instances(stackname)
-    if not _check_want_to_be_running(stackname, instances):
+    instances = _check_want_to_be_running(stackname)
+    if not instances:
         return
     public_ip = _pick_node(instances, node).ip_address
     # -i identify file
