@@ -53,7 +53,7 @@ def update(stackname, part_filter=None):
 @task
 def update_template(stackname):
     """Limited update of the Cloudformation template.
-    
+
     Resources can be added, but existing ones are immutable"""
 
     (pname, _) = core.parse_stackname(stackname)

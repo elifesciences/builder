@@ -19,6 +19,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 import os, json, copy
 from slugify import slugify
 from . import utils, trop, core, project, context_handler
+from .utils import ensure
 from .config import STACK_DIR
 
 import logging
@@ -169,8 +170,7 @@ def write_template(stackname, contents):
 
 def read_template(stackname):
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
-    with open(output_fname, 'r') as template_file:
-        return json.loads(template_file.read())
+    return json.load(open(output_fname, 'r'))
 
 def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
@@ -258,7 +258,7 @@ def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
     for component in delta:
-        assert component in ["Resources", "Outputs"]
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
         template[component].update(delta[component])
     write_template(stackname, json.dumps(template))
     return template

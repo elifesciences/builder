@@ -314,6 +314,7 @@ def update_template(stackname, template):
     if pdata['aws']['ec2']:
         parameters.append(('KeyName', stackname))
     conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+
     def stack_is_updating():
         return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
     call_while(stack_is_updating, interval=2, update_msg="waiting for template of %s to be updated" % stackname, done_msg="template of %s is in state UPDATE_COMPLETE" % stackname)

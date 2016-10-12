@@ -360,7 +360,6 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
         raise
 
 
-
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."
     return (aws_stack.stack_name, aws_stack.stack_status, aws_stack)
