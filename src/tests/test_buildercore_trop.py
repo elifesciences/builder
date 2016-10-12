@@ -19,7 +19,6 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('dummy3', **extra)
         self.assertEqual(context['rds_dbname'], "dummy3test")
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
-        self.assertTrue('rds' in context['project']['aws'])
         data = json.loads(trop.render(context))
         self.assertTrue(isinstance(utils.lu(data, 'Resources.AttachedDB'), dict))
 
