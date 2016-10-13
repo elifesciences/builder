@@ -1,5 +1,5 @@
-from . import base
 from time import sleep
+from . import base
 from buildercore import cfngen, project
 
 import logging
@@ -35,3 +35,9 @@ class TestBuildercoreCfngen(base.BaseCase):
             sleep(0.25)
 
         self.switch_in_test_settings()
+
+    def test_empty_template_delta(self):
+        template = cfngen.quick_render('dummy1')
+        cfngen.write_template('dummy1--test', template)
+        delta = cfngen.template_delta('dummy1', stackname='dummy1--test')
+        self.assertEqual(delta, {'Outputs': {}, 'Resources': {}})

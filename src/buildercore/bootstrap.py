@@ -10,8 +10,9 @@ from os.path import join
 from functools import partial
 from StringIO import StringIO
 from . import core, utils, config, keypair, bvars
+from collections import OrderedDict
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
-from .utils import first
+from .utils import first, call_while, ensure, subdict
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put, parallel
 import fabric.exceptions as fabric_exceptions
@@ -78,8 +79,6 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
-        # TODO: maybe we can move this in the update too
-        setup_sqs(stackname, context['sqs'], context['project']['aws']['region'])
 
         return True
     except BotoServerError as err:
@@ -127,6 +126,13 @@ def setup_ec2(stackname, context_ec2):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
+
+def update_sqs_stack(stackname):
+    pdata = project_data_for_stackname(stackname)
+    if not pdata['aws']['sqs']:
+        return
+    context = context_handler.load_context(stackname)
+    setup_sqs(stackname, context['sqs'], pdata['aws']['region'])
 
 def setup_sqs(stackname, context_sqs, region):
     """
@@ -266,6 +272,8 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
 
 def update_s3_stack(stackname):
     pdata = project_data_for_stackname(stackname)
+    if not pdata['aws']['s3']:
+        return
     context = context_handler.load_context(stackname)
     setup_s3(stackname, context['s3'], pdata['aws']['region'], pdata['aws']['account_id'])
 
@@ -300,6 +308,22 @@ def master(region, key):
 # bootstrap stack
 #
 
+def current_template(stackname):
+    conn = connect_aws_with_stack(stackname, 'cfn')
+    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
+
+def update_template(stackname, template):
+    conn = connect_aws_with_stack(stackname, 'cfn')
+    parameters = []
+    pdata = project_data_for_stackname(stackname)
+    if pdata['aws']['ec2']:
+        parameters.append(('KeyName', stackname))
+    conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+
+    def stack_is_updating():
+        return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
+    call_while(stack_is_updating, interval=2, update_msg="waiting for template of %s to be updated" % stackname, done_msg="template of %s is in state UPDATE_COMPLETE" % stackname)
+
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
@@ -327,21 +351,20 @@ def write_environment_info(stackname, overwrite=False):
 #
 
 @core.requires_active_stack
-def update_stack(stackname, part_filter=None):
-    pdata = project_data_for_stackname(stackname)
+def update_stack(stackname, service_list=None):
+    """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
+    then only those services will be updated"""
+    service_update_fns = OrderedDict([
+        ('ec2', update_ec2_stack),
+        ('s3', update_s3_stack),
+        ('sqs', update_sqs_stack)
+    ])
 
-    parts = {}
-    if pdata['aws']['ec2']:
-        parts['ec2'] = lambda: update_ec2_stack(stackname)
-    if pdata['aws']['s3']:
-        parts['s3'] = lambda: update_s3_stack(stackname)
+    if not service_list:
+        service_list = service_update_fns.keys()
+    ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
 
-    if part_filter:
-        parts[part_filter]()
-    else:
-        for part in parts:
-            parts[part]()
-
+    [fn(stackname) for fn in subdict(service_update_fns, service_list).values()]
 
 @core.requires_stack_file
 def create_update(stackname, part_filter=None):
@@ -361,6 +384,8 @@ def update_ec2_stack(stackname):
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
     pdata = project_data_for_stackname(stackname)
+    if not pdata['aws']['ec2']:
+        return
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
 
