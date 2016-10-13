@@ -132,7 +132,7 @@ def update_sqs_stack(stackname):
     if not pdata['aws']['sqs']:
         return
     context = context_handler.load_context(stackname)
-    setup_sqs(stackname, context['sqs'], pdata['aws']['region'])
+    setup_sqs(stackname, context.get('sqs', {}), pdata['aws']['region'])
 
 def setup_sqs(stackname, context_sqs, region):
     """
