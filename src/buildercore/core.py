@@ -7,7 +7,7 @@ import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
-from .utils import first, lookup
+from .utils import ensure, first, lookup
 from boto import sns
 from boto.exception import BotoServerError
 import boto3
@@ -215,6 +215,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
     params.update({'public_ips': public_ips})
     LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
 
+    ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips)
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
         execute(workfn, hosts=public_ips.values(), **work_kwargs)
