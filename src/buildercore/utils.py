@@ -32,6 +32,9 @@ def dictfilter(func, ddict):
         return ddict
     return {k: v for k, v in ddict.items() if func(k, v)}
 
+def subdict(ddict, key_list):
+    return {k: v for k, v in ddict.items() if k in key_list}
+
 def exsubdict(ddict, key_list):
     "returns a version of the given dictionary excluding the keys specified"
     return {k: v for k, v in ddict.items() if k not in key_list}
