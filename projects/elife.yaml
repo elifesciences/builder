@@ -328,6 +328,7 @@ elife-alfred:
             - 22
             - 80
             - 443
+            - 10241 # JNLP for jenkins-cli.jar
             - 16022 # Jenkins SSH port
         ext:
             size: 30 # GB
