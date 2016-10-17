@@ -3,6 +3,7 @@ from subprocess import check_output
 from fabric.api import settings
 from tests import base
 from buildercore import bootstrap, cfngen, lifecycle
+#import buildvars
 import cfn
 
 class TestProvisioning(base.BaseCase):
@@ -29,6 +30,7 @@ class TestProvisioning(base.BaseCase):
 
             # TODO: hangs, not ready to test this. Will revisit in the future
             #buildvars.switch_revision(stackname, 'master')
+            #buildvars.force(stackname, 'answer', 'forty-two')
 
             lifecycle.stop(stackname)
             lifecycle.start(stackname)
