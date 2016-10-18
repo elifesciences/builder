@@ -82,6 +82,21 @@ def fix(stackname):
 
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, [stackname]))
 
+@debugtask
+@requires_aws_stack
+def force(stackname, field, value):
+    def _force_single_ec2_node():
+        _, build_vars = _validate()
+        if build_vars is None:
+            raise RuntimeError("no build vars, found")
+
+        new_vars = build_vars.copy()
+        new_vars[field] = value
+        _update_remote_bvars(stackname, new_vars)
+        LOG.info("updated bvars %s", new_vars)
+
+    stack_all_ec2_nodes(stackname, _force_single_ec2_node)
+
 def _retrieve_build_vars():
     print 'looking for build vars ...'
     with hide('everything'):
