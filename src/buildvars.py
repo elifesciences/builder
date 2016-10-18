@@ -95,17 +95,4 @@ def _update_remote_bvars(stackname, buildvars):
 
 
 def _bvarstype(bvars):
-    "return"
-    if not bvars:
-        return None
-    bvarkeys = bvars.keys()
-    if len(bvarkeys) == 1:
-        # we have the old-style {'appname': {'branch': ..., 'revision': ...}}
-        return OLD
-    if len(bvarkeys) == 2:
-        # we have the abbreviated build-vars {'branch': ..., 'revision': ... }
-        return ABBREV
-    if len(bvarkeys) > 2 and core_utils.hasallkeys(bvars, ['author', 'project', 'branch']):
-        # we have the huge dump of vars
-        return FULL
-    raise ValueError("unknown buildvars: %r" % bvars)
+    return FULL
