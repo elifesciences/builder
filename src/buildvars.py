@@ -2,6 +2,7 @@ from buildercore.bvars import encode_bvars, read_from_current_host
 from fabric.api import sudo, put, hide
 from StringIO import StringIO
 from decorators import requires_aws_stack, debugtask
+from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
 from buildercore.trop import build_vars
@@ -30,18 +31,18 @@ def switch_revision(stackname, revision=None):
         new_data['revision'] = revision
         _update_remote_bvars(stackname, new_data)
 
-    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node)
+    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER)
 
 @debugtask
 @requires_aws_stack
 def read(stackname):
     "returns the unencoded build variables found on given instance"
-    return stack_all_ec2_nodes(stackname, lambda: pprint(read_from_current_host()))
+    return stack_all_ec2_nodes(stackname, lambda: pprint(read_from_current_host()), username=BOOTSTRAP_USER)
 
 @debugtask
 @requires_aws_stack
 def valid(stackname):
-    return stack_all_ec2_nodes(stackname, lambda: pprint(_validate()))
+    return stack_all_ec2_nodes(stackname, lambda: pprint(_validate()), username=BOOTSTRAP_USER)
 
 def _validate():
     "returns a pair of (type, build data) for the given instance. type is either 'old', 'abbrev' or 'full'"
@@ -80,22 +81,20 @@ def fix(stackname):
             new_vars = build_vars(context, node_id)
             _update_remote_bvars(stackname, new_vars)
 
-    stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, [stackname]))
+    stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, [stackname]), username=BOOTSTRAP_USER)
 
 @debugtask
 @requires_aws_stack
 def force(stackname, field, value):
     def _force_single_ec2_node():
-        _, build_vars = _validate()
-        if build_vars is None:
-            raise RuntimeError("no build vars, found")
+        buildvars = _validate()
 
-        new_vars = build_vars.copy()
+        new_vars = buildvars.copy()
         new_vars[field] = value
         _update_remote_bvars(stackname, new_vars)
         LOG.info("updated bvars %s", new_vars)
 
-    stack_all_ec2_nodes(stackname, _force_single_ec2_node)
+    stack_all_ec2_nodes(stackname, _force_single_ec2_node, username=BOOTSTRAP_USER)
 
 def _retrieve_build_vars():
     print 'looking for build vars ...'
