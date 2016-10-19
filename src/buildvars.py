@@ -87,7 +87,7 @@ def fix(stackname):
 @requires_aws_stack
 def force(stackname, field, value):
     def _force_single_ec2_node():
-        buildvars = _validate()
+        buildvars = read_from_current_host()
 
         new_vars = buildvars.copy()
         new_vars[field] = value
