@@ -7,7 +7,7 @@ from decorators import requires_project, requires_aws_stack, requires_steady_sta
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
-from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
+from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
 # TODO: avoid when cfngen has new signature
 import json
 
@@ -181,7 +181,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
     if not instances:
         return
     public_ip = _pick_node(instances, node).ip_address
-    local("ssh %s@%s" % (username, public_ip))
+    _interactive_ssh("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
@@ -192,7 +192,14 @@ def owner_ssh(stackname, node=None):
         return
     public_ip = _pick_node(instances, node).ip_address
     # -i identify file
-    local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+    _interactive_ssh("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+
+def _interactive_ssh(command):
+    try:
+        local(command)
+    except FabricException as e:
+        LOG.warn(e)
+
 
 @task
 @requires_aws_stack
