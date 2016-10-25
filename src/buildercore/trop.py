@@ -135,15 +135,19 @@ def mkoutput(title, desc, val):
 #
 #
 
-def ec2instance(context, node):
-    lu = partial(utils.lu, context)
-    build_vars = dict(context)
-    del build_vars['project']
-    build_vars['node'] = node
-    build_vars['nodename'] = "%s--%s" % (context['stackname'], node)
+def build_vars(context, node):
+    buildvars = dict(context)
+    del buildvars['project']
+    buildvars['node'] = node
+    buildvars['nodename'] = "%s--%s" % (context['stackname'], node)
     # the above context will reside on the server at /etc/build-vars.json.b64
     # this gives Salt all (most) of the data that was available at template compile time.
-    build_vars_serialization = bvars.encode_bvars(build_vars)
+    return buildvars
+
+def ec2instance(context, node):
+    lu = partial(utils.lu, context)
+    buildvars = build_vars(context, node)
+    buildvars_serialization = bvars.encode_bvars(buildvars)
 
     project_ec2 = {
         "ImageId": lu('project.aws.ec2.ami'),
@@ -154,7 +158,7 @@ def ec2instance(context, node):
         "Tags": instance_tags(context, node),
 
         "UserData": Base64("""#!/bin/bash
-echo %s > /etc/build-vars.json.b64""" % build_vars_serialization),
+echo %s > /etc/build-vars.json.b64""" % buildvars_serialization),
     }
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
