@@ -101,9 +101,9 @@ master-server:
             - 22
             - 4506: # salt publish port
                 # CIDR of subnet this master will server
-                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
+                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
-                cidr-ip: 10.0.2.0/24
+                cidr-ip: 10.0.0.0/16
     vagrant: {}
 
 lax:
