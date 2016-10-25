@@ -19,6 +19,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 import os, json, copy
 from slugify import slugify
 from . import utils, trop, core, project, context_handler
+from .utils import ensure
 from .config import STACK_DIR
 
 import logging
@@ -137,6 +138,19 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     return context
 
 
+def choose_config(stackname):
+    (pname, instance_id) = core.parse_stackname(stackname)
+    pdata = project.project_data(pname)
+    more_context = {
+        'stackname': stackname,
+    }
+    if instance_id in project.project_alt_config_names(pdata):
+        LOG.info("using alternate AWS configuration %r", instance_id)
+        # TODO there must be a single place where alt-config is switched in
+        # hopefully as deep in the stack as possible to hide it away
+        more_context['alt-config'] = instance_id
+
+    return more_context
 #
 #
 #
@@ -153,6 +167,10 @@ def write_template(stackname, contents):
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
+
+def read_template(stackname):
+    output_fname = os.path.join(STACK_DIR, stackname + ".json")
+    return json.load(open(output_fname, 'r'))
 
 def validate_aws_template(pname, rendered_template):
     conn = core.connect_aws_with_pname(pname, 'cfn')
@@ -223,3 +241,24 @@ def generate_stack(pname, **more_context):
     out_fname = write_template(stackname, template)
     context_handler.write_context(stackname, context)
     return context, out_fname
+
+def template_delta(pname, **more_context):
+    """given an already existing template, regenerates it and produces a delta containing only the new resources.
+
+    Existing resources are treated as immutable and not put in the delta"""
+    old_template = read_template(more_context['stackname'])
+    context = build_context(pname, **more_context)
+    template = json.loads(render_template(context))
+    return {
+        'Outputs': {title: o for (title, o) in template['Outputs'].iteritems() if title not in old_template['Outputs']},
+        'Resources': {title: r for (title, r) in template['Resources'].iteritems() if title not in old_template['Resources']}
+    }
+
+def merge_delta(stackname, delta):
+    """Merges the new resources in delta in the local copy of the Cloudformation  template"""
+    template = read_template(stackname)
+    for component in delta:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
+        template[component].update(delta[component])
+    write_template(stackname, json.dumps(template))
+    return template

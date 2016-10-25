@@ -7,7 +7,7 @@ import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
-from .utils import first, lookup
+from .utils import ensure, first, lookup
 from boto import sns
 from boto.exception import BotoServerError
 import boto3
@@ -207,14 +207,21 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
     if isinstance(workfn, tuple):
         workfn, work_kwargs = workfn
 
-    public_ips = {ec2['id']: ec2['ip_address'] for ec2 in stack_data(stackname)}
+    data = stack_data(stackname)
+    public_ips = {ec2['id']: ec2['ip_address'] for ec2 in data}
+    nodes = {ec2['id']: int(ec2['tags']['Node']) if 'Node' in ec2['tags'] else 1 for ec2 in data}
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
+
     # custom for builder, these are available as fabric.api.env.public_ips
     # inside workfn
+    params.update({'stackname': stackname})
     params.update({'public_ips': public_ips})
+    params.update({'nodes': nodes})
+
     LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
 
+    ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips)
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
         execute(workfn, hosts=public_ips.values(), **work_kwargs)
@@ -222,7 +229,9 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
 
-    Sticking to the 'node' terminology because 'instance' is too overloaded."""
+    Sticking to the 'node' terminology because 'instance' is too overloaded.
+
+    Sample value: 'i-0553487b4b6916bc9'"""
 
     assert env.host is not None, "This is supposed to be called with settings for connecting to an EC2 instance"
     current_public_ip = env.host
@@ -233,6 +242,30 @@ def current_ec2_node_id():
     assert len(matching_instance_ids) == 1, ("Too many instance ids (%s) pointing to this ip (%s)" % (matching_instance_ids, current_public_ip))
     return matching_instance_ids[0]
 
+def current_node_id():
+    """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
+
+    Returns a number from 1 to N (usually a small number, like 2) indicating how the current node has been numbered on creation to distinguish it from the others"""
+    ec2_id = current_ec2_node_id()
+    ensure(
+        ec2_id in env.nodes,
+        "Can't find %s in %s node map",
+        ec2_id,
+        env.nodes
+    )
+    return env.nodes[ec2_id]
+
+def current_ip():
+    """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
+
+    Returns the ip address used to access the current host, e.g. '54.243.19.153'"""
+    return env.host
+
+def current_stackname():
+    """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
+
+    Returns the name of the stack the task is working on, e.g. 'journal--end2end'"""
+    return env.stackname
 
 #
 # stackname wrangling
@@ -338,17 +371,27 @@ def stack_data(stackname, ensure_single_instance=False):
 # DO NOT CACHE
 def stack_is_active(stackname):
     "returns True if the given stack is in a completed state"
+    return stack_is(stackname, ['CREATE_COMPLETE', 'UPDATE_COMPLETE'])
+
+def stack_is(stackname, acceptable_states, terminal_states=None):
+    "returns True if the given stack is in one of acceptable_states"
+    if terminal_states is None:
+        terminal_states = []
     try:
         description = describe_stack(stackname)
-        result = description.stack_status in ['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        if description.stack_status in terminal_states:
+            LOG.error("stack_status is '%s', cannot move from that\nDescription: %s", description.stack_status, vars(description))
+            raise RuntimeError("stack status is '%s'" % description.stack_status)
+        result = description.stack_status in acceptable_states
         if not result:
             LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, vars(description))
         return result
     except BotoServerError as err:
         if err.message.endswith('does not exist'):
             return False
-        LOG.warning("unhandled exception testing active state of stack %r", stackname)
+        LOG.warning("unhandled exception testing state of stack %r", stackname)
         raise
+
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."

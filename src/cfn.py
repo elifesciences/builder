@@ -1,4 +1,5 @@
 from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
+from pprint import pformat
 from fabric.api import task, local, run, sudo, put, get, abort, parallel
 from fabric.contrib import files
 import aws, utils
@@ -6,7 +7,9 @@ from decorators import requires_project, requires_aws_stack, requires_steady_sta
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
-from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER
+from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
+# TODO: avoid when cfngen has new signature
+import json
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -41,11 +44,30 @@ def ensure_destroyed(stackname):
 @task(alias='aws_update_stack')
 @requires_aws_stack
 @timeit
-def update(stackname):
+def update(stackname, *service_list):
     """Updates the environment within the stack's ec2 instance.
-
     does *not* call Cloudformation's `update` command on the stack"""
-    return bootstrap.update_stack(stackname)
+    return bootstrap.update_stack(stackname, service_list)
+
+@task
+def update_template(stackname):
+    """Limited update of the Cloudformation template.
+
+    Resources can be added, but existing ones are immutable"""
+
+    (pname, _) = core.parse_stackname(stackname)
+    current_template = bootstrap.current_template(stackname)
+    cfngen.write_template(stackname, json.dumps(current_template))
+
+    more_context = cfngen.choose_config(stackname)
+    delta = cfngen.template_delta(pname, **more_context)
+    LOG.info("%s", pformat(delta))
+
+    new_template = cfngen.merge_delta(stackname, delta)
+    bootstrap.update_template(stackname, new_template)
+
+    update(stackname)
+
 
 @task
 def update_master():
@@ -159,7 +181,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
     if not instances:
         return
     public_ip = _pick_node(instances, node).ip_address
-    local("ssh %s@%s" % (username, public_ip))
+    _interactive_ssh("ssh %s@%s" % (username, public_ip))
 
 @task
 @requires_aws_stack
@@ -170,7 +192,14 @@ def owner_ssh(stackname, node=None):
         return
     public_ip = _pick_node(instances, node).ip_address
     # -i identify file
-    local("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+    _interactive_ssh("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
+
+def _interactive_ssh(command):
+    try:
+        local(command)
+    except FabricException as e:
+        LOG.warn(e)
+
 
 @task
 @requires_aws_stack

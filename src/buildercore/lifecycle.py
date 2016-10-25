@@ -97,12 +97,13 @@ def _wait_daemons():
 
 def update_dns(stackname):
     nodes = find_ec2_instances(stackname)
-    LOG.info("Nodes found: %s", [node.id for node in nodes])
+    LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
     if len(nodes) == 0:
         raise RuntimeError("No nodes found for %s, they be in a stopped state. They need to be running to have a (public, at least) ip address that can be mapped onto a DNS" % stackname)
 
     if len(nodes) > 1:
         # ELB has its own DNS, EC2 nodes will autoregister
+        LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB, nothing to do")
         return
 
     context = load_context(stackname)

@@ -38,16 +38,8 @@ def deploy(pname, instance_id=None, branch='master', part_filter=None):
         LOG.info("stack %r exists, skipping creation", stackname)
     else:
         LOG.info("stack %r doesn't exist, creating", stackname)
-        more_context = {
-            'stackname': stackname,
-            'branch': branch,
-        }
-        # optionally select alternate configurations if it matches the instance name
-        if instance_id in project.project_alt_config_names(pdata):
-            LOG.info("using alternate AWS configuration %r", instance_id)
-            # TODO there must be a single place where alt-config is switched in
-            # hopefully as deep in the stack as possible to hide it away
-            more_context['alt-config'] = instance_id
+        more_context = cfngen.choose_config(stackname)
+        more_context['branch'] = branch
         cfngen.generate_stack(pname, **more_context)
 
     bootstrap.create_update(stackname, part_filter)
