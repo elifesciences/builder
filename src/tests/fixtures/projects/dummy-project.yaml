@@ -30,7 +30,7 @@ defaults:
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
         subnet-cidr: '10.0.2.0/24'
-        redundant-subnet-id: subnet-1d4eb46a # elife-public-subnet-2
+        redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
         redundant-subnet-cidr: '10.0.2.0/24'
         rds:
             # rds defaults only used if an `rds` section present in project

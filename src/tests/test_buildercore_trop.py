@@ -87,6 +87,11 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('EC2Instance1', resources.keys())
         self.assertIn('EC2Instance2', resources.keys())
         self.assertIn('StackSecurityGroup', resources.keys())
+
+        # different subnets, placed in different Availability Zones
+        self.assertEqual(resources['EC2Instance1']['Properties']['SubnetId'], 'subnet-1d4eb46a')
+        self.assertEqual(resources['EC2Instance2']['Properties']['SubnetId'], 'subnet-7a31dd46')
+
         self.assertIn(
             {
                 'Key': 'Name',
