@@ -520,6 +520,7 @@ observer:
     subdomain: observer # observer.elifesciences.org
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
+        type: t2.medium
         ports:
             - 22
             - 80
