@@ -56,7 +56,7 @@ fi
 if $upgrade_python; then
     apt-get install python2.7 python2.7-dev -y
     # virtual envs have to be recreated
-    rm -rf "$(find /srv /opt -type d -name venv)"
+    find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
 fi
 
 if $install_git; then
