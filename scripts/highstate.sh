@@ -11,6 +11,6 @@ set -o pipefail
 sudo salt-call --force-color state.highstate -l info --retcode-passthrough | tee $log_file || {
     status=$?
     echo "Error provisioning, state.highstate returned: ${status}"
-    logger "Salt highstate failure: $log_file"
+    logger "Salt highstate failure: $log_file on $(hostname)"
     exit $status
 }
