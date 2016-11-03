@@ -433,23 +433,6 @@ medium:
             elb: 
                 protocol: http
 
-search:
-    description: service for indexing all of Elife 2.0 content
-    domain: False
-    subdomain: search
-    repo: https://github.com/elifesciences/search
-    formula-repo: https://github.com/elifesciences/search-formula
-    vagrant:
-        ram: 1024
-        ports:
-            1244: 80
-    aws:
-        type: t2.small # 2 GB of RAM: once we know more about which software
-                       # will be installed, we can choose the right machine
-        ports:
-            - 22
-            - 80
-
 bus:
     description: see https://github.com/elifesciences/bus
     default-branch: null
