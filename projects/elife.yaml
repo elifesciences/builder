@@ -257,6 +257,11 @@ journal-cms:
             - 443
             - 80: 
                 cidr-ip: 10.0.2.0/24 # access via VPC ip range only
+        sqs:
+            # journal-cms-prod, journal-csm--end2end, etc.
+            journal-cms--{instance}:
+                subscriptions:
+                    - bus-articles--{instance}
     vagrant:
         ports:
             1241: 80
