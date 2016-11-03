@@ -4,7 +4,7 @@ __description__ = """Module that deals with AMI baking!
 We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
-from buildercore import core, utils, bootstrap
+from buildercore import core, utils, bootstrap, config
 from .decorators import osissue, testme
 
 @testme
@@ -15,7 +15,7 @@ def ami_name(stackname):
 @core.requires_active_stack
 def create_ami(stackname):
     "creates an AMI from the running stack"
-    with core.stack_conn(stackname):
+    with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
         bootstrap.prep_ec2_instance()
     ec2 = core.find_ec2_instances(stackname)[0]
     kwargs = {
