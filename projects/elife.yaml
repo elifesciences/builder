@@ -258,7 +258,7 @@ journal-cms:
             - 80: 
                 cidr-ip: 10.0.2.0/24 # access via VPC ip range only
         sqs:
-            # journal-cms-prod, journal-csm--end2end, etc.
+            # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
@@ -441,7 +441,7 @@ bus:
     aws:
         ec2: false
         sns:
-            # bus-articles-prod, bus-articles-end2end, etc.
+            # bus-articles--prod, bus-articles--end2end, etc.
             - bus-articles--{instance}
             - bus-podcast-episodes--{instance}
             - bus-subjects--{instance}
@@ -468,8 +468,8 @@ search:
             - 22
             - 80
         sqs:
-            # search-prod, search-end2end, etc.
-            search-{instance}:
+            # search--prod, search--end2end, etc.
+            search--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
                     - bus-podcast-episodes--{instance}
