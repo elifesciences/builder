@@ -321,6 +321,11 @@ elife-libraries:
         type: t2.small # 2GB of RAM
         ports:
             - 22
+    aws-alt:
+        powerful:
+            description: speeding up bot-lax-adaptor tests
+            type: c4.2xlarge
+
     vagrant:
         ram: 2048
 
