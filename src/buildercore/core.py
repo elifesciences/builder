@@ -200,6 +200,9 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
     with settings(**params):
         yield
 
+class NoPublicIps(Exception):
+    pass
+
 def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs):
     """Executes work on all the EC2 nodes of stackname.
     Optionally connects with the specified username"""
@@ -221,7 +224,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
 
     LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
 
-    ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips)
+    ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
         execute(workfn, hosts=public_ips.values(), **work_kwargs)
