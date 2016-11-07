@@ -149,12 +149,18 @@ def ec2instance(context, node):
     buildvars = build_vars(context, node)
     buildvars_serialization = bvars.encode_bvars(buildvars)
 
+    odd = node % 2 == 1
+    if odd:
+        subnet_id = lu('project.aws.subnet-id')
+    else:
+        subnet_id = lu('project.aws.redundant-subnet-id')
+
     project_ec2 = {
         "ImageId": lu('project.aws.ec2.ami'),
         "InstanceType": lu('project.aws.type'), # t2.small, m1.medium, etc
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
-        "SubnetId": lu('project.aws.subnet-id'), # ll: "subnet-1d4eb46a"
+        "SubnetId": subnet_id, # ll: "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
 
         "UserData": Base64("""#!/bin/bash
