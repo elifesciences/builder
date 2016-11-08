@@ -11,6 +11,7 @@ from functools import partial
 from StringIO import StringIO
 from . import core, utils, config, keypair, bvars
 from collections import OrderedDict
+from datetime import datetime
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
 from .utils import first, call_while, ensure, subdict
 from .config import BOOTSTRAP_USER
@@ -33,7 +34,8 @@ def run_script(script_path, *script_params):
     """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
     ASSUMES YOU ARE CONNECTED TO A STACK"""
     local_script = join(config.SCRIPTS_PATH, script_path)
-    remote_script = join('/tmp', os.path.basename(script_path))
+    timestamp_marker = datetime.now().strftime("%Y%m%d%H%M%S")
+    remote_script = join('/tmp', os.path.basename(script_path) + '-' + timestamp_marker)
     put(local_script, remote_script)
     cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
     retval = sudo(" ".join(cmd))
