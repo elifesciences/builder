@@ -32,7 +32,7 @@ defaults:
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
         subnet-cidr: '10.0.2.0/24'
-        # only necessary for ELB
+        # necessary for multiple-node EC2 and for ELB
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
         redundant-subnet-cidr: '10.0.3.0/24'
         type: t2.small  # ~ $20/mo
@@ -101,9 +101,9 @@ master-server:
             - 22
             - 4506: # salt publish port
                 # CIDR of subnet this master will server
-                cidr-ip: 10.0.2.0/24 # access via VPC ip range only
+                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
-                cidr-ip: 10.0.2.0/24
+                cidr-ip: 10.0.0.0/16
     vagrant: {}
 
 lax:
@@ -258,6 +258,11 @@ journal-cms:
             - 443
             - 80: 
                 cidr-ip: 10.0.2.0/24 # access via VPC ip range only
+        sqs:
+            # journal-cms--prod, journal-cms--end2end, etc.
+            journal-cms--{instance}:
+                subscriptions:
+                    - bus-articles--{instance}
     vagrant:
         ports:
             1241: 80
@@ -317,6 +322,11 @@ elife-libraries:
         type: t2.small # 2GB of RAM
         ports:
             - 22
+    aws-alt:
+        powerful:
+            description: speeding up bot-lax-adaptor tests
+            type: c4.2xlarge
+
     vagrant:
         ram: 2048
 
@@ -429,23 +439,6 @@ medium:
             elb: 
                 protocol: http
 
-search:
-    description: service for indexing all of Elife 2.0 content
-    domain: False
-    subdomain: search
-    repo: https://github.com/elifesciences/search
-    formula-repo: https://github.com/elifesciences/search-formula
-    vagrant:
-        ram: 1024
-        ports:
-            1244: 80
-    aws:
-        type: t2.small # 2 GB of RAM: once we know more about which software
-                       # will be installed, we can choose the right machine
-        ports:
-            - 22
-            - 80
-
 bus:
     description: see https://github.com/elifesciences/bus
     default-branch: null
@@ -454,7 +447,7 @@ bus:
     aws:
         ec2: false
         sns:
-            # bus-articles-prod, bus-articles-end2end, etc.
+            # bus-articles--prod, bus-articles--end2end, etc.
             - bus-articles--{instance}
             - bus-podcast-episodes--{instance}
             - bus-subjects--{instance}
@@ -481,8 +474,8 @@ search:
             - 22
             - 80
         sqs:
-            # search-prod, search-end2end, etc.
-            search-{instance}:
+            # search--prod, search--end2end, etc.
+            search--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
                     - bus-podcast-episodes--{instance}

@@ -81,7 +81,7 @@ def fix(stackname):
             new_vars = build_vars(context, node_id)
             _update_remote_bvars(stackname, new_vars)
 
-    stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname':stackname}), username=BOOTSTRAP_USER)
+    stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
 @debugtask
 @requires_aws_stack
