@@ -27,7 +27,7 @@ defaults:
             # how many EC2 instance per stack instance
             cluster-size: 1
             # find more here: http://cloud-images.ubuntu.com/releases/
-            ami: ami-aa15f6c7   # elife 'basebox.2016-05-06'
+            ami: ami-92002785   # elife 'basebox.2016-11-03'
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet

@@ -57,14 +57,14 @@ def create_ami(stackname):
     amiid = bakery.create_ami(stackname)
     #amiid = "ami-e9ff3682"
     print 'AWS is now creating AMI with id', amiid
-    path = pname + '.aws.ec2.ami'
+    #path = pname + '.aws.ec2.ami'
     # wait until ami finished creating?
     #core.update_project_file(pname + ".aws.ec2.ami", amiid)
-    new_project_file = project.update_project_file(path, amiid)
-    output_file = project.write_project_file(new_project_file)
+    #new_project_file = project.update_project_file(path, amiid)
+    #output_file = project.write_project_file(new_project_file)
     print '\n' * 4
-    print 'wrote', output_file
-    print 'updated project file with new ami. these changes must be merged and committed manually'
+    #print 'wrote', output_file
+    print 'update project file with new ami %s. these changes must be merged and committed manually' % amiid
     print '\n' * 4
 
 
