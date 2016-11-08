@@ -114,7 +114,8 @@ lax:
         ports:
             - 22
             - 443
-            - 80
+            - 80:
+                cidr-ip: 10.0.2.0/24 # internal access only
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
