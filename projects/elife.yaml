@@ -468,8 +468,8 @@ search:
         ports:
             1244: 80
     aws:
-        type: t2.small # 2 GB of RAM: once we know more about which software
-                       # will be installed, we can choose the right machine
+        type: t2.medium # 4 GB of RAM: once we know more about which software
+                        # will be installed, we can choose the right machine
         ports:
             - 22
             - 80
