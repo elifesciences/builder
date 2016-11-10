@@ -25,6 +25,7 @@ downloads
 .coverage
 projects/*/
 scripts/customize.sh
+scripts/salt/*.minion
 /custom-vagrant/salt/
 /custom-vagrant/pillar/
 
