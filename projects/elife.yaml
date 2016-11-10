@@ -17,7 +17,7 @@ defaults:
     private-repo: ssh://git@github.com/elifesciences/builder-private
     # default branch to use when creating new instances
     default-branch: master
-    # 
+    # in rare cases we have formulas requiring the states of other formulas
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
@@ -463,6 +463,9 @@ search:
     subdomain: search
     repo: https://github.com/elifesciences/search
     formula-repo: https://github.com/elifesciences/search-formula
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+        - https://github.com/elifesciences/api-dummy-formula
     vagrant:
         ram: 1024
         ports:
