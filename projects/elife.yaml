@@ -317,11 +317,15 @@ elife-reporting:
             1333: 80
 
 elife-libraries:
+    subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
         type: t2.small # 2GB of RAM
         ports:
             - 22
+        ext:
+            size: 30 # GB
+            type: gp2
     aws-alt:
         powerful:
             description: speeding up bot-lax-adaptor tests
