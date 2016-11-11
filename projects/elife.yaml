@@ -392,6 +392,9 @@ elife-website:
         large:
             description: intended to run temporarily
             type: m4.2xlarge
+        end2end:
+            description: speeding up ingests in end2end tests
+            type: m4.large
     vagrant:
         ram: 3072
         ports:
