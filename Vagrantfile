@@ -246,7 +246,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 }
                 # write the minion file
                 minion_cfg = YAML.load_file("scripts/salt/minion.template")
-                more_base_paths = formula_paths.map{|p| "/vagrant/" + p + "/"}
+                more_base_paths = formula_paths.map{|p| "/vagrant/" + p + "/salt/"}
                 minion_cfg['file_roots']['base'].insert(1, *more_base_paths)
                 
                 more_pillar_roots = more_base_paths.map{|p| p + "pillar/" }
