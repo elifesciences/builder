@@ -28,12 +28,11 @@ def destroy(stackname):
         print 'got:'
         print '\n'.join(difflib.ndiff([stackname], [uin]))
         exit(1)
-    return bootstrap.delete_stack(stackname) and core_lifecycle.delete_dns(stackname)
-
+    return bootstrap.delete_stack(stackname)
 @task
 def ensure_destroyed(stackname):
     try:
-        return bootstrap.delete_stack(stackname) and core_lifecycle.delete_dns(stackname)
+        return bootstrap.delete_stack(stackname)
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
             print "Not even the CloudFormation template exists anymore, exiting idempotently"
