@@ -120,11 +120,24 @@ def update_dns(stackname):
         for node in nodes:
             _update_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'], node.private_ip_address)
 
+def delete_dns(stackname):
+    context = load_context(stackname)
+    LOG.info("Deleting external full hostname: %s", context['full_hostname'])
+    _delete_dns_a_record(stackname, context['domain'], context['full_hostname'])
+    LOG.info("Deleting internal full hostname: %s", context['int_full_hostname'])
+    _delete_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'])
+
 def _update_dns_a_record(stackname, zone_name, name, value):
     route53 = connect_aws_with_stack(stackname, 'route53')
     zone = route53.get_zone(zone_name)
     LOG.info("Updating DNS record %s to %s", name, value)
     zone.update_a(name, value)
+
+def _delete_dns_a_record(stackname, zone_name, name):
+    route53 = connect_aws_with_stack(stackname, 'route53')
+    zone = route53.get_zone(zone_name)
+    LOG.info("Deleting DNS record %s", name)
+    zone.delete_a(name)
 
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]

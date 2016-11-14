@@ -4,7 +4,7 @@ from fabric.api import task, local, run, sudo, put, get, abort, parallel
 from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
-from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks
+from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
@@ -28,12 +28,12 @@ def destroy(stackname):
         print 'got:'
         print '\n'.join(difflib.ndiff([stackname], [uin]))
         exit(1)
-    return bootstrap.delete_stack(stackname)
+    return bootstrap.delete_stack(stackname) and core_lifecycle.delete_dns(stackname)
 
 @task
 def ensure_destroyed(stackname):
     try:
-        return bootstrap.delete_stack(stackname)
+        return bootstrap.delete_stack(stackname) and core_lifecycle.delete_dns(stackname)
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
             print "Not even the CloudFormation template exists anymore, exiting idempotently"
@@ -168,8 +168,7 @@ def _check_want_to_be_running(stackname):
     if not should_start:
         return False
 
-    from buildercore import lifecycle
-    lifecycle.start(stackname)
+    core_lifecycle.start(stackname)
     # to get the ip addresses that are assigned to the now-running instances
     # and that weren't there before
     return core.find_ec2_instances(stackname)
