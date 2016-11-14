@@ -471,7 +471,7 @@ search:
     repo: https://github.com/elifesciences/search
     formula-repo: https://github.com/elifesciences/search-formula
     vagrant:
-        ram: 1024
+        ram: 4096
         ports:
             1244: 80
     aws:
