@@ -224,7 +224,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         if using_formula
             # no need to attempt a clone/pull when ssh'ing or stopping a machine ...
-            if ['up', 'provision'].include? VAGRANT_COMMAND
+            if ['up', 'provision', 'reload'].include? VAGRANT_COMMAND
                 all_formulas = PRJ.fetch("formula-dependencies") + [formula]
                 prn "formulas needed: #{all_formulas}"
                 formula_paths = all_formulas.map {| formula |
@@ -246,18 +246,29 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 }
                 # write the minion file
                 minion_cfg = YAML.load_file("scripts/salt/minion.template")
-                more_base_paths = formula_paths.map{|p| "/vagrant/" + p + "/salt/"}
-                minion_cfg['file_roots']['base'].insert(1, *more_base_paths)
                 
+                project_formula = formula_paths.pop() # path to this project's formula
+                more_base_paths = formula_paths.map{|p| "/vagrant/" + p + "/salt/"}
+
+                # expected order:
+                # /srv/custom/salt/
+                # /cloned-projects/builder-base-formula/salt/
+                # /srv/salt/
+                # [/cloned-projects/any-other-dependent-formulas/]
+
+                minion_cfg['file_roots']['base'].insert(1, more_base_paths[0]) # after /srv/custom/salt/
+                rest_paths = more_base_paths[1..-1] # all paths except the first
+                minion_cfg['file_roots']['base'].insert(3, *rest_paths)
+
                 more_pillar_roots = more_base_paths.map{|p| p + "pillar/" }
-                minion_cfg['pillar_roots']['base'].insert(1, *more_pillar_roots)
+                minion_cfg['pillar_roots']['base'].insert(2, *more_pillar_roots)
 
                 # write minion file. 
                 # bootstrap script will find this file and use it
                 File.open("scripts/salt/" + INSTANCE_NAME + ".minion", "w") {|f| f.write minion_cfg.to_yaml }
 
                 # mount formula as salt directory
-                project.vm.synced_folder formula_paths[-1], "/project"
+                project.vm.synced_folder project_formula, "/project"
             end
         else
             prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'"
