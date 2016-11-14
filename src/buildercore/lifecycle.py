@@ -143,8 +143,11 @@ def _update_dns_a_record(stackname, zone_name, name, value):
 def _delete_dns_a_record(stackname, zone_name, name):
     route53 = connect_aws_with_stack(stackname, 'route53')
     zone = route53.get_zone(zone_name)
-    LOG.info("Deleting DNS record %s", name)
-    zone.delete_a(name)
+    if zone.get_a(name):
+        LOG.info("Deleting DNS record %s", name)
+        zone.delete_a(name)
+    else:
+        LOG.info("No DNS record to delete")
 
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]
