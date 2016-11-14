@@ -122,10 +122,17 @@ def update_dns(stackname):
 
 def delete_dns(stackname):
     context = load_context(stackname)
-    LOG.info("Deleting external full hostname: %s", context['full_hostname'])
-    _delete_dns_a_record(stackname, context['domain'], context['full_hostname'])
-    LOG.info("Deleting internal full hostname: %s", context['int_full_hostname'])
-    _delete_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'])
+    if context['full_hostname']:
+        LOG.info("Deleting external full hostname: %s", context['full_hostname'])
+        _delete_dns_a_record(stackname, context['domain'], context['full_hostname'])
+    else:
+        LOG.info("No external full hostname to delete")
+
+    if context['int_full_hostname']:
+        LOG.info("Deleting internal full hostname: %s", context['int_full_hostname'])
+        _delete_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'])
+    else:
+        LOG.info("No internal full hostname to delete")
 
 def _update_dns_a_record(stackname, zone_name, name, value):
     route53 = connect_aws_with_stack(stackname, 'route53')
