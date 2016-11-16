@@ -17,7 +17,7 @@ defaults:
     private-repo: ssh://git@github.com/elifesciences/builder-private
     # default branch to use when creating new instances
     default-branch: master
-    # 
+    # in rare cases we have formulas requiring the states of other formulas
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
@@ -470,10 +470,14 @@ search:
     subdomain: search
     repo: https://github.com/elifesciences/search
     formula-repo: https://github.com/elifesciences/search-formula
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+        - https://github.com/elifesciences/api-dummy-formula
     vagrant:
-        ram: 1024
+        ram: 2048
         ports:
             1244: 80
+            1245: 8080
     aws:
         type: t2.medium # 4 GB of RAM: once we know more about which software
                         # will be installed, we can choose the right machine

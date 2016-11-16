@@ -119,15 +119,18 @@ if [ -d /vagrant ]; then
     # by default the project's top.sls is disabled by file naming. hook that up here
     cd /srv/salt/ && ln -sf example.top top.sls
     
-    # install the builder base formula 
-    if [ ! -d /vagrant/cloned-projects/builder-base-formula/.git ]; then
-        git clone https://github.com/elifesciences/builder-base-formula \
-            /vagrant/cloned-projects/builder-base-formula
-    fi
-    
-    # overwrite the general purpose /etc/salt/minion file created above with 
-    # this more complex one for dev environments only
-    cp /vagrant/scripts/salt/minion /etc/salt/minion
+    # vagrant makes all formula dependencies available, including builder base formula
+
+    # overwrite the general purpose /etc/salt/minion file created above 
+    # with this more complex one for dev environments only
+    cp /vagrant/scripts/salt/minion.template /etc/salt/minion
+    custom_minion_file="/vagrant/scripts/salt/$minion_id.minion"
+    if [ -e "$custom_minion_file" ]; then
+        # this project requires a custom minion file. use that instead
+        cp "$custom_minion_file" /etc/salt/minion
+    else
+        echo "couldn't find $custom_minion_file"
+    fi        
 fi
 
 
