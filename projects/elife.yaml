@@ -1,6 +1,7 @@
 defaults:
     description: defaults for all projects in this file
     salt: '2016.3' # the version of salt these project use
+    # use False with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
     intdomain: elife.internal
@@ -317,6 +318,7 @@ elife-reporting:
             1333: 80
 
 elife-libraries:
+    domain: False
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
@@ -392,9 +394,6 @@ elife-website:
         large:
             description: intended to run temporarily
             type: m4.2xlarge
-        #end2end:
-        #    description: speeding up ingests in end2end tests
-        #    type: m4.large
     vagrant:
         ram: 3072
         ports:
@@ -452,7 +451,7 @@ bus:
     domain: null
     intdomain: null
     aws:
-        ec2: false
+        ec2: False
         sns:
             # bus-articles--prod, bus-articles--end2end, etc.
             - bus-articles--{instance}
@@ -478,6 +477,7 @@ search:
         ports:
             1244: 80
             1245: 8080
+            9920: 9200
     aws:
         type: t2.medium # 4 GB of RAM: once we know more about which software
                         # will be installed, we can choose the right machine
