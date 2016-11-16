@@ -6,16 +6,16 @@ from buildercore.core import stack_conn, utils as core_utils
 @task(alias='dumpdata')
 @requires_aws_project_stack('lax')
 def download_db_fixtures(stackname):
-    """downloads a dump of the lax database as *django fixtures* to the 
+    """downloads a dump of the lax database as *django fixtures* to the
     current directory as 'stackname-yyyymmddhhmmss'.json.gz"""
 
-    dtstamp = core_utils.utcnow().isoformat().rsplit('.',1)[0].replace(':', '-')
+    dtstamp = core_utils.utcnow().isoformat().rsplit('.', 1)[0].replace(':', '-')
     local_path = "./%s.%s.json.gz" % (stackname, dtstamp)
     remote_path = '/tmp/db.json.gz'
-    
+
     with stack_conn(stackname), cd('/srv/lax/'):
         # dump fixtures
-        run('./manage.sh dumpdata --exclude=contenttypes --natural-foreign --natural-primary --indent=4 | ' \
+        run('./manage.sh dumpdata --exclude=contenttypes --natural-foreign --natural-primary --indent=4 | '
             'gzip -9 - > ' + remote_path)
 
         # download

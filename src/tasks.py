@@ -63,7 +63,7 @@ def create_ami(stackname):
     #new_project_file = project.update_project_file(path, amiid)
     #output_file = project.write_project_file(new_project_file)
     print '\n' * 4
-    #print 'wrote', output_file
+    # print 'wrote', output_file
     print 'update project file with new ami %s. these changes must be merged and committed manually' % amiid
     print '\n' * 4
 
