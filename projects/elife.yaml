@@ -467,7 +467,7 @@ search:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     vagrant:
-        ram: 4096
+        ram: 2048
         ports:
             1244: 80
             1245: 8080
