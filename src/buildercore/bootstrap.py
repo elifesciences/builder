@@ -14,6 +14,7 @@ from collections import OrderedDict
 from datetime import datetime
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
 from .utils import first, call_while, ensure, subdict
+from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put, parallel
 import fabric.exceptions as fabric_exceptions
@@ -467,6 +468,8 @@ def delete_stack(stackname):
         utils.call_while(partial(is_deleting, stackname), update_msg='Waiting for AWS to finish deleting stack ...')
         keypair.delete_keypair(stackname)
         delete_stack_file(stackname)
+        delete_dns(stackname)
+
         LOG.info("stack %r deleted", stackname)
     except BotoServerError as err:
         LOG.exception("[%s: %s] %s (request-id: %s)", err.status, err.reason, err.message, err.request_id)
