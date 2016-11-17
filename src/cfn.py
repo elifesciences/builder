@@ -201,7 +201,7 @@ def _interactive_ssh(command):
 
 @task
 @requires_aws_stack
-def download_file(stackname, path, destination, allow_missing="False", use_bootstrap_user="False"):
+def download_file(stackname, path, destination=None, allow_missing="False", use_bootstrap_user="False"):
     """
     Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
 
@@ -211,6 +211,8 @@ def download_file(stackname, path, destination, allow_missing="False", use_boots
 
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
+    if not destination:
+        destination = '.'
     utils.mkdirp(destination)
     with stack_conn(stackname, username=_user(use_bootstrap_user)):
         if _should_be_skipped(path, allow_missing):
