@@ -240,7 +240,9 @@ elife-bot:
             #s3:
             #    end2end-elife-production-final:
             #        sqs-notifications:
-            #            end2end-incoming-queue: True
+            #            end2end-incoming-queue: {}
+            #               #prefix: null
+            #               #suffix: null
     vagrant:
         ports:
             1231: 80

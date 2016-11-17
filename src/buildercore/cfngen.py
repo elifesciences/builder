@@ -134,7 +134,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     # but if we start using {instance}, here is the place to replace it
     # - look at context['project']['aws']['s3']
     # - build what is necessary for buildercore.bootstrap.setup_s3()
-    context['s3'] = [] 
+    context['s3'] = context['project']['aws']['s3']
 
     return context
 
