@@ -236,13 +236,11 @@ elife-bot:
                 device: /dev/xvdh
         end2end:
             description: speeding up end2end tests
-            type: c4.xlarge
+            type: c4.2xlarge
             s3:
                 end2end-elife-production-final:
                     sqs-notifications:
                         end2end-incoming-queue: True
-
-
     vagrant:
         ports:
             1231: 80
