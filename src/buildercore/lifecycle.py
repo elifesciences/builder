@@ -7,7 +7,7 @@ import logging
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
-from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id
+from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps
 from .utils import call_while, ensure
 from .context_handler import load_context
 
@@ -27,7 +27,15 @@ def start(stackname):
     LOG.info("Nodes to be started: %s", to_be_started)
     _connection(stackname).start_instances(to_be_started)
     _wait_all_in_state(stackname, 'running', to_be_started)
-    stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+
+    def some_node_is_still_not_networked():
+        try:
+            stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+        except NoPublicIps as e:
+            LOG.info("No public ips available yet: %s", e.message)
+            return True
+        return False
+    call_while(some_node_is_still_not_networked, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
     update_dns(stackname)
 
 def stop(stackname):

@@ -233,11 +233,20 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
         dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
 
-def ensure(assertion, msg, *args):
+def ensure(assertion, msg, *args, **kwargs):
     """intended as a convenient replacement for `assert` statements that
     get compiled away with -O flags"""
+
+    exception_class = AssertionError
+    if 'exception_class' in kwargs:
+        exception_class = kwargs['exception_class']
+        del kwargs['exception_class']
+
+    if len(kwargs):
+        raise ValueError("No other keyword arguments than exception_class are accepted: %s", kwargs)
+
     if not assertion:
-        raise AssertionError(msg % args)
+        raise exception_class(msg % args)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
