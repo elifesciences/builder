@@ -133,7 +133,11 @@ def find_ec2_instances(stackname, state='running', node_ids=None):
     "returns list of ec2 instances data for a *specific* stackname"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
     conn = connect_aws_with_stack(stackname, 'ec2')
-    return conn.get_only_instances(filters=_all_nodes_filter(stackname, state=state, node_ids=node_ids))
+    filters = _all_nodes_filter(stackname, state=state, node_ids=node_ids)
+    ec2_instances = conn.get_only_instances(filters=filters)
+    LOG.info("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
+    return ec2_instances
+
 
 def _all_nodes_filter(stackname, state, node_ids):
     query = {

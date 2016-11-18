@@ -72,7 +72,7 @@ def stop_if_next_hour_is_imminent(stackname, minimum_minutes=55):
 def _wait_all_in_state(stackname, state, node_ids):
     def some_node_is_still_not_compliant():
         states = _nodes_states(stackname)
-        LOG.debug("states: %s", states)
+        LOG.info("states of %s nodes (%s): %s", stackname, node_ids, states)
         return set(states.values()) != {state}
     # TODO: timeout argument
     call_while(some_node_is_still_not_compliant, interval=2, update_msg="waiting for states of nodes to be %s" % state, done_msg="all nodes in state %s" % state)
