@@ -54,9 +54,10 @@ def _validate():
             'build vars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.',
             buildvars
         )
+        missing_keys = core_utils.missingkeys(buildvars, ['stackname', 'instance_id', 'branch', 'revision', 'is_prod_instance'])
         core_utils.ensure(
-            core_utils.hasallkeys(buildvars, ['stackname', 'instance_id', 'branch', 'revision', 'is_prod_instance']),
-            'build vars are not valid. use `./bldr buildvars.fix` to attempt to fix this.'
+            len(missing_keys) == 0,
+            'build vars are not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys
         )
         return buildvars
 
