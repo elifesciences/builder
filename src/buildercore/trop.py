@@ -11,7 +11,7 @@ it to the correct file etc."""
 
 from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
-#from troposphere import s3
+from troposphere import s3
 from troposphere import elasticloadbalancing as elb
 
 from functools import partial
@@ -355,14 +355,11 @@ def render_sqs(context, template):
         ))
 
 def render_s3(context, template):
-    pass
-    # in the future, we will do this. Now there are too many buckets
-    # that have been created manually
-    # for bucket_name in context['s3']:
-    #    template.add_resource(s3.Bucket(
-    #        _sanitize_title(bucket_name) + "Bucket",
-    #        BucketName=bucket_name
-    #    ))
+    for bucket_name in context['s3']:
+        template.add_resource(s3.Bucket(
+            _sanitize_title(bucket_name) + "Bucket",
+            BucketName=bucket_name
+        ))
 
 def render_elb(context, template, ec2_instances):
     ensure(any([context['full_hostname'], context['int_full_hostname']]),

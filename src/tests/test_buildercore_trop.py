@@ -161,3 +161,17 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('AliasTarget', dns.keys())
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
         self.assertIn('DomainName', outputs.keys())
+
+    def test_s3_template(self):
+        extra = {
+            'stackname': 'project-with-s3--prod',
+        }
+        context = cfngen.build_context('project-with-s3', **extra)
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        print data
+        self.assertEqual(['ProjectWithS3ProdBucket'], data['Resources'].keys())
+        self.assertEqual(
+            {'Type': 'AWS::S3::Bucket', 'Properties': {'BucketName': 'project-with-s3-prod'}},
+            data['Resources']['ProjectWithS3ProdBucket']
+        )

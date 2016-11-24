@@ -159,6 +159,13 @@ project-with-sqs:
                 subscriptions:
                     - widgets-{instance}
 
+project-with-s3:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2: false
+        s3: 
+            project-with-s3-{instance}: 
+
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:

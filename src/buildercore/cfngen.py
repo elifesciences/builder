@@ -130,11 +130,11 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
                 subscriptions.append(_parameterize(topic_template_name))
         context['sqs'][queue_name] = subscriptions
 
-    # at the moment, don't support any parameterization of names,
-    # but if we start using {instance}, here is the place to replace it
-    # - look at context['project']['aws']['s3']
-    # - build what is necessary for buildercore.bootstrap.setup_s3()
-    context['s3'] = context['project']['aws']['s3']
+    # future: build what is necessary for buildercore.bootstrap.setup_s3()
+    context['s3'] = {}
+    for bucket_template_name in context['project']['aws']['s3']:
+        bucket_name = _parameterize(bucket_template_name)
+        context['s3'][bucket_name] = context['project']['aws']['s3'][bucket_template_name]
 
     return context
 
