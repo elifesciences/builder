@@ -167,11 +167,11 @@ class TestBuildercoreTrop(base.BaseCase):
             'stackname': 'project-with-s3--prod',
         }
         context = cfngen.build_context('project-with-s3', **extra)
+        self.assertEquals({'sqs-notifications':{}}, context['s3']['project-with-s3-bucket-in-env-prod'])
         cfn_template = trop.render(context)
         data = json.loads(cfn_template)
-        print data
-        self.assertEqual(['ProjectWithS3ProdBucket'], data['Resources'].keys())
+        self.assertEqual(['ProjectWithS3BucketInEnvProdBucket'], data['Resources'].keys())
         self.assertEqual(
-            {'Type': 'AWS::S3::Bucket', 'Properties': {'BucketName': 'project-with-s3-prod'}},
-            data['Resources']['ProjectWithS3ProdBucket']
+            {'Type': 'AWS::S3::Bucket', 'Properties': {'BucketName': 'project-with-s3-bucket-in-env-prod'}},
+            data['Resources']['ProjectWithS3BucketInEnvProdBucket']
         )

@@ -134,7 +134,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     context['s3'] = {}
     for bucket_template_name in context['project']['aws']['s3']:
         bucket_name = _parameterize(bucket_template_name)
-        context['s3'][bucket_name] = context['project']['aws']['s3'][bucket_template_name]
+        configuration = context['project']['aws']['s3'][bucket_template_name]
+        context['s3'][bucket_name] = configuration if configuration else {'sqs-notifications':{}}
 
     return context
 

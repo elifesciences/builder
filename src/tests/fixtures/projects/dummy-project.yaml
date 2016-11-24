@@ -164,7 +164,7 @@ project-with-s3:
     aws:
         ec2: false
         s3: 
-            project-with-s3-{instance}: 
+            project-with-s3-bucket-in-env-{instance}: 
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
