@@ -135,7 +135,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     for bucket_template_name in context['project']['aws']['s3']:
         bucket_name = _parameterize(bucket_template_name)
         configuration = context['project']['aws']['s3'][bucket_template_name]
-        context['s3'][bucket_name] = configuration if configuration else {'sqs-notifications':{}}
+        context['s3'][bucket_name] = configuration if configuration else {'sqs-notifications': {}}
 
     return context
 
@@ -251,9 +251,17 @@ def template_delta(pname, **more_context):
     old_template = read_template(more_context['stackname'])
     context = build_context(pname, **more_context)
     template = json.loads(render_template(context))
+
+    def _related_to_ec2(output):
+        if 'Value' in output:
+            if 'Ref' in output['Value']:
+                return 'EC2Instance' in output['Value']['Ref']
+            if 'Fn::GetAtt' in output['Value']:
+                return 'EC2Instance' in output['Value']['Fn::GetAtt'][0]
+        return False
     return {
-        'Outputs': {title: o for (title, o) in template['Outputs'].iteritems() if title not in old_template['Outputs']},
-        'Resources': {title: r for (title, r) in template['Resources'].iteritems() if title not in old_template['Resources']}
+        'Outputs': {title: o for (title, o) in template['Outputs'].iteritems() if title not in old_template['Outputs'] and not _related_to_ec2(o)},
+        'Resources': {title: r for (title, r) in template['Resources'].iteritems() if title not in old_template['Resources'] and 'EC2Instance' not in title}
     }
 
 def merge_delta(stackname, delta):
