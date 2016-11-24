@@ -68,6 +68,7 @@ def update_template(stackname):
     more_context = cfngen.choose_config(stackname)
     delta = cfngen.template_delta(pname, **more_context)
     LOG.info("%s", pformat(delta))
+    utils.confirm('Confirming changes to the stack template?')
 
     new_template = cfngen.merge_delta(stackname, delta)
     bootstrap.update_template(stackname, new_template)
