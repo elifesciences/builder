@@ -278,6 +278,11 @@ def update_s3_stack(stackname):
     if not pdata['aws']['s3']:
         return
     context = context_handler.load_context(stackname)
+
+    if 's3' not in context:
+        # old instance of the stack that hasn't any S3 buckets
+        return
+
     setup_s3(stackname, context['s3'], pdata['aws']['region'], pdata['aws']['account_id'])
 
 
