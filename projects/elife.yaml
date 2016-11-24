@@ -231,6 +231,8 @@ elife-bot:
             - 80
         ext:
             size: 30 # GB
+        s3:
+            "{instance}-elife-silent-corrections":
     aws-alt:
         #prod:
         #    eip: 54.164.145.166
@@ -244,7 +246,6 @@ elife-bot:
         end2end:
             description: speeding up end2end tests
             type: c4.2xlarge
-            #s3:
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
