@@ -122,6 +122,7 @@ lax:
             bot-lax-{instance}-out: {}
     aws-alt:
         end2end:
+            type: c4.2xlarge
             description: RDS backed
             rds:
                 storage: 5
