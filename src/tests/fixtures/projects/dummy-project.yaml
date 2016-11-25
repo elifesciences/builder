@@ -164,7 +164,9 @@ project-with-s3:
     aws:
         ec2: false
         s3: 
-            project-with-s3-bucket-in-env-{instance}: 
+            widgets-{instance}: 
+            widgets-archive-{instance}: 
+                deletion-policy: retain
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3

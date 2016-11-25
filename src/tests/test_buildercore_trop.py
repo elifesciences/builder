@@ -167,17 +167,33 @@ class TestBuildercoreTrop(base.BaseCase):
             'stackname': 'project-with-s3--prod',
         }
         context = cfngen.build_context('project-with-s3', **extra)
-        self.assertEquals({'sqs-notifications': {}}, context['s3']['project-with-s3-bucket-in-env-prod'])
+        self.assertEquals(
+            {
+                'sqs-notifications': {},
+                'deletion-policy': 'delete',
+            },
+            context['s3']['widgets-prod']
+        )
         cfn_template = trop.render(context)
         data = json.loads(cfn_template)
-        self.assertEqual(['ProjectWithS3BucketInEnvProdBucket'], data['Resources'].keys())
+        self.assertEqual(['WidgetsArchiveProdBucket', 'WidgetsProdBucket'], data['Resources'].keys())
         self.assertEqual(
             {
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Delete',
                 'Properties': {
-                    'BucketName': 'project-with-s3-bucket-in-env-prod'
+                    'BucketName': 'widgets-prod'
                 }
             },
-            data['Resources']['ProjectWithS3BucketInEnvProdBucket']
+            data['Resources']['WidgetsProdBucket']
+        )
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Retain',
+                'Properties': {
+                    'BucketName': 'widgets-archive-prod'
+                }
+            },
+            data['Resources']['WidgetsArchiveProdBucket']
         )

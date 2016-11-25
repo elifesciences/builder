@@ -69,7 +69,15 @@ defaults:
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
         sqs: []
         sns: []
-        s3: []
+        # e.g.
+        # s3: 
+        #    bucket-name-{instance}:
+        #       sqs-notifications: # not implemented
+        #           queue-name:
+        #               prefix: 'elife-'
+        #               suffix: '.xml'
+        #       deletion-policy: delete|retain
+        s3: {}
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
