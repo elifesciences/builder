@@ -7,7 +7,7 @@ import logging
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
-from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps
+from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
 from .context_handler import load_context
 
@@ -28,14 +28,20 @@ def start(stackname):
     _connection(stackname).start_instances(to_be_started)
     _wait_all_in_state(stackname, 'running', to_be_started)
 
-    def some_node_is_still_not_networked():
+    def some_node_is_not_ready():
         try:
             stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
         except NoPublicIps as e:
             LOG.info("No public ips available yet: %s", e.message)
             return True
+        except NoRunningInstances as e:
+            # shouldn't be necessary because of _wait_all_in_state() we do before, but the EC2 API is not consistent
+            # and sometimes selecting instances filtering for the `running` state doesn't find them
+            # even if their state is `running` according to the latest API call
+            LOG.info("No running instances yet: %s", e.message)
+            return True
         return False
-    call_while(some_node_is_still_not_networked, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
+    call_while(some_node_is_not_ready, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
     update_dns(stackname)
 
 def stop(stackname):

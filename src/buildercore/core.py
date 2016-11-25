@@ -354,6 +354,9 @@ def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 
+class NoRunningInstances(Exception):
+    pass
+
 # TODO: rename or something
 def stack_data(stackname, ensure_single_instance=False):
     """like `describe_stack`, but returns a list of dictionaries"""
@@ -362,7 +365,7 @@ def stack_data(stackname, ensure_single_instance=False):
         ec2_instances = find_ec2_instances(stackname)
 
         if len(ec2_instances) < 1:
-            raise RuntimeError("found no running ec2 instances for %r. The stack nodes may have been stopped" % stackname)
+            raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped" % stackname)
         elif len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
