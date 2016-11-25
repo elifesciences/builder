@@ -358,7 +358,8 @@ def render_s3(context, template):
     for bucket_name in context['s3']:
         template.add_resource(s3.Bucket(
             _sanitize_title(bucket_name) + "Bucket",
-            BucketName=bucket_name
+            BucketName=bucket_name,
+            DeletionPolicy='Delete',
         ))
 
 def render_elb(context, template, ec2_instances):

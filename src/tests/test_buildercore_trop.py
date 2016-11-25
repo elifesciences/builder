@@ -172,6 +172,12 @@ class TestBuildercoreTrop(base.BaseCase):
         data = json.loads(cfn_template)
         self.assertEqual(['ProjectWithS3BucketInEnvProdBucket'], data['Resources'].keys())
         self.assertEqual(
-            {'Type': 'AWS::S3::Bucket', 'Properties': {'BucketName': 'project-with-s3-bucket-in-env-prod'}},
+            {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Delete',
+                'Properties': {
+                    'BucketName': 'project-with-s3-bucket-in-env-prod'
+                }
+            },
             data['Resources']['ProjectWithS3BucketInEnvProdBucket']
         )
