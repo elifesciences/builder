@@ -17,4 +17,8 @@ fi
 # a wrapper around fabric that activates the elife-builder virtualenv
 
 fabric=$(which fab)
-$fabric "$*" -f src/fabfile.py
+if [ -e newrelic.ini ]; then
+    NEW_RELIC_CONFIG_FILE=./newrelic.ini newrelic-admin run-program $fabric "$*" -f src/fabfile.py
+else
+    $fabric "$*" -f src/fabfile.py
+fi
