@@ -199,3 +199,8 @@ def repair_cfn_info(stackname):
 def repair_context(stackname):
     # triggers the workaround of downloading it from EC2 and persisting it
     load_context(stackname)
+
+@task
+@requires_aws_stack
+def remove_minion_key(stackname):
+    bootstrap.remove_minion_key(stackname)

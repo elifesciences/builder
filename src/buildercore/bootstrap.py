@@ -12,7 +12,7 @@ from StringIO import StringIO
 from . import core, utils, config, keypair, bvars
 from collections import OrderedDict
 from datetime import datetime
-from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname
+from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
@@ -454,8 +454,16 @@ def delete_stack_file(stackname):
         return not os.path.exists(path)
     return dict(zip(paths, map(_unlink, paths)))
 
+def remove_minion_key(stackname):
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    with stack_conn(core.find_master(region)):
+        sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
+
+
 def delete_stack(stackname):
     try:
+        remove_minion_key(stackname)
         connect_aws_with_stack(stackname, 'cfn').delete_stack(stackname)
 
         def is_deleting(stackname):
