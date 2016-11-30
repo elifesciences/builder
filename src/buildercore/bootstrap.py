@@ -102,7 +102,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
 def _wait_until_in_progress(stackname):
     def is_updating(stackname):
         return core.describe_stack(stackname).stack_status in ['CREATE_IN_PROGRESS']
-    utils.call_while(partial(is_updating, stackname), update_msg='Waiting for AWS to finish creating stack ...')
+    utils.call_while(partial(is_updating, stackname), timeout=1200, update_msg='Waiting for AWS to finish creating stack ...')
 
 def setup_ec2(stackname, context_ec2):
     if not context_ec2:
