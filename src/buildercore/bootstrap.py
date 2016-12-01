@@ -458,12 +458,8 @@ def remove_minion_key(stackname):
     pdata = project_data_for_stackname(stackname)
     region = pdata['aws']['region']
     master_stack = core.find_master(region)
-    try:
-        with stack_conn(master_stack):
-            sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
-    except ValueError:
-        LOG.info("No master detected as %s, skipping removal of key", master_stack)
-
+    with stack_conn(master_stack):
+        sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
 
 def delete_stack(stackname):
     try:
