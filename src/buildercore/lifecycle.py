@@ -9,12 +9,15 @@ import fabric.exceptions as fabric_exceptions
 from . import config
 from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
-from .context_handler import load_context
+from .context_handler import load_context, download_from_s3
 
 LOG = logging.getLogger(__name__)
 
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
+
+    # update local copy of of context from s3
+    download_from_s3(stackname)
 
     states = _nodes_states(stackname)
     LOG.info("Current states: %s", states)
