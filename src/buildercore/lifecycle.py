@@ -17,7 +17,7 @@ def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
 
     # update local copy of of context from s3
-    download_from_s3(stackname)
+    download_from_s3(stackname, refresh=True)
 
     states = _nodes_states(stackname)
     LOG.info("Current states: %s", states)

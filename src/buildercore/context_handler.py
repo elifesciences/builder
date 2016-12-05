@@ -56,11 +56,13 @@ def delete_context_from_s3(stackname):
     return s3.delete(key)
 
 @if_enabled('write-context-to-s3', silent=True)
-def download_from_s3(stackname):
+def download_from_s3(stackname, refresh=False):
     key = s3_context_key(stackname)
     if not s3.exists(key):
         return False
 
     expected_path = local_context_file(stackname)
+    if os.path.exists(expected_path) and refresh:
+        os.unlink(expected_path)
     s3.download(key, expected_path)
     return True
