@@ -94,8 +94,7 @@ def requires_aws_stack(func):
         region = aws.find_region(stackname)
         asl = core.active_stack_names(region)
         if not asl:
-            print '\nno AWS stacks *in an active state* exist, cannot continue.'
-            return
+            raise RuntimeError('\nno AWS stacks *in an active state* exist, cannot continue.')
         if not stackname or stackname not in asl:
             stackname = utils._pick("stack", asl, default_file=deffile('.active-stack'))
         args = args[1:]
