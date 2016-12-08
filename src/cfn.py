@@ -61,6 +61,8 @@ def update_template(stackname):
     Moreover, EC2 instances must be running while this is executed or their
     resources like PublicIP will be inaccessible"""
 
+    core_lifecycle.start(stackname)
+
     (pname, _) = core.parse_stackname(stackname)
     current_template = bootstrap.current_template(stackname)
     cfngen.write_template(stackname, json.dumps(current_template))

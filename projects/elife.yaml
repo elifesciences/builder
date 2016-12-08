@@ -241,6 +241,8 @@ elife-bot:
             size: 30 # GB
         s3:
             "{instance}-elife-silent-corrections":
+            "{instance}-elife-published":
+                deletion-policy: retain
     aws-alt:
         #prod:
         #    eip: 54.164.145.166
