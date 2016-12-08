@@ -92,6 +92,11 @@ def uin(param, default=0xDEADBEEF):
 def get_input(message):
     return raw_input(message)
 
+def confirm(message):
+    print message
+    print 'press any key to confirm (ctrl-c to quit)'
+    get_input('')
+
 def walk_nested_struct(val, fn):
     "walks a potentially nested structure, calling `fn` on each value it encounters"
     if isinstance(val, dict):

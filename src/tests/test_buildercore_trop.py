@@ -161,3 +161,39 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('AliasTarget', dns.keys())
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
         self.assertIn('DomainName', outputs.keys())
+
+    def test_s3_template(self):
+        extra = {
+            'stackname': 'project-with-s3--prod',
+        }
+        context = cfngen.build_context('project-with-s3', **extra)
+        self.assertEquals(
+            {
+                'sqs-notifications': {},
+                'deletion-policy': 'delete',
+            },
+            context['s3']['widgets-prod']
+        )
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        self.assertEqual(['WidgetsArchiveProdBucket', 'WidgetsProdBucket'], data['Resources'].keys())
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Delete',
+                'Properties': {
+                    'BucketName': 'widgets-prod'
+                }
+            },
+            data['Resources']['WidgetsProdBucket']
+        )
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Retain',
+                'Properties': {
+                    'BucketName': 'widgets-archive-prod'
+                }
+            },
+            data['Resources']['WidgetsArchiveProdBucket']
+        )

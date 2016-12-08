@@ -69,7 +69,15 @@ defaults:
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
         sqs: []
         sns: []
-        s3: []
+        # e.g.
+        # s3: 
+        #    bucket-name-{instance}:
+        #       sqs-notifications: # not implemented
+        #           queue-name:
+        #               prefix: 'elife-'
+        #               suffix: '.xml'
+        #       deletion-policy: delete|retain
+        s3: {}
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -231,6 +239,8 @@ elife-bot:
             - 80
         ext:
             size: 30 # GB
+        s3:
+            "{instance}-elife-silent-corrections":
     aws-alt:
         #prod:
         #    eip: 54.164.145.166
@@ -244,7 +254,6 @@ elife-bot:
         end2end:
             description: speeding up end2end tests
             type: c4.2xlarge
-            #s3:
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}

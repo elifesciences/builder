@@ -52,7 +52,14 @@ def update(stackname, *service_list):
 def update_template(stackname):
     """Limited update of the Cloudformation template.
 
-    Resources can be added, but existing ones are immutable"""
+    Resources can be added, but existing ones are immutable.
+    
+    Moreover, we never add anything related to EC2 instances as they are
+    not supported anyway (they will come up as part of the template
+    but without any software being on it)
+    
+    Moreover, EC2 instances must be running while this is executed or their
+    resources like PublicIP will be inaccessible"""
 
     (pname, _) = core.parse_stackname(stackname)
     current_template = bootstrap.current_template(stackname)
@@ -61,6 +68,7 @@ def update_template(stackname):
     more_context = cfngen.choose_config(stackname)
     delta = cfngen.template_delta(pname, **more_context)
     LOG.info("%s", pformat(delta))
+    utils.confirm('Confirming changes to the stack template?')
 
     new_template = cfngen.merge_delta(stackname, delta)
     bootstrap.update_template(stackname, new_template)
