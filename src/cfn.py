@@ -53,11 +53,11 @@ def update_template(stackname):
     """Limited update of the Cloudformation template.
 
     Resources can be added, but existing ones are immutable.
-    
+
     Moreover, we never add anything related to EC2 instances as they are
     not supported anyway (they will come up as part of the template
     but without any software being on it)
-    
+
     Moreover, EC2 instances must be running while this is executed or their
     resources like PublicIP will be inaccessible"""
 
@@ -262,7 +262,7 @@ def _user(use_bootstrap_user):
 def cmd(stackname, command=None, username=DEPLOY_USER):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
-    print "Connecting to: %s" % stackname
+    LOG.info("Connecting to: %s", stackname)
     stack_all_ec2_nodes(
         stackname,
         (parallel(run), {'command': command}),
