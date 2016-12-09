@@ -358,7 +358,7 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
-        type: t2.medium
+        type: t2.large
         ports:
             - 22
             - 80
