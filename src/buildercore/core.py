@@ -231,17 +231,17 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
     def single_node_work():
-        try:
-            workfn(**work_kwargs)
-        except config.FabricException as err:
-            if str(err.message).startswith('Timed out trying to connect'):
-                LOG.info("Timeout while executing task on %s (node %s), retrying once", current_ip(), current_ec2_node_id())
-                workfn(**work_kwargs)
-            else:
-                raise err
+        workfn(**work_kwargs)
     with settings(**params):
         # TODO: decorate work to print what it is connecting only
-        execute(single_node_work, hosts=public_ips.values())
+        try:
+            execute(single_node_work, hosts=public_ips.values())
+        except config.FabricException as err:
+            if str(err.message).startswith('Timed out trying to connect'):
+                LOG.info("Timeout while executing task on %s (node %s), retrying once on all nodes", current_ip(), current_ec2_node_id())
+                execute(single_node_work, hosts=public_ips.values())
+            else:
+                raise err
 
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
