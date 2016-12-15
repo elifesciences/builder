@@ -397,8 +397,6 @@ def update_ec2_stack(stackname):
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
 
-    # forward-agent == ssh -A
-
     def _update_ec2_node():
         # upload private key if not present remotely
         if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
@@ -433,7 +431,7 @@ def update_ec2_stack(stackname):
         # this will tell the machine to update itself
         run_script('highstate.sh')
 
-    stack_all_ec2_nodes(stackname, parallel(_update_ec2_node), username=BOOTSTRAP_USER, forward_agent=True)
+    stack_all_ec2_nodes(stackname, parallel(_update_ec2_node), username=BOOTSTRAP_USER)
 
 @core.requires_stack_file
 def delete_stack_file(stackname):
