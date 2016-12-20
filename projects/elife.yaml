@@ -147,14 +147,16 @@ api-gateway:
     aws:
         ports:
             - 22
-            - 80 # TODO: remove in favor of only 443? will require certificates for all environments
+            # only internal traffic has access to port 80 and http
+            - 80:
+                cidr-ip: 10.0.0.0/16
+            # the world must use https
             - 443
-            # - 8000: # possibly expose this to public. Kong uses this to *proxy* requests
-            # - 8001: # don't ever expose to public. Kong uses this for API management
+            # - 8000: # don't expose this to public. Kong uses this to proxy requests
+            # - 8001: # don't ever expose to public. Kong uses this for API admin
     vagrant:
         ports:
             1323: 80
-
 
 journal:
     subdomain: journal # journal.elifesciences.org
@@ -352,7 +354,7 @@ elife-libraries:
             type: c4.2xlarge
 
     vagrant:
-        ram: 2048
+        ram: 1024
 
 elife-alfred:
     subdomain: alfred
