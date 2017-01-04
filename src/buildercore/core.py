@@ -238,7 +238,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
             execute(single_node_work, hosts=public_ips.values())
         except config.FabricException as err:
             if str(err.message).startswith('Timed out trying to connect'):
-                LOG.info("Timeout while executing task on %s (node %s), retrying once on all nodes", current_ip(), current_ec2_node_id())
+                LOG.info("Timeout while executing task on a %s node (%s), retrying once on all nodes", stackname, err.message)
                 execute(single_node_work, hosts=public_ips.values())
             else:
                 raise err
