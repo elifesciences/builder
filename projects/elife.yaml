@@ -483,6 +483,9 @@ bus:
             - bus-interviews--{instance}
             - bus-blog-articles--{instance}
             - bus-annual-reports--{instance}
+            - bus-covers--{instance}
+            - bus-labs-experiments--{instance}
+            - bus-press-packages--{instance}
 
 search:
     domain: False
