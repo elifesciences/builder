@@ -457,7 +457,8 @@ medium:
         type: t2.micro
         ports:
             - 22
-            - 80
+            - 80:
+                cidr-ip: 10.0.2.0/24 # internal access only
     aws-alt:
         clustered:
             ec2:
@@ -503,7 +504,8 @@ search:
                         # will be installed, we can choose the right machine
         ports:
             - 22
-            - 80
+            - 80:
+                cidr-ip: 10.0.2.0/24 # internal access only
         sqs:
             # search--prod, search--end2end, etc.
             search--{instance}:
