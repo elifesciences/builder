@@ -167,7 +167,8 @@ journal:
         ports:
             - 22
             - 443
-            - 80
+            - 80:
+                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
     aws-alt:
         end2end:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
