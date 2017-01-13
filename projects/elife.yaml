@@ -70,7 +70,7 @@ defaults:
         sqs: []
         sns: []
         # e.g.
-        # s3: 
+        # s3:
         #    bucket-name-{instance}:
         #       sqs-notifications: # not implemented
         #           queue-name:
@@ -85,23 +85,23 @@ defaults:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
-        # box-url not needed for boxes hosted on Atlas 
-        box-url: null 
+        # box-url not needed for boxes hosted on Atlas
+        box-url: null
         ip: 192.168.33.44
         ram: 1024
         cpus: 2
         cpucap: 100 # percent (vagrant default)
- 
+
 basebox:
     aws:
         ec2:
             ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
-            - 22    
+            - 22
     vagrant: {}
 
 master-server:
-    # formula-repo for the 'master-server' project should contain the 
+    # formula-repo for the 'master-server' project should contain the
     # confidential pillar data, master config and state top file.
     # see: https://github.com/elifesciences/builder-private-example
     formula-repo: ssh://git@github.com/elifesciences/master-server-formula
@@ -278,7 +278,7 @@ journal-cms:
         ports:
             - 22
             - 443
-            - 80: 
+            - 80:
                 cidr-ip: 10.0.2.0/24 # access via VPC ip range only
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
@@ -437,7 +437,7 @@ anonymous:
 jats4r:
     aws:
         ec2:
-            ami: ami-c60b90d1 # us-east-1 xenial 16.04 LTS amd64 hvm:ebs-ssd 20160815 hvm  
+            ami: ami-c60b90d1 # us-east-1 xenial 16.04 LTS amd64 hvm:ebs-ssd 20160815 hvm
         type: t2.micro
         ports:
             - 22
@@ -464,7 +464,7 @@ medium:
         clustered:
             ec2:
                 cluster-size: 2
-            elb: 
+            elb:
                 protocol: http
 
 bus:
@@ -522,6 +522,33 @@ search:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
 
+recommendations:
+    domain: False
+    subdomain: recommendations
+    repo: https://github.com/elifesciences/recommendations
+    formula-repo: https://github.com/elifesciences/recommendations-formula
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+        - https://github.com/elifesciences/api-dummy-formula
+    vagrant:
+        ram: 2048
+        ports:
+            1244: 80
+            1245: 8080
+    aws:
+        type: t2.medium # 4 GB of RAM: same as search for now.
+        ports:
+            - 22
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
+        sqs:
+            recommendations--{instance}:
+                subscriptions:
+                    - bus-articles--{instance}
+                    - bus-podcast-episodes--{instance}
+                    - bus-subjects--{instance}
+                    - bus-collections--{instance}
+
 jats4r-validator:
     #domain: jats4r.org
     subdomain: validator # validator.jats4r.org
@@ -534,7 +561,7 @@ jats4r-validator:
     vagrant:
         ports:
             1239: 80
-            
+
 statusbase:
     subdomain: statusbase
     repo: https://github.com/ep320/statusbase
