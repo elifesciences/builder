@@ -86,7 +86,7 @@ def rds_security(context):
         'postgres': 5432,
         'mysql': 3306
     }
-    ingress_ports = [engine_ports[context['project']['aws']['rds']['engine']]]
+    ingress_ports = [engine_ports[context['project']['aws']['rds']['engine'].lower()]]
     return security_group("VPCSecurityGroup",
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
