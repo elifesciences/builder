@@ -222,11 +222,7 @@ elife-metrics:
         prod:
             description: production environment for metrics. RDS backed
             rds:
-                storage: 5
-        master:
-            description: production environment for metrics. RDS backed
-            rds:
-                storage: 5
+                storage: 10
     vagrant:
         ports:
             1240: 80
