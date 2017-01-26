@@ -548,6 +548,29 @@ recommendations:
                     - bus-subjects--{instance}
                     - bus-collections--{instance}
 
+personalised-covers:
+    domain: False
+    subdomain: personalised-covers
+    repo: https://github.com/elifesciences/personalised-covers
+    formula-repo: https://github.com/elifesciences/personalised-covers-formula
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+        - https://github.com/elifesciences/api-dummy-formula
+    vagrant:
+        ram: 1024
+        ports:
+            1246: 80
+            1247: 8080
+    aws:
+        type: t2.micro # 1 GB of RAM: Unsure memory stats for PDF generation.
+        ports:
+            - 22
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
+        s3:
+            "{instance}-elife-personalised-covers":
+                deletion-policy: retain
+
 jats4r-validator:
     #domain: jats4r.org
     subdomain: validator # validator.jats4r.org
