@@ -609,3 +609,13 @@ observer:
         ram: 2048 # metabase, mostly
         ports:
             1239: 80
+
+error-pages:
+    description: static deployment of https://github.com/elifesciences/error-pages
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: False
+        s3:
+            "{instance}-elife-error-pages":
