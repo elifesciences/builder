@@ -356,10 +356,35 @@ def render_sqs(context, template):
 
 def render_s3(context, template):
     for bucket_name in context['s3']:
+        props = {
+            'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize()
+        }
+        bucket_title = _sanitize_title(bucket_name) + "Bucket"
+        if context['s3'][bucket_name]['website-configuration']:
+            index_document = context['s3'][bucket_name]['website-configuration'].get('index-document', 'index.html')
+            props['WebsiteConfiguration'] = s3.WebsiteConfiguration(
+                IndexDocument=index_document
+            )
+            template.add_resource(s3.BucketPolicy(
+                "%sPolicy" % bucket_title,
+                Bucket=bucket_name,
+                PolicyDocument={
+                    "Version": "2012-10-17",
+                    "Statement": [{
+                        "Sid": "AddPerm",
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": ["s3:GetObject"],
+                        "Resource":[
+                            "arn:aws:s3:::%s/*" % bucket_name
+                        ]
+                    }]
+                }
+            ))
         template.add_resource(s3.Bucket(
-            _sanitize_title(bucket_name) + "Bucket",
+            bucket_title,
             BucketName=bucket_name,
-            DeletionPolicy=context['s3'][bucket_name]['deletion-policy'].capitalize(),
+            **props
         ))
 
 def render_elb(context, template, ec2_instances):
