@@ -170,6 +170,7 @@ project-with-s3:
             widgets-static-hosting-{instance}:
                 website-configuration:
                     index-document: index.html
+                cors: True
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3

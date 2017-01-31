@@ -621,3 +621,4 @@ error-pages:
             "{instance}-elife-error-pages":
                 website-configuration:
                     index-document: index.html
+                cors: True

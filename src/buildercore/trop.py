@@ -360,6 +360,15 @@ def render_s3(context, template):
             'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize()
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
+        if context['s3'][bucket_name]['cors']:
+            props['CorsConfiguration'] = s3.CorsConfiguration(
+                CorsRules=[
+                    s3.CorsRules(
+                        AllowedMethods=['GET', 'HEAD'],
+                        AllowedOrigins=['*']
+                    )
+                ]
+            )
         if context['s3'][bucket_name]['website-configuration']:
             index_document = context['s3'][bucket_name]['website-configuration'].get('index-document', 'index.html')
             props['WebsiteConfiguration'] = s3.WebsiteConfiguration(

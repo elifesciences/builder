@@ -172,6 +172,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'sqs-notifications': {},
                 'deletion-policy': 'delete',
                 'website-configuration': None,
+                'cors': None,
             },
             context['s3']['widgets-prod']
         )
@@ -206,6 +207,14 @@ class TestBuildercoreTrop(base.BaseCase):
                 'DeletionPolicy': 'Delete',
                 'Properties': {
                     'BucketName': 'widgets-static-hosting-prod',
+                    'CorsConfiguration': {
+                        'CorsRules': [
+                            {
+                                'AllowedMethods': ['GET', 'HEAD'],
+                                'AllowedOrigins': ['*'],
+                            },
+                        ],
+                    },
                     'WebsiteConfiguration': {
                         'IndexDocument': 'index.html',
                     }
@@ -235,4 +244,3 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['WidgetsStaticHostingProdBucketPolicy']
         )
-        print data['Resources'].keys()
