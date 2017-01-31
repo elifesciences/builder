@@ -361,6 +361,7 @@ def render_s3(context, template):
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:
+            # generic configuration for allowing read-only access
             props['CorsConfiguration'] = s3.CorsConfiguration(
                 CorsRules=[
                     s3.CorsRules(
