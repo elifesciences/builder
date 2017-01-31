@@ -210,6 +210,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'CorsConfiguration': {
                         'CorsRules': [
                             {
+                                'AllowedHeaders': ['*'],
                                 'AllowedMethods': ['GET', 'HEAD'],
                                 'AllowedOrigins': ['*'],
                             },

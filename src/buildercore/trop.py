@@ -364,6 +364,7 @@ def render_s3(context, template):
             props['CorsConfiguration'] = s3.CorsConfiguration(
                 CorsRules=[
                     s3.CorsRules(
+                        AllowedHeaders=['*'],
                         AllowedMethods=['GET', 'HEAD'],
                         AllowedOrigins=['*']
                     )
