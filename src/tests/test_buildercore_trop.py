@@ -171,18 +171,22 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'sqs-notifications': {},
                 'deletion-policy': 'delete',
+                'website-configuration': None,
+                'cors': None,
             },
             context['s3']['widgets-prod']
         )
         cfn_template = trop.render(context)
         data = json.loads(cfn_template)
-        self.assertEqual(['WidgetsArchiveProdBucket', 'WidgetsProdBucket'], data['Resources'].keys())
+        self.assertTrue('WidgetsProdBucket' in data['Resources'].keys())
+        self.assertTrue('WidgetsArchiveProdBucket' in data['Resources'].keys())
+        self.assertTrue('WidgetsStaticHostingProdBucket' in data['Resources'].keys())
         self.assertEqual(
             {
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Delete',
                 'Properties': {
-                    'BucketName': 'widgets-prod'
+                    'BucketName': 'widgets-prod',
                 }
             },
             data['Resources']['WidgetsProdBucket']
@@ -192,8 +196,52 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Retain',
                 'Properties': {
-                    'BucketName': 'widgets-archive-prod'
-                }
+                    'BucketName': 'widgets-archive-prod',
+                },
             },
             data['Resources']['WidgetsArchiveProdBucket']
+        )
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Delete',
+                'Properties': {
+                    'BucketName': 'widgets-static-hosting-prod',
+                    'CorsConfiguration': {
+                        'CorsRules': [
+                            {
+                                'AllowedHeaders': ['*'],
+                                'AllowedMethods': ['GET', 'HEAD'],
+                                'AllowedOrigins': ['*'],
+                            },
+                        ],
+                    },
+                    'WebsiteConfiguration': {
+                        'IndexDocument': 'index.html',
+                    }
+                },
+            },
+            data['Resources']['WidgetsStaticHostingProdBucket']
+        )
+
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::BucketPolicy',
+                'Properties': {
+                    'Bucket': 'widgets-static-hosting-prod',
+                    'PolicyDocument': {
+                        "Version": "2012-10-17",
+                        "Statement": [{
+                            "Sid": "AddPerm",
+                            "Effect": "Allow",
+                            "Principal": "*",
+                            "Action": ["s3:GetObject"],
+                            "Resource":[
+                                "arn:aws:s3:::widgets-static-hosting-prod/*",
+                            ]
+                        }]
+                    }
+                },
+            },
+            data['Resources']['WidgetsStaticHostingProdBucketPolicy']
         )

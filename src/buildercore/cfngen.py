@@ -132,14 +132,17 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
     context['s3'] = {}
+    default_bucket_configuration = {
+        'sqs-notifications': {},
+        'deletion-policy': 'delete',
+        'website-configuration': None,
+        'cors': None,
+    }
     for bucket_template_name in context['project']['aws']['s3']:
         bucket_name = _parameterize(bucket_template_name)
-        default_bucket_configuration = {
-            'sqs-notifications': {},
-            'deletion-policy': 'delete',
-        }
         configuration = context['project']['aws']['s3'][bucket_template_name]
-        context['s3'][bucket_name] = configuration if configuration else default_bucket_configuration
+        context['s3'][bucket_name] = default_bucket_configuration.copy()
+        context['s3'][bucket_name].update(configuration if configuration else {})
 
     return context
 

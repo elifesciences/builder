@@ -619,3 +619,6 @@ error-pages:
         ec2: False
         s3:
             "{instance}-elife-error-pages":
+                website-configuration:
+                    index-document: index.html
+                cors: True

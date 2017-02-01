@@ -167,6 +167,10 @@ project-with-s3:
             widgets-{instance}: 
             widgets-archive-{instance}: 
                 deletion-policy: retain
+            widgets-static-hosting-{instance}:
+                website-configuration:
+                    index-document: index.html
+                cors: True
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
