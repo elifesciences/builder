@@ -11,6 +11,12 @@ set -xv  # output the scripts and interpolated steps
 
 echo "-----------------------------"
 
+if [ "$#" -ne 4 ]; then
+    echo "Usage: ./bootstrap.sh version minion_id install_master master_ipaddr"
+    echo "Example: ./bootstrap.sh 2016.3.4 journal--end2end--1 false 10.0.0.1"
+    exit 1
+fi
+
 version=$1
 minion_id=$2
 install_master=$3
