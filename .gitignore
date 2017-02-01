@@ -28,6 +28,7 @@ scripts/customize.sh
 scripts/salt/*.minion
 /custom-vagrant/salt/
 /custom-vagrant/pillar/
+/newrelic.ini
 
 .no-install-basebox.flag
 .no-vagrant-s3auth.flag

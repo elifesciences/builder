@@ -13,6 +13,8 @@ from buildercore.core import stack_conn
 import utils
 from buildercore.decorators import osissue
 from buildercore.context_handler import load_context
+import time
+import newrelic.agent
 
 @debugtask
 @requires_project
@@ -204,3 +206,12 @@ def repair_context(stackname):
 @requires_aws_stack
 def remove_minion_key(stackname):
     bootstrap.remove_minion_key(stackname)
+
+@task
+def sleep(seconds):
+    total = 0
+    for i in range(0, 10000000*int(seconds)):
+        total = total + i
+    print total
+    time.sleep(int(seconds))
+
