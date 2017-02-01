@@ -38,7 +38,8 @@ fi
 
 upgrade_python=false
 install_git=false
-# Python is such a hard dependency of Salt that we have to upgrade it outside of it to avoid changing it while it is running
+# Python is such a hard dependency of Salt that we have to upgrade it outside of 
+# Salt to avoid changing it while it is running
 python_version=$(dpkg-query -W --showformat='${Version}' python2.7) # e.g. 2.7.5-5ubuntu3
 if dpkg --compare-versions "$python_version" lt 2.7.12; then
     sudo add-apt-repository -y ppa:fkrull/deadsnakes-python2.7
@@ -155,4 +156,7 @@ echo "github.com,192.30.252.128 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9
 # run the daily cron job
 # this ensures security patches are run for machines that are only brought 
 # online temporarily to run tests
-run-parts /etc/cron.daily &
+if [ ! -e "/root/updated-$(date -I)" ]; then
+    touch "/root/updated-$(date -I)" && run-parts /etc/cron.daily &
+fi
+
