@@ -23,6 +23,7 @@ LOG = logging.getLogger(__name__)
 # TODO: embarassing code. some of these constants should be pulled form project config or given better names.
 
 SECURITY_GROUP_TITLE = "StackSecurityGroup"
+SECURITY_GROUP_ELB_TITLE = "ELBSecurityGroup"
 EC2_TITLE = 'EC2Instance1'
 EC2_TITLE_NODE = 'EC2Instance%d'
 ELB_TITLE = 'ElasticLoadBalancer'
@@ -413,29 +414,35 @@ def render_elb(context, template, ec2_instances):
     else:
         cookie_stickiness = []
 
-    if context['elb']['protocol'] == 'http':
-        listeners = [
-            elb.Listener(
+    if isinstance(context['elb']['protocol'], str):
+        protocols = [context['elb']['protocol']]
+    else:
+        protocols = context['elb']['protocol']
+
+    listeners = []
+    elb_ports = []
+    for protocol in protocols:
+        if protocol == 'http':
+            listeners.append(elb.Listener(
                 InstanceProtocol='HTTP',
                 InstancePort='80',
                 LoadBalancerPort='80',
                 PolicyNames=listeners_policy_names,
                 Protocol='HTTP',
-            ),
-        ]
-    elif context['elb']['protocol'] == 'https':
-        listeners = [
-            elb.Listener(
+            ))
+            elb_ports.append(80)
+        elif protocol == 'https':
+            listeners.append(elb.Listener(
                 InstanceProtocol='HTTP',
                 InstancePort='80',
                 LoadBalancerPort='443',
                 PolicyNames=listeners_policy_names,
                 Protocol='HTTPS',
                 SSLCertificateId=context['elb']['certificate']
-            ),
-        ]
-    else:
-        raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
+            ))
+            elb_ports.append(443)
+        else:
+            raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
@@ -458,11 +465,17 @@ def render_elb(context, template, ec2_instances):
             Interval=str(context['elb']['healthcheck'].get('interval', 30)),
             Timeout=str(context['elb']['healthcheck'].get('timeout', 30)),
         ),
-        SecurityGroups=[Ref(SECURITY_GROUP_TITLE)],
+        SecurityGroups=[Ref(SECURITY_GROUP_ELB_TITLE)],
         Scheme='internet-facing' if elb_is_public else 'internal',
         Subnets=context['elb']['subnets'],
         Tags=elb_tags(context)
     ))
+
+    template.add_resource(security_group(
+        SECURITY_GROUP_ELB_TITLE,
+        context['project']['aws']['vpc-id'],
+        elb_ports
+    )) # list of strings or dicts
 
     dns = external_dns_elb if elb_is_public else internal_dns_elb
     template.add_resource(dns(context))

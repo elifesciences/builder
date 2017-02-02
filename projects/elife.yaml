@@ -182,14 +182,27 @@ journal:
                 cluster-size: 2
             elb:
                 stickiness: True
-                protocol: https
+                protocol: 
+                    - https
+                    - http
+        end2end-test:
+            description: end2end environment for journal. ELB on top of multiple EC2 instances
+            ec2:
+                cluster-size: 2
+            elb:
+                stickiness: True
+                protocol: 
+                    - https
+                    - http
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
                 cluster-size: 2
             elb:
                 stickiness: True
-                protocol: https
+                protocol:
+                    - https
+                    - http
     vagrant:
         ram: 4096
         ports:
