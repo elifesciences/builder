@@ -487,6 +487,7 @@ bus:
             - bus-covers--{instance}
             - bus-labs-experiments--{instance}
             - bus-press-packages--{instance}
+            - bus-metrics--{instance}
 
 search:
     domain: False

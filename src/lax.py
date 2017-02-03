@@ -3,6 +3,9 @@ from fabric.context_managers import cd
 from decorators import requires_aws_project_stack
 from buildercore.core import stack_conn, utils as core_utils
 
+
+# TODO: replace this download db thing with calls to UBR
+
 @task(alias='dumpdata')
 @requires_aws_project_stack('lax')
 def download_db_fixtures(stackname):
