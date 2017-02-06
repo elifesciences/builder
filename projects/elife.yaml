@@ -630,3 +630,18 @@ error-pages:
                 website-configuration:
                     index-document: index.html
                 cors: True
+
+reviewer-suggestions:
+    description: data science project
+    subdomain: reviewer-suggestions
+    #repo: https://github.com/elifesciences/...
+    formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
+    aws:
+        type: t2.medium # explicitly 4GB RAM
+        ports:
+            - 22
+            - 80
+    vagrant:
+        ports:
+            1241: 80
+        ram: 4096
