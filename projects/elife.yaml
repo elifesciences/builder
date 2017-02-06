@@ -284,6 +284,13 @@ journal-cms:
             journal-cms--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
+    aws-alt:
+        end2end: 
+            ext:
+                size: 30 # GB
+        prod:
+            ext:
+                size: 30 # GB
     vagrant:
         ports:
             1241: 80
