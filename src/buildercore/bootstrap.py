@@ -35,12 +35,15 @@ def run_script(script_path, *script_params):
     """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
     ASSUMES YOU ARE CONNECTED TO A STACK"""
     local_script = join(config.SCRIPTS_PATH, script_path)
-    timestamp_marker = datetime.now().strftime("%Y%m%d%H%M%S")
+    start = datetime.now()
+    timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_path) + '-' + timestamp_marker)
     put(local_script, remote_script)
     cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
     retval = sudo(" ".join(cmd))
     sudo("rm " + remote_script) # remove the script after executing it
+    end = datetime.now()
+    LOG.info("Executed script %s in %2.4f seconds", script_path, (end - start).total_seconds())
     return retval
 
 def prep_ec2_instance():
