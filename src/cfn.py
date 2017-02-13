@@ -1,6 +1,7 @@
 from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
-from fabric.api import task, local, run, sudo, put, get, abort, parallel
+from fabric.api import task, local, run, sudo, put, get, abort, parallel, settings
+import fabric.state
 from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
@@ -259,15 +260,25 @@ def _user(use_bootstrap_user):
 
 @task
 @requires_aws_stack
-def cmd(stackname, command=None, username=DEPLOY_USER):
+def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
     LOG.info("Connecting to: %s", stackname)
-    stack_all_ec2_nodes(
-        stackname,
-        (parallel(run), {'command': command}),
-        username=username,
-        abort_on_prompts=True)
+
+    # take out the load of crap that Fabric prints mangling the useful output
+    # of a remote command
+    custom_settings = {}
+    if clean_output:
+        fabric.state.output['status'] = False
+        fabric.state.output['running'] = False
+        custom_settings['output_prefix'] = False
+
+    with settings(**custom_settings):
+        stack_all_ec2_nodes(
+            stackname,
+            (parallel(run), {'command': command}),
+            username=username,
+            abort_on_prompts=True)
 
 @task
 def project_list():
