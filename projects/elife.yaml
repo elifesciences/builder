@@ -641,6 +641,10 @@ reviewer-suggestions:
         ports:
             - 22
             - 80
+        ext:
+            # external hdd
+            size: 100 # GB
+            device: /dev/sdf
     vagrant:
         ports:
             1241: 80
