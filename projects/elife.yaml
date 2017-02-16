@@ -235,6 +235,7 @@ elife-bot:
         type: t2.medium
         ports:
             - 22
+            # TODO: close this port to outside the VPC
             - 80
         ext:
             size: 30 # GB
