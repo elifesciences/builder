@@ -638,7 +638,7 @@ reviewer-suggestions:
     #repo: https://github.com/elifesciences/...
     formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
     aws:
-        type: t2.medium # explicitly 4GB RAM
+        type: t2.xlarge # explicitly 16GB RAM for heavy background processing
         ports:
             - 22
             - 80
