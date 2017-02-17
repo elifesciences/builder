@@ -262,8 +262,12 @@ elife-bot:
             #               #prefix: null
             #               #suffix: null
     vagrant:
+        ram: 2048
         ports:
+            # loris
             1231: 80
+            # digilib
+            1232: 8080
 
 
 journal-cms:
