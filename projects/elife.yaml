@@ -384,7 +384,7 @@ elife-alfred:
             - 10241 # JNLP for jenkins-cli.jar
             - 16022 # Jenkins SSH port
         ext:
-            size: 30 # GB
+            size: 100 # GB
             type: gp2
     vagrant:
         ram: 4096
