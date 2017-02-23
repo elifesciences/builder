@@ -129,9 +129,6 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
-        ci:
-            ext:
-                size: 200 # GB
         end2end:
             description: RDS backed
             rds:
