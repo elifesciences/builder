@@ -203,6 +203,19 @@ pattern-library:
         ports:
             1340: 80
 
+evanthia-prototype:
+    subdomain: evanthia-prototype
+    repo: https://github.com/code56/node_web_server
+    formula-repo: https://github.com/code56/node-web-server-formula
+    aws:
+        type: t2.small
+        ports:
+            - 22
+    vagrant:
+        ram: 2048
+        ports:
+            1340: 80
+
 
 elife-metrics:
     subdomain: metrics # metrics.elifesciences.org
