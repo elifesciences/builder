@@ -116,7 +116,7 @@ def update_dns(stackname):
     nodes = find_ec2_instances(stackname)
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
     if len(nodes) == 0:
-        raise RuntimeError("No nodes found for %s, they be in a stopped state. They need to be running to have a (public, at least) ip address that can be mapped onto a DNS" % stackname)
+        raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _nodes_states(stackname)))
 
     if len(nodes) > 1:
         # ELB has its own DNS, EC2 nodes will autoregister
