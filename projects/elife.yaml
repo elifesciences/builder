@@ -307,7 +307,7 @@ journal-cms:
             description: production-like environment. backed by RDS
             rds:
                 engine: MySQL
-                version: '5.5'
+                version: '5.7'
                 storage: 12 # GB
             ext:
                 size: 30 # GB
@@ -315,7 +315,7 @@ journal-cms:
             description: production environment. backed by RDS
             rds:
                 engine: MySQL
-                version: '5.5'
+                version: '5.7'
                 storage: 12 # GB
             ext:
                 size: 30 # GB
