@@ -41,7 +41,7 @@ defaults:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
             multi-az: False
-            engine: postgres
+            engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
             version: '9.4'
             type: db.t2.small
@@ -303,10 +303,20 @@ journal-cms:
                 subscriptions:
                     - bus-articles--{instance}
     aws-alt:
-        end2end: 
+        end2end:
+            description: production-like environment. backed by RDS
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 12 # GB
             ext:
                 size: 30 # GB
         prod:
+            description: production environment. backed by RDS
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 12 # GB
             ext:
                 size: 30 # GB
     vagrant:
