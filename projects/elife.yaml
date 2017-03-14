@@ -174,10 +174,6 @@ journal:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:
                 cluster-size: 2
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             elb:
                 stickiness: True
                 protocol: https
@@ -185,10 +181,6 @@ journal:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
                 cluster-size: 2
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             elb:
                 stickiness: True
                 protocol: https
