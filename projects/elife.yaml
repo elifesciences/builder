@@ -659,6 +659,18 @@ error-pages:
                     index-document: index.html
                 cors: True
 
+figure-viewer:
+    description: static deployment of https://github.com/elifesciences/figure-viewer
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: False
+        s3:
+            "{instance}-elife-figure-viewer":
+                website-configuration:
+                    index-document: index.html
+
 reviewer-suggestions:
     description: data science project
     subdomain: reviewer-suggestions
