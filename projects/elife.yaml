@@ -553,7 +553,6 @@ search:
                     - bus-podcast-episodes--{instance}
                     - bus-subjects--{instance}
                     - bus-collections--{instance}
-                    - bus-events--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
 
