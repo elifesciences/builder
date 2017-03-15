@@ -15,8 +15,8 @@ Case 2: Ad-hoc instances
 A developer wants a temporary instance deployed for testing or debugging.
 
 """
-
 import os, json, copy
+import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, context_handler
 from .utils import ensure
@@ -85,15 +85,15 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         default_rds_dbname = slugify(stackname, separator="")
 
         # used to give mysql a range of valid ip addresses to connect from
-        net, bits = context['project']['aws']['subnet-cidr'].split('/', 1)
-        # todo: determine mask based on bits
-        mask = '255.255.255.0'
-        netmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
+        subnet_cidr = netaddr.IPNetwork(context['project']['aws']['subnet-cidr'])
+        net = subnet_cidr.network
+        mask = subnet_cidr.netmask
+        networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
 
         # alpha-numeric only
         # TODO: investigate possibility of ambiguous RDS naming here
         context.update({
-            'netmask': netmask,
+            'netmask': networkmask,
             'rds_username': 'root',
             'rds_password': utils.random_alphanumeric(length=32), # will be saved to build-vars.json
             'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
