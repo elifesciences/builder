@@ -694,7 +694,7 @@ iiif:
     subdomain: iiif
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
-        type: t2.small
+        type: t2.medium
         ports:
             - 22
             - 80
