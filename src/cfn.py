@@ -1,6 +1,6 @@
 from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
-from fabric.api import task, local, run, sudo, put, get, abort, parallel, settings
+from fabric.api import task, local, run, sudo, put, get, abort, settings
 import fabric.state
 from fabric.contrib import files
 import aws, utils
@@ -260,7 +260,7 @@ def _user(use_bootstrap_user):
 
 @task
 @requires_aws_stack
-def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False):
+def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
     LOG.info("Connecting to: %s", stackname)
@@ -274,11 +274,12 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False):
         custom_settings['output_prefix'] = False
 
     with settings(**custom_settings):
-        stack_all_ec2_nodes(
+        return stack_all_ec2_nodes(
             stackname,
-            (parallel(run), {'command': command}),
+            (run, {'command': command}),
             username=username,
-            abort_on_prompts=True)
+            abort_on_prompts=True,
+            concurrency=concurrency)
 
 @task
 def project_list():

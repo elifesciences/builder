@@ -16,7 +16,7 @@ from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, projec
 from .utils import first, call_while, ensure, subdict
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
-from fabric.api import sudo, put, parallel
+from fabric.api import sudo, put
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from boto.exception import BotoServerError
@@ -362,11 +362,11 @@ def write_environment_info(stackname, overwrite=False):
 #
 
 @core.requires_active_stack
-def update_stack(stackname, service_list=None):
+def update_stack(stackname, service_list=None, concurrency=None):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
     service_update_fns = OrderedDict([
-        ('ec2', update_ec2_stack),
+        ('ec2', lambda stackname: update_ec2_stack(stackname, concurrency)),
         ('s3', update_s3_stack),
         ('sqs', update_sqs_stack)
     ])
@@ -386,7 +386,7 @@ def create_update(stackname, part_filter=None):
     update_stack(stackname, part_filter)
     return stackname
 
-def update_ec2_stack(stackname):
+def update_ec2_stack(stackname, concurrency):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
@@ -434,7 +434,7 @@ def update_ec2_stack(stackname):
         # this will tell the machine to update itself
         run_script('highstate.sh')
 
-    stack_all_ec2_nodes(stackname, parallel(_update_ec2_node), username=BOOTSTRAP_USER)
+    stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
 @core.requires_stack_file
 def delete_stack_file(stackname):

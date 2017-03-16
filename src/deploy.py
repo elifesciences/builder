@@ -47,6 +47,7 @@ def deploy(pname, instance_id=None, branch='master', part_filter=None):
 
 @task
 @requires_aws_stack
-def switch_revision_update_instance(stackname, revision=None):
+def switch_revision_update_instance(stackname, revision=None, concurrency=None):
+    """concurrency default is to perform updates in parallel to multiple machines"""
     buildvars.switch_revision(stackname, revision)
-    bootstrap.update_stack(stackname)
+    bootstrap.update_stack(stackname, concurrency=concurrency)
