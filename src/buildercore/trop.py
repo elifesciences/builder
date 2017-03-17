@@ -451,15 +451,13 @@ def render_elb(context, template, ec2_instances):
         # TODO: from configuration
         Listeners=listeners,
         LBCookieStickinessPolicy=cookie_stickiness,
-        # TODO: from configuration
-        # seems to default to opening a TCP connection on port 80
-        # HealthCheck=elb.HealthCheck(
-        #    Target=Join('', ['HTTP:', Ref(webport_param), '/']),
-        #    HealthyThreshold='3',
-        #    UnhealthyThreshold='5',
-        #    Interval='30',
-        #    Timeout='5',
-        #    )
+        HealthCheck=elb.HealthCheck(
+            Target='TCP:%d' % context['elb']['healthcheck'].get('port', 80),
+            HealthyThreshold=str(context['elb']['healthcheck'].get('healthy_threshold', 10)),
+            UnhealthyThreshold=str(context['elb']['healthcheck'].get('unhealthy_threshold', 2)),
+            Interval=str(context['elb']['healthcheck'].get('interval', 30)),
+            Timeout=str(context['elb']['healthcheck'].get('timeout', 30)),
+        ),
         SecurityGroups=[Ref(SECURITY_GROUP_TITLE)],
         Scheme='internet-facing' if elb_is_public else 'internal',
         Subnets=context['elb']['subnets'],

@@ -59,6 +59,12 @@ defaults:
             stickiness: False
             protocol: http
             idle_timeout: 60
+            healthcheck:
+                port: 80
+                timeout: 4 
+                interval: 5
+                unhealthy_threshold: 2
+                healthy_threshold: 2
         sns: []
         sqs: []
         s3: []
