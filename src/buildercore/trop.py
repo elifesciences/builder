@@ -116,7 +116,7 @@ def instance_tags(context, node=None):
             'Cluster': context['stackname'], # ll: journal--prod
             'Node': node, # ll: 1
         })
-    return [ec2.Tag(key, value) for key, value in tags.items()]
+    return [ec2.Tag(key, str(value)) for key, value in tags.items()]
 
 def elb_tags(context):
     tags = _generic_tags(context)
