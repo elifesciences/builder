@@ -39,13 +39,11 @@ class TestProject(base.BaseCase):
 
 class TestProjectData(base.BaseCase):
     def setUp(self):
+        project.files.all_projects.cache_clear()
         self.dummy_yaml = join(self.fixtures_dir, 'projects', 'dummy-project.yaml')
         self.dummy1_config = join(self.fixtures_dir, 'dummy1-project.json')
         self.dummy2_config = join(self.fixtures_dir, 'dummy2-project.json')
         self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
-
-    def tearDown(self):
-        pass
 
     def test_configurations(self):
         expected = [
