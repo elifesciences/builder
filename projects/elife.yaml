@@ -67,6 +67,12 @@ defaults:
             protocol: http
             idle_timeout: 60
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
+            healthcheck:
+                port: 80
+                timeout: 4 
+                interval: 5
+                unhealthy_threshold: 2
+                healthy_threshold: 2
         sqs: []
         sns: []
         # e.g.

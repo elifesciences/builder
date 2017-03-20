@@ -142,6 +142,16 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Protocol': 'HTTP',
             }
         )
+        self.assertEqual(
+            elb['HealthCheck'],
+            {
+                'Target': 'TCP:80',
+                'Timeout': '4',
+                'Interval': '5',
+                'HealthyThreshold': '2',
+                'UnhealthyThreshold': '2',
+            }
+        )
         self.assertIn(
             {
                 'Key': 'Name',
