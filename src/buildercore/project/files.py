@@ -5,6 +5,7 @@ from collections import OrderedDict
 # from . import core # DONT import core. this module should be relatively independent
 from buildercore import utils
 from buildercore.decorators import testme
+from kids.cache import cache as cached
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def write_project_file(new_project_data, project_file):
 #
 #
 
+@cached
 def all_projects(project_file):  # , project_file=config.PROJECT_FILE):
     allp = utils.ordered_load(open(project_file))
     if allp is None:
