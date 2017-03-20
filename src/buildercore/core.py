@@ -12,7 +12,7 @@ from boto import sns
 from boto.exception import BotoServerError
 import boto3
 from contextlib import contextmanager
-from fabric.api import settings, execute, env
+from fabric.api import settings, execute, env, parallel, serial
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -207,7 +207,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
 class NoPublicIps(Exception):
     pass
 
-def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs):
+def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, **kwargs):
     """Executes work on all the EC2 nodes of stackname.
     Optionally connects with the specified username"""
     work_kwargs = {}
@@ -230,6 +230,16 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, **kwargs
 
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
+    def decorate_with_concurrency():
+        if not concurrency:
+            return parallel
+        if concurrency == 'serial':
+            return serial
+        if concurrency == 'parallel':
+            return parallel
+        raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
+
+    @decorate_with_concurrency()
     def single_node_work():
         workfn(**work_kwargs)
     with settings(**params):

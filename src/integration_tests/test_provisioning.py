@@ -3,6 +3,7 @@ from subprocess import check_output
 from fabric.api import settings
 from tests import base
 from buildercore import bootstrap, cfngen, lifecycle
+from buildercore.config import BOOTSTRAP_USER
 import buildvars
 import cfn
 
@@ -33,3 +34,5 @@ class TestProvisioning(base.BaseCase):
 
             lifecycle.stop(stackname)
             lifecycle.start(stackname)
+
+            cfn.cmd(stackname, "ls -l", username=BOOTSTRAP_USER, concurrency='parallel')
