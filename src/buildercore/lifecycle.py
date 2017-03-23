@@ -63,7 +63,7 @@ def stop(stackname):
     _wait_all_in_state(stackname, 'stopped', to_be_stopped)
 
 def last_start_time(stackname):
-    nodes = find_ec2_instances(stackname)
+    nodes = find_ec2_instances(stackname, allow_empty=True)
 
     def _parse_datetime(value):
         return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
