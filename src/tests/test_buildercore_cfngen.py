@@ -32,7 +32,7 @@ class TestBuildercoreCfngen(base.BaseCase):
 
         for pname in project.aws_projects().keys():
             self.assertTrue(cfngen.validate_project(pname))
-            sleep(0.25)
+            sleep(0.5)
 
         self.switch_in_test_settings()
 

@@ -27,6 +27,7 @@ class DeprecationException(Exception):
 class NoMasterException(Exception):
     pass
 
+
 ALL_CFN_STATUS = [
     'CREATE_IN_PROGRESS',
     'CREATE_FAILED',
@@ -79,6 +80,7 @@ def _set_raw_subscription_attribute(sns_connection, subscription_arn):
     }
     return sns_connection._make_request('SetSubscriptionAttributes', params)
 
+
 sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
 
 
@@ -129,13 +131,15 @@ def connect_aws_with_stack(stackname, service):
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service)
 
-def find_ec2_instances(stackname, state='running', node_ids=None):
+def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
     conn = connect_aws_with_stack(stackname, 'ec2')
     filters = _all_nodes_filter(stackname, state=state, node_ids=node_ids)
     ec2_instances = conn.get_only_instances(filters=filters)
     LOG.info("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
+    if not allow_empty and not ec2_instances:
+        raise RuntimeError("ec2_instances is empty and this it not allowed in this situation")
     return ec2_instances
 
 

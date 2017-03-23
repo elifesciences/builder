@@ -92,6 +92,9 @@ def requires_aws_stack(func):
     def call(*args, **kwargs):
         stackname = first(args) or os.environ.get('INSTANCE')
         region = aws.find_region(stackname)
+        if stackname:
+            args = args[1:]
+            return func(stackname, *args, **kwargs)
         asl = core.active_stack_names(region)
         if not asl:
             raise RuntimeError('\nno AWS stacks *in an active state* exist, cannot continue.')

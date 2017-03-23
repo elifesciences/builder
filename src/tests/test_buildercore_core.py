@@ -124,7 +124,10 @@ class SimpleCases(base.BaseCase):
             self.assertEqual(["us-east-1", "eu-central-1"], e.regions())
 
     def test_find_ec2_instances(self):
-        self.assertEquals([], core.find_ec2_instances('dummy1--prod'))
+        self.assertEquals([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
+
+    def test_find_ec2_instances_requiring_a_non_empty_list(self):
+        self.assertRaises(RuntimeError, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
 
 
 class TestCoreNewProjectData(base.BaseCase):
