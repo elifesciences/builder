@@ -115,7 +115,15 @@ def project_dir_path(project_file):
     # /path/to/elife-builder/project/elife/
     path = join(os.path.dirname(project_file), project_file_name(project_file))
     if not os.path.exists(path):
-        os.mkdir(path)
+        # this call fails non-deterministically in build, debugging it
+
+        try:
+            os.mkdir(path)
+        except:
+            import subprocess
+            print "Debugging os.mkdir(path) failure"
+            print subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT)
+            raise
     return path
 
 def find_snippets(project_file):
