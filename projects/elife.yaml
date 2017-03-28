@@ -700,7 +700,7 @@ figure-viewer:
 reviewer-suggestions:
     description: data science project
     subdomain: reviewer-suggestions
-    #repo: https://github.com/elifesciences/...
+    repo: https://github.com/elifesciences/reviewer-suggestions
     formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
     aws:
         type: t2.xlarge # explicitly 16GB RAM for heavy background processing
