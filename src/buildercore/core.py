@@ -13,6 +13,7 @@ from boto.exception import BotoServerError
 import boto3
 from contextlib import contextmanager
 from fabric.api import settings, execute, env, parallel, serial
+from fabric.exceptions import NetworkError
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -245,17 +246,16 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     @decorate_with_concurrency()
     def single_node_work():
-        workfn(**work_kwargs)
-    with settings(**params):
-        # TODO: decorate work to print what it is connecting only
         try:
-            return execute(single_node_work, hosts=public_ips.values())
-        except config.FabricException as err:
+            workfn(**work_kwargs)
+        except NetworkError as err:
             if str(err.message).startswith('Timed out trying to connect'):
-                LOG.info("Timeout while executing task on a %s node (%s), retrying once on all nodes", stackname, err.message)
-                return execute(single_node_work, hosts=public_ips.values())
+                LOG.info("Timeout while executing task on a %s node (%s), retrying once on this node", stackname, err.message)
+                return workfn(**work_kwargs)
             else:
                 raise err
+    with settings(**params):
+        return execute(single_node_work, hosts=public_ips.values())
 
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
