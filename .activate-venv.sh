@@ -18,8 +18,13 @@ if [ ! -d venv ]; then
     virtualenv --python=`which python2` venv
 fi
 
-# 'ARCHFLAGS' fixes a problem with OSX refusing to compile a dependency
-export ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future"
-
 . ./venv/bin/activate
-pip install -r requirements.txt
+
+if [ "$(uname)" = "Darwin" ]; then
+    # 'ARCHFLAGS' fixes a problem with OSX refusing to compile a dependency
+    export ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future"
+    # at time of writing, macs dont have ipython and a lower version of Fabric
+    pip install -r mac-requirements.txt
+else
+    pip install -r requirements.txt
+fi
