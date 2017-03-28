@@ -119,7 +119,7 @@ def project_dir_path(project_file):
 
         try:
             os.mkdir(path)
-        except:
+        except BaseException:
             import subprocess
             print "Debugging os.mkdir(path) failure"
             print subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT)

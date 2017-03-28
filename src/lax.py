@@ -30,6 +30,7 @@ def download_db_fixtures(stackname):
         print '\ndata dumped to `%s`\n' % local_path
         return local_path
 
+
 '''
 @task
 def loaddata():

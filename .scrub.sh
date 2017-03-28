@@ -6,9 +6,10 @@
 # E302 = don't go crazy with the double whitespace between funcs
 # E401 = don't put imports on separate lines
 # E309 = don't put a blank line after class declaration
+# E731 - Fix do not assign a lambda expression check.
 
 autopep8 \
     --in-place --recursive --aggressive \
-    --ignore E501,E302,E261,E401,E309 \
+    --ignore E501,E302,E261,E401,E309,E731 \
     --exclude *.html \
     src/

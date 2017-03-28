@@ -36,7 +36,7 @@ class BaseCase(TestCase):
             except AssertionError:
                 LOG.error("failed, %r != %r", expected, actual)
                 raise
-            except:
+            except BaseException:
                 LOG.critical("unexpected failure testing %r", given)
                 raise
 
@@ -50,7 +50,7 @@ class BaseCase(TestCase):
             except AssertionError:
                 LOG.error("failed, %r != %r", x, y)
                 raise
-            except:
+            except BaseException:
                 LOG.critical("unexpected failure testing %r", x)
                 raise
 
@@ -64,6 +64,6 @@ class BaseCase(TestCase):
             except AssertionError:
                 LOG.error("failed, %r == %r", x, y)
                 raise
-            except:
+            except BaseException:
                 LOG.critical("unexpected failure testing %r", x)
                 raise

@@ -94,7 +94,7 @@ class TestBuildercoreUtils(base.BaseCase):
         try:
             utils.call_while(check, interval=5, timeout=15)
             self.fail("Should not return normally")
-        except:
+        except BaseException:
             self.assertEqual(3, len(sleep.mock_calls))
 
     def test_ensure(self):
