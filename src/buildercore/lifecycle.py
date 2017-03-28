@@ -21,7 +21,15 @@ def start(stackname):
 
     states = _nodes_states(stackname)
     LOG.info("Current states: %s", states)
-    _ensure_valid_states(states, {'stopped', 'pending', 'running'})
+    _ensure_valid_states(states, {'stopped', 'pending', 'running', 'stopping'})
+
+    stopping = _select_nodes_with_state('stopping', states)
+    if stopping:
+        LOG.info("Nodes are stopping: %s", stopping)
+        _wait_all_in_state(stackname, 'stopped', stopping)
+        states = _nodes_states(stackname)
+    LOG.info("Current states: %s", states)
+
     to_be_started = _select_nodes_with_state('stopped', states)
     if not to_be_started:
         LOG.info("Nodes are all running")
