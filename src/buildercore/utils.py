@@ -48,6 +48,7 @@ def complement(pred):
 def splitfilter(func, data):
     return filter(func, data), filter(complement(func), data)
 
+
 """
 # NOTE: works, unused.
 def deep_exclude(ddict, excluding):
@@ -151,6 +152,7 @@ def updatein(data, path, newval, create=False):
 def random_alphanumeric(length=32):
     rand = random.SystemRandom()
     return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
+
 
 '''
 # works, but the !include function is unused

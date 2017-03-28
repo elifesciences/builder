@@ -60,7 +60,7 @@ def cert_info(hostname, verbose=False):
         LOG.error("failed to fetch certificate for %r", hostname)
         ret['results'] = err.reason
 
-    except:
+    except BaseException:
         LOG.exception("unhandled exception attempting to fetch certificate for hostname %r", hostname)
         raise
 

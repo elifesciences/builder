@@ -23,6 +23,7 @@ import logging
 class FabricException(Exception):
     pass
 
+
 env.abort_exception = FabricException
 
 

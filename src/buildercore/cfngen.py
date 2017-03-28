@@ -204,7 +204,7 @@ def more_validation(json_template_str):
             assert '--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid
 
         return True
-    except:
+    except BaseException:
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
 

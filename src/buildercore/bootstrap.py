@@ -97,7 +97,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
     except KeyboardInterrupt:
         LOG.debug("caught keyboard interrupt, cancelling...")
         return False
-    except:
+    except BaseException:
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         on_error()
         raise

@@ -42,6 +42,7 @@ def rtask(*roles):
         return func
     return wrapper
 
+
 # pylint: disable=invalid-name
 debugtask = rtask('admin')
 mastertask = rtask('master')
@@ -57,6 +58,7 @@ def requires_filtered_project(filterfn=None):
             return func(pname, *args, **kwargs)
         return wrap2
     return wrap1
+
 
 # pylint: disable=invalid-name
 requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.get('repo'))
@@ -159,6 +161,7 @@ def echo_output(func):
             return res
         return func(*args, **kwargs)
     return _wrapper
+
 
 # avoid circular dependencies.
 # TODO: this is a design smell. refactor.
