@@ -263,7 +263,7 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-cloudfront', **extra)
         self.assertEquals(
             {
-                'subdomain': 'prod--cdn'
+                'subdomain': 'prod--cdn-of-www'
             },
             context['cloudfront']
         )
@@ -275,6 +275,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::CloudFront::Distribution',
                 'Properties': {
                     'DistributionConfig': {
+                        'Aliases': ['prod--cdn-of-www.example.org'],
                         'DefaultCacheBehavior': {
                             'ForwardedValues': {
                                 # yes this is a string containing the word 'true'...
@@ -287,7 +288,7 @@ class TestBuildercoreTrop(base.BaseCase):
                         'Enabled': 'true',
                         'Origins': [
                             {
-                                'DomainName': '',
+                                'DomainName': 'prod--www.example.org',
                                 'Id': 'CloudFrontCDNOrigin',
                             }
                         ],

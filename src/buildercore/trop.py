@@ -480,9 +480,11 @@ def render_elb(context, template, ec2_instances):
     dns = external_dns_elb if elb_is_public else internal_dns_elb
     template.add_resource(dns(context))
 
-def render_cloudfront(context, template):
+def render_cloudfront(context, template, origin_hostname):
     origin = CLOUDFRONT_TITLE+'Origin'
+    cdn_hostname = "%s.%s" % (context['cloudfront']['subdomain'], context['domain'])
     props = {
+        'Aliases': [cdn_hostname],
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
@@ -493,7 +495,7 @@ def render_cloudfront(context, template):
         'Enabled': True,
         'Origins': [
             cloudfront.Origin(
-                DomainName='',
+                DomainName=origin_hostname,
                 Id=origin
             )
         ]
@@ -502,6 +504,8 @@ def render_cloudfront(context, template):
         CLOUDFRONT_TITLE,
         DistributionConfig=cloudfront.DistributionConfig(**props)
     ))
+
+    # TODO: we need to add to Route53 the CNAME, it's not enough to configure it here I think
 
 def render(context):
     template = Template()
@@ -519,7 +523,6 @@ def render(context):
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
-    render_cloudfront(context, template)
 
     # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
     if context['elb']:
@@ -531,8 +534,11 @@ def render(context):
         ensure(context['ec2']['cluster-size'] == 1,
                "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
 
+        #from pprint import pprint
+        #pprint(context)
         if context['full_hostname']:
-            template.add_resource(external_dns_ec2(context))
+            dns_record = template.add_resource(external_dns_ec2(context))
+            hostname = context['full_hostname']
 
         # ec2 nodes in a cluster DONT get an internal hostname
         if context['int_full_hostname']:
@@ -545,5 +551,9 @@ def render(context):
     if context['int_full_hostname']:
         ensure(R53_INT_TITLE in template.resources.keys(), "You want an internal DNS entry but there is no resource configuring it: %s" % context)
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
+
+    if context['cloudfront']:
+        ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
+        render_cloudfront(context, template, origin_hostname=context['full_hostname'])
 
     return template.to_json()

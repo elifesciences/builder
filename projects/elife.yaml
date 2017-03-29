@@ -84,6 +84,7 @@ defaults:
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
         s3: {}
+        cloudfront: None
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

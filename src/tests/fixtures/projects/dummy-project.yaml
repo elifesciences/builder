@@ -189,11 +189,13 @@ project-with-ext:
 
 project-with-cloudfront:
     repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
     aws:
         ports:
             - 80
         cloudfront:
-            subdomain: "{instance}--cdn"
+            subdomain: "{instance}--cdn-of-www"
+            additional_subdomains: []
 
 
 project-with-cluster:
