@@ -11,8 +11,7 @@ it to the correct file etc."""
 
 from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
-from troposphere import s3
-from troposphere import elasticloadbalancing as elb
+from troposphere import s3, cloudfront, elasticloadbalancing as elb
 
 from functools import partial
 import logging
@@ -34,6 +33,7 @@ EXT_TITLE = "ExtraStorage"
 EXT_MP_TITLE = "MountPoint"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
+CLOUDFRONT_TITLE = 'CloudFrontCDN'
 
 KEYPAIR = "KeyName"
 
@@ -480,9 +480,28 @@ def render_elb(context, template, ec2_instances):
     dns = external_dns_elb if elb_is_public else internal_dns_elb
     template.add_resource(dns(context))
 
-#
-#
-#
+def render_cloudfront(context, template):
+    origin = CLOUDFRONT_TITLE+'Origin'
+    props = {
+        'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
+            TargetOriginId=origin,
+            ForwardedValues=cloudfront.ForwardedValues(
+                QueryString=True
+            ),
+            ViewerProtocolPolicy='redirect-to-https',
+        ),
+        'Enabled': True,
+        'Origins': [
+            cloudfront.Origin(
+                DomainName='',
+                Id=origin
+            )
+        ]
+    }
+    template.add_resource(cloudfront.Distribution(
+        CLOUDFRONT_TITLE,
+        DistributionConfig=cloudfront.DistributionConfig(**props)
+    ))
 
 def render(context):
     template = Template()
@@ -500,6 +519,7 @@ def render(context):
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
+    render_cloudfront(context, template)
 
     # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
     if context['elb']:

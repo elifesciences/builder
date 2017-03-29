@@ -255,3 +255,44 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['WidgetsStaticHostingProdBucketPolicy']
         )
+
+    def test_cdn_template(self):
+        extra = {
+            'stackname': 'project-with-cloudfront--prod',
+        }
+        context = cfngen.build_context('project-with-cloudfront', **extra)
+        self.assertEquals(
+            {
+                'subdomain': 'prod--cdn'
+            },
+            context['cloudfront']
+        )
+        cfn_template = trop.render(context)
+        data = json.loads(cfn_template)
+        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        self.assertEqual(
+            {
+                'Type': 'AWS::CloudFront::Distribution',
+                'Properties': {
+                    'DistributionConfig': {
+                        'DefaultCacheBehavior': {
+                            'ForwardedValues': {
+                                # yes this is a string containing the word 'true'...
+                                'QueryString': "true",
+                            },
+                            'TargetOriginId': 'CloudFrontCDNOrigin',
+                            'ViewerProtocolPolicy': 'redirect-to-https',
+                        },
+                                # yes this is a string containing the word 'true'...
+                        'Enabled': 'true',
+                        'Origins': [
+                            {
+                                'DomainName': '',
+                                'Id': 'CloudFrontCDNOrigin',
+                            }
+                        ],
+                    },
+                },
+            },
+            data['Resources']['CloudFrontCDN']
+        )

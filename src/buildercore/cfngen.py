@@ -61,7 +61,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'elb': False,
         'sns': [],
         'sqs': {},
-        'ext': None
+        'ext': None,
+        'cloudfront': None,
     }
 
     context = copy.deepcopy(defaults)
@@ -151,6 +152,11 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         configuration = context['project']['aws']['s3'][bucket_template_name]
         context['s3'][bucket_name] = default_bucket_configuration.copy()
         context['s3'][bucket_name].update(configuration if configuration else {})
+
+    if 'cloudfront' in context['project']['aws']:
+        context['cloudfront'] = {
+            'subdomain': _parameterize(context['project']['aws']['cloudfront']['subdomain'])
+        }
 
     return context
 
