@@ -275,7 +275,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::CloudFront::Distribution',
                 'Properties': {
                     'DistributionConfig': {
-                        'Aliases': ['prod--cdn-of-www.example.org'],
+                        'Aliases': ['*.example.org'],
                         'DefaultCacheBehavior': {
                             'ForwardedValues': {
                                 # yes this is a string containing the word 'true'...
@@ -284,7 +284,7 @@ class TestBuildercoreTrop(base.BaseCase):
                             'TargetOriginId': 'CloudFrontCDNOrigin',
                             'ViewerProtocolPolicy': 'redirect-to-https',
                         },
-                                # yes this is a string containing the word 'true'...
+                        # yes this is a string containing the word 'true'...
                         'Enabled': 'true',
                         'Origins': [
                             {

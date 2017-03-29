@@ -482,9 +482,10 @@ def render_elb(context, template, ec2_instances):
 
 def render_cloudfront(context, template, origin_hostname):
     origin = CLOUDFRONT_TITLE+'Origin'
+    allowed_cnames = "*.%s" % context['domain']
     cdn_hostname = "%s.%s" % (context['cloudfront']['subdomain'], context['domain'])
     props = {
-        'Aliases': [cdn_hostname],
+        'Aliases': [allowed_cnames],
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
@@ -534,8 +535,6 @@ def render(context):
         ensure(context['ec2']['cluster-size'] == 1,
                "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
 
-        #from pprint import pprint
-        #pprint(context)
         if context['full_hostname']:
             dns_record = template.add_resource(external_dns_ec2(context))
             hostname = context['full_hostname']
