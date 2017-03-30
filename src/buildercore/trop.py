@@ -35,6 +35,8 @@ R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
+# from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
+CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
 
 KEYPAIR = "KeyName"
 
@@ -314,8 +316,7 @@ def external_dns_cloudfront(context):
             Name=cdn_hostname,
             Type="A",
             AliasTarget=route53.AliasTarget(
-                # Magic value, put in a constant
-                "Z2FDTNDATAQYW2",
+                CLOUDFRONT_HOSTED_ZONE_ID,
                 GetAtt(CLOUDFRONT_TITLE, "DomainName")
             )
         ))
