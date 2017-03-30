@@ -61,8 +61,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'elb': False,
         'sns': [],
         'sqs': {},
-        'ext': None,
-        'cloudfront': None,
+        'ext': False,
+        'cloudfront': False,
     }
 
     context = copy.deepcopy(defaults)
