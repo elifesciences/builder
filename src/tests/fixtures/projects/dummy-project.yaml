@@ -71,6 +71,11 @@ defaults:
         cloudfront:
             # cloudfront defaults only used if an 'elb' section present in project
             certificate_id: 'dummy...'
+    aws-alt:
+        fresh:
+            description: uses a plain Ubuntu basebox instead of an ami
+            ec2:
+                ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         box-url: null # not needed for boxes hosted on Atlas 
