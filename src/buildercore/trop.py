@@ -33,7 +33,7 @@ EXT_TITLE = "ExtraStorage"
 EXT_MP_TITLE = "MountPoint"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
-R53_CDN_TITLE = "CloudFrontCDNDNS"
+R53_CDN_TITLE = "CloudFrontCDNDNS%s"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
 
 KEYPAIR = "KeyName"
@@ -302,21 +302,25 @@ def internal_dns_elb(context):
 
 def external_dns_cloudfront(context):
     # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    dns_records = []
     hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
-    cdn_hostname = "%s.%s" % (context['cloudfront']['subdomain'], context['domain'])
-    dns_record = route53.RecordSetType(
-        R53_CDN_TITLE,
-        HostedZoneName=hostedzone,
-        Comment="External DNS record for Cloudfront distribution",
-        Name=cdn_hostname,
-        Type="A",
-        AliasTarget=route53.AliasTarget(
-            # Magic value, put in a constant
-            "Z2FDTNDATAQYW2",
-            GetAtt(CLOUDFRONT_TITLE, "DomainName")
-        )
-    )
-    return dns_record
+    i = 1
+    for subdomain in context['cloudfront']['subdomains']:
+        cdn_hostname = "%s.%s" % (subdomain, context['domain'])
+        dns_records.append(route53.RecordSetType(
+            R53_CDN_TITLE % i,
+            HostedZoneName=hostedzone,
+            Comment="External DNS record for Cloudfront distribution",
+            Name=cdn_hostname,
+            Type="A",
+            AliasTarget=route53.AliasTarget(
+                # Magic value, put in a constant
+                "Z2FDTNDATAQYW2",
+                GetAtt(CLOUDFRONT_TITLE, "DomainName")
+            )
+        ))
+        i = i + 1
+    return dns_records
 
 #
 # render_* funcs
@@ -500,9 +504,9 @@ def render_elb(context, template, ec2_instances):
 
 def render_cloudfront(context, template, origin_hostname):
     origin = CLOUDFRONT_TITLE+'Origin'
-    allowed_cnames = "*.%s" % context['domain']
+    allowed_cnames = ["%s.%s" % (subdomain, context['domain']) for subdomain in context['cloudfront']['subdomains']]
     props = {
-        'Aliases': [allowed_cnames],
+        'Aliases': allowed_cnames,
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
@@ -527,7 +531,8 @@ def render_cloudfront(context, template, origin_hostname):
         DistributionConfig=cloudfront.DistributionConfig(**props)
     ))
 
-    template.add_resource(external_dns_cloudfront(context))
+    for dns in external_dns_cloudfront(context):
+        template.add_resource(dns)
 
 def render(context):
     template = Template()

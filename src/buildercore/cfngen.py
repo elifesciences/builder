@@ -156,7 +156,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     ensure('cloudfront' in context['project']['aws'], "Context for AWS is missing an explicit configuration for cloudfront: %s", context['project']['aws'])
     if context['project']['aws']['cloudfront']:
         context['cloudfront'] = {
-            'subdomain': _parameterize(context['project']['aws']['cloudfront']['subdomain'])
+            'subdomains': [_parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']]
         }
 
     return context

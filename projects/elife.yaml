@@ -736,7 +736,12 @@ iiif:
                 size: 30 # GB
         shielded:
             cloudfront:
-                subdomain: "{instance}--cdn-iiif"
+                subdomains: 
+                    - "{instance}--cdn-iiif"
+        shielded2:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
     vagrant:
         ports:
             1241: 80

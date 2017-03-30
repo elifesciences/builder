@@ -263,7 +263,7 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-cloudfront', **extra)
         self.assertEquals(
             {
-                'subdomain': 'prod--cdn-of-www'
+                'subdomains': ['prod--cdn-of-www']
             },
             context['cloudfront']
         )
@@ -275,7 +275,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::CloudFront::Distribution',
                 'Properties': {
                     'DistributionConfig': {
-                        'Aliases': ['*.example.org'],
+                        'Aliases': ['prod--cdn-of-www.example.org'],
                         'DefaultCacheBehavior': {
                             'ForwardedValues': {
                                 # yes this is a string containing the word 'true'...
@@ -301,7 +301,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['CloudFrontCDN']
         )
-        self.assertTrue('CloudFrontCDNDNS' in data['Resources'].keys())
+        self.assertTrue('CloudFrontCDNDNS1' in data['Resources'].keys())
         self.assertEqual(
             {
                 'Type': 'AWS::Route53::RecordSet',
@@ -318,7 +318,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'Type': 'A',
                 },
             },
-            data['Resources']['CloudFrontCDNDNS']
+            data['Resources']['CloudFrontCDNDNS1']
         )
 
     def _parse_json(self, dump):

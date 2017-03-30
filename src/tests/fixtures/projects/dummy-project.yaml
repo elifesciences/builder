@@ -194,7 +194,8 @@ project-with-cloudfront:
         ports:
             - 80
         cloudfront:
-            subdomain: "{instance}--cdn-of-www"
+            subdomains:
+                - "{instance}--cdn-of-www"
 
 
 project-with-cluster:
