@@ -503,7 +503,7 @@ def render_elb(context, template, ec2_instances):
     template.add_resource(dns(context))
 
 def render_cloudfront(context, template, origin_hostname):
-    origin = CLOUDFRONT_TITLE+'Origin'
+    origin = CLOUDFRONT_TITLE + 'Origin'
     allowed_cnames = ["%s.%s" % (subdomain, context['domain']) for subdomain in context['cloudfront']['subdomains']]
     props = {
         'Aliases': allowed_cnames,
@@ -526,7 +526,7 @@ def render_cloudfront(context, template, origin_hostname):
             )
         ],
         'ViewerCertificate': cloudfront.ViewerCertificate(
-            AcmCertificateArn=context['cloudfront']['certificate'],
+            IamCertificateId=context['cloudfront']['certificate_id'],
             SslSupportMethod='sni-only'
         )
     }

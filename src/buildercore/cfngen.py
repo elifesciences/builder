@@ -111,17 +111,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
 
-    if 'elb' in context['project']['aws']:
-        if isinstance(context['project']['aws']['elb'], dict):
-            context['elb'] = context['project']['aws']['elb']
-        else:
-            context['elb'] = {}
-        context['elb'].update({
-            'subnets': [
-                context['project']['aws']['subnet-id'],
-                context['project']['aws']['redundant-subnet-id']
-            ]
-        })
+    build_context_elb(context)
 
     def _parameterize(string):
         return string.format(instance=context['instance_id'])
@@ -153,17 +143,32 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['s3'][bucket_name] = default_bucket_configuration.copy()
         context['s3'][bucket_name].update(configuration if configuration else {})
 
-    # first check if it is defined at all in defaults
-    if 'cloudfront' in context['project']['aws']:
-        context['cloudfront'] = {
-            'subdomains': [_parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']],
-            'certificate': context['project']['aws']['cloudfront']['certificate'],
-        }
-    else:
-        context['cloudfront'] = False
+    build_context_cloudfront(context, parameterize=_parameterize)
 
     return context
 
+
+def build_context_elb(context):
+    if 'elb' in context['project']['aws']:
+        if isinstance(context['project']['aws']['elb'], dict):
+            context['elb'] = context['project']['aws']['elb']
+        else:
+            context['elb'] = {}
+        context['elb'].update({
+            'subnets': [
+                context['project']['aws']['subnet-id'],
+                context['project']['aws']['redundant-subnet-id']
+            ]
+        })
+
+def build_context_cloudfront(context, parameterize):
+    if 'cloudfront' in context['project']['aws']:
+        context['cloudfront'] = {
+            'subdomains': [parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']],
+            'certificate_id': context['project']['aws']['cloudfront']['certificate_id'],
+        }
+    else:
+        context['cloudfront'] = False
 
 def choose_config(stackname):
     (pname, instance_id) = core.parse_stackname(stackname)

@@ -86,7 +86,7 @@ defaults:
         s3: {}
         cloudfront: 
             # cloudfront defaults only used if an 'elb' section present in project
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
+            certificate_id: ASCAIRXYIRFBOR5QSDP5M
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

@@ -70,7 +70,7 @@ defaults:
         s3: []
         cloudfront:
             # cloudfront defaults only used if an 'elb' section present in project
-            certificate: 'dummy...'
+            certificate_id: 'dummy...'
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         box-url: null # not needed for boxes hosted on Atlas 
