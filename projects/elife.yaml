@@ -84,7 +84,7 @@ defaults:
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
         s3: {}
-        cloudfront: None
+        cloudfront: null
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -734,6 +734,9 @@ iiif:
         prod:
             ext:
                 size: 30 # GB
+        shielded:
+            cloudfront:
+                subdomain: "{instance}--cdn-iiif"
     vagrant:
         ports:
             1241: 80

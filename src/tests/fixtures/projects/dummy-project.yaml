@@ -68,7 +68,7 @@ defaults:
         sns: []
         sqs: []
         s3: []
-        cloudfront: None
+        cloudfront: null
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -195,7 +195,6 @@ project-with-cloudfront:
             - 80
         cloudfront:
             subdomain: "{instance}--cdn-of-www"
-            additional_subdomains: []
 
 
 project-with-cluster:
