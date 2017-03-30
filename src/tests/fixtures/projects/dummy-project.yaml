@@ -69,7 +69,7 @@ defaults:
         sqs: []
         s3: []
         cloudfront:
-            # cloudfront defaults only used if an 'elb' section present in project
+            # cloudfront defaults only used if a 'cloudfront' section present in project
             certificate_id: 'dummy...'
     aws-alt:
         fresh:

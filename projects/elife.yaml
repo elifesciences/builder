@@ -85,7 +85,7 @@ defaults:
         #       deletion-policy: delete|retain
         s3: {}
         cloudfront: 
-            # cloudfront defaults only used if an 'elb' section present in project
+            # cloudfront defaults only used if a 'cloudfront' section present in project
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
     aws-alt:
         fresh:
