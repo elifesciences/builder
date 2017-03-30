@@ -515,6 +515,10 @@ def render_cloudfront(context, template, origin_hostname):
             cloudfront.Origin(
                 DomainName=origin_hostname,
                 Id=origin
+                #CustomOriginConfig=CustomOrigin(
+                #    HTTPSPort=443,
+                #    OriginProtocolPolicy='https-only'
+                #)
             )
         ]
     }
@@ -553,8 +557,7 @@ def render(context):
                "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
 
         if context['full_hostname']:
-            dns_record = template.add_resource(external_dns_ec2(context))
-            hostname = context['full_hostname']
+            template.add_resource(external_dns_ec2(context))
 
         # ec2 nodes in a cluster DONT get an internal hostname
         if context['int_full_hostname']:

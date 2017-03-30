@@ -1,6 +1,5 @@
 import yaml
 from os.path import join
-import json
 from . import base
 from buildercore import cfngen, trop, utils
 
