@@ -1,3 +1,4 @@
+import yaml
 from os.path import join
 import json
 from . import base
@@ -19,7 +20,7 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('dummy3', **extra)
         self.assertEqual(context['rds_dbname'], "dummy3test")
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
-        data = json.loads(trop.render(context))
+        data = self._parse_json(trop.render(context))
         self.assertTrue(isinstance(utils.lu(data, 'Resources.AttachedDB'), dict))
 
     def test_sns_template(self):
@@ -28,7 +29,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('just-some-sns', **extra)
         cfn_template = trop.render(context)
-        data = json.loads(cfn_template)
+        data = self._parse_json(cfn_template)
         self.assertEqual(['WidgetsProdTopic'], data['Resources'].keys())
         self.assertEqual(
             {'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}},
@@ -46,7 +47,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-sqs', **extra)
         cfn_template = trop.render(context)
-        data = json.loads(cfn_template)
+        data = self._parse_json(cfn_template)
         self.assertEqual(['ProjectWithSqsIncomingProdQueue'], data['Resources'].keys())
         self.assertEqual(
             {'Type': 'AWS::SQS::Queue', 'Properties': {'QueueName': 'project-with-sqs-incoming-prod'}},
@@ -64,7 +65,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-ext', **extra)
         cfn_template = trop.render(context)
-        data = json.loads(cfn_template)
+        data = self._parse_json(cfn_template)
         self.assertIn('MountPoint', data['Resources'].keys())
         self.assertIn('ExtraStorage', data['Resources'].keys())
         self.assertEqual(
@@ -82,7 +83,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cluster', **extra)
         cfn_template = trop.render(context)
-        data = json.loads(cfn_template)
+        data = self._parse_json(cfn_template)
         resources = data['Resources']
         self.assertIn('EC2Instance1', resources.keys())
         self.assertIn('EC2Instance2', resources.keys())
@@ -187,7 +188,7 @@ class TestBuildercoreTrop(base.BaseCase):
             context['s3']['widgets-prod']
         )
         cfn_template = trop.render(context)
-        data = json.loads(cfn_template)
+        data = self._parse_json(cfn_template)
         self.assertTrue('WidgetsProdBucket' in data['Resources'].keys())
         self.assertTrue('WidgetsArchiveProdBucket' in data['Resources'].keys())
         self.assertTrue('WidgetsStaticHostingProdBucket' in data['Resources'].keys())
@@ -268,7 +269,7 @@ class TestBuildercoreTrop(base.BaseCase):
             context['cloudfront']
         )
         cfn_template = trop.render(context)
-        data = json.loads(cfn_template)
+        data = self._parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
         self.assertEqual(
             {
@@ -297,3 +298,32 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['CloudFrontCDN']
         )
+        self.assertTrue('CloudFrontCDNDNS' in data['Resources'].keys())
+        self.assertEqual(
+            {
+                'Type': 'AWS::Route53::RecordSet',
+                'Properties': {
+                    'AliasTarget': {
+                        'DNSName': {
+                            'Fn::GetAtt': ['CloudFrontCDN', 'DomainName']
+                        },
+                        'HostedZoneId': 'Z2FDTNDATAQYW2',
+                    },
+                    'Comment': 'External DNS record for Cloudfront distribution',
+                    'HostedZoneName': 'example.org.',
+                    'Name': 'prod--cdn-of-www.example.org',
+                    'Type': 'A',
+                },
+            },
+            data['Resources']['CloudFrontCDNDNS']
+        )
+
+    def _parse_json(self, dump):
+        """Parses dump into a dictionary, using strings rather than unicode strings
+
+        Ridiculously, the yaml module is more helpful in parsing JSON than the json module. Using json.loads() will result in unhelpful error messages like
+        -  'Type': 'AWS::Route53::RecordSet'}
+        +  u'Type': u'AWS::Route53::RecordSet'}
+        that hide the true comparison problem in self.assertEquals().
+        """
+        return yaml.safe_load(dump)

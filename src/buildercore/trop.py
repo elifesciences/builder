@@ -33,6 +33,7 @@ EXT_TITLE = "ExtraStorage"
 EXT_MP_TITLE = "MountPoint"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
+R53_CDN_TITLE = "CloudFrontCDNDNS"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
 
 KEYPAIR = "KeyName"
@@ -299,6 +300,23 @@ def internal_dns_elb(context):
     )
     return dns_record
 
+def external_dns_cloudfront(context):
+    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
+    cdn_hostname = "%s.%s" % (context['cloudfront']['subdomain'], context['domain'])
+    dns_record = route53.RecordSetType(
+        R53_CDN_TITLE,
+        HostedZoneName=hostedzone,
+        Comment="External DNS record for Cloudfront distribution",
+        Name=cdn_hostname,
+        Type="A",
+        AliasTarget=route53.AliasTarget(
+            # Magic value, put in a constant
+            "Z2FDTNDATAQYW2",
+            GetAtt(CLOUDFRONT_TITLE, "DomainName")
+        )
+    )
+    return dns_record
 
 #
 # render_* funcs
@@ -483,7 +501,6 @@ def render_elb(context, template, ec2_instances):
 def render_cloudfront(context, template, origin_hostname):
     origin = CLOUDFRONT_TITLE+'Origin'
     allowed_cnames = "*.%s" % context['domain']
-    cdn_hostname = "%s.%s" % (context['cloudfront']['subdomain'], context['domain'])
     props = {
         'Aliases': [allowed_cnames],
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
@@ -506,7 +523,7 @@ def render_cloudfront(context, template, origin_hostname):
         DistributionConfig=cloudfront.DistributionConfig(**props)
     ))
 
-    # TODO: we need to add to Route53 the CNAME, it's not enough to configure it here I think
+    template.add_resource(external_dns_cloudfront(context))
 
 def render(context):
     template = Template()
