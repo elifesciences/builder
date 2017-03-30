@@ -290,6 +290,10 @@ class TestBuildercoreTrop(base.BaseCase):
                             {
                                 'DomainName': 'prod--www.example.org',
                                 'Id': 'CloudFrontCDNOrigin',
+                                'CustomOriginConfig': {
+                                    'HTTPSPort': 443,
+                                    'OriginProtocolPolicy': 'https-only',
+                                },
                             }
                         ],
                     },

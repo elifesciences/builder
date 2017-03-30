@@ -514,11 +514,11 @@ def render_cloudfront(context, template, origin_hostname):
         'Origins': [
             cloudfront.Origin(
                 DomainName=origin_hostname,
-                Id=origin
-                #CustomOriginConfig=CustomOrigin(
-                #    HTTPSPort=443,
-                #    OriginProtocolPolicy='https-only'
-                #)
+                Id=origin,
+                CustomOriginConfig=cloudfront.CustomOrigin(
+                    HTTPSPort=443,
+                    OriginProtocolPolicy='https-only'
+                )
             )
         ]
     }
