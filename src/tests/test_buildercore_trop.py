@@ -263,7 +263,8 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-cloudfront', **extra)
         self.assertEquals(
             {
-                'subdomains': ['prod--cdn-of-www']
+                'certificate': 'dummy...',
+                'subdomains': ['prod--cdn-of-www'],
             },
             context['cloudfront']
         )
@@ -296,6 +297,10 @@ class TestBuildercoreTrop(base.BaseCase):
                                 },
                             }
                         ],
+                        'ViewerCertificate': {
+                            'AcmCertificateArn': 'dummy...',
+                            'SslSupportMethod': 'sni-only',
+                        },
                     },
                 },
             },

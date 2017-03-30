@@ -524,7 +524,11 @@ def render_cloudfront(context, template, origin_hostname):
                     OriginProtocolPolicy='https-only'
                 )
             )
-        ]
+        ],
+        'ViewerCertificate': cloudfront.ViewerCertificate(
+            AcmCertificateArn=context['cloudfront']['certificate'],
+            SslSupportMethod='sni-only'
+        )
     }
     template.add_resource(cloudfront.Distribution(
         CLOUDFRONT_TITLE,

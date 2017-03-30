@@ -84,7 +84,9 @@ defaults:
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
         s3: {}
-        cloudfront: null
+        cloudfront: 
+            # cloudfront defaults only used if an 'elb' section present in project
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

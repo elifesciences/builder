@@ -153,11 +153,14 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['s3'][bucket_name] = default_bucket_configuration.copy()
         context['s3'][bucket_name].update(configuration if configuration else {})
 
-    ensure('cloudfront' in context['project']['aws'], "Context for AWS is missing an explicit configuration for cloudfront: %s", context['project']['aws'])
-    if context['project']['aws']['cloudfront']:
+    # first check if it is defined at all in defaults
+    if 'cloudfront' in context['project']['aws']:
         context['cloudfront'] = {
-            'subdomains': [_parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']]
+            'subdomains': [_parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']],
+            'certificate': context['project']['aws']['cloudfront']['certificate'],
         }
+    else:
+        context['cloudfront'] = False
 
     return context
 
