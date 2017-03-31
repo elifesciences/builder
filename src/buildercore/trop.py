@@ -524,6 +524,7 @@ def render_cloudfront(context, template, origin_hostname):
             ViewerProtocolPolicy='redirect-to-https',
         ),
         'Enabled': True,
+        'HttpVersion': 'http2',
         'Origins': [
             cloudfront.Origin(
                 DomainName=origin_hostname,

@@ -297,6 +297,7 @@ class TestBuildercoreTrop(base.BaseCase):
                         },
                         # yes this is a string containing the word 'true'...
                         'Enabled': 'true',
+                        'HttpVersion': 'http2',
                         'Origins': [
                             {
                                 'DomainName': 'prod--www.example.org',
