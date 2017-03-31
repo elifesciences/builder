@@ -332,10 +332,10 @@ journal-cms:
                 size: 30 # GB
         continuumtest:
             description: production-like environment.
-            #rds:
-            #    engine: MySQL
-            #    version: '5.7'
-            #    storage: 12 # GB
+            rds:
+                engine: MySQL
+                version: '5.7'
+                storage: 12 # GB
             ext:
                 size: 30 # GB
         prod:
