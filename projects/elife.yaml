@@ -736,6 +736,10 @@ iiif:
         end2end:
             ext:
                 size: 30 # GB
+        continuumtest:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
         prod:
             ext:
                 size: 30 # GB
