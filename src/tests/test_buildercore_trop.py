@@ -338,6 +338,21 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['CloudFrontCDNDNS1']
         )
 
+    def test_cdn_template_minimal(self):
+        extra = {
+            'stackname': 'project-with-cloudfront-minimal--prod',
+        }
+        context = cfngen.build_context('project-with-cloudfront-minimal', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        self.assertEquals(
+            {
+                'Forward': 'none',
+            },
+            data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['DefaultCacheBehavior']['ForwardedValues']['Cookies']
+        )
+
     def _parse_json(self, dump):
         """Parses dump into a dictionary, using strings rather than unicode strings
 

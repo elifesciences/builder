@@ -506,6 +506,15 @@ def render_elb(context, template, ec2_instances):
 def render_cloudfront(context, template, origin_hostname):
     origin = CLOUDFRONT_TITLE + 'Origin'
     allowed_cnames = ["%s.%s" % (subdomain, context['domain']) for subdomain in context['cloudfront']['subdomains']]
+    if context['cloudfront']['cookies']:
+        cookies = cloudfront.Cookies(
+            Forward='whitelist',
+            WhitelistedNames=context['cloudfront']['cookies']
+        )
+    else:
+        cookies = cloudfront.Cookies(
+            Forward='none'
+        )
     props = {
         'Aliases': allowed_cnames,
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
@@ -514,10 +523,7 @@ def render_cloudfront(context, template, origin_hostname):
             Compress=context['cloudfront']['compress'],
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
-                Cookies=cloudfront.Cookies(
-                    Forward='whitelist',
-                    WhitelistedNames=context['cloudfront']['cookies']
-                ),
+                Cookies=cookies,
                 Headers=context['cloudfront']['headers'],
                 QueryString=True
             ),
