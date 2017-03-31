@@ -264,6 +264,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEquals(
             {
                 'certificate_id': 'dummy...',
+                'cookies': ['session_id'],
                 'subdomains': ['prod--cdn-of-www'],
             },
             context['cloudfront']
@@ -278,7 +279,13 @@ class TestBuildercoreTrop(base.BaseCase):
                     'DistributionConfig': {
                         'Aliases': ['prod--cdn-of-www.example.org'],
                         'DefaultCacheBehavior': {
+                            'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
+                            'CachedMethods': ['GET', 'HEAD'],
                             'ForwardedValues': {
+                                'Cookies': {
+                                    'Forward': 'whitelist',
+                                    'WhitelistedNames': ['session_id'],
+                                },
                                 'Headers': [],
                                 # yes this is a string containing the word 'true'...
                                 'QueryString': "true",

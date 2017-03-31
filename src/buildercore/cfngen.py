@@ -166,6 +166,7 @@ def build_context_cloudfront(context, parameterize):
         context['cloudfront'] = {
             'subdomains': [parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']],
             'certificate_id': context['project']['aws']['cloudfront']['certificate_id'],
+            'cookies': context['project']['aws']['cloudfront']['cookies'],
         }
     else:
         context['cloudfront'] = False

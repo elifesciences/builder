@@ -71,6 +71,7 @@ defaults:
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             certificate_id: 'dummy...'
+            cookies: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -198,6 +199,8 @@ project-with-cloudfront:
         cloudfront:
             subdomains:
                 - "{instance}--cdn-of-www"
+            cookies:
+                - session_id
 
 
 project-with-cluster:

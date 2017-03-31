@@ -509,8 +509,14 @@ def render_cloudfront(context, template, origin_hostname):
     props = {
         'Aliases': allowed_cnames,
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
+            AllowedMethods=['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
+            CachedMethods=['GET', 'HEAD'],
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
+                Cookies=cloudfront.Cookies(
+                    Forward='whitelist',
+                    WhitelistedNames=context['cloudfront']['cookies']
+                ),
                 Headers=[],
                 QueryString=True
             ),
