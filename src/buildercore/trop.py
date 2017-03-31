@@ -518,7 +518,7 @@ def render_cloudfront(context, template, origin_hostname):
                     Forward='whitelist',
                     WhitelistedNames=context['cloudfront']['cookies']
                 ),
-                Headers=[],
+                Headers=context['cloudfront']['headers'],
                 QueryString=True
             ),
             ViewerProtocolPolicy='redirect-to-https',

@@ -73,6 +73,7 @@ defaults:
             certificate_id: 'dummy...'
             cookies: []
             compress: True
+            headers: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -202,6 +203,8 @@ project-with-cloudfront:
                 - "{instance}--cdn-of-www"
             cookies:
                 - session_id
+            headers:
+                - Accept
 
 
 project-with-cluster:

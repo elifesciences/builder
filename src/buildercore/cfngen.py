@@ -168,6 +168,7 @@ def build_context_cloudfront(context, parameterize):
             'certificate_id': context['project']['aws']['cloudfront']['certificate_id'],
             'cookies': context['project']['aws']['cloudfront']['cookies'],
             'compress': context['project']['aws']['cloudfront']['compress'],
+            'headers': context['project']['aws']['cloudfront']['headers'],
         }
     else:
         context['cloudfront'] = False

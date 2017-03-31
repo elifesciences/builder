@@ -89,6 +89,7 @@ defaults:
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
             compress: True
+            headers: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

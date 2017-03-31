@@ -266,6 +266,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'certificate_id': 'dummy...',
                 'compress': True,
                 'cookies': ['session_id'],
+                'headers': ['Accept'],
                 'subdomains': ['prod--cdn-of-www'],
             },
             context['cloudfront']
@@ -288,7 +289,7 @@ class TestBuildercoreTrop(base.BaseCase):
                                     'Forward': 'whitelist',
                                     'WhitelistedNames': ['session_id'],
                                 },
-                                'Headers': [],
+                                'Headers': ['Accept'],
                                 # yes this is a string containing the word 'true'...
                                 'QueryString': "true",
                             },
