@@ -747,6 +747,10 @@ iiif:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
+        shielded3:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
     vagrant:
         ports:
             1241: 80
