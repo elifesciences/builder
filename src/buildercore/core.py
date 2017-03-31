@@ -140,7 +140,7 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
     ec2_instances = conn.get_only_instances(filters=filters)
     LOG.info("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
-        raise RuntimeError("ec2_instances is empty and this it not allowed in this situation")
+        raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
 
@@ -388,9 +388,7 @@ def stack_data(stackname, ensure_single_instance=False):
     try:
         ec2_instances = find_ec2_instances(stackname)
 
-        if len(ec2_instances) < 1:
-            raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped" % stackname)
-        elif len(ec2_instances) > 1 and ensure_single_instance:
+        if len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
         def ec2data(ec2):
