@@ -279,6 +279,7 @@ class TestBuildercoreTrop(base.BaseCase):
                         'Aliases': ['prod--cdn-of-www.example.org'],
                         'DefaultCacheBehavior': {
                             'ForwardedValues': {
+                                'Headers': [],
                                 # yes this is a string containing the word 'true'...
                                 'QueryString': "true",
                             },

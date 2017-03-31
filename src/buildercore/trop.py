@@ -511,6 +511,7 @@ def render_cloudfront(context, template, origin_hostname):
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
+                Headers=[],
                 QueryString=True
             ),
             ViewerProtocolPolicy='redirect-to-https',
