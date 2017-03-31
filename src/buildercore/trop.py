@@ -511,6 +511,7 @@ def render_cloudfront(context, template, origin_hostname):
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
             AllowedMethods=['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
             CachedMethods=['GET', 'HEAD'],
+            Compress=context['cloudfront']['compress'],
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
                 Cookies=cloudfront.Cookies(

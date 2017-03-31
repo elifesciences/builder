@@ -264,6 +264,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEquals(
             {
                 'certificate_id': 'dummy...',
+                'compress': True,
                 'cookies': ['session_id'],
                 'subdomains': ['prod--cdn-of-www'],
             },
@@ -281,6 +282,7 @@ class TestBuildercoreTrop(base.BaseCase):
                         'DefaultCacheBehavior': {
                             'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
                             'CachedMethods': ['GET', 'HEAD'],
+                            'Compress': 'true',
                             'ForwardedValues': {
                                 'Cookies': {
                                     'Forward': 'whitelist',

@@ -88,6 +88,7 @@ defaults:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
+            compress: True
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
