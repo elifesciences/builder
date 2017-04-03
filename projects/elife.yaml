@@ -736,6 +736,9 @@ iiif:
         end2end:
             ext:
                 size: 30 # GB
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
         continuumtest:
             cloudfront:
                 subdomains: 
@@ -743,15 +746,10 @@ iiif:
         prod:
             ext:
                 size: 30 # GB
-        shielded:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
         shielded2:
-            cloudfront:
-                subdomains: 
-                    - "{instance}--cdn-iiif"
-        shielded3:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
