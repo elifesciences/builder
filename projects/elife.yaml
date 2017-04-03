@@ -90,6 +90,7 @@ defaults:
             cookies: []
             compress: True
             headers: []
+            errors: null
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
