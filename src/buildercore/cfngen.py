@@ -163,18 +163,22 @@ def build_context_elb(context):
 
 def build_context_cloudfront(context, parameterize):
     if 'cloudfront' in context['project']['aws']:
+        if context['project']['aws']['cloudfront']['errors']:
+            errors = {
+                # TODO: parameterize 'domain'
+                'domain': context['project']['aws']['cloudfront']['errors']['domain'],
+                'pattern': context['project']['aws']['cloudfront']['errors']['pattern'],
+                'codes': context['project']['aws']['cloudfront']['errors']['codes'],
+            }
+        else:
+            errors = None
         context['cloudfront'] = {
             'subdomains': [parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']],
             'certificate_id': context['project']['aws']['cloudfront']['certificate_id'],
             'cookies': context['project']['aws']['cloudfront']['cookies'],
             'compress': context['project']['aws']['cloudfront']['compress'],
             'headers': context['project']['aws']['cloudfront']['headers'],
-            'errors': {
-                # TODO: parameterize 'domain'
-                'domain': context['project']['aws']['cloudfront']['errors']['domain'],
-                'pattern': context['project']['aws']['cloudfront']['errors']['pattern'],
-                'codes': context['project']['aws']['cloudfront']['errors']['codes'],
-            }
+            'errors': errors,
         }
     else:
         context['cloudfront'] = False
