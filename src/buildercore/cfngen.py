@@ -58,6 +58,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'rds_password': None,
         'rds_instance_id': None,
         'ec2': False,
+        's3': {},
         'elb': False,
         'sns': [],
         'sqs': {},
@@ -130,7 +131,6 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['sqs'][queue_name] = subscriptions
 
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
-    context['s3'] = {}
     default_bucket_configuration = {
         'sqs-notifications': {},
         'deletion-policy': 'delete',
