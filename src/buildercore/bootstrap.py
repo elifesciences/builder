@@ -88,6 +88,9 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         setup_ec2(stackname, context['ec2'])
 
         return True
+    except StackTakingALongTimeToComplete as err:
+        LOG.info("Stack taking a long time to complete: %s", err.message)
+        raise
     except BotoServerError as err:
         if err.message.endswith(' already exists'):
             LOG.debug(err.message)
@@ -103,16 +106,23 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         on_error()
         raise
 
+class StackTakingALongTimeToComplete(RuntimeError):
+    pass
+
 def _wait_until_in_progress(stackname):
     def is_updating(stackname):
         stack_status = core.describe_stack(stackname).stack_status
         LOG.info("Stack status: %s", stack_status)
         return stack_status in ['CREATE_IN_PROGRESS']
-    utils.call_while(partial(is_updating, stackname), timeout=3600, update_msg='Waiting for AWS to finish creating stack ...')
+    utils.call_while(
+        partial(is_updating, stackname),
+        timeout=3600,
+        update_msg='Waiting for AWS to finish creating stack ...',
+        exception_class=StackTakingALongTimeToComplete
+    )
     final_stack = core.describe_stack(stackname)
     events = [(e.resource_status, e.resource_status_reason) for e in final_stack.describe_events()]
     ensure(final_stack.stack_status in ['CREATE_COMPLETE'], "Failed to create stack: %s.\nEvents: %s", final_stack.stack_status, pformat(events))
-
 
 def setup_ec2(stackname, context_ec2):
     if not context_ec2:
