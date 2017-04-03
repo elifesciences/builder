@@ -74,6 +74,7 @@ defaults:
             cookies: []
             compress: True
             headers: []
+            errors: null
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -216,6 +217,17 @@ project-with-cloudfront-minimal:
             subdomains:
                 - "{instance}--cdn-of-www"
 
+project-with-cloudfront-error-pages:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        cloudfront:
+            subdomains:
+                - "{instance}--cdn-of-www"
+            errors: 
+                domain: example-errors.com
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

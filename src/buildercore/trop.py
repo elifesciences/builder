@@ -546,6 +546,27 @@ def render_cloudfront(context, template, origin_hostname):
             SslSupportMethod='sni-only'
         )
     }
+    if context['cloudfront']['errors']:
+        props['Origins'].append(cloudfront.Origin(
+            DomainName=context['cloudfront']['errors']['domain'],
+            # TODO: constant
+            Id='errors',
+            # no advantage in using cloudfront.S3Origin for public buckets
+            CustomOriginConfig=cloudfront.CustomOrigin(
+                HTTPSPort=443,
+                OriginProtocolPolicy='https-only'
+            )
+        ))
+        props['CacheBehaviors'] = [
+            cloudfront.CacheBehavior(
+                TargetOriginId='errors',
+                ForwardedValues=cloudfront.ForwardedValues(
+                    QueryString=False
+                ),
+                PathPattern='/errors/*',
+                ViewerProtocolPolicy='allow-all',
+            ),
+        ]
     template.add_resource(cloudfront.Distribution(
         CLOUDFRONT_TITLE,
         DistributionConfig=cloudfront.DistributionConfig(**props)

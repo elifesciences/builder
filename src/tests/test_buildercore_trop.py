@@ -353,6 +353,38 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['DefaultCacheBehavior']['ForwardedValues']['Cookies']
         )
 
+    def test_cdn_template_error_pages(self):
+        extra = {
+            'stackname': 'project-with-cloudfront-error-pages--prod',
+        }
+        context = cfngen.build_context('project-with-cloudfront-error-pages', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        self.assertEquals(
+            {
+                'CustomOriginConfig': {
+                    'HTTPSPort': 443,
+                    'OriginProtocolPolicy': 'https-only',
+                },
+                'DomainName': 'example-errors.com',
+                'Id': 'errors',
+            },
+            data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['Origins'][1]
+        )
+        self.assertEquals(
+            [{
+                'ForwardedValues': {
+                    # yes this is a string containing the word 'false'...
+                    'QueryString': 'false',
+                },
+                'PathPattern': '/errors/*',
+                'TargetOriginId': 'errors',
+                'ViewerProtocolPolicy': 'allow-all',
+            }],
+            data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CacheBehaviors']
+        )
+
     def _parse_json(self, dump):
         """Parses dump into a dictionary, using strings rather than unicode strings
 
