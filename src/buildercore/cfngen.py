@@ -169,8 +169,12 @@ def build_context_cloudfront(context, parameterize):
             'cookies': context['project']['aws']['cloudfront']['cookies'],
             'compress': context['project']['aws']['cloudfront']['compress'],
             'headers': context['project']['aws']['cloudfront']['headers'],
-            # TODO: parameterize 'domain'
-            'errors': context['project']['aws']['cloudfront']['errors'],
+            'errors': {
+                # TODO: parameterize 'domain'
+                'domain': context['project']['aws']['cloudfront']['errors']['domain'],
+                'pattern': context['project']['aws']['cloudfront']['errors']['pattern'],
+                'codes': context['project']['aws']['cloudfront']['errors']['codes'],
+            }
         }
     else:
         context['cloudfront'] = False

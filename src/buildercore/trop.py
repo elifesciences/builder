@@ -567,6 +567,14 @@ def render_cloudfront(context, template, origin_hostname):
                 ViewerProtocolPolicy='allow-all',
             ),
         ]
+        all_codes = [400, 403, 404, 405, 414, 416, 500, 501, 502, 503, 504]
+        props['CustomErrorResponses'] = [
+            cloudfront.CustomErrorResponse(
+                ErrorCode=c,
+                ResponseCode=c,
+                ResponsePagePath='%s.html' % c if c in context['cloudfront']['errors']['codes'] else "%sxx.html" % (c / 100)
+            ) for c in all_codes
+        ]
     template.add_resource(cloudfront.Distribution(
         CLOUDFRONT_TITLE,
         DistributionConfig=cloudfront.DistributionConfig(**props)

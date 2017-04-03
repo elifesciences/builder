@@ -229,6 +229,8 @@ project-with-cloudfront-error-pages:
             errors: 
                 domain: example-errors.com
                 pattern: "???.html"
+                codes:
+                    - 404
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
