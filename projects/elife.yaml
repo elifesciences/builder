@@ -763,6 +763,7 @@ iiif:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
+                    - iiif
         shielded2:
             cloudfront:
                 subdomains: 
