@@ -572,7 +572,9 @@ def render_cloudfront(context, template, origin_hostname):
             cloudfront.CustomErrorResponse(
                 ErrorCode=c,
                 ResponseCode=c,
-                ResponsePagePath='%s.html' % c if c in context['cloudfront']['errors']['codes'] else "%sxx.html" % (c / 100)
+                ResponsePagePath='/%s.html' % c \
+                        if c in context['cloudfront']['errors']['codes'] 
+                        else "/%sxx.html" % (c / 100)
             ) for c in all_codes
         ]
     template.add_resource(cloudfront.Distribution(

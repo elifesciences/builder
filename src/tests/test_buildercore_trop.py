@@ -391,7 +391,7 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'ErrorCode': 400,
                 'ResponseCode': 400,
-                'ResponsePagePath': '4xx.html'
+                'ResponsePagePath': '/4xx.html'
             },
             actual_custom_error_responses
         )
@@ -399,7 +399,7 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'ErrorCode': 404,
                 'ResponseCode': 404,
-                'ResponsePagePath': '404.html'
+                'ResponsePagePath': '/404.html'
             },
             actual_custom_error_responses
         )
