@@ -166,6 +166,20 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
+            #
+    aws-alt:
+        end2end:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-gateway"
+        continuumtest:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-gateway"
+        prod:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-gateway"
     vagrant:
         ports:
             1323: 80
