@@ -228,6 +228,7 @@ project-with-cloudfront-error-pages:
                 - "{instance}--cdn-of-www"
             errors: 
                 domain: example-errors.com
+                pattern: "???.html"
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

@@ -169,7 +169,7 @@ def build_context_cloudfront(context, parameterize):
             'cookies': context['project']['aws']['cloudfront']['cookies'],
             'compress': context['project']['aws']['cloudfront']['compress'],
             'headers': context['project']['aws']['cloudfront']['headers'],
-            # TODO: parameterize 'template_url'
+            # TODO: parameterize 'domain'
             'errors': context['project']['aws']['cloudfront']['errors'],
         }
     else:

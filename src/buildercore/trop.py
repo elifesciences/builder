@@ -563,7 +563,7 @@ def render_cloudfront(context, template, origin_hostname):
                 ForwardedValues=cloudfront.ForwardedValues(
                     QueryString=False
                 ),
-                PathPattern='/errors/*',
+                PathPattern=context['cloudfront']['errors']['pattern'],
                 ViewerProtocolPolicy='allow-all',
             ),
         ]

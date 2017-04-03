@@ -378,7 +378,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     # yes this is a string containing the word 'false'...
                     'QueryString': 'false',
                 },
-                'PathPattern': '/errors/*',
+                'PathPattern': '???.html',
                 'TargetOriginId': 'errors',
                 'ViewerProtocolPolicy': 'allow-all',
             }],
