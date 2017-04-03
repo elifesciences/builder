@@ -55,7 +55,8 @@ class TestBuildercoreCfngen(base.BaseCase):
                 "compress": True,
                 "cookies": [],
                 "certificate_id": "AAAA...",
-                "headers": []
+                "headers": [],
+                "errors": None,
             }
             mock_build_context.return_value = context
             delta = cfngen.template_delta('dummy1', stackname='dummy1--test')

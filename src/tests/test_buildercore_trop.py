@@ -268,6 +268,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
                 'subdomains': ['prod--cdn-of-www'],
+                'errors': None,
             },
             context['cloudfront']
         )
