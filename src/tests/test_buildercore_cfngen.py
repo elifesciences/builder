@@ -44,11 +44,8 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.assertEqual(delta, {'Outputs': {}, 'Resources': {}})
 
     def test_template_delta_includes_cloudfront(self):
-        "we do not want to mess with running VMs"
-        context = cfngen.build_context('dummy1', stackname='dummy1--test')
-        context_handler.write_context('dummy1--test', context)
-        template = cfngen.render_template(context)
-        cfngen.write_template('dummy1--test', template)
+        "we can add CDNs (that takes an hour or more) without downtime"
+        context = self._base_context()
         with patch('buildercore.cfngen.build_context') as mock_build_context:
             context['full_hostname'] = "test--dummy1.example.org"
             context['cloudfront'] = {
@@ -64,3 +61,20 @@ class TestBuildercoreCfngen(base.BaseCase):
             delta = cfngen.template_delta('dummy1', stackname='dummy1--test')
             self.assertEqual(delta['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])
             self.assertEqual(delta['Outputs'].keys(), ['DomainName'])
+
+    def test_template_delta_never_includes_ec2(self):
+        "we do not want to mess with running VMs"
+        context = self._base_context()
+        with patch('buildercore.cfngen.build_context') as mock_build_context:
+            context['ec2']['cluster_size'] = 2
+            mock_build_context.return_value = context
+            delta = cfngen.template_delta('dummy1', stackname='dummy1--test')
+            self.assertEqual(delta['Resources'].keys(), [])
+            self.assertEqual(delta['Outputs'].keys(), [])
+
+    def _base_context(self, stackname='dummy1--test'):
+        context = cfngen.build_context('dummy1', stackname=stackname)
+        context_handler.write_context(stackname, context)
+        template = cfngen.render_template(context)
+        cfngen.write_template(stackname, template)
+        return context
