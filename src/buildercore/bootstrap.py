@@ -111,7 +111,7 @@ def _wait_until_in_progress(stackname):
     utils.call_while(partial(is_updating, stackname), timeout=3600, update_msg='Waiting for AWS to finish creating stack ...')
     final_stack = core.describe_stack(stackname)
     events = [(e.resource_status, e.resource_status_reason) for e in final_stack.describe_events()]
-    ensure(final_stack.stack_status in ['CREATE_COMPLETE'], "Final stack status is not successful: %s.\nEvents: %s", final_stack.stack_status, pformat(events))
+    ensure(final_stack.stack_status in ['CREATE_COMPLETE'], "Failed to create stack: %s.\nEvents: %s", final_stack.stack_status, pformat(events))
 
 
 def setup_ec2(stackname, context_ec2):
