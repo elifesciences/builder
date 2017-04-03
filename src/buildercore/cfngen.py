@@ -58,6 +58,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'rds_password': None,
         'rds_instance_id': None,
         'ec2': False,
+        's3': {},
         'elb': False,
         'sns': [],
         'sqs': {},
@@ -130,7 +131,6 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['sqs'][queue_name] = subscriptions
 
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
-    context['s3'] = {}
     default_bucket_configuration = {
         'sqs-notifications': {},
         'deletion-policy': 'delete',
@@ -284,6 +284,7 @@ def template_delta(pname, **more_context):
     old_template = read_template(more_context['stackname'])
     context = build_context(pname, **more_context)
     template = json.loads(render_template(context))
+    updatable_title_prefixes = ['CloudFront']
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -292,9 +293,23 @@ def template_delta(pname, **more_context):
             if 'Fn::GetAtt' in output['Value']:
                 return 'EC2Instance' in output['Value']['Fn::GetAtt'][0]
         return False
+
+    def _title_is_updatable(title):
+        return len([p for p in updatable_title_prefixes if title.startswith(p)]) > 0
+    resources = {
+        title: r for (title, r) in template['Resources'].iteritems()
+        if (title not in old_template['Resources'] and 'EC2Instance' not in title)
+        or _title_is_updatable(title)
+    }
+    outputs = {
+        title: o for (title, o) in template['Outputs'].iteritems()
+        if (title not in old_template['Outputs'] and not _related_to_ec2(o))
+        or _title_is_updatable(title)
+    }
+
     return {
-        'Outputs': {title: o for (title, o) in template['Outputs'].iteritems() if title not in old_template['Outputs'] and not _related_to_ec2(o)},
-        'Resources': {title: r for (title, r) in template['Resources'].iteritems() if title not in old_template['Resources'] and 'EC2Instance' not in title}
+        'Resources': resources,
+        'Outputs': outputs,
     }
 
 def merge_delta(stackname, delta):

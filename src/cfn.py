@@ -47,13 +47,18 @@ def ensure_destroyed(stackname):
 def update(stackname, *service_list):
     """Updates the environment within the stack's ec2 instance.
     does *not* call Cloudformation's `update` command on the stack"""
+    instances = _check_want_to_be_running(stackname)
+    if not instances:
+        return
     return bootstrap.update_stack(stackname, service_list)
 
 @task
 def update_template(stackname):
     """Limited update of the Cloudformation template.
 
-    Resources can be added, but existing ones are immutable.
+    Resources can be added, but most of the existing ones are immutable.
+
+    Some resources are updatable in place.
 
     Moreover, we never add anything related to EC2 instances as they are
     not supported anyway (they will come up as part of the template

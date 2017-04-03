@@ -127,7 +127,7 @@ class SimpleCases(base.BaseCase):
         self.assertEquals([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
 
     def test_find_ec2_instances_requiring_a_non_empty_list(self):
-        self.assertRaises(RuntimeError, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
+        self.assertRaises(core.NoRunningInstances, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
 
 
 class TestCoreNewProjectData(base.BaseCase):
