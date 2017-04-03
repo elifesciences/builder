@@ -68,6 +68,12 @@ defaults:
         sns: []
         sqs: []
         s3: []
+        cloudfront:
+            # cloudfront defaults only used if a 'cloudfront' section present in project
+            certificate_id: 'dummy...'
+            cookies: []
+            compress: True
+            headers: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -185,6 +191,31 @@ project-with-ext:
             - 80
         ext: 
             size: 200
+
+project-with-cloudfront:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        cloudfront:
+            subdomains:
+                - "{instance}--cdn-of-www"
+            cookies:
+                - session_id
+            headers:
+                - Accept
+
+project-with-cloudfront-minimal:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        cloudfront:
+            subdomains:
+                - "{instance}--cdn-of-www"
+
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

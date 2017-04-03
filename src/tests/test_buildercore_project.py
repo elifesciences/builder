@@ -23,7 +23,7 @@ class TestProject(base.BaseCase):
         "a map of organisations and their projects are returned"
         prj_loc_lst = self.parsed_config['project-locations']
         expected = {'dummy-project': [
-            'dummy1', 'dummy2', 'dummy3', 'just-some-sns', 'project-with-sqs', 'project-with-s3', 'project-with-ext', 'project-with-cluster',
+            'dummy1', 'dummy2', 'dummy3', 'just-some-sns', 'project-with-sqs', 'project-with-s3', 'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal', 'project-with-cluster',
         ]}
         #self.assertEqual(project.org_project_map(prj_loc_lst), expected)
         self.assertEqual(project.org_map(prj_loc_lst), expected)
@@ -32,7 +32,7 @@ class TestProject(base.BaseCase):
         "a simple list of projects are returned, ignoring which org they belong to"
         prj_loc_lst = self.parsed_config['project-locations']
         expected = [
-            'dummy1', 'dummy2', 'dummy3', 'just-some-sns', 'project-with-sqs', 'project-with-s3', 'project-with-ext', 'project-with-cluster',
+            'dummy1', 'dummy2', 'dummy3', 'just-some-sns', 'project-with-sqs', 'project-with-s3', 'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal', 'project-with-cluster',
         ]
         self.assertEqual(project.project_list(prj_loc_lst), expected)
 
@@ -204,7 +204,7 @@ class TestMultiProjects(base.BaseCase):
 
     def test_project_list_from_multiple_files(self):
         expected = [
-            'dummy1', 'dummy2', 'dummy3', 'just-some-sns', 'project-with-sqs', 'project-with-s3', 'project-with-ext', 'project-with-cluster',
+            'dummy1', 'dummy2', 'dummy3', 'just-some-sns', 'project-with-sqs', 'project-with-s3', 'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal', 'project-with-cluster',
 
             'yummy1'
         ]

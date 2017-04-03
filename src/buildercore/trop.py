@@ -11,8 +11,7 @@ it to the correct file etc."""
 
 from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
-from troposphere import s3
-from troposphere import elasticloadbalancing as elb
+from troposphere import s3, cloudfront, elasticloadbalancing as elb
 
 from functools import partial
 import logging
@@ -34,6 +33,10 @@ EXT_TITLE = "ExtraStorage"
 EXT_MP_TITLE = "MountPoint"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
+R53_CDN_TITLE = "CloudFrontCDNDNS%s"
+CLOUDFRONT_TITLE = 'CloudFrontCDN'
+# from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
+CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
 
 KEYPAIR = "KeyName"
 
@@ -299,6 +302,26 @@ def internal_dns_elb(context):
     )
     return dns_record
 
+def external_dns_cloudfront(context):
+    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    dns_records = []
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
+    i = 1
+    for subdomain in context['cloudfront']['subdomains']:
+        cdn_hostname = "%s.%s" % (subdomain, context['domain'])
+        dns_records.append(route53.RecordSetType(
+            R53_CDN_TITLE % i,
+            HostedZoneName=hostedzone,
+            Comment="External DNS record for Cloudfront distribution",
+            Name=cdn_hostname,
+            Type="A",
+            AliasTarget=route53.AliasTarget(
+                CLOUDFRONT_HOSTED_ZONE_ID,
+                GetAtt(CLOUDFRONT_TITLE, "DomainName")
+            )
+        ))
+        i = i + 1
+    return dns_records
 
 #
 # render_* funcs
@@ -480,9 +503,56 @@ def render_elb(context, template, ec2_instances):
     dns = external_dns_elb if elb_is_public else internal_dns_elb
     template.add_resource(dns(context))
 
-#
-#
-#
+def render_cloudfront(context, template, origin_hostname):
+    origin = CLOUDFRONT_TITLE + 'Origin'
+    allowed_cnames = ["%s.%s" % (subdomain, context['domain']) for subdomain in context['cloudfront']['subdomains']]
+    if context['cloudfront']['cookies']:
+        cookies = cloudfront.Cookies(
+            Forward='whitelist',
+            WhitelistedNames=context['cloudfront']['cookies']
+        )
+    else:
+        cookies = cloudfront.Cookies(
+            Forward='none'
+        )
+    props = {
+        'Aliases': allowed_cnames,
+        'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
+            AllowedMethods=['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
+            CachedMethods=['GET', 'HEAD'],
+            Compress=context['cloudfront']['compress'],
+            TargetOriginId=origin,
+            ForwardedValues=cloudfront.ForwardedValues(
+                Cookies=cookies,
+                Headers=context['cloudfront']['headers'],
+                QueryString=True
+            ),
+            ViewerProtocolPolicy='redirect-to-https',
+        ),
+        'Enabled': True,
+        'HttpVersion': 'http2',
+        'Origins': [
+            cloudfront.Origin(
+                DomainName=origin_hostname,
+                Id=origin,
+                CustomOriginConfig=cloudfront.CustomOrigin(
+                    HTTPSPort=443,
+                    OriginProtocolPolicy='https-only'
+                )
+            )
+        ],
+        'ViewerCertificate': cloudfront.ViewerCertificate(
+            IamCertificateId=context['cloudfront']['certificate_id'],
+            SslSupportMethod='sni-only'
+        )
+    }
+    template.add_resource(cloudfront.Distribution(
+        CLOUDFRONT_TITLE,
+        DistributionConfig=cloudfront.DistributionConfig(**props)
+    ))
+
+    for dns in external_dns_cloudfront(context):
+        template.add_resource(dns)
 
 def render(context):
     template = Template()
@@ -525,5 +595,9 @@ def render(context):
     if context['int_full_hostname']:
         ensure(R53_INT_TITLE in template.resources.keys(), "You want an internal DNS entry but there is no resource configuring it: %s" % context)
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
+
+    if context['cloudfront']:
+        ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
+        render_cloudfront(context, template, origin_hostname=context['full_hostname'])
 
     return template.to_json()

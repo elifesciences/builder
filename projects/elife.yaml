@@ -84,6 +84,12 @@ defaults:
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
         s3: {}
+        cloudfront: 
+            # cloudfront defaults only used if a 'cloudfront' section present in project
+            certificate_id: ASCAIRXYIRFBOR5QSDP5M
+            cookies: []
+            compress: True
+            headers: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -730,9 +736,25 @@ iiif:
         end2end:
             ext:
                 size: 30 # GB
+        continuumtest:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
         prod:
             ext:
                 size: 30 # GB
+        shielded:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
+        shielded2:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
+        shielded3:
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
     vagrant:
         ports:
             1241: 80
