@@ -267,7 +267,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'compress': True,
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
-                'subdomains': ['prod--cdn-of-www'],
+                'subdomains': ['prod--cdn-of-www', ''],
                 'errors': None,
                 'default-ttl': 5,
             },
@@ -281,7 +281,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::CloudFront::Distribution',
                 'Properties': {
                     'DistributionConfig': {
-                        'Aliases': ['prod--cdn-of-www.example.org'],
+                        'Aliases': ['prod--cdn-of-www.example.org', 'example.org'],
                         'DefaultCacheBehavior': {
                             'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
                             'CachedMethods': ['GET', 'HEAD'],
@@ -334,11 +334,30 @@ class TestBuildercoreTrop(base.BaseCase):
                     },
                     'Comment': 'External DNS record for Cloudfront distribution',
                     'HostedZoneName': 'example.org.',
-                    'Name': 'prod--cdn-of-www.example.org',
+                    'Name': 'prod--cdn-of-www.example.org.',
                     'Type': 'A',
                 },
             },
             data['Resources']['CloudFrontCDNDNS1']
+        )
+        self.assertTrue('CloudFrontCDNDNS2' in data['Resources'].keys())
+        self.assertEqual(
+            {
+                'Type': 'AWS::Route53::RecordSet',
+                'Properties': {
+                    'AliasTarget': {
+                        'DNSName': {
+                            'Fn::GetAtt': ['CloudFrontCDN', 'DomainName']
+                        },
+                        'HostedZoneId': 'Z2FDTNDATAQYW2',
+                    },
+                    'Comment': 'External DNS record for Cloudfront distribution',
+                    'HostedZoneName': 'example.org.',
+                    'Name': 'example.org.',
+                    'Type': 'A',
+                },
+            },
+            data['Resources']['CloudFrontCDNDNS2']
         )
 
     def test_cdn_template_minimal(self):

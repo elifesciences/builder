@@ -248,7 +248,7 @@ def external_dns_ec2(context):
         R53_EXT_TITLE,
         HostedZoneName=hostedzone,
         Comment="External DNS record for EC2",
-        Name=context['full_hostname'],
+        Name=context['full_hostname'] + '.',
         Type="A",
         TTL="60",
         ResourceRecords=[GetAtt(EC2_TITLE, "PublicIp")],
@@ -262,7 +262,7 @@ def internal_dns(context):
         R53_INT_TITLE,
         HostedZoneName=hostedzone,
         Comment="Internal DNS record for EC2",
-        Name=context['int_full_hostname'],
+        Name=context['int_full_hostname'] + '.',
         Type="A",
         TTL="60",
         ResourceRecords=[GetAtt(EC2_TITLE, "PrivateIp")],
@@ -309,7 +309,7 @@ def external_dns_cloudfront(context):
     hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
     i = 1
     for subdomain in context['cloudfront']['subdomains']:
-        cdn_hostname = "%s.%s" % (subdomain, context['domain'])
+        cdn_hostname = "%s.%s" % (subdomain, hostedzone) if subdomain != '' else hostedzone
         dns_records.append(route53.RecordSetType(
             R53_CDN_TITLE % i,
             HostedZoneName=hostedzone,
@@ -506,7 +506,10 @@ def render_elb(context, template, ec2_instances):
 
 def render_cloudfront(context, template, origin_hostname):
     origin = CLOUDFRONT_TITLE + 'Origin'
-    allowed_cnames = ["%s.%s" % (subdomain, context['domain']) for subdomain in context['cloudfront']['subdomains']]
+    allowed_cnames = [
+        "%s.%s" % (subdomain, context['domain']) if subdomain != '' else context['domain']
+        for subdomain in context['cloudfront']['subdomains']
+    ]
     if context['cloudfront']['cookies']:
         cookies = cloudfront.Cookies(
             Forward='whitelist',
