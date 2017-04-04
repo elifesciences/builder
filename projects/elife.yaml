@@ -220,7 +220,7 @@ journal:
                 subdomains:
                     - "{instance}--cdn-journal"
                 errors: 
-                    domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
+                    domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
                         - 404
