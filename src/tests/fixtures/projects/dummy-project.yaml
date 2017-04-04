@@ -230,7 +230,7 @@ project-with-cloudfront-error-pages:
                 domain: example-errors.com
                 pattern: "???.html"
                 codes:
-                    - 404
+                    502: "/5xx.html"
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

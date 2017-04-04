@@ -385,23 +385,15 @@ class TestBuildercoreTrop(base.BaseCase):
             }],
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CacheBehaviors']
         )
-        actual_custom_error_responses = data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
-        self.assertEquals(11, len(actual_custom_error_responses))
-        self.assertIn(
-            {
-                'ErrorCode': 400,
-                'ResponseCode': 400,
-                'ResponsePagePath': '/4xx.html'
-            },
-            actual_custom_error_responses
-        )
-        self.assertIn(
-            {
-                'ErrorCode': 404,
-                'ResponseCode': 404,
-                'ResponsePagePath': '/404.html'
-            },
-            actual_custom_error_responses
+        self.assertEquals(
+            [
+                {
+                    'ErrorCode': 502,
+                    'ResponseCode': 502,
+                    'ResponsePagePath': '/5xx.html'
+                },
+            ],
+            data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
         )
 
     def _parse_json(self, dump):
