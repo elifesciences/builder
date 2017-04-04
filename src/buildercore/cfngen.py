@@ -168,6 +168,7 @@ def build_context_cloudfront(context, parameterize):
                 'domain': parameterize(context['project']['aws']['cloudfront']['errors']['domain']),
                 'pattern': context['project']['aws']['cloudfront']['errors']['pattern'],
                 'codes': context['project']['aws']['cloudfront']['errors']['codes'],
+                'protocol': context['project']['aws']['cloudfront']['errors']['protocol'],
             }
         else:
             errors = None

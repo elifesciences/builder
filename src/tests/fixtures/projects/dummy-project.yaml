@@ -231,6 +231,7 @@ project-with-cloudfront-error-pages:
                 pattern: "???.html"
                 codes:
                     502: "/5xx.html"
+                protocol: http
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

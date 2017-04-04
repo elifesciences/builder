@@ -555,7 +555,7 @@ def render_cloudfront(context, template, origin_hostname):
             # no advantage in using cloudfront.S3Origin for public buckets
             CustomOriginConfig=cloudfront.CustomOrigin(
                 HTTPSPort=443,
-                OriginProtocolPolicy='https-only'
+                OriginProtocolPolicy='https-only' if context['cloudfront']['errors']['protocol'] == 'https' else 'http-only'
             )
         ))
         props['CacheBehaviors'] = [

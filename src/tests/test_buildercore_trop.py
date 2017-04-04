@@ -366,7 +366,7 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'CustomOriginConfig': {
                     'HTTPSPort': 443,
-                    'OriginProtocolPolicy': 'https-only',
+                    'OriginProtocolPolicy': 'http-only',
                 },
                 'DomainName': 'prod--example-errors.com',
                 'Id': 'ErrorsOrigin',

@@ -214,6 +214,7 @@ journal:
                     pattern: "???.html"
                     codes:
                         502: "/5xx.html"
+                    protocol: http
         continuumtest:
             cloudfront:
                 subdomains:
@@ -223,6 +224,7 @@ journal:
                     pattern: "???.html"
                     codes:
                         502: "/5xx.html"
+                    protocol: http
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -241,6 +243,7 @@ journal:
                     pattern: "???.html"
                     codes:
                         502: "/5xx.html"
+                    protocol: http
     vagrant:
         ram: 4096
         ports:
