@@ -178,6 +178,7 @@ def build_context_cloudfront(context, parameterize):
             'cookies': context['project']['aws']['cloudfront']['cookies'],
             'compress': context['project']['aws']['cloudfront']['compress'],
             'headers': context['project']['aws']['cloudfront']['headers'],
+            'default-ttl': context['project']['aws']['cloudfront']['default-ttl'],
             'errors': errors,
         }
     else:

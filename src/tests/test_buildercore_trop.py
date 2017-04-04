@@ -269,6 +269,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'headers': ['Accept'],
                 'subdomains': ['prod--cdn-of-www'],
                 'errors': None,
+                'default-ttl': 5,
             },
             context['cloudfront']
         )
@@ -285,6 +286,7 @@ class TestBuildercoreTrop(base.BaseCase):
                             'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
                             'CachedMethods': ['GET', 'HEAD'],
                             'Compress': 'true',
+                            'DefaultTTL': 5,
                             'ForwardedValues': {
                                 'Cookies': {
                                     'Forward': 'whitelist',
@@ -375,6 +377,7 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertEquals(
             [{
+                'DefaultTTL': 300,
                 'ForwardedValues': {
                     # yes this is a string containing the word 'false'...
                     'QueryString': 'false',

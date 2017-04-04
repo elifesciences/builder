@@ -522,6 +522,7 @@ def render_cloudfront(context, template, origin_hostname):
             AllowedMethods=['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
             CachedMethods=['GET', 'HEAD'],
             Compress=context['cloudfront']['compress'],
+            DefaultTTL=context['cloudfront']['default-ttl'],
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
                 Cookies=cookies,
@@ -561,6 +562,7 @@ def render_cloudfront(context, template, origin_hostname):
         props['CacheBehaviors'] = [
             cloudfront.CacheBehavior(
                 TargetOriginId=CLOUDFRONT_ERROR_ORIGIN_ID,
+                DefaultTTL=context['cloudfront']['default-ttl'],
                 ForwardedValues=cloudfront.ForwardedValues(
                     QueryString=False
                 ),

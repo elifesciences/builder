@@ -75,6 +75,7 @@ defaults:
             compress: True
             headers: []
             errors: null
+            default-ttl: 300 # seconds
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -202,10 +203,12 @@ project-with-cloudfront:
         cloudfront:
             subdomains:
                 - "{instance}--cdn-of-www"
+                #- ""
             cookies:
                 - session_id
             headers:
                 - Accept
+            default-ttl: 5
 
 project-with-cloudfront-minimal:
     repo: ssh://git@github.com/elifesciences/dummy3
