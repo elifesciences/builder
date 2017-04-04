@@ -71,11 +71,9 @@ def update_template(stackname):
     core_lifecycle.start(stackname)
 
     (pname, _) = core.parse_stackname(stackname)
-    current_template = bootstrap.current_template(stackname)
-    cfngen.write_template(stackname, json.dumps(current_template))
     more_context = cfngen.choose_config(stackname)
-    context = cfngen.build_context(pname, **more_context)
-    delta = cfngen.template_delta(pname, context)
+
+    context, delta = cfngen.regenerate_stack(pname, **more_context)
     LOG.info("%s", pformat(delta))
     utils.confirm('Confirming changes to the stack template?')
 
