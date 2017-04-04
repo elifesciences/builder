@@ -237,7 +237,10 @@ journal:
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
-                    - journal # in the future 'beta' or... ''?
+                    - beta
+                    #- elife
+                    #- prod
+                    #- ""
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
