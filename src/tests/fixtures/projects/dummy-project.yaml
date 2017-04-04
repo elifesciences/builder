@@ -227,7 +227,7 @@ project-with-cloudfront-error-pages:
             subdomains:
                 - "{instance}--cdn-of-www"
             errors: 
-                domain: example-errors.com
+                domain: "{instance}--example-errors.com"
                 pattern: "???.html"
                 codes:
                     502: "/5xx.html"

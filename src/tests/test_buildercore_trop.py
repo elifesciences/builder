@@ -368,7 +368,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'HTTPSPort': 443,
                     'OriginProtocolPolicy': 'https-only',
                 },
-                'DomainName': 'example-errors.com',
+                'DomainName': 'prod--example-errors.com',
                 'Id': 'ErrorsOrigin',
             },
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['Origins'][1]

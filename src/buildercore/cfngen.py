@@ -165,8 +165,7 @@ def build_context_cloudfront(context, parameterize):
     if 'cloudfront' in context['project']['aws']:
         if context['project']['aws']['cloudfront']['errors']:
             errors = {
-                # TODO: parameterize 'domain'
-                'domain': context['project']['aws']['cloudfront']['errors']['domain'],
+                'domain': parameterize(context['project']['aws']['cloudfront']['errors']['domain']),
                 'pattern': context['project']['aws']['cloudfront']['errors']['pattern'],
                 'codes': context['project']['aws']['cloudfront']['errors']['codes'],
             }
