@@ -346,7 +346,12 @@ def update_template(stackname, template):
     pdata = project_data_for_stackname(stackname)
     if pdata['aws']['ec2']:
         parameters.append(('KeyName', stackname))
-    conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+    try:
+        conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+    except BotoServerError as ex:
+        if ex.message == 'No updates are to be performed.':
+            return
+        raise
 
     def stack_is_updating():
         return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
