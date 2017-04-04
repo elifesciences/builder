@@ -213,8 +213,7 @@ journal:
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
-                        - 404
-                        - 503
+                        502: "/5xx.html"
         continuumtest:
             cloudfront:
                 subdomains:
@@ -223,8 +222,7 @@ journal:
                     domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
-                        - 404
-                        - 503
+                        502: "/5xx.html"
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -242,8 +240,7 @@ journal:
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
-                        - 404
-                        - 503
+                        502: "/5xx.html"
     vagrant:
         ram: 4096
         ports:
