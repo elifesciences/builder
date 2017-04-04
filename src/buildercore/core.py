@@ -403,7 +403,7 @@ def stack_data(stackname, ensure_single_instance=False):
 # DO NOT CACHE
 def stack_is_active(stackname):
     "returns True if the given stack is in a completed state"
-    return stack_is(stackname, ['CREATE_COMPLETE', 'UPDATE_COMPLETE'])
+    return stack_is(stackname, ACTIVE_CFN_STATUS)
 
 def stack_is(stackname, acceptable_states, terminal_states=None):
     "returns True if the given stack is in one of acceptable_states"
