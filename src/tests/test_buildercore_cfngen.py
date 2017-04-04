@@ -57,6 +57,7 @@ class TestBuildercoreCfngen(base.BaseCase):
                 "certificate_id": "AAAA...",
                 "headers": [],
                 "errors": None,
+                "default-ttl": 300,
             }
             mock_build_context.return_value = context
             delta = cfngen.template_delta('dummy1', stackname='dummy1--test')
@@ -91,7 +92,7 @@ class TestBuildercoreCfngen(base.BaseCase):
             mock_build_context.return_value = context
             delta = cfngen.template_delta('project-with-cloudfront-minimal', stackname='project-with-cloudfront-minimal--test')
             self.assertEqual(delta['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])
-            self.assertEqual(delta['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org')
+            self.assertEqual(delta['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org.')
             self.assertEqual(delta['Outputs'].keys(), [])
 
     def _base_context(self, project_name='dummy1'):
