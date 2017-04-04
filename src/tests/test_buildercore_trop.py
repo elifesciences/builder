@@ -369,7 +369,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'OriginProtocolPolicy': 'https-only',
                 },
                 'DomainName': 'example-errors.com',
-                'Id': 'errors',
+                'Id': 'ErrorsOrigin',
             },
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['Origins'][1]
         )
@@ -380,7 +380,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'QueryString': 'false',
                 },
                 'PathPattern': '???.html',
-                'TargetOriginId': 'errors',
+                'TargetOriginId': 'ErrorsOrigin',
                 'ViewerProtocolPolicy': 'allow-all',
             }],
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CacheBehaviors']

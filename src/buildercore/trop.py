@@ -37,6 +37,7 @@ R53_CDN_TITLE = "CloudFrontCDNDNS%s"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
 # from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
 CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
+CLOUDFRONT_ERROR_ORIGIN_ID = 'ErrorsOrigin'
 
 KEYPAIR = "KeyName"
 
@@ -550,7 +551,7 @@ def render_cloudfront(context, template, origin_hostname):
         props['Origins'].append(cloudfront.Origin(
             DomainName=context['cloudfront']['errors']['domain'],
             # TODO: constant
-            Id='errors',
+            Id=CLOUDFRONT_ERROR_ORIGIN_ID,
             # no advantage in using cloudfront.S3Origin for public buckets
             CustomOriginConfig=cloudfront.CustomOrigin(
                 HTTPSPort=443,
@@ -559,7 +560,7 @@ def render_cloudfront(context, template, origin_hostname):
         ))
         props['CacheBehaviors'] = [
             cloudfront.CacheBehavior(
-                TargetOriginId='errors',
+                TargetOriginId=CLOUDFRONT_ERROR_ORIGIN_ID,
                 ForwardedValues=cloudfront.ForwardedValues(
                     QueryString=False
                 ),
