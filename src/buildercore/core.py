@@ -247,7 +247,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     @decorate_with_concurrency()
     def single_node_work():
         try:
-            workfn(**work_kwargs)
+            return workfn(**work_kwargs)
         except NetworkError as err:
             if str(err.message).startswith('Timed out trying to connect'):
                 LOG.info("Timeout while executing task on a %s node (%s), retrying once on this node", stackname, err.message)
