@@ -568,7 +568,6 @@ def render_cloudfront(context, template, origin_hostname):
                 ViewerProtocolPolicy='allow-all',
             ),
         ]
-        all_codes = [400, 403, 404, 405, 414, 416, 500, 501, 502, 503, 504]
         props['CustomErrorResponses'] = [
             cloudfront.CustomErrorResponse(
                 ErrorCode=code,
