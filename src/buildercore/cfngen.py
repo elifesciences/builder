@@ -288,12 +288,11 @@ def generate_stack(pname, **more_context):
     context_handler.write_context(stackname, context)
     return context, out_fname
 
-def template_delta(pname, **more_context):
+def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Existing resources are treated as immutable and not put in the delta"""
-    old_template = read_template(more_context['stackname'])
-    context = build_context(pname, **more_context)
+    old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
     updatable_title_prefixes = ['CloudFront']
 
