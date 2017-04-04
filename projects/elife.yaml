@@ -214,8 +214,6 @@ journal:
                     pattern: "???.html"
                     codes:
                         - 404
-                        # not supported
-                        # - 410 
                         - 503
         continuumtest:
             cloudfront:
@@ -226,8 +224,6 @@ journal:
                     pattern: "???.html"
                     codes:
                         - 404
-                        # not supported
-                        # - 410 
                         - 503
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
@@ -247,8 +243,6 @@ journal:
                     pattern: "???.html"
                     codes:
                         - 404
-                        # not supported
-                        # - 410 
                         - 503
     vagrant:
         ram: 4096
