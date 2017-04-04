@@ -163,12 +163,23 @@ def build_context_elb(context):
 
 def build_context_cloudfront(context, parameterize):
     if 'cloudfront' in context['project']['aws']:
+        if context['project']['aws']['cloudfront']['errors']:
+            errors = {
+                'domain': parameterize(context['project']['aws']['cloudfront']['errors']['domain']),
+                'pattern': context['project']['aws']['cloudfront']['errors']['pattern'],
+                'codes': context['project']['aws']['cloudfront']['errors']['codes'],
+                'protocol': context['project']['aws']['cloudfront']['errors']['protocol'],
+            }
+        else:
+            errors = None
         context['cloudfront'] = {
             'subdomains': [parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']],
             'certificate_id': context['project']['aws']['cloudfront']['certificate_id'],
             'cookies': context['project']['aws']['cloudfront']['cookies'],
             'compress': context['project']['aws']['cloudfront']['compress'],
             'headers': context['project']['aws']['cloudfront']['headers'],
+            'default-ttl': context['project']['aws']['cloudfront']['default-ttl'],
+            'errors': errors,
         }
     else:
         context['cloudfront'] = False
@@ -296,15 +307,19 @@ def template_delta(pname, **more_context):
 
     def _title_is_updatable(title):
         return len([p for p in updatable_title_prefixes if title.startswith(p)]) > 0
+
+    def _title_has_been_updated(title, section):
+        return template[section][title] != old_template[section][title]
+
     resources = {
         title: r for (title, r) in template['Resources'].iteritems()
         if (title not in old_template['Resources'] and 'EC2Instance' not in title)
-        or _title_is_updatable(title)
+        or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
     outputs = {
         title: o for (title, o) in template['Outputs'].iteritems()
         if (title not in old_template['Outputs'] and not _related_to_ec2(o))
-        or _title_is_updatable(title)
+        or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
     return {

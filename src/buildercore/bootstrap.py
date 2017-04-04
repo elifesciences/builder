@@ -116,7 +116,7 @@ def _wait_until_in_progress(stackname):
         return stack_status in ['CREATE_IN_PROGRESS']
     utils.call_while(
         partial(is_updating, stackname),
-        timeout=3600,
+        timeout=7200,
         update_msg='Waiting for AWS to finish creating stack ...',
         exception_class=StackTakingALongTimeToComplete
     )
@@ -346,11 +346,16 @@ def update_template(stackname, template):
     pdata = project_data_for_stackname(stackname)
     if pdata['aws']['ec2']:
         parameters.append(('KeyName', stackname))
-    conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+    try:
+        conn.update_stack(stackname, json.dumps(template), parameters=parameters)
+    except BotoServerError as ex:
+        if ex.message == 'No updates are to be performed.':
+            return
+        raise
 
     def stack_is_updating():
         return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
-    call_while(stack_is_updating, interval=2, update_msg="waiting for template of %s to be updated" % stackname, done_msg="template of %s is in state UPDATE_COMPLETE" % stackname)
+    call_while(stack_is_updating, interval=2, timeout=7200, update_msg="waiting for template of %s to be updated" % stackname, done_msg="template of %s is in state UPDATE_COMPLETE" % stackname)
 
 @core.requires_active_stack
 def template_info(stackname):

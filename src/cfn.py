@@ -53,6 +53,7 @@ def update(stackname, *service_list):
     return bootstrap.update_stack(stackname, service_list)
 
 @task
+@timeit
 def update_template(stackname):
     """Limited update of the Cloudformation template.
 

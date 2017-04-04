@@ -267,7 +267,9 @@ class TestBuildercoreTrop(base.BaseCase):
                 'compress': True,
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
-                'subdomains': ['prod--cdn-of-www'],
+                'subdomains': ['prod--cdn-of-www', ''],
+                'errors': None,
+                'default-ttl': 5,
             },
             context['cloudfront']
         )
@@ -279,11 +281,12 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::CloudFront::Distribution',
                 'Properties': {
                     'DistributionConfig': {
-                        'Aliases': ['prod--cdn-of-www.example.org'],
+                        'Aliases': ['prod--cdn-of-www.example.org', 'example.org'],
                         'DefaultCacheBehavior': {
                             'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
                             'CachedMethods': ['GET', 'HEAD'],
                             'Compress': 'true',
+                            'DefaultTTL': 5,
                             'ForwardedValues': {
                                 'Cookies': {
                                     'Forward': 'whitelist',
@@ -331,11 +334,30 @@ class TestBuildercoreTrop(base.BaseCase):
                     },
                     'Comment': 'External DNS record for Cloudfront distribution',
                     'HostedZoneName': 'example.org.',
-                    'Name': 'prod--cdn-of-www.example.org',
+                    'Name': 'prod--cdn-of-www.example.org.',
                     'Type': 'A',
                 },
             },
             data['Resources']['CloudFrontCDNDNS1']
+        )
+        self.assertTrue('CloudFrontCDNDNS2' in data['Resources'].keys())
+        self.assertEqual(
+            {
+                'Type': 'AWS::Route53::RecordSet',
+                'Properties': {
+                    'AliasTarget': {
+                        'DNSName': {
+                            'Fn::GetAtt': ['CloudFrontCDN', 'DomainName']
+                        },
+                        'HostedZoneId': 'Z2FDTNDATAQYW2',
+                    },
+                    'Comment': 'External DNS record for Cloudfront distribution',
+                    'HostedZoneName': 'example.org.',
+                    'Name': 'example.org.',
+                    'Type': 'A',
+                },
+            },
+            data['Resources']['CloudFrontCDNDNS2']
         )
 
     def test_cdn_template_minimal(self):
@@ -351,6 +373,49 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Forward': 'none',
             },
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['DefaultCacheBehavior']['ForwardedValues']['Cookies']
+        )
+
+    def test_cdn_template_error_pages(self):
+        extra = {
+            'stackname': 'project-with-cloudfront-error-pages--prod',
+        }
+        context = cfngen.build_context('project-with-cloudfront-error-pages', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        self.assertEquals(
+            {
+                'CustomOriginConfig': {
+                    'HTTPSPort': 443,
+                    'OriginProtocolPolicy': 'http-only',
+                },
+                'DomainName': 'prod--example-errors.com',
+                'Id': 'ErrorsOrigin',
+            },
+            data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['Origins'][1]
+        )
+        self.assertEquals(
+            [{
+                'DefaultTTL': 300,
+                'ForwardedValues': {
+                    # yes this is a string containing the word 'false'...
+                    'QueryString': 'false',
+                },
+                'PathPattern': '???.html',
+                'TargetOriginId': 'ErrorsOrigin',
+                'ViewerProtocolPolicy': 'allow-all',
+            }],
+            data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CacheBehaviors']
+        )
+        self.assertEquals(
+            [
+                {
+                    'ErrorCode': 502,
+                    'ResponseCode': 502,
+                    'ResponsePagePath': '/5xx.html'
+                },
+            ],
+            data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
         )
 
     def _parse_json(self, dump):

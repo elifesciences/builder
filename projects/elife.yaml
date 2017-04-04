@@ -90,6 +90,8 @@ defaults:
             cookies: []
             compress: True
             headers: []
+            errors: null
+            default-ttl: 300 # seconds
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -205,15 +207,25 @@ journal:
                 protocol: 
                     - https
                     - http
-        end2end-test:
-            description: end2end environment for journal. ELB on top of multiple EC2 instances
-            ec2:
-                cluster-size: 2
-            elb:
-                stickiness: True
-                protocol: 
-                    - https
-                    - http
+            cloudfront:
+                subdomains:
+                    - "{instance}--cdn-journal"
+                errors: 
+                    domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
+                    pattern: "???.html"
+                    codes:
+                        502: "/5xx.html"
+                    protocol: http
+        continuumtest:
+            cloudfront:
+                subdomains:
+                    - "{instance}--cdn-journal"
+                errors: 
+                    domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
+                    pattern: "???.html"
+                    codes:
+                        502: "/5xx.html"
+                    protocol: http
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -223,6 +235,19 @@ journal:
                 protocol:
                     - https
                     - http
+            cloudfront:
+                subdomains:
+                    - "{instance}--cdn-journal"
+                    - beta
+                    #- elife
+                    #- prod
+                    #- ""
+                errors: 
+                    domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
+                    pattern: "???.html"
+                    codes:
+                        502: "/5xx.html"
+                    protocol: http
     vagrant:
         ram: 4096
         ports:

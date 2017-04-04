@@ -55,12 +55,22 @@ class TestBuildercoreCfngen(base.BaseCase):
                 "compress": True,
                 "cookies": [],
                 "certificate_id": "AAAA...",
-                "headers": []
+                "headers": [],
+                "errors": None,
+                "default-ttl": 300,
             }
             mock_build_context.return_value = context
             delta = cfngen.template_delta('dummy1', stackname='dummy1--test')
             self.assertEqual(delta['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])
             self.assertEqual(delta['Outputs'].keys(), ['DomainName'])
+
+    def test_template_delta_does_not_include_cloudfront_if_there_are_no_modifications(self):
+        context = self._base_context('project-with-cloudfront-minimal')
+        with patch('buildercore.cfngen.build_context') as mock_build_context:
+            mock_build_context.return_value = context
+            delta = cfngen.template_delta('project-with-cloudfront-minimal', stackname='project-with-cloudfront-minimal--test')
+            self.assertEqual(delta['Resources'].keys(), [])
+            self.assertEqual(delta['Outputs'].keys(), [])
 
     def test_template_delta_never_includes_ec2(self):
         "we do not want to mess with running VMs"
@@ -82,7 +92,7 @@ class TestBuildercoreCfngen(base.BaseCase):
             mock_build_context.return_value = context
             delta = cfngen.template_delta('project-with-cloudfront-minimal', stackname='project-with-cloudfront-minimal--test')
             self.assertEqual(delta['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])
-            self.assertEqual(delta['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org')
+            self.assertEqual(delta['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org.')
             self.assertEqual(delta['Outputs'].keys(), [])
 
     def _base_context(self, project_name='dummy1'):
