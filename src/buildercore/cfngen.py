@@ -136,6 +136,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'deletion-policy': 'delete',
         'website-configuration': None,
         'cors': None,
+        'public': False,
     }
     for bucket_template_name in context['project']['aws']['s3']:
         bucket_name = _parameterize(bucket_template_name)
