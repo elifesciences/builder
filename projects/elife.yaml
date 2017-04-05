@@ -174,14 +174,20 @@ api-gateway:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-gateway"
+                headers:
+                    - Accept
         continuumtest:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-gateway"
+                headers:
+                    - Accept
         prod:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-gateway"
+                headers:
+                    - Accept
     vagrant:
         ports:
             1323: 80
@@ -210,6 +216,8 @@ journal:
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
+                headers:
+                    - X-Requested-With
                 errors: 
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -221,6 +229,8 @@ journal:
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
+                headers:
+                    - X-Requested-With
                 errors: 
                     domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -243,6 +253,8 @@ journal:
                     #- elife
                     #- prod
                     #- ""
+                headers:
+                    - X-Requested-With
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
