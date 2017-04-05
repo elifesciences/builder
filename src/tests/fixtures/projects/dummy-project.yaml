@@ -60,7 +60,9 @@ defaults:
             protocol: http
             idle_timeout: 60
             healthcheck:
+                protocol: http
                 port: 80
+                path: /ping
                 timeout: 4 
                 interval: 5
                 unhealthy_threshold: 2

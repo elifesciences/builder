@@ -145,7 +145,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(
             elb['HealthCheck'],
             {
-                'Target': 'TCP:80',
+                'Target': 'HTTP:80/ping',
                 'Timeout': '4',
                 'Interval': '5',
                 'HealthyThreshold': '2',
