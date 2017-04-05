@@ -301,7 +301,7 @@ def template_delta(pname, context):
     Existing resources are treated as immutable and not put in the delta"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    updatable_title_prefixes = ['CloudFront']
+    updatable_title_prefixes = ['CloudFront', 'ElasticLoadBalancer']
 
     def _related_to_ec2(output):
         if 'Value' in output:
