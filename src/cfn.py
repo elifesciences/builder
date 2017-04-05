@@ -9,8 +9,6 @@ from buildercore import core, cfngen, utils as core_utils, bootstrap, project, c
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
-# TODO: avoid when cfngen has new signature
-import json
 
 import logging
 LOG = logging.getLogger(__name__)
