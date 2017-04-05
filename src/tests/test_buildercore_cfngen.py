@@ -85,6 +85,15 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.assertEqual(delta['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org.')
         self.assertEqual(delta['Outputs'].keys(), [])
 
+    def test_template_delta_includes_parts_of_elb(self):
+        "we want to update ELBs in place given how long it takes to recreate them"
+        context = self._base_context('project-with-cluster')
+        context['elb']['healthcheck']['protocol'] = 'tcp'
+        delta = cfngen.template_delta('project-with-cluster', context)
+        self.assertEqual(delta['Resources'].keys(), ['ElasticLoadBalancer'])
+        self.assertEqual(delta['Resources']['ElasticLoadBalancer']['Properties']['HealthCheck']['Target'], 'TCP:80')
+        self.assertEqual(delta['Outputs'].keys(), [])
+
     def _base_context(self, project_name='dummy1'):
         stackname = '%s--test' % project_name
         context = cfngen.build_context(project_name, stackname=stackname)

@@ -468,6 +468,11 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
+    if context['elb']['healthcheck']['protocol'] == 'tcp':
+        healthcheck_target = 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
+    elif context['elb']['healthcheck']['protocol'] == 'http':
+        healthcheck_target = 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
+
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
@@ -483,7 +488,7 @@ def render_elb(context, template, ec2_instances):
         Listeners=listeners,
         LBCookieStickinessPolicy=cookie_stickiness,
         HealthCheck=elb.HealthCheck(
-            Target='TCP:%d' % context['elb']['healthcheck'].get('port', 80),
+            Target=healthcheck_target,
             HealthyThreshold=str(context['elb']['healthcheck'].get('healthy_threshold', 10)),
             UnhealthyThreshold=str(context['elb']['healthcheck'].get('unhealthy_threshold', 2)),
             Interval=str(context['elb']['healthcheck'].get('interval', 30)),
