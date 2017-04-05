@@ -111,6 +111,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     })
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
+    if isinstance(context['ec2'], dict):
+        context['ec2']['type'] = context['project']['aws']['type']
 
     build_context_elb(context)
 
@@ -298,10 +300,10 @@ def regenerate_stack(pname, **more_context):
 def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
-    Existing resources are treated as immutable and not put in the delta"""
+    Most of the existing resources are treated as immutable and not put in the delta. Some that support updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    updatable_title_prefixes = ['CloudFront', 'ElasticLoadBalancer']
+    updatable_title_prefixes = ['CloudFront', 'ElasticLoadBalancer', 'EC2Instance']
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -315,7 +317,14 @@ def template_delta(pname, context):
         return len([p for p in updatable_title_prefixes if title.startswith(p)]) > 0
 
     def _title_has_been_updated(title, section):
-        return template[section][title] != old_template[section][title]
+        title_in_old = dict(old_template[section][title])
+        title_in_new = dict(template[section][title])
+        # ignore UserData changes, it's not useful to update them and cause
+        # a needless reboot
+        if title_in_old['Type'] == 'AWS::EC2::Instance':
+            title_in_old['Properties']['UserData'] = None
+            title_in_new['Properties']['UserData'] = None
+        return title_in_old != title_in_new
 
     resources = {
         title: r for (title, r) in template['Resources'].iteritems()

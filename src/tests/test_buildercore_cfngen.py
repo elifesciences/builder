@@ -66,12 +66,20 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.assertEqual(delta['Resources'].keys(), [])
         self.assertEqual(delta['Outputs'].keys(), [])
 
-    def test_template_delta_never_includes_ec2(self):
+    def test_template_delta_does_not_normally_include_ec2(self):
         "we do not want to mess with running VMs"
         context = self._base_context()
         context['ec2']['cluster_size'] = 2
         delta = cfngen.template_delta('dummy1', context)
         self.assertEqual(delta['Resources'].keys(), [])
+        self.assertEqual(delta['Outputs'].keys(), [])
+
+    def test_template_delta_includes_ec2_instance_type(self):
+        "we accept to reboot VMs if an instance type change is requested"
+        context = self._base_context()
+        context['ec2']['type'] = 't2.xlarge'
+        delta = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta['Resources'].keys(), ['EC2Instance1'])
         self.assertEqual(delta['Outputs'].keys(), [])
 
     def test_template_delta_includes_parts_of_cloudfront(self):
