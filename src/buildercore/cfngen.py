@@ -18,7 +18,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 import os, json, copy
 import netaddr
 from slugify import slugify
-from . import utils, trop, core, project, context_handler
+from . import utils, trop, core, project, bootstrap, context_handler
 from .utils import ensure
 from .config import STACK_DIR
 
@@ -288,12 +288,18 @@ def generate_stack(pname, **more_context):
     context_handler.write_context(stackname, context)
     return context, out_fname
 
-def template_delta(pname, **more_context):
+def regenerate_stack(pname, **more_context):
+    current_template = bootstrap.current_template(more_context['stackname'])
+    write_template(more_context['stackname'], json.dumps(current_template))
+    context = build_context(pname, **more_context)
+    delta = template_delta(pname, context)
+    return context, delta
+
+def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Existing resources are treated as immutable and not put in the delta"""
-    old_template = read_template(more_context['stackname'])
-    context = build_context(pname, **more_context)
+    old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
     updatable_title_prefixes = ['CloudFront']
 

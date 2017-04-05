@@ -214,7 +214,8 @@ journal:
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
-                        502: "/5xx.html"
+                        # ELB with no active instances
+                        503: "/5xx.html"
                     protocol: http
         continuumtest:
             cloudfront:
@@ -224,7 +225,7 @@ journal:
                     domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
-                        502: "/5xx.html"
+                        503: "/5xx.html"
                     protocol: http
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
@@ -246,7 +247,8 @@ journal:
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
-                        502: "/5xx.html"
+                        # ELB with no active instances
+                        503: "/5xx.html"
                     protocol: http
     vagrant:
         ram: 4096

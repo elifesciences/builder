@@ -5,12 +5,10 @@ import fabric.state
 from fabric.contrib import files
 import aws, utils
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
-from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle
+from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
-# TODO: avoid when cfngen has new signature
-import json
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -71,14 +69,13 @@ def update_template(stackname):
     core_lifecycle.start(stackname)
 
     (pname, _) = core.parse_stackname(stackname)
-    current_template = bootstrap.current_template(stackname)
-    cfngen.write_template(stackname, json.dumps(current_template))
-
     more_context = cfngen.choose_config(stackname)
-    delta = cfngen.template_delta(pname, **more_context)
+
+    context, delta = cfngen.regenerate_stack(pname, **more_context)
     LOG.info("%s", pformat(delta))
     utils.confirm('Confirming changes to the stack template?')
 
+    context_handler.write_context(stackname, context)
     new_template = cfngen.merge_delta(stackname, delta)
     bootstrap.update_template(stackname, new_template)
 
