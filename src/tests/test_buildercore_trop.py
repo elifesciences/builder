@@ -183,6 +183,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'deletion-policy': 'delete',
                 'website-configuration': None,
                 'cors': None,
+                'public': False,
             },
             context['s3']['widgets-prod']
         )
@@ -254,6 +255,28 @@ class TestBuildercoreTrop(base.BaseCase):
                 },
             },
             data['Resources']['WidgetsStaticHostingProdBucketPolicy']
+        )
+
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::BucketPolicy',
+                'Properties': {
+                    'Bucket': 'widgets-just-access-prod',
+                    'PolicyDocument': {
+                        "Version": "2012-10-17",
+                        "Statement": [{
+                            "Sid": "AddPerm",
+                            "Effect": "Allow",
+                            "Principal": "*",
+                            "Action": ["s3:GetObject"],
+                            "Resource":[
+                                "arn:aws:s3:::widgets-just-access-prod/*",
+                            ]
+                        }]
+                    }
+                },
+            },
+            data['Resources']['WidgetsJustAccessProdBucketPolicy']
         )
 
     def test_cdn_template(self):

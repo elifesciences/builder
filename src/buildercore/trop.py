@@ -401,27 +401,34 @@ def render_s3(context, template):
             props['WebsiteConfiguration'] = s3.WebsiteConfiguration(
                 IndexDocument=index_document
             )
-            template.add_resource(s3.BucketPolicy(
-                "%sPolicy" % bucket_title,
-                Bucket=bucket_name,
-                PolicyDocument={
-                    "Version": "2012-10-17",
-                    "Statement": [{
-                        "Sid": "AddPerm",
-                        "Effect": "Allow",
-                        "Principal": "*",
-                        "Action": ["s3:GetObject"],
-                        "Resource":[
-                            "arn:aws:s3:::%s/*" % bucket_name
-                        ]
-                    }]
-                }
-            ))
+            _add_bucket_policy(template, bucket_title, bucket_name)
+
+        if context['s3'][bucket_name]['public']:
+            _add_bucket_policy(template, bucket_title, bucket_name)
+
         template.add_resource(s3.Bucket(
             bucket_title,
             BucketName=bucket_name,
             **props
         ))
+
+def _add_bucket_policy(template, bucket_title, bucket_name):
+    template.add_resource(s3.BucketPolicy(
+        "%sPolicy" % bucket_title,
+        Bucket=bucket_name,
+        PolicyDocument={
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Sid": "AddPerm",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": ["s3:GetObject"],
+                "Resource":[
+                    "arn:aws:s3:::%s/*" % bucket_name
+                ]
+            }]
+        }
+    ))
 
 def render_elb(context, template, ec2_instances):
     ensure(any([context['full_hostname'], context['int_full_hostname']]),

@@ -185,6 +185,8 @@ project-with-s3:
                 website-configuration:
                     index-document: index.html
                 cors: True
+            widgets-just-access-{instance}:
+                public: True
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
