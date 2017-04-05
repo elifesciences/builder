@@ -218,6 +218,8 @@ journal:
                     - "{instance}--cdn-journal"
                 headers:
                     - X-Requested-With
+                cookies:
+                    - journal
                 errors: 
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -231,6 +233,8 @@ journal:
                     - "{instance}--cdn-journal"
                 headers:
                     - X-Requested-With
+                cookies:
+                    - journal
                 errors: 
                     domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -255,6 +259,8 @@ journal:
                     #- ""
                 headers:
                     - X-Requested-With
+                cookies:
+                    - journal
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
