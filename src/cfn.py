@@ -268,6 +268,10 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
     LOG.info("Connecting to: %s", stackname)
 
+    instances = _check_want_to_be_running(stackname)
+    if not instances:
+        return
+
     # take out the load of crap that Fabric prints mangling the useful output
     # of a remote command
     custom_settings = {}
