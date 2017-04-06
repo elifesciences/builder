@@ -775,6 +775,8 @@ reviewer-suggestions:
         ports:
             - 22
             - 80
+        rds:
+            storage: 5
         ext:
             # external hdd
             size: 100 # GB
