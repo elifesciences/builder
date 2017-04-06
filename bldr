@@ -17,4 +17,4 @@ fi
 # a wrapper around fabric that activates the elife-builder virtualenv
 
 fabric=$(which fab)
-$fabric "$*" -f src/fabfile.py
+exec $fabric "$*" -f src/fabfile.py
