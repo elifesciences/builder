@@ -149,10 +149,14 @@ lax:
             description: RDS backed
             rds:
                 storage: 5
+            ext:
+                size: 10 # GB
         prod:
             description: RDS backed
             rds:
                 storage: 5
+            ext:
+                size: 10 # GB
     vagrant:
         ports:
             1239: 80

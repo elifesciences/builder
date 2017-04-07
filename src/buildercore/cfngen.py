@@ -316,8 +316,21 @@ def template_delta(pname, context):
 
     def _title_is_updatable(title):
         return len([p for p in updatable_title_prefixes if title.startswith(p)]) > 0
+    # start backward compatibility code
+    # back for when EC2Instance was the title rather than EC2Instance1
+    if 'EC2Instance' in old_template['Resources']:
+        if 'ExtraStorage' in template['Resources']:
+            template['Resources']['ExtraStorage']['Properties']['AvailabilityZone']['Fn::GetAtt'][0] = 'EC2Instance'
+        if 'MountPoint' in template['Resources']:
+            template['Resources']['MountPoint']['Properties']['InstanceId']['Ref'] = 'EC2Instance'
+    # end backward compatibility code
 
     def _title_has_been_updated(title, section):
+        # title was there before with a deprecated name, leave it alone
+        # e.g. 'EC2Instance' rather than 'EC2Instance1'
+        if not title in old_template[section]:
+            return False
+
         title_in_old = dict(old_template[section][title])
         title_in_new = dict(template[section][title])
         # ignore UserData changes, it's not useful to update them and cause
@@ -325,6 +338,8 @@ def template_delta(pname, context):
         if title_in_old['Type'] == 'AWS::EC2::Instance':
             title_in_old['Properties']['UserData'] = None
             title_in_new['Properties']['UserData'] = None
+            title_in_old['Properties']['Tags'] = None
+            title_in_new['Properties']['Tags'] = None
         return title_in_old != title_in_new
 
     resources = {

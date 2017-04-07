@@ -102,6 +102,19 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.assertEqual(delta['Resources']['ElasticLoadBalancer']['Properties']['HealthCheck']['Target'], 'TCP:80')
         self.assertEqual(delta['Outputs'].keys(), [])
 
+    def test_template_delta_includes_new_external_volumes(self):
+        "we want to add additional volumes to projects that are getting their main volume filled"
+        context = self._base_context()
+        context['ext'] = {
+            'size': 10,
+            'device': '/dev/sdh',
+        }
+        delta = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta['Resources'].keys(), ['MountPoint', 'ExtraStorage'])
+        self.assertEqual(delta['Resources']['ExtraStorage']['Properties']['Size'], '10')
+        self.assertEqual(delta['Resources']['MountPoint']['Properties']['Device'], '/dev/sdh')
+        self.assertEqual(delta['Outputs'].keys(), [])
+
     def _base_context(self, project_name='dummy1'):
         stackname = '%s--test' % project_name
         context = cfngen.build_context(project_name, stackname=stackname)
