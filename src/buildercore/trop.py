@@ -162,7 +162,7 @@ def ec2instance(context, node):
 
     project_ec2 = {
         "ImageId": lu('project.aws.ec2.ami'),
-        "InstanceType": lu('project.aws.type'), # t2.small, m1.medium, etc
+        "InstanceType": context['ec2']['type'], # t2.small, m1.medium, etc
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
         "SubnetId": subnet_id, # ll: "subnet-1d4eb46a"
