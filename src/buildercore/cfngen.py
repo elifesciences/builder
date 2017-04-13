@@ -16,6 +16,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 
 """
 import os, json, copy
+import re
 import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, bootstrap, context_handler
@@ -305,7 +306,7 @@ def template_delta(pname, context):
     Most of the existing resources are treated as immutable and not put in the delta. Some that support updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    updatable_title_prefixes = ['CloudFront', 'ElasticLoadBalancer', 'EC2Instance']
+    updatable_title_prefixes = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy']
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -316,7 +317,7 @@ def template_delta(pname, context):
         return False
 
     def _title_is_updatable(title):
-        return len([p for p in updatable_title_prefixes if title.startswith(p)]) > 0
+        return len([p for p in updatable_title_prefixes if re.match(p, title)]) > 0
     # start backward compatibility code
     # back for when EC2Instance was the title rather than EC2Instance1
     if 'EC2Instance' in old_template['Resources']:
