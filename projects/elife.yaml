@@ -350,6 +350,7 @@ elife-bot:
             "{instance}-elife-published":
                 deletion-policy: retain
                 public: true
+                cors: True
     aws-alt:
         #prod:
         #    eip: 54.164.145.166
