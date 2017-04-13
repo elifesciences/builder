@@ -49,6 +49,7 @@ class TestBuildercoreCfngen(base.BaseCase):
             "subdomains": [
                 "test--cdn-dummy1"
             ],
+            "subdomains-without-dns": [],
             "compress": True,
             "cookies": [],
             "certificate_id": "AAAA...",

@@ -520,7 +520,7 @@ def render_cloudfront(context, template, origin_hostname):
     origin = CLOUDFRONT_TITLE + 'Origin'
     allowed_cnames = [
         "%s.%s" % (subdomain, context['domain']) if subdomain != '' else context['domain']
-        for subdomain in context['cloudfront']['subdomains']
+        for subdomain in context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
     ]
     if context['cloudfront']['cookies']:
         cookies = cloudfront.Cookies(

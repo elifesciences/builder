@@ -291,6 +291,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
                 'subdomains': ['prod--cdn-of-www', ''],
+                'subdomains-without-dns': ['future'],
                 'errors': None,
                 'default-ttl': 5,
             },
@@ -304,7 +305,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::CloudFront::Distribution',
                 'Properties': {
                     'DistributionConfig': {
-                        'Aliases': ['prod--cdn-of-www.example.org', 'example.org'],
+                        'Aliases': ['prod--cdn-of-www.example.org', 'example.org', 'future.example.org'],
                         'DefaultCacheBehavior': {
                             'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
                             'CachedMethods': ['GET', 'HEAD'],

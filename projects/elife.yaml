@@ -88,6 +88,7 @@ defaults:
         s3: {}
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
+            subdomains-without-dns: []
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
             compress: True
@@ -263,6 +264,8 @@ journal:
                     #- elife
                     #- prod
                     #- ""
+                subdomains-without-dns:
+                    - gamma
                 headers:
                     - X-Requested-With
                 cookies:

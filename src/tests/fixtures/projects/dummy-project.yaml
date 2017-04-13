@@ -72,6 +72,7 @@ defaults:
         s3: []
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
+            subdomains-without-dns: []
             certificate_id: 'dummy...'
             cookies: []
             compress: True
@@ -208,6 +209,8 @@ project-with-cloudfront:
             subdomains:
                 - "{instance}--cdn-of-www"
                 - ""
+            subdomains-without-dns:
+                - future
             cookies:
                 - session_id
             headers:
