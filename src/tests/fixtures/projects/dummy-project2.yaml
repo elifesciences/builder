@@ -33,7 +33,7 @@ defaults:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
             name: <defined at generation>
-            multi-az: False
+            multi-az: false
             engine: postgres
             # ensure this matches the version of Postgres you install on server!
             version: '9.4'
@@ -53,7 +53,7 @@ defaults:
             device: /dev/sdh
         elb:
             # elb defaults only used if an 'elb' section present in project
-            stickiness: False
+            stickiness: false
             protocol: http
             idle_timeout: 60
         sns: []
