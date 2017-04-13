@@ -264,7 +264,6 @@ journal:
                     #- elife
                     #- prod
                     #- ""
-                subdomains-without-dns:
                     - gamma
                 headers:
                     - X-Requested-With
