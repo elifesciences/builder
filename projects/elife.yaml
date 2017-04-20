@@ -1,7 +1,7 @@
 defaults:
     description: defaults for all projects in this file
     salt: '2016.3.4' # the version of salt these project use
-    # use False with a subdomain to assign internal addresses only
+    # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
     intdomain: elife.internal
@@ -40,7 +40,7 @@ defaults:
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
-            multi-az: False
+            multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
             version: '9.4'
@@ -63,7 +63,7 @@ defaults:
             device: /dev/sdh
         elb:
             # elb defaults only used if an 'elb' section present in project
-            stickiness: False
+            stickiness: false
             protocol: http
             idle_timeout: 60
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
@@ -91,7 +91,7 @@ defaults:
             subdomains-without-dns: []
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
-            compress: True
+            compress: true
             headers: []
             errors: null
             default-ttl: 300 # seconds
@@ -216,7 +216,7 @@ journal:
             ec2:
                 cluster-size: 2
             elb:
-                stickiness: True
+                stickiness: true
                 protocol: 
                     - https
                     - http
@@ -253,7 +253,7 @@ journal:
             ec2:
                 cluster-size: 2
             elb:
-                stickiness: True
+                stickiness: true
                 protocol:
                     - https
                     - http
@@ -349,7 +349,7 @@ elife-bot:
             "{instance}-elife-published":
                 deletion-policy: retain
                 public: true
-                cors: True
+                cors: true
     aws-alt:
         #prod:
         #    eip: 54.164.145.166
@@ -476,7 +476,7 @@ elife-reporting:
             1333: 80
 
 elife-libraries:
-    domain: False
+    domain: false
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
@@ -583,7 +583,7 @@ jats4r:
 
 medium:
     description: microservice that gives access to eLife posts on Medium.com
-    domain: False
+    domain: false
     subdomain: medium
     repo: https://github.com/elifesciences/medium
     formula-repo: https://github.com/elifesciences/medium-formula
@@ -610,7 +610,7 @@ bus:
     domain: null
     intdomain: null
     aws:
-        ec2: False
+        ec2: false
         sns:
             # bus-articles--prod, bus-articles--end2end, etc.
             - bus-articles--{instance}
@@ -628,7 +628,7 @@ bus:
             - bus-metrics--{instance}
 
 search:
-    domain: False
+    domain: false
     subdomain: search
     repo: https://github.com/elifesciences/search
     formula-repo: https://github.com/elifesciences/search-formula
@@ -660,7 +660,7 @@ search:
                     - bus-blog-articles--{instance}
 
 recommendations:
-    domain: False
+    domain: false
     subdomain: recommendations
     repo: https://github.com/elifesciences/recommendations
     formula-repo: https://github.com/elifesciences/recommendations-formula
@@ -687,7 +687,7 @@ recommendations:
                     - bus-collections--{instance}
 
 personalised-covers:
-    domain: False
+    domain: false
     subdomain: personalised-covers
     repo: https://github.com/elifesciences/personalised-covers
     formula-repo: https://github.com/elifesciences/personalised-covers-formula
@@ -754,12 +754,12 @@ error-pages:
     domain: null
     intdomain: null
     aws:
-        ec2: False
+        ec2: false
         s3:
             "{instance}-elife-error-pages":
                 website-configuration:
                     index-document: index.html
-                cors: True
+                cors: true
 
 figure-viewer:
     description: static deployment of https://github.com/elifesciences/figure-viewer
@@ -767,7 +767,7 @@ figure-viewer:
     domain: null
     intdomain: null
     aws:
-        ec2: False
+        ec2: false
         s3:
             "{instance}-elife-figure-viewer":
                 website-configuration:

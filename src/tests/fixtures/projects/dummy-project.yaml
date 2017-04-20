@@ -36,7 +36,7 @@ defaults:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
             name: <defined at generation>
-            multi-az: False
+            multi-az: false
             engine: postgres
             # ensure this matches the version of Postgres you install on server!
             version: '9.4'
@@ -56,7 +56,7 @@ defaults:
             device: /dev/sdh
         elb:
             # elb defaults only used if an 'elb' section present in project
-            stickiness: False
+            stickiness: false
             protocol: http
             idle_timeout: 60
             healthcheck:
@@ -75,7 +75,7 @@ defaults:
             subdomains-without-dns: []
             certificate_id: 'dummy...'
             cookies: []
-            compress: True
+            compress: true
             headers: []
             errors: null
             default-ttl: 300 # seconds
@@ -187,9 +187,9 @@ project-with-s3:
             widgets-static-hosting-{instance}:
                 website-configuration:
                     index-document: index.html
-                cors: True
+                cors: true
             widgets-just-access-{instance}:
-                public: True
+                public: true
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
