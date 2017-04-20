@@ -396,6 +396,7 @@ journal-cms:
             journal-cms--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
+                    - bus-metrics--{instance}
     aws-alt:
         end2end:
             description: production-like environment. backed by RDS
