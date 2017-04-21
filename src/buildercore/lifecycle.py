@@ -162,8 +162,11 @@ def delete_dns(stackname):
 def _update_dns_a_record(stackname, zone_name, name, value):
     route53 = connect_aws_with_stack(stackname, 'route53')
     zone = route53.get_zone(zone_name)
-    LOG.info("Updating DNS record %s to %s", name, value)
-    zone.update_a(name, value)
+    if zone.get_a(name).resource_records == [value]:
+        LOG.info("No need to update DNS record %s (already %s)", name, value)
+    else:
+        LOG.info("Updating DNS record %s to %s", name, value)
+        zone.update_a(name, value)
 
 def _delete_dns_a_record(stackname, zone_name, name):
     route53 = connect_aws_with_stack(stackname, 'route53')
