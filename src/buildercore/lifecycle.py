@@ -31,28 +31,28 @@ def start(stackname):
     LOG.info("Current states: %s", states)
 
     to_be_started = _select_nodes_with_state('stopped', states)
-    if not to_be_started:
+    if to_be_started:
+        LOG.info("Nodes to be started: %s", to_be_started)
+        _connection(stackname).start_instances(to_be_started)
+        _wait_all_in_state(stackname, 'running', to_be_started)
+
+        def some_node_is_not_ready():
+            try:
+                stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+            except NoPublicIps as e:
+                LOG.info("No public ips available yet: %s", e.message)
+                return True
+            except NoRunningInstances as e:
+                # shouldn't be necessary because of _wait_all_in_state() we do before, but the EC2 API is not consistent
+                # and sometimes selecting instances filtering for the `running` state doesn't find them
+                # even if their state is `running` according to the latest API call
+                LOG.info("No running instances yet: %s", e.message)
+                return True
+            return False
+        call_while(some_node_is_not_ready, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
+    else:
         LOG.info("Nodes are all running")
-        return
 
-    LOG.info("Nodes to be started: %s", to_be_started)
-    _connection(stackname).start_instances(to_be_started)
-    _wait_all_in_state(stackname, 'running', to_be_started)
-
-    def some_node_is_not_ready():
-        try:
-            stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
-        except NoPublicIps as e:
-            LOG.info("No public ips available yet: %s", e.message)
-            return True
-        except NoRunningInstances as e:
-            # shouldn't be necessary because of _wait_all_in_state() we do before, but the EC2 API is not consistent
-            # and sometimes selecting instances filtering for the `running` state doesn't find them
-            # even if their state is `running` according to the latest API call
-            LOG.info("No running instances yet: %s", e.message)
-            return True
-        return False
-    call_while(some_node_is_not_ready, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
     update_dns(stackname)
 
 def stop(stackname):
@@ -162,8 +162,11 @@ def delete_dns(stackname):
 def _update_dns_a_record(stackname, zone_name, name, value):
     route53 = connect_aws_with_stack(stackname, 'route53')
     zone = route53.get_zone(zone_name)
-    LOG.info("Updating DNS record %s to %s", name, value)
-    zone.update_a(name, value)
+    if zone.get_a(name).resource_records == [value]:
+        LOG.info("No need to update DNS record %s (already %s)", name, value)
+    else:
+        LOG.info("Updating DNS record %s to %s", name, value)
+        zone.update_a(name, value)
 
 def _delete_dns_a_record(stackname, zone_name, name):
     route53 = connect_aws_with_stack(stackname, 'route53')
