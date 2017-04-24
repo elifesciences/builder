@@ -79,9 +79,13 @@ H1 = logging.StreamHandler()
 H1.setLevel(logging.INFO) # output level for *this handler*
 H1.setFormatter(FORMAT)
 
+
 # FileHandler sends to a named file
 H2 = logging.FileHandler(LOG_FILE)
-H2.setLevel(logging.INFO) # root logger sends *everything* to file
+if 'LOG_LEVEL_FILE' in os.environ:
+    H2.setLevel(getattr(logging, os.environ['LOG_LEVEL_FILE']))
+else:
+    H2.setLevel(logging.INFO)
 H2.setFormatter(FORMAT)
 
 ROOTLOG.addHandler(H1)

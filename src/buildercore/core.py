@@ -136,15 +136,20 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
     "returns list of ec2 instances data for a *specific* stackname"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
     conn = connect_aws_with_stack(stackname, 'ec2')
-    filters = _all_nodes_filter(stackname, state=state, node_ids=node_ids)
-    ec2_instances = conn.get_only_instances(filters=filters)
+    filters = _all_nodes_filter(stackname, node_ids=node_ids)
+    all_ec2_instances = conn.get_only_instances(filters=filters)
+    LOG.info("all_ec2_instances returned instances %s", [(e.id, e.state) for e in all_ec2_instances])
+    if state:
+        ec2_instances = [i for i in all_ec2_instances if i.state == state]
+    else:
+        ec2_instances = all_ec2_instances
     LOG.info("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
 
-def _all_nodes_filter(stackname, state, node_ids):
+def _all_nodes_filter(stackname, node_ids):
     query = {
         # tag-key+tag-value is misleading here:
         # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
@@ -158,8 +163,9 @@ def _all_nodes_filter(stackname, state, node_ids):
         # Cloudformation
         'tag:aws:cloudformation:stack-name': [stackname],
     }
-    if state:
-        query['instance-state-name'] = [state]
+    # hypothesis is that this is causing filters to skip running instances, non-deterministically. We'll try to filter the list in-memory instead
+    # if state:
+    #    query['instance-state-name'] = [state]
     if node_ids:
         query['instance-id'] = node_ids
     return query
