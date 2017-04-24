@@ -167,6 +167,7 @@ def _pick_node(instance_list, node):
         node = int(node) - 1
         instance = instance_list[int(node)]
     else:
+        assert node == 1 or node is None, "You can't specify a node different from 1 for a single-instance stack"
         instance = instance_list[0]
     core_utils.ensure(instance.ip_address is not None, "Selected instance does not have a public ip address, are you sure it's running?")
     return instance

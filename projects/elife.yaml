@@ -739,6 +739,7 @@ statusbase:
 
 observer:
     subdomain: observer # observer.elifesciences.org
+    repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
         type: t2.medium
@@ -800,6 +801,7 @@ reviewer-suggestions:
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
     subdomain: iiif
+    intdomain: null
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
@@ -832,10 +834,14 @@ iiif:
                 subdomains: 
                     - "{instance}--cdn-iiif"
                     - iiif
-        shielded2:
-            cloudfront:
-                subdomains: 
-                    - "{instance}--cdn-iiif"
+        balanced:
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol: 
+                    - https
+                healthcheck:
+                    path: /
     vagrant:
         ports:
             1241: 80
