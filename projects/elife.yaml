@@ -487,6 +487,9 @@ elife-libraries:
             size: 30 # GB
             type: gp2
     aws-alt:
+        load:
+            description: running load tests
+            type: t2.large
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
