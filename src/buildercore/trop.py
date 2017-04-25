@@ -611,7 +611,7 @@ def render(context):
         rdsinstance(context, template)
 
     if context['ext']:
-        for node in range(1, len(ec2_instances)+1):
+        for node in range(1, len(ec2_instances) + 1):
             ext_volume(context, template, node)
 
     render_sns(context, template)
