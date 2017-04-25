@@ -831,6 +831,13 @@ iiif:
                     - "{instance}--cdn-iiif"
         # manual tests
         continuumtest:
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol: 
+                    - https
+                healthcheck:
+                    path: /
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
