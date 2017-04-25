@@ -842,8 +842,15 @@ iiif:
                 subdomains: 
                     - "{instance}--cdn-iiif"
         prod:
+            ec2:
+                cluster-size: 2
             ext:
                 size: 30 # GB
+            elb:
+                protocol: 
+                    - https
+                healthcheck:
+                    path: /
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
