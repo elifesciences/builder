@@ -817,8 +817,15 @@ iiif:
                 size: 30 # GB
         # automated tests, identical to prod
         end2end:
+            ec2:
+                cluster-size: 2
             ext:
                 size: 30 # GB
+            elb:
+                protocol: 
+                    - https
+                healthcheck:
+                    path: /
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"

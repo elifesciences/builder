@@ -65,15 +65,23 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-ext', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertIn('MountPoint', data['Resources'].keys())
-        self.assertIn('ExtraStorage', data['Resources'].keys())
+        self.assertIn('MountPoint1', data['Resources'].keys())
+        self.assertIn('ExtraStorage1', data['Resources'].keys())
         self.assertEqual(
             {
                 'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance1', 'AvailabilityZone']},
                 'VolumeType': 'standard',
                 'Size': '200',
             },
-            data['Resources']['ExtraStorage']['Properties']
+            data['Resources']['ExtraStorage1']['Properties']
+        )
+        self.assertEqual(
+            {
+                'Device': '/dev/sdh',
+                'InstanceId': {'Ref': 'EC2Instance1'},
+                'VolumeId': {'Ref': 'ExtraStorage1'},
+            },
+            data['Resources']['MountPoint1']['Properties']
         )
 
     def test_clustered_template(self):
