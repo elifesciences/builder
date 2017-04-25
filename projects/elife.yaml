@@ -855,14 +855,6 @@ iiif:
                 subdomains: 
                     - "{instance}--cdn-iiif"
                     - iiif
-        balanced:
-            ec2:
-                cluster-size: 2
-            elb:
-                protocol: 
-                    - https
-                healthcheck:
-                    path: /
     vagrant:
         ports:
             1241: 80
