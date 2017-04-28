@@ -746,11 +746,28 @@ observer:
         ports:
             - 22
             - 80
+            - 8001
             - 443
+        sqs:
+            observer--{instance}:
+                subscriptions:
+                    - bus-articles--{instance}
+                    - bus-metrics--{instance}
+    aws-alt:
+        end2end:
+            description: production-like environment. RDS backed
+            rds:
+                storage: 10
+        prod:
+            description: production environment. RDS backed
+            rds:
+                storage: 10
+
     vagrant:
         ram: 2048 # metabase, mostly
         ports:
             1239: 80
+            1240: 8001
 
 error-pages:
     description: static deployment of https://github.com/elifesciences/error-pages
