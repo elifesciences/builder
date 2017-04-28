@@ -336,6 +336,8 @@ elife-metrics:
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
     formula-repo: https://github.com/elifesciences/elife-bot-formula
+    domain: false
+    subdomain: bot
     aws:
         type: t2.medium
         ports:
