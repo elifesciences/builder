@@ -29,8 +29,8 @@ ELB_TITLE = 'ElasticLoadBalancer'
 RDS_TITLE = "AttachedDB"
 RDS_SG_ID = "DBSecurityGroup"
 DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
-EXT_TITLE = "ExtraStorage"
-EXT_MP_TITLE = "MountPoint"
+EXT_TITLE = "ExtraStorage%s"
+EXT_MP_TITLE = "MountPoint%s"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
@@ -219,7 +219,7 @@ def rdsinstance(context, template):
     ]
     map(template.add_output, outputs)
 
-def ext_volume(context, template):
+def ext_volume(context, template, node=1):
     context_ext = context['ext']
     vtype = context_ext.get('type', 'standard')
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
@@ -228,17 +228,17 @@ def ext_volume(context, template):
 
     args = {
         "Size": str(context_ext['size']),
-        "AvailabilityZone": GetAtt(EC2_TITLE, "AvailabilityZone"),
+        "AvailabilityZone": GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone"),
         "VolumeType": vtype,
     }
-    ec2v = ec2.Volume(EXT_TITLE, **args)
+    ec2v = ec2.Volume(EXT_TITLE % node, **args)
 
     args = {
-        "InstanceId": Ref(EC2_TITLE),
+        "InstanceId": Ref(EC2_TITLE_NODE % node),
         "VolumeId": Ref(ec2v),
         "Device": context_ext['device'],
     }
-    ec2va = ec2.VolumeAttachment(EXT_MP_TITLE, **args)
+    ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
     map(template.add_resource, [ec2v, ec2va])
 
 def external_dns_ec2(context):
@@ -611,7 +611,8 @@ def render(context):
         rdsinstance(context, template)
 
     if context['ext']:
-        ext_volume(context, template)
+        for node in range(1, len(ec2_instances) + 1):
+            ext_volume(context, template, node)
 
     render_sns(context, template)
     render_sqs(context, template)

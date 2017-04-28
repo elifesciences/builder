@@ -834,24 +834,20 @@ iiif:
                 size: 30 # GB
         # automated tests, identical to prod
         end2end:
+            ec2:
+                cluster-size: 2
             ext:
                 size: 30 # GB
+            elb:
+                protocol: 
+                    - https
+                healthcheck:
+                    path: /
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
         # manual tests
         continuumtest:
-            cloudfront:
-                subdomains: 
-                    - "{instance}--cdn-iiif"
-        prod:
-            ext:
-                size: 30 # GB
-            cloudfront:
-                subdomains: 
-                    - "{instance}--cdn-iiif"
-                    - iiif
-        balanced:
             ec2:
                 cluster-size: 2
             elb:
@@ -859,6 +855,23 @@ iiif:
                     - https
                 healthcheck:
                     path: /
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
+        prod:
+            ec2:
+                cluster-size: 2
+            ext:
+                size: 30 # GB
+            elb:
+                protocol: 
+                    - https
+                healthcheck:
+                    path: /
+            cloudfront:
+                subdomains: 
+                    - "{instance}--cdn-iiif"
+                    - iiif
     vagrant:
         ports:
             1241: 80

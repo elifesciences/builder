@@ -111,9 +111,9 @@ class TestBuildercoreCfngen(base.BaseCase):
             'device': '/dev/sdh',
         }
         delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta['Resources'].keys(), ['MountPoint', 'ExtraStorage'])
-        self.assertEqual(delta['Resources']['ExtraStorage']['Properties']['Size'], '10')
-        self.assertEqual(delta['Resources']['MountPoint']['Properties']['Device'], '/dev/sdh')
+        self.assertEqual(delta['Resources'].keys(), ['MountPoint1', 'ExtraStorage1'])
+        self.assertEqual(delta['Resources']['ExtraStorage1']['Properties']['Size'], '10')
+        self.assertEqual(delta['Resources']['MountPoint1']['Properties']['Device'], '/dev/sdh')
         self.assertEqual(delta['Outputs'].keys(), [])
 
     def _base_context(self, project_name='dummy1'):
