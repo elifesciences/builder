@@ -531,7 +531,6 @@ def render_cloudfront(context, template, origin_hostname):
             Forward='none'
         )
 
-    origins = []
     if context['cloudfront']['origins']:
         origins = [
             cloudfront.Origin(
@@ -556,7 +555,7 @@ def render_cloudfront(context, template, origin_hostname):
                     OriginProtocolPolicy='https-only'
                 )
             )
-        ],
+        ]
     props = {
         'Aliases': allowed_cnames,
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
