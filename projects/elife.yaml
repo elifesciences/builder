@@ -89,6 +89,7 @@ defaults:
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
+            origins: {}
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
             compress: true
@@ -378,6 +379,23 @@ elife-bot:
             # digilib
             1232: 8080
 
+generic-cdn:
+    description: generic CDN for content like PDF, images
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+        cloudfront:
+            subdomains:
+                - "{instance}-cdn.elifesciences.org"
+            origins:
+                # first is default
+                default:
+                    hostname: elife-cdn.s3.amazonaws.com
+                articles:
+                    hostname: "{instance}-elife-published.s3.amazonaws.com"
+                    pattern: articles/*
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org
