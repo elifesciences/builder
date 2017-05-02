@@ -417,6 +417,10 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
         distribution_config = data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']
         self.assertEquals(
+            [ 'prod--cdn.example.org' ],
+            distribution_config['Aliases']
+        )
+        self.assertEquals(
             [
                 {
                     'CustomOriginConfig': {
