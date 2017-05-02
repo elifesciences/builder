@@ -298,6 +298,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'compress': True,
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
+                'origins': {},
                 'subdomains': ['prod--cdn-of-www', ''],
                 'subdomains-without-dns': ['future'],
                 'errors': None,
