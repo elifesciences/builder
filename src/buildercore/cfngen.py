@@ -185,7 +185,7 @@ def build_context_cloudfront(context, parameterize):
             'headers': context['project']['aws']['cloudfront']['headers'],
             'default-ttl': context['project']['aws']['cloudfront']['default-ttl'],
             'errors': errors,
-            'origins': context['project']['aws']['cloudfront']['origins'],
+            'origins': { o_id: { 'hostname': parameterize(o['hostname']) } for o_id, o in context['project']['aws']['cloudfront']['origins'].iteritems()},
         }
     else:
         context['cloudfront'] = False

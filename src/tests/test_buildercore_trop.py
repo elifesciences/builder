@@ -423,7 +423,7 @@ class TestBuildercoreTrop(base.BaseCase):
                         'HTTPSPort': 443,
                         'OriginProtocolPolicy': 'https-only',
                     },
-                    'DomainName': 'some-bucket.s3.amazonaws.com',
+                    'DomainName': 'prod--some-bucket.s3.amazonaws.com',
                     'Id': 'some-bucket',
                 }
             ],
