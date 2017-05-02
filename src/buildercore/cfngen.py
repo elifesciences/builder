@@ -185,6 +185,7 @@ def build_context_cloudfront(context, parameterize):
             'headers': context['project']['aws']['cloudfront']['headers'],
             'default-ttl': context['project']['aws']['cloudfront']['default-ttl'],
             'errors': errors,
+            'origins': context['project']['aws']['cloudfront']['origins'],
         }
     else:
         context['cloudfront'] = False

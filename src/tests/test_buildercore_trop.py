@@ -407,6 +407,29 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['DefaultCacheBehavior']['ForwardedValues']['Cookies']
         )
 
+    def test_cdn_template_multiple_origins(self):
+        extra = {
+            'stackname': 'project-with-cloudfront-origins--prod',
+        }
+        context = cfngen.build_context('project-with-cloudfront-origins', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        distribution_config = data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']
+        self.assertEquals(
+            [
+                {
+                    'CustomOriginConfig': {
+                        'HTTPSPort': 443,
+                        'OriginProtocolPolicy': 'https-only',
+                    },
+                    'DomainName': 'some-bucket.s3.amazonaws.com',
+                    'Id': 'some-bucket',
+                }
+            ],
+            distribution_config['Origins']
+        )
+
     def test_cdn_template_error_pages(self):
         extra = {
             'stackname': 'project-with-cloudfront-error-pages--prod',

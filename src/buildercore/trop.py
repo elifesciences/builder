@@ -531,6 +531,30 @@ def render_cloudfront(context, template, origin_hostname):
         cookies = cloudfront.Cookies(
             Forward='none'
         )
+
+    if context['cloudfront']['origins']:
+        origins = [
+            cloudfront.Origin(
+                DomainName=o['hostname'],
+                Id=o_id,
+                CustomOriginConfig=cloudfront.CustomOrigin(
+                    HTTPSPort=443,
+                    OriginProtocolPolicy='https-only'
+                )
+            )
+            for o_id, o in context['cloudfront']['origins'].iteritems()
+        ]
+    else:
+        origins = [
+            cloudfront.Origin(
+                DomainName=origin_hostname,
+                Id=origin,
+                CustomOriginConfig=cloudfront.CustomOrigin(
+                    HTTPSPort=443,
+                    OriginProtocolPolicy='https-only'
+                )
+            )
+        ],
     props = {
         'Aliases': allowed_cnames,
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
@@ -548,16 +572,7 @@ def render_cloudfront(context, template, origin_hostname):
         ),
         'Enabled': True,
         'HttpVersion': 'http2',
-        'Origins': [
-            cloudfront.Origin(
-                DomainName=origin_hostname,
-                Id=origin,
-                CustomOriginConfig=cloudfront.CustomOrigin(
-                    HTTPSPort=443,
-                    OriginProtocolPolicy='https-only'
-                )
-            )
-        ],
+        'Origins': origins,
         'ViewerCertificate': cloudfront.ViewerCertificate(
             IamCertificateId=context['cloudfront']['certificate_id'],
             SslSupportMethod='sni-only'
@@ -644,7 +659,8 @@ def render(context):
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
     if context['cloudfront']:
-        ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
+        if not context['cloudfront']['origins']:
+            ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
         render_cloudfront(context, template, origin_hostname=context['full_hostname'])
 
     return template.to_json()

@@ -73,6 +73,7 @@ defaults:
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
+            origins: {}
             certificate_id: 'dummy...'
             cookies: []
             compress: true
@@ -242,6 +243,18 @@ project-with-cloudfront-error-pages:
                 codes:
                     502: "/5xx.html"
                 protocol: http
+
+project-with-cloudfront-origins:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ports:
+            - 80
+        cloudfront:
+            subdomains:
+                - "{instance}--cdn"
+            origins:
+                some-bucket:
+                    hostname: some-bucket.s3.amazonaws.com
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
