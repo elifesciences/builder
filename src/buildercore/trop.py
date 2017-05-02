@@ -517,7 +517,6 @@ def render_elb(context, template, ec2_instances):
     template.add_resource(dns(context))
 
 def render_cloudfront(context, template, origin_hostname):
-    origin = CLOUDFRONT_TITLE + 'Origin'
     allowed_cnames = [
         "%s.%s" % (subdomain, context['domain']) if subdomain != '' else context['domain']
         for subdomain in context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
@@ -532,6 +531,7 @@ def render_cloudfront(context, template, origin_hostname):
             Forward='none'
         )
 
+    origins = []
     if context['cloudfront']['origins']:
         origins = [
             cloudfront.Origin(
@@ -544,7 +544,9 @@ def render_cloudfront(context, template, origin_hostname):
             )
             for o_id, o in context['cloudfront']['origins'].iteritems()
         ]
+        origin = origins[0].Id
     else:
+        origin = CLOUDFRONT_TITLE + 'Origin'
         origins = [
             cloudfront.Origin(
                 DomainName=origin_hostname,
@@ -578,6 +580,18 @@ def render_cloudfront(context, template, origin_hostname):
             SslSupportMethod='sni-only'
         )
     }
+
+    def _cache_behavior(origin_id, pattern):
+        return cloudfront.CacheBehavior(
+            TargetOriginId=origin_id,
+            DefaultTTL=context['cloudfront']['default-ttl'],
+            ForwardedValues=cloudfront.ForwardedValues(
+                QueryString=False
+            ),
+            PathPattern=pattern,
+            ViewerProtocolPolicy='allow-all',
+        )
+
     if context['cloudfront']['errors']:
         props['Origins'].append(cloudfront.Origin(
             DomainName=context['cloudfront']['errors']['domain'],
@@ -589,17 +603,10 @@ def render_cloudfront(context, template, origin_hostname):
                 OriginProtocolPolicy='https-only' if context['cloudfront']['errors']['protocol'] == 'https' else 'http-only'
             )
         ))
-        props['CacheBehaviors'] = [
-            cloudfront.CacheBehavior(
-                TargetOriginId=CLOUDFRONT_ERROR_ORIGIN_ID,
-                DefaultTTL=context['cloudfront']['default-ttl'],
-                ForwardedValues=cloudfront.ForwardedValues(
-                    QueryString=False
-                ),
-                PathPattern=context['cloudfront']['errors']['pattern'],
-                ViewerProtocolPolicy='allow-all',
-            ),
-        ]
+        props['CacheBehaviors'] = [_cache_behavior(
+            CLOUDFRONT_ERROR_ORIGIN_ID,
+            context['cloudfront']['errors']['pattern'],
+        )]
         props['CustomErrorResponses'] = [
             cloudfront.CustomErrorResponse(
                 ErrorCode=code,
@@ -607,6 +614,14 @@ def render_cloudfront(context, template, origin_hostname):
                 ResponsePagePath=page
             ) for code, page in context['cloudfront']['errors']['codes'].iteritems()
         ]
+
+    if context['cloudfront']['origins']:
+        props['CacheBehaviors'] = [
+            _cache_behavior(o_id, o['pattern']) \
+                    for o_id, o in context['cloudfront']['origins'].iteritems() \
+                    if o['pattern']
+        ]
+
     template.add_resource(cloudfront.Distribution(
         CLOUDFRONT_TITLE,
         DistributionConfig=cloudfront.DistributionConfig(**props)

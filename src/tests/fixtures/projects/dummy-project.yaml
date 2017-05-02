@@ -253,8 +253,11 @@ project-with-cloudfront-origins:
             subdomains:
                 - "{instance}--cdn"
             origins:
+                default-bucket:
+                    hostname: "{instance}--default-bucket.s3.amazonaws.com"
                 some-bucket:
                     hostname: "{instance}--some-bucket.s3.amazonaws.com"
+                    pattern: articles/*
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

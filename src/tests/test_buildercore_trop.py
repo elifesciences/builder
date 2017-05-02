@@ -423,11 +423,32 @@ class TestBuildercoreTrop(base.BaseCase):
                         'HTTPSPort': 443,
                         'OriginProtocolPolicy': 'https-only',
                     },
+                    'DomainName': 'prod--default-bucket.s3.amazonaws.com',
+                    'Id': 'default-bucket',
+                },
+                {
+                    'CustomOriginConfig': {
+                        'HTTPSPort': 443,
+                        'OriginProtocolPolicy': 'https-only',
+                    },
                     'DomainName': 'prod--some-bucket.s3.amazonaws.com',
                     'Id': 'some-bucket',
                 }
             ],
             distribution_config['Origins']
+        )
+        self.assertEquals(
+            'default-bucket',
+            distribution_config['DefaultCacheBehavior']['TargetOriginId'],
+        )
+        self.assertEquals(1, len(distribution_config['CacheBehaviors']))
+        self.assertEquals(
+            'some-bucket',
+            distribution_config['CacheBehaviors'][0]['TargetOriginId'],
+        )
+        self.assertEquals(
+            'articles/*',
+            distribution_config['CacheBehaviors'][0]['PathPattern'],
         )
 
     def test_cdn_template_error_pages(self):

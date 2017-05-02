@@ -17,6 +17,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 """
 import os, json, copy
 import re
+from collections import OrderedDict
 import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, bootstrap, context_handler
@@ -185,7 +186,10 @@ def build_context_cloudfront(context, parameterize):
             'headers': context['project']['aws']['cloudfront']['headers'],
             'default-ttl': context['project']['aws']['cloudfront']['default-ttl'],
             'errors': errors,
-            'origins': { o_id: { 'hostname': parameterize(o['hostname']) } for o_id, o in context['project']['aws']['cloudfront']['origins'].iteritems()},
+            'origins': OrderedDict([
+                (o_id, { 'hostname': parameterize(o['hostname']), 'pattern': o.get('pattern') }) \
+                for o_id, o in context['project']['aws']['cloudfront']['origins'].iteritems()
+            ]),
         }
     else:
         context['cloudfront'] = False
