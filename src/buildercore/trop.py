@@ -616,9 +616,9 @@ def render_cloudfront(context, template, origin_hostname):
 
     if context['cloudfront']['origins']:
         props['CacheBehaviors'] = [
-            _cache_behavior(o_id, o['pattern']) \
-                    for o_id, o in context['cloudfront']['origins'].iteritems() \
-                    if o['pattern']
+            _cache_behavior(o_id, o['pattern'])
+            for o_id, o in context['cloudfront']['origins'].iteritems()
+            if o['pattern']
         ]
 
     template.add_resource(cloudfront.Distribution(
