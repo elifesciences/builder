@@ -33,7 +33,6 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_params'], expected_params)
         # rendered template has a db parameter group attached to it
         cfntemplate = json.loads(trop.render(context))
-        pprint(cfntemplate)
         expected = {
             "Type": "AWS::RDS::DBParameterGroup",
             "Properties": {
