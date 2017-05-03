@@ -1,7 +1,7 @@
-import yaml
+import json, yaml
 from os.path import join
 from . import base
-from buildercore import cfngen, trop, utils
+from buildercore import cfngen, trop
 
 class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
@@ -20,7 +20,30 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_dbname'], "dummy3test")
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
         data = self._parse_json(trop.render(context))
-        self.assertTrue(isinstance(utils.lu(data, 'Resources.AttachedDB'), dict))
+        self.assertTrue(isinstance(data['Resources']['AttachedDB'], dict))
+
+    def test_rds_param_groups(self):
+        extra = {
+            'stackname': 'project-with-db-params--1',
+        }
+        context = cfngen.build_context('project-with-db-params', **extra)
+        expected_params = {'key1': 'val1', 'key2': 'val2'}
+        # params are read in from project file
+        self.assertEqual(context['rds_params'], expected_params)
+        # rendered template has a db parameter group attached to it
+        cfntemplate = json.loads(trop.render(context))
+        expected = {
+            "Type": "AWS::RDS::DBParameterGroup",
+            "Properties": {
+                "Description": "project-with-db-params (1) custom parameters",
+                "Family": "postgres9.4",
+                "Parameters": {
+                    "key1": "val1",
+                    "key2": "val2",
+                }
+            }
+        }
+        self.assertEqual(cfntemplate['Resources']['RDSDBParameterGroup'], expected)
 
     def test_sns_template(self):
         extra = {

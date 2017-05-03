@@ -74,6 +74,7 @@
                 "type": "db.t2.small", 
                 "storage": 15, 
                 "backup-retention": 28, 
+                "params": [], 
                 "subnets": [
                     "subnet-foo", 
                     "subnet-bar"
