@@ -228,9 +228,11 @@ def rdsinstance(context, template):
         "Tags": instance_tags(context),
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default
-
-        'DBParameterGroupName': param_group_ref
     }
+
+    if param_group_ref:
+        data['DBParameterGroupName'] = param_group_ref
+
     rdbi = rds.DBInstance(RDS_TITLE, **data)
     map(template.add_resource, [rsn, rdbi, vpcdbsg])
 
