@@ -274,7 +274,7 @@ def current_ec2_node_id():
     current_public_ip = env.host
 
     assert 'public_ips' in env, "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration"
-    matching_instance_ids = [instance_id for (instance_id, public_ip) in env.public_ips.iteritems() if current_public_ip == public_ip]
+    matching_instance_ids = [instance_id for (instance_id, public_ip) in env.public_ips.items() if current_public_ip == public_ip]
 
     assert len(matching_instance_ids) == 1, ("Too many instance ids (%s) pointing to this ip (%s)" % (matching_instance_ids, current_public_ip))
     return matching_instance_ids[0]

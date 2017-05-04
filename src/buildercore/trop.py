@@ -564,7 +564,7 @@ def render_cloudfront(context, template, origin_hostname):
                     OriginProtocolPolicy='https-only'
                 )
             )
-            for o_id, o in context['cloudfront']['origins'].iteritems()
+            for o_id, o in context['cloudfront']['origins'].items()
         ]
         origin = origins[0].Id
     else:
@@ -634,13 +634,13 @@ def render_cloudfront(context, template, origin_hostname):
                 ErrorCode=code,
                 ResponseCode=code,
                 ResponsePagePath=page
-            ) for code, page in context['cloudfront']['errors']['codes'].iteritems()
+            ) for code, page in context['cloudfront']['errors']['codes'].items()
         ]
 
     if context['cloudfront']['origins']:
         props['CacheBehaviors'] = [
             _cache_behavior(o_id, o['pattern'])
-            for o_id, o in context['cloudfront']['origins'].iteritems()
+            for o_id, o in context['cloudfront']['origins'].items()
             if o['pattern']
         ]
 

@@ -80,14 +80,14 @@ def last_start_time(stackname):
 def stop_if_next_hour_is_imminent(stackname, minimum_minutes=55):
     maximum_minutes = 60
     starting_times = last_start_time(stackname)
-    running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) % (maximum_minutes * 60) for (node_id, launch_time) in starting_times.iteritems()}
+    running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) % (maximum_minutes * 60) for (node_id, launch_time) in starting_times.items()}
     LOG.info("Hourly fraction running times: %s", running_times)
 
     minimum_running_time = minimum_minutes * 60
     maximum_running_time = maximum_minutes * 60
     LOG.info("Interval to select nodes to stop: %s-%s", minimum_running_time, maximum_running_time)
 
-    to_be_stopped = [node_id for (node_id, running_time) in running_times.iteritems() if running_time >= minimum_running_time]
+    to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
     LOG.info("Selected for stopping: %s", to_be_stopped)
     if to_be_stopped:
         _connection(stackname).stop_instances(to_be_stopped)
@@ -178,7 +178,7 @@ def _delete_dns_a_record(stackname, zone_name, name):
         LOG.info("No DNS record to delete")
 
 def _select_nodes_with_state(interesting_state, states):
-    return [instance_id for (instance_id, state) in states.iteritems() if state == interesting_state]
+    return [instance_id for (instance_id, state) in states.items() if state == interesting_state]
 
 def _nodes_states(stackname, node_ids=None):
     """dictionary from instance id to a string state.
@@ -201,8 +201,8 @@ def _nodes_states(stackname, node_ids=None):
 
     ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
     by_node_name = _by_node_name(ec2_data)
-    unified_nodes = {name: _unify_node_information(nodes) for name, nodes in by_node_name.iteritems()}
-    return {node.id: node.state for name, node in unified_nodes.iteritems()}
+    unified_nodes = {name: _unify_node_information(nodes) for name, nodes in by_node_name.items()}
+    return {node.id: node.state for name, node in unified_nodes.items()}
 
 def _connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
