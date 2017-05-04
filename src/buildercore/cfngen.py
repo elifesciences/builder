@@ -17,6 +17,7 @@ A developer wants a temporary instance deployed for testing or debugging.
 """
 import os, json, copy
 import re
+from collections import OrderedDict
 import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, bootstrap, context_handler
@@ -186,6 +187,10 @@ def build_context_cloudfront(context, parameterize):
             'headers': context['project']['aws']['cloudfront']['headers'],
             'default-ttl': context['project']['aws']['cloudfront']['default-ttl'],
             'errors': errors,
+            'origins': OrderedDict([
+                (o_id, {'hostname': parameterize(o['hostname']), 'pattern': o.get('pattern')})
+                for o_id, o in context['project']['aws']['cloudfront']['origins'].items()
+            ]),
         }
     else:
         context['cloudfront'] = False
@@ -346,12 +351,12 @@ def template_delta(pname, context):
         return title_in_old != title_in_new
 
     resources = {
-        title: r for (title, r) in template['Resources'].iteritems()
+        title: r for (title, r) in template['Resources'].items()
         if (title not in old_template['Resources'] and 'EC2Instance' not in title)
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
     outputs = {
-        title: o for (title, o) in template['Outputs'].iteritems()
+        title: o for (title, o) in template['Outputs'].items()
         if (title not in old_template['Outputs'] and not _related_to_ec2(o))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }

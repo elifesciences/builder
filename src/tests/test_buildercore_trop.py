@@ -321,6 +321,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'compress': True,
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
+                'origins': {},
                 'subdomains': ['prod--cdn-of-www', ''],
                 'subdomains-without-dns': ['future'],
                 'errors': None,
@@ -428,6 +429,54 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Forward': 'none',
             },
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['DefaultCacheBehavior']['ForwardedValues']['Cookies']
+        )
+
+    def test_cdn_template_multiple_origins(self):
+        extra = {
+            'stackname': 'project-with-cloudfront-origins--prod',
+        }
+        context = cfngen.build_context('project-with-cloudfront-origins', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        distribution_config = data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']
+        self.assertEquals(
+            ['prod--cdn.example.org'],
+            distribution_config['Aliases']
+        )
+        self.assertEquals(
+            [
+                {
+                    'CustomOriginConfig': {
+                        'HTTPSPort': 443,
+                        'OriginProtocolPolicy': 'https-only',
+                    },
+                    'DomainName': 'prod--default-bucket.s3.amazonaws.com',
+                    'Id': 'default-bucket',
+                },
+                {
+                    'CustomOriginConfig': {
+                        'HTTPSPort': 443,
+                        'OriginProtocolPolicy': 'https-only',
+                    },
+                    'DomainName': 'prod--some-bucket.s3.amazonaws.com',
+                    'Id': 'some-bucket',
+                }
+            ],
+            distribution_config['Origins']
+        )
+        self.assertEquals(
+            'default-bucket',
+            distribution_config['DefaultCacheBehavior']['TargetOriginId'],
+        )
+        self.assertEquals(1, len(distribution_config['CacheBehaviors']))
+        self.assertEquals(
+            'some-bucket',
+            distribution_config['CacheBehaviors'][0]['TargetOriginId'],
+        )
+        self.assertEquals(
+            'articles/*',
+            distribution_config['CacheBehaviors'][0]['PathPattern'],
         )
 
     def test_cdn_template_error_pages(self):

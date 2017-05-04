@@ -540,7 +540,6 @@ def render_elb(context, template, ec2_instances):
     template.add_resource(dns(context))
 
 def render_cloudfront(context, template, origin_hostname):
-    origin = CLOUDFRONT_TITLE + 'Origin'
     allowed_cnames = [
         "%s.%s" % (subdomain, context['domain']) if subdomain != '' else context['domain']
         for subdomain in context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
@@ -554,6 +553,32 @@ def render_cloudfront(context, template, origin_hostname):
         cookies = cloudfront.Cookies(
             Forward='none'
         )
+
+    if context['cloudfront']['origins']:
+        origins = [
+            cloudfront.Origin(
+                DomainName=o['hostname'],
+                Id=o_id,
+                CustomOriginConfig=cloudfront.CustomOrigin(
+                    HTTPSPort=443,
+                    OriginProtocolPolicy='https-only'
+                )
+            )
+            for o_id, o in context['cloudfront']['origins'].items()
+        ]
+        origin = origins[0].Id
+    else:
+        origin = CLOUDFRONT_TITLE + 'Origin'
+        origins = [
+            cloudfront.Origin(
+                DomainName=origin_hostname,
+                Id=origin,
+                CustomOriginConfig=cloudfront.CustomOrigin(
+                    HTTPSPort=443,
+                    OriginProtocolPolicy='https-only'
+                )
+            )
+        ]
     props = {
         'Aliases': allowed_cnames,
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
@@ -571,21 +596,24 @@ def render_cloudfront(context, template, origin_hostname):
         ),
         'Enabled': True,
         'HttpVersion': 'http2',
-        'Origins': [
-            cloudfront.Origin(
-                DomainName=origin_hostname,
-                Id=origin,
-                CustomOriginConfig=cloudfront.CustomOrigin(
-                    HTTPSPort=443,
-                    OriginProtocolPolicy='https-only'
-                )
-            )
-        ],
+        'Origins': origins,
         'ViewerCertificate': cloudfront.ViewerCertificate(
             IamCertificateId=context['cloudfront']['certificate_id'],
             SslSupportMethod='sni-only'
         )
     }
+
+    def _cache_behavior(origin_id, pattern):
+        return cloudfront.CacheBehavior(
+            TargetOriginId=origin_id,
+            DefaultTTL=context['cloudfront']['default-ttl'],
+            ForwardedValues=cloudfront.ForwardedValues(
+                QueryString=False
+            ),
+            PathPattern=pattern,
+            ViewerProtocolPolicy='allow-all',
+        )
+
     if context['cloudfront']['errors']:
         props['Origins'].append(cloudfront.Origin(
             DomainName=context['cloudfront']['errors']['domain'],
@@ -597,24 +625,25 @@ def render_cloudfront(context, template, origin_hostname):
                 OriginProtocolPolicy='https-only' if context['cloudfront']['errors']['protocol'] == 'https' else 'http-only'
             )
         ))
-        props['CacheBehaviors'] = [
-            cloudfront.CacheBehavior(
-                TargetOriginId=CLOUDFRONT_ERROR_ORIGIN_ID,
-                DefaultTTL=context['cloudfront']['default-ttl'],
-                ForwardedValues=cloudfront.ForwardedValues(
-                    QueryString=False
-                ),
-                PathPattern=context['cloudfront']['errors']['pattern'],
-                ViewerProtocolPolicy='allow-all',
-            ),
-        ]
+        props['CacheBehaviors'] = [_cache_behavior(
+            CLOUDFRONT_ERROR_ORIGIN_ID,
+            context['cloudfront']['errors']['pattern'],
+        )]
         props['CustomErrorResponses'] = [
             cloudfront.CustomErrorResponse(
                 ErrorCode=code,
                 ResponseCode=code,
                 ResponsePagePath=page
-            ) for code, page in context['cloudfront']['errors']['codes'].iteritems()
+            ) for code, page in context['cloudfront']['errors']['codes'].items()
         ]
+
+    if context['cloudfront']['origins']:
+        props['CacheBehaviors'] = [
+            _cache_behavior(o_id, o['pattern'])
+            for o_id, o in context['cloudfront']['origins'].items()
+            if o['pattern']
+        ]
+
     template.add_resource(cloudfront.Distribution(
         CLOUDFRONT_TITLE,
         DistributionConfig=cloudfront.DistributionConfig(**props)
@@ -667,7 +696,8 @@ def render(context):
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
     if context['cloudfront']:
-        ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
+        if not context['cloudfront']['origins']:
+            ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
         render_cloudfront(context, template, origin_hostname=context['full_hostname'])
 
     return template.to_json()
