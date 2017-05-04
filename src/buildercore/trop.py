@@ -28,6 +28,7 @@ EC2_TITLE_NODE = 'EC2Instance%d'
 ELB_TITLE = 'ElasticLoadBalancer'
 RDS_TITLE = "AttachedDB"
 RDS_SG_ID = "DBSecurityGroup"
+RDS_DB_PG = "RDSDBParameterGroup"
 DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
 EXT_TITLE = "ExtraStorage%s"
 EXT_MP_TITLE = "MountPoint%s"
@@ -173,6 +174,21 @@ echo %s > /etc/build-vars.json.b64""" % buildvars_serialization),
     }
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
+def rdsdbparams(context, template):
+    if not context.get('rds_params'):
+        return None
+    lu = partial(utils.lu, context)
+    engine = lu('project.aws.rds.engine')
+    version = str(lu('project.aws.rds.version'))
+    name = RDS_DB_PG
+    dbpg = rds.DBParameterGroup(name, **{
+        'Family': "%s%s" % (engine.lower(), version), # ll: mysql5.6, postgres9.4
+        'Description': '%s (%s) custom parameters' % (context['project_name'], context['instance_id']),
+        'Parameters': context['rds_params']
+    })
+    template.add_resource(dbpg)
+    return Ref(dbpg)
+
 def rdsinstance(context, template):
     lu = partial(utils.lu, context)
 
@@ -188,6 +204,9 @@ def rdsinstance(context, template):
     # rds security group. uses the ec2 security group
     vpcdbsg = rds_security(context)
 
+    # rds parameter group. None or a Ref
+    param_group_ref = rdsdbparams(context, template)
+
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
@@ -200,6 +219,8 @@ def rdsinstance(context, template):
         'DBSubnetGroupName': Ref(rsn),
         'DBInstanceClass': lu('project.aws.rds.type'),
         'Engine': lu('project.aws.rds.engine'),
+        # something is converting this value to an int from a float :(
+        "EngineVersion": str(lu('project.aws.rds.version')), # 'defaults.aws.rds.storage')),
         'MasterUsername': lu('rds_username'), # pillar data is now UNavailable
         'MasterUserPassword': lu('rds_password'),
         'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'),
@@ -207,9 +228,11 @@ def rdsinstance(context, template):
         "Tags": instance_tags(context),
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default
-        # something is converting this value to an int :(
-        "EngineVersion": str(lu('project.aws.rds.version')), # 'defaults.aws.rds.storage')),
     }
+
+    if param_group_ref:
+        data['DBParameterGroupName'] = param_group_ref
+
     rdbi = rds.DBInstance(RDS_TITLE, **data)
     map(template.add_resource, [rsn, rdbi, vpcdbsg])
 

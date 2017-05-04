@@ -102,6 +102,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
             'rds_password': utils.random_alphanumeric(length=32), # will be saved to build-vars.json
             'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
             'rds_instance_id': slugify(stackname), # *completely* different to database name
+            'rds_params': context['project']['aws']['rds'].get('params', [])
         })
 
     if 'ext' in context['project']['aws']:
