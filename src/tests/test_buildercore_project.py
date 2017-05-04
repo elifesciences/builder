@@ -5,6 +5,14 @@ from buildercore import config, project, utils
 from buildercore.project import files as project_files
 from collections import OrderedDict
 
+ALL_PROJECTS = [
+    'dummy1', 'dummy2', 'dummy3',
+    'just-some-sns', 'project-with-sqs', 'project-with-s3',
+    'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
+    'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-cluster',
+    'project-with-db-params',
+]
+
 class TestProject(base.BaseCase):
     def setUp(self):
         self.project_file = join(self.fixtures_dir, 'projects', 'dummy-project.yaml')
@@ -22,26 +30,14 @@ class TestProject(base.BaseCase):
     def test_org_map(self):
         "a map of organisations and their projects are returned"
         prj_loc_lst = self.parsed_config['project-locations']
-        expected = {'dummy-project': [
-            'dummy1', 'dummy2', 'dummy3',
-            'just-some-sns', 'project-with-sqs', 'project-with-s3',
-            'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
-            'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-cluster',
-            'project-with-db-params',
-        ]}
+        expected = {'dummy-project': ALL_PROJECTS}
         #self.assertEqual(project.org_project_map(prj_loc_lst), expected)
         self.assertEqual(project.org_map(prj_loc_lst), expected)
 
     def test_project_list(self):
         "a simple list of projects are returned, ignoring which org they belong to"
         prj_loc_lst = self.parsed_config['project-locations']
-        expected = [
-            'dummy1', 'dummy2', 'dummy3',
-            'just-some-sns', 'project-with-sqs', 'project-with-s3',
-            'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
-            'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-cluster',
-            'project-with-db-params'
-        ]
+        expected = ALL_PROJECTS
         self.assertEqual(project.project_list(prj_loc_lst), expected)
 
 
@@ -211,12 +207,5 @@ class TestMultiProjects(base.BaseCase):
         pass
 
     def test_project_list_from_multiple_files(self):
-        expected = [
-            'dummy1', 'dummy2', 'dummy3',
-            'just-some-sns', 'project-with-sqs', 'project-with-s3',
-            'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
-            'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-cluster',
-            'project-with-db-params',
-            'yummy1'
-        ]
+        expected = ALL_PROJECTS + ['yummy1']
         self.assertEqual(project.project_list(self.parsed_config), expected)
