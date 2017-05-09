@@ -512,7 +512,7 @@ elife-libraries:
     aws-alt:
         load:
             description: running load tests
-            type: t2.large
+            type: t2.2xlarge
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
