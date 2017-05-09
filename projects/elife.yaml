@@ -230,6 +230,7 @@ journal:
                     - "{instance}--cdn-journal"
                 headers:
                     - X-Requested-With
+                    - Host
                 cookies:
                     - journal
                 errors: 
@@ -245,6 +246,7 @@ journal:
                     - "{instance}--cdn-journal"
                 headers:
                     - X-Requested-With
+                    - Host
                 cookies:
                     - journal
                 errors: 
@@ -272,6 +274,7 @@ journal:
                     - gamma
                 headers:
                     - X-Requested-With
+                    - Host
                 cookies:
                     - journal
                 errors: 
