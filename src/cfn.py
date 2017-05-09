@@ -48,7 +48,7 @@ def update(stackname, *service_list):
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
-    return bootstrap.update_stack(stackname, service_list)
+    return bootstrap.update_stack(stackname, service_list, concurrency='serial')
 
 @task
 @timeit
