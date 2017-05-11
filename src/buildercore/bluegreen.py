@@ -50,5 +50,15 @@ def deregister(elb_name, nodes_params):
     ]
     conn.deregister_instances_from_load_balancer(
         LoadBalancerName=elb_name,
-        Instances=instances,
+        Instances=_instances(nodes_params),
     )
+
+def register(elb_name, nodes_params):
+    conn = boto_elb_conn('us-east-1')
+    conn.register_instances_from_load_balancer(
+        LoadBalancerName=elb_name,
+        Instances=_instances(nodes_params),
+    )
+
+def _instances(nodes_params):
+    return [{'InstanceId': instance_id} for instance_id in nodes_params['nodes'].keys()]
