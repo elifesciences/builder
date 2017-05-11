@@ -1,7 +1,10 @@
 #from .context_handler import load_context
+import logging
 from .core import boto_elb_conn
-from .utils import ensure
+from .utils import ensure, call_while
 from pprint import pprint
+
+LOG = logging.getLogger(__name__)
 
 def concurrency_work(single_node_work, nodes_params):
     pprint(nodes_params)
@@ -9,6 +12,7 @@ def concurrency_work(single_node_work, nodes_params):
     elb_name = find_load_balancer(nodes_params['stackname'])
     
     wait_registered_all(elb_name, nodes_params)
+    wait_deregistered_all(elb_name, nodes_params)
     #health = conn.describe_instance_health(LoadBalancerName=lb, Instances=instances)['InstanceStates']
     #pprint(health)
     # 1. separate blue from green
@@ -68,6 +72,23 @@ def wait_registered_all(elb_name, nodes_params):
     conn = boto_elb_conn('us-east-1')
     waiter = conn.get_waiter('instance_in_service')
     waiter.wait(LoadBalancerName=elb_name, Instances=_instances(nodes_params))
+
+def wait_deregistered_all(elb_name, nodes_params):
+    instance_ids = nodes_params['nodes'].keys()
+    def condition():
+        conn = boto_elb_conn('us-east-1')
+        health = conn.describe_instance_health(
+            LoadBalancerName=elb_name,
+            Instances=_instances(nodes_params)
+        )['InstanceStates']
+        registered = _registered(health)
+        LOG.info("InService: %s", registered)
+        return True in registered.values()
+
+    call_while(condition)
+
+def _registered(health):
+    return {result['InstanceId']:result['State']=='InService' for result in health}
 
 def _instances(nodes_params):
     return [{'InstanceId': instance_id} for instance_id in nodes_params['nodes'].keys()]

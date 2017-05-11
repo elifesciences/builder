@@ -99,6 +99,30 @@ class Primitives(base.BaseCase):
             Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
         )
 
+    @patch('buildercore.bluegreen.boto_elb_conn')
+    def test_wait_deregistered_all(self, elb_conn_factory):
+        conn = self._conn_mock(elb_conn_factory)
+        nodes_params = {
+            'nodes': OrderedDict([
+                ('i-10000001', 1),
+                ('i-10000002', 2),
+            ]),
+            # ...
+        }
+        conn.describe_instance_health.return_value = {
+            'InstanceStates': [
+                {
+                    'InstanceId': 'i-10000001',
+                    'State': 'OutOfService',
+                },
+                {
+                    'InstanceId': 'i-10000002',
+                    'State': 'OutOfService',
+                },
+            ],
+        }
+        bluegreen.wait_deregistered_all('dummy1-ElasticL-ABCDEFGHI', nodes_params)
+
     def _conn_mock(self, elb_conn_factory):
         conn = MagicMock()
         elb_conn_factory.return_value = conn
