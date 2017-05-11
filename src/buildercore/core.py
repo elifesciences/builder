@@ -107,6 +107,11 @@ def boto_ec2_conn(region):
     return connect_aws('ec2', region)
 
 @cached
+def boto_elb_conn(region):
+    "This uses boto3 because it allows to read tags on ELB and associate them to a stackname"
+    return boto3.client('elb', region)
+
+@cached
 def boto_sns_conn(region):
     return connect_aws('sns', region)
 
