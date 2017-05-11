@@ -72,12 +72,14 @@ def deregister(elb_name, nodes_params):
 def wait_registered_any(elb_name, nodes_params):
     LOG.info("Waiting for registration of any on %s: %s", elb_name, _instance_ids(nodes_params))
     conn = boto_elb_conn('us-east-1')
+    # TODO: reimplement with call_while because polling interval cannot be customized
     waiter = conn.get_waiter('any_instance_in_service')
     waiter.wait(LoadBalancerName=elb_name, Instances=_instances(nodes_params))
 
 def wait_registered_all(elb_name, nodes_params):
     LOG.info("Waiting for registration of all on %s: %s", elb_name, _instance_ids(nodes_params))
     conn = boto_elb_conn('us-east-1')
+    # TODO: reimplement with call_while because polling interval cannot be customized
     waiter = conn.get_waiter('instance_in_service')
     waiter.wait(LoadBalancerName=elb_name, Instances=_instances(nodes_params))
 
