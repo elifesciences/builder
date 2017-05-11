@@ -1,6 +1,7 @@
 from buildercore import bluegreen
 from . import base
 from mock import patch, MagicMock
+from collections import OrderedDict
 
 class Primitives(base.BaseCase):
     @patch('buildercore.bluegreen.boto_elb_conn')
@@ -26,7 +27,7 @@ class Primitives(base.BaseCase):
         self.assertEquals(name, 'dummy1-ElasticL-ABCDEFGHI')
 
     def test_divide_by_color(self):
-        params = {
+        nodes_params = {
             'key_filename': './dummy1--test.pem',
             'nodes': {
                 'i-10000001': 1,
@@ -40,7 +41,7 @@ class Primitives(base.BaseCase):
             'user': 'ubuntu'
         }
         self.assertEquals(
-            bluegreen.divide_by_color(params),
+            bluegreen.divide_by_color(nodes_params),
             (
                 {
                     'key_filename': './dummy1--test.pem',
@@ -65,4 +66,21 @@ class Primitives(base.BaseCase):
                     'user': 'ubuntu'
                 }
             )
+        )
+
+    @patch('buildercore.bluegreen.boto_elb_conn')
+    def test_deregister(self, elb_conn):
+        conn = MagicMock()
+        elb_conn.return_value = conn
+        nodes_params = {
+            'nodes': OrderedDict([
+                ('i-10000001', 1),
+                ('i-10000002', 2),
+            ]),
+            # ...
+        }
+        bluegreen.deregister('dummy1-ElasticL-ABCDEFGHI', nodes_params)
+        conn.deregister_instances_from_load_balancer.assert_called_once_with(
+            LoadBalancerName='dummy1-ElasticL-ABCDEFGHI',
+            Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
         )
