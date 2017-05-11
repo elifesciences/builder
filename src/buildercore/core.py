@@ -20,7 +20,7 @@ from kids.cache import cache as cached
 from slugify import slugify
 
 LOG = logging.getLogger(__name__)
-boto3.set_stream_logger(name='botocore')
+boto3.set_stream_logger(name='botocore', level=logging.INFO)
 
 class DeprecationException(Exception):
     pass
