@@ -7,12 +7,15 @@ from buildercore.config import BOOTSTRAP_USER
 import buildvars
 import cfn
 
+def generate_environment_name():
+    """to avoid multiple people clashing while running their builds
+       and new builds clashing with older ones"""
+    return check_output('whoami').rstrip() + datetime.utcnow().strftime("%Y%m%d%H%M%S")
+
 class TestProvisioning(base.BaseCase):
     def setUp(self):
         self.stacknames = []
-        # to avoid multiple people clashing while running their builds
-        # and new builds clashing with older ones
-        self.environment = check_output('whoami').rstrip() + datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        self.environment = generate_environment_name()
 
     def tearDown(self):
         for stackname in self.stacknames:
@@ -24,7 +27,7 @@ class TestProvisioning(base.BaseCase):
             stackname = '%s--%s' % (project, self.environment)
 
             cfn.ensure_destroyed(stackname)
-            self.stacknames.append(stackname) # ensures stack is destroyed
+            self.stacknames.append(stackname)
 
             cfngen.generate_stack(project, stackname=stackname)
             bootstrap.create_stack(stackname)
@@ -36,3 +39,24 @@ class TestProvisioning(base.BaseCase):
             lifecycle.start(stackname)
 
             cfn.cmd(stackname, "ls -l", username=BOOTSTRAP_USER, concurrency='parallel')
+
+class TestDeployment(base.BaseCase):
+    def setUp(self):
+        self.stacknames = []
+        self.environment = generate_environment_name()
+
+    def tearDown(self):
+        for stackname in self.stacknames:
+            cfn.ensure_destroyed(stackname)
+
+    def _test_blue_green_operations(self):
+        with settings(abort_on_prompts=True):
+            project = 'project-with-cluster'
+            stackname = '%s--%s' % (project, self.environment)
+
+            cfn.ensure_destroyed(stackname)
+            self.stacknames.append(stackname)
+            cfngen.generate_stack(project, stackname=stackname)
+            bootstrap.create_stack(stackname)
+
+            # operate with bluegreen module
