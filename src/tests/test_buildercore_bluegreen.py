@@ -24,3 +24,45 @@ class Primitives(base.BaseCase):
         }
         name = bluegreen.find_load_balancer('dummy1--test')
         self.assertEquals(name, 'dummy1-ElasticL-ABCDEFGHI')
+
+    def test_divide_by_color(self):
+        params = {
+            'key_filename': './dummy1--test.pem',
+            'nodes': {
+                'i-10000001': 1,
+                'i-10000002': 2,
+            },
+            'public_ips': {
+                'i-10000001': '127.0.0.1',
+                'i-10000002': '127.0.0.2',
+            },
+            'stackname': 'dummy1--test',
+            'user': 'ubuntu'
+        }
+        self.assertEquals(
+            bluegreen.divide_by_color(params),
+            (
+                {
+                    'key_filename': './dummy1--test.pem',
+                    'nodes': {
+                        'i-10000001': 1,
+                    },
+                    'public_ips': {
+                        'i-10000001': '127.0.0.1',
+                    },
+                    'stackname': 'dummy1--test',
+                    'user': 'ubuntu'
+                },
+                {
+                    'key_filename': './dummy1--test.pem',
+                    'nodes': {
+                        'i-10000002': 2,
+                    },
+                    'public_ips': {
+                        'i-10000002': '127.0.0.2',
+                    },
+                    'stackname': 'dummy1--test',
+                    'user': 'ubuntu'
+                }
+            )
+        )

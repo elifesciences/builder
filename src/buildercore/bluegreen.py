@@ -36,3 +36,13 @@ def find_load_balancer(stackname):
     balancers = [lb['LoadBalancerName'] for lb in tags if {'Key':'Cluster', 'Value': stackname} in lb['Tags']]
     ensure(len(balancers) == 1, "Expected to find exactly 1 load balancer, but found %s", balancers)
     return balancers[0]
+
+def divide_by_color(params):
+    is_blue = lambda node: node % 2 == 1
+    is_green = lambda node: node % 2 == 0
+    def subset(is_subset):
+        subset = params.copy()
+        subset['nodes'] = {id: node for (id, node) in params['nodes'].items() if is_subset(node)}
+        subset['public_ips'] = {id: ip for (id, ip) in params['public_ips'].items() if id in subset['nodes'].keys() }
+        return subset
+    return subset(is_blue), subset(is_green)
