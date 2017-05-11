@@ -242,20 +242,20 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     params.update({'public_ips': public_ips})
     params.update({'nodes': nodes})
 
-    LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
+    LOG.info("Executing %s on all ec2 nodes (%s), concurrency %s", workfn, public_ips, concurrency)
 
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
-    def decorate_with_concurrency():
-        if not concurrency:
-            return parallel
-        if concurrency == 'serial':
-            return serial
-        if concurrency == 'parallel':
-            return parallel
-        raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
+    #def decorate_with_concurrency():
+    #    if not concurrency:
+    #        return parallel
+    #    if concurrency == 'serial':
+    #        return serial
+    #    if concurrency == 'parallel':
+    #        return parallel
+    #    raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
 
-    @decorate_with_concurrency()
+    #@decorate_with_concurrency()
     def single_node_work():
         try:
             return workfn(**work_kwargs)
@@ -265,8 +265,24 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 return workfn(**work_kwargs)
             else:
                 raise err
+
+    if not concurrency:
+        concurrency = 'parallel'
+    if concurrency == 'serial':
+        return _serial_work(single_node_work, params, public_ips)
+    if concurrency == 'parallel':
+        return _parallel_work(single_node_work, params, public_ips)
+    if callable(concurrency):
+        return concurrency(single_node_work, params)
+    raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
+
+def _serial_work(single_node_work, params, public_ips):
     with settings(**params):
-        return execute(single_node_work, hosts=public_ips.values())
+        return execute(serial(single_node_work), hosts=public_ips.values())
+
+def _parallel_work(single_node_work, params, public_ips):
+    with settings(**params):
+        return execute(parallel(single_node_work), hosts=public_ips.values())
 
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
