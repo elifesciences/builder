@@ -1,5 +1,6 @@
 #from .context_handler import load_context
 from .core import boto_elb_conn
+from .utils import ensure
 from pprint import pprint
 
 def concurrency_work(single_node_work, params):
@@ -8,7 +9,6 @@ def concurrency_work(single_node_work, params):
     #pprint(context)
     #assert context['elb'], "Only ELB stacks can perform blue-green deployment"
     
-    lb = find_load_balancer(params['stackname'])
     #waiter = conn.get_waiter('any_instance_in_service')
     #instances = [
     #    {'InstanceId': instance_id} for instance_id in params['nodes'].keys()
@@ -30,8 +30,9 @@ def concurrency_work(single_node_work, params):
 
 def find_load_balancer(stackname):
     conn = boto_elb_conn('us-east-1')
-    names = [lb['LoadBalancerName'] for lb in conn.describe_load_g()['LoadBalancerDescriptions']]
+    names = [lb['LoadBalancerName'] for lb in conn.describe_load_balancers()['LoadBalancerDescriptions']]
+    ensure(len(names) >= 1, "No load balancers found")
     tags = conn.describe_tags(LoadBalancerNames=names)['TagDescriptions']
     balancers = [lb['LoadBalancerName'] for lb in tags if {'Key':'Cluster', 'Value': stackname} in lb['Tags']]
-    assert len(balancers) == 1, "Expected to find exactly 1 load balancer, but found %s" % balancers
+    ensure(len(balancers) == 1, "Expected to find exactly 1 load balancer, but found %s", balancers)
     return balancers[0]

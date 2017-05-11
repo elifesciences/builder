@@ -22,4 +22,5 @@ class Primitives(base.BaseCase):
                 }
             ]
         }
-        elb = bluegreen.find_load_balancer('dummy1--test')
+        name = bluegreen.find_load_balancer('dummy1--test')
+        self.assertEquals(name, 'dummy1-ElasticL-ABCDEFGHI')
