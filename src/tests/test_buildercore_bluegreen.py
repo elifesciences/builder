@@ -94,7 +94,7 @@ class Primitives(base.BaseCase):
             # ...
         }
         bluegreen.register('dummy1-ElasticL-ABCDEFGHI', nodes_params)
-        conn.register_instances_from_load_balancer.assert_called_once_with(
+        conn.register_instances_with_load_balancer.assert_called_once_with(
             LoadBalancerName='dummy1-ElasticL-ABCDEFGHI',
             Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
         )

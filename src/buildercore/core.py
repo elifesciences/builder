@@ -269,20 +269,20 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     if not concurrency:
         concurrency = 'parallel'
     if concurrency == 'serial':
-        return _serial_work(single_node_work, params, public_ips)
+        return serial_work(single_node_work, params)
     if concurrency == 'parallel':
-        return _parallel_work(single_node_work, params, public_ips)
+        return parallel_work(single_node_work, params)
     if callable(concurrency):
         return concurrency(single_node_work, params)
     raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
 
-def _serial_work(single_node_work, params, public_ips):
+def serial_work(single_node_work, params):
     with settings(**params):
-        return execute(serial(single_node_work), hosts=public_ips.values())
+        return execute(serial(single_node_work), hosts=params['public_ips'].values())
 
-def _parallel_work(single_node_work, params, public_ips):
+def parallel_work(single_node_work, params):
     with settings(**params):
-        return execute(parallel(single_node_work), hosts=public_ips.values())
+        return execute(parallel(single_node_work), hosts=params['public_ips'].values())
 
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.

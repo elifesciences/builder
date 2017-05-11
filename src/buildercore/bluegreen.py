@@ -1,31 +1,28 @@
-#from .context_handler import load_context
 import logging
-from .core import boto_elb_conn
+from .core import boto_elb_conn, parallel_work
 from .utils import ensure, call_while
 from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
 def concurrency_work(single_node_work, nodes_params):
-    pprint(nodes_params)
-    #context = load_context(nodes_params['stackname'])
     elb_name = find_load_balancer(nodes_params['stackname'])
-    
+    blue, green = divide_by_color(nodes_params)
+
+    deregister(elb_name, blue)
+    wait_deregistered_all(elb_name, blue)
+    parallel_work(single_node_work, blue)
+
+    # this is the window of time in which old and new servers overlap
+    register(elb_name, blue)
+    wait_registered_any(elb_name, blue)
+
+    deregister(elb_name, green)
+    wait_deregistered_all(elb_name, green)
+    parallel_work(single_node_work, green)
+    register(elb_name, green)
+
     wait_registered_all(elb_name, nodes_params)
-    wait_deregistered_all(elb_name, nodes_params)
-    #health = conn.describe_instance_health(LoadBalancerName=lb, Instances=instances)['InstanceStates']
-    #pprint(health)
-    # 1. separate blue from green
-    # 2. deregister blue
-    # 2.1 wait, yes because of connection draining
-    # 3. perform single_node_work in parallel on blue
-    # 4. register blue
-    # 4.1 wait, yes, with waiter any_instance_in_service
-    # 5. deregister green
-    # 5.1 wait, yes because of connection draining
-    # 6. perform single_node_work in parallel on green
-    # 7. register green
-    # 7.1 wait, yes, with all_instances_in_service
 
 def find_load_balancer(stackname):
     conn = boto_elb_conn('us-east-1')
@@ -48,13 +45,14 @@ def divide_by_color(nodes_params):
 
 def register(elb_name, nodes_params):
     conn = boto_elb_conn('us-east-1')
-    conn.register_instances_from_load_balancer(
+    conn.register_instances_with_load_balancer(
         LoadBalancerName=elb_name,
         Instances=_instances(nodes_params),
     )
 
 def deregister(elb_name, nodes_params):
     conn = boto_elb_conn('us-east-1')
+    LOG.info("Deregistering: %s", nodes_params['nodes'].keys())
     instances = [
         {'InstanceId': instance_id} for instance_id in nodes_params['nodes'].keys()
     ]
