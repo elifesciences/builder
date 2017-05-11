@@ -5,8 +5,6 @@ from os.path import join
 from . import config, s3
 from .decorators import if_enabled
 
-from .utils import hasallkeys, missingkeys, ensure, exsubdict
-
 import logging
 LOG = logging.getLogger(__name__)
 

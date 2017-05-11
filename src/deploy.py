@@ -50,7 +50,7 @@ def deploy(pname, instance_id=None, branch='master', part_filter=None):
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
     """concurrency default is to perform updates one machine at a time.
-    
+
     Concurrency can be:
     - serial
     - parallel
@@ -59,4 +59,3 @@ def switch_revision_update_instance(stackname, revision=None, concurrency='seria
     if concurrency == 'blue-green':
         concurrency = bluegreen.concurrency_work
     bootstrap.update_stack(stackname, concurrency=concurrency)
-

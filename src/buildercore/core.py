@@ -246,7 +246,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
-    #def decorate_with_concurrency():
+    # def decorate_with_concurrency():
     #    if not concurrency:
     #        return parallel
     #    if concurrency == 'serial':

@@ -7,7 +7,6 @@ TODO: make nodes_params a named tuple"""
 import logging
 from .core import boto_elb_conn, parallel_work
 from .utils import ensure, call_while
-from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 
@@ -39,17 +38,18 @@ def find_load_balancer(stackname):
     names = [lb['LoadBalancerName'] for lb in conn.describe_load_balancers()['LoadBalancerDescriptions']]
     ensure(len(names) >= 1, "No load balancers found")
     tags = conn.describe_tags(LoadBalancerNames=names)['TagDescriptions']
-    balancers = [lb['LoadBalancerName'] for lb in tags if {'Key':'Cluster', 'Value': stackname} in lb['Tags']]
+    balancers = [lb['LoadBalancerName'] for lb in tags if {'Key': 'Cluster', 'Value': stackname} in lb['Tags']]
     ensure(len(balancers) == 1, "Expected to find exactly 1 load balancer, but found %s", balancers)
     return balancers[0]
 
 def divide_by_color(nodes_params):
     is_blue = lambda node: node % 2 == 1
     is_green = lambda node: node % 2 == 0
+
     def subset(is_subset):
         subset = nodes_params.copy()
         subset['nodes'] = {id: node for (id, node) in nodes_params['nodes'].items() if is_subset(node)}
-        subset['public_ips'] = {id: ip for (id, ip) in nodes_params['public_ips'].items() if id in subset['nodes'].keys() }
+        subset['public_ips'] = {id: ip for (id, ip) in nodes_params['public_ips'].items() if id in subset['nodes'].keys()}
         return subset
     return subset(is_blue), subset(is_green)
 
@@ -85,7 +85,7 @@ def wait_registered_all(elb_name, nodes_params):
 
 def wait_deregistered_all(elb_name, nodes_params):
     LOG.info("Waiting for deregistration of all on %s: %s", elb_name, _instance_ids(nodes_params))
-    instance_ids = nodes_params['nodes'].keys()
+
     def condition():
         conn = boto_elb_conn('us-east-1')
         health = conn.describe_instance_health(
@@ -99,11 +99,10 @@ def wait_deregistered_all(elb_name, nodes_params):
     call_while(condition)
 
 def _registered(health):
-    return {result['InstanceId']:result['State']=='InService' for result in health}
+    return {result['InstanceId']: result['State'] == 'InService' for result in health}
 
 def _instances(nodes_params):
     return [{'InstanceId': instance_id} for instance_id in _instance_ids(nodes_params)]
 
 def _instance_ids(nodes_params):
     return nodes_params['nodes'].keys()
-

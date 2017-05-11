@@ -9,11 +9,11 @@ class Primitives(base.BaseCase):
         conn = self._conn_mock(elb_conn_factory)
         conn.describe_load_balancers.return_value = {
             'LoadBalancerDescriptions': [
-                { 'LoadBalancerName': 'dummy1-ElasticL-ABCDEFGHI' }
+                {'LoadBalancerName': 'dummy1-ElasticL-ABCDEFGHI'}
             ]
         }
         conn.describe_tags.return_value = {
-            'TagDescriptions' : [
+            'TagDescriptions': [
                 {
                     'LoadBalancerName': 'dummy1-ElasticL-ABCDEFGHI',
                     'Tags': [
