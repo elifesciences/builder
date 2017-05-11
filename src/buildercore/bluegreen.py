@@ -8,8 +8,7 @@ def concurrency_work(single_node_work, nodes_params):
     #context = load_context(nodes_params['stackname'])
     elb_name = find_load_balancer(nodes_params['stackname'])
     
-    #waiter = conn.get_waiter('any_instance_in_service')
-    #waiter.wait(LoadBalancerName=lb, Instances=instances)
+    wait_registered_all(elb_name, nodes_params)
     #health = conn.describe_instance_health(LoadBalancerName=lb, Instances=instances)['InstanceStates']
     #pprint(health)
     # 1. separate blue from green
@@ -43,6 +42,13 @@ def divide_by_color(nodes_params):
         return subset
     return subset(is_blue), subset(is_green)
 
+def register(elb_name, nodes_params):
+    conn = boto_elb_conn('us-east-1')
+    conn.register_instances_from_load_balancer(
+        LoadBalancerName=elb_name,
+        Instances=_instances(nodes_params),
+    )
+
 def deregister(elb_name, nodes_params):
     conn = boto_elb_conn('us-east-1')
     instances = [
@@ -53,12 +59,15 @@ def deregister(elb_name, nodes_params):
         Instances=_instances(nodes_params),
     )
 
-def register(elb_name, nodes_params):
+def wait_registered_any(elb_name, nodes_params):
     conn = boto_elb_conn('us-east-1')
-    conn.register_instances_from_load_balancer(
-        LoadBalancerName=elb_name,
-        Instances=_instances(nodes_params),
-    )
+    waiter = conn.get_waiter('any_instance_in_service')
+    waiter.wait(LoadBalancerName=elb_name, Instances=_instances(nodes_params))
+
+def wait_registered_all(elb_name, nodes_params):
+    conn = boto_elb_conn('us-east-1')
+    waiter = conn.get_waiter('instance_in_service')
+    waiter.wait(LoadBalancerName=elb_name, Instances=_instances(nodes_params))
 
 def _instances(nodes_params):
     return [{'InstanceId': instance_id} for instance_id in nodes_params['nodes'].keys()]
