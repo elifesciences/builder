@@ -900,4 +900,4 @@ iiif:
                     - iiif
     vagrant:
         ports:
-            1241: 80
+            1261: 80
