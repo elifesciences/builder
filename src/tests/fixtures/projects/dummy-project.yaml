@@ -273,6 +273,24 @@ project-with-cluster:
         elb: 
             protocol: http
 
+project-with-cluster-integration-tests:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    # no dummy domains since we really create this on CloudFormation
+    domain: false
+    intdomain: false
+    aws:
+        ports:
+            - 80
+            - 22
+        ec2:
+            cluster-size: 2
+        elb: 
+            protocol: http
+            healthcheck:
+                protocol: tcp
+                port: 22
+
 project-with-db-params:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:

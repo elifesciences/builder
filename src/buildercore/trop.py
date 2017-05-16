@@ -454,9 +454,6 @@ def _add_bucket_policy(template, bucket_title, bucket_name):
     ))
 
 def render_elb(context, template, ec2_instances):
-    ensure(any([context['full_hostname'], context['int_full_hostname']]),
-           "An ELB must have either an external or an internal DNS entry")
-
     elb_is_public = True if context['full_hostname'] else False
     listeners_policy_names = []
 
@@ -536,8 +533,9 @@ def render_elb(context, template, ec2_instances):
         elb_ports
     )) # list of strings or dicts
 
-    dns = external_dns_elb if elb_is_public else internal_dns_elb
-    template.add_resource(dns(context))
+    if any([context['full_hostname'], context['int_full_hostname']]):
+        dns = external_dns_elb if elb_is_public else internal_dns_elb
+        template.add_resource(dns(context))
 
 def render_cloudfront(context, template, origin_hostname):
     allowed_cnames = [

@@ -38,7 +38,7 @@ class TestProvisioning(base.BaseCase):
             lifecycle.stop(stackname)
             lifecycle.start(stackname)
 
-            cfn.cmd(stackname, "ls -l", username=BOOTSTRAP_USER, concurrency='parallel')
+            cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
 
 class TestDeployment(base.BaseCase):
     def setUp(self):
@@ -49,9 +49,10 @@ class TestDeployment(base.BaseCase):
         for stackname in self.stacknames:
             cfn.ensure_destroyed(stackname)
 
-    def _test_blue_green_operations(self):
+    # takes too long, tens of minutes
+    def test_blue_green_operations(self):
         with settings(abort_on_prompts=True):
-            project = 'project-with-cluster'
+            project = 'project-with-cluster-integration-tests'
             stackname = '%s--%s' % (project, self.environment)
 
             cfn.ensure_destroyed(stackname)
@@ -59,4 +60,5 @@ class TestDeployment(base.BaseCase):
             cfngen.generate_stack(project, stackname=stackname)
             bootstrap.create_stack(stackname)
 
-            # operate with bluegreen module
+            output = cfn.cmd(stackname, 'ls -l /', username=BOOTSTRAP_USER, concurrency='blue-green')
+            print output
