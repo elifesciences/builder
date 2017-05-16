@@ -97,7 +97,7 @@ defaults:
             compress: true
             headers: []
             errors: null
-            default-ttl: 300 # seconds
+            default-ttl: 0 # seconds
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
