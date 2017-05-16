@@ -10,8 +10,8 @@ from .utils import ensure, call_while
 
 LOG = logging.getLogger(__name__)
 
-class BlueGreenConcurrency():
-    def __init__(self, region='us-east-1'):
+class BlueGreenConcurrency(object):
+    def __init__(self, region):
         self.conn = boto_elb_conn(region)
 
     def __call__(self, single_node_work, nodes_params):

@@ -3,7 +3,7 @@
 from fabric.api import task
 from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile, requires_aws_stack, timeit
 import utils
-from buildercore import core, bootstrap, cfngen, project, bluegreen
+from buildercore import core, bootstrap, cfngen, project, bluegreen, context_handler
 import buildvars
 
 import logging
@@ -56,6 +56,7 @@ def switch_revision_update_instance(stackname, revision=None, concurrency='seria
     - parallel
     - blue-green"""
     buildvars.switch_revision(stackname, revision)
+    context = context_handler.load_context(stackname)
     if concurrency == 'blue-green':
-        concurrency = bluegreen.BlueGreenConcurrency('us-east-1')
+        concurrency = bluegreen.BlueGreenConcurrency(context['project']['aws']['region'])
     bootstrap.update_stack(stackname, concurrency=concurrency)
