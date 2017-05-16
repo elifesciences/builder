@@ -313,6 +313,7 @@ def template_delta(pname, context):
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
     updatable_title_prefixes = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy']
+    ec2_not_updatable_properties = ['ImageId', 'Tags', 'UserData']
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -344,10 +345,9 @@ def template_delta(pname, context):
         # ignore UserData changes, it's not useful to update them and cause
         # a needless reboot
         if title_in_old['Type'] == 'AWS::EC2::Instance':
-            title_in_old['Properties']['UserData'] = None
-            title_in_new['Properties']['UserData'] = None
-            title_in_old['Properties']['Tags'] = None
-            title_in_new['Properties']['Tags'] = None
+            for property_name in ec2_not_updatable_properties:
+                title_in_old['Properties'][property_name] = None
+                title_in_new['Properties'][property_name] = None
         return title_in_old != title_in_new
 
     resources = {
