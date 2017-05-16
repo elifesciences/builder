@@ -4,15 +4,20 @@ from mock import patch, MagicMock
 from collections import OrderedDict
 
 class Primitives(base.BaseCase):
-    @patch('buildercore.bluegreen.boto_elb_conn')
-    def test_find_load_balancer(self, elb_conn_factory):
-        conn = self._conn_mock(elb_conn_factory)
-        conn.describe_load_balancers.return_value = {
+    def setUp(self):
+        patcher = patch('buildercore.bluegreen.boto_elb_conn')
+        self.addCleanup(patcher.stop)
+        elb_conn_factory = patcher.start()
+        self.conn = MagicMock()
+        elb_conn_factory.return_value = self.conn
+
+    def test_find_load_balancer(self):
+        self.conn.describe_load_balancers.return_value = {
             'LoadBalancerDescriptions': [
                 {'LoadBalancerName': 'dummy1-ElasticL-ABCDEFGHI'}
             ]
         }
-        conn.describe_tags.return_value = {
+        self.conn.describe_tags.return_value = {
             'TagDescriptions': [
                 {
                     'LoadBalancerName': 'dummy1-ElasticL-ABCDEFGHI',
@@ -67,9 +72,7 @@ class Primitives(base.BaseCase):
             )
         )
 
-    @patch('buildercore.bluegreen.boto_elb_conn')
-    def test_deregister(self, elb_conn_factory):
-        conn = self._conn_mock(elb_conn_factory)
+    def test_deregister(self):
         nodes_params = {
             'nodes': OrderedDict([
                 ('i-10000001', 1),
@@ -78,14 +81,12 @@ class Primitives(base.BaseCase):
             # ...
         }
         bluegreen.deregister('dummy1-ElasticL-ABCDEFGHI', nodes_params)
-        conn.deregister_instances_from_load_balancer.assert_called_once_with(
+        self.conn.deregister_instances_from_load_balancer.assert_called_once_with(
             LoadBalancerName='dummy1-ElasticL-ABCDEFGHI',
             Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
         )
 
-    @patch('buildercore.bluegreen.boto_elb_conn')
-    def test_register(self, elb_conn_factory):
-        conn = self._conn_mock(elb_conn_factory)
+    def test_register(self):
         nodes_params = {
             'nodes': OrderedDict([
                 ('i-10000001', 1),
@@ -94,14 +95,12 @@ class Primitives(base.BaseCase):
             # ...
         }
         bluegreen.register('dummy1-ElasticL-ABCDEFGHI', nodes_params)
-        conn.register_instances_with_load_balancer.assert_called_once_with(
+        self.conn.register_instances_with_load_balancer.assert_called_once_with(
             LoadBalancerName='dummy1-ElasticL-ABCDEFGHI',
             Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
         )
 
-    @patch('buildercore.bluegreen.boto_elb_conn')
-    def test_wait_deregistered_all(self, elb_conn_factory):
-        conn = self._conn_mock(elb_conn_factory)
+    def test_wait_deregistered_all(self):
         nodes_params = {
             'nodes': OrderedDict([
                 ('i-10000001', 1),
@@ -109,7 +108,7 @@ class Primitives(base.BaseCase):
             ]),
             # ...
         }
-        conn.describe_instance_health.return_value = {
+        self.conn.describe_instance_health.return_value = {
             'InstanceStates': [
                 {
                     'InstanceId': 'i-10000001',
@@ -122,8 +121,3 @@ class Primitives(base.BaseCase):
             ],
         }
         bluegreen.wait_deregistered_all('dummy1-ElasticL-ABCDEFGHI', nodes_params)
-
-    def _conn_mock(self, elb_conn_factory):
-        conn = MagicMock()
-        elb_conn_factory.return_value = conn
-        return conn
