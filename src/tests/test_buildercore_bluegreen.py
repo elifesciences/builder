@@ -10,6 +10,7 @@ class Primitives(base.BaseCase):
         elb_conn_factory = patcher.start()
         self.conn = MagicMock()
         elb_conn_factory.return_value = self.conn
+        self.concurrency = bluegreen.BlueGreenConcurrency('us-east-1')
 
     def test_find_load_balancer(self):
         self.conn.describe_load_balancers.return_value = {
@@ -27,7 +28,7 @@ class Primitives(base.BaseCase):
                 }
             ]
         }
-        name = bluegreen.find_load_balancer('dummy1--test')
+        name = self.concurrency.find_load_balancer('dummy1--test')
         self.assertEquals(name, 'dummy1-ElasticL-ABCDEFGHI')
 
     def test_divide_by_color(self):
@@ -45,7 +46,7 @@ class Primitives(base.BaseCase):
             'user': 'ubuntu'
         }
         self.assertEquals(
-            bluegreen.divide_by_color(nodes_params),
+            self.concurrency.divide_by_color(nodes_params),
             (
                 {
                     'key_filename': './dummy1--test.pem',
@@ -80,7 +81,7 @@ class Primitives(base.BaseCase):
             ]),
             # ...
         }
-        bluegreen.deregister('dummy1-ElasticL-ABCDEFGHI', nodes_params)
+        self.concurrency.deregister('dummy1-ElasticL-ABCDEFGHI', nodes_params)
         self.conn.deregister_instances_from_load_balancer.assert_called_once_with(
             LoadBalancerName='dummy1-ElasticL-ABCDEFGHI',
             Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
@@ -94,7 +95,7 @@ class Primitives(base.BaseCase):
             ]),
             # ...
         }
-        bluegreen.register('dummy1-ElasticL-ABCDEFGHI', nodes_params)
+        self.concurrency.register('dummy1-ElasticL-ABCDEFGHI', nodes_params)
         self.conn.register_instances_with_load_balancer.assert_called_once_with(
             LoadBalancerName='dummy1-ElasticL-ABCDEFGHI',
             Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
@@ -120,4 +121,4 @@ class Primitives(base.BaseCase):
                 },
             ],
         }
-        bluegreen.wait_deregistered_all('dummy1-ElasticL-ABCDEFGHI', nodes_params)
+        self.concurrency.wait_deregistered_all('dummy1-ElasticL-ABCDEFGHI', nodes_params)
