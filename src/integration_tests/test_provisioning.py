@@ -49,7 +49,6 @@ class TestDeployment(base.BaseCase):
         for stackname in self.stacknames:
             cfn.ensure_destroyed(stackname)
 
-    # takes too long, tens of minutes
     def test_blue_green_operations(self):
         with settings(abort_on_prompts=True):
             project = 'project-with-cluster-integration-tests'

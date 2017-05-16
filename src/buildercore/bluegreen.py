@@ -76,7 +76,9 @@ class BlueGreenConcurrency(object):
             LOG.info("InService: %s", registered)
             return True not in registered.values()
 
-        call_while(condition)
+        # needs to be as responsive as possible,
+        # to start deregistering the green group as soon as a blue server becomes available
+        call_while(condition, interval=1, timeout=600)
 
     def wait_registered_all(self, elb_name, nodes_params):
         LOG.info("Waiting for registration of all on %s: %s", elb_name, self._instance_ids(nodes_params))
@@ -86,7 +88,7 @@ class BlueGreenConcurrency(object):
             LOG.info("InService: %s", registered)
             return False in registered.values()
 
-        call_while(condition)
+        call_while(condition, interval=5, timeout=600)
 
     def wait_deregistered_all(self, elb_name, nodes_params):
         LOG.info("Waiting for deregistration of all on %s: %s", elb_name, self._instance_ids(nodes_params))
@@ -96,7 +98,7 @@ class BlueGreenConcurrency(object):
             LOG.info("InService: %s", registered)
             return True in registered.values()
 
-        call_while(condition)
+        call_while(condition, interval=5, timeout=600)
 
     def _registered(self, elb_name, nodes_params):
         health = self.conn.describe_instance_health(
