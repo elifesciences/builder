@@ -57,5 +57,5 @@ def switch_revision_update_instance(stackname, revision=None, concurrency='seria
     - blue-green"""
     buildvars.switch_revision(stackname, revision)
     if concurrency == 'blue-green':
-        concurrency = bluegreen.concurrency_work
+        concurrency = bluegreen.BlueGreenConcurrency()
     bootstrap.update_stack(stackname, concurrency=concurrency)

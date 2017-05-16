@@ -10,6 +10,10 @@ from .utils import ensure, call_while
 
 LOG = logging.getLogger(__name__)
 
+class BlueGreenConcurrency():
+    def __call__(self, single_node_work, nodes_params):
+        return concurrency_work(single_node_work, nodes_params)
+
 def concurrency_work(single_node_work, nodes_params):
     # TODO: region should come from context of nodes_params['stackname']
     # TODO: transform functions into methods of a class to pass region and/or connection in the constructor
