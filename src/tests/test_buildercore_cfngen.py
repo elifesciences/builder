@@ -84,6 +84,22 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.assertEqual(delta['Resources'].keys(), ['EC2Instance1'])
         self.assertEqual(delta['Outputs'].keys(), [])
 
+    def test_template_delta_does_not_include_ec2_immutable_properties_like_image(self):
+        "we don't want random reboot or recreations of instances"
+        context = self._base_context()
+        context['ec2']['ami'] = 'ami-1234567'
+        delta = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta['Resources'].keys(), [])
+        self.assertEqual(delta['Outputs'].keys(), [])
+
+    def test_template_delta_includes_ec2_security_group(self):
+        "it's useful to open and close ports"
+        context = self._base_context()
+        context['project']['aws']['ports'] = [110]
+        delta = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta['Resources'].keys(), ['StackSecurityGroup'])
+        self.assertEqual(delta['Outputs'].keys(), [])
+
     def test_template_delta_includes_parts_of_cloudfront(self):
         "we want to update CDNs in place given how long it takes to recreate them"
         context = self._base_context('project-with-cloudfront-minimal')
@@ -102,6 +118,15 @@ class TestBuildercoreCfngen(base.BaseCase):
         delta = cfngen.template_delta('project-with-cluster', context)
         self.assertEqual(delta['Resources'].keys(), ['ElasticLoadBalancer'])
         self.assertEqual(delta['Resources']['ElasticLoadBalancer']['Properties']['HealthCheck']['Target'], 'TCP:80')
+        self.assertEqual(delta['Outputs'].keys(), [])
+
+    def test_template_delta_includes_elb_security_group(self):
+        "for consistency with EC2 security groups"
+        context = self._base_context('project-with-cluster')
+        context['elb']['protocol'] = 'https'
+        context['elb']['certificate'] = 'DUMMY_CERTIFICATE'
+        delta = cfngen.template_delta('project-with-cluster', context)
+        self.assertEqual(delta['Resources'].keys(), ['ElasticLoadBalancer', 'ELBSecurityGroup'])
         self.assertEqual(delta['Outputs'].keys(), [])
 
     def test_template_delta_includes_new_external_volumes(self):
