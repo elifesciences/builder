@@ -246,16 +246,6 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
-    # def decorate_with_concurrency():
-    #    if not concurrency:
-    #        return parallel
-    #    if concurrency == 'serial':
-    #        return serial
-    #    if concurrency == 'parallel':
-    #        return parallel
-    #    raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
-
-    #@decorate_with_concurrency()
     def single_node_work():
         try:
             return workfn(**work_kwargs)
@@ -266,6 +256,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
             else:
                 raise err
 
+    # TODO: extract in buildercore.concurrency
     if not concurrency:
         concurrency = 'parallel'
     if concurrency == 'serial':
