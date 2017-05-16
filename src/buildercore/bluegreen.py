@@ -70,31 +70,39 @@ class BlueGreenConcurrency(object):
 
     def wait_registered_any(self, elb_name, nodes_params):
         LOG.info("Waiting for registration of any on %s: %s", elb_name, self._instance_ids(nodes_params))
-        # TODO: reimplement with call_while because polling interval cannot be customized
-        waiter = self.conn.get_waiter('any_instance_in_service')
-        waiter.wait(LoadBalancerName=elb_name, Instances=self._instances(nodes_params))
+
+        def condition():
+            registered = self._registered(elb_name, nodes_params)
+            LOG.info("InService: %s", registered)
+            return True not in registered.values()
+
+        call_while(condition)
 
     def wait_registered_all(self, elb_name, nodes_params):
         LOG.info("Waiting for registration of all on %s: %s", elb_name, self._instance_ids(nodes_params))
-        # TODO: reimplement with call_while because polling interval cannot be customized
-        waiter = self.conn.get_waiter('instance_in_service')
-        waiter.wait(LoadBalancerName=elb_name, Instances=self._instances(nodes_params))
+
+        def condition():
+            registered = self._registered(elb_name, nodes_params)
+            LOG.info("InService: %s", registered)
+            return False in registered.values()
+
+        call_while(condition)
 
     def wait_deregistered_all(self, elb_name, nodes_params):
         LOG.info("Waiting for deregistration of all on %s: %s", elb_name, self._instance_ids(nodes_params))
 
         def condition():
-            health = self.conn.describe_instance_health(
-                LoadBalancerName=elb_name,
-                Instances=self._instances(nodes_params)
-            )['InstanceStates']
-            registered = self._registered(health)
+            registered = self._registered(elb_name, nodes_params)
             LOG.info("InService: %s", registered)
             return True in registered.values()
 
         call_while(condition)
 
-    def _registered(self, health):
+    def _registered(self, elb_name, nodes_params):
+        health = self.conn.describe_instance_health(
+            LoadBalancerName=elb_name,
+            Instances=self._instances(nodes_params)
+        )['InstanceStates']
         return {result['InstanceId']: result['State'] == 'InService' for result in health}
 
     def _instances(self, nodes_params):

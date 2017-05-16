@@ -101,6 +101,50 @@ class Primitives(base.BaseCase):
             Instances=[{'InstanceId': 'i-10000001'}, {'InstanceId': 'i-10000002'}]
         )
 
+    def test_wait_registered_any(self):
+        nodes_params = {
+            'nodes': OrderedDict([
+                ('i-10000001', 1),
+                ('i-10000002', 2),
+            ]),
+            # ...
+        }
+        self.conn.describe_instance_health.return_value = {
+            'InstanceStates': [
+                {
+                    'InstanceId': 'i-10000001',
+                    'State': 'InService',
+                },
+                {
+                    'InstanceId': 'i-10000002',
+                    'State': 'OutOfService',
+                },
+            ],
+        }
+        self.concurrency.wait_registered_any('dummy1-ElasticL-ABCDEFGHI', nodes_params)
+
+    def test_wait_registered_all(self):
+        nodes_params = {
+            'nodes': OrderedDict([
+                ('i-10000001', 1),
+                ('i-10000002', 2),
+            ]),
+            # ...
+        }
+        self.conn.describe_instance_health.return_value = {
+            'InstanceStates': [
+                {
+                    'InstanceId': 'i-10000001',
+                    'State': 'InService',
+                },
+                {
+                    'InstanceId': 'i-10000002',
+                    'State': 'InService',
+                },
+            ],
+        }
+        self.concurrency.wait_registered_all('dummy1-ElasticL-ABCDEFGHI', nodes_params)
+
     def test_wait_deregistered_all(self):
         nodes_params = {
             'nodes': OrderedDict([
