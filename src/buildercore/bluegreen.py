@@ -27,7 +27,7 @@ class BlueGreenConcurrency(object):
         self.register(elb_name, blue)
         self.wait_registered_any(elb_name, blue)
 
-        LOG.info("Green phase on %s: %s", elb_name, self._instance_ids(blue))
+        LOG.info("Green phase on %s: %s", elb_name, self._instance_ids(green))
         self.deregister(elb_name, green)
         self.wait_deregistered_all(elb_name, green)
         parallel_work(single_node_work, green)
