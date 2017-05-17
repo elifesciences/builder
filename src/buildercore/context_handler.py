@@ -5,10 +5,6 @@ from os.path import join
 from . import config, s3
 from .decorators import if_enabled
 
-# only needed for _fallback_download_context_from_ec2:
-from . import core, bvars
-from .utils import hasallkeys, missingkeys, ensure, exsubdict
-
 import logging
 LOG = logging.getLogger(__name__)
 
@@ -24,18 +20,8 @@ def load_context(stackname):
     path = local_context_file(stackname)
     if not os.path.exists(path):
         if not download_from_s3(stackname):
-            _fallback_download_context_from_ec2(stackname)
+            raise RuntimeError("We are missing the context file for %s, even on S3" % stackname)
     return json.load(open(path, 'r'))
-
-def _fallback_download_context_from_ec2(stackname):
-    LOG.warn("Context for %s was not on S3, downloading it from EC2 and uploading it", stackname)
-    with core.stack_conn(stackname):
-        build_vars = dict(bvars.read_from_current_host())
-        context = exsubdict(build_vars, ['node', 'nodename'])
-        required_keys = ['full_hostname', 'domain', 'int_full_hostname', 'int_domain']
-        ensure(hasallkeys(context, required_keys), "Context missing keys %s: %s" %
-               (missingkeys(context, required_keys), context))
-        write_context(stackname, context)
 
 def write_context(stackname, context):
     write_context_locally(stackname, json.dumps(context))

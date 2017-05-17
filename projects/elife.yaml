@@ -216,6 +216,15 @@ journal:
     aws-alt:
         ci:
             type: t2.medium
+        end2endtest:
+            description: temporary environment for blue-green deployment testing
+            ec2:
+                cluster-size: 2
+            elb:
+                stickiness: true
+                protocol: 
+                    - https
+                    - http
         end2end:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:

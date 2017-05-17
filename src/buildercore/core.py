@@ -20,7 +20,7 @@ from kids.cache import cache as cached
 from slugify import slugify
 
 LOG = logging.getLogger(__name__)
-boto3.set_stream_logger(name='botocore')
+boto3.set_stream_logger(name='botocore', level=logging.INFO)
 
 class DeprecationException(Exception):
     pass
@@ -105,6 +105,11 @@ def boto_cfn_conn(region):
 @cached
 def boto_ec2_conn(region):
     return connect_aws('ec2', region)
+
+@cached
+def boto_elb_conn(region):
+    "This uses boto3 because it allows to read tags on ELB and associate them to a stackname"
+    return boto3.client('elb', region)
 
 @cached
 def boto_sns_conn(region):
@@ -237,20 +242,10 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     params.update({'public_ips': public_ips})
     params.update({'nodes': nodes})
 
-    LOG.info("Executing %s on all ec2 nodes (%s)", workfn, public_ips)
+    LOG.info("Executing %s on all ec2 nodes (%s), concurrency %s", workfn, public_ips, concurrency)
 
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
-    def decorate_with_concurrency():
-        if not concurrency:
-            return parallel
-        if concurrency == 'serial':
-            return serial
-        if concurrency == 'parallel':
-            return parallel
-        raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
-
-    @decorate_with_concurrency()
     def single_node_work():
         try:
             return workfn(**work_kwargs)
@@ -260,8 +255,25 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 return workfn(**work_kwargs)
             else:
                 raise err
+
+    # TODO: extract in buildercore.concurrency
+    if not concurrency:
+        concurrency = 'parallel'
+    if concurrency == 'serial':
+        return serial_work(single_node_work, params)
+    if concurrency == 'parallel':
+        return parallel_work(single_node_work, params)
+    if callable(concurrency):
+        return concurrency(single_node_work, params)
+    raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
+
+def serial_work(single_node_work, params):
     with settings(**params):
-        return execute(single_node_work, hosts=public_ips.values())
+        return execute(serial(single_node_work), hosts=params['public_ips'].values())
+
+def parallel_work(single_node_work, params):
+    with settings(**params):
+        return execute(parallel(single_node_work), hosts=params['public_ips'].values())
 
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.

@@ -1,7 +1,8 @@
 import os
 import boto
+from boto import s3
 from boto.s3.key import Key
-from . import core, config
+from . import config
 from kids.cache import cache as cached
 
 import logging
@@ -10,7 +11,7 @@ LOG = logging.getLogger(__name__)
 
 def connect_s3():
     # we'll need to deal with this assumption
-    return core.connect_aws('s3', 'us-east-1')  # Location.USWest2)
+    return s3.connect_to_region('us-east-1')  # Location.USWest2)
 
 @cached
 def builder_bucket():

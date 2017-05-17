@@ -4,6 +4,7 @@ from fabric.api import task
 from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile, requires_aws_stack, timeit
 import utils
 from buildercore import core, bootstrap, cfngen, project
+from buildercore.concurrency import concurrency_for
 import buildvars
 
 import logging
@@ -45,9 +46,9 @@ def deploy(pname, instance_id=None, branch='master', part_filter=None):
     bootstrap.create_update(stackname, part_filter)
     setdefault('.active-stack', stackname)
 
+
 @task
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
-    """concurrency default is to perform updates in parallel to multiple machines"""
     buildvars.switch_revision(stackname, revision)
-    bootstrap.update_stack(stackname, concurrency=concurrency)
+    bootstrap.update_stack(stackname, concurrency=concurrency_for(stackname, concurrency))
