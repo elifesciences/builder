@@ -67,10 +67,9 @@ def update_template(stackname):
     Moreover, EC2 instances must be running while this is executed or their
     resources like PublicIP will be inaccessible"""
 
-
     (pname, _) = core.parse_stackname(stackname)
     more_context = cfngen.choose_config(stackname)
-    
+
     context, delta = cfngen.regenerate_stack(pname, **more_context)
 
     if context['ec2']:

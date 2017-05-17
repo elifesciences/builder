@@ -350,13 +350,19 @@ def template_delta(pname, context):
                 title_in_new['Properties'][property_name] = None
         return title_in_old != title_in_new
 
+    def legacy_title(title):
+        # some titles were originally EC2Instance rather than EC2Instance1, EC2Instance2 and so on
+        return title.strip("1234567890")
+
     resources = {
         title: r for (title, r) in template['Resources'].items()
-        if (title not in old_template['Resources'] and 'EC2Instance' not in title)
+        if (title not in old_template['Resources']
+            and (legacy_title(title) not in old_template)
+            and ('EC2Instance' not in title))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
     outputs = {
-        title: o for (title, o) in template['Outputs'].items()
+        title: o for (title, o) in template.get('Outputs', {}).items()
         if (title not in old_template['Outputs'] and not _related_to_ec2(o))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
