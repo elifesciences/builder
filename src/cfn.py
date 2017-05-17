@@ -67,13 +67,18 @@ def update_template(stackname):
     Moreover, EC2 instances must be running while this is executed or their
     resources like PublicIP will be inaccessible"""
 
-    core_lifecycle.start(stackname)
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = cfngen.choose_config(stackname)
-
+    
     context, delta = cfngen.regenerate_stack(pname, **more_context)
+
+    if context['ec2']:
+        core_lifecycle.start(stackname)
     LOG.info("%s", pformat(delta))
+    if not delta['Resources'] and not delta['Outputs']:
+        LOG.info("Nothing to update")
+        return
     utils.confirm('Confirming changes to the stack template?')
 
     context_handler.write_context(stackname, context)
