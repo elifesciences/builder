@@ -312,7 +312,8 @@ def template_delta(pname, context):
     Most of the existing resources are treated as immutable and not put in the delta. Some that support updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    updatable_title_prefixes = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy']
+    updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$']
+    ec2_not_updatable_properties = ['ImageId', 'Tags', 'UserData']
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -323,7 +324,7 @@ def template_delta(pname, context):
         return False
 
     def _title_is_updatable(title):
-        return len([p for p in updatable_title_prefixes if re.match(p, title)]) > 0
+        return len([p for p in updatable_title_patterns if re.match(p, title)]) > 0
     # start backward compatibility code
     # back for when EC2Instance was the title rather than EC2Instance1
     if 'EC2Instance' in old_template['Resources']:
@@ -344,10 +345,9 @@ def template_delta(pname, context):
         # ignore UserData changes, it's not useful to update them and cause
         # a needless reboot
         if title_in_old['Type'] == 'AWS::EC2::Instance':
-            title_in_old['Properties']['UserData'] = None
-            title_in_new['Properties']['UserData'] = None
-            title_in_old['Properties']['Tags'] = None
-            title_in_new['Properties']['Tags'] = None
+            for property_name in ec2_not_updatable_properties:
+                title_in_old['Properties'][property_name] = None
+                title_in_new['Properties'][property_name] = None
         return title_in_old != title_in_new
 
     resources = {
