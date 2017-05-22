@@ -699,8 +699,8 @@ recommendations:
     vagrant:
         ram: 2048
         ports:
-            1244: 80
-            1245: 8080
+            1254: 80
+            1255: 8080
     aws:
         type: t2.medium # 4 GB of RAM: same as search for now.
         ports:
