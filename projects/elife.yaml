@@ -424,6 +424,9 @@ journal-cms:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
+        restore-test:
+            ext:
+                size: 30 # GB
         end2end:
             description: production-like environment. backed by RDS
             rds:
@@ -860,6 +863,10 @@ iiif:
                 size: 30 # GB
         # automated tests, identical to prod
         end2end:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
                 cluster-size: 2
             ext:
@@ -874,6 +881,10 @@ iiif:
                     - "{instance}--cdn-iiif"
         # manual tests
         continuumtest:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
                 cluster-size: 2
             elb:
@@ -885,6 +896,10 @@ iiif:
                 subdomains: 
                     - "{instance}--cdn-iiif"
         prod:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
                 cluster-size: 2
             ext:
