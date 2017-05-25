@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from subprocess import check_output
 from fabric.api import settings
@@ -39,6 +40,10 @@ class TestProvisioning(base.BaseCase):
             lifecycle.start(stackname)
 
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
+            cfn.download_file(stackname, "/bin/ls", "ls", use_bootstrap_user="true")
+            self.assertTrue(os.path.exists("./ls"))
+            cfn.download_file(stackname, "/bin/less", "venv/bin/", use_bootstrap_user="true")
+            self.assertTrue(os.path.exists("./venv/bin/less"))
 
 class TestDeployment(base.BaseCase):
     def setUp(self):

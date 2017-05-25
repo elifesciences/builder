@@ -233,7 +233,6 @@ def download_file(stackname, path, destination=None, allow_missing="False", use_
     """
     if not destination:
         destination = '.'
-    utils.mkdirp(destination)
     with stack_conn(stackname, username=_user(use_bootstrap_user)):
         if _should_be_skipped(path, allow_missing):
             return
