@@ -656,6 +656,7 @@ bus:
             - bus-annual-reports--{instance}
             - bus-covers--{instance}
             - bus-labs-experiments--{instance}
+            - bus-labs-posts--{instance}
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
 
