@@ -45,6 +45,9 @@ class TestProvisioning(base.BaseCase):
             cfn.download_file(stackname, "/bin/less", "venv/bin/", use_bootstrap_user="true")
             self.assertTrue(os.path.isfile("./venv/bin/less"))
 
+            cfn.download_file(stackname, "/bin/pwd", "subfolder/pwd", use_bootstrap_user="true")
+            self.assertTrue(os.path.isfile("./subfolder/pwd"))
+
 class TestDeployment(base.BaseCase):
     def setUp(self):
         self.stacknames = []
