@@ -290,6 +290,18 @@ class TestBuildercoreTrop(base.BaseCase):
 
         self.assertEqual(
             {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Delete',
+                'Properties': {
+                    'AccessControl': 'PublicRead',
+                    'BucketName': 'widgets-just-access-prod',
+                },
+            },
+            data['Resources']['WidgetsJustAccessProdBucket']
+        )
+
+        self.assertEqual(
+            {
                 'Type': 'AWS::S3::BucketPolicy',
                 'Properties': {
                     'Bucket': 'widgets-just-access-prod',
