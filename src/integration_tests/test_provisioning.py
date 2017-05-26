@@ -41,9 +41,9 @@ class TestProvisioning(base.BaseCase):
 
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
             cfn.download_file(stackname, "/bin/ls", "ls", use_bootstrap_user="true")
-            self.assertTrue(os.path.exists("./ls"))
+            self.assertTrue(os.path.isfile("./ls"))
             cfn.download_file(stackname, "/bin/less", "venv/bin/", use_bootstrap_user="true")
-            self.assertTrue(os.path.exists("./venv/bin/less"))
+            self.assertTrue(os.path.isfile("./venv/bin/less"))
 
 class TestDeployment(base.BaseCase):
     def setUp(self):
