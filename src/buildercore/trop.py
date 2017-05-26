@@ -504,10 +504,7 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
-    if context['elb']['healthcheck']['protocol'] == 'tcp':
-        healthcheck_target = 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
-    elif context['elb']['healthcheck']['protocol'] == 'http':
-        healthcheck_target = 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
+    healthcheck_target = _elb_healthcheck_target(context)
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
@@ -546,6 +543,14 @@ def render_elb(context, template, ec2_instances):
     if any([context['full_hostname'], context['int_full_hostname']]):
         dns = external_dns_elb if elb_is_public else internal_dns_elb
         template.add_resource(dns(context))
+
+def _elb_healthcheck_target(context):
+    if context['elb']['healthcheck']['protocol'] == 'tcp':
+        return 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
+    elif context['elb']['healthcheck']['protocol'] == 'http':
+        return 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
+    else:
+        raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_cloudfront(context, template, origin_hostname):
     allowed_cnames = [
