@@ -457,13 +457,22 @@ def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
     listeners_policy_names = []
 
+    app_cookie_stickiness_policy = []
+    lb_cookie_stickiness_policy = []
     if context['elb']['stickiness']:
-        cookie_stickiness = [elb.LBCookieStickinessPolicy(
-            PolicyName="BrowserSessionLongCookieStickinessPolicy"
-        )]
-        listeners_policy_names.append('BrowserSessionLongCookieStickinessPolicy')
-    else:
-        cookie_stickiness = []
+        if context['elb']['stickiness']['type'] == 'cookie':
+            app_cookie_stickiness_policy = [elb.AppCookieStickinessPolicy(
+                CookieName=context['elb']['stickiness']['cookie-name'],
+                PolicyName='AppCookieStickinessPolicy'
+            )]
+            listeners_policy_names.append('AppCookieStickinessPolicy')
+        elif context['elb']['stickiness']['type'] == 'browser':
+            lb_cookie_stickiness_policy = [elb.LBCookieStickinessPolicy(
+                PolicyName='BrowserSessionLongCookieStickinessPolicy'
+            )]
+            listeners_policy_names.append('BrowserSessionLongCookieStickinessPolicy')
+        else:
+            raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
 
     if isinstance(context['elb']['protocol'], str):
         protocols = [context['elb']['protocol']]
@@ -502,6 +511,7 @@ def render_elb(context, template, ec2_instances):
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
+        AppCookieStickinessPolicy=app_cookie_stickiness_policy,
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
             Enabled=True,
             Timeout=60,
@@ -513,7 +523,7 @@ def render_elb(context, template, ec2_instances):
         Instances=map(Ref, ec2_instances),
         # TODO: from configuration
         Listeners=listeners,
-        LBCookieStickinessPolicy=cookie_stickiness,
+        LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
         HealthCheck=elb.HealthCheck(
             Target=healthcheck_target,
             HealthyThreshold=str(context['elb']['healthcheck'].get('healthy_threshold', 10)),

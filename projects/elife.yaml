@@ -221,7 +221,9 @@ journal:
             ec2:
                 cluster-size: 2
             elb:
-                stickiness: true
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
                 protocol: 
                     - https
                     - http
@@ -233,6 +235,7 @@ journal:
                     - Host
                 cookies:
                     - journal
+                    - AWSELB
                 errors: 
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -260,7 +263,9 @@ journal:
             ec2:
                 cluster-size: 3
             elb:
-                stickiness: true
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
                 protocol:
                     - https
                     - http
@@ -277,6 +282,7 @@ journal:
                     - Host
                 cookies:
                     - journal
+                    - AWSELB
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"

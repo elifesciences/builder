@@ -203,6 +203,32 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
         self.assertIn('DomainName', outputs.keys())
 
+    def test_stickiness_template(self):
+        extra = {
+            'stackname': 'project-with-stickiness--prod',
+        }
+        context = cfngen.build_context('project-with-stickiness', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertIn('ElasticLoadBalancer', resources.keys())
+        elb = resources['ElasticLoadBalancer']['Properties']
+        self.assertEqual(
+            elb['AppCookieStickinessPolicy'],
+            [
+                {
+                    'CookieName': 'mysessionid',
+                    'PolicyName': 'AppCookieStickinessPolicy',
+                }
+            ]
+        )
+        self.assertEqual(
+            elb['Listeners'][0]['PolicyNames'],
+            [
+                'AppCookieStickinessPolicy',
+            ]
+        )
+
     def test_s3_template(self):
         extra = {
             'stackname': 'project-with-s3--prod',
