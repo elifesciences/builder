@@ -277,6 +277,8 @@ journal:
                     #- prod
                     #- ""
                     - gamma
+                #subdomains-without-dns:
+                    #- future
                 headers:
                     - X-Requested-With
                     - Host
