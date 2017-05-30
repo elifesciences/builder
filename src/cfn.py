@@ -75,14 +75,16 @@ def update_template(stackname):
     if context['ec2']:
         core_lifecycle.start(stackname)
     LOG.info("%s", pformat(delta))
-    if not delta['Resources'] and not delta['Outputs']:
-        LOG.info("Nothing to update")
-        return
-    utils.confirm('Confirming changes to the stack template?')
+    utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template')
 
     context_handler.write_context(stackname, context)
-    new_template = cfngen.merge_delta(stackname, delta)
-    bootstrap.update_template(stackname, new_template)
+
+    if delta['Resources'] or delta['Outputs']:
+        new_template = cfngen.merge_delta(stackname, delta)
+        bootstrap.update_template(stackname, new_template)
+    else:
+        # attempting to apply an empty change set would result in an error
+        LOG.info("Nothing to update on CloudFormation")
 
     update(stackname)
 
