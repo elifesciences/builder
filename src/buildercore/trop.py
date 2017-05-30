@@ -457,13 +457,22 @@ def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
     listeners_policy_names = []
 
+    app_cookie_stickiness_policy = []
+    lb_cookie_stickiness_policy = []
     if context['elb']['stickiness']:
-        cookie_stickiness = [elb.LBCookieStickinessPolicy(
-            PolicyName="BrowserSessionLongCookieStickinessPolicy"
-        )]
-        listeners_policy_names.append('BrowserSessionLongCookieStickinessPolicy')
-    else:
-        cookie_stickiness = []
+        if context['elb']['stickiness']['type'] == 'cookie':
+            app_cookie_stickiness_policy = [elb.AppCookieStickinessPolicy(
+                CookieName=context['elb']['stickiness']['cookie-name'],
+                PolicyName='AppCookieStickinessPolicy'
+            )]
+            listeners_policy_names.append('AppCookieStickinessPolicy')
+        elif context['elb']['stickiness']['type'] == 'browser':
+            lb_cookie_stickiness_policy = [elb.LBCookieStickinessPolicy(
+                PolicyName='BrowserSessionLongCookieStickinessPolicy'
+            )]
+            listeners_policy_names.append('BrowserSessionLongCookieStickinessPolicy')
+        else:
+            raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
 
     if isinstance(context['elb']['protocol'], str):
         protocols = [context['elb']['protocol']]
@@ -495,13 +504,11 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
-    if context['elb']['healthcheck']['protocol'] == 'tcp':
-        healthcheck_target = 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
-    elif context['elb']['healthcheck']['protocol'] == 'http':
-        healthcheck_target = 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
+    healthcheck_target = _elb_healthcheck_target(context)
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
+        AppCookieStickinessPolicy=app_cookie_stickiness_policy,
         ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
             Enabled=True,
             Timeout=60,
@@ -513,7 +520,7 @@ def render_elb(context, template, ec2_instances):
         Instances=map(Ref, ec2_instances),
         # TODO: from configuration
         Listeners=listeners,
-        LBCookieStickinessPolicy=cookie_stickiness,
+        LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
         HealthCheck=elb.HealthCheck(
             Target=healthcheck_target,
             HealthyThreshold=str(context['elb']['healthcheck'].get('healthy_threshold', 10)),
@@ -536,6 +543,14 @@ def render_elb(context, template, ec2_instances):
     if any([context['full_hostname'], context['int_full_hostname']]):
         dns = external_dns_elb if elb_is_public else internal_dns_elb
         template.add_resource(dns(context))
+
+def _elb_healthcheck_target(context):
+    if context['elb']['healthcheck']['protocol'] == 'tcp':
+        return 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
+    elif context['elb']['healthcheck']['protocol'] == 'http':
+        return 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
+    else:
+        raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_cloudfront(context, template, origin_hostname):
     allowed_cnames = [

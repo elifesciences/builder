@@ -273,6 +273,22 @@ project-with-cluster:
         elb: 
             protocol: http
 
+project-with-stickiness:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    # no internal domain, while the public 'domain' is true by default
+    intdomain: false
+    aws:
+        ports:
+            - 80
+        ec2:
+            cluster-size: 2
+        elb: 
+            protocol: http
+            stickiness:
+                type: cookie
+                cookie-name: mysessionid
+
 project-with-cluster-integration-tests:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
