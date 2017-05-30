@@ -663,7 +663,6 @@ bus:
             - bus-blog-articles--{instance}
             - bus-annual-reports--{instance}
             - bus-covers--{instance}
-            - bus-labs-experiments--{instance}
             - bus-labs-posts--{instance}
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
@@ -699,6 +698,7 @@ search:
                     - bus-collections--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
+                    - bus-labs-posts--{instance}
 
 recommendations:
     domain: false
