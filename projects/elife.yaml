@@ -888,6 +888,8 @@ iiif:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
+                headers:
+                    - Host
         # manual tests
         continuumtest:
             ports:
@@ -904,6 +906,8 @@ iiif:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
+                headers:
+                    - Host
         prod:
             ports:
                 - 22
@@ -922,6 +926,8 @@ iiif:
                 subdomains: 
                     - "{instance}--cdn-iiif"
                     - iiif
+                headers:
+                    - Host
     vagrant:
         ports:
             1261: 80
