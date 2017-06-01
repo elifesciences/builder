@@ -273,7 +273,6 @@ journal:
                 subdomains:
                     - "{instance}--cdn-journal"
                     - beta
-                subdomains-without-dns:
                     - elife
                     - prod
                     - ""
