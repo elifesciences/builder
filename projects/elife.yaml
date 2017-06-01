@@ -273,12 +273,11 @@ journal:
                 subdomains:
                     - "{instance}--cdn-journal"
                     - beta
-                    #- elife
-                    #- prod
-                    #- ""
-                    - gamma
-                #subdomains-without-dns:
-                    #- future
+                subdomains-without-dns:
+                    - elife
+                    - prod
+                    - ""
+                    - www
                 headers:
                     - X-Requested-With
                     - Host
