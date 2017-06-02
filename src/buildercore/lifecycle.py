@@ -4,6 +4,7 @@ The primary reason for doing this is to save on costs."""
 
 from datetime import datetime
 import logging
+import re
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
@@ -189,6 +190,10 @@ def _nodes_states(stackname, node_ids=None):
         node_index = {}
         for node in ec2_data:
             name = node.tags['Name']
+            # start legacy name: pattern-library--prod -> pattern-library--prod--1
+            if not re.match(".*--[0-9]+", name):
+                name = name + "--1"
+            # end legacy name
             node_list = node_index.get(name, [])
             node_list.append(node)
             node_index[name] = node_list
@@ -196,11 +201,12 @@ def _nodes_states(stackname, node_ids=None):
 
     def _unify_node_information(nodes):
         excluding_terminated = [node for node in nodes if node.state != 'terminated']
-        ensure(len(excluding_terminated) == 1, "Nodes in %s have the same name, but a non-terminated state")
+        ensure(len(excluding_terminated) == 1, "Nodes in %s have the same name, but a non-terminated state" % excluding_terminated)
         return excluding_terminated[0]
 
     ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
     by_node_name = _by_node_name(ec2_data)
+    print by_node_name.keys()
     unified_nodes = {name: _unify_node_information(nodes) for name, nodes in by_node_name.items()}
     return {node.id: node.state for name, node in unified_nodes.items()}
 
