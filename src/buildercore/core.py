@@ -129,7 +129,7 @@ def connect_aws_with_pname(pname, service):
     "convenience"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
-    LOG.info('connecting to a %s instance in region %s', pname, region)
+    LOG.debug('connecting to a %s instance in region %s', pname, region)
     return connect_aws(service, region)
 
 def connect_aws_with_stack(stackname, service):
@@ -143,12 +143,12 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
     conn = connect_aws_with_stack(stackname, 'ec2')
     filters = _all_nodes_filter(stackname, node_ids=node_ids)
     all_ec2_instances = conn.get_only_instances(filters=filters)
-    LOG.info("all_ec2_instances returned instances %s", [(e.id, e.state) for e in all_ec2_instances])
+    LOG.debug("all_ec2_instances returned instances %s", [(e.id, e.state) for e in all_ec2_instances])
     if state:
         ec2_instances = [i for i in all_ec2_instances if i.state == state]
     else:
         ec2_instances = all_ec2_instances
-    LOG.info("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
+    LOG.debug("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
@@ -242,7 +242,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     params.update({'public_ips': public_ips})
     params.update({'nodes': nodes})
 
-    LOG.info("Executing %s on all ec2 nodes (%s), concurrency %s", workfn, public_ips, concurrency)
+    LOG.info("Executing on all ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
