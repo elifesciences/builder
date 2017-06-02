@@ -257,8 +257,12 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
             else:
                 raise err
         except config.FabricException as remote_e:
-            message = "[%s] %s" % (current_ip(), remote_e.message.replace("\n", "    "))
-            raise SystemExit(message)
+            message = remote_e.message.replace("\n", "    ")
+            LOG.error(message)
+            # not useful to specify more, this will be printed out 
+            # but we are already logging it (and printing it on stderr)
+            # which is better
+            raise SystemExit("")
 
     # something less stateful like a context manager?
     output['aborts'] = False
