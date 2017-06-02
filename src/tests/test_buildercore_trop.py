@@ -203,6 +203,27 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
         self.assertIn('DomainName', outputs.keys())
 
+    def test_additional_cnames(self):
+        extra = {
+            'stackname': 'dummy2--prod',
+        }
+        context = cfngen.build_context('dummy2', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertIn('CnameDNS0', resources.keys())
+        dns = resources['CnameDNS0']['Properties']
+        self.assertEqual(
+            dns,
+            {
+                'HostedZoneName': 'example.org.',
+                'Name': 'official.example.org',
+                'ResourceRecords': ['prod--dummy2.example.org'],
+                'TTL': '60',
+                'Type': 'CNAME',
+            }
+        )
+
     def test_stickiness_template(self):
         extra = {
             'stackname': 'project-with-stickiness--prod',

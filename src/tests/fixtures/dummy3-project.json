@@ -28,7 +28,8 @@
         "redundant-subnet-cidr": "10.0.2.0/24", 
         "ports": [
             22
-        ]
+        ],
+        "subdomains": []
     }, 
     "aws-alt": {
         "fresh": {
@@ -49,7 +50,8 @@
             "ports": [
                 22
             ], 
-            "description": "uses a plain Ubuntu basebox instead of an ami"
+            "description": "uses a plain Ubuntu basebox instead of an ami",
+            "subdomains": []
         }, 
         "alt-config1": {
             "ec2": {
@@ -86,7 +88,8 @@
             }, 
             "ports": [
                 80
-            ]
+            ],
+            "subdomains": []
         }
     }, 
     "meta": {
