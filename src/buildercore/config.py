@@ -92,6 +92,7 @@ ROOTLOG.addHandler(H1)
 ROOTLOG.addHandler(H2)
 
 LOG = logging.getLogger(__name__)
+logging.getLogger('paramiko.transport').setLevel(logging.ERROR);
 
 #
 # remote
