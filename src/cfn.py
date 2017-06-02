@@ -296,7 +296,7 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 username=username,
                 abort_on_prompts=True,
                 concurrency=concurrency_for(stackname, concurrency))
-    except Exception as e:
+    except FabricException as e:
         LOG.error(e.message)
         exit(2)
 
