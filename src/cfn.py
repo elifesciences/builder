@@ -288,13 +288,18 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
         fabric.state.output['running'] = False
         custom_settings['output_prefix'] = False
 
-    with settings(**custom_settings):
-        return stack_all_ec2_nodes(
-            stackname,
-            (run, {'command': command}),
-            username=username,
-            abort_on_prompts=True,
-            concurrency=concurrency_for(stackname, concurrency))
+    try:
+        with settings(**custom_settings):
+            return stack_all_ec2_nodes(
+                stackname,
+                (run, {'command': command}),
+                username=username,
+                abort_on_prompts=True,
+                concurrency=concurrency_for(stackname, concurrency))
+    except Exception as e:
+        print "Exception during cmd(): %s" % e.message
+        import sys
+        sys.exit(1)
 
 @task
 def project_list():
