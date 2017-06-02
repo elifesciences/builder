@@ -428,6 +428,7 @@ def render_s3(context, template):
 
         if context['s3'][bucket_name]['public']:
             _add_bucket_policy(template, bucket_title, bucket_name)
+            props['AccessControl'] = s3.PublicRead
 
         template.add_resource(s3.Bucket(
             bucket_title,
