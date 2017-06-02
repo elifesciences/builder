@@ -14,6 +14,7 @@ import boto3
 from contextlib import contextmanager
 from fabric.api import settings, execute, env, parallel, serial
 from fabric.exceptions import NetworkError
+from fabric.state import output
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -255,6 +256,12 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 return workfn(**work_kwargs)
             else:
                 raise err
+        except config.FabricException as remote_e:
+            message = "[%s] %s" % (current_ip(), remote_e.message.replace("\n", "    "))
+            raise SystemExit(message)
+
+    # something less stateful like a context manager?
+    output['aborts'] = False
 
     # TODO: extract in buildercore.concurrency
     if not concurrency:
