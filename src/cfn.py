@@ -297,9 +297,8 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 abort_on_prompts=True,
                 concurrency=concurrency_for(stackname, concurrency))
     except Exception as e:
-        print "Exception during cmd(): %s" % e.message
-        import sys
-        sys.exit(1)
+        LOG.error(e.message)
+        exit(2)
 
 @task
 def project_list():
