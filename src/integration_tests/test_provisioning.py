@@ -36,6 +36,7 @@ class TestProvisioning(base.BaseCase):
                 os.unlink(path)
             elif os.path.isdir(path):
                 # assumes dir is empty
+                print 'should be empty:', os.listdir(path)
                 os.rmdir(path)
             self.assertFalse(os.path.exists(path), "failed to delete path %r in tearDown" % path)
 
@@ -60,7 +61,7 @@ class TestProvisioning(base.BaseCase):
 
             dl_list = [
                 ('/bin/ls', 'ls'),
-                ('/bin/less', 'venv/bin/'),
+                ('/bin/less', 'venv/bin/less'),
                 ('/bin/pwd', 'subfolder/pwd'),
             ]
             for dl, target in dl_list:
