@@ -59,14 +59,14 @@ class TestProvisioning(base.BaseCase):
 
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
 
-            dl_list = [
-                ('/bin/ls', 'ls'),
-                ('/bin/less', 'venv/bin/less'),
-                ('/bin/pwd', 'subfolder/pwd'),
-            ]
-            for dl, target in dl_list:
-                cfn.download_file(stackname, dl, target, use_bootstrap_user="true")
-                self.assertTrue(os.path.isfile(target), "failed to download %r, given target is not a file" % target)
+            cfn.download_file(stackname, "/bin/ls", "ls", use_bootstrap_user="true")
+            self.assertTrue(os.path.isfile("./ls"))
+
+            cfn.download_file(stackname, "/bin/less", "venv/bin/", use_bootstrap_user="true")
+            self.assertTrue(os.path.isfile("./venv/bin/less"))
+
+            cfn.download_file(stackname, "/bin/pwd", "subfolder/pwd", use_bootstrap_user="true")
+            self.assertTrue(os.path.isfile("./subfolder/pwd"))
 
 class TestDeployment(base.BaseCase):
     def setUp(self):
