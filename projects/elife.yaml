@@ -98,6 +98,7 @@ defaults:
             headers: []
             errors: null
             default-ttl: 0 # seconds
+        subdomains: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -303,7 +304,12 @@ pattern-library:
         type: t2.small
         ports:
             - 22
+            - 80
             - 443
+    aws-alt:
+        prod:
+            subdomains:
+                - ui-patterns
     vagrant:
         ram: 2048
         ports:

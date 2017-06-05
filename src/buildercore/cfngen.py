@@ -150,6 +150,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['s3'][bucket_name].update(configuration if configuration else {})
 
     build_context_cloudfront(context, parameterize=_parameterize)
+    build_context_subdomains(context)
 
     return context
 
@@ -194,6 +195,9 @@ def build_context_cloudfront(context, parameterize):
         }
     else:
         context['cloudfront'] = False
+
+def build_context_subdomains(context):
+    context['subdomains'] = [s + '.' + context['project']['domain'] for s in context['project']['aws'].get('subdomains', [])]
 
 def choose_config(stackname):
     (pname, instance_id) = core.parse_stackname(stackname)
@@ -312,7 +316,7 @@ def template_delta(pname, context):
     Most of the existing resources are treated as immutable and not put in the delta. Some that support updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$']
+    updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$']
     ec2_not_updatable_properties = ['ImageId', 'Tags', 'UserData']
 
     def _related_to_ec2(output):

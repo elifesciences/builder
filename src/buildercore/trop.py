@@ -35,6 +35,7 @@ EXT_MP_TITLE = "MountPoint%s"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
+R53_CNAME_TITLE = "CnameDNS%s"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
 # from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
 CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
@@ -189,7 +190,7 @@ def rdsdbparams(context, template):
     template.add_resource(dbpg)
     return Ref(dbpg)
 
-def rdsinstance(context, template):
+def render_rds(context, template):
     lu = partial(utils.lu, context)
 
     # db subnet *group*
@@ -242,7 +243,7 @@ def rdsinstance(context, template):
     ]
     map(template.add_output, outputs)
 
-def ext_volume(context, template, node=1):
+def render_ext_volume(context, template, node=1):
     context_ext = context['ext']
     vtype = context_ext.get('type', 'standard')
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
@@ -379,6 +380,18 @@ def render_ec2(context, template):
         "Description": "EC2 KeyPair that enables SSH access to this instance",
     }))
     return ec2_instances
+
+def render_ec2_dns(context, template):
+    ensure(context['ec2']['cluster-size'] == 1,
+           "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
+
+    if context['full_hostname']:
+        template.add_resource(external_dns_ec2(context))
+        [template.add_resource(cname) for cname in cnames(context)]
+
+    # ec2 nodes in a cluster DON'T get an internal hostname
+    if context['int_full_hostname']:
+        template.add_resource(internal_dns(context))
 
 def render_sns(context, template):
     for topic_name in context['sns']:
@@ -544,6 +557,8 @@ def render_elb(context, template, ec2_instances):
     if any([context['full_hostname'], context['int_full_hostname']]):
         dns = external_dns_elb if elb_is_public else internal_dns_elb
         template.add_resource(dns(context))
+    if context['full_hostname']:
+        [template.add_resource(cname) for cname in cnames(context)]
 
 def _elb_healthcheck_target(context):
     if context['elb']['healthcheck']['protocol'] == 'tcp':
@@ -554,6 +569,9 @@ def _elb_healthcheck_target(context):
         raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_cloudfront(context, template, origin_hostname):
+    if not context['cloudfront']['origins']:
+        ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
+
     allowed_cnames = [
         "%s.%s" % (subdomain, context['domain']) if subdomain != '' else context['domain']
         for subdomain in context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
@@ -674,11 +692,11 @@ def render(context):
         ec2_instances = render_ec2(context, template)
 
     if context['rds_instance_id']:
-        rdsinstance(context, template)
+        render_rds(context, template)
 
     if context['ext']:
         for node in range(1, len(ec2_instances) + 1):
-            ext_volume(context, template, node)
+            render_ext_volume(context, template, node)
 
     render_sns(context, template)
     render_sqs(context, template)
@@ -686,21 +704,18 @@ def render(context):
 
     # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
     if context['elb']:
-        # TODO: we're already passing a mutable object around (template),
-        # perhaps elb should just inspect that to get the ec2 instances
         render_elb(context, template, ec2_instances)
-
     elif context['ec2']:
-        ensure(context['ec2']['cluster-size'] == 1,
-               "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
+        render_ec2_dns(context, template)
 
-        if context['full_hostname']:
-            template.add_resource(external_dns_ec2(context))
+    add_outputs(context, template)
 
-        # ec2 nodes in a cluster DONT get an internal hostname
-        if context['int_full_hostname']:
-            template.add_resource(internal_dns(context))
+    if context['cloudfront']:
+        render_cloudfront(context, template, origin_hostname=context['full_hostname'])
 
+    return template.to_json()
+
+def add_outputs(context, template):
     if context['full_hostname']:
         ensure(R53_EXT_TITLE in template.resources.keys(), "You want an external DNS entry but there is no resource configuring it: %s" % context)
         template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
@@ -709,9 +724,16 @@ def render(context):
         ensure(R53_INT_TITLE in template.resources.keys(), "You want an internal DNS entry but there is no resource configuring it: %s" % context)
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
-    if context['cloudfront']:
-        if not context['cloudfront']['origins']:
-            ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
-        render_cloudfront(context, template, origin_hostname=context['full_hostname'])
 
-    return template.to_json()
+def cnames(context):
+    "additional CNAME DNS entries pointing to full_hostname"
+    assert isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built"
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
+    return [route53.RecordSetType(
+        R53_CNAME_TITLE % i,
+        HostedZoneName=hostedzone,
+        Name=hostname,
+        Type="CNAME",
+        TTL="60",
+        ResourceRecords=[context['full_hostname']],
+    ) for i, hostname in enumerate(context['subdomains'])]

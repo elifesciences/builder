@@ -48,7 +48,8 @@
                     "cidr-ip": "0.0.0.0/0"
                 }
             }
-        ]
+        ],
+        "subdomains": ["official"]
     }, 
     "aws-alt": {
         "fresh": {
@@ -89,7 +90,8 @@
                     }
                 }
             ], 
-            "description": "uses a plain Ubuntu basebox instead of an ami"
+            "description": "uses a plain Ubuntu basebox instead of an ami",
+            "subdomains": ["official"]
         }, 
         "alt-config1": {
             "ec2": {
@@ -128,7 +130,8 @@
                         "cidr-ip": "0.0.0.0/0"
                     }
                 }
-            ]
+            ],
+            "subdomains": ["official"]
         }
     }, 
     "vagrant": {

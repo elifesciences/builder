@@ -59,7 +59,7 @@ class TestProjectData(base.BaseCase):
             expected_data = json.load(open(expected_path, 'r'))
             project_data = project.project_data(pname)
             project_data = utils.remove_ordereddict(project_data)
-            self.assertEqual(expected_data, project_data, 'failed %s' % pname)
+            self.assertEqual(expected_data, project_data)
 
     # snippets
 
