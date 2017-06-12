@@ -113,12 +113,65 @@ elife-dashboard:
             rds:
                 storage: 5
 
-elife-website:
-    subdomain: v2
-    repo: https://github.com/elifesciences/elife-website
-    formula-repo: https://github.com/elifesciences/elife-website-formula
+api-dummy:
+    subdomain: api-dummy
+    repo: https://github.com/elifesciences/api-dummy
+    formula-repo: https://github.com/elifesciences/api-dummy-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 443
+            - 80
+    vagrant:
+        ports:
+            1242: 80
+
+journal:
+    subdomain: journal # journal.elifesciences.org
+    intdomain: null
+    repo: https://github.com/elifesciences/journal
+    formula-repo: https://github.com/elifesciences/journal-formula
     aws:
         ports:
             - 22
-            - 80
             - 443
+            - 80:
+                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+    aws-alt:
+        prod:
+            description: prod environment for journal. ELB on top of multiple EC2 instances
+            ec2:
+                cluster-size: 3
+            elb:
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
+                protocol:
+                    - https
+                    - http
+            #cloudfront:
+            #    subdomains:
+            #        - "{instance}--cdn-journal"
+            #        - beta
+            #        - elife
+            #        - prod
+            #        - ""
+            #        - www
+            #    headers:
+            #        - X-Requested-With
+            #        - Host
+            #    cookies:
+            #        - journal
+            #        - AWSELB
+            #    errors: 
+            #        domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
+            #        pattern: "???.html"
+            #        codes:
+            #            # ELB with no active instances
+            #            503: "/5xx.html"
+            #        protocol: http
+    vagrant:
+        ram: 4096
+        ports:
+            1240: 80
