@@ -14,12 +14,10 @@ To change the version of Salt used by `builder`, use the `salt` key in [your pro
 
 It *is* possible to have different versions of Salt installed per-project on either Vagrant or AWS. Vagrant runs master-less and is a good place to test Salt upgrades per-project, however **it is not** recommended for AWS. For the sake of sanity, the master and minion versions of Salt should match on AWS.
 
-Salt has been very stable with almost no problems upgrading `builder` instances from `2014.7` to `2015.8` to `2016.3`.
+Salt has been very stable with almost no problems upgrading `builder` instances from `2014.7` to `2015.8` to `2016.3.4`.
 
 ## Salt targeting Vagrant instances
 
-Configuration specific to Vagrant instances can be done in two ways: `pillar.elife.dev` or an entry in the `top.sls` targeting `projectname--vagrant` instances.
+Configuration specific to Vagrant instances can be done by using the `pillar.elife.dev` configuration.
 
 `pillar.elife.dev` is `True` [out of the box](https://github.com/elifesciences/builder-base-formula/blob/master/pillar/elife.sls#L5) and should be overriden with `False` in the [builder-private](https://github.com/elifesciences/builder-private-example/blob/master/pillar/elife.sls#L7) repo.
-
-Using `projectname--vagrant` in the state/pillar `top.sls` files allows one to include whole other state files that can neatly separate your application's configuration from platform-specific (Vagrant) issues.
