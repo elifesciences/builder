@@ -46,7 +46,7 @@ both_checks = [
     ('vagrant',
      {'osx': 'brew cask install vagrant'}),
 
-    ('ssh credentials',
+    ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f ~/.ssh/id_rsa && test -f ~/.ssh/id_rsa.pub'),
      None), # do not check version
@@ -56,7 +56,7 @@ both_checks = [
      lambda x: sh('ps aux | grep ssh-agent$ > /dev/null'),
      None),
 
-    ('aws credentials',
+    ('aws-credentials',
      {'all': 'do `aws configure` after installing builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
      None), # do not check version
