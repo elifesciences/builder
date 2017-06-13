@@ -414,6 +414,8 @@ generic-cdn:
                 articles:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     pattern: articles/*
+            headers:
+                - Origin
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org
