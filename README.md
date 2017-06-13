@@ -21,6 +21,8 @@ message. Updating in the future is as simple as:
     git pull
     ./update.sh
 
+If you are outside of the eLife organization, make sure the `write-context-to-s3` and `write-keypairs-to-s3` keys in `settings.yml` keys are `False. Their use is not supported.
+
 ## Next
 
 Your `settings.yaml` file was created automatically and contains options for tweaking the behaviour of `builder`, like the project file it should be using.
