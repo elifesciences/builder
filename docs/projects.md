@@ -11,6 +11,8 @@ is automatically created when `builder` is installed will point to this.
 A cut-down version of a project file is available in `./projects/example.yaml`
 that can be used as a template for creating new project files.
 
+Another cut-down version is `./projects/continuum.yaml`, which is used in our testing infrastructure on an isolated AWS account.
+
 ## project file structure
 
 At the top of a project file are the defaults for all projects *in that file*.
@@ -43,24 +45,21 @@ The above will print the configuration for the `master-server` project in YAML.
     
 The above will print the configuration for the `master-server` project in JSON.
 
+All the scripts starting with `.` require you to first load the Python virtualenv with `source venv/bin/activate`.
+
 ## default and alternate configurations
 
 All projects have default Vagrant and AWS configurations, typically in a 
 just-works configuration with as few moving parts as possible.
 
-When launching an ad-hoc instance of a project with `./bldr launch` that has an 
-`aws-alt` section specified you will be prompted to select an alternate 
-configuration or just skip selection and go with the default.
+When launching an ad-hoc instance of a project with `./bldr deploy` or `./bldr launch`, the second parameter may specify the `aws-alt` section to use:
 
-When launching an instance using `./bldr deploy`, you won't get this prompt.
-Instead, if a branch name matches the name of an alternate configuration 
-in the project's `aws-alt` section, that configuration will be used.
+    ./bldr deploy:journal,prod
+    ./bldr deploy:journal,test
 
-For example, an `aws-alt` configuration named `master` will be used if deploying
-an instance of the `master` (production) branch of a project. This might be a 
-larger instance or be backed by an RDS database.
+Here an `aws-alt` configuration named `prod` will be used for the `journal` project in the former case, whereas a configuration named `test` will be used in the latter. Everything not specified will be inherited by the `aws` configuration.
 
-Vagrant doesn't support alternate configurations yet.
+Vagrant doesn't support alternate configurations.
 
 ## per-user project config overrides
 

@@ -3,14 +3,14 @@
 `builder`:
 
 * is a [Python](https://www.python.org/) language project
-* uses [Fabric](http://www.fabfile.org/) to run commands locally and remotely
+* uses [Fabric](http://www.fabfile.org/) as a library to run commands locally and remotely
 * runs within a [virtualenv](http://docs.python-guide.org/en/latest/dev/virtualenvs/)
 * a bash script [`bldr`](https://github.com/elifesciences/elife-builder/blob/master/bldr) that wraps  Fabric's `fab` command in an activated virtualenv
 
-and ...
+It builds on top of:
 
 * [Vagrant](https://www.vagrantup.com/) for creating, running and managing *local* [Virtualbox](https://www.virtualbox.org/) project instances
-* [Amazon AWS services](http://aws.amazon.com/) for creating, running and managing _remote_ project instances
+* [Amazon AWS services](http://aws.amazon.com/) for creating, running and managing *remote* project instances
 
 as well as ...
 
@@ -19,4 +19,4 @@ as well as ...
 
 but most importantly:
 
-* [Salt](http://saltstack.com/), to describe what these local and remote environments must be
+* [Salt](http://saltstack.com/), to describe what these local and remote environments must be, in a consistent way no matter if you are inside a VM or a EC2 instance.
