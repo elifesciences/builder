@@ -729,14 +729,10 @@ def add_outputs(context, template):
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"
     assert isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built"
-    def hostedzone(hostname):
-        if hostname.count(".") == 1: # example.net
-            return hostname + "."
-        else:
-            return context['domain'] + "."
+
     def entry(hostname, i):
         # TODO: i should become i + 1 so that it starts from 1 like for other resources
-        # pattern-library--prod needs to be migrated to this
+        # pattern-library--prod and journal--prod need to be migrated to this 1-based index if we do it
         if hostname.count(".") == 1:
             # must be an alias as it is a 2nd-level domain like elifesciences.net
             hostedzone = hostname + "."
@@ -752,7 +748,7 @@ def cnames(context):
                 )
             )
         else:
-            hostedzone = context['domain'] + "." 
+            hostedzone = context['domain'] + "."
             return route53.RecordSetType(
                 R53_CNAME_TITLE % (i),
                 HostedZoneName=hostedzone,

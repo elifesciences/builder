@@ -197,12 +197,12 @@ def build_context_cloudfront(context, parameterize):
         context['cloudfront'] = False
 
 def build_context_subdomains(context):
-    def complete_domain(h):
-        is_complete = h.count(".") > 0
+    def complete_domain(host):
+        is_complete = host.count(".") > 0
         if is_complete:
-            return h
+            return host
         else:
-            return h + '.' + context['project']['domain'] # something + '.' + elifesciences.org
+            return host + '.' + context['project']['domain'] # something + '.' + elifesciences.org
     context['subdomains'] = [complete_domain(s) for s in context['project']['aws'].get('subdomains', [])]
 
 def choose_config(stackname):
