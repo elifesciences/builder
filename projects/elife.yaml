@@ -91,6 +91,7 @@ defaults:
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
+            domains: []
             origins: {}
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
@@ -225,9 +226,11 @@ journal:
                 stickiness:
                     type: cookie
                     cookie-name: journal
-                protocol: 
+                protocol:
                     - https
                     - http
+                domains:
+                    - elifejournal.net
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -278,6 +281,8 @@ journal:
                     - prod
                     - ""
                     - www
+                    # to overwrite a previously used DNS entry
+                    - dummydoesnotexistsplaceholder
                 headers:
                     - X-Requested-With
                     - Host
@@ -291,6 +296,15 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
+            subdomains:
+                - elifesciences.net
+                - e-lifesciences.org
+                - e-lifesciences.net
+                - elifejournal.net
+                - e-lifejournal.org
+                - e-lifejournal.com
+                - e-lifejournal.net
+                - elifejournal.org
     vagrant:
         ram: 4096
         ports:

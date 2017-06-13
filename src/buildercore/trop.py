@@ -346,6 +346,7 @@ def external_dns_cloudfront(context):
             )
         ))
         i = i + 1
+
     return dns_records
 
 #
@@ -728,12 +729,36 @@ def add_outputs(context, template):
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"
     assert isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built"
-    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
-    return [route53.RecordSetType(
-        R53_CNAME_TITLE % i,
-        HostedZoneName=hostedzone,
-        Name=hostname,
-        Type="CNAME",
-        TTL="60",
-        ResourceRecords=[context['full_hostname']],
-    ) for i, hostname in enumerate(context['subdomains'])]
+    def hostedzone(hostname):
+        if hostname.count(".") == 1: # example.net
+            return hostname + "."
+        else:
+            return context['domain'] + "."
+    def entry(hostname, i):
+        # TODO: i should become i + 1 so that it starts from 1 like for other resources
+        # pattern-library--prod needs to be migrated to this
+        if hostname.count(".") == 1:
+            # must be an alias as it is a 2nd-level domain like elifesciences.net
+            hostedzone = hostname + "."
+            ensure(context['elb'], "2nd-level domains aliases are only supported for ELBs")
+            return route53.RecordSetType(
+                R53_CNAME_TITLE % (i),
+                HostedZoneName=hostedzone,
+                Name=hostname,
+                Type="A",
+                AliasTarget=route53.AliasTarget(
+                    GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
+                    GetAtt(ELB_TITLE, "DNSName")
+                )
+            )
+        else:
+            hostedzone = context['domain'] + "." 
+            return route53.RecordSetType(
+                R53_CNAME_TITLE % (i),
+                HostedZoneName=hostedzone,
+                Name=hostname,
+                Type="CNAME",
+                TTL="60",
+                ResourceRecords=[context['full_hostname']],
+            )
+    return [entry(hostname, i) for i, hostname in enumerate(context['subdomains'])]
