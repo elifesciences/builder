@@ -73,6 +73,7 @@ mac_checks = [
 ]
 
 def run_checks(check_list, exclusions=[]):
+    failed_checks = 0
     for cmd in check_list:
         installed_checker = dumb_install_check
         version_checker = dumb_version_check
@@ -97,7 +98,10 @@ def run_checks(check_list, exclusions=[]):
             sys.stdout.write('NOT found. Try:\n')
             for opsys, suggestion in install_suggestions.items():
                 print('   %s: %s' % (opsys, suggestion))
+            failed_checks = failed_checks + 1
         sys.stdout.flush()
+
+    exit(failed_checks)
 
 def main():
     checks = both_checks
