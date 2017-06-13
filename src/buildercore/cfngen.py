@@ -165,7 +165,7 @@ def build_context_elb(context):
             'subnets': [
                 context['project']['aws']['subnet-id'],
                 context['project']['aws']['redundant-subnet-id']
-            ]
+            ],
         })
 
 def build_context_cloudfront(context, parameterize):
@@ -197,7 +197,13 @@ def build_context_cloudfront(context, parameterize):
         context['cloudfront'] = False
 
 def build_context_subdomains(context):
-    context['subdomains'] = [s + '.' + context['project']['domain'] for s in context['project']['aws'].get('subdomains', [])]
+    def complete_domain(host):
+        is_complete = host.count(".") > 0
+        if is_complete:
+            return host
+        else:
+            return host + '.' + context['project']['domain'] # something + '.' + elifesciences.org
+    context['subdomains'] = [complete_domain(s) for s in context['project']['aws'].get('subdomains', [])]
 
 def choose_config(stackname):
     (pname, instance_id) = core.parse_stackname(stackname)

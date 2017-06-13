@@ -125,7 +125,7 @@ dummy2:
         rds:
             storage: 10
         subdomains:
-            - "official"
+            - official
     aws-alt:
         # uses an rds backend and different ami
         alt-config1:
@@ -275,6 +275,8 @@ project-with-cluster:
             cluster-size: 2
         elb: 
             protocol: http
+        subdomains:
+            - project.tv
 
 project-with-stickiness:
     repo: ssh://git@github.com/elifesciences/dummy3
