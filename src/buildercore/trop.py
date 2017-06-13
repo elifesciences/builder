@@ -622,7 +622,7 @@ def render_cloudfront(context, template, origin_hostname):
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
                 Cookies=cookies,
-                Headers=context['cloudfront']['headers'],
+                Headers=context['cloudfront']['headers'], # 'whitelisted' headers
                 QueryString=True
             ),
             ViewerProtocolPolicy='redirect-to-https',
