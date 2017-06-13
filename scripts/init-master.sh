@@ -78,7 +78,7 @@ fi
 # the master server will need to install project formulas. 
 
 # install builder dependencies for Ubuntu
-apt-get install python-dev python-pip -y
+apt-get install python-dev python-pip libffi-dev libssl-dev -y
 pip install virtualenv
 
 if [ ! -d /opt/builder ]; then
