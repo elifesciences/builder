@@ -167,27 +167,6 @@ journal:
                 protocol:
                     - https
                     - http
-            #cloudfront:
-            #    subdomains:
-            #        - "{instance}--cdn-journal"
-            #        - beta
-            #        - elife
-            #        - prod
-            #        - ""
-            #        - www
-            #    headers:
-            #        - X-Requested-With
-            #        - Host
-            #    cookies:
-            #        - journal
-            #        - AWSELB
-            #    errors: 
-            #        domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
-            #        pattern: "???.html"
-            #        codes:
-            #            # ELB with no active instances
-            #            503: "/5xx.html"
-            #        protocol: http
     vagrant:
         ram: 4096
         ports:
