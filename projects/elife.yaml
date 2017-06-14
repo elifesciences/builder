@@ -229,8 +229,6 @@ journal:
                 protocol:
                     - https
                     - http
-                domains:
-                    - elifejournal.net
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
