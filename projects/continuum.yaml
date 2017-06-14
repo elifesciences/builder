@@ -159,7 +159,7 @@ journal:
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
-                cluster-size: 3
+                cluster-size: 2
             elb:
                 stickiness:
                     type: cookie
