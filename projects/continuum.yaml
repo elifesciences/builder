@@ -28,8 +28,11 @@ defaults:
             ami: ami-d90d92ce   # Ubuntu 14.04 us-east-1 hvm:ebs
         region: us-east-1
         vpc-id: vpc-c23159a5  # vpc-id + subnet-id are peculiar to AWS account + region
-        subnet-id: subnet-6b6c6e41 # elife-public-subnet
+        subnet-id: subnet-6b6c6e41
         subnet-cidr: '172.31.48.0/20'
+        # necessary for multiple-node EC2 and for ELB
+        redundant-subnet-id: subnet-dffe0c96
+        redundant-subnet-cidr: '172.31.0.0/20'
         type: t2.small  # ~ $20/mo
         rds:
             # rds defaults only used if an `rds` section present in project
