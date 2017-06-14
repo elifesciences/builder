@@ -217,6 +217,21 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             resources['CnameDNS0']['Properties']
         )
+        self.assertIn('CnameDNS1', resources.keys())
+        self.assertEqual(
+            {
+                'AliasTarget': {
+                    'DNSName': {
+                        'Fn::GetAtt': ['ElasticLoadBalancer', 'DNSName']
+                    },
+                    'HostedZoneId': {'Fn::GetAtt': ['ElasticLoadBalancer', 'CanonicalHostedZoneNameID']}
+                },
+                'HostedZoneName': 'example.org.',
+                'Name': 'example.org',
+                'Type': 'A'
+            },
+            resources['CnameDNS1']['Properties']
+        )
 
     def test_additional_cnames(self):
         extra = {
