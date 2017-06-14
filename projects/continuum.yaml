@@ -84,9 +84,9 @@ master-server:
             - 22
             - 4506: # salt publish port
                 # CIDR of subnet this master will server
-                cidr-ip: 172.31.48.0/20 # access via VPC ip range only
+                cidr-ip: 172.31.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
-                cidr-ip: 172.31.48.0/20
+                cidr-ip: 172.31.0.0/16
 
 lax:
     subdomain: lax # lax.elifesciences.org
@@ -154,7 +154,7 @@ journal:
             - 22
             - 443
             - 80:
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                cidr-ip: 172.31.0.0/16 # access via VPC ip range only
     aws-alt:
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
