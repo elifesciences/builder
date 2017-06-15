@@ -28,18 +28,21 @@ This report is generated from the results stored in the `.coverage` file
 
 ## Slow! So slow!
 
-The `tests.sh` script is designed to be run by a CI and does several things,
+The `test.sh` script is designed to be run by a CI and does several things,
 like creating/activating/populating a virtualenv and project linting before
-running the unittests. This is unbearably slow.
+running the unittests. This is unbearably slow, after the first run
+you can load the virtualenv with:
 
-The test runner can be called directly with:
+    source venv/bin/activate
 
-    ./.unittest.sh
+Then, the test runner can be called directly with:
 
-and:
+    PYTHONPATH=src green tests
 
-	./.unitest.sh modulename
+or:
 
-and:
+    PYTHONPATH=src green tests.test_buildercore_trop
 
-	./.unittest.sh modulename.SuiteName.method_name
+or:
+
+    PYTHONPATH=src green tests.test_buildercore_trop.TestBuildercoreTrop.test_method_name

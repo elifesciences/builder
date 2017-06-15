@@ -1,28 +1,23 @@
 # master-server
 
-The `builder` uses a master+minion configuration when used on AWS.
+`builder` uses Salt in a master+minion configuration when used on AWS.
 
 The `master-server` project instance *must* exist in AWS before other minions can
-be told what their configuration is.
+be told what their configuration is. All the EC2 instances will pull their configuration from the master, which is the only instance able to provision itself.
 
 ## deploying a master server for the first time
 
 Deploy a new `master-server` instance with:
 
-	PROJECT=master-server ./bldr deploy
+	./bldr launch:master-server,prod
 
-It will prompt you for an identifier before proceeding.
+The first attempt will fail as the master server cannot access your [builder-private](https://github.com/elifesciences/builder-private-example) repo. This can be done using [Github deploy keys](https://developer.github.com/guides/managing-deploy-keys/#deploy-keys):
 
-The master server needs access to clone your [builder-private](https://github.com/elifesciences/builder-private-example) repo. This is done using [Github deploy keys](https://developer.github.com/guides/managing-deploy-keys/#deploy-keys).
-
-Copy the contents of the *master server's* pubkey (`/root/.ssh/id_rsa.pub`) into a new deploy key for your `builder-private` repo.
-
-Or, copy the output of the below command into the new deploy key (where 'something' is the name you gave your master-server instance):
-
-    ssh-keygen -y -f ./.cfn/keypairs/master-server--something
+    ./bldr download_file:master-server--prod,/root/.ssh/id_rsa.pub,/tmp,use_bootstrap_user=True
+    # now add /tmp/id_rsa.pub as a read-only deploy key to your repository
 
 Then run:
 
-	INSTANCE=master-server--yourinstanceid ./bldr update
+	./bldr update:master-server--prod
 
-to complete the update.
+to complete the update. All Salt states shown should be green.

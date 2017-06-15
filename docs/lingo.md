@@ -1,15 +1,14 @@
 # lingo
 
-A Cloudformation TEMPLATE describes a STACK of AWS resources using JSON.
+Builder describes `projects` and their environment requirements in the project file using YAML.
 
-Builder describes PROJECTS and their environment requirements in the project file using YAML.
+From this abstract definitions an intermediate `context` is generated (`.cfn/contexts`) in JSON format. This is deployed to EC2 instances so that they can use it to configure themselves e.g. pulling a database password from it.
 
-A STACKNAME is the unique name of a PROJECT INSTANCE of a Cloudformation resource STACK.
+From the context, a Cloudformation `template` that describes a `stack` of AWS resources using JSON is generated (`.cfn/stacks`). This template does not just describe the EC2 instances but also additional resources such as RDS databases, DNS entries, S3 buckets, SQS queues, Elastic Load Balancers, and so on.
 
-It comprises the PROJECT NAME, an INSTANCE-ID and an optional CLUSTER-ID, all delimited by double hyphens.
+A `stackname` is the unique name of a `project` instance, pointing to a single Cloudformation resource `stack`.
 
-For example, "elife-lax--master" is the project "elife-lax" with the identifier "master" in the default (unnamed) cluster.
+It comprises the `project name` and an `instance id`, usually indicating an `environment`, delimited by double hyphens.
 
-"elife-lax--master--testing" is like the above, but in the 'testing' cluster.
-
+For example, `journal--prod` is the project `journal` within the environment `prod`. `journal--20170601` is the project `journal` where the instance id is used to indicate an ad-hoc instance used for tests rather than a environment.
 

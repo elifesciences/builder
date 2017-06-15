@@ -198,8 +198,11 @@ def build_context_cloudfront(context, parameterize):
 
 def build_context_subdomains(context):
     def complete_domain(host):
+        is_main = host == ''
         is_complete = host.count(".") > 0
-        if is_complete:
+        if is_main:
+            return context['project']['domain']
+        elif is_complete:
             return host
         else:
             return host + '.' + context['project']['domain'] # something + '.' + elifesciences.org

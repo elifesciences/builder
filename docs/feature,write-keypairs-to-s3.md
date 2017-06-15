@@ -1,5 +1,7 @@
 # feature: write keypairs to s3
 
+*Warning: this feature is not available outside of the eLife organization at the moment*
+
 This feature is *enabled* by default.
 
 When an ec2 instance is created a private+public keypair is also created that 
