@@ -97,7 +97,7 @@ touch .no-install-basebox.flag
 touch .no-delete-venv.flag
 
 # install the virtualenv but don't die if some userland deps don't exist
-./update.sh --exclude virtualbox vagrant
+./update.sh --exclude virtualbox vagrant ssh-agent
 
 # some vagrant wrangling for convenient development
 if [ -d /vagrant ]; then
