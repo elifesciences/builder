@@ -43,13 +43,13 @@ def ensure_destroyed(stackname):
 @task(alias='aws_update_stack')
 @requires_aws_stack
 @timeit
-def update(stackname, *service_list):
+def update(stackname, autostart="0"):
     """Updates the environment within the stack's ec2 instance.
     does *not* call Cloudformation's `update` command on the stack"""
-    instances = _check_want_to_be_running(stackname)
+    instances = _check_want_to_be_running(stackname, bool(strtobool(autostart)))
     if not instances:
         return
-    return bootstrap.update_stack(stackname, service_list, concurrency='serial')
+    return bootstrap.update_stack(stackname, service_list=[], concurrency='serial')
 
 @task
 @timeit
@@ -179,15 +179,16 @@ def _pick_node(instance_list, node):
     core_utils.ensure(instance.ip_address is not None, "Selected instance does not have a public ip address, are you sure it's running?")
     return instance
 
-def _check_want_to_be_running(stackname):
+def _check_want_to_be_running(stackname, autostart=False):
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
     num_instances = len(instance_list)
     if num_instances >= 1:
         return instance_list
 
-    should_start = utils._pick('should_start', [True, False], message='Stack not running. Should it be started?')
-    if not should_start:
-        return False
+    if not autostart:
+        should_start = utils._pick('should_start', [True, False], message='Stack not running. Should it be started?')
+        if not should_start:
+            return False
 
     core_lifecycle.start(stackname)
     # to get the ip addresses that are assigned to the now-running instances
