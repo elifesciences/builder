@@ -122,7 +122,7 @@ lax:
             - 443
             - 80
     aws-alt:
-        prod:
+        baseline:
             description: RDS backed
             rds:
                 storage: 5
@@ -149,8 +149,7 @@ elife-dashboard:
             - 80
             - 443
     aws-alt:
-        prod:
-            description: production environment. backed by RDS
+        baseline:
             rds:
                 storage: 5
 
@@ -181,8 +180,8 @@ journal:
                 # these CIDR should be customized according the range of the `vpc-id`
                 cidr-ip: 172.31.0.0/16
     aws-alt:
-        prod:
-            description: prod environment for journal. ELB on top of multiple EC2 instances
+        baseline:
+            description: baseline environment for journal. ELB on top of multiple EC2 instances
             ec2:
                 cluster-size: 2
             elb:
