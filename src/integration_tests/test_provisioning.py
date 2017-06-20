@@ -8,6 +8,8 @@ from buildercore.config import BOOTSTRAP_USER
 import buildvars
 import cfn
 
+from fabfile import PROJECT_DIR
+
 def generate_environment_name():
     """to avoid multiple people clashing while running their builds
        and new builds clashing with older ones"""
@@ -21,6 +23,22 @@ class TestProvisioning(base.BaseCase):
     def tearDown(self):
         for stackname in self.stacknames:
             cfn.ensure_destroyed(stackname)
+
+        tempfiles = [
+            'ls',
+            'venv/bin/less',
+            'subfolder/pwd',
+            'subfolder',
+        ]
+        for tf in tempfiles:
+            path = os.path.join(PROJECT_DIR, tf)
+            if os.path.isfile(path):
+                os.unlink(path)
+            elif os.path.isdir(path):
+                # assumes dir is empty
+                print 'should be empty:', os.listdir(path)
+                os.rmdir(path)
+            self.assertFalse(os.path.exists(path), "failed to delete path %r in tearDown" % path)
 
     def test_create(self):
         with settings(abort_on_prompts=True):
@@ -40,8 +58,10 @@ class TestProvisioning(base.BaseCase):
             lifecycle.start(stackname)
 
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
+
             cfn.download_file(stackname, "/bin/ls", "ls", use_bootstrap_user="true")
             self.assertTrue(os.path.isfile("./ls"))
+
             cfn.download_file(stackname, "/bin/less", "venv/bin/", use_bootstrap_user="true")
             self.assertTrue(os.path.isfile("./venv/bin/less"))
 
