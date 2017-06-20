@@ -959,3 +959,18 @@ iiif:
     vagrant:
         ports:
             1261: 80
+
+redirects:
+    description: redirect various domains to the canonical elifesciences.org
+    subdomain: redirects
+    intdomain: null
+    formula-repo: https://github.com/elifesciences/redirects-formula
+    aws:
+        type: t2.nano
+        ports:
+            - 22
+            - 80
+            - 443
+    vagrant:
+        ports:
+            1262: 80
