@@ -146,7 +146,7 @@ class TestBuildercoreCfngen(base.BaseCase):
         context = self._base_context('dummy2')
         context['subdomains'] = []
         (delta_plus, delta_minus) = cfngen.template_delta('dummy2', context)
-        self.assertEqual(delta_minus['Resources'].keys(), ['CnameDNS0'])
+        self.assertEqual(delta_minus['Resources'].keys(), ['CnameDNS1'])
         self.assertEqual(delta_minus['Outputs'].keys(), [])
 
     def test_apply_delta_may_add_and_remove_resources(self):
