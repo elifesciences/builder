@@ -383,7 +383,7 @@ def template_delta(pname, context):
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
-    delta_minus_resources = {r:v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and re.match(removable_title_pattern, r)}
+    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and re.match(removable_title_pattern, r)}
 
     return (
         {
