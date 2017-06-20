@@ -962,6 +962,18 @@ redirects:
             - 22
             - 80
             - 443
+    aws-alt:
+        prod:
+            subdomains:
+                - elifesciences.net
+                - e-lifesciences.org
+                - e-lifesciences.net
+                - elifejournal.net
+                - e-lifejournal.org
+                - e-lifejournal.com
+                - e-lifejournal.net
+                - elifejournal.org
+
     vagrant:
         ports:
             1262: 80
