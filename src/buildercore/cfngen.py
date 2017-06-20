@@ -396,7 +396,7 @@ def template_delta(pname, context):
         }
     )
 
-def merge_delta(stackname, delta_plus, delta_minus={}):
+def merge_delta(stackname, delta_plus, delta_minus):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
     apply_delta(template, delta_plus, delta_minus)
