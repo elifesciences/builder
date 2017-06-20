@@ -965,6 +965,8 @@ redirects:
     aws-alt:
         prod:
             cloudfront:
+                # TODO: change with newly released one
+                certificate_id: ASCAIRXYIRFBOR5QSDP5M
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
