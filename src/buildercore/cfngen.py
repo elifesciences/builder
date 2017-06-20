@@ -316,8 +316,8 @@ def regenerate_stack(pname, **more_context):
     current_template = bootstrap.current_template(more_context['stackname'])
     write_template(more_context['stackname'], json.dumps(current_template))
     context = build_context(pname, **more_context)
-    delta = template_delta(pname, context)
-    return context, delta
+    delta_plus, delta_minus = template_delta(pname, context)
+    return context, delta_plus, delta_minus
 
 def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
@@ -326,6 +326,7 @@ def template_delta(pname, context):
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
     updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$']
+    removable_title_pattern = '^CnameDNS\\d+$'
     ec2_not_updatable_properties = ['ImageId', 'Tags', 'UserData']
 
     def _related_to_ec2(output):
@@ -369,23 +370,31 @@ def template_delta(pname, context):
         # some titles were originally EC2Instance rather than EC2Instance1, EC2Instance2 and so on
         return title.strip("1234567890")
 
-    resources = {
+    delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()
         if (title not in old_template['Resources']
             and (legacy_title(title) not in old_template['Resources'])
             and ('EC2Instance' not in title))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
-    outputs = {
+    delta_plus_outputs = {
         title: o for (title, o) in template.get('Outputs', {}).items()
         if (title not in old_template['Outputs'] and not _related_to_ec2(o))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
-    return {
-        'Resources': resources,
-        'Outputs': outputs,
-    }
+    delta_minus_resources = {r:v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and re.match(removable_title_pattern, r)}
+
+    return (
+        {
+            'Resources': delta_plus_resources,
+            'Outputs': delta_plus_outputs,
+        },
+        {
+            'Resources': delta_minus_resources,
+            'Outputs': {},
+        }
+    )
 
 def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""

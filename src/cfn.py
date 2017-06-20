@@ -70,17 +70,18 @@ def update_template(stackname):
     (pname, _) = core.parse_stackname(stackname)
     more_context = cfngen.choose_config(stackname)
 
-    context, delta = cfngen.regenerate_stack(pname, **more_context)
+    context, delta_plus, delta_minus = cfngen.regenerate_stack(pname, **more_context)
 
     if context['ec2']:
         core_lifecycle.start(stackname)
-    LOG.info("%s", pformat(delta))
+    LOG.info("ADD: %s", pformat(delta_plus))
+    LOG.info("REMOVE: %s", pformat(delta_minus))
     utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template')
 
     context_handler.write_context(stackname, context)
 
-    if delta['Resources'] or delta['Outputs']:
-        new_template = cfngen.merge_delta(stackname, delta)
+    if delta_plus['Resources'] or delta_plus['Outputs']:
+        new_template = cfngen.merge_delta(stackname, delta_plus)
         bootstrap.update_template(stackname, new_template)
     else:
         # attempting to apply an empty change set would result in an error
