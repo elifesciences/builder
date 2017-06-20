@@ -294,15 +294,6 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
-            subdomains:
-                - elifesciences.net
-                - e-lifesciences.org
-                - e-lifesciences.net
-                - elifejournal.net
-                - e-lifejournal.org
-                - e-lifejournal.com
-                - e-lifejournal.net
-                - elifejournal.org
     vagrant:
         ram: 4096
         ports:

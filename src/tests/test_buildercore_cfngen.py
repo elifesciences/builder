@@ -149,6 +149,15 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.assertEqual(delta_minus['Resources'].keys(), ['CnameDNS0'])
         self.assertEqual(delta_minus['Outputs'].keys(), [])
 
+    def test_apply_delta_may_add_and_remove_resources(self):
+        template = {
+            'Resources': {
+                'A': 1,
+                'B': 2,
+            }
+        }
+        cfngen.apply_delta(template, delta_plus={'Resources': {'C': 3}}, delta_minus={'Resources': {'B': 2}})
+        self.assertEqual(template, {'Resources': {'A': 1, 'C': 3}})
 
     def _base_context(self, project_name='dummy1'):
         stackname = '%s--test' % project_name
