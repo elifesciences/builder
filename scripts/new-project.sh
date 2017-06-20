@@ -72,5 +72,5 @@ sed -i "s/\$appname/$appname/g" README.md
 # init the repo
 git init
 git add .
-git ci -am "initial commit"
+git commit -am "initial commit"
 
