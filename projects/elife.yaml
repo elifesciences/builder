@@ -964,15 +964,18 @@ redirects:
             - 443
     aws-alt:
         prod:
-            subdomains:
-                - elifesciences.net
-                - e-lifesciences.org
-                - e-lifesciences.net
-                - elifejournal.net
-                - e-lifejournal.org
-                - e-lifejournal.com
-                - e-lifejournal.net
-                - elifejournal.org
+            cloudfront:
+                subdomains:
+                    - elifesciences.net
+                    - e-lifesciences.org
+                    - e-lifesciences.net
+                    - elifejournal.net
+                    - e-lifejournal.org
+                    - e-lifejournal.com
+                    - e-lifejournal.net
+                    - elifejournal.org
+                headers:
+                    - Host
 
     vagrant:
         ports:
