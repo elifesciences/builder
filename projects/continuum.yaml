@@ -1,10 +1,13 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2016.3' # the version of salt these project use
+    # the version of salt these project use
+    salt: '2016.3'
+    # the base public domain under which all hostnames will be created
     domain: thedailybugle.org
-    # addressing within VPC
+    # the base internal domain for addressing within the VPC
     intdomain: thedailybugle.internal
-    # 'lax', 'metrics', 'gateway', etc
+    # 'journal', 'gateway', etc.
+    # by default, a project doesn't get an hostname, only a public ip
     subdomain: null
     # projects with an explicit `repo` attribute support branch deployments with
     # ./bldr deploy
@@ -17,62 +20,100 @@ defaults:
     private-repo: ssh://git@github.com/elife-anonymous-user/builder-private
     # default branch to use when creating new instances
     default-branch: master
-    # 
+    # set of formulas that the project depends upon in addition to its own
+    # can be expanded to add to the base formula other formulas
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
+        # AWS account id to be used to create all components
         account_id: 531849302986
-        # find more here: https://cloud-images.ubuntu.com/locator/ec2/
         ec2:
+            # number of EC2 instances for the project
             cluster-size: 1
-            ami: ami-d90d92ce   # Ubuntu 14.04 us-east-1 hvm:ebs
+            # base AMI used to create EC2 instances
+            # Ubuntu 14.04 us-east-1 hvm:ebs
+            # find more here: https://cloud-images.ubuntu.com/locator/ec2/
+            ami: ami-d90d92ce 
+        # AWS region: only us-east-1 is supported
         region: us-east-1
-        vpc-id: vpc-c23159a5  # vpc-id + subnet-id are peculiar to AWS account + region
-        subnet-id: subnet-6b6c6e41 # elife-public-subnet
+        # VPC inside the `account_id` AWS account
+        vpc-id: vpc-c23159a5  
+        # subnet id and IP range
+        subnet-id: subnet-6b6c6e41
         subnet-cidr: '172.31.48.0/20'
-        type: t2.small  # ~ $20/mo
+        # a second subnet for high availability
+        # necessary for projects using multiple-node EC2 and ELB
+        redundant-subnet-id: subnet-dffe0c96
+        redundant-subnet-cidr: '172.31.0.0/20'
+        # default small instance, ~$17/month
+        type: t2.small  
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
             multi-az: False
             engine: postgres
-            # ensure this matches the version of Postgres you install on server!
+            # ensure this matches the version of Postgres you install on the EC2 instance
             version: '9.4'
             type: db.t2.small
-            storage: 5 # GB
-            backup-retention: 28 # days
+            # GB to allocate
+            storage: 5
+            # days to retain snapshots
+            backup-retention: 28
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
-                # two are required
-                # NOTE! the 'dbsubnet-' prefix is important to *builder*
-                # it tells us which subnets we can provision RDS within
-                - subnet-6b6c6e41 # elife-dbsubnet-1
-                - subnet-dffe0c96 # elife-dbsubnet-2
+                # this example uses the same subnets as for EC2 instances,
+                # but these can be customized (for increased security)
+                # making them not accessible to outside traffic
+                - subnet-6b6c6e41
+                - subnet-dffe0c96
+        # set of SNS topics. Default is none
         sns: []
+        # set of SQS queues. Default is none
         sqs: []
         ext:
-            # external hdd
+            # external volume defaults only used is an `ext` section present in project
+            # GB to allocate
             size: 10 # GB
+            # name of device (usually transformed into /dev/xvdh)
             device: /dev/sdh
+        elb:
+            # elb defaults only used if an 'elb' section present in project
+            # sticky sessions: send a user always to the same EC2 instance
+            stickiness: false
+            # can be a list too
+            # - http
+            # - https 
+            protocol: http
+            idle_timeout: 60
+            # ARN of a wildcard certificate for the domain chosen. Used for https ELBs
+            certificate: arn:aws:iam::531849302986:server-certificate/wildcard.thedailybugle.org
+            # HTTP request performed by the ELB to check if an EC2 instance is healthy
+            healthcheck:
+                protocol: http
+                port: 80
+                path: /ping
+                timeout: 4 
+                interval: 5
+                unhealthy_threshold: 2
+                healthy_threshold: 2
+        # S3 buckets for this project
         s3: []
  
 master-server:
-    # formula-repo for the 'master-server' project should contain the 
-    # confidential pillar data, master config and state top file.
-    # see: https://github.com/elifesciences/builder-private-example
     formula-repo: ssh://git@github.com/elifesciences/master-server-formula
     aws:
         ports:
             - 22
+            # access via VPC ip range only
+            # these CIDR should be customized according the range of the `vpc-id`
             - 4506: # salt publish port
-                # CIDR of subnet this master will server
-                cidr-ip: 172.31.48.0/20 # access via VPC ip range only
+                cidr-ip: 172.31.0.0/16
             - 4505: # salt return port
-                cidr-ip: 172.31.48.0/20
+                cidr-ip: 172.31.0.0/16
 
 lax:
-    subdomain: lax # lax.elifesciences.org
+    subdomain: lax
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
@@ -81,7 +122,7 @@ lax:
             - 443
             - 80
     aws-alt:
-        prod:
+        baseline:
             description: RDS backed
             rds:
                 storage: 5
@@ -108,17 +149,52 @@ elife-dashboard:
             - 80
             - 443
     aws-alt:
-        prod:
-            description: production environment. backed by RDS
+        baseline:
             rds:
                 storage: 5
 
-elife-website:
-    subdomain: v2
-    repo: https://github.com/elifesciences/elife-website
-    formula-repo: https://github.com/elifesciences/elife-website-formula
+api-dummy:
+    subdomain: api-dummy
+    repo: https://github.com/elifesciences/api-dummy
+    formula-repo: https://github.com/elifesciences/api-dummy-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 443
+            - 80
+    vagrant:
+        ports:
+            1242: 80
+
+journal:
+    subdomain: journal
+    intdomain: null
+    repo: https://github.com/elifesciences/journal
+    formula-repo: https://github.com/elifesciences/journal-formula
     aws:
         ports:
             - 22
-            - 80
             - 443
+            - 80:
+                # these CIDR should be customized according the range of the `vpc-id`
+                cidr-ip: 172.31.0.0/16
+    aws-alt:
+        baseline:
+            description: baseline environment for journal. ELB on top of multiple EC2 instances
+            ec2:
+                cluster-size: 2
+            elb:
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
+                protocol:
+                    - https
+                    - http
+            subdomains:
+                # corresponding to the main domain thedailybugle.org
+                - ""
+    vagrant:
+        ram: 4096
+        ports:
+            1240: 80

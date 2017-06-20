@@ -43,13 +43,13 @@ def ensure_destroyed(stackname):
 @task(alias='aws_update_stack')
 @requires_aws_stack
 @timeit
-def update(stackname, *service_list):
+def update(stackname, autostart="0"):
     """Updates the environment within the stack's ec2 instance.
     does *not* call Cloudformation's `update` command on the stack"""
-    instances = _check_want_to_be_running(stackname)
+    instances = _check_want_to_be_running(stackname, bool(strtobool(autostart)))
     if not instances:
         return
-    return bootstrap.update_stack(stackname, service_list, concurrency='serial')
+    return bootstrap.update_stack(stackname, service_list=[], concurrency='serial')
 
 @task
 @timeit
@@ -75,14 +75,16 @@ def update_template(stackname):
     if context['ec2']:
         core_lifecycle.start(stackname)
     LOG.info("%s", pformat(delta))
-    if not delta['Resources'] and not delta['Outputs']:
-        LOG.info("Nothing to update")
-        return
-    utils.confirm('Confirming changes to the stack template?')
+    utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template')
 
     context_handler.write_context(stackname, context)
-    new_template = cfngen.merge_delta(stackname, delta)
-    bootstrap.update_template(stackname, new_template)
+
+    if delta['Resources'] or delta['Outputs']:
+        new_template = cfngen.merge_delta(stackname, delta)
+        bootstrap.update_template(stackname, new_template)
+    else:
+        # attempting to apply an empty change set would result in an error
+        LOG.info("Nothing to update on CloudFormation")
 
     update(stackname)
 
@@ -177,15 +179,16 @@ def _pick_node(instance_list, node):
     core_utils.ensure(instance.ip_address is not None, "Selected instance does not have a public ip address, are you sure it's running?")
     return instance
 
-def _check_want_to_be_running(stackname):
+def _check_want_to_be_running(stackname, autostart=False):
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
     num_instances = len(instance_list)
     if num_instances >= 1:
         return instance_list
 
-    should_start = utils._pick('should_start', [True, False], message='Stack not running. Should it be started?')
-    if not should_start:
-        return False
+    if not autostart:
+        should_start = utils._pick('should_start', [True, False], message='Stack not running. Should it be started?')
+        if not should_start:
+            return False
 
     core_lifecycle.start(stackname)
     # to get the ip addresses that are assigned to the now-running instances
@@ -285,13 +288,17 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
         fabric.state.output['running'] = False
         custom_settings['output_prefix'] = False
 
-    with settings(**custom_settings):
-        return stack_all_ec2_nodes(
-            stackname,
-            (run, {'command': command}),
-            username=username,
-            abort_on_prompts=True,
-            concurrency=concurrency_for(stackname, concurrency))
+    try:
+        with settings(**custom_settings):
+            return stack_all_ec2_nodes(
+                stackname,
+                (run, {'command': command}),
+                username=username,
+                abort_on_prompts=True,
+                concurrency=concurrency_for(stackname, concurrency))
+    except FabricException as e:
+        LOG.error(e.message)
+        exit(2)
 
 @task
 def project_list():

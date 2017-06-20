@@ -32,6 +32,12 @@ both_checks = [
     ('virtualenv',
      {'all': 'sudo pip install virtualenv'}),
 
+    # needed for installing pynacl, which is a transitive dependency of Paramiko which is a dependency of Fabric
+    ('make',
+     {'all': 'which make'},
+     dumb_install_check,
+     lambda x: shs('make -v')),
+
     ('virtualbox',
      {'osx': 'brew cask install virtualbox'},
      dumb_install_check,
@@ -40,7 +46,7 @@ both_checks = [
     ('vagrant',
      {'osx': 'brew cask install vagrant'}),
 
-    ('ssh credentials',
+    ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f ~/.ssh/id_rsa && test -f ~/.ssh/id_rsa.pub'),
      None), # do not check version
@@ -50,7 +56,7 @@ both_checks = [
      lambda x: sh('ps aux | grep ssh-agent$ > /dev/null'),
      None),
 
-    ('aws credentials',
+    ('aws-credentials',
      {'all': 'do `aws configure` after installing builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
      None), # do not check version
@@ -67,6 +73,7 @@ mac_checks = [
 ]
 
 def run_checks(check_list, exclusions=[]):
+    failed_checks = 0
     for cmd in check_list:
         installed_checker = dumb_install_check
         version_checker = dumb_version_check
@@ -91,7 +98,10 @@ def run_checks(check_list, exclusions=[]):
             sys.stdout.write('NOT found. Try:\n')
             for opsys, suggestion in install_suggestions.items():
                 print('   %s: %s' % (opsys, suggestion))
+            failed_checks = failed_checks + 1
         sys.stdout.flush()
+
+    exit(failed_checks)
 
 def main():
     checks = both_checks

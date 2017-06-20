@@ -91,6 +91,7 @@ defaults:
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
+            domains: []
             origins: {}
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
@@ -98,6 +99,7 @@ defaults:
             headers: []
             errors: null
             default-ttl: 0 # seconds
+        subdomains: []
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -221,8 +223,10 @@ journal:
             ec2:
                 cluster-size: 2
             elb:
-                stickiness: true
-                protocol: 
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
+                protocol:
                     - https
                     - http
             cloudfront:
@@ -233,6 +237,7 @@ journal:
                     - Host
                 cookies:
                     - journal
+                    - AWSELB
                 errors: 
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -260,7 +265,9 @@ journal:
             ec2:
                 cluster-size: 3
             elb:
-                stickiness: true
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
                 protocol:
                     - https
                     - http
@@ -268,15 +275,18 @@ journal:
                 subdomains:
                     - "{instance}--cdn-journal"
                     - beta
-                    #- elife
-                    #- prod
-                    #- ""
-                    - gamma
+                    - elife
+                    - prod
+                    - ""
+                    - www
+                    # to overwrite a previously used DNS entry
+                    - dummydoesnotexistsplaceholder
                 headers:
                     - X-Requested-With
                     - Host
                 cookies:
                     - journal
+                    - AWSELB
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -284,6 +294,15 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
+            subdomains:
+                - elifesciences.net
+                - e-lifesciences.org
+                - e-lifesciences.net
+                - elifejournal.net
+                - e-lifejournal.org
+                - e-lifejournal.com
+                - e-lifejournal.net
+                - elifejournal.org
     vagrant:
         ram: 4096
         ports:
@@ -297,7 +316,12 @@ pattern-library:
         type: t2.small
         ports:
             - 22
+            - 80
             - 443
+    aws-alt:
+        prod:
+            subdomains:
+                - ui-patterns
     vagrant:
         ram: 2048
         ports:
@@ -402,6 +426,8 @@ generic-cdn:
                 articles:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     pattern: articles/*
+            headers:
+                - Origin
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org
@@ -655,7 +681,7 @@ bus:
             - bus-blog-articles--{instance}
             - bus-annual-reports--{instance}
             - bus-covers--{instance}
-            - bus-labs-experiments--{instance}
+            - bus-labs-posts--{instance}
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
 
@@ -690,6 +716,7 @@ search:
                     - bus-collections--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
+                    - bus-labs-posts--{instance}
 
 recommendations:
     domain: false
@@ -859,9 +886,19 @@ iiif:
     aws-alt:
         # for testing new versions
         ci:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
+            ec2:
+                cluster-size: 2
             ext:
                 size: 30 # GB
-        # automated tests, identical to prod
+            elb:
+                protocol: 
+                    - https
+                healthcheck:
+                    path: /
         end2end:
             ports:
                 - 22
@@ -879,6 +916,8 @@ iiif:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
+                headers:
+                    - Host
         # manual tests
         continuumtest:
             ports:
@@ -895,6 +934,8 @@ iiif:
             cloudfront:
                 subdomains: 
                     - "{instance}--cdn-iiif"
+                headers:
+                    - Host
         prod:
             ports:
                 - 22
@@ -913,6 +954,8 @@ iiif:
                 subdomains: 
                     - "{instance}--cdn-iiif"
                     - iiif
+                headers:
+                    - Host
     vagrant:
         ports:
             1261: 80

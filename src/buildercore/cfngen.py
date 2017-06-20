@@ -150,6 +150,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['s3'][bucket_name].update(configuration if configuration else {})
 
     build_context_cloudfront(context, parameterize=_parameterize)
+    build_context_subdomains(context)
 
     return context
 
@@ -164,7 +165,7 @@ def build_context_elb(context):
             'subnets': [
                 context['project']['aws']['subnet-id'],
                 context['project']['aws']['redundant-subnet-id']
-            ]
+            ],
         })
 
 def build_context_cloudfront(context, parameterize):
@@ -194,6 +195,18 @@ def build_context_cloudfront(context, parameterize):
         }
     else:
         context['cloudfront'] = False
+
+def build_context_subdomains(context):
+    def complete_domain(host):
+        is_main = host == ''
+        is_complete = host.count(".") > 0
+        if is_main:
+            return context['project']['domain']
+        elif is_complete:
+            return host
+        else:
+            return host + '.' + context['project']['domain'] # something + '.' + elifesciences.org
+    context['subdomains'] = [complete_domain(s) for s in context['project']['aws'].get('subdomains', [])]
 
 def choose_config(stackname):
     (pname, instance_id) = core.parse_stackname(stackname)
@@ -312,7 +325,7 @@ def template_delta(pname, context):
     Most of the existing resources are treated as immutable and not put in the delta. Some that support updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$']
+    updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$']
     ec2_not_updatable_properties = ['ImageId', 'Tags', 'UserData']
 
     def _related_to_ec2(output):
@@ -332,6 +345,8 @@ def template_delta(pname, context):
             template['Resources']['ExtraStorage']['Properties']['AvailabilityZone']['Fn::GetAtt'][0] = 'EC2Instance'
         if 'MountPoint' in template['Resources']:
             template['Resources']['MountPoint']['Properties']['InstanceId']['Ref'] = 'EC2Instance'
+        if 'IntDNS' in template['Resources']:
+            template['Resources']['IntDNS']['Properties']['ResourceRecords'][0]['Fn::GetAtt'][0] = 'EC2Instance'
     # end backward compatibility code
 
     def _title_has_been_updated(title, section):

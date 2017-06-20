@@ -9,7 +9,7 @@ ALL_PROJECTS = [
     'dummy1', 'dummy2', 'dummy3',
     'just-some-sns', 'project-with-sqs', 'project-with-s3',
     'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
-    'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-cluster',
+    'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-cluster', 'project-with-stickiness',
     'project-with-cluster-integration-tests', 'project-with-db-params',
 ]
 
@@ -59,7 +59,7 @@ class TestProjectData(base.BaseCase):
             expected_data = json.load(open(expected_path, 'r'))
             project_data = project.project_data(pname)
             project_data = utils.remove_ordereddict(project_data)
-            self.assertEqual(expected_data, project_data, 'failed %s' % pname)
+            self.assertEqual(expected_data, project_data)
 
     # snippets
 

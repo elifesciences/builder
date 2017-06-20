@@ -92,6 +92,7 @@ ROOTLOG.addHandler(H1)
 ROOTLOG.addHandler(H2)
 
 LOG = logging.getLogger(__name__)
+logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 
 #
 # remote
@@ -180,7 +181,7 @@ def app(settings_path=None):
     if not settings_path:
         # set default here so tests can change the value of SETTINGS_FILE
         settings_path = SETTINGS_FILE
-    LOG.info("using settings path %r", settings_path)
+    LOG.debug("using settings path %r", settings_path)
     return parse(load(settings_path))
 
 def feature_enabled(feature):

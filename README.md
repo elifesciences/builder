@@ -21,6 +21,8 @@ message. Updating in the future is as simple as:
     git pull
     ./update.sh
 
+If you are outside of the eLife organization, make sure the `write-context-to-s3` and `write-keypairs-to-s3` keys in `settings.yml` keys are `False. Their use is not supported.
+
 ## Next
 
 Your `settings.yaml` file was created automatically and contains options for tweaking the behaviour of `builder`, like the project file it should be using.
@@ -63,10 +65,17 @@ A `master-server` instance must exist before project instances can be brought up
 To launch a project backed by a code repository to AWS:
 
     $ ./bldr deploy
+    // or specify project and environment
+    $ ./bldr deploy:journal,prod
 
-To launch an ad-hoc instance of any project to AWS, use:
+To launch a instance of any project to AWS, use:
 
-    $ ./bldr aws_launch_instance
+    // or specify project and environment
+    $ ./bldr launch:api-gateway,prod
+
+To ssh into one of these machines:
+
+    $ ./bldr ssh:journal--prod
 
 ## More!
 

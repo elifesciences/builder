@@ -202,6 +202,83 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('AliasTarget', dns.keys())
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
         self.assertIn('DomainName', outputs.keys())
+        self.assertIn('CnameDNS0', resources.keys())
+        self.assertEqual(
+            {
+                'AliasTarget': {
+                    'DNSName': {
+                        'Fn::GetAtt': ['ElasticLoadBalancer', 'DNSName']
+                    },
+                    'HostedZoneId': {'Fn::GetAtt': ['ElasticLoadBalancer', 'CanonicalHostedZoneNameID']}
+                },
+                'HostedZoneName': 'project.tv.',
+                'Name': 'project.tv',
+                'Type': 'A'
+            },
+            resources['CnameDNS0']['Properties']
+        )
+        self.assertIn('CnameDNS1', resources.keys())
+        self.assertEqual(
+            {
+                'AliasTarget': {
+                    'DNSName': {
+                        'Fn::GetAtt': ['ElasticLoadBalancer', 'DNSName']
+                    },
+                    'HostedZoneId': {'Fn::GetAtt': ['ElasticLoadBalancer', 'CanonicalHostedZoneNameID']}
+                },
+                'HostedZoneName': 'example.org.',
+                'Name': 'example.org',
+                'Type': 'A'
+            },
+            resources['CnameDNS1']['Properties']
+        )
+
+    def test_additional_cnames(self):
+        extra = {
+            'stackname': 'dummy2--prod',
+        }
+        context = cfngen.build_context('dummy2', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertIn('CnameDNS0', resources.keys())
+        dns = resources['CnameDNS0']['Properties']
+        self.assertEqual(
+            dns,
+            {
+                'HostedZoneName': 'example.org.',
+                'Name': 'official.example.org',
+                'ResourceRecords': ['prod--dummy2.example.org'],
+                'TTL': '60',
+                'Type': 'CNAME',
+            }
+        )
+
+    def test_stickiness_template(self):
+        extra = {
+            'stackname': 'project-with-stickiness--prod',
+        }
+        context = cfngen.build_context('project-with-stickiness', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertIn('ElasticLoadBalancer', resources.keys())
+        elb = resources['ElasticLoadBalancer']['Properties']
+        self.assertEqual(
+            elb['AppCookieStickinessPolicy'],
+            [
+                {
+                    'CookieName': 'mysessionid',
+                    'PolicyName': 'AppCookieStickinessPolicy',
+                }
+            ]
+        )
+        self.assertEqual(
+            elb['Listeners'][0]['PolicyNames'],
+            [
+                'AppCookieStickinessPolicy',
+            ]
+        )
 
     def test_s3_template(self):
         extra = {
@@ -286,6 +363,18 @@ class TestBuildercoreTrop(base.BaseCase):
                 },
             },
             data['Resources']['WidgetsStaticHostingProdBucketPolicy']
+        )
+
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Delete',
+                'Properties': {
+                    'AccessControl': 'PublicRead',
+                    'BucketName': 'widgets-just-access-prod',
+                },
+            },
+            data['Resources']['WidgetsJustAccessProdBucket']
         )
 
         self.assertEqual(

@@ -78,7 +78,7 @@ fi
 # the master server will need to install project formulas. 
 
 # install builder dependencies for Ubuntu
-apt-get install python-dev python-pip -y
+apt-get install python-dev python-pip libffi-dev libssl-dev -y
 pip install virtualenv
 
 if [ ! -d /opt/builder ]; then
@@ -97,7 +97,7 @@ touch .no-install-basebox.flag
 touch .no-delete-venv.flag
 
 # install the virtualenv but don't die if some userland deps don't exist
-./update.sh --exclude virtualbox vagrant
+./update.sh --exclude virtualbox vagrant ssh-agent ssh-credentials aws-credentials
 
 # some vagrant wrangling for convenient development
 if [ -d /vagrant ]; then
