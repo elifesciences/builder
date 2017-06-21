@@ -202,7 +202,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('AliasTarget', dns.keys())
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
         self.assertIn('DomainName', outputs.keys())
-        self.assertIn('CnameDNS0', resources.keys())
+        self.assertIn('CnameDNS1', resources.keys())
         self.assertEqual(
             {
                 'AliasTarget': {
@@ -215,9 +215,9 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Name': 'project.tv',
                 'Type': 'A'
             },
-            resources['CnameDNS0']['Properties']
+            resources['CnameDNS1']['Properties']
         )
-        self.assertIn('CnameDNS1', resources.keys())
+        self.assertIn('CnameDNS2', resources.keys())
         self.assertEqual(
             {
                 'AliasTarget': {
@@ -230,7 +230,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Name': 'example.org',
                 'Type': 'A'
             },
-            resources['CnameDNS1']['Properties']
+            resources['CnameDNS2']['Properties']
         )
 
     def test_additional_cnames(self):
@@ -241,8 +241,8 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertIn('CnameDNS0', resources.keys())
-        dns = resources['CnameDNS0']['Properties']
+        self.assertIn('CnameDNS1', resources.keys())
+        dns = resources['CnameDNS1']['Properties']
         self.assertEqual(
             dns,
             {

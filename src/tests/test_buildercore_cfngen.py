@@ -38,8 +38,8 @@ class TestBuildercoreCfngen(base.BaseCase):
 
     def test_empty_template_delta(self):
         context = self._base_context()
-        delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta, {'Outputs': {}, 'Resources': {}})
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta_plus, {'Outputs': {}, 'Resources': {}})
 
     def test_template_delta_includes_cloudfront(self):
         "we can add CDNs (that takes an hour or more) without downtime"
@@ -58,47 +58,47 @@ class TestBuildercoreCfngen(base.BaseCase):
             "errors": None,
             "default-ttl": 300,
         }
-        delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])
-        self.assertEqual(delta['Outputs'].keys(), ['DomainName'])
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])
+        self.assertEqual(delta_plus['Outputs'].keys(), ['DomainName'])
 
     def test_template_delta_does_not_include_cloudfront_if_there_are_no_modifications(self):
         context = self._base_context('project-with-cloudfront-minimal')
-        delta = cfngen.template_delta('project-with-cloudfront-minimal', context)
-        self.assertEqual(delta['Resources'].keys(), [])
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('project-with-cloudfront-minimal', context)
+        self.assertEqual(delta_plus['Resources'].keys(), [])
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_does_not_normally_include_ec2(self):
         "we do not want to mess with running VMs"
         context = self._base_context()
         context['ec2']['cluster_size'] = 2
-        delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta['Resources'].keys(), [])
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta_plus['Resources'].keys(), [])
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_includes_ec2_instance_type(self):
         "we accept to reboot VMs if an instance type change is requested"
         context = self._base_context()
         context['ec2']['type'] = 't2.xlarge'
-        delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta['Resources'].keys(), ['EC2Instance1'])
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['EC2Instance1'])
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_does_not_include_ec2_immutable_properties_like_image(self):
         "we don't want random reboot or recreations of instances"
         context = self._base_context()
         context['ec2']['ami'] = 'ami-1234567'
-        delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta['Resources'].keys(), [])
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta_plus['Resources'].keys(), [])
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_includes_ec2_security_group(self):
         "it's useful to open and close ports"
         context = self._base_context()
         context['project']['aws']['ports'] = [110]
-        delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta['Resources'].keys(), ['StackSecurityGroup'])
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['StackSecurityGroup'])
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_includes_parts_of_cloudfront(self):
         "we want to update CDNs in place given how long it takes to recreate them"
@@ -106,28 +106,28 @@ class TestBuildercoreCfngen(base.BaseCase):
         context['cloudfront']['subdomains'] = [
             "custom-subdomain"
         ]
-        delta = cfngen.template_delta('project-with-cloudfront-minimal', context)
-        self.assertEqual(delta['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])
-        self.assertEqual(delta['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org.')
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('project-with-cloudfront-minimal', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])
+        self.assertEqual(delta_plus['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org.')
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_includes_parts_of_elb(self):
         "we want to update ELBs in place given how long it takes to recreate them"
         context = self._base_context('project-with-cluster')
         context['elb']['healthcheck']['protocol'] = 'tcp'
-        delta = cfngen.template_delta('project-with-cluster', context)
-        self.assertEqual(delta['Resources'].keys(), ['ElasticLoadBalancer'])
-        self.assertEqual(delta['Resources']['ElasticLoadBalancer']['Properties']['HealthCheck']['Target'], 'TCP:80')
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('project-with-cluster', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['ElasticLoadBalancer'])
+        self.assertEqual(delta_plus['Resources']['ElasticLoadBalancer']['Properties']['HealthCheck']['Target'], 'TCP:80')
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_includes_elb_security_group(self):
         "for consistency with EC2 security groups"
         context = self._base_context('project-with-cluster')
         context['elb']['protocol'] = 'https'
         context['elb']['certificate'] = 'DUMMY_CERTIFICATE'
-        delta = cfngen.template_delta('project-with-cluster', context)
-        self.assertEqual(delta['Resources'].keys(), ['ElasticLoadBalancer', 'ELBSecurityGroup'])
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('project-with-cluster', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['ElasticLoadBalancer', 'ELBSecurityGroup'])
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
 
     def test_template_delta_includes_new_external_volumes(self):
         "we want to add additional volumes to projects that are getting their main volume filled"
@@ -136,11 +136,28 @@ class TestBuildercoreCfngen(base.BaseCase):
             'size': 10,
             'device': '/dev/sdh',
         }
-        delta = cfngen.template_delta('dummy1', context)
-        self.assertEqual(delta['Resources'].keys(), ['MountPoint1', 'ExtraStorage1'])
-        self.assertEqual(delta['Resources']['ExtraStorage1']['Properties']['Size'], '10')
-        self.assertEqual(delta['Resources']['MountPoint1']['Properties']['Device'], '/dev/sdh')
-        self.assertEqual(delta['Outputs'].keys(), [])
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy1', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['MountPoint1', 'ExtraStorage1'])
+        self.assertEqual(delta_plus['Resources']['ExtraStorage1']['Properties']['Size'], '10')
+        self.assertEqual(delta_plus['Resources']['MountPoint1']['Properties']['Device'], '/dev/sdh')
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
+
+    def test_template_delta_includes_removal_of_subdomains(self):
+        context = self._base_context('dummy2')
+        context['subdomains'] = []
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy2', context)
+        self.assertEqual(delta_minus['Resources'].keys(), ['CnameDNS1'])
+        self.assertEqual(delta_minus['Outputs'].keys(), [])
+
+    def test_apply_delta_may_add_and_remove_resources(self):
+        template = {
+            'Resources': {
+                'A': 1,
+                'B': 2,
+            }
+        }
+        cfngen.apply_delta(template, delta_plus={'Resources': {'C': 3}}, delta_minus={'Resources': {'B': 2}})
+        self.assertEqual(template, {'Resources': {'A': 1, 'C': 3}})
 
     def _base_context(self, project_name='dummy1'):
         stackname = '%s--test' % project_name

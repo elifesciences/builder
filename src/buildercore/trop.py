@@ -738,7 +738,7 @@ def cnames(context):
             hostedzone = hostname + "."
             ensure(context['elb'], "2nd-level domains aliases are only supported for ELBs")
             return route53.RecordSetType(
-                R53_CNAME_TITLE % (i),
+                R53_CNAME_TITLE % (i + 1),
                 HostedZoneName=hostedzone,
                 Name=hostname,
                 Type="A",
@@ -750,7 +750,7 @@ def cnames(context):
         else:
             hostedzone = context['domain'] + "."
             return route53.RecordSetType(
-                R53_CNAME_TITLE % (i),
+                R53_CNAME_TITLE % (i + 1),
                 HostedZoneName=hostedzone,
                 Name=hostname,
                 Type="CNAME",

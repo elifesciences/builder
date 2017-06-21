@@ -294,15 +294,6 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
-            subdomains:
-                - elifesciences.net
-                - e-lifesciences.org
-                - e-lifesciences.net
-                - elifejournal.net
-                - e-lifejournal.org
-                - e-lifejournal.com
-                - e-lifejournal.net
-                - elifejournal.org
     vagrant:
         ram: 4096
         ports:
@@ -959,3 +950,34 @@ iiif:
     vagrant:
         ports:
             1261: 80
+
+redirects:
+    description: redirect various domains to the canonical elifesciences.org
+    subdomain: redirects
+    intdomain: null
+    formula-repo: https://github.com/elifesciences/redirects-formula
+    aws:
+        type: t2.nano
+        ports:
+            - 22
+            - 80
+            - 443
+    aws-alt:
+        prod:
+            cloudfront:
+                certificate_id: ASCAIEHY4AGS453E4IUJK
+                subdomains:
+                    - elifesciences.net
+                    - e-lifesciences.org
+                    - e-lifesciences.net
+                    - elifejournal.net
+                    - e-lifejournal.org
+                    - e-lifejournal.com
+                    - e-lifejournal.net
+                    - elifejournal.org
+                headers:
+                    - Host
+
+    vagrant:
+        ports:
+            1262: 80
