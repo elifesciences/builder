@@ -981,3 +981,17 @@ redirects:
     vagrant:
         ports:
             1262: 80
+
+profiles:
+    subdomain: profiles
+    repo: https://github.com/elifesciences/profiles
+    formula-repo: https://github.com/elifesciences/profiles-formula
+    vagrant:
+        ram: 1024
+        ports:
+            1265: 80
+    aws:
+        ports:
+            - 22
+            - 80
+
