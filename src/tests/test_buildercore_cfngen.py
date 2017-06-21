@@ -47,7 +47,7 @@ class TestBuildercoreCfngen(base.BaseCase):
         context['full_hostname'] = "test--dummy1.example.org"
         context['cloudfront'] = {
             "subdomains": [
-                "test--cdn-dummy1"
+                "test--cdn-dummy1.example.org"
             ],
             "subdomains-without-dns": [],
             "origins": {},
@@ -104,7 +104,7 @@ class TestBuildercoreCfngen(base.BaseCase):
         "we want to update CDNs in place given how long it takes to recreate them"
         context = self._base_context('project-with-cloudfront-minimal')
         context['cloudfront']['subdomains'] = [
-            "custom-subdomain"
+            "custom-subdomain.example.org"
         ]
         (delta_plus, delta_minus) = cfngen.template_delta('project-with-cloudfront-minimal', context)
         self.assertEqual(delta_plus['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])

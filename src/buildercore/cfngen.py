@@ -169,6 +169,8 @@ def build_context_elb(context):
         })
 
 def build_context_cloudfront(context, parameterize):
+    def build_subdomain(x):
+        return complete_domain(parameterize(x), context['domain'])
     if 'cloudfront' in context['project']['aws']:
         if context['project']['aws']['cloudfront']['errors']:
             errors = {
@@ -180,8 +182,8 @@ def build_context_cloudfront(context, parameterize):
         else:
             errors = None
         context['cloudfront'] = {
-            'subdomains': [parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains']],
-            'subdomains-without-dns': [parameterize(x) for x in context['project']['aws']['cloudfront']['subdomains-without-dns']],
+            'subdomains': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains']],
+            'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains-without-dns']],
             'certificate_id': context['project']['aws']['cloudfront']['certificate_id'],
             'cookies': context['project']['aws']['cloudfront']['cookies'],
             'compress': context['project']['aws']['cloudfront']['compress'],
@@ -196,17 +198,18 @@ def build_context_cloudfront(context, parameterize):
     else:
         context['cloudfront'] = False
 
+def complete_domain(host, default_main):
+    is_main = host == ''
+    is_complete = host.count(".") > 0
+    if is_main:
+        return default_main
+    elif is_complete:
+        return host
+    else:
+        return host + '.' + default_main # something + '.' + elifesciences.org
+
 def build_context_subdomains(context):
-    def complete_domain(host):
-        is_main = host == ''
-        is_complete = host.count(".") > 0
-        if is_main:
-            return context['project']['domain']
-        elif is_complete:
-            return host
-        else:
-            return host + '.' + context['project']['domain'] # something + '.' + elifesciences.org
-    context['subdomains'] = [complete_domain(s) for s in context['project']['aws'].get('subdomains', [])]
+    context['subdomains'] = [complete_domain(s, context['project']['domain']) for s in context['project']['aws'].get('subdomains', [])]
 
 def choose_config(stackname):
     (pname, instance_id) = core.parse_stackname(stackname)

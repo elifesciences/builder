@@ -330,15 +330,17 @@ def internal_dns_elb(context):
 def external_dns_cloudfront(context):
     # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
     dns_records = []
-    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
     i = 1
-    for subdomain in context['cloudfront']['subdomains']:
-        cdn_hostname = "%s.%s" % (subdomain, hostedzone) if subdomain != '' else hostedzone
+    for cdn_hostname in context['cloudfront']['subdomains']:
+        if _is_domain_2nd_level(cdn_hostname):
+            hostedzone = cdn_hostname + "."
+        else:
+            hostedzone = context['domain'] + "."
         dns_records.append(route53.RecordSetType(
             R53_CDN_TITLE % i,
             HostedZoneName=hostedzone,
             Comment="External DNS record for Cloudfront distribution",
-            Name=cdn_hostname,
+            Name=cdn_hostname + ".",
             Type="A",
             AliasTarget=route53.AliasTarget(
                 CLOUDFRONT_HOSTED_ZONE_ID,
@@ -573,10 +575,7 @@ def render_cloudfront(context, template, origin_hostname):
     if not context['cloudfront']['origins']:
         ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
 
-    allowed_cnames = [
-        "%s.%s" % (subdomain, context['domain']) if subdomain != '' else context['domain']
-        for subdomain in context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
-    ]
+    allowed_cnames = context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
     if context['cloudfront']['cookies']:
         cookies = cloudfront.Cookies(
             Forward='whitelist',
@@ -731,9 +730,7 @@ def cnames(context):
     assert isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built"
 
     def entry(hostname, i):
-        # TODO: i should become i + 1 so that it starts from 1 like for other resources
-        # pattern-library--prod and journal--prod need to be migrated to this 1-based index if we do it
-        if hostname.count(".") == 1:
+        if _is_domain_2nd_level(hostname):
             # must be an alias as it is a 2nd-level domain like elifesciences.net
             hostedzone = hostname + "."
             ensure(context['elb'], "2nd-level domains aliases are only supported for ELBs")
@@ -758,3 +755,7 @@ def cnames(context):
                 ResourceRecords=[context['full_hostname']],
             )
     return [entry(hostname, i) for i, hostname in enumerate(context['subdomains'])]
+
+def _is_domain_2nd_level(hostname):
+    "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
+    return hostname.count(".") == 1
