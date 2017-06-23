@@ -975,9 +975,7 @@ redirects:
                     - e-lifejournal.com
                     - e-lifejournal.net
                     - elifejournal.org
-udo salt-call -l debug state.highstate
-               headers:
-                    - Host
+
 
     vagrant:
         ports:
