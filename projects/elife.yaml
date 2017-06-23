@@ -975,7 +975,8 @@ redirects:
                     - e-lifejournal.com
                     - e-lifejournal.net
                     - elifejournal.org
-                headers:
+udo salt-call -l debug state.highstate
+               headers:
                     - Host
 
     vagrant:
@@ -994,4 +995,20 @@ profiles:
         ports:
             - 22
             - 80
+
+evanthia-simpler-component:
+    subdomain: evanthia-simpler-component
+    repo: https://github.com/code56/node_web_server
+    formula-repo: https://github.com/code56/simpler-component-formula
+    aws:
+        type: t2.small
+        ports:
+            - 22
+    vagrant:
+        ram: 2048
+        ports:
+            1340: 80
+
+
+
 
