@@ -417,6 +417,7 @@ generic-cdn:
                 articles:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     pattern: articles/*
+            default-ttl: 86400 # seconds
             headers:
                 - Origin
 

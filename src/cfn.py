@@ -181,6 +181,9 @@ def _pick_node(instance_list, node):
     return instance
 
 def _check_want_to_be_running(stackname, autostart=False):
+    context = context_handler.load_context(stackname)
+    if not context['ec2']:
+        return False
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
     num_instances = len(instance_list)
     if num_instances >= 1:
