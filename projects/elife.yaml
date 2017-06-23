@@ -976,8 +976,8 @@ redirects:
                     - e-lifejournal.net
                     - elifejournal.org
 
-    headers:
-        - Host
+                headers:
+                    - Host
 
     vagrant:
         ports:
