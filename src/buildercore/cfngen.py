@@ -409,7 +409,9 @@ def merge_delta(stackname, delta_plus, delta_minus):
 def apply_delta(template, delta_plus, delta_minus):
     for component in delta_plus:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
-        template[component].update(delta_plus[component])
+        data = template.get(component, {})
+        data.update(delta_plus[component])
+        template[component] = data
     for component in delta_minus:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
         for title in delta_minus[component]:

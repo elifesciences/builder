@@ -159,6 +159,15 @@ class TestBuildercoreCfngen(base.BaseCase):
         cfngen.apply_delta(template, delta_plus={'Resources': {'C': 3}}, delta_minus={'Resources': {'B': 2}})
         self.assertEqual(template, {'Resources': {'A': 1, 'C': 3}})
 
+    def test_apply_delta_may_add_components_which_werent_there(self):
+        template = {
+            'Resources': {
+                'A': 1,
+            }
+        }
+        cfngen.apply_delta(template, delta_plus={'Outputs': {'B': 2}}, delta_minus={})
+        self.assertEqual(template, {'Resources': {'A': 1}, 'Outputs': {'B': 2}})
+
     def _base_context(self, project_name='dummy1'):
         stackname = '%s--test' % project_name
         context = cfngen.build_context(project_name, stackname=stackname)
