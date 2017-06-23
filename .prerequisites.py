@@ -68,7 +68,7 @@ mac_checks = [
 
     ('brew cask',
      {'osx': 'brew tap caskroom/cask'},
-     lambda x: sh('brew cask')
+     lambda x: sh('brew cask help')
      ),
 ]
 
