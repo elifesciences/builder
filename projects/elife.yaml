@@ -998,7 +998,7 @@ profiles:
 
 evanthia-simpler-component:
     subdomain: evanthia-simpler-component
-    repo: https://github.com/code56/node_web_server
+    repo: https://github.com/code56/nodeServerSimplerFig
     formula-repo: https://github.com/code56/simpler-component-formula
     aws:
         type: t2.small
