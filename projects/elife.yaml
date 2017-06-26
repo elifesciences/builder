@@ -976,7 +976,6 @@ redirects:
                     - e-lifejournal.com
                     - e-lifejournal.net
                     - elifejournal.org
-
                 headers:
                     - Host
 
