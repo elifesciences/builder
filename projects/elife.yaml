@@ -147,6 +147,7 @@ lax:
             - 443
             - 80:
                 cidr-ip: 10.0.2.0/24 # internal access only
+            - 8001 # bot-lax api
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
@@ -166,6 +167,7 @@ lax:
     vagrant:
         ports:
             1239: 80
+            1240: 8001
 
 api-gateway:
     subdomain: gateway # ll: gateway.elifesciences.org
