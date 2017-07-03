@@ -20,7 +20,7 @@ def load_context(stackname):
     path = local_context_file(stackname)
     if not os.path.exists(path):
         if not download_from_s3(stackname):
-            raise RuntimeError("We are missing the context file for %s, even on S3" % stackname)
+            raise MissingContextFile("We are missing the context file for %s, even on S3" % stackname)
     return json.load(open(path, 'r'))
 
 def write_context(stackname, context):
@@ -52,3 +52,6 @@ def download_from_s3(stackname, refresh=False):
         os.unlink(expected_path)
     s3.download(key, expected_path)
     return True
+
+class MissingContextFile(RuntimeError):
+    pass
