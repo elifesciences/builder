@@ -168,10 +168,17 @@ def aws_stack_list():
     return core.active_stack_names(region)
 
 def _pick_node(instance_list, node):
+    info = [n for n in instance_list]
+
+    def helpfn(pick):
+        node = pick - 1
+        return info[node]
+
     num_instances = len(instance_list)
     if num_instances > 1:
         if not node:
-            node = utils._pick('node', range(1, num_instances + 1))
+            # TODO print some more info: ip address, instance id
+            node = utils._pick('node', range(1, num_instances + 1), helpfn=helpfn)
         node = int(node) - 1
         instance = instance_list[int(node)]
     else:
