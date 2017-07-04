@@ -329,7 +329,7 @@ def template_delta(pname, context):
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
     updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$']
-    removable_title_pattern = '^CnameDNS\\d+$'
+    removable_title_patterns = ['^CnameDNS\\d+$', '^ExtDNS$']
     ec2_not_updatable_properties = ['ImageId', 'Tags', 'UserData']
 
     def _related_to_ec2(output):
@@ -342,6 +342,9 @@ def template_delta(pname, context):
 
     def _title_is_updatable(title):
         return len([p for p in updatable_title_patterns if re.match(p, title)]) > 0
+    def _title_is_removable(title):
+        return len([p for p in removable_title_patterns if re.match(p, title)]) > 0
+
     # start backward compatibility code
     # back for when EC2Instance was the title rather than EC2Instance1
     if 'EC2Instance' in old_template['Resources']:
@@ -386,7 +389,8 @@ def template_delta(pname, context):
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
-    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and re.match(removable_title_pattern, r)}
+    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
+    delta_minus_outputs = {o: v for o, v in old_template['Outputs'].iteritems() if o not in template['Outputs']}
 
     return (
         {
@@ -395,7 +399,7 @@ def template_delta(pname, context):
         },
         {
             'Resources': delta_minus_resources,
-            'Outputs': {},
+            'Outputs': delta_minus_outputs,
         }
     )
 
