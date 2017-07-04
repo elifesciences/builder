@@ -183,7 +183,7 @@ def _pick_node(instance_list, node):
 def _check_want_to_be_running(stackname, autostart=False):
     try:
         context = context_handler.load_context(stackname)
-    
+
         if 'ec2' in context:
             # early check can only be made if the instance actually declares
             # ec2 True/False in its context
