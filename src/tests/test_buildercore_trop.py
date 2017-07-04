@@ -611,6 +611,63 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
         )
 
+    def test_elasticache_redis_template(self):
+        extra = {
+            'stackname': 'project-with-elasticache-redis--prod',
+        }
+        context = cfngen.build_context('project-with-elasticache-redis', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('ElastiCache' in data['Resources'].keys())
+        self.assertTrue('ElastiCacheSecurityGroup' in data['Resources'].keys())
+        self.assertTrue('ElastiCacheSubnetGroup' in data['Resources'].keys())
+        self.assertEquals(
+            {
+                'CacheNodeType': 'cache.t2.small',
+                'CacheSecurityGroupNames': [{'Ref': 'ElastiCacheSecurityGroup'}],
+                'CacheSubnetGroupName': {'Ref': 'ElastiCacheSubnetGroup'},
+                'Engine': 'redis',
+                'NumCacheNodes': 1,
+            },
+            data['Resources']['ElastiCache']['Properties']
+        )
+        self.assertEquals(
+            {
+                'GroupDescription': 'ElastiCache security group',
+                'SecurityGroupIngress': [{
+                    # TODO: seems too much, make more stringent. Maybe it's just the example
+                    'CidrIp': '0.0.0.0/0',
+                    'FromPort': 6379,
+                    'IpProtocol': 'tcp',
+                    'ToPort': 6379,
+                }],
+                'VpcId': 'vpc-78a2071d',
+            },
+            data['Resources']['ElastiCacheSecurityGroup']['Properties']
+        )
+        self.assertEquals(
+            {
+                'Description': 'a group of subnets for this cache instance.',
+                'SubnetIds': ['subnet-foo', 'subnet-bar'],
+            },
+            data['Resources']['ElastiCacheSubnetGroup']['Properties']
+        )
+        self.assertTrue('ElastiCacheHost' in data['Outputs'])
+        self.assertEquals(
+            {
+                'Description': 'The hostname on which the cache accepts connections',
+                'Value': {'Fn::GetAtt': ['ElastiCache', 'RedisEndpoint.Address']}
+            },
+            data['Outputs']['ElastiCacheHost']
+        )
+        self.assertEquals(
+            {
+                'Description': 'The port number on which the cache accepts connections',
+                'Value': {'Fn::GetAtt': ['ElastiCache', 'RedisEndpoint.Port']}
+            },
+            data['Outputs']['ElastiCachePort']
+        )
+
     def _parse_json(self, dump):
         """Parses dump into a dictionary, using strings rather than unicode strings
 

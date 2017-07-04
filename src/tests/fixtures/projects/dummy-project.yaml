@@ -82,6 +82,15 @@ defaults:
             errors: null
             default-ttl: 300 # seconds
         subdomains: []
+        elasticache:
+            # elasticache defaults only used if an `rds` section present in project
+            type: cache.t2.small
+            engine: redis
+            subnets:
+                # TODO: are two required?
+                - subnet-foo
+                - subnet-bar
+            #version: "2.8.24"
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -321,3 +330,14 @@ project-with-db-params:
             params:
                 key1: val1
                 key2: val2
+
+project-with-elasticache-redis:
+    domain: False
+    intdomain: False
+    subdomain: www
+    aws:
+        ec2: false
+        ports:
+            - 80
+        elasticache:
+            engine: redis

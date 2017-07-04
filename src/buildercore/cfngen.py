@@ -66,6 +66,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'sqs': {},
         'ext': False,
         'cloudfront': False,
+        'elasticache': False,
     }
 
     context = copy.deepcopy(defaults)
@@ -151,6 +152,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     build_context_cloudfront(context, parameterize=_parameterize)
     build_context_subdomains(context)
+    build_context_elasticache(context)
 
     return context
 
@@ -210,6 +212,9 @@ def complete_domain(host, default_main):
 
 def build_context_subdomains(context):
     context['subdomains'] = [complete_domain(s, context['project']['domain']) for s in context['project']['aws'].get('subdomains', [])]
+
+def build_context_elasticache(context):
+    context['elasticache'] = context['project']['aws']['elasticache']
 
 def choose_config(stackname):
     (pname, instance_id) = core.parse_stackname(stackname)

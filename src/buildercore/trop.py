@@ -11,7 +11,7 @@ it to the correct file etc."""
 
 from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
-from troposphere import s3, cloudfront, elasticloadbalancing as elb
+from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 
 from functools import partial
 import logging
@@ -40,6 +40,9 @@ CLOUDFRONT_TITLE = 'CloudFrontCDN'
 # from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
 CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
 CLOUDFRONT_ERROR_ORIGIN_ID = 'ErrorsOrigin'
+ELASTICACHE_TITLE = 'ElastiCache'
+ELASTICACHE_SECURITY_GROUP_TITLE = 'ElastiCacheSecurityGroup'
+ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 
 KEYPAIR = "KeyName"
 
@@ -684,6 +687,48 @@ def render_cloudfront(context, template, origin_hostname):
     for dns in external_dns_cloudfront(context):
         template.add_resource(dns)
 
+def elasticache_security(context):
+    "returns a security group for the ElastiCache instances. this security group only allows access within the VPC"
+    engine_ports = {
+        'redis': 6379,
+    }
+    ingress_ports = [engine_ports[context['elasticache']['engine']]]
+    return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
+                          context['project']['aws']['vpc-id'],
+                          ingress_ports,
+                          "ElastiCache security group")
+
+
+def render_elasticache(context, template):
+    ensure(context['elasticache']['engine'] == 'redis', 'We only support Redis as ElastiCache engine at this time')
+
+    # TODO: better name
+    sg = elasticache_security(context)
+    template.add_resource(sg)
+
+    subnet_group = elasticache.SubnetGroup(
+        ELASTICACHE_SUBNET_GROUP_TITLE,
+        Description="a group of subnets for this cache instance.",
+        SubnetIds=context['elasticache']['subnets']
+    )
+    template.add_resource(subnet_group)
+
+    template.add_resource(elasticache.CacheCluster(
+        ELASTICACHE_TITLE,
+        CacheNodeType='cache.t2.small',
+        CacheSecurityGroupNames=[Ref(sg)],
+        CacheSubnetGroupName=Ref(subnet_group),
+        Engine='redis',
+        # we only support Redis, and it only supports 1 node
+        NumCacheNodes=1
+    ))
+
+    outputs = [
+        mkoutput("ElastiCacheHost", "The hostname on which the cache accepts connections", (ELASTICACHE_TITLE, "RedisEndpoint.Address")),
+        mkoutput("ElastiCachePort", "The port number on which the cache accepts connections", (ELASTICACHE_TITLE, "RedisEndpoint.Port")),
+    ]
+    map(template.add_output, outputs)
+
 def render(context):
     template = Template()
 
@@ -712,6 +757,9 @@ def render(context):
 
     if context['cloudfront']:
         render_cloudfront(context, template, origin_hostname=context['full_hostname'])
+
+    if context['elasticache']:
+        render_elasticache(context, template)
 
     return template.to_json()
 

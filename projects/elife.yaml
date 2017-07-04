@@ -100,6 +100,11 @@ defaults:
             errors: null
             default-ttl: 0 # seconds
         subdomains: []
+        elasticache:
+            # elasticache defaults only used if an `rds` section present in project
+            type: cache.t2.small
+            engine: redis
+
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
