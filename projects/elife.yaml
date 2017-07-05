@@ -307,6 +307,9 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
+        cachetest:
+            elasticache:
+                engine: redis
     vagrant:
         ram: 4096
         ports:
