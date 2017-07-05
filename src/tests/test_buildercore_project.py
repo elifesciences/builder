@@ -10,7 +10,7 @@ ALL_PROJECTS = [
     'just-some-sns', 'project-with-sqs', 'project-with-s3',
     'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
     'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-cluster', 'project-with-stickiness',
-    'project-with-cluster-integration-tests', 'project-with-db-params',
+    'project-with-cluster-integration-tests', 'project-with-db-params', 'project-with-elasticache-redis',
 ]
 
 class TestProject(base.BaseCase):
