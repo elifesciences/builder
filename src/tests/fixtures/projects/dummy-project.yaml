@@ -86,11 +86,12 @@ defaults:
             # elasticache defaults only used if an `rds` section present in project
             type: cache.t2.small
             engine: redis
+            az: us-east-1a
             subnets:
                 # TODO: are two required?
                 - subnet-foo
                 - subnet-bar
-            #version: "2.8.24"
+            version: "2.8.24"
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

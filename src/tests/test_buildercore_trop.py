@@ -1,4 +1,5 @@
 import json, yaml
+import os
 from os.path import join
 from . import base
 from buildercore import cfngen, trop
@@ -7,9 +8,10 @@ class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
         self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
+        os.environ['LOGNAME'] = 'my_user'
 
     def tearDown(self):
-        pass
+        del os.environ['LOGNAME']
 
     def test_rds_template_contains_rds(self):
         extra = {
@@ -627,7 +629,15 @@ class TestBuildercoreTrop(base.BaseCase):
                 'CacheSecurityGroupNames': [{'Ref': 'ElastiCacheSecurityGroup'}],
                 'CacheSubnetGroupName': {'Ref': 'ElastiCacheSubnetGroup'},
                 'Engine': 'redis',
+                'EngineVersion': '2.8.24',
+                'PreferredAvailabilityZone': 'us-east-1a',
                 'NumCacheNodes': 1,
+                'Tags': [
+                    {'Key':'Environment', 'Value': 'prod'},
+                    {'Key':'Name', 'Value': 'project-with-elasticache-redis--prod'},
+                    {'Key':'Owner', 'Value': 'my_user'},
+                    {'Key':'Project', 'Value': 'project-with-elasticache-redis'},
+                ]
             },
             data['Resources']['ElastiCache']['Properties']
         )

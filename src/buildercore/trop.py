@@ -10,7 +10,7 @@ data called a `context`.
 it to the correct file etc."""
 
 from . import utils, bvars
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 
 from functools import partial
@@ -117,7 +117,7 @@ def _generic_tags(context):
     }
 
 def instance_tags(context, node=None):
-    # NOTE: RDS instances also call this function
+    # NOTE: RDS and Elasticache instances also call this function
     tags = _generic_tags(context)
     if node:
         # this instance is part of a cluster
@@ -719,8 +719,11 @@ def render_elasticache(context, template):
         CacheSecurityGroupNames=[Ref(sg)],
         CacheSubnetGroupName=Ref(subnet_group),
         Engine='redis',
+        EngineVersion=context['elasticache']['version'],
+        PreferredAvailabilityZone=context['elasticache']['az'],
         # we only support Redis, and it only supports 1 node
-        NumCacheNodes=1
+        NumCacheNodes=1,
+        Tags=Tags(**_generic_tags(context))
     ))
 
     outputs = [
