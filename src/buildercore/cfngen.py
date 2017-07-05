@@ -322,15 +322,17 @@ def regenerate_stack(pname, **more_context):
     delta_plus, delta_minus = template_delta(pname, context)
     return context, delta_plus, delta_minus
 
+
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$']
+REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$']
+EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
+
 def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Most of the existing resources are treated as immutable and not put in the delta. Some that support updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    updatable_title_patterns = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$']
-    removable_title_pattern = '^CnameDNS\\d+$'
-    ec2_not_updatable_properties = ['ImageId', 'Tags', 'UserData']
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -341,7 +343,11 @@ def template_delta(pname, context):
         return False
 
     def _title_is_updatable(title):
-        return len([p for p in updatable_title_patterns if re.match(p, title)]) > 0
+        return len([p for p in UPDATABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+
+    def _title_is_removable(title):
+        return len([p for p in REMOVABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+
     # start backward compatibility code
     # back for when EC2Instance was the title rather than EC2Instance1
     if 'EC2Instance' in old_template['Resources']:
@@ -364,7 +370,7 @@ def template_delta(pname, context):
         # ignore UserData changes, it's not useful to update them and cause
         # a needless reboot
         if title_in_old['Type'] == 'AWS::EC2::Instance':
-            for property_name in ec2_not_updatable_properties:
+            for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
                 title_in_old['Properties'][property_name] = None
                 title_in_new['Properties'][property_name] = None
         return title_in_old != title_in_new
@@ -386,7 +392,8 @@ def template_delta(pname, context):
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
-    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and re.match(removable_title_pattern, r)}
+    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
+    delta_minus_outputs = {o: v for o, v in old_template['Outputs'].iteritems() if o not in template['Outputs']}
 
     return (
         {
@@ -395,7 +402,7 @@ def template_delta(pname, context):
         },
         {
             'Resources': delta_minus_resources,
-            'Outputs': {},
+            'Outputs': delta_minus_outputs,
         }
     )
 

@@ -987,6 +987,7 @@ redirects:
             1262: 80
 
 profiles:
+    domain: false
     subdomain: profiles
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
