@@ -214,7 +214,8 @@ def build_context_subdomains(context):
     context['subdomains'] = [complete_domain(s, context['project']['domain']) for s in context['project']['aws'].get('subdomains', [])]
 
 def build_context_elasticache(context):
-    context['elasticache'] = context['project']['aws']['elasticache']
+    if 'elasticache' in context['project']['aws']:
+        context['elasticache'] = context['project']['aws']['elasticache']
 
 def choose_config(stackname):
     (pname, instance_id) = core.parse_stackname(stackname)

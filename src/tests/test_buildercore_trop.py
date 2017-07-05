@@ -633,10 +633,10 @@ class TestBuildercoreTrop(base.BaseCase):
                 'PreferredAvailabilityZone': 'us-east-1a',
                 'NumCacheNodes': 1,
                 'Tags': [
-                    {'Key':'Environment', 'Value': 'prod'},
-                    {'Key':'Name', 'Value': 'project-with-elasticache-redis--prod'},
-                    {'Key':'Owner', 'Value': 'my_user'},
-                    {'Key':'Project', 'Value': 'project-with-elasticache-redis'},
+                    {'Key': 'Environment', 'Value': 'prod'},
+                    {'Key': 'Name', 'Value': 'project-with-elasticache-redis--prod'},
+                    {'Key': 'Owner', 'Value': 'my_user'},
+                    {'Key': 'Project', 'Value': 'project-with-elasticache-redis'},
                 ]
             },
             data['Resources']['ElastiCache']['Properties']
