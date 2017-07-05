@@ -715,14 +715,14 @@ def render_elasticache(context, template):
     template.add_resource(elasticache.CacheCluster(
         ELASTICACHE_TITLE,
         CacheNodeType='cache.t2.small',
-        CacheSecurityGroupNames=[Ref(cache_security_group)],
         CacheSubnetGroupName=Ref(subnet_group),
         Engine='redis',
         EngineVersion=context['elasticache']['version'],
         PreferredAvailabilityZone=context['elasticache']['az'],
         # we only support Redis, and it only supports 1 node
         NumCacheNodes=1,
-        Tags=Tags(**_generic_tags(context))
+        Tags=Tags(**_generic_tags(context)),
+        VpcSecurityGroupIds=[Ref(cache_security_group)],
     ))
 
     outputs = [

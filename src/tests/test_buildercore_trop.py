@@ -626,7 +626,6 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEquals(
             {
                 'CacheNodeType': 'cache.t2.small',
-                'CacheSecurityGroupNames': [{'Ref': 'ElastiCacheSecurityGroup'}],
                 'CacheSubnetGroupName': {'Ref': 'ElastiCacheSubnetGroup'},
                 'Engine': 'redis',
                 'EngineVersion': '2.8.24',
@@ -637,7 +636,8 @@ class TestBuildercoreTrop(base.BaseCase):
                     {'Key': 'Name', 'Value': 'project-with-elasticache-redis--prod'},
                     {'Key': 'Owner', 'Value': 'my_user'},
                     {'Key': 'Project', 'Value': 'project-with-elasticache-redis'},
-                ]
+                ],
+                'VpcSecurityGroupIds': [{'Ref': 'ElastiCacheSecurityGroup'}],
             },
             data['Resources']['ElastiCache']['Properties']
         )
