@@ -67,8 +67,8 @@ mac_checks = [
      {'osx': 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'}),
 
     ('brew cask',
-     {'osx': 'brew install caskroom/cask/brew-cask'},
-     lambda x: sh('which brew &> /dev/null && brew list | grep brew-cask')
+     {'osx': 'brew tap caskroom/cask'},
+     lambda x: sh('brew cask help')
      ),
 ]
 
