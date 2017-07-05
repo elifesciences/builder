@@ -431,7 +431,7 @@ def update_ec2_stack(stackname, concurrency):
             put(pem, "/root/.ssh/id_rsa", use_sudo=True)
 
         # write out environment config so Salt can read CFN outputs
-        write_environment_info(stackname)
+        write_environment_info(stackname, overwrite=True)
 
         salt_version = pdata['salt']
         install_master_flag = str(is_master).lower() # ll: 'true'
