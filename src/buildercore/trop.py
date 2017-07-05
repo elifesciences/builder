@@ -687,7 +687,7 @@ def render_cloudfront(context, template, origin_hostname):
     for dns in external_dns_cloudfront(context):
         template.add_resource(dns)
 
-def elasticache_security(context):
+def elasticache_security_group(context):
     "returns a security group for the ElastiCache instances. this security group only allows access within the VPC"
     engine_ports = {
         'redis': 6379,
@@ -702,9 +702,8 @@ def elasticache_security(context):
 def render_elasticache(context, template):
     ensure(context['elasticache']['engine'] == 'redis', 'We only support Redis as ElastiCache engine at this time')
 
-    # TODO: better name
-    sg = elasticache_security(context)
-    template.add_resource(sg)
+    cache_security_group = elasticache_security_group(context)
+    template.add_resource(cache_security_group)
 
     subnet_group = elasticache.SubnetGroup(
         ELASTICACHE_SUBNET_GROUP_TITLE,
@@ -716,7 +715,7 @@ def render_elasticache(context, template):
     template.add_resource(elasticache.CacheCluster(
         ELASTICACHE_TITLE,
         CacheNodeType='cache.t2.small',
-        CacheSecurityGroupNames=[Ref(sg)],
+        CacheSecurityGroupNames=[Ref(cache_security_group)],
         CacheSubnetGroupName=Ref(subnet_group),
         Engine='redis',
         EngineVersion=context['elasticache']['version'],

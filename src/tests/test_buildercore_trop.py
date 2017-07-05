@@ -645,7 +645,7 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'GroupDescription': 'ElastiCache security group',
                 'SecurityGroupIngress': [{
-                    # TODO: seems too much, make more stringent. Maybe it's just the example
+                    # access is dealt with at the subnet level
                     'CidrIp': '0.0.0.0/0',
                     'FromPort': 6379,
                     'IpProtocol': 'tcp',
