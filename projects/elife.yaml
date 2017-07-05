@@ -102,8 +102,13 @@ defaults:
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
-            type: cache.t2.small
+            type: cache.t2.small # 1.55 GB of memory, ~$25/mo
             engine: redis
+            az: us-east-1d # alternative: us-east-1e to match EC2 instances
+            subnets:
+                - subnet-20275c68 # elife-cache-subnet-1
+                - subnet-c4033af8 # elife-cache-subnet-2
+            version: "2.8.24" # closest to builder-base-formula redis.sls
 
     aws-alt:
         fresh:
