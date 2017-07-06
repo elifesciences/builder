@@ -621,11 +621,13 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         self.assertTrue('ElastiCache' in data['Resources'].keys())
+        self.assertTrue('ElastiCacheParameterGroup' in data['Resources'].keys())
         self.assertTrue('ElastiCacheSecurityGroup' in data['Resources'].keys())
         self.assertTrue('ElastiCacheSubnetGroup' in data['Resources'].keys())
         self.assertEquals(
             {
                 'CacheNodeType': 'cache.t2.small',
+                'CacheParameterGroupName': {'Ref': 'ElastiCacheParameterGroup'},
                 'CacheSubnetGroupName': {'Ref': 'ElastiCacheSubnetGroup'},
                 'Engine': 'redis',
                 'EngineVersion': '2.8.24',
@@ -640,6 +642,16 @@ class TestBuildercoreTrop(base.BaseCase):
                 'VpcSecurityGroupIds': [{'Ref': 'ElastiCacheSecurityGroup'}],
             },
             data['Resources']['ElastiCache']['Properties']
+        )
+        self.assertEquals(
+            {
+                'CacheParameterGroupFamily': 'redis2.8',
+                'Description': 'ElastiCache parameter group for project-with-elasticache-redis--prod',
+                'Properties': {
+                    'maxmemory-policy': 'volatile-ttl',
+                },
+            },
+            data['Resources']['ElastiCacheParameterGroup']['Properties']
         )
         self.assertEquals(
             {

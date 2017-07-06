@@ -109,6 +109,8 @@ defaults:
                 - subnet-20275c68 # elife-cache-subnet-1
                 - subnet-c4033af8 # elife-cache-subnet-2
             version: "2.8.24" # closest to builder-base-formula redis.sls
+            configuration:
+                maxmemory-policy: volatile-ttl
 
     aws-alt:
         fresh:

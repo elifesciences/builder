@@ -43,6 +43,7 @@ CLOUDFRONT_ERROR_ORIGIN_ID = 'ErrorsOrigin'
 ELASTICACHE_TITLE = 'ElastiCache'
 ELASTICACHE_SECURITY_GROUP_TITLE = 'ElastiCacheSecurityGroup'
 ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
+ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
 
@@ -712,9 +713,18 @@ def render_elasticache(context, template):
     )
     template.add_resource(subnet_group)
 
+    parameter_group = elasticache.ParameterGroup(
+        ELASTICACHE_PARAMETER_GROUP_TITLE,
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s' % context['stackname'],
+        Properties=context['elasticache']['configuration']
+    )
+    template.add_resource(parameter_group)
+
     template.add_resource(elasticache.CacheCluster(
         ELASTICACHE_TITLE,
         CacheNodeType='cache.t2.small',
+        CacheParameterGroupName=Ref(parameter_group),
         CacheSubnetGroupName=Ref(subnet_group),
         Engine='redis',
         EngineVersion=context['elasticache']['version'],
