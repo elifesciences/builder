@@ -10,8 +10,8 @@ data called a `context`.
 it to the correct file etc."""
 
 from . import utils, bvars
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter
-from troposphere import s3, cloudfront, elasticloadbalancing as elb
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
+from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 
 from functools import partial
 import logging
@@ -40,6 +40,10 @@ CLOUDFRONT_TITLE = 'CloudFrontCDN'
 # from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
 CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
 CLOUDFRONT_ERROR_ORIGIN_ID = 'ErrorsOrigin'
+ELASTICACHE_TITLE = 'ElastiCache'
+ELASTICACHE_SECURITY_GROUP_TITLE = 'ElastiCacheSecurityGroup'
+ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
+ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
 
@@ -114,7 +118,7 @@ def _generic_tags(context):
     }
 
 def instance_tags(context, node=None):
-    # NOTE: RDS instances also call this function
+    # NOTE: RDS and Elasticache instances also call this function
     tags = _generic_tags(context)
     if node:
         # this instance is part of a cluster
@@ -684,6 +688,59 @@ def render_cloudfront(context, template, origin_hostname):
     for dns in external_dns_cloudfront(context):
         template.add_resource(dns)
 
+def elasticache_security_group(context):
+    "returns a security group for the ElastiCache instances. this security group only allows access within the VPC"
+    engine_ports = {
+        'redis': 6379,
+    }
+    ingress_ports = [engine_ports[context['elasticache']['engine']]]
+    return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
+                          context['project']['aws']['vpc-id'],
+                          ingress_ports,
+                          "ElastiCache security group")
+
+
+def render_elasticache(context, template):
+    ensure(context['elasticache']['engine'] == 'redis', 'We only support Redis as ElastiCache engine at this time')
+
+    cache_security_group = elasticache_security_group(context)
+    template.add_resource(cache_security_group)
+
+    subnet_group = elasticache.SubnetGroup(
+        ELASTICACHE_SUBNET_GROUP_TITLE,
+        Description="a group of subnets for this cache instance.",
+        SubnetIds=context['elasticache']['subnets']
+    )
+    template.add_resource(subnet_group)
+
+    parameter_group = elasticache.ParameterGroup(
+        ELASTICACHE_PARAMETER_GROUP_TITLE,
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s' % context['stackname'],
+        Properties=context['elasticache']['configuration']
+    )
+    template.add_resource(parameter_group)
+
+    template.add_resource(elasticache.CacheCluster(
+        ELASTICACHE_TITLE,
+        CacheNodeType='cache.t2.small',
+        CacheParameterGroupName=Ref(parameter_group),
+        CacheSubnetGroupName=Ref(subnet_group),
+        Engine='redis',
+        EngineVersion=context['elasticache']['version'],
+        PreferredAvailabilityZone=context['elasticache']['az'],
+        # we only support Redis, and it only supports 1 node
+        NumCacheNodes=1,
+        Tags=Tags(**_generic_tags(context)),
+        VpcSecurityGroupIds=[Ref(cache_security_group)],
+    ))
+
+    outputs = [
+        mkoutput("ElastiCacheHost", "The hostname on which the cache accepts connections", (ELASTICACHE_TITLE, "RedisEndpoint.Address")),
+        mkoutput("ElastiCachePort", "The port number on which the cache accepts connections", (ELASTICACHE_TITLE, "RedisEndpoint.Port")),
+    ]
+    map(template.add_output, outputs)
+
 def render(context):
     template = Template()
 
@@ -712,6 +769,9 @@ def render(context):
 
     if context['cloudfront']:
         render_cloudfront(context, template, origin_hostname=context['full_hostname'])
+
+    if context['elasticache']:
+        render_elasticache(context, template)
 
     return template.to_json()
 

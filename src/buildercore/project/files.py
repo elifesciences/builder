@@ -75,7 +75,7 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
 
     # exceptions.
     # these values *shouldn't* be merged if they *don't* exist in the project
-    aws_excluding = ['rds', 'ext', 'elb', 'cloudfront']
+    aws_excluding = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache']
     excluding = [
         'aws',
         'vagrant',

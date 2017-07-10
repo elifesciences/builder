@@ -1,4 +1,5 @@
 import json, yaml
+import os
 from os.path import join
 from . import base
 from buildercore import cfngen, trop
@@ -7,9 +8,10 @@ class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
         self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
+        os.environ['LOGNAME'] = 'my_user'
 
     def tearDown(self):
-        pass
+        del os.environ['LOGNAME']
 
     def test_rds_template_contains_rds(self):
         extra = {
@@ -609,6 +611,83 @@ class TestBuildercoreTrop(base.BaseCase):
                 },
             ],
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
+        )
+
+    def test_elasticache_redis_template(self):
+        extra = {
+            'stackname': 'project-with-elasticache-redis--prod',
+        }
+        context = cfngen.build_context('project-with-elasticache-redis', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('ElastiCache' in data['Resources'].keys())
+        self.assertTrue('ElastiCacheParameterGroup' in data['Resources'].keys())
+        self.assertTrue('ElastiCacheSecurityGroup' in data['Resources'].keys())
+        self.assertTrue('ElastiCacheSubnetGroup' in data['Resources'].keys())
+        self.assertEquals(
+            {
+                'CacheNodeType': 'cache.t2.small',
+                'CacheParameterGroupName': {'Ref': 'ElastiCacheParameterGroup'},
+                'CacheSubnetGroupName': {'Ref': 'ElastiCacheSubnetGroup'},
+                'Engine': 'redis',
+                'EngineVersion': '2.8.24',
+                'PreferredAvailabilityZone': 'us-east-1a',
+                'NumCacheNodes': 1,
+                'Tags': [
+                    {'Key': 'Environment', 'Value': 'prod'},
+                    {'Key': 'Name', 'Value': 'project-with-elasticache-redis--prod'},
+                    {'Key': 'Owner', 'Value': 'my_user'},
+                    {'Key': 'Project', 'Value': 'project-with-elasticache-redis'},
+                ],
+                'VpcSecurityGroupIds': [{'Ref': 'ElastiCacheSecurityGroup'}],
+            },
+            data['Resources']['ElastiCache']['Properties']
+        )
+        self.assertEquals(
+            {
+                'CacheParameterGroupFamily': 'redis2.8',
+                'Description': 'ElastiCache parameter group for project-with-elasticache-redis--prod',
+                'Properties': {
+                    'maxmemory-policy': 'volatile-ttl',
+                },
+            },
+            data['Resources']['ElastiCacheParameterGroup']['Properties']
+        )
+        self.assertEquals(
+            {
+                'GroupDescription': 'ElastiCache security group',
+                'SecurityGroupIngress': [{
+                    # access is dealt with at the subnet level
+                    'CidrIp': '0.0.0.0/0',
+                    'FromPort': 6379,
+                    'IpProtocol': 'tcp',
+                    'ToPort': 6379,
+                }],
+                'VpcId': 'vpc-78a2071d',
+            },
+            data['Resources']['ElastiCacheSecurityGroup']['Properties']
+        )
+        self.assertEquals(
+            {
+                'Description': 'a group of subnets for this cache instance.',
+                'SubnetIds': ['subnet-foo', 'subnet-bar'],
+            },
+            data['Resources']['ElastiCacheSubnetGroup']['Properties']
+        )
+        self.assertTrue('ElastiCacheHost' in data['Outputs'])
+        self.assertEquals(
+            {
+                'Description': 'The hostname on which the cache accepts connections',
+                'Value': {'Fn::GetAtt': ['ElastiCache', 'RedisEndpoint.Address']}
+            },
+            data['Outputs']['ElastiCacheHost']
+        )
+        self.assertEquals(
+            {
+                'Description': 'The port number on which the cache accepts connections',
+                'Value': {'Fn::GetAtt': ['ElastiCache', 'RedisEndpoint.Port']}
+            },
+            data['Outputs']['ElastiCachePort']
         )
 
     def _parse_json(self, dump):
