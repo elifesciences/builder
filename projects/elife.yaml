@@ -469,6 +469,7 @@ journal-cms:
         end2end:
             description: production-like environment. backed by RDS
             rds:
+                type: db.t2.small
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
@@ -477,6 +478,7 @@ journal-cms:
         continuumtest:
             description: production-like environment.
             rds:
+                type: db.t2.small
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
@@ -485,6 +487,7 @@ journal-cms:
         prod:
             description: production environment. backed by RDS
             rds:
+                type: db.t2.small
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
