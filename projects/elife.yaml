@@ -240,6 +240,8 @@ journal:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:
                 cluster-size: 2
+            elasticache:
+                engine: redis
             elb:
                 stickiness:
                     type: cookie
@@ -264,6 +266,8 @@ journal:
                         503: "/5xx.html"
                     protocol: http
         continuumtest:
+            elasticache:
+                engine: redis
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -282,6 +286,8 @@ journal:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
                 cluster-size: 3
+            elasticache:
+                engine: redis
             elb:
                 stickiness:
                     type: cookie
