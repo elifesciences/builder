@@ -507,7 +507,7 @@ journal-cms:
 
 elife-dashboard:
     subdomain: ppp-dash # ppp-dash.elifesciences.org
-    repo: ssh://git@github.com/elifesciences/elife-dashboard
+    repo: https://github.com/elifesciences/elife-dashboard
     formula-repo: https://github.com/elifesciences/elife-dashboard-formula
     default-branch: develop
     aws:
