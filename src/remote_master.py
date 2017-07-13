@@ -11,6 +11,8 @@ from buildercore import project
 from decorators import mastertask
 
 def install_formula(pname, formula_url):
+    if formula_url.startswith("ssh://"):
+        formula_url = formula_url[6:]
     return local("/bin/bash /opt/builder/scripts/update-master-formula.sh %s %s" % (pname, formula_url))
 
 def install_update_all_project_formulas():
