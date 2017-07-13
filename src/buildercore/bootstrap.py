@@ -450,6 +450,8 @@ def update_ec2_stack(stackname, concurrency):
 
         if is_master:
             builder_private_repo = pdata['private-repo']
+            if builder_private_repo.startswith('ssh://'):
+                builder_private_repo = builder_private_repo[6:]
             run_script('init-master.sh', stackname, builder_private_repo)
             run_script('update-master.sh', stackname, builder_private_repo)
 

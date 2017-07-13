@@ -18,4 +18,4 @@ def access(repo_url):
     return {
         'https': http_access,
         'ssh': ssh_access,
-    }[protocol](repo_url)
+    }[protocol](bits[1])
