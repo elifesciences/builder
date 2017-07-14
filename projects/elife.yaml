@@ -882,6 +882,7 @@ reviewer-suggestions:
         ports:
             - 22
             - 80
+            - 443
         rds:
             storage: 5
         ext:
