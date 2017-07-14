@@ -21,3 +21,9 @@ Then run:
 	./bldr update:master-server--prod
 
 to complete the update. All Salt states shown should be green.
+
+## updating the master server
+
+Whenever a change is made to the formulas or to your builder-private repository, the master server needs to be updated. It will do so every hour through a cron job, but you can always do this immediately after you want a change to be applied with:
+
+	./bldr update:master-server--prod
