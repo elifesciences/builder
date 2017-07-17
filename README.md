@@ -87,6 +87,10 @@ AWS:
 * [creating a master server](docs/master-server.md)
 * [caveats](docs/caveats.md)
 
+Troubleshooting:
+
+* [ssh-agent](docs/ssh-agent.md)
+
 Development
 * [adding projects](docs/adding-projects.md)
 * [technology](docs/tech.md)
