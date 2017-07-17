@@ -1,5 +1,6 @@
 from fabric.api import task, local
 from buildercore import project, utils as core_utils
+from buildercore.utils import ensure
 from decorators import requires_project, echo_output
 import utils
 
@@ -7,7 +8,8 @@ import utils
 @requires_project
 @echo_output
 def data(pname, output_format=None):
-    assert output_format in [None, 'json', 'yaml'], "unknown output format %r" % output_format
+    "given a project name, returns the fully realized project description data."
+    ensure(output_format in [None, 'json', 'yaml'], "unknown output format %r" % output_format)
     formatters = {
         'json': core_utils.json_dumps,
         'yaml': core_utils.ordered_dump,

@@ -174,6 +174,7 @@ lax:
             description: RDS backed
             rds:
                 storage: 5
+                multi-az: true
             ext:
                 size: 10 # GB
     vagrant:
@@ -194,7 +195,7 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
-            #
+
     aws-alt:
         end2end:
             cloudfront:
@@ -377,6 +378,7 @@ elife-metrics:
         prod:
             description: production environment for metrics. RDS backed
             rds:
+                multi-az: true
                 storage: 10
     vagrant:
         ports:
@@ -496,6 +498,7 @@ journal-cms:
                 type: db.t2.medium
                 engine: MySQL
                 version: '5.7'
+                multi-az: true
                 storage: 12 # GB
             ext:
                 size: 30 # GB
@@ -524,6 +527,7 @@ elife-dashboard:
             description: production environment. backed by RDS
             rds:
                 storage: 5
+                multi-az: true
     vagrant:
         ports:
             1324: 80
@@ -651,6 +655,7 @@ anonymous:
         ram: 1024
 
 # used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
+# this is a free form instance jats4r can do what they like with
 jats4r:
     aws:
         ec2:
@@ -660,6 +665,20 @@ jats4r:
             - 22
             - 80
             - 443
+
+# distinct from the 'jats4r' project, this runs an instance of the validator only
+jats4r-validator:
+    #domain: jats4r.org
+    subdomain: validator # validator.jats4r.org
+    repo: https://github.com/jats4r/validator
+    formula-repo: https://github.com/elifesciences/jats4r-validator-formula
+    aws:
+        ports:
+            - 22
+            - 80
+    vagrant:
+        ports:
+            1239: 80
 
 medium:
     description: microservice that gives access to eLife posts on Medium.com
@@ -790,19 +809,6 @@ personalised-covers:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
 
-jats4r-validator:
-    #domain: jats4r.org
-    subdomain: validator # validator.jats4r.org
-    repo: https://github.com/jats4r/validator
-    formula-repo: https://github.com/elifesciences/jats4r-validator-formula
-    aws:
-        ports:
-            - 22
-            - 80
-    vagrant:
-        ports:
-            1239: 80
-
 statusbase:
     subdomain: statusbase
     repo: https://github.com/ep320/statusbase
@@ -840,6 +846,7 @@ observer:
             description: production environment. RDS backed
             rds:
                 storage: 10
+                multi-az: true
 
     vagrant:
         ram: 2048 # metabase, mostly
@@ -889,6 +896,10 @@ reviewer-suggestions:
             # external hdd
             size: 100 # GB
             device: /dev/sdf
+    aws-alt:
+        prod:
+            rds:
+                multi-az: true
     vagrant:
         ports:
             1241: 80
