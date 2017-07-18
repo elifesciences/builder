@@ -100,6 +100,15 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.assertEqual(delta_plus['Resources'].keys(), ['StackSecurityGroup'])
         self.assertEqual(delta_plus['Outputs'].keys(), [])
 
+    def test_template_delta_includes_parts_of_rds(self):
+        "we want to update RDS instances in place to avoid data loss"
+        context = self._base_context('dummy2')
+        context['project']['aws']['rds']['multi-az'] = True
+        (delta_plus, delta_minus) = cfngen.template_delta('project-with-cloudfront-minimal', context)
+        self.assertEqual(delta_plus['Resources'].keys(), ['AttachedDB'])
+        self.assertEqual(delta_plus['Resources']['AttachedDB']['Properties']['MultiAZ'], 'true')
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
+
     def test_template_delta_includes_parts_of_cloudfront(self):
         "we want to update CDNs in place given how long it takes to recreate them"
         context = self._base_context('project-with-cloudfront-minimal')
