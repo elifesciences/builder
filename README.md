@@ -21,7 +21,7 @@ message. Updating in the future is as simple as:
     git pull
     ./update.sh
 
-If you are outside of the eLife organization, make sure the `write-context-to-s3` and `write-keypairs-to-s3` keys in `settings.yml` keys are `False. Their use is not supported.
+If you are outside of the eLife organization, make sure to set the `write-context-to-s3` and `write-keypairs-to-s3` keys in `settings.yml` keys are `False`. Their use is related to backing up information about the generated resources on an S3 bucket, but the customization of this bucket is not supported yet.
 
 ## Next
 
