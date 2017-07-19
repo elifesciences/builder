@@ -137,9 +137,7 @@ def refresh(stackname, context):
             nodename = old_buildvars.get('nodename')
             if nodename: # ll: "elife-dashboard--prod--1"
                 node = nodename.split('--')[-1]
-                if node.isdigit():
-                    node = int(node)
-                else:
+                if not node.isdigit():
                     LOG.warning("nodename ends in a non-digit node: %s", nodename)
                     node = None
 
@@ -149,7 +147,7 @@ def refresh(stackname, context):
                 # and that there is only 1 in the 'cluster'.
                 node = 1
 
-        new_buildvars = trop.build_vars(context, node)
+        new_buildvars = trop.build_vars(context, int(node))
         new_buildvars['revision'] = old_buildvars.get('revision')
         _update_remote_bvars(stackname, new_buildvars)
 
