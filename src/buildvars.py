@@ -130,7 +130,24 @@ def refresh(stackname, context):
 
     def _refresh_buildvars():
         old_buildvars = _retrieve_build_vars()
-        new_buildvars = trop.build_vars(context, old_buildvars['node'])
+
+        node = old_buildvars.get('node')
+        if not node or not str(node).isdigit():
+            # (very) old buildvars. try parsing 'nodename'
+            nodename = old_buildvars.get('nodename')
+            if nodename: # ll: "elife-dashboard--prod--1"
+                node = nodename.split('--')[-1]
+                if not node.isdigit():
+                    LOG.warning("nodename ends in a non-digit node: %s" % nodename)
+                    node = None
+
+            if not node:
+                # no 'node' and no (valid) 'nodename' present
+                # assume this stack was created before nodes were a thing
+                # and that there is only 1 in the 'cluster'.
+                node = 1
+
+        new_buildvars = trop.build_vars(context, node)
         new_buildvars['revision'] = old_buildvars.get('revision')
         _update_remote_bvars(stackname, new_buildvars)
 
