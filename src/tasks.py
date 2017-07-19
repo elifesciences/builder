@@ -117,7 +117,6 @@ def fetch_cert(stackname):
         # instances but don't adhere to the naming yet.
         old_prods = [
             'elife-ci-2015-11-04',
-            'elife-jira-2015-06-02'
         ]
         if not is_prod and stackname in old_prods:
             is_prod = True

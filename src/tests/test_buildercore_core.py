@@ -53,7 +53,6 @@ class SimpleCases(base.BaseCase):
             ('elife-civiapi--2015-02-13', 'elife-civiapi'),
             ('elife-crm--2015-08-18', 'elife-crm'),
             ('elife-dashboard--2016-01-26', 'elife-dashboard'),
-            ('elife-jira--2015-06-02', 'elife-jira'),
             ('elife-lax--2015-10-15-develop', 'elife-lax'),
             ('elife-metrics--2015-09-25', 'elife-metrics'),
             ('elife-metrics--prod-candidate', 'elife-metrics'),
