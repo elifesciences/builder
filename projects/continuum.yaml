@@ -1,7 +1,7 @@
 defaults:
     description: defaults for all projects in this file
     # the version of salt these project use
-    salt: '2016.3'
+    salt: '2016.3.6'
     # the base public domain under which all hostnames will be created
     domain: thedailybugle.org
     # the base internal domain for addressing within the VPC
@@ -72,8 +72,7 @@ defaults:
         # set of SQS queues. Default is none
         sqs: []
         ext:
-            # external volume defaults only used is an `ext` section present in project
-            # GB to allocate
+            # external volume defaults only used if an `ext` section present in project
             size: 10 # GB
             # name of device (usually transformed into /dev/xvdh)
             device: /dev/sdh
