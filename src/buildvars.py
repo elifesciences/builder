@@ -106,9 +106,8 @@ def force(stackname, field, value):
 
 def _update_remote_bvars(stackname, buildvars):
     LOG.info('updating %r with new vars %r', stackname, buildvars)
-    # TODO: do we use 'branch' anymore? if not, remove
-    # TODO: include 'revision' once again
-    ensure(core_utils.hasallkeys(buildvars, ['branch']), "buildvars missing key 'branch'")  # , 'revision']) # we don't use 'revision'
+    # not all projects have a 'revision'
+    #ensure(core_utils.hasallkeys(buildvars, ['revision']), "buildvars missing key 'revision'")
 
     encoded = encode_bvars(buildvars)
     fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
