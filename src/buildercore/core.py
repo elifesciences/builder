@@ -18,7 +18,6 @@ from fabric.state import output
 import importlib
 import logging
 from kids.cache import cache as cached
-from slugify import slugify
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
