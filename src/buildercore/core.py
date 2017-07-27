@@ -18,7 +18,6 @@ from fabric.state import output
 import importlib
 import logging
 from kids.cache import cache as cached
-from slugify import slugify
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
@@ -330,8 +329,8 @@ def current_stackname():
 # stackname wrangling
 #
 
-def mk_stackname(*bits):
-    return "--".join(map(slugify, filter(None, bits)))
+def mk_stackname(project_name, instance_id):
+    return "%s--%s" % (project_name, instance_id)
 
 # TODO: test these functions
 def parse_stackname(stackname, all_bits=False):
