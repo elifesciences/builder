@@ -5,6 +5,7 @@ from decorators import requires_branch_deployable_project, echo_output, setdefau
 import utils
 from buildercore import core, bootstrap, cfngen, project
 from buildercore.concurrency import concurrency_for
+import cfn
 import buildvars
 
 import logging
@@ -31,7 +32,7 @@ def deploy(pname, instance_id=None, branch='master', part_filter=None):
         branch_list = utils.git_remote_branches(pdata['repo'])
         branch_list = impose_ordering(branch_list)
         branch = utils._pick('branch', branch_list, deffile('.branch'))
-    stackname = core.mk_stackname(pname, instance_id)
+    stackname = cfn.generate_stack_from_input(pname, instance_id)
 
     region = pdata['aws']['region']
     active_stacks = core.active_stack_names(region)
