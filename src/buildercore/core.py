@@ -330,8 +330,8 @@ def current_stackname():
 # stackname wrangling
 #
 
-def mk_stackname(*bits):
-    return "--".join(map(slugify, filter(None, bits)))
+def mk_stackname(project_name, instance_id):
+    return "%s--%s" % (project_name, instance_id)
 
 # TODO: test these functions
 def parse_stackname(stackname, all_bits=False):
