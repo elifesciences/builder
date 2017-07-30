@@ -236,8 +236,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
-    # custom for builder, these are available as fabric.api.env.public_ips
-    # inside workfn
+    # custom for builder, these are available as fabric.api.env.public_ips inside workfn
     params.update({'stackname': stackname})
     params.update({'public_ips': public_ips})
     params.update({'nodes': nodes})
@@ -268,12 +267,16 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     # TODO: extract in buildercore.concurrency
     if not concurrency:
         concurrency = 'parallel'
+
     if concurrency == 'serial':
         return serial_work(single_node_work, params)
-    if concurrency == 'parallel':
+
+    elif concurrency == 'parallel':
         return parallel_work(single_node_work, params)
-    if callable(concurrency):
+
+    elif callable(concurrency):
         return concurrency(single_node_work, params)
+
     raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
 
 def serial_work(single_node_work, params):
@@ -408,10 +411,8 @@ def describe_stack(stackname):
 class NoRunningInstances(Exception):
     pass
 
-# TODO: rename or something
 def stack_data(stackname, ensure_single_instance=False):
     """like `describe_stack`, but returns a list of dictionaries"""
-
     try:
         ec2_instances = find_ec2_instances(stackname)
 
