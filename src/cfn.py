@@ -3,7 +3,7 @@ from pprint import pformat
 from fabric.api import task, local, run, sudo, put, get, abort, settings
 import fabric.state
 from fabric.contrib import files
-import aws, utils
+import aws, utils, buildvars
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 from buildercore.concurrency import concurrency_for
@@ -29,6 +29,7 @@ def destroy(stackname):
         print '\n'.join(difflib.ndiff([stackname], [uin]))
         exit(1)
     return bootstrap.delete_stack(stackname)
+
 @task
 def ensure_destroyed(stackname):
     try:
@@ -83,6 +84,8 @@ def update_template(stackname):
     if delta_plus['Resources'] or delta_plus['Outputs'] or delta_minus['Resources'] or delta_minus['Outputs']:
         new_template = cfngen.merge_delta(stackname, delta_plus, delta_minus)
         bootstrap.update_template(stackname, new_template)
+        # the /etc/buildvars.json file may need to be updated
+        buildvars.refresh(stackname, context)
     else:
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
