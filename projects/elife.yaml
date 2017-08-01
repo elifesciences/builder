@@ -1043,6 +1043,38 @@ evanthia-simpler-component:
         ports:
             1340: 80
 
+crm:
+    subdomain: crm # crm.elifesciences.org
+    repo: https://github.com/elifesciences/drupal-civi
+    formula-repo: ssh://git@github.com/elifesciences/crm-formula
+    aws:
+        type: t2.medium
+        ports:
+            22: 22
+            80: 80
+            443: 443
+    aws-alt:
+        end2end:
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
+        prod:
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
+
+    vagrant:
+        ram: 2048
+        ports:
+            1237: 80
 
 
 
