@@ -48,9 +48,9 @@ install_git=false
 # Salt to avoid changing it while it is running
 python_version=$(dpkg-query -W --showformat='${Version}' python2.7) # e.g. 2.7.5-5ubuntu3
 if dpkg --compare-versions "$python_version" lt 2.7.12; then
-    add-apt-repository -y ppa:fkrull/deadsnakes-python2.7
+    add-apt-repository ppa:jonathonf/python-2.7
     # the above should do the below but if it doesn't the rest will fail
-    # apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5BB92C09DB82666C
+    # apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ...unknown key id...
     upgrade_python=true
 fi
 
