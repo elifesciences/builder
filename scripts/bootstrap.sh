@@ -48,6 +48,9 @@ install_git=false
 # Salt to avoid changing it while it is running
 python_version=$(dpkg-query -W --showformat='${Version}' python2.7) # e.g. 2.7.5-5ubuntu3
 if dpkg --compare-versions "$python_version" lt 2.7.12; then
+    # we used this, which is not available anymore, to provide a more recent Python 2.7
+    # let's remove it to avoid apt-get update errors
+    rm -f /etc/apt/sources.list.d/fkrull-deadsnakes-python2_7-trusty.list
     # provides python2.7[.13] package and some dependencies
     add-apt-repository ppa:jonathonf/python-2.7
     # provides a recent python-urllib3 (1.13.1-2) because:
