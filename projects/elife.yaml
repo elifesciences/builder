@@ -341,6 +341,10 @@ pattern-library:
             - 80
             - 443
     aws-alt:
+        ci:
+            s3:
+                "{instance}-pattern-library":
+                    public: true
         prod:
             subdomains:
                 - ui-patterns
