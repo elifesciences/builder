@@ -421,6 +421,7 @@ def update_ec2_stack(stackname, concurrency):
         return
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
+    is_masterless = pdata['aws']['ec2']['masterless']
 
     def _update_ec2_node():
         # upload private key if not present remotely
@@ -430,23 +431,20 @@ def update_ec2_stack(stackname, concurrency):
             pem = stack_pem(stackname, die_if_doesnt_exist=True)
             put(pem, "/root/.ssh/id_rsa", use_sudo=True)
 
-        # write out environment config so Salt can read CFN outputs
+        # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)
 
         salt_version = pdata['salt']
-        install_master_flag = str(is_master).lower() # ll: 'true'
-        master_ip = master(region, 'private_ip_address')
+        install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
+        master_ip = 'masterless' if is_masterless else master(region, 'private_ip_address')
 
-        # TODO: this is a little gnarly. I think I'd prefer this logic in the script:
-        #       if [ cat /etc/build-vars.json | grep 'nodename' ]; then ... fi
-        # it will do for now, though.
         build_vars = bvars.read_from_current_host()
-        if 'nodename' in build_vars:
-            minion_id = build_vars['nodename']
-        else:
-            minion_id = stackname
+        minion_id = build_vars.get('nodename', stackname)
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
-        # /TODO
+
+        if is_masterless:
+            run_script('init-formulas.py')
+            run_script('configure-formulas.sh')
 
         if is_master:
             builder_private_repo = pdata['private-repo']

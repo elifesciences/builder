@@ -1,9 +1,6 @@
 #!/bin/bash
-# AWS and VAGRANT *MASTER AND MINIONS*
+# AWS and VAGRANT *MASTER AND MINIONS AND MASTERLESS*
 # copied into the virtual machine and executed. DO NOT run on your host machine.
-
-# significant parts taken from
-# https://github.com/mitchellh/vagrant/issues/5973#issuecomment-126082024
 
 set -e # everything must pass
 set -u # no unbound variables
@@ -113,43 +110,14 @@ master: $master_ipaddr
 log_level: info" > /etc/salt/minion
 
 echo "$minion_id" > /etc/salt/minion_id
-if [ -d /vagrant ]; then
-    # we're using Vagrant    
-
-    # ignore IP parameter and use the one we can detect
-    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
-
-    # link up the project formula mounted at /project
-    # NOTE: these links will be overwritten if this a master-server instance
-    ln -sfn /project/salt /srv/salt
-    ln -sfn /project/salt/pillar /srv/pillar
-    ln -sfn /vagrant/custom-vagrant /srv/custom
-    
-    # by default the project's top.sls is disabled by file naming. hook that up here
-    cd /srv/salt/ && ln -sf example.top top.sls
-    
-    # vagrant makes all formula dependencies available, including builder base formula
-
-    # overwrite the general purpose /etc/salt/minion file created above 
-    # with this more complex one for dev environments only
-    cp /vagrant/scripts/salt/minion.template /etc/salt/minion
-    custom_minion_file="/vagrant/scripts/salt/$minion_id.minion"
-    if [ -e "$custom_minion_file" ]; then
-        # this project requires a custom minion file. use that instead
-        cp "$custom_minion_file" /etc/salt/minion
-    else
-        echo "couldn't find $custom_minion_file"
-    fi        
-fi
-
 
 #  service restart necessary as we've changed the minion's configuration
 service salt-minion restart
 
-
 # generate a key for the root user
 # in AWS this is uploaded to the server and moved into place prior to calling 
-# this script. in Vagrant it must be created.
+# this script. 
+# in Vagrant it must be created.
 if [ ! -f /root/.ssh/id_rsa ]; then
     ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ''
 fi

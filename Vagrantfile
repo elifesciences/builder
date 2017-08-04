@@ -219,6 +219,22 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             vb.customize ["modifyvm", :id, "--cpuexecutioncap", prj("cpucap")]
         end
 
+        # makes the current user's pub key available within the guest.
+        # Salt will pick up on it's existence and add it to the deploy user's
+        # `./ssh/authorised_keys` file allowing login. 
+        # ssh-agent provides communication with Github
+        if File.exists?(File.expand_path("~/.ssh/id_rsa.pub"))
+            runcmd("cp ~/.ssh/id_rsa.pub custom-vagrant/id_rsa.pub")
+        end
+
+        # bootstrap Saltstack
+        project.vm.provision("shell", path: "scripts/bootstrap.sh", \
+            keep_color: true, privileged: true, \
+            args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER), "masterless"])
+
+        # init formulas
+        # in Vagrant we ensure they've all been cloned and mounted
+    
         formula = PRJ.fetch("formula-repo", nil)
         using_formula = formula != nil and formula != ""
 
@@ -273,19 +289,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         else
             prn "no 'formula-repo' value found for project '#{PROJECT_NAME}'"
         end
-
-        # makes the current user's pub key available within the guest.
-        # Salt will pick up on it's existence and add it to the deploy user's
-        # `./ssh/authorised_keys` file allowing login. 
-        # ssh-agent provides communication with Github
-        if File.exists?(File.expand_path("~/.ssh/id_rsa.pub"))
-            runcmd("cp ~/.ssh/id_rsa.pub custom-vagrant/id_rsa.pub")
-        end
-
-        # bootstrap Saltstack
-        project.vm.provision("shell", path: "scripts/bootstrap.sh", \
+        
+        # configure formulas
+        # now formulas are all there, we 
+        project.vm.provision("shell", path: "scripts/configure-formulas.sh", \
             keep_color: true, privileged: true, \
-            args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER), "noipfromhere"])
+            args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER)])
+
         
         # configure the instance as if it were a master server
         if IS_MASTER
