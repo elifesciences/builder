@@ -219,6 +219,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             vb.customize ["modifyvm", :id, "--cpuexecutioncap", prj("cpucap")]
         end
 
+        project.vm.provider :libvirt do |lv|
+            lv.memory = prj("ram")
+            lv.cpus = prj("cpus")
+            lv.nic_model_type = "virtio"
+            lv.volume_cache = "writeback"
+        end
+
         formula = PRJ.fetch("formula-repo", nil)
         using_formula = formula != nil and formula != ""
 
