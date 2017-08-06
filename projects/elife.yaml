@@ -33,10 +33,13 @@ defaults:
             masterless: false
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
-        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
         subnet-cidr: '10.0.2.0/24'
+        ## additional value in case of capacity problems: elife-public-subnet-3, us-east-1a
+        # subnet-id: subnet-2116727b
+        # subnet-cidr: '10.0.10.0/24'
         # necessary for multiple-node EC2 and for ELB
-        redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
+        redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.3.0/24'
         type: t2.small  # ~ $20/mo
         rds:
@@ -340,6 +343,10 @@ pattern-library:
             - 80
             - 443
     aws-alt:
+        ci:
+            s3:
+                "{instance}-pattern-library":
+                    public: true
         prod:
             subdomains:
                 - ui-patterns
@@ -1048,6 +1055,38 @@ evanthia-simpler-component:
         ports:
             1340: 80
 
+crm:
+    subdomain: crm # crm.elifesciences.org
+    repo: https://github.com/elifesciences/drupal-civi
+    formula-repo: ssh://git@github.com/elifesciences/crm-formula
+    aws:
+        type: t2.medium
+        ports:
+            22: 22
+            80: 80
+            443: 443
+    aws-alt:
+        end2end:
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
+        prod:
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
+
+    vagrant:
+        ram: 2048
+        ports:
+            1237: 80
 
 
 
