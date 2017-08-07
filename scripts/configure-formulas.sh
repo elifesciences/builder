@@ -1,14 +1,11 @@
 #!/bin/bash
-# AWS and VAGRANT *MASTERLESS ONLY*
+# VAGRANT *MASTERLESS ONLY*
 # assumes project formulas are available at /project/salt
 # copied into the virtual machine and executed. DO NOT run on your host machine.
 
 set -e # everything must pass
 set -u # no unbound variables
 set -xv  # output the scripts and interpolated steps
-
-# ignore IP parameter and use the one we can detect
-master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
 
 # link up the project formula mounted at /project
 # NOTE: these links will be overwritten if this a master-server instance
