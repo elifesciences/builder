@@ -102,6 +102,10 @@ fi
 if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log; fi
 if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
 
+if [ $masterip = "masterless" ]; then
+    # ignore given IP parameter and use the one we can detect
+    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
+fi
 
 # reset the minion config and
 # put minion id in dedicated file else salt keeps recreating file
