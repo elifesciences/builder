@@ -444,7 +444,8 @@ def update_ec2_stack(stackname, concurrency):
 
         if is_masterless:
             run_script('init-formulas.py')
-            run_script('configure-formulas.sh')
+            formula_list = "%s" % ' '.join(prj.get('formula-dependencies', []) + [prj['formula-repo']])
+            run_script('configure-formulas.sh', formula_list)
 
         if is_master:
             builder_private_repo = pdata['private-repo']
