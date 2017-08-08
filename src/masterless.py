@@ -7,9 +7,9 @@ LOG = logging.getLogger(__name__)
 
 @task
 @requires_project
-def launch(pname, instance_id=None, alt_config=None):
+def launch(pname, instance_id=None):
     import cfn
-    cfn.launch(pname, instance_id, alt_config)
+    cfn.launch(pname, instance_id, 'masterless')
     # opportunity to do post-launch things here
 
 @task
