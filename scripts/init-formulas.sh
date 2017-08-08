@@ -11,17 +11,13 @@ set -x
 formula_list=$1
 formula_dir="/opt/formulas"
 
-mkdir -p "$formula_dir" /srv/salt/ /srv/pillar/
+mkdir -p "$formula_dir"
 
 echo "---
 file_client: local
 log_level: info
 fileserver_backend:
-- roots
-file_roots:
-  base: []
-pillar_roots:
-  base: []"  > /tmp/minion # > /etc/salt/minion
+- roots" > /etc/salt/minion
 
 clone_update() {
     repo=$1
@@ -40,22 +36,22 @@ clone_update() {
 
     # tell the minion where it can find the formula's state and pillar data
         
-    echo "  - $repo_path/salt/" >> /etc/salt/minion.d/file_roots.conf
-    echo "  - $repo_path/salt/pillar/" >> /etc/salt/minion.d/pillar_roots.conf
+    echo "    - $repo_path/salt/" >> /etc/salt/minion.d/file_roots.conf
+    echo "    - $repo_path/salt/pillar/" >> /etc/salt/minion.d/pillar_roots.conf
 
     topfile="$repo_path/salt/example.top"
-    pillarfile="$repo_path/salt/pillar/example.pillar"
+    #pillarfile="$repo_path/salt/pillar/top.sls"
     
     # successively overwrites the top files until the last one (project formula) wins
     if [ -e "$topfile" ]; then
         # /srv/salt/ and /srv/pillar/ are Salt's default dirs for top files
-        cd /srv/salt/; ln -sfT "$topfile" top.sls
-        cd /srv/pillar/; ln -sfT "$pillarfile" top.sls
+        cd "$repo_path/salt"; ln -sfT "$topfile" top.sls
+        #cd /srv/pillar/; ln -sfT "$pillarfile" top.sls
     fi
 }
 
-echo "file_roots:" > /etc/salt/minion.d/file_roots.conf
-echo "pillar_roots:" > /etc/salt/minion.d/pillar_roots.conf
+printf "file_roots:\n  base:\n" > /etc/salt/minion.d/file_roots.conf
+printf "pillar_roots:\n  base:\n" > /etc/salt/minion.d/pillar_roots.conf
 
 for formula in $formula_list; do
     clone_update "$formula"

@@ -416,7 +416,9 @@ def update_ec2_stack(stackname, concurrency):
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
-    pdata = project_data_for_stackname(stackname)
+    #pdata = project_data_for_stackname(stackname)
+    ctx = context_handler.load_context(stackname)
+    pdata = ctx['project']
     if not pdata['aws']['ec2']:
         return
     region = pdata['aws']['region']
@@ -443,9 +445,9 @@ def update_ec2_stack(stackname, concurrency):
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
 
         if is_masterless:
-            # order is important. 
-            formula_list = "%s" % ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
-            run_script('init-formulas.py', formula_list)
+            # order is important.
+            formula_list = '"%s"' % ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
+            run_script('init-formulas.sh', formula_list)
 
         if is_master:
             builder_private_repo = pdata['private-repo']
