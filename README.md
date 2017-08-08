@@ -64,7 +64,9 @@ The other half of the `builder` project is the ability to create and manage AWS 
 
     $ ./bldr -l
 
-Will list all `builder` tasks found in `src/`. These tasks are just Python functions.
+Will list all builder tasks found in `src/`. These tasks are just Python functions.
+
+builder relies on a `~/.aws/credentials` file containing [configuration for accessing your AWS account](https://aws.amazon.com/blogs/security/a-new-and-standardized-way-to-manage-credentials-in-the-aws-sdks/).
 
 A `master-server` instance must exist before project instances can be brought up. [See here](docs/master-server.md) for a walkthrough.
 
