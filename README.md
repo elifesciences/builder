@@ -52,8 +52,11 @@ The `Vagrantfile` can build any project, you just need to tell it which one:
 
     $ PROJECT=journal vagrant up
 
+Note: if you with to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
+
 Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin
 to rebuild the ubuntu/trusty64 box for your own hypervisor.  See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
+
 
 ### AWS (Amazon Web Services)
 
