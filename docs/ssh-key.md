@@ -5,6 +5,7 @@ builder relies on a keypair (private and public key) being present at `~/.ssh/id
 If you with to use a different path, specify the private key path as the CUSTOM_SSH_KEY environment variable in your vagrant commands:
 
 ```
+CUSTOM_SSH_KEY=~/.ssh/my_key ./update.sh
 CUSTOM_SSH_KEY=~/.ssh/my_key vagrant up
 ```
 
