@@ -45,9 +45,15 @@ install_git=false
 # Salt to avoid changing it while it is running
 python_version=$(dpkg-query -W --showformat='${Version}' python2.7) # e.g. 2.7.5-5ubuntu3
 if dpkg --compare-versions "$python_version" lt 2.7.12; then
-    add-apt-repository -y ppa:fkrull/deadsnakes-python2.7
-    # the above should do the below but if it doesn't the rest will fail
-    # apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5BB92C09DB82666C
+    # we used this, which is not available anymore, to provide a more recent Python 2.7
+    # let's remove it to avoid apt-get update errors
+    rm -f /etc/apt/sources.list.d/fkrull-deadsnakes-python2_7-trusty.list
+    # provides python2.7[.13] package and some dependencies
+    add-apt-repository ppa:jonathonf/python-2.7
+    # provides a recent python-urllib3 (1.13.1-2) because:
+    # libpython2.7-stdlib : Breaks: python-urllib3 (< 1.9.1-3) but 1.7.1-1ubuntu4 is to be installed
+    # due to the previous PPA
+    add-apt-repository ppa:ross-kallisti/python-urllib3
     upgrade_python=true
 fi
 
@@ -102,10 +108,6 @@ fi
 if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log; fi
 if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
 
-if [ $masterip = "masterless" ]; then
-    # ignore given IP parameter and use the one we can detect
-    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
-fi
 
 # reset the minion config and
 # put minion id in dedicated file else salt keeps recreating file
@@ -115,8 +117,45 @@ log_level: info" > /etc/salt/minion
 
 echo "$minion_id" > /etc/salt/minion_id
 
+if [ "$master_ipaddr" = "masterless" ]; then
+    # ignore given IP parameter and use the one we can detect
+    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
+fi
+
+if [ -d /vagrant ]; then
+    # we're using Vagrant
+
+    # link up the project formula mounted at /project
+    # NOTE: these links will be overwritten if this a master-server instance
+    ln -sfn /project/salt /srv/salt
+    ln -sfn /project/salt/pillar /srv/pillar
+
+    # this allows you to serve up projects like the old builder used
+    # excellent for project creation without all the formula overhead
+    ln -sfn /vagrant/custom-vagrant /srv/custom
+
+    # by default the project's top.sls is disabled by file naming. hook that up here
+    cd /srv/salt/ && ln -sf example.top top.sls
+
+    # vagrant makes all formula dependencies available, including builder base formula
+
+    # overwrite the general purpose /etc/salt/minion file created above 
+    # with a custom one for masterless environments only
+    # TODO: will break on remote masterless instances
+    cp /vagrant/scripts/salt/minion.template /etc/salt/minion
+    custom_minion_file="/vagrant/scripts/salt/$minion_id.minion"
+    if [ -e "$custom_minion_file" ]; then
+        # this project requires a custom minion file. use that instead
+        cp "$custom_minion_file" /etc/salt/minion
+    else
+        echo "couldn't find $custom_minion_file"
+    fi
+fi
+
+
 #  service restart necessary as we've changed the minion's configuration
 service salt-minion restart
+
 
 # generate a key for the root user
 # in AWS this is uploaded to the server and moved into place prior to calling 
