@@ -1,24 +1,22 @@
+from fabric.api import task
+from decorators import requires_project, requires_aws_stack # , echo_output, requires_feature
+from buildercore import bootstrap
+import logging
 
+LOG = logging.getLogger(__name__)
+
+@task
 @requires_project
-def launch(pname, instance_id):
-    try:
-        stackname = generate_stack_from_input(pname, instance_id)
-        pdata = core.project_data_for_stackname(stackname)
+def launch(pname, instance_id=None, alt_config=None):
+    import cfn
+    cfn.launch(pname, instance_id, alt_config)
+    # opportunity to do post-launch things here
 
-        print 'attempting to create stack:'
-        print '  stackname: ' + stackname
-        print '  region:    ' + pdata['aws']['region']
-        print
-
-        bootstrap.create_update(stackname)
-        setdefault('.active-stack', stackname)
-    except core.NoMasterException as e:
-        LOG.warn(e.message)
-        print "\n%s\ntry `./bldr master.create`'" % e.message
-
-
-def update():
-    pass
+@task
+@requires_aws_stack
+def update(stackname):
+    # this task is just temporary while I debug
+    bootstrap.update_ec2_stack(stackname, 'serial')
 
 def destroy():
     pass

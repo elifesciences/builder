@@ -98,7 +98,7 @@ def update_master():
     return bootstrap.update_stack(core.find_master(aws.find_region()))
 
 @requires_project
-def generate_stack_from_input(pname, instance_id=None):
+def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     """creates a new CloudFormation file for the given project."""
     if not instance_id:
         default_instance_id = core_utils.ymd()
@@ -115,8 +115,9 @@ def generate_stack_from_input(pname, instance_id=None):
             except KeyError:
                 return None
         default = 'skip this step'
-        alt_config = [default] + pdata['aws-alt'].keys()
-        alt_config = utils._pick('alternative config', alt_config, helpfn=helpfn)
+        alt_config_choices = [default] + pdata['aws-alt'].keys()
+        if not alt_config:
+            alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
         if alt_config != default:
             more_context['alt-config'] = alt_config
     cfngen.generate_stack(pname, **more_context)
@@ -125,9 +126,9 @@ def generate_stack_from_input(pname, instance_id=None):
 # these aliases are deprecated
 @task(alias='aws_launch_instance')
 @requires_project
-def launch(pname, instance_id=None):
+def launch(pname, instance_id=None, alt_config=None):
     try:
-        stackname = generate_stack_from_input(pname, instance_id)
+        stackname = generate_stack_from_input(pname, instance_id, alt_config)
         pdata = core.project_data_for_stackname(stackname)
 
         print 'attempting to create stack:'
