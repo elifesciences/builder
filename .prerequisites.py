@@ -25,6 +25,8 @@ def dumb_version_check(cmd):
 def osx():
     return sh('[ "$(uname)" = "Darwin" ]')
 
+ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
+
 both_checks = [
     ('git',
      {'osx': 'brew install git'}),
@@ -48,7 +50,7 @@ both_checks = [
 
     ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
-     lambda x: sh('test -f ~/.ssh/id_rsa && test -f ~/.ssh/id_rsa.pub'),
+     lambda x: sh('test -f %s && test -f %s.pub' % (ssh_key, ssh_key)),
      None), # do not check version
 
     ('ssh-agent',

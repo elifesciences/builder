@@ -158,11 +158,13 @@ end
 
 # if provisioning died before the custom ssh user (deploy user) can be created,
 # set this to false and it will log-in as the default 'vagrant' user.
-CUSTOM_SSH_USER = File.exists?(File.expand_path("~/.ssh/id_rsa"))
+CUSTOM_SSH_KEY = File.expand_path(ENV.fetch("CUSTOM_SSH_KEY", "~/.ssh/id_rsa"))
+CUSTOM_SSH_USER = File.exists?(CUSTOM_SSH_KEY)
 CUSTOM_SSH_USERNAME = "elife"
 if ENV.fetch("CUSTOM_SSH_USER", nil)
     CUSTOM_SSH_USER = (true if ENV.fetch("CUSTOM_SSH_USER") =~ /^true$/i) || false
 end
+prn "Using ssh key #{CUSTOM_SSH_KEY}"
 
 # finally! configure the beast
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -172,7 +174,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     if CUSTOM_SSH_USER and ["ssh", "ssh-config"].include? VAGRANT_COMMAND
         config.ssh.username = CUSTOM_SSH_USERNAME
-        config.ssh.private_key_path = File.expand_path("~/.ssh/id_rsa")
+        config.ssh.private_key_path = File.expand_path(CUSTOM_SSH_KEY)
     end
 
     # setup any shared folders
@@ -285,8 +287,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # Salt will pick up on it's existence and add it to the deploy user's
         # `./ssh/authorised_keys` file allowing login. 
         # ssh-agent provides communication with Github
-        if File.exists?(File.expand_path("~/.ssh/id_rsa.pub"))
-            runcmd("cp ~/.ssh/id_rsa.pub custom-vagrant/id_rsa.pub")
+        if File.exists?(CUSTOM_SSH_KEY + ".pub")
+          runcmd("cp #{CUSTOM_SSH_KEY}.pub custom-vagrant/id_rsa.pub")
         end
 
         # bootstrap Saltstack
