@@ -1091,7 +1091,7 @@ crm:
 elife-xpub:
     subdomain: xpub
     repo: https://github.com/elifesciences/elife-xpub
-    formula-repo: https://github.com/elifesciences/elife-xpub-formula
+    formula-repo: ssh://git@github.com/elifesciences/elife-xpub-formula
     aws:
         type: t2.micro
         ports:
