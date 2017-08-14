@@ -52,11 +52,11 @@ if dpkg --compare-versions "$python_version" lt 2.7.12; then
     # let's remove it to avoid apt-get update errors
     rm -f /etc/apt/sources.list.d/fkrull-deadsnakes-python2_7-trusty.list
     # provides python2.7[.13] package and some dependencies
-    add-apt-repository ppa:jonathonf/python-2.7
+    add-apt-repository -y ppa:jonathonf/python-2.7
     # provides a recent python-urllib3 (1.13.1-2) because:
     # libpython2.7-stdlib : Breaks: python-urllib3 (< 1.9.1-3) but 1.7.1-1ubuntu4 is to be installed
     # due to the previous PPA
-    add-apt-repository ppa:ross-kallisti/python-urllib3
+    add-apt-repository -y ppa:ross-kallisti/python-urllib3
     upgrade_python=true
 fi
 
