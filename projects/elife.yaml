@@ -121,7 +121,8 @@ defaults:
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
+        # box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
+        box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
         box-url: null
         ip: 192.168.33.44
@@ -181,6 +182,7 @@ lax:
             ext:
                 size: 10 # GB
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1239: 80
             1240: 8001
@@ -326,6 +328,7 @@ journal:
             elasticache:
                 engine: redis
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 4096
         ports:
             1240: 80
