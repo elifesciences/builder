@@ -1088,5 +1088,18 @@ crm:
         ports:
             1237: 80
 
+elife-xpub:
+    subdomain: xpub
+    repo: https://github.com/elifesciences/elife-xpub
+    formula-repo: https://github.com/elifesciences/elife-xpub-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 443
+            - 80
+    vagrant:
+        ports:
+            1201: 80
 
 
