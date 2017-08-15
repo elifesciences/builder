@@ -434,6 +434,7 @@ elife-bot:
             #               #prefix: null
             #               #suffix: null
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             # loris
