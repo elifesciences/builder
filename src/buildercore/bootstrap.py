@@ -4,8 +4,7 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import json
-import os
+import os, json
 from os.path import join
 from pprint import pformat
 from functools import partial
@@ -20,6 +19,7 @@ from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
+from fabric import operations
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
 from buildercore import context_handler
@@ -408,6 +408,24 @@ def create_update(stackname, part_filter=None):
     update_stack(stackname, part_filter)
     return stackname
 
+def upload_master_builder_key(key):
+    private_key = "/root/.ssh/id_rsa"
+    try:
+        # NOTE: overwrites any existing master key on machine being updated
+        operations.put(local_path=key, remote_path=private_key, use_sudo=True)
+    finally:
+        key.close()
+
+def download_master_builder_key(stackname):
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    master_stack = core.find_master(region)
+    private_key = "/root/.ssh/id_rsa"
+    fh = StringIO()
+    with stack_conn(master_stack):
+        operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
+    return fh
+
 def update_ec2_stack(stackname, concurrency):
     """installs/updates the ec2 instance attached to the specified stackname.
 
@@ -424,6 +442,10 @@ def update_ec2_stack(stackname, concurrency):
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
     is_masterless = pdata['aws']['ec2']['masterless']
+
+    master_builder_key = None
+    if is_masterless:
+        master_builder_key = download_master_builder_key(stackname)
 
     def _update_ec2_node():
         # upload private key if not present remotely
@@ -448,6 +470,9 @@ def update_ec2_stack(stackname, concurrency):
             # order is important.
             formula_list = '"%s"' % ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
             prepo = pdata['private-repo']
+            # to init the builder-private formula, the masterless instance needs
+            # the master-builder key
+            upload_master_builder_key(master_builder_key)
             run_script('init-formulas.sh', formula_list, prepo)
 
         if is_master:
