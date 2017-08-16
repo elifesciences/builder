@@ -1093,12 +1093,13 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        type: t2.micro
+        type: t2.small
         ports:
             - 22
             - 443
             - 80
     vagrant:
+        ram: 2048
         ports:
             1201: 80
 
