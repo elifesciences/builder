@@ -30,8 +30,8 @@ RDS_TITLE = "AttachedDB"
 RDS_SG_ID = "DBSecurityGroup"
 RDS_DB_PG = "RDSDBParameterGroup"
 DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
-EXT_TITLE = "ExtraStorage%s"
-EXT_MP_TITLE = "MountPoint%s"
+EXT_TITLE = "ExtraStorage%s%s"
+EXT_MP_TITLE = "MountPoint%s%s"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
@@ -250,6 +250,7 @@ def render_rds(context, template):
 def render_ext_volume(context, template, node=1):
     context_ext = context['ext']
     vtype = context_ext.get('type', 'standard')
+    suffix = context_ext.get('suffix', '')
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
     if vtype == 'ssd':
         vtype = 'gp2'
@@ -259,14 +260,14 @@ def render_ext_volume(context, template, node=1):
         "AvailabilityZone": GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone"),
         "VolumeType": vtype,
     }
-    ec2v = ec2.Volume(EXT_TITLE % node, **args)
+    ec2v = ec2.Volume(EXT_TITLE % (node, suffix), **args)
 
     args = {
         "InstanceId": Ref(EC2_TITLE_NODE % node),
         "VolumeId": Ref(ec2v),
         "Device": context_ext['device'],
     }
-    ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
+    ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % (node, suffix), **args)
     map(template.add_resource, [ec2v, ec2va])
 
 def external_dns_ec2(context):
