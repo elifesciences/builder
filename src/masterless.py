@@ -9,16 +9,14 @@ LOG = logging.getLogger(__name__)
 @requires_project
 def launch(pname, instance_id=None):
     import cfn
-    with settings(forward_agent=True):
-        cfn.launch(pname, instance_id, 'masterless')
-        # opportunity to do post-launch things here
+    cfn.launch(pname, instance_id, 'masterless')
+    # opportunity to do post-launch things here
 
 @task
 @requires_aws_stack
 def update(stackname):
     # this task is just temporary while I debug
-    with settings(forward_agent=True):
-        bootstrap.update_ec2_stack(stackname, 'serial')
+    bootstrap.update_ec2_stack(stackname, 'serial')
 
 def destroy():
     pass
@@ -31,9 +29,8 @@ def ssh(stackname, node=None):
     import cfn
     instances = core.find_ec2_instances(stackname)
     public_ip = cfn._pick_node(instances, node).ip_address
-    with settings(forward_agent=True):
-        # -i identify file
-        local("ssh %s@%s -i %s" % (config.BOOTSTRAP_USER, public_ip, core.stack_pem(stackname)))
+    # -i identify file
+    local("ssh %s@%s -i %s" % (config.BOOTSTRAP_USER, public_ip, core.stack_pem(stackname)))
 
 #
 #
