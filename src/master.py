@@ -55,6 +55,16 @@ def download_keypair(stackname):
 #
 #
 
+@debugtask
+@echo_output
+def server_access():
+    """returns True if this builder instance has access to the master server.
+    access may be available through presence of the master-server's bootstrap user's
+    identify file OR current user is in master server's allowed_keys list"""
+    stackname = core.find_master(core.find_region())
+    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['ip_address']
+    result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
+    return result.return_code == 0
 
 @echo_output
 def aws_update_many_projects(pname_list):

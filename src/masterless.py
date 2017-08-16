@@ -1,12 +1,22 @@
-from fabric.api import local, task, settings
+from fabric.api import local, task
 from decorators import requires_project, requires_aws_stack, echo_output
 from buildercore import bootstrap, config, core
+from buildercore.utils import ensure
 import logging
-
+from functools import wraps
 LOG = logging.getLogger(__name__)
+
+def requires_master_server_access(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        import master
+        ensure(master.server_access(), "this command requires access to the master server. you don't have it.")
+        return fn(*args, **kwargs)
+    return wrapper
 
 @task
 @requires_project
+@requires_master_server_access
 def launch(pname, instance_id=None):
     import cfn
     cfn.launch(pname, instance_id, 'masterless')
@@ -14,13 +24,13 @@ def launch(pname, instance_id=None):
 
 @task
 @requires_aws_stack
+@requires_master_server_access
 def update(stackname):
     # this task is just temporary while I debug
     bootstrap.update_ec2_stack(stackname, 'serial')
 
 def destroy():
     pass
-
 
 @task
 @requires_aws_stack
