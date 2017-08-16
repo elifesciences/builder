@@ -540,14 +540,11 @@ def _find_master(stacks):
     msl = map(first, msl) # just stack names
     if len(msl) > 1:
         LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
-    # this all assumes master servers with YMD instance ids
-    #master_server_ymd_instance_id = lambda x: ''.join(x.split('--')[2:])
-    #msl = sorted(msl, key=master_server_ymd_instance_id, reverse=True)
     msl = sorted(msl, key=parse_stackname, reverse=True)
     return first(msl)
 
 def find_master(region):
-    "returns the most recent aws master-server it can find. assumes instances have YMD names"
+    "returns the most recent aws master-server it can find."
     stacks = active_aws_stacks(region)
     if not stacks:
         raise NoMasterException("no master servers found in region %r" % region)
@@ -556,7 +553,6 @@ def find_master(region):
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
     pdata = project_data_for_stackname(stackname)
-
     return find_master(pdata['aws']['region'])
 
 #
