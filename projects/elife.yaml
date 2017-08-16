@@ -937,7 +937,8 @@ iiif:
                 cluster-size: 2
             ext:
                 size: 30 # GB
-                suffix: temp
+                suffix: 
+                    1: temp
             elb:
                 protocol: 
                     - https
