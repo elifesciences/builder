@@ -1066,6 +1066,14 @@ crm:
             80: 80
             443: 443
     aws-alt:
+        ci:
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
         end2end:
             rds:
                 engine: MySQL
@@ -1088,5 +1096,18 @@ crm:
         ports:
             1237: 80
 
+elife-xpub:
+    subdomain: xpub
+    repo: https://github.com/elifesciences/elife-xpub
+    formula-repo: git@github.com:elifesciences/elife-xpub-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 443
+            - 80
+    vagrant:
+        ports:
+            1201: 80
 
 

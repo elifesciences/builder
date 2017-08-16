@@ -52,13 +52,21 @@ The `Vagrantfile` can build any project, you just need to tell it which one:
 
     $ PROJECT=journal vagrant up
 
+Note: if you with to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
+
+Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin
+to rebuild the ubuntu/trusty64 box for your own hypervisor.  See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
+
+
 ### AWS (Amazon Web Services)
 
 The other half of the `builder` project is the ability to create and manage AWS resources. This is controlled with the "bldr" script:
 
     $ ./bldr -l
 
-Will list all `builder` tasks found in `src/`. These tasks are just Python functions.
+Will list all builder tasks found in `src/`. These tasks are just Python functions.
+
+builder relies on a `~/.aws/credentials` file containing [configuration for accessing your AWS account](https://aws.amazon.com/blogs/security/a-new-and-standardized-way-to-manage-credentials-in-the-aws-sdks/).
 
 A `master-server` instance must exist before project instances can be brought up. [See here](docs/master-server.md) for a walkthrough.
 

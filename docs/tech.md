@@ -1,11 +1,19 @@
 # `builder` tech
 
-`builder`:
+`builder`
 
 * is a [Python](https://www.python.org/) language project
 * uses [Fabric](http://www.fabfile.org/) as a library to run commands locally and remotely
 * runs within a [virtualenv](http://docs.python-guide.org/en/latest/dev/virtualenvs/)
 * a bash script [`bldr`](https://github.com/elifesciences/elife-builder/blob/master/bldr) that wraps  Fabric's `fab` command in an activated virtualenv
+
+It has the following responsibilities:
+
+* provisioning: creating cloud infrastructure such as virtual machines and queues (CloudFormation)
+* automation: installing software stacks on virtual machines (Salt)
+* orchestration: connecting projects together in their environments (CloudFormation, Boto)
+* discovery: allowing developers to list and access projects servers (CloudFormation, SSH)
+* deployment: allowing developers and CI systems to change a project version on a deployment
 
 It builds on top of:
 
