@@ -7,7 +7,7 @@ import aws
 from fabric.api import sudo, task, local
 from buildercore import core, bootstrap, config, keypair
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
-
+from kids.cache import cache as cached
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -57,6 +57,7 @@ def download_keypair(stackname):
 
 @debugtask
 @echo_output
+@cached
 def server_access():
     """returns True if this builder instance has access to the master server.
     access may be available through presence of the master-server's bootstrap user's
