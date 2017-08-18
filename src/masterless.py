@@ -55,12 +55,6 @@ def ssh(stackname, node=None):
 #
 #
 
-def parse_repo(string):
-    if '@' not in string:
-        print 'skipping', string
-        return
-    return string.split('@')
-
 @task
 @echo_output
 def set_versions(stackname, *repolist):
