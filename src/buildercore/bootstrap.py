@@ -473,7 +473,7 @@ def update_ec2_stack(stackname, concurrency):
             # to init the builder-private formula, the masterless instance needs
             # the master-builder key
             upload_master_builder_key(master_builder_key)
-            # Vagrant's equivalent is 'init-vagrant-formulas.sh' 
+            # Vagrant's equivalent is 'init-vagrant-formulas.sh'
             run_script('init-formulas.sh', formula_list, prepo)
 
         if is_master:
