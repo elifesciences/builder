@@ -1,6 +1,8 @@
+import os
+from collections import OrderedDict
 from fabric.api import local, task
 from decorators import requires_project, requires_aws_stack, echo_output
-from buildercore import bootstrap, config, core
+from buildercore import bootstrap, config, core, context_handler
 from buildercore.utils import ensure
 import logging
 from functools import wraps
@@ -12,6 +14,14 @@ def requires_master_server_access(fn):
         import master
         ensure(master.server_access(), "this command requires access to the master server. you don't have it.")
         return fn(*args, **kwargs)
+    return wrapper
+
+def requires_masterless(fn):
+    @wraps(fn)
+    def wrapper(stackname=None, *args, **kwargs):
+        ctx = context_handler.load_context(stackname)
+        ensure(stackname and ctx['project']['aws']['ec2']['masterless'], "this command requires a masterless instance.")
+        return fn(stackname, *args, **kwargs)
     return wrapper
 
 @task
@@ -46,14 +56,50 @@ def ssh(stackname, node=None):
 #
 
 def parse_repo(string):
-    repo, rev = string.split('@')
-    return {
-        'repo': repo,
-        'rev': rev
-    }
+    if '@' not in string:
+        print 'skipping', string
+        return
+    return string.split('@')
 
 @task
 @echo_output
 def set_versions(stackname, *repolist):
-    bits = map(parse_repo, repolist)
-    return bits
+    "call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"
+    ctx = context_handler.load_context(stackname)
+
+    pdata = ctx['project']
+    known_formulas = pdata.get('formula-dependencies', [])
+    known_formulas = [
+        pdata['formula-repo'],
+        pdata['private-repo']
+    ]
+
+    known_formula_map = OrderedDict(zip(map(os.path.basename, known_formulas), known_formulas))
+
+    if not repolist:
+        return 'nothing to do'
+
+    arglist = []
+    for user_string in repolist:
+        if '@' not in user_string:
+            print 'skipping %r, no revision component' % user_string
+            continue
+
+        repo, rev = user_string.split('@')
+
+        if not rev.strip():
+            print 'skipping %r, empty revision component' % user_string
+            continue
+
+        if repo not in known_formula_map:
+            print 'skipping %r, unknown formula. known formulas: %s' % (repo, ', '.join(known_formula_map.keys()))
+            continue
+
+        arglist.append((repo, known_formula_map[repo], rev))
+
+    if not arglist:
+        return 'nothing to do'
+
+    with core.stack_conn(stackname):
+        for repo, formula, revision in arglist:
+            bootstrap.run_script('update-master-formula.sh', repo, formula, revision)
