@@ -121,6 +121,7 @@ defaults:
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
+        # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         # box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
         box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
