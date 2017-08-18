@@ -460,7 +460,7 @@ def update_ec2_stack(stackname, concurrency):
 
         salt_version = pdata['salt']
         install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
-        master_ip = 'masterless' if is_masterless else master(region, 'private_ip_address')
+        master_ip = master(region, 'private_ip_address')
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
@@ -473,6 +473,7 @@ def update_ec2_stack(stackname, concurrency):
             # to init the builder-private formula, the masterless instance needs
             # the master-builder key
             upload_master_builder_key(master_builder_key)
+            # Vagrant's equivalent is 'init-vagrant-formulas.sh' 
             run_script('init-formulas.sh', formula_list, prepo)
 
         if is_master:

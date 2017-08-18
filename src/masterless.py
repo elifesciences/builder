@@ -20,7 +20,6 @@ def requires_master_server_access(fn):
 def launch(pname, instance_id=None):
     import cfn
     cfn.launch(pname, instance_id, 'masterless')
-    # opportunity to do post-launch things here
 
 @task
 @requires_aws_stack
