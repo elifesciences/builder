@@ -2,6 +2,7 @@
 # updates a formula on a masterless or master server
 
 set -e # everything must pass
+set -x # output interpolated
 set -u # no unbound variables
 
 pname=$1
@@ -9,7 +10,7 @@ formula=$2
 revision=${3:-""}
 
 formula_root="/opt/formulas"
-if [ "$pname" == "builder-private" ]; then
+if [ "$pname" = "builder-private" ]; then
     formula_root="/opt"
 fi
 formula_path="$formula_root/$pname"
@@ -17,9 +18,13 @@ formula_path="$formula_root/$pname"
 mkdir -p "$formula_root"
 
 if [ -d "$formula_path" ]; then
+    # formula exists, bring it back into a known state
     cd "$formula_path"
-    git reset --hard
-    git clean -d --force
+    git reset --hard # undo any changes
+    git clean -d --force # wipe any unknown files
+    git checkout master # switch to master branch
+
+    # pull down any changes
     git pull --rebase
 else
     cd "$formula_root"
@@ -29,5 +34,6 @@ fi
 cd "$formula_path"
 
 if [ "$revision" != "" ]; then
+    # switch to a specific revision or branch
     git checkout "$revision"
 fi
