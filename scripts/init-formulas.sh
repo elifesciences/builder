@@ -37,9 +37,12 @@ when ready, complete this process by using the 'masterless.update' command:
     
 else
     cd /opt/builder-private
-    git clean -d --force # in vagrant, destroys any rsync'd files
-    git reset --hard
-    git pull
+    git clean -d --force # remove any unknown files
+    git reset --hard # revert any changes to known files
+    git pull || {
+        # known case - we've set a specific revision and cannot pull
+        echo "builder-private is pinned, could not update to head"
+    }
 fi
 
 # we can't use the master-server's top.sls file (and it probably shouldn't be
@@ -87,7 +90,12 @@ clone_update() {
     if [ -d "$repo_path" ]; then
         echo "updating $repo_name"
         cd "$repo_path"
-        git pull
+        git clean -d --force # remove any unknown files
+        git reset --hard # revert any changes to known files
+        git pull || {
+            # known case - we've set a specific revision and cannot pull
+            echo "$repo_name is pinned, could not update to head"
+        } 
     else
         echo "cloning $repo_name"
         cd "$formula_dir"
