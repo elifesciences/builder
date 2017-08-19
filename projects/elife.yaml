@@ -850,6 +850,7 @@ observer:
                 multi-az: true
 
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 2048 # metabase, mostly
         ports:
             1239: 80
