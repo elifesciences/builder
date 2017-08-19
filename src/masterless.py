@@ -63,10 +63,10 @@ def set_versions(stackname, *repolist):
 
     pdata = ctx['project']
     known_formulas = pdata.get('formula-dependencies', [])
-    known_formulas = [
+    known_formulas.extend([
         pdata['formula-repo'],
         pdata['private-repo']
-    ]
+    ])
 
     known_formula_map = OrderedDict(zip(map(os.path.basename, known_formulas), known_formulas))
 
