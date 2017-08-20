@@ -1,13 +1,15 @@
 import os
 from collections import OrderedDict
-from fabric.api import local, task
-from decorators import requires_project, requires_aws_stack, echo_output
-from buildercore import bootstrap, config, core, context_handler
-from buildercore.utils import ensure
+from fabric.api import task
+from decorators import requires_aws_stack
+from buildercore import bootstrap, core, context_handler
+
 import logging
-from functools import wraps
+
 LOG = logging.getLogger(__name__)
 
+'''
+# work, but not being used
 def requires_master_server_access(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -25,23 +27,6 @@ def requires_masterless(fn):
     return wrapper
 
 @task
-@requires_project
-@requires_master_server_access
-def launch(pname, instance_id=None):
-    import cfn
-    cfn.launch(pname, instance_id, 'masterless')
-
-@task
-@requires_aws_stack
-@requires_master_server_access
-def update(stackname):
-    # this task is just temporary while I debug
-    bootstrap.update_ec2_stack(stackname, 'serial')
-
-def destroy():
-    pass
-
-@task
 @requires_aws_stack
 def ssh(stackname, node=None):
     "maintenance ssh. uses the pem key and the bootstrap user to login."
@@ -50,13 +35,10 @@ def ssh(stackname, node=None):
     public_ip = cfn._pick_node(instances, node).ip_address
     # -i identify file
     local("ssh %s@%s -i %s" % (config.BOOTSTRAP_USER, public_ip, core.stack_pem(stackname)))
-
-#
-#
-#
+'''
 
 @task
-@echo_output
+@requires_aws_stack
 def set_versions(stackname, *repolist):
     "call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"
     ctx = context_handler.load_context(stackname)
