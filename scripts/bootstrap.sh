@@ -45,7 +45,7 @@ install_git=false
 # Python is such a hard dependency of Salt that we have to upgrade it outside of 
 # Salt to avoid changing it while it is running
 
-if ! command python2.7; then
+if ! command -v python2.7; then
     # python2 not found
     upgrade_python=true
 else
