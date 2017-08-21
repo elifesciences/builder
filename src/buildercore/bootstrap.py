@@ -434,11 +434,16 @@ def update_ec2_stack(stackname, concurrency):
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
-    #pdata = project_data_for_stackname(stackname)
     ctx = context_handler.load_context(stackname)
     pdata = ctx['project']
-    if not pdata['aws']['ec2']:
-        return
+    if not pdata['aws'].get('ec2'):
+        # it's possible we're missing the context file for this instance
+        static_pdata = project_data_for_stackname(stackname)
+        if not static_pdata['aws'].get('ec2'):
+            # nope, it really doesn't have an ec2 instance
+            return
+        LOG.warn("missing context for stack %s, falling back to static project values", stackname)
+        pdata = static_pdata
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
     is_masterless = pdata['aws']['ec2'].get('masterless', False)
