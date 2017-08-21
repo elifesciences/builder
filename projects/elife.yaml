@@ -172,6 +172,9 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
+        1604test:
+            ec2:
+                ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         end2end:
             description: RDS backed
             rds:
