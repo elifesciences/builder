@@ -1,8 +1,8 @@
 import os
 from collections import OrderedDict
-from fabric.api import local, task
-from decorators import requires_project, requires_aws_stack, echo_output
-from buildercore import bootstrap, config, core, context_handler
+from fabric.api import task
+from decorators import requires_project, requires_aws_stack
+from buildercore import bootstrap, core, context_handler
 from buildercore.utils import ensure
 import logging
 from functools import wraps
@@ -34,29 +34,18 @@ def launch(pname, instance_id=None):
 @task
 @requires_aws_stack
 @requires_master_server_access
+@requires_masterless
 def update(stackname):
-    # this task is just temporary while I debug
-    bootstrap.update_ec2_stack(stackname, 'serial')
-
-def destroy():
-    pass
-
-@task
-@requires_aws_stack
-def ssh(stackname, node=None):
-    "maintenance ssh. uses the pem key and the bootstrap user to login."
     import cfn
-    instances = core.find_ec2_instances(stackname)
-    public_ip = cfn._pick_node(instances, node).ip_address
-    # -i identify file
-    local("ssh %s@%s -i %s" % (config.BOOTSTRAP_USER, public_ip, core.stack_pem(stackname)))
+    return cfn.update(stackname)
 
 #
 #
 #
 
 @task
-@echo_output
+@requires_master_server_access
+@requires_masterless
 def set_versions(stackname, *repolist):
     "call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"
     ctx = context_handler.load_context(stackname)
@@ -94,6 +83,8 @@ def set_versions(stackname, *repolist):
     if not arglist:
         return 'nothing to do'
 
-    with core.stack_conn(stackname):
+    def updater():
         for repo, formula, revision in arglist:
             bootstrap.run_script('update-master-formula.sh', repo, formula, revision)
+
+    core.stack_all_ec2_nodes(stackname, updater, concurrency='serial')
