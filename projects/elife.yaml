@@ -28,6 +28,7 @@ defaults:
             # how many EC2 instance per stack instance
             cluster-size: 1
             # find more here: http://cloud-images.ubuntu.com/releases/
+            # ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
             ami: ami-92002785   # elife 'basebox.2016-11-03'
             # use a master server or go ronin?
             masterless: false
@@ -829,6 +830,8 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
+        ec2:
+            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         type: t2.medium
         ports:
             - 22
@@ -841,7 +844,7 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        masterless:
+        standalone:
             description: doesn't speak to the master server. RDS backed
             ec2:
                 masterless: true
