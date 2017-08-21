@@ -309,13 +309,13 @@ journal:
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
-                    - beta
+                    - www
                     - elife
                     - prod
                     - ""
-                    - www
                     # to overwrite a previously used DNS entry
                     - dummydoesnotexistsplaceholder
+                    - dummydoesnotexistsplaceholder2
                 headers:
                     - X-Requested-With
                     - Host
