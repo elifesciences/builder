@@ -1,9 +1,6 @@
 #!/bin/bash
-# AWS and VAGRANT *MASTER AND MINIONS*
+# *ALL INSTANCES*
 # copied into the virtual machine and executed. DO NOT run on your host machine.
-
-# significant parts taken from
-# https://github.com/mitchellh/vagrant/issues/5973#issuecomment-126082024
 
 set -e # everything must pass
 set -u # no unbound variables
@@ -11,8 +8,8 @@ set -xv  # output the scripts and interpolated steps
 
 echo "-----------------------------"
 
-if [ "$#" -ne 4 ]; then
-    echo "Usage: ./bootstrap.sh version minion_id install_master master_ipaddr"
+if [ ! "$#" -ge 3 ]; then
+    echo "Usage: ./bootstrap.sh <version> <minion_id> <install_master> [master_ipaddr]"
     echo "Example: ./bootstrap.sh 2016.3.4 journal--end2end--1 false 10.0.0.1"
     exit 1
 fi
@@ -20,7 +17,7 @@ fi
 version=$1
 minion_id=$2
 install_master=$3
-master_ipaddr=$4
+master_ipaddr=${4:-""} # optional 4th argument. masterless minions do not use this.
 
 # ensures the SSH_AUTH_SOCK envvar is retained when we sudo to root
 # this allows the root user to talk to private git repos
@@ -121,7 +118,6 @@ fi
 if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log; fi
 if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
 
-
 # reset the minion config and
 # put minion id in dedicated file else salt keeps recreating file
 echo "
@@ -129,35 +125,6 @@ master: $master_ipaddr
 log_level: info" > /etc/salt/minion
 
 echo "$minion_id" > /etc/salt/minion_id
-if [ -d /vagrant ]; then
-    # we're using Vagrant    
-
-    # ignore IP parameter and use the one we can detect
-    master_ipaddr=$(ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://')
-
-    # link up the project formula mounted at /project
-    # NOTE: these links will be overwritten if this a master-server instance
-    ln -sfn /project/salt /srv/salt
-    ln -sfn /project/salt/pillar /srv/pillar
-    ln -sfn /vagrant/custom-vagrant /srv/custom
-    
-    # by default the project's top.sls is disabled by file naming. hook that up here
-    cd /srv/salt/ && ln -sf example.top top.sls
-    
-    # vagrant makes all formula dependencies available, including builder base formula
-
-    # overwrite the general purpose /etc/salt/minion file created above 
-    # with this more complex one for dev environments only
-    cp /vagrant/scripts/salt/minion.template /etc/salt/minion
-    custom_minion_file="/vagrant/scripts/salt/$minion_id.minion"
-    if [ -e "$custom_minion_file" ]; then
-        # this project requires a custom minion file. use that instead
-        cp "$custom_minion_file" /etc/salt/minion
-    else
-        echo "couldn't find $custom_minion_file"
-    fi        
-fi
-
 
 #  service restart necessary as we've changed the minion's configuration
 service salt-minion restart
@@ -171,6 +138,7 @@ if [ ! -f /root/.ssh/id_rsa ]; then
 fi
 touch /root/.ssh/known_hosts
 
+# after bootstrap.sh and before salt's highstate, we may need to talk to github
 
 # ensure salt can talk to github without host verification failures
 ssh-keygen -R github.com # removes any existing keys

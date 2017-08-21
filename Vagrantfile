@@ -294,8 +294,13 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # bootstrap Saltstack
         project.vm.provision("shell", path: "scripts/bootstrap.sh", \
             keep_color: true, privileged: true, \
-            args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER), "noipfromhere"])
-        
+            args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER)])
+
+        # link up formulas
+        project.vm.provision("shell", path: "scripts/init-vagrant-formulas.sh", \
+            keep_color: true, privileged: true, \
+            args: [INSTANCE_NAME])
+
         # configure the instance as if it were a master server
         if IS_MASTER
             pillar_repo = "https://github.com/elifesciences/builder-private-example"

@@ -15,7 +15,7 @@ from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 
 from functools import partial
 import logging
-from .utils import first, ensure
+from .utils import first, ensure, subdict
 
 LOG = logging.getLogger(__name__)
 
@@ -148,7 +148,14 @@ def mkoutput(title, desc, val):
 
 def build_vars(context, node):
     buildvars = dict(context)
-    del buildvars['project']
+
+    # preseve some of the project data. all of it is too much
+    keepers = [
+        'formula-repo',
+        'formula-dependencies'
+    ]
+    buildvars['project'] = subdict(buildvars['project'], keepers)
+
     buildvars['node'] = node
     buildvars['nodename'] = "%s--%s" % (context['stackname'], node)
     # the above context will reside on the server at /etc/build-vars.json.b64
