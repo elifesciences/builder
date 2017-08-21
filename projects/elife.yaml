@@ -29,6 +29,8 @@ defaults:
             cluster-size: 1
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-92002785   # elife 'basebox.2016-11-03'
+            # use a master server or go ronin?
+            masterless: false
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
@@ -833,6 +835,12 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
+        masterless:
+            description: doesn't speak to the master server. RDS backed
+            ec2:
+                masterless: true
+            rds:
+                storage: 10
         end2end:
             description: production-like environment. RDS backed
             rds:

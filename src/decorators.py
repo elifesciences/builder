@@ -141,8 +141,9 @@ def _sole_task(nom):
     task_list = env.tasks
     if len(task_list) > 0:
         final_task = task_list[-1]
+        final_task = final_task.split(':', 1)[0] # ignore any args
         final_task = final_task.split('.')[-1] # handles namespaced tasks like: webserver.vhost
-        return final_task.split(':')[0] == nom     # remove any args given to the function
+        return final_task == nom
 
 def echo_output(func):
     """if the wrapped function is the sole task being run, then it's output is

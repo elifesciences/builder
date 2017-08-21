@@ -16,8 +16,6 @@ fi
 
 
 cd /opt/builder/
-
-
 if [ ! -d /vagrant ]; then
     # NOT vagrant. if this were vagrant, any dev changes would be reset
     git reset --hard
