@@ -441,7 +441,7 @@ def update_ec2_stack(stackname, concurrency):
         return
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
-    is_masterless = pdata['aws']['ec2']['masterless']
+    is_masterless = pdata['aws']['ec2'].get('masterless', False)
 
     master_builder_key = None
     if is_masterless:
