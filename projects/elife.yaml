@@ -28,6 +28,7 @@ defaults:
             # how many EC2 instance per stack instance
             cluster-size: 1
             # find more here: http://cloud-images.ubuntu.com/releases/
+            # ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
             ami: ami-92002785   # elife 'basebox.2016-11-03'
             # use a master server or go ronin?
             masterless: false
@@ -123,6 +124,8 @@ defaults:
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
+        # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
+        # box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
         box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
         box-url: null
@@ -183,6 +186,7 @@ lax:
             ext:
                 size: 10 # GB
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1239: 80
             1240: 8001
@@ -222,6 +226,7 @@ api-gateway:
                 headers:
                     - Accept
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1323: 80
 
@@ -328,6 +333,7 @@ journal:
             elasticache:
                 engine: redis
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 4096
         ports:
             1240: 80
@@ -432,6 +438,7 @@ elife-bot:
             #               #prefix: null
             #               #suffix: null
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             # loris
@@ -823,6 +830,8 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
+        ec2:
+            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         type: t2.medium
         ports:
             - 22
@@ -835,7 +844,7 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        masterless:
+        standalone:
             description: doesn't speak to the master server. RDS backed
             ec2:
                 masterless: true
@@ -852,6 +861,7 @@ observer:
                 multi-az: true
 
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 2048 # metabase, mostly
         ports:
             1239: 80
