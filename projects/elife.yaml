@@ -835,7 +835,7 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        standalone:
+        masterless:
             description: doesn't speak to the master server. RDS backed
             ec2:
                 masterless: true
