@@ -29,7 +29,7 @@ def requires_masterless(fn):
 @requires_master_server_access
 def launch(pname, instance_id=None):
     import cfn
-    cfn.launch(pname, instance_id, 'masterless')
+    cfn.launch(pname, instance_id, 'standalone')
 
 @task
 @requires_aws_stack
