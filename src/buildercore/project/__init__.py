@@ -127,6 +127,7 @@ def branch_deployable_projects(*args, **kwargs):
 def projects_with_formulas(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: pdata.get('formula-repo'), *args, **kwargs)
 
+# TODO: add builder-base => builder-base-formula
 def all_formulas():
     formulas = OrderedDict()
     for pname in projects_with_formulas():

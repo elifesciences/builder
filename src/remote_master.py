@@ -15,15 +15,12 @@ def install_formula(pname, formula_url):
         formula_url = formula_url[6:]
     return local("/bin/bash /opt/builder/scripts/update-master-formula.sh %s %s" % (pname, formula_url))
 
-def install_update_all_project_formulas():
-    for pname in project.projects_with_formulas():
-        pdata = project.project_data(pname)
-        formula_url = pdata['formula-repo']
-        install_formula(pname, formula_url)
-
 def install_update_formula_deps():
     pdata = project.project_data('master-server')
     for dep in pdata.get('formula-dependencies', []):
+        # TODO: this is inconsistent as api-dummy-formula could both be present both as
+        # - api-dummy (as project main formula)
+        # - api-dummy-formula (as dependency)
         name = os.path.basename(dep) # ll: 'some-formula' in 'https://github.com/elifesciences/some-formula
         install_formula(name, dep)
 
@@ -66,5 +63,4 @@ def refresh():
     # called as part of the update-master.sh script with the 'master' BLDR ROLE
     # shouldn't be called otherwise
     install_update_formula_deps() # builder base
-    install_update_all_project_formulas() # website, journal, etc
     refresh_config() # rewrite /etc/salt/master yaml
