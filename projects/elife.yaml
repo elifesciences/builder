@@ -770,12 +770,10 @@ recommendations:
     formula-repo: https://github.com/elifesciences/recommendations-formula
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
     vagrant:
         ram: 2048
         ports:
             1254: 80
-            1255: 8080
     aws:
         type: t2.medium # 4 GB of RAM: same as search for now.
         ports:
