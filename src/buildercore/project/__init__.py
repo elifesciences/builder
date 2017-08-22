@@ -1,4 +1,5 @@
 # from . import core # DONT import core. this project module should be relatively independent
+from collections import OrderedDict
 from buildercore import utils, config
 from buildercore.decorators import osissue
 from kids.cache import cache
@@ -125,6 +126,13 @@ def branch_deployable_projects(*args, **kwargs):
 
 def projects_with_formulas(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: pdata.get('formula-repo'), *args, **kwargs)
+
+def all_formulas():
+    formulas = OrderedDict()
+    for pname in projects_with_formulas():
+        pdata = project_data(pname)
+        formulas[pname] = pdata['formula-repo']
+    return formulas
 
 def aws_projects(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: 'aws' in pdata, *args, **kwargs)
