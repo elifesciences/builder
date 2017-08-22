@@ -11,6 +11,8 @@ set -xv  # output the scripts and interpolated steps
 
 stackname=$1 # who am I? ll: master-server--2016-01-01
 pillar_repo=$2 # what secrets do I know?
+formulas=$3 # which formulas will I use? YAML format
+formula_root="/opt/formulas"
 
 echo "bootstrapping master-minion $stackname"
 
@@ -24,7 +26,7 @@ if [ ! -f /root/.ssh/id_rsa.pub ]; then
 fi
 
 
-# test if master hasn't accepted it's own key yet
+# test if master hasn't accepted its own key yet
 if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     if [ ! -f /etc/salt/pki/minion/minion.pub ]; then
         # master hasn't generated it's own keys yet!
@@ -33,7 +35,10 @@ if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     fi
     # minion keys for master should exist at this point
     mkdir -p /etc/salt/pki/master/minions/
-    cp /etc/salt/pki/minion/minion.pub "/etc/salt/pki/master/minions/$stackname"
+    # TODO: not sure why this is needed?
+    # other nodes usually just start using the master without
+    # their key manually configured
+    #cp /etc/salt/pki/minion/minion.pub "/etc/salt/pki/master/minions/$stackname"
 fi
 
 
@@ -62,6 +67,8 @@ after the setup of the key, complete this process by running builder's 'update' 
 
     ./bldr update:$stackname
 
+Note this key must be added also tom any private formula you want the master-server to use.
+
 ----------"
 
         exit 1
@@ -72,6 +79,27 @@ else
     git reset --hard
     git pull
 fi
+
+# clone all formulas
+mkdir -p $formula_root
+cd $formula_root
+OLDIFS=$IFS
+IFS=,
+test -e $formulas
+while read pname formula_repo
+do
+    echo "Initializing $pname ($formula_repo)"
+    if [ -d "$pname" ]; then
+        cd "$pname"
+        git reset --hard
+        git clean -d --force
+        git pull --rebase
+        cd -
+    else
+        git clone "$formula_repo" "$pname"
+    fi
+done < "$formulas"
+IFS=$OLDIFS
 
 
 # install/update builder
