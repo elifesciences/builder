@@ -33,12 +33,17 @@ def private_ip():
 
 def private_file_roots():
     return [
-        "/srv/salt/",
+        "/opt/builder-private/salt/",
     ]
 
 def basic_file_roots():
     return [
         "/opt/formulas/builder-base-formula/",
+    ]
+
+def private_pillar_roots():
+    return [
+        "/opt/builder-private/pillar",
     ]
 
 def formula_file_roots():
@@ -50,6 +55,7 @@ def refresh_config():
     with open('/etc/salt/master', 'r') as cfgfile:
         cfg = core_utils.ordered_load(cfgfile)
     cfg['file_roots']['base'] = private_file_roots() + formula_file_roots() + basic_file_roots()
+    cfg['pillar_roots']['base'] = private_pillar_roots()
     cfg['interface'] = private_ip()
 
     with open('/etc/salt/master', 'w') as cfgfile:

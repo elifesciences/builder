@@ -143,8 +143,10 @@ fi
 cp /opt/builder-private/etc-salt-master /etc/salt/master
 
 cd /srv
-ln -sf /opt/builder-private/pillar
-ln -sf /opt/builder-private/salt
+# on Vagrant, this overwrite /srv/pillar which contains the pillars from the formula
+#ln -sf /opt/builder-private/pillar
+# on Vagrant, this overwrite /srv/salt which contains the formula
+#ln -sf /opt/builder-private/salt
 
 echo "master server configured"
 
