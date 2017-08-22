@@ -10,20 +10,6 @@ from fabric.api import local
 from buildercore import project
 from decorators import mastertask
 
-def install_formula(pname, formula_url):
-    if formula_url.startswith("ssh://"):
-        formula_url = formula_url[6:]
-    return local("/bin/bash /opt/builder/scripts/update-master-formula.sh %s %s" % (pname, formula_url))
-
-def install_update_formula_deps():
-    pdata = project.project_data('master-server')
-    for dep in pdata.get('formula-dependencies', []):
-        # TODO: this is inconsistent as api-dummy-formula could both be present both as
-        # - api-dummy (as project main formula)
-        # - api-dummy-formula (as dependency)
-        name = os.path.basename(dep) # ll: 'some-formula' in 'https://github.com/elifesciences/some-formula
-        install_formula(name, dep)
-
 def private_ip():
     cmd = "/sbin/ifconfig eth0 | awk '/inet / { print $2 }' | sed 's/addr://'"
     return str(local(cmd, capture=True))
@@ -62,5 +48,4 @@ def refresh_config():
 def refresh():
     # called as part of the update-master.sh script with the 'master' BLDR ROLE
     # shouldn't be called otherwise
-    install_update_formula_deps() # builder base
     refresh_config() # rewrite /etc/salt/master yaml

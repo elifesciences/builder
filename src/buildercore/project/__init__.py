@@ -1,5 +1,7 @@
 # from . import core # DONT import core. this project module should be relatively independent
 from collections import OrderedDict
+import re
+import os
 from buildercore import utils, config
 from buildercore.decorators import osissue
 from kids.cache import cache
@@ -127,12 +129,15 @@ def branch_deployable_projects(*args, **kwargs):
 def projects_with_formulas(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: pdata.get('formula-repo'), *args, **kwargs)
 
-# TODO: add builder-base => builder-base-formula
 def all_formulas():
     formulas = OrderedDict()
     for pname in projects_with_formulas():
         pdata = project_data(pname)
         formulas[pname] = pdata['formula-repo']
+        for dep in pdata.get('formula-dependencies', []):
+            dep_name = re.sub('-formula$', '', os.path.basename(dep))
+            formulas[dep_name] = dep
+
     return formulas
 
 def aws_projects(*args, **kwargs):
