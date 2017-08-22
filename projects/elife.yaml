@@ -782,13 +782,6 @@ recommendations:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-        sqs:
-            recommendations--{instance}:
-                subscriptions:
-                    - bus-articles--{instance}
-                    - bus-podcast-episodes--{instance}
-                    - bus-subjects--{instance}
-                    - bus-collections--{instance}
 
 personalised-covers:
     domain: false
