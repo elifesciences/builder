@@ -34,7 +34,18 @@ fi
 
 # replace the master config, if it exists, with the builder-private copy ...
 cp /opt/builder-private/etc-salt-master /etc/salt/master
+
+env
 # ... then clone/pull all formula repos and update master config
+cd /opt/formulas
+for formula in `ls`; do
+    cd $formula
+    git reset --hard
+    git clean -d --force
+    git pull --rebase
+    cd ..
+done
+cd /opt/builder
 BLDR_ROLE=master ./bldr remote_master.refresh
 
 service salt-master stop || true
