@@ -21,7 +21,7 @@ def private_file_roots():
 
 def basic_file_roots():
     return [
-        "/opt/formulas/builder-base-formula/",
+        "/opt/formulas/builder-base/",
     ]
 
 def private_pillar_roots():

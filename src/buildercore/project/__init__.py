@@ -1,7 +1,4 @@
 # from . import core # DONT import core. this project module should be relatively independent
-from collections import OrderedDict
-import re
-import os
 from buildercore import utils, config
 from buildercore.decorators import osissue
 from kids.cache import cache
@@ -129,16 +126,25 @@ def branch_deployable_projects(*args, **kwargs):
 def projects_with_formulas(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: pdata.get('formula-repo'), *args, **kwargs)
 
-def all_formulas():
-    formulas = OrderedDict()
-    for pname in projects_with_formulas():
-        pdata = project_data(pname)
-        formulas[pname] = pdata['formula-repo']
-        for dep in pdata.get('formula-dependencies', []):
-            dep_name = re.sub('-formula$', '', os.path.basename(dep))
-            formulas[dep_name] = dep
-
-    return formulas
-
 def aws_projects(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: 'aws' in pdata, *args, **kwargs)
+
+#
+#
+#
+
+def transformed_projects(mapfn, *args, **kwargs):
+    return utils.dictmap(mapfn, project_map(*args, **kwargs))
+
+def project_formulas():
+    return transformed_projects(lambda _, pdata: [pdata.get('formula-repo')] + pdata.get('formula-dependencies', []))
+
+#
+#
+#
+
+def known_formulas():
+    "a simple list of all known project formulas (excluding the private-repo)"
+    lst = utils.unique(utils.shallow_flatten(project_formulas().values()))
+    lst.remove(None)
+    return lst

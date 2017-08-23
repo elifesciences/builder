@@ -83,23 +83,22 @@ fi
 # clone all formulas
 mkdir -p $formula_root
 cd $formula_root
-OLDIFS=$IFS
-IFS=,
-test -e $formulas
-while read pname formula_repo
+for formula_repo in $formulas
 do
+    pname=${formula_repo##*/} # "personalised-covers-formula"
+    pname=${pname%-formula} # "personalised-covers"
     echo "Initializing $pname ($formula_repo)"
     if [ -d "$pname" ]; then
-        cd "$pname"
-        git reset --hard
-        git clean -d --force
-        git pull --rebase
-        cd -
+        (
+            cd "$pname"
+            git reset --hard
+            git clean -d --force
+            git pull --rebase
+        )
     else
         git clone "$formula_repo" "$pname"
     fi
-done < "$formulas"
-IFS=$OLDIFS
+done
 
 
 # install/update builder
