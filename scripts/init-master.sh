@@ -83,7 +83,6 @@ fi
 # clone all formulas
 mkdir -p $formula_root
 cd $formula_root
-test -e "$formulas"
 for formula_repo in $formulas
 do
     pname=${formula_repo##*/} # "personalised-covers-formula"
