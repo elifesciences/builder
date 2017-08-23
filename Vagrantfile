@@ -304,10 +304,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # configure the instance as if it were a master server
         if IS_MASTER
             pillar_repo = "https://github.com/elifesciences/builder-private-example"
-            IO.popen("/bin/bash -c \"source venv/bin/activate && PYTHONPATH=src ./.all-formulas.py > all-formulas.csv\"").read
-
+            all_formulas = YAML.load(IO.popen("/bin/bash -c \"source venv/bin/activate && ./.project.py --formula\"").read)
             project.vm.provision("shell", path: "scripts/init-master.sh", \
-                                 keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo, "/vagrant/all-formulas.csv"])
+                keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo, all_formulas.join(' ')])
 
             # this script is called regularly on master server to sync project formulas
             project.vm.provision("shell", path: "scripts/update-master.sh", \
