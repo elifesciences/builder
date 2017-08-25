@@ -437,7 +437,7 @@ def update_ec2_stack(stackname, concurrency):
     #pdata = project_data_for_stackname(stackname)
     ctx = context_handler.load_context(stackname)
     pdata = ctx['project']
-    if not pdata['aws']['ec2']:
+    if not pdata['aws'].get('ec2'):
         return
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
