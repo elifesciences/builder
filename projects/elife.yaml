@@ -893,7 +893,7 @@ figure-viewer:
                     index-document: index.html
 
 reviewer-suggestions:
-    description: data science project
+    description: data science project (DEPRECATED)
     subdomain: reviewer-suggestions
     repo: https://github.com/elifesciences/reviewer-suggestions
     formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
