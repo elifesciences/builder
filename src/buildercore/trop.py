@@ -481,6 +481,12 @@ def _add_bucket_policy(template, bucket_title, bucket_name):
         }
     ))
 
+def _elb_protocols(context):
+    if isinstance(context['elb']['protocol'], str):
+        return [context['elb']['protocol']]
+    else:
+        return context['elb']['protocol']
+
 def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
     listeners_policy_names = []
@@ -502,10 +508,7 @@ def render_elb(context, template, ec2_instances):
         else:
             raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
 
-    if isinstance(context['elb']['protocol'], str):
-        protocols = [context['elb']['protocol']]
-    else:
-        protocols = context['elb']['protocol']
+    protocols = _elb_protocols(context)
 
     listeners = []
     elb_ports = []
@@ -532,9 +535,7 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
-    additional_listeners = context['elb']['additional_listeners']
-    for listener_name in additional_listeners:
-        listener = additional_listeners[listener_name]
+    for _, listener in context['elb']['additional_listeners'].iteritems():
         listeners.append(elb.Listener(
             InstanceProtocol='HTTP',
             InstancePort=str(listener['port']),
@@ -544,8 +545,6 @@ def render_elb(context, template, ec2_instances):
             SSLCertificateId=context['elb']['certificate']
         ))
         elb_ports.append(listener['port'])
-
-    healthcheck_target = _elb_healthcheck_target(context)
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
@@ -563,7 +562,7 @@ def render_elb(context, template, ec2_instances):
         Listeners=listeners,
         LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
         HealthCheck=elb.HealthCheck(
-            Target=healthcheck_target,
+            Target=_elb_healthcheck_target(context),
             HealthyThreshold=str(context['elb']['healthcheck'].get('healthy_threshold', 10)),
             UnhealthyThreshold=str(context['elb']['healthcheck'].get('unhealthy_threshold', 2)),
             Interval=str(context['elb']['healthcheck'].get('interval', 30)),
