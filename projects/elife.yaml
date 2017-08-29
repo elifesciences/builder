@@ -159,6 +159,7 @@ master-server:
 
 lax:
     subdomain: lax # lax.elifesciences.org
+    intdomain: null
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
@@ -185,6 +186,22 @@ lax:
                 multi-az: true
             ext:
                 size: 10 # GB
+        balanced:
+            description: testing out load balancing for high availability
+            rds:
+                storage: 5
+                multi-az: true
+            ext:
+                size: 10 # GB
+            elb:
+                protocol:
+                    - https
+                additional_listeners:
+                    bot_lax_adaptor:
+                        protocol: https
+                        port: 8001
+                healthcheck:
+                    path: /api/v2/ping
     vagrant:
         box: bento/ubuntu-16.04
         ports:
