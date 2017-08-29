@@ -918,6 +918,32 @@ reviewer-suggestions:
             1241: 80
         ram: 4096
 
+peerscout:
+    description: PeerScout
+    subdomain: peerscout
+    repo: https://github.com/elifesciences/peerscout
+    formula-repo: https://github.com/elifesciences/peerscout-formula
+    aws:
+        type: t2.xlarge # explicitly 16GB RAM for heavy background processing
+        ports:
+            - 22
+            - 80
+            - 443
+        rds:
+            storage: 5
+        ext:
+            # external hdd
+            size: 100 # GB
+            device: /dev/sdf
+    aws-alt:
+        prod:
+            rds:
+                multi-az: true
+    vagrant:
+        ports:
+            1241: 80
+        ram: 4096
+
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
     subdomain: iiif
