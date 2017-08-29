@@ -59,6 +59,7 @@ defaults:
             # elb defaults only used if an 'elb' section present in project
             stickiness: false
             protocol: http
+            additional_listeners: {}
             idle_timeout: 60
             certificate: arn:aws:iam::...:...
             healthcheck:
