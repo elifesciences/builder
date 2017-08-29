@@ -532,6 +532,19 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
+    additional_listeners = context['elb']['additional_listeners']
+    for listener_name in additional_listeners:
+        listener = additional_listeners[listener_name]
+        listeners.append(elb.Listener(
+            InstanceProtocol='HTTP',
+            InstancePort=str(listener['port']),
+            LoadBalancerPort=str(listener['port']),
+            PolicyNames=listeners_policy_names,
+            Protocol=listener['protocol'].upper(),
+            SSLCertificateId=context['elb']['certificate']
+        ))
+        elb_ports.append(listener['port'])
+
     healthcheck_target = _elb_healthcheck_target(context)
 
     template.add_resource(elb.LoadBalancer(

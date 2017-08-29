@@ -60,6 +60,7 @@ defaults:
             stickiness: false
             protocol: http
             idle_timeout: 60
+            certificate: arn:aws:iam::...:...
             healthcheck:
                 protocol: http
                 port: 80
@@ -306,6 +307,27 @@ project-with-stickiness:
             stickiness:
                 type: cookie
                 cookie-name: mysessionid
+
+project-with-multiple-elb-listeners:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    # no internal domain, while the public 'domain' is true by default
+    intdomain: false
+    aws:
+        ports:
+            - 80
+            - 8001
+        ec2:
+            cluster-size: 2
+        elb: 
+            protocol: http
+            additional_listeners:
+                some_daemon:
+                    protocol: https
+                    port: 8001
+        subdomains:
+            - project.tv
+            - ""
 
 project-with-cluster-integration-tests:
     repo: ssh://git@github.com/elifesciences/dummy3
