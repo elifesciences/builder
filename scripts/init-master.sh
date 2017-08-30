@@ -11,7 +11,7 @@ set -xv  # output the scripts and interpolated steps
 
 stackname=$1 # who am I? ll: master-server--2016-01-01
 pillar_repo=$2 # what secrets do I know?
-formulas=$3 # which formulas will I use? YAML format
+formulas=$3 # which formulas will I use?
 formula_root="/opt/formulas"
 
 echo "bootstrapping master-minion $stackname"
