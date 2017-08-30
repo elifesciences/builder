@@ -892,32 +892,6 @@ figure-viewer:
                 website-configuration:
                     index-document: index.html
 
-reviewer-suggestions:
-    description: data science project (DEPRECATED)
-    subdomain: reviewer-suggestions
-    repo: https://github.com/elifesciences/reviewer-suggestions
-    formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
-    aws:
-        type: t2.xlarge # explicitly 16GB RAM for heavy background processing
-        ports:
-            - 22
-            - 80
-            - 443
-        rds:
-            storage: 5
-        ext:
-            # external hdd
-            size: 100 # GB
-            device: /dev/sdf
-    aws-alt:
-        prod:
-            rds:
-                multi-az: true
-    vagrant:
-        ports:
-            1241: 80
-        ram: 4096
-
 peerscout:
     description: PeerScout
     subdomain: peerscout
