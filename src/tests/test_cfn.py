@@ -1,8 +1,15 @@
+import os
 from . import base
 from cfn import ssh, owner_ssh, generate_stack_from_input
 from mock import patch, MagicMock
 
 class TestCfn(base.BaseCase):
+    def setUp(self):
+        os.environ['LOGNAME'] = 'my_user'
+
+    def tearDown(self):
+        del os.environ['LOGNAME']
+
     @patch('cfn.local')
     @patch('buildercore.core.active_stack_names')
     @patch('buildercore.core.find_ec2_instances')
