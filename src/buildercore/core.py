@@ -540,11 +540,13 @@ def _find_master(stacks):
     msl = map(first, msl) # just stack names
     if len(msl) > 1:
         LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
-    msl = sorted(msl, key=parse_stackname, reverse=True)
+    msl = sorted(msl, key=parse_stackname)
     return first(msl)
 
 def find_master(region):
-    "returns the most recent aws master-server it can find."
+    """returns the oldest aws master-server it can find.
+    
+    Since we are using the oldest, new master-server instances can be provisioned and debugged without being picked up until the older master-server is taken down"""
     stacks = active_aws_stacks(region)
     if not stacks:
         raise NoMasterException("no master servers found in region %r" % region)
