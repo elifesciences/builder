@@ -545,7 +545,7 @@ def _find_master(stacks):
 
 def find_master(region):
     """returns the oldest aws master-server it can find.
-    
+
     Since we are using the oldest, new master-server instances can be provisioned and debugged without being picked up until the older master-server is taken down"""
     stacks = active_aws_stacks(region)
     if not stacks:
