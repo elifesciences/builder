@@ -11,11 +11,15 @@ def ssh_access(url):
 
 def access(repo_url):
     bits = repo_url.split('://', 1)
-    assert len(bits) == 2, "could not find a protocol in url: %r" % repo_url
-    protocol, _ = bits
+    if len(bits) == 1:
+        protocol = 'ssh'
+        remote = repo_url
+    else:
+        assert len(bits) == 2, "could not find a protocol in url: %r" % repo_url
+        protocol, remote = bits
     if protocol == 'http':
         protocol = 'https'
     return {
         'https': http_access,
         'ssh': ssh_access,
-    }[protocol](bits[1])
+    }[protocol](remote)

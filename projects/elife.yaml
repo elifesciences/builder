@@ -15,7 +15,8 @@ defaults:
     # repo containing project pillar data (credentials typically)
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
-    private-repo: ssh://git@github.com/elifesciences/builder-private
+    # TODO: hunt down ssh:// remotes
+    private-repo: git@github.com:elifesciences/builder-private
     # default branch to use when creating new instances
     default-branch: master
     # in rare cases we have formulas requiring the states of other formulas
