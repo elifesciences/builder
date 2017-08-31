@@ -40,7 +40,9 @@ def run_script(script_path, *script_params):
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_path) + '-' + timestamp_marker)
     put(local_script, remote_script)
-    cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
+    def escape_string_parameter(parameter):
+        return "'%s'" % parameter
+    cmd = ["/bin/bash", remote_script] + map(escape_string_parameter, list(script_params))
     retval = sudo(" ".join(cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
