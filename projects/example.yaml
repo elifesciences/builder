@@ -63,7 +63,7 @@ master-server:
     # formula-repo for the 'master-server' project should contain the 
     # confidential pillar data, master config and state top file.
     # TODO: link to further docs
-    formula-repo: ssh://git@github.com/elifesciences/builder-private
+    formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
         ports:
             22: 22

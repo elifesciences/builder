@@ -128,3 +128,23 @@ def projects_with_formulas(*args, **kwargs):
 
 def aws_projects(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: 'aws' in pdata, *args, **kwargs)
+
+#
+#
+#
+
+def transformed_projects(mapfn, *args, **kwargs):
+    return utils.dictmap(mapfn, project_map(*args, **kwargs))
+
+def project_formulas():
+    return transformed_projects(lambda _, pdata: [pdata.get('formula-repo')] + pdata.get('formula-dependencies', []))
+
+#
+#
+#
+
+def known_formulas():
+    "a simple list of all known project formulas (excluding the private-repo)"
+    lst = utils.unique(utils.shallow_flatten(project_formulas().values()))
+    lst.remove(None)
+    return lst

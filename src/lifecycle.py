@@ -18,6 +18,13 @@ def stop(stackname):
 
 @task
 @requires_aws_stack
+@timeit
+def restart(stackname):
+    stop(stackname)
+    start(stackname)
+
+@task
+@requires_aws_stack
 @echo_output
 def last_start_time(stackname):
     return lifecycle.last_start_time(stackname)

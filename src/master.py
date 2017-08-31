@@ -7,7 +7,7 @@ import aws
 from fabric.api import sudo, task, local
 from buildercore import core, bootstrap, config, keypair
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
-
+from kids.cache import cache as cached
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -55,6 +55,17 @@ def download_keypair(stackname):
 #
 #
 
+@debugtask
+@echo_output
+@cached
+def server_access():
+    """returns True if this builder instance has access to the master server.
+    access may be available through presence of the master-server's bootstrap user's
+    identify file OR current user is in master server's allowed_keys list"""
+    stackname = core.find_master(core.find_region())
+    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['ip_address']
+    result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
+    return result.return_code == 0
 
 @echo_output
 def aws_update_many_projects(pname_list):
@@ -71,25 +82,19 @@ def aws_update_projects(pname):
 
 @debugtask
 @requires_aws_stack
-def remaster_minion(stackname):
+def remaster_minion(stackname, master_ip):
     """tell minion who their new master is.
 
     deletes the master's key on the minion
-    updates the minion, which re-writes the minion config and eventually calls highstate
+    """
 
-    * assumes you don't have ssh access to the minion
-    * assumes writing keypairs to S3 is turned on"""
     print 're-mastering', stackname
-    expected_key = core.stack_pem(stackname)
-    if not os.path.exists(expected_key):
-        download_keypair(stackname)
-    with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
-        sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
-    bootstrap.update_stack(stackname)
 
-@debugtask
-def remaster_minions():
-    map(remaster_minion, core.active_stack_names(aws.find_region()))
+    def work():
+        sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
+        sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
+    core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
+    bootstrap.update_ec2_stack(stackname, concurrency='serial')
 
 @task
 def kick():

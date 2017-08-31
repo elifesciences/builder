@@ -15,7 +15,8 @@ defaults:
     # repo containing project pillar data (credentials typically)
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
-    private-repo: ssh://git@github.com/elifesciences/builder-private
+    # TODO: hunt down ssh:// remotes
+    private-repo: git@github.com:elifesciences/builder-private
     # default branch to use when creating new instances
     default-branch: master
     # in rare cases we have formulas requiring the states of other formulas
@@ -28,7 +29,10 @@ defaults:
             # how many EC2 instance per stack instance
             cluster-size: 1
             # find more here: http://cloud-images.ubuntu.com/releases/
+            # ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
             ami: ami-92002785   # elife 'basebox.2016-11-03'
+            # use a master server or go ronin?
+            masterless: false
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
@@ -121,6 +125,8 @@ defaults:
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
     vagrant:
+        # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
+        # box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
         box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
         box-url: null
@@ -150,6 +156,7 @@ master-server:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
+            - 8080 # chemist, Github webhooks for formulas
     vagrant: {}
 
 lax:
@@ -181,6 +188,7 @@ lax:
             ext:
                 size: 10 # GB
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1239: 80
             1240: 8001
@@ -220,6 +228,7 @@ api-gateway:
                 headers:
                     - Accept
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1323: 80
 
@@ -302,13 +311,13 @@ journal:
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
-                    - beta
+                    - www
                     - elife
                     - prod
                     - ""
-                    - www
                     # to overwrite a previously used DNS entry
                     - dummydoesnotexistsplaceholder
+                    - dummydoesnotexistsplaceholder2
                 headers:
                     - X-Requested-With
                     - Host
@@ -326,6 +335,7 @@ journal:
             elasticache:
                 engine: redis
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 4096
         ports:
             1240: 80
@@ -430,6 +440,7 @@ elife-bot:
             #               #prefix: null
             #               #suffix: null
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             # loris
@@ -761,25 +772,16 @@ recommendations:
     formula-repo: https://github.com/elifesciences/recommendations-formula
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
     vagrant:
         ram: 2048
         ports:
             1254: 80
-            1255: 8080
     aws:
         type: t2.medium # 4 GB of RAM: same as search for now.
         ports:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-        sqs:
-            recommendations--{instance}:
-                subscriptions:
-                    - bus-articles--{instance}
-                    - bus-podcast-episodes--{instance}
-                    - bus-subjects--{instance}
-                    - bus-collections--{instance}
 
 personalised-covers:
     domain: false
@@ -821,6 +823,8 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
+        ec2:
+            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         type: t2.medium
         ports:
             - 22
@@ -833,6 +837,12 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
+        standalone:
+            description: doesn't speak to the master server. RDS backed
+            ec2:
+                masterless: true
+            rds:
+                storage: 10
         end2end:
             description: production-like environment. RDS backed
             rds:
@@ -844,6 +854,7 @@ observer:
                 multi-az: true
 
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 2048 # metabase, mostly
         ports:
             1239: 80
@@ -874,11 +885,11 @@ figure-viewer:
                 website-configuration:
                     index-document: index.html
 
-reviewer-suggestions:
-    description: data science project
-    subdomain: reviewer-suggestions
-    repo: https://github.com/elifesciences/reviewer-suggestions
-    formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
+peerscout:
+    description: PeerScout
+    subdomain: peerscout
+    repo: https://github.com/elifesciences/peerscout
+    formula-repo: https://github.com/elifesciences/peerscout-formula
     aws:
         type: t2.xlarge # explicitly 16GB RAM for heavy background processing
         ports:
@@ -895,6 +906,8 @@ reviewer-suggestions:
         prod:
             rds:
                 multi-az: true
+            subdomains:
+                - peerscout
     vagrant:
         ports:
             1241: 80
@@ -1052,7 +1065,7 @@ evanthia-simpler-component:
 crm:
     subdomain: crm # crm.elifesciences.org
     repo: https://github.com/elifesciences/drupal-civi
-    formula-repo: ssh://git@github.com/elifesciences/crm-formula
+    formula-repo: git@github.com:elifesciences/crm-formula
     aws:
         type: t2.medium
         ports:
@@ -1095,12 +1108,16 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        type: t2.micro
+        ec2: 
+            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
+        type: t2.small
         ports:
             - 22
             - 443
             - 80
     vagrant:
+        box: bento/ubuntu-16.04
+        ram: 2048
         ports:
             1201: 80
 

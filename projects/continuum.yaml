@@ -17,7 +17,7 @@ defaults:
     # repo containing project pillar data (credentials typically)
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
-    private-repo: ssh://git@github.com/elife-anonymous-user/builder-private
+    private-repo: git@github.com:elife-anonymous-user/builder-private
     # default branch to use when creating new instances
     default-branch: master
     # set of formulas that the project depends upon in addition to its own
@@ -100,7 +100,7 @@ defaults:
         s3: []
  
 master-server:
-    formula-repo: ssh://git@github.com/elifesciences/master-server-formula
+    formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
         ports:
             - 22
@@ -139,7 +139,7 @@ elife-bot:
 
 elife-dashboard:
     subdomain: ppp-dash # ppp-dash.elifesciences.org
-    repo: ssh://git@github.com/elifesciences/elife-dashboard
+    repo: https://github.com/elifesciences/elife-dashboard
     formula-repo: https://github.com/elifesciences/elife-dashboard-formula
     default-branch: develop
     aws:

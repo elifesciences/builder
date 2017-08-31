@@ -32,6 +32,9 @@ def dictfilter(func, ddict):
         return ddict
     return {k: v for k, v in ddict.items() if func(k, v)}
 
+def dictmap(fn, ddict):
+    return {key: fn(key, val) for key, val in ddict.items()}
+
 def subdict(ddict, key_list):
     return {k: v for k, v in ddict.items() if k in key_list}
 

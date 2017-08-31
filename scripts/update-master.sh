@@ -16,8 +16,6 @@ fi
 
 
 cd /opt/builder/
-
-
 if [ ! -d /vagrant ]; then
     # NOT vagrant. if this were vagrant, any dev changes would be reset
     git reset --hard
@@ -36,7 +34,19 @@ fi
 
 # replace the master config, if it exists, with the builder-private copy ...
 cp /opt/builder-private/etc-salt-master /etc/salt/master
+
+env
 # ... then clone/pull all formula repos and update master config
+cd /opt/formulas
+for formula in *; do
+    (
+        cd "$formula"
+        git reset --hard
+        git clean -d --force
+        git pull --rebase
+    )
+done
+cd /opt/builder
 BLDR_ROLE=master ./bldr remote_master.refresh
 
 service salt-master stop || true

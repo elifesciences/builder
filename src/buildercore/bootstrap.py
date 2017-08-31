@@ -4,8 +4,7 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import json
-import os
+import os, json
 from os.path import join
 from pprint import pformat
 from functools import partial
@@ -20,9 +19,10 @@ from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
+from fabric import operations
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
-from buildercore import context_handler
+from buildercore import context_handler, project
 from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
@@ -40,7 +40,10 @@ def run_script(script_path, *script_params):
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_path) + '-' + timestamp_marker)
     put(local_script, remote_script)
-    cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
+
+    def escape_string_parameter(parameter):
+        return "'%s'" % parameter
+    cmd = ["/bin/bash", remote_script] + map(escape_string_parameter, list(script_params))
     retval = sudo(" ".join(cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
@@ -408,6 +411,24 @@ def create_update(stackname, part_filter=None):
     update_stack(stackname, part_filter)
     return stackname
 
+def upload_master_builder_key(key):
+    private_key = "/root/.ssh/id_rsa"
+    try:
+        # NOTE: overwrites any existing master key on machine being updated
+        operations.put(local_path=key, remote_path=private_key, use_sudo=True)
+    finally:
+        key.close()
+
+def download_master_builder_key(stackname):
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    master_stack = core.find_master(region)
+    private_key = "/root/.ssh/id_rsa"
+    fh = StringIO()
+    with stack_conn(master_stack):
+        operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
+    return fh
+
 def update_ec2_stack(stackname, concurrency):
     """installs/updates the ec2 instance attached to the specified stackname.
 
@@ -416,11 +437,24 @@ def update_ec2_stack(stackname, concurrency):
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
-    pdata = project_data_for_stackname(stackname)
-    if not pdata['aws']['ec2']:
+    ctx = context_handler.load_context(stackname)
+    pdata = ctx['project']
+    # backward compatibility: old instances may not have 'ec2' key
+    # consider it true if missing, as newer stacks e.g. bus--prod
+    # would have it explicitly set to False
+    default_ec2 = {'masterless': False, 'cluster-size': 1}
+    ec2 = pdata['aws'].get('ec2', default_ec2)
+    if not ec2:
         return
+    if ec2 is True:
+        ec2 = default_ec2
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
+    is_masterless = ec2.get('masterless', False)
+
+    master_builder_key = None
+    if is_masterless:
+        master_builder_key = download_master_builder_key(stackname)
 
     def _update_ec2_node():
         # upload private key if not present remotely
@@ -430,29 +464,31 @@ def update_ec2_stack(stackname, concurrency):
             pem = stack_pem(stackname, die_if_doesnt_exist=True)
             put(pem, "/root/.ssh/id_rsa", use_sudo=True)
 
-        # write out environment config so Salt can read CFN outputs
+        # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)
 
         salt_version = pdata['salt']
-        install_master_flag = str(is_master).lower() # ll: 'true'
+        install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
         master_ip = master(region, 'private_ip_address')
 
-        # TODO: this is a little gnarly. I think I'd prefer this logic in the script:
-        #       if [ cat /etc/build-vars.json | grep 'nodename' ]; then ... fi
-        # it will do for now, though.
         build_vars = bvars.read_from_current_host()
-        if 'nodename' in build_vars:
-            minion_id = build_vars['nodename']
-        else:
-            minion_id = stackname
+        minion_id = build_vars.get('nodename', stackname)
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
-        # /TODO
+
+        if is_masterless:
+            # order is important.
+            formula_list = '"%s"' % ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
+            prepo = pdata['private-repo']
+            # to init the builder-private formula, the masterless instance needs
+            # the master-builder key
+            upload_master_builder_key(master_builder_key)
+            # Vagrant's equivalent is 'init-vagrant-formulas.sh'
+            run_script('init-formulas.sh', formula_list, prepo)
 
         if is_master:
             builder_private_repo = pdata['private-repo']
-            if builder_private_repo.startswith('ssh://'):
-                builder_private_repo = builder_private_repo[6:]
-            run_script('init-master.sh', stackname, builder_private_repo)
+            all_formulas = project.known_formulas()
+            run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
             run_script('update-master.sh', stackname, builder_private_repo)
 
         # this will tell the machine to update itself
