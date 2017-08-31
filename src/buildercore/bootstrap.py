@@ -22,7 +22,7 @@ from fabric.contrib import files
 from fabric import operations
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
-from buildercore import context_handler
+from buildercore import context_handler, project
 from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
@@ -478,9 +478,8 @@ def update_ec2_stack(stackname, concurrency):
 
         if is_master:
             builder_private_repo = pdata['private-repo']
-            if builder_private_repo.startswith('ssh://'):
-                builder_private_repo = builder_private_repo[6:]
-            run_script('init-master.sh', stackname, builder_private_repo)
+            all_formulas = project.known_formulas()
+            run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
             run_script('update-master.sh', stackname, builder_private_repo)
 
         # this will tell the machine to update itself
