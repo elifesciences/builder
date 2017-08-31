@@ -82,25 +82,18 @@ def aws_update_projects(pname):
 
 @debugtask
 @requires_aws_stack
-def remaster_minion(stackname):
+def remaster_minion(stackname, master_ip):
     """tell minion who their new master is.
 
     deletes the master's key on the minion
-    updates the minion, which re-writes the minion config and eventually calls highstate
+    """
 
-    * assumes you don't have ssh access to the minion
-    * assumes writing keypairs to S3 is turned on"""
     print 're-mastering', stackname
-    expected_key = core.stack_pem(stackname)
-    if not os.path.exists(expected_key):
-        download_keypair(stackname)
-    with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
+    def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
-    bootstrap.update_stack(stackname)
-
-@debugtask
-def remaster_minions():
-    map(remaster_minion, core.active_stack_names(aws.find_region()))
+        sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
+    core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
+    bootstrap.update_ec2_stack(stackname, concurrency='serial')
 
 @task
 def kick():
