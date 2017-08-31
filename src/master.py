@@ -89,6 +89,7 @@ def remaster_minion(stackname, master_ip):
     """
 
     print 're-mastering', stackname
+
     def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
         sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
