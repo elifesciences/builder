@@ -1,7 +1,6 @@
 #!/bin/bash
 # executed as ROOT on AWS and Vagrant
 # called regularly to install/reset project formulas, update the master config
-# python logic lives in ./builder/src/remote_master.py
 
 set -e # everything must pass
 set -u # no unbound variables
@@ -32,10 +31,6 @@ fi
 # install/update any python requirements
 /bin/bash .activate-venv.sh
 
-# replace the master config, if it exists, with the builder-private copy ...
-cp /opt/builder-private/etc-salt-master /etc/salt/master
-
-env
 # ... then clone/pull all formula repos and update master config
 cd /opt/formulas
 for formula in *; do
@@ -47,7 +42,6 @@ for formula in *; do
     )
 done
 cd /opt/builder
-BLDR_ROLE=master ./bldr remote_master.refresh
 
 service salt-master stop || true
 

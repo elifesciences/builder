@@ -79,6 +79,7 @@ else
     git reset --hard
     git pull
 fi
+cp /opt/builder-private/etc-salt-master /etc/salt/master.template
 
 # clone all formulas
 mkdir -p $formula_root

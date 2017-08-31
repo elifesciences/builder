@@ -308,6 +308,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             project.vm.provision("shell", path: "scripts/init-master.sh", \
                 keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo, all_formulas.join(' ')])
 
+            # TODO: insert here same downloading/uploading of the /etc/salt/master configuration
             # this script is called regularly on master server to sync project formulas
             project.vm.provision("shell", path: "scripts/update-master.sh", \
                 keep_color: true, privileged: true)

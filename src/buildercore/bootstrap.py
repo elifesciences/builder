@@ -4,7 +4,7 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os, json
+import os, json, re
 from os.path import join
 from pprint import pformat
 from functools import partial
@@ -22,7 +22,7 @@ from fabric.contrib import files
 from fabric import operations
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
-from buildercore import context_handler, project
+from buildercore import context_handler, project, utils as core_utils
 from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
@@ -429,6 +429,31 @@ def download_master_builder_key(stackname):
         operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
     return fh
 
+def download_master_configuration(master_stack):
+    fh = StringIO()
+    with stack_conn(master_stack):
+        operations.get(remote_path='/etc/salt/master.template', local_path=fh, use_sudo=True)
+    return fh
+
+def render_master_configuration(master_configuration_template, formulas):
+    cfg = core_utils.ordered_load(master_configuration_template)
+
+    def basename(formula):
+        return re.sub('-formula$', '', os.path.basename(formula))
+
+    cfg['file_roots']['base'] = ["/opt/builder-private/salt/"] + [basename(f) for f in formulas] + ["/opt/formulas/builder-base/"]
+    cfg['pillar_roots']['base'] = ["/opt/builder-private/pillar"]
+    # dealt with at the infrastructural level
+    cfg['interface'] = '0.0.0.0'
+
+    master_configuration = StringIO()
+    core_utils.ordered_dump(cfg, master_configuration)
+    return master_configuration
+
+def upload_master_configuration(master_stack, master_configuration):
+    with stack_conn(master_stack):
+        operations.put(local_path=master_configuration, remote_path='/etc/salt/master', use_sudo=True)
+
 def update_ec2_stack(stackname, concurrency):
     """installs/updates the ec2 instance attached to the specified stackname.
 
@@ -489,6 +514,9 @@ def update_ec2_stack(stackname, concurrency):
             builder_private_repo = pdata['private-repo']
             all_formulas = project.known_formulas()
             run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
+            master_configuration_template = download_master_configuration(stackname)
+            master_configuration = render_master_configuration(master_configuration_template, all_formulas)
+            upload_master_configuration(stackname, master_configuration)
             run_script('update-master.sh', stackname, builder_private_repo)
 
         # this will tell the machine to update itself
