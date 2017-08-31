@@ -156,6 +156,7 @@ master-server:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
+            - 8080 # chemist, Github webhooks for formulas
     vagrant: {}
 
 lax:
