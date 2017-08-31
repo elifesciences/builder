@@ -1071,7 +1071,7 @@ evanthia-simpler-component:
 crm:
     subdomain: crm # crm.elifesciences.org
     repo: https://github.com/elifesciences/drupal-civi
-    formula-repo: ssh://git@github.com/elifesciences/crm-formula
+    formula-repo: git@github.com:elifesciences/crm-formula
     aws:
         type: t2.medium
         ports:
