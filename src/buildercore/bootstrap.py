@@ -442,9 +442,12 @@ def update_ec2_stack(stackname, concurrency):
     # backward compatibility: old instances may not have 'ec2' key
     # consider it true if missing, as newer stacks e.g. bus--prod
     # would have it explicitly set to False
-    ec2 = pdata['aws'].get('ec2', {'masterless': False, 'cluster-size': 1})
+    default_ec2 = {'masterless': False, 'cluster-size': 1}
+    ec2 = pdata['aws'].get('ec2', default_ec2)
     if not ec2:
         return
+    if ec2 is True:
+        ec2 = default_ec2
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
     is_masterless = ec2.get('masterless', False)
