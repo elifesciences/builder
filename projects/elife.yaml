@@ -893,11 +893,11 @@ figure-viewer:
                 website-configuration:
                     index-document: index.html
 
-reviewer-suggestions:
-    description: data science project
-    subdomain: reviewer-suggestions
-    repo: https://github.com/elifesciences/reviewer-suggestions
-    formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
+peerscout:
+    description: PeerScout
+    subdomain: peerscout
+    repo: https://github.com/elifesciences/peerscout
+    formula-repo: https://github.com/elifesciences/peerscout-formula
     aws:
         type: t2.xlarge # explicitly 16GB RAM for heavy background processing
         ports:
@@ -914,6 +914,8 @@ reviewer-suggestions:
         prod:
             rds:
                 multi-az: true
+            subdomains:
+                - peerscout
     vagrant:
         ports:
             1241: 80
