@@ -950,7 +950,11 @@ iiif:
                 cluster-size: 2
             ext:
                 size: 30 # GB
+                device: 
+                    1: /dev/sdf
+                    2: /dev/sdh
                 suffix: 
+                    # $node: $suffix in resource name
                     1: temp
             elb:
                 protocol: 

@@ -1,0 +1,45 @@
+auto_accept: true
+interface: 0.0.0.0
+log_level: info
+fileserver_backend:
+- roots
+file_roots:
+    base:
+    - /opt/builder-private/salt/
+    - /opt/formulas/redirects/
+    - /opt/formulas/builder-base/
+    - /opt/formulas/observer/
+    - /opt/formulas/search/
+    - /opt/formulas/api-dummy/
+    - /opt/formulas/elife-libraries/
+    - /opt/formulas/profiles/
+    - /opt/formulas/pattern-library/
+    - /opt/formulas/node-web-server/
+    - /opt/formulas/elife-website/
+    - /opt/formulas/elife-xpub/
+    - /opt/formulas/elife-api/
+    - /opt/formulas/elife-dashboard/
+    - /opt/formulas/elife-bot/
+    - /opt/formulas/iiif/
+    - /opt/formulas/medium/
+    - /opt/formulas/elife-alfred/
+    - /opt/formulas/elife-reporting/
+    - /opt/formulas/journal/
+    - /opt/formulas/personalised-covers/
+    - /opt/formulas/master-server/
+    - /opt/formulas/jats4r-validator/
+    - /opt/formulas/lax/
+    - /opt/formulas/anonymous/
+    - /opt/formulas/statusbase/
+    - /opt/formulas/elife-metrics/
+    - /opt/formulas/simpler-component/
+    - /opt/formulas/peerscout/
+    - /opt/formulas/api-gateway/
+    - /opt/formulas/journal-cms/
+    - /opt/formulas/recommendations/
+    - /opt/formulas/crm/
+    - /opt/formulas/builder-base/
+pillar_roots:
+    base:
+    - /opt/builder-private/pillar
+

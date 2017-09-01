@@ -258,6 +258,9 @@ def render_ext_volume(context, template, node=1):
     context_ext = context['ext']
     vtype = context_ext.get('type', 'standard')
     suffix = context_ext.get('suffix', {}).get(node, '')
+    device = context_ext.get('device')
+    if not isinstance(device, str):
+        device = device[node]
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
     if vtype == 'ssd':
         vtype = 'gp2'
@@ -272,7 +275,7 @@ def render_ext_volume(context, template, node=1):
     args = {
         "InstanceId": Ref(EC2_TITLE_NODE % node),
         "VolumeId": Ref(ec2v),
-        "Device": context_ext['device'],
+        "Device": device,
     }
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % (node, suffix), **args)
     map(template.add_resource, [ec2v, ec2va])
