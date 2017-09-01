@@ -373,11 +373,14 @@ def render_ec2(context, template):
     # all ec2 nodes in a cluster share the same security group
     secgroup = ec2_security(context)
     template.add_resource(secgroup)
+    suppressed = context['ec2'].get('suppressed', [])
 
-    ec2_instances = []
+    ec2_instances = {}
     for node in range(1, context['ec2']['cluster-size'] + 1):
+        if node in suppressed:
+            continue
         instance = ec2instance(context, node)
-        ec2_instances.append(instance)
+        ec2_instances[node] = instance
         template.add_resource(instance)
 
         outputs = [
@@ -545,7 +548,7 @@ def render_elb(context, template, ec2_instances):
             IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
-        Instances=map(Ref, ec2_instances),
+        Instances=map(Ref, ec2_instances.values()),
         # TODO: from configuration
         Listeners=listeners,
         LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
@@ -759,7 +762,7 @@ def render(context):
         render_rds(context, template)
 
     if context['ext']:
-        all_nodes = range(1, len(ec2_instances) + 1)
+        all_nodes = ec2_instances.keys()
         for_instances = context['ext'].get('for_instances', True)
         if for_instances is True:
             for_instances = all_nodes

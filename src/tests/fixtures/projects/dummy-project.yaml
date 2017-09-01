@@ -23,6 +23,9 @@ defaults:
     aws:
         ec2:
             cluster-size: 1
+            # nodes to temporarily delete, for later recreation
+            # https://martinfowler.com/bliki/PhoenixServer.html
+            suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
@@ -304,6 +307,22 @@ project-with-cluster:
         subdomains:
             - project.tv
             - ""
+
+project-with-cluster-suppressed:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    # no internal domain, while the public 'domain' is true by default
+    intdomain: false
+    aws:
+        ports:
+            - 80
+        ec2:
+            cluster-size: 3
+            suppressed: [1]
+        ext:
+            size: 10
+        elb: 
+            protocol: http
 
 project-with-stickiness:
     repo: ssh://git@github.com/elifesciences/dummy3
