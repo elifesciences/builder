@@ -775,10 +775,7 @@ def render(context):
 
     if context['ext']:
         all_nodes = ec2_instances.keys()
-        for_instances = context['ext'].get('for_instances', True)
-        if for_instances is True:
-            for_instances = all_nodes
-        for node in for_instances:
+        for node in all_nodes:
             render_ext_volume(context, template, node)
 
     render_sns(context, template)

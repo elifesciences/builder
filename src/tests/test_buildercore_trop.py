@@ -264,18 +264,6 @@ class TestBuildercoreTrop(base.BaseCase):
             ]
         )
 
-    def test_ext_template_on_some_nodes_only(self):
-        extra = {
-            'stackname': 'project-with-ext-sometimes--prod',
-        }
-        context = cfngen.build_context('project-with-ext-sometimes', **extra)
-        cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
-        self.assertIn('MountPoint1', data['Resources'].keys())
-        self.assertIn('ExtraStorage1', data['Resources'].keys())
-        self.assertNotIn('MountPoint2', data['Resources'].keys())
-        self.assertNotIn('ExtraStorage2', data['Resources'].keys())
-
     def test_multiple_elb_listeners(self):
         extra = {
             'stackname': 'project-with-multiple-elb-listeners--prod',
