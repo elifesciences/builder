@@ -14,6 +14,7 @@
     "aws": {
         "ec2": {
             "cluster-size": 1,
+            "suppressed": [],
             "ami": "ami-9eaa1cf6"
         },
         "type": "t2.micro", 

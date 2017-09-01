@@ -285,7 +285,6 @@ class TestBuildercoreTrop(base.BaseCase):
             '10'
         )
 
-
     def test_multiple_elb_listeners(self):
         extra = {
             'stackname': 'project-with-multiple-elb-listeners--prod',
