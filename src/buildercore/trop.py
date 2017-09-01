@@ -9,6 +9,7 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing
 it to the correct file etc."""
 
+import copy
 from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
@@ -776,7 +777,10 @@ def render(context):
     if context['ext']:
         all_nodes = ec2_instances.keys()
         for node in all_nodes:
-            render_ext_volume(context, template, node)
+            overrides = context['ec2'].get('overrides', {}).get(node, {})
+            overridden_context = copy.deepcopy(context)
+            overridden_context['ext'].update(overrides.get('ext', {}))
+            render_ext_volume(overridden_context, template, node)
 
     render_sns(context, template)
     render_sqs(context, template)

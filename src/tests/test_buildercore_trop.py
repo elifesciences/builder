@@ -264,6 +264,28 @@ class TestBuildercoreTrop(base.BaseCase):
             ]
         )
 
+    def test_clustered_template_with_node_overrides(self):
+        extra = {
+            'stackname': 'project-with-cluster-overrides--prod',
+        }
+        context = cfngen.build_context('project-with-cluster-overrides', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertIn('EC2Instance1', resources.keys())
+        self.assertIn('EC2Instance2', resources.keys())
+        self.assertIn('ExtraStorage1', resources.keys())
+        self.assertIn('ExtraStorage2', resources.keys())
+        self.assertEqual(
+            resources['ExtraStorage1']['Properties']['Size'],
+            '20'
+        )
+        self.assertEqual(
+            resources['ExtraStorage2']['Properties']['Size'],
+            '10'
+        )
+
+
     def test_multiple_elb_listeners(self):
         extra = {
             'stackname': 'project-with-multiple-elb-listeners--prod',

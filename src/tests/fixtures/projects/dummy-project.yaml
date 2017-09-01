@@ -312,6 +312,25 @@ project-with-cluster-suppressed:
         elb: 
             protocol: http
 
+project-with-cluster-overrides:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    # no internal domain, while the public 'domain' is true by default
+    intdomain: false
+    aws:
+        ports:
+            - 80
+        ec2:
+            cluster-size: 2
+            overrides:
+                1: 
+                    ext: 
+                        size: 20
+        ext:
+            size: 10
+        elb: 
+            protocol: http
+
 project-with-stickiness:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
