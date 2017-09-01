@@ -82,13 +82,16 @@ def aws_update_projects(pname):
 
 @debugtask
 @requires_aws_stack
-def remaster_minion(stackname, master_ip):
-    """tell minion who their new master is.
+def remaster_minion(stackname, master_ip=None):
+    "tell minion who their new master is. deletes any existing master key on minion"
 
-    deletes the master's key on the minion
-    """
+    if not master_ip:
+        newest_master = core._find_master(core.active_aws_stacks(core.find_region()))[-1]
+        if not newest_master:
+            raise core.NoMasterException("no master servers found")
+        master_ip = core.stack_data(newest_master)[0]['private_ip_address']
 
-    print 're-mastering', stackname
+    print 're-mastering %s to %s' % (stackname, master_ip)
 
     def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
