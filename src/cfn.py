@@ -114,12 +114,15 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
                 return pdata['aws-alt'][altkey]['description']
             except KeyError:
                 return None
-        default = 'skip this step'
-        alt_config_choices = [default] + pdata['aws-alt'].keys()
-        if not alt_config:
-            alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
-        if alt_config != default:
-            more_context['alt-config'] = alt_config
+        if instance_id in pdata['aws-alt'].keys():
+            more_context['alt-config'] = instance_id
+        else:
+            default = 'skip this step'
+            alt_config_choices = [default] + pdata['aws-alt'].keys()
+            if not alt_config:
+                alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
+            if alt_config != default:
+                more_context['alt-config'] = alt_config
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
