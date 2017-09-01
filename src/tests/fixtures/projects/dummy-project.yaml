@@ -26,6 +26,7 @@ defaults:
             # nodes to temporarily delete, for later recreation
             # https://martinfowler.com/bliki/PhoenixServer.html
             suppressed: []
+            overrides: {}
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-9eaa1cf6  # Ubuntu 14.04
         type: t2.small
