@@ -539,6 +539,7 @@ journal-cms:
             ext:
                 size: 30 # GB
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1241: 80
         ram: 2048
