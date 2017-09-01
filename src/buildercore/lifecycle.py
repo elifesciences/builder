@@ -200,18 +200,16 @@ def _nodes_states(stackname, node_ids=None):
         return node_index
 
     def _unify_node_information(nodes, name):
-        names = [node.state for node in nodes]
         excluding_terminated = [node for node in nodes if node.state != 'terminated']
         ensure(len(excluding_terminated) <= 1, "Multiple nodes in %s have the same name (%s), but a non-terminated state" % (excluding_terminated, name))
-        #ensure(len(excluding_terminated) == 1, "Found no nodes for the name %s" % name)
         if len(excluding_terminated):
             return excluding_terminated[0]
         return None
 
     ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
     by_node_name = _by_node_name(ec2_data)
-    unified_nodes_including_terminated = {name: _unify_node_information(nodes, name) for name, nodes in by_node_name.items()}
-    unified_nodes = {name: node for name, node in unified_nodes_including_terminated.items() if node is not None}
+    unified_including_terminated = {name: _unify_node_information(nodes, name) for name, nodes in by_node_name.items()}
+    unified_nodes = {name: node for name, node in unified_including_terminated.items() if node is not None}
     return {node.id: node.state for name, node in unified_nodes.items()}
 
 def _connection(stackname):

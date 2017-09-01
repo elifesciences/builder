@@ -766,7 +766,7 @@ def render_elasticache(context, template):
 def render(context):
     template = Template()
 
-    ec2_instances = []
+    ec2_instances = {}
     if context['ec2']:
         ec2_instances = render_ec2(context, template)
 
