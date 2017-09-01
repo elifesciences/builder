@@ -207,7 +207,6 @@ def _check_want_to_be_running(stackname, autostart=False):
 
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
     num_instances = len(instance_list)
-    print [i.ip_address for i in instance_list]
     if num_instances >= 1:
         return instance_list
 

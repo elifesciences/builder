@@ -949,7 +949,7 @@ iiif:
                     cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
                 cluster-size: 2
-                suppressed: [1]
+                #suppressed: [1]
             ext:
                 size: 30 # GB
             elb:

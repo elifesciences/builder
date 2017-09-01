@@ -389,7 +389,7 @@ def template_delta(pname, context):
         title: r for (title, r) in template['Resources'].items()
         if (title not in old_template['Resources']
             and (legacy_title(title) not in old_template['Resources'])
-            and ('EC2Instance' not in title))
+            and ('EC2Instance' != title))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
     delta_plus_outputs = {
