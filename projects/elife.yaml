@@ -28,6 +28,12 @@ defaults:
         ec2:
             # how many EC2 instance per stack instance
             cluster-size: 1
+            # override 'ext' (only supported key)
+            # for some EC2 instances
+            overrides: {}
+            # destroy some EC2 instances in the cluster,
+            # for future re-creation
+            suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
             ami: ami-92002785   # elife 'basebox.2016-11-03'
