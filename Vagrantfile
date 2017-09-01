@@ -307,8 +307,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             all_formulas = YAML.load(IO.popen("/bin/bash -c \"source venv/bin/activate && ./.project.py --formula\"").read)
             project.vm.provision("shell", path: "scripts/init-master.sh", \
                 keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo, all_formulas.join(' ')])
+            master_configuration = IO.popen("/bin/bash -c \"source venv/bin/activate && PYTHONPATH=src ./.master.py etc-salt-master.template | tee etc-salt-master\"").read
+            project.vm.provision("file", source: "./etc-salt-master", destination: "/tmp/etc-salt-master")
+            project.vm.provision("shell", inline: "sudo mv /tmp/etc-salt-master /etc/salt/master")
 
-            # TODO: insert here same downloading/uploading of the /etc/salt/master configuration
             # this script is called regularly on master server to sync project formulas
             project.vm.provision("shell", path: "scripts/update-master.sh", \
                 keep_color: true, privileged: true)
