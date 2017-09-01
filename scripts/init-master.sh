@@ -113,23 +113,7 @@ done
 apt-get install python-dev python-pip libffi-dev libssl-dev -y
 pip install virtualenv
 
-if [ ! -d /opt/builder ]; then
-    cd /opt
-    git clone https://github.com/elifesciences/builder
-    cd builder
-else
-    cd /opt/builder
-    git reset --hard
-    #git clean -d --force # destroys the venv
-    git pull --rebase
-fi
-
-touch .no-vagrant-s3auth.flag
-touch .no-install-basebox.flag
-touch .no-delete-venv.flag
-
-# install the virtualenv but don't die if some userland deps don't exist
-./update.sh --exclude virtualbox vagrant ssh-agent ssh-credentials aws-credentials
+rm -rf /opt/builder
 
 # some vagrant wrangling for convenient development
 if [ -d /vagrant ]; then
@@ -138,19 +122,10 @@ if [ -d /vagrant ]; then
     if [ -d /vagrant/builder-private ]; then
         rsync -av /vagrant/builder-private/ /opt/builder-private/
     fi
-    rsync -av /vagrant/src/ /opt/builder/src/
-    rsync -av /vagrant/scripts/ /opt/builder/scripts/
-    rsync -av /vagrant/projects/ /opt/builder/projects/
 fi
 
 # replace the master config, if it exists, with the builder-private copy
 cp /opt/builder-private/etc-salt-master /etc/salt/master
-
-cd /srv
-# on Vagrant, this overwrite /srv/pillar which contains the pillars from the formula
-#ln -sf /opt/builder-private/pillar
-# on Vagrant, this overwrite /srv/salt which contains the formula
-#ln -sf /opt/builder-private/salt
 
 echo "master server configured"
 
