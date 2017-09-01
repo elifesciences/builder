@@ -1,7 +1,7 @@
 """module concerns itself with tasks involving branch deployments of projects."""
 
 from fabric.api import task
-from decorators import requires_branch_deployable_project, echo_output, setdefault, deffile, requires_aws_stack, timeit
+from decorators import requires_branch_deployable_project, echo_output, setdefault, requires_aws_stack, timeit
 import utils
 from buildercore import core, bootstrap, cfngen, project
 from buildercore.concurrency import concurrency_for
@@ -26,13 +26,9 @@ def impose_ordering(branch_list):
 @requires_branch_deployable_project
 @echo_output
 @timeit
-def deploy(pname, instance_id=None, branch='master', part_filter=None):
+def deploy(pname, instance_id=None, alt_config=None):
     pdata = project.project_data(pname)
-    if not branch:
-        branch_list = utils.git_remote_branches(pdata['repo'])
-        branch_list = impose_ordering(branch_list)
-        branch = utils._pick('branch', branch_list, deffile('.branch'))
-    stackname = cfn.generate_stack_from_input(pname, instance_id)
+    stackname = cfn.generate_stack_from_input(pname, instance_id, alt_config=alt_config)
 
     region = pdata['aws']['region']
     active_stacks = core.active_stack_names(region)
@@ -41,10 +37,9 @@ def deploy(pname, instance_id=None, branch='master', part_filter=None):
     else:
         LOG.info("stack %r doesn't exist, creating", stackname)
         more_context = cfngen.choose_config(stackname)
-        more_context['branch'] = branch
         cfngen.generate_stack(pname, **more_context)
 
-    bootstrap.create_update(stackname, part_filter)
+    bootstrap.create_update(stackname)
     setdefault('.active-stack', stackname)
 
 
