@@ -440,8 +440,9 @@ def render_master_configuration(master_configuration_template, formulas):
 
     def basename(formula):
         return re.sub('-formula$', '', os.path.basename(formula))
+    formula_path = '/opt/formulas/%s/'
 
-    cfg['file_roots']['base'] = ["/opt/builder-private/salt/"] + [basename(f) for f in formulas] + ["/opt/formulas/builder-base/"]
+    cfg['file_roots']['base'] = ["/opt/builder-private/salt/"] + [formula_path % basename(f) for f in formulas] + ["/opt/formulas/builder-base/"]
     cfg['pillar_roots']['base'] = ["/opt/builder-private/pillar"]
     # dealt with at the infrastructural level
     cfg['interface'] = '0.0.0.0'
