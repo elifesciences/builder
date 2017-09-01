@@ -68,6 +68,7 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         ext:
             # external hdd
+            for_instances: True
             size: 10 # GB
             device: /dev/sdh
         elb:
@@ -949,13 +950,8 @@ iiif:
             ec2:
                 cluster-size: 2
             ext:
+                for_instances: [2]
                 size: 30 # GB
-                device: 
-                    1: /dev/sdf
-                    2: /dev/sdh
-                suffix: 
-                    # $node: $suffix in resource name
-                    1: temp
             elb:
                 protocol: 
                     - https

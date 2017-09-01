@@ -53,6 +53,7 @@ defaults:
         ext:
             # ext defaults only used if an `ext` section present in project
             # external hdd
+            for_instances: true
             size: 10 # GB
             device: /dev/sdh
         elb:
@@ -214,6 +215,19 @@ project-with-ext:
         ports:
             - 80
         ext: 
+            size: 200
+
+project-with-ext-sometimes:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ports:
+            - 80
+        ec2:
+            cluster-size: 2
+        elb: 
+            protocol: http
+        ext: 
+            for_instances: [1]
             size: 200
 
 project-with-cloudfront:
