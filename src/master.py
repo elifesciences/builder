@@ -6,6 +6,7 @@ import os
 import aws
 from fabric.api import sudo, task, local
 from buildercore import core, bootstrap, config, keypair
+from buildercore.utils import last
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
@@ -86,7 +87,7 @@ def remaster_minion(stackname, master_ip=None):
     "tell minion who their new master is. deletes any existing master key on minion"
 
     if not master_ip:
-        newest_master = core.find_master_servers(core.active_aws_stacks(core.find_region()))[-1]
+        newest_master = last(core.find_master_servers(core.active_aws_stacks(core.find_region())))
         if not newest_master:
             raise core.NoMasterException("no master servers found")
         master_ip = core.stack_data(newest_master)[0]['private_ip_address']
