@@ -86,7 +86,7 @@ def remaster_minion(stackname, master_ip=None):
     "tell minion who their new master is. deletes any existing master key on minion"
 
     if not master_ip:
-        newest_master = core._find_master(core.active_aws_stacks(core.find_region()))[-1]
+        newest_master = core.find_master_servers(core.active_aws_stacks(core.find_region()))[-1]
         if not newest_master:
             raise core.NoMasterException("no master servers found")
         master_ip = core.stack_data(newest_master)[0]['private_ip_address']

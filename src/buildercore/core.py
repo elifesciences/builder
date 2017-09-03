@@ -531,14 +531,8 @@ def find_region(stackname=None):
     return region_list[0]
 
 @testme
-def _find_master(stacks):
+def find_master_servers(stacks):
     "returns a list of master servers, oldest to newest"
-    # this bit is weird. _find_master is passed a list of active stacks.
-    # if it returns immediately on a single stack, that stack could be anything ...
-    # if len(stacks) == 1:
-    #    # first item (stackname) of first (and only) result
-    #    return first(first(stacks))
-
     msl = filter(lambda triple: is_master_server_stack(first(triple)), stacks)
     msl = map(first, msl) # just stack names
     if len(msl) > 1:
@@ -552,7 +546,7 @@ def find_master(region):
     stacks = active_aws_stacks(region)
     if not stacks:
         raise NoMasterException("no master servers found in region %r" % region)
-    return first(_find_master(stacks))
+    return first(find_master_servers(stacks))
 
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
