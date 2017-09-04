@@ -24,6 +24,12 @@ def runcmd(cmd)
     return output
 end
 
+def project_cmd(argstr)
+    cmd = "/bin/bash -c \"source venv/bin/activate && ./.project.py #{argstr}\""
+    #prn(cmd)
+    return YAML.load(IO.popen(cmd).read)
+end
+
 def runningvms()
     begin
         v = %x(vboxmanage list runningvms 2> .vagrant-error)
@@ -46,7 +52,7 @@ VAGRANTFILE_API_VERSION = "2"
 VAGRANT_COMMAND = ARGV[0]
 VAGRANT_VERSION = %x(vagrant --version).gsub(/[^\d\.]/, "") # looks like: 1.7.4
 # all *VAGRANT* projects
-ALL_PROJECTS = YAML.load(IO.popen("/bin/bash -c \"source venv/bin/activate && ./.project.py --env=vagrant\"").read)
+ALL_PROJECTS = project_cmd("--env=vagrant")
 
 # essentially gives vagrant a project to use to prevent the prompt
 if ['box'].include? VAGRANT_COMMAND
@@ -136,8 +142,7 @@ if not SUPPORTED_PROJECTS.has_key? INSTANCE_NAME
     abort 
 end
 
-cmd = "/bin/bash -c \"source venv/bin/activate && ./.project.py #{PROJECT_NAME}\""
-PRJ = YAML.load(IO.popen(cmd).read)
+PRJ = project_cmd(PROJECT_NAME)
 
 #PP.pp PRJ
 #abort
@@ -304,10 +309,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # configure the instance as if it were a master server
         if IS_MASTER
             pillar_repo = "https://github.com/elifesciences/builder-private-example"
-            all_formulas = YAML.load(IO.popen("/bin/bash -c \"source venv/bin/activate && ./.project.py --formula\"").read)
+            all_formulas = project_cmd("--formula")
             project.vm.provision("shell", path: "scripts/init-master.sh", \
                 keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo, all_formulas.join(' ')])
-            master_configuration = IO.popen("/bin/bash -c \"source venv/bin/activate && PYTHONPATH=src ./.master.py etc-salt-master.template | tee etc-salt-master\"").read
+            master_configuration = project_cmd("master-server --task salt-master-config | tee etc-salt-master")
             project.vm.provision("file", source: "./etc-salt-master", destination: "/tmp/etc-salt-master")
             project.vm.provision("shell", inline: "sudo mv /tmp/etc-salt-master /etc/salt/master")
 

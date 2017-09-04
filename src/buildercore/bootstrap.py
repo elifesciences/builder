@@ -13,7 +13,7 @@ from . import core, utils, config, keypair, bvars
 from collections import OrderedDict
 from datetime import datetime
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, call_while, ensure, subdict
+from .utils import first, call_while, ensure, subdict, yaml_dump
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put
@@ -435,21 +435,25 @@ def download_master_configuration(master_stack):
         operations.get(remote_path='/etc/salt/master.template', local_path=fh, use_sudo=True)
     return fh
 
-def render_master_configuration(master_configuration_template, formulas):
+def expand_master_configuration(master_configuration_template, formulas=None):
+    "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"
     cfg = core_utils.ordered_load(master_configuration_template)
+
+    if not formulas:
+        formulas = project.known_formulas() # *all* formulas
 
     def basename(formula):
         return re.sub('-formula$', '', os.path.basename(formula))
     formula_path = '/opt/formulas/%s/'
 
-    cfg['file_roots']['base'] = ["/opt/builder-private/salt/"] + [formula_path % basename(f) for f in formulas] + ["/opt/formulas/builder-base/"]
+    cfg['file_roots']['base'] = \
+        ["/opt/builder-private/salt/"] + \
+        [formula_path % basename(f) for f in formulas] + \
+        ["/opt/formulas/builder-base/"]
     cfg['pillar_roots']['base'] = ["/opt/builder-private/pillar"]
     # dealt with at the infrastructural level
     cfg['interface'] = '0.0.0.0'
-
-    master_configuration = StringIO()
-    core_utils.ordered_dump(cfg, master_configuration)
-    return master_configuration
+    return cfg
 
 def upload_master_configuration(master_stack, master_configuration):
     with stack_conn(master_stack):
@@ -516,8 +520,8 @@ def update_ec2_stack(stackname, concurrency):
             all_formulas = project.known_formulas()
             run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
             master_configuration_template = download_master_configuration(stackname)
-            master_configuration = render_master_configuration(master_configuration_template, all_formulas)
-            upload_master_configuration(stackname, master_configuration)
+            master_configuration = expand_master_configuration(master_configuration_template, all_formulas)
+            upload_master_configuration(stackname, yaml_dump(master_configuration))
             run_script('update-master.sh', stackname, builder_private_repo)
 
         # this will tell the machine to update itself
