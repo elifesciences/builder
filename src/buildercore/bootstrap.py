@@ -22,7 +22,7 @@ from fabric.contrib import files
 from fabric import operations
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
-from buildercore import context_handler
+from buildercore import context_handler, project
 from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
@@ -40,7 +40,10 @@ def run_script(script_path, *script_params):
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_path) + '-' + timestamp_marker)
     put(local_script, remote_script)
-    cmd = ["/bin/bash", remote_script] + map(str, list(script_params))
+
+    def escape_string_parameter(parameter):
+        return "'%s'" % parameter
+    cmd = ["/bin/bash", remote_script] + map(escape_string_parameter, list(script_params))
     retval = sudo(" ".join(cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
@@ -434,14 +437,20 @@ def update_ec2_stack(stackname, concurrency):
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
-    #pdata = project_data_for_stackname(stackname)
     ctx = context_handler.load_context(stackname)
     pdata = ctx['project']
-    if not pdata['aws']['ec2']:
+    # backward compatibility: old instances may not have 'ec2' key
+    # consider it true if missing, as newer stacks e.g. bus--prod
+    # would have it explicitly set to False
+    default_ec2 = {'masterless': False, 'cluster-size': 1}
+    ec2 = pdata['aws'].get('ec2', default_ec2)
+    if not ec2:
         return
+    if ec2 is True:
+        ec2 = default_ec2
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
-    is_masterless = pdata['aws']['ec2'].get('masterless', False)
+    is_masterless = ec2.get('masterless', False)
 
     master_builder_key = None
     if is_masterless:
@@ -478,9 +487,8 @@ def update_ec2_stack(stackname, concurrency):
 
         if is_master:
             builder_private_repo = pdata['private-repo']
-            if builder_private_repo.startswith('ssh://'):
-                builder_private_repo = builder_private_repo[6:]
-            run_script('init-master.sh', stackname, builder_private_repo)
+            all_formulas = project.known_formulas()
+            run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
             run_script('update-master.sh', stackname, builder_private_repo)
 
         # this will tell the machine to update itself

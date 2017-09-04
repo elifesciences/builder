@@ -6,6 +6,7 @@ import os
 import aws
 from fabric.api import sudo, task, local
 from buildercore import core, bootstrap, config, keypair
+from buildercore.utils import last
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
@@ -82,25 +83,22 @@ def aws_update_projects(pname):
 
 @debugtask
 @requires_aws_stack
-def remaster_minion(stackname):
-    """tell minion who their new master is.
+def remaster_minion(stackname, master_ip=None):
+    "tell minion who their new master is. deletes any existing master key on minion"
 
-    deletes the master's key on the minion
-    updates the minion, which re-writes the minion config and eventually calls highstate
+    if not master_ip:
+        newest_master = last(core.find_master_servers(core.active_aws_stacks(core.find_region())))
+        if not newest_master:
+            raise core.NoMasterException("no master servers found")
+        master_ip = core.stack_data(newest_master)[0]['private_ip_address']
 
-    * assumes you don't have ssh access to the minion
-    * assumes writing keypairs to S3 is turned on"""
-    print 're-mastering', stackname
-    expected_key = core.stack_pem(stackname)
-    if not os.path.exists(expected_key):
-        download_keypair(stackname)
-    with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
+    print 're-mastering %s to %s' % (stackname, master_ip)
+
+    def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
-    bootstrap.update_stack(stackname)
-
-@debugtask
-def remaster_minions():
-    map(remaster_minion, core.active_stack_names(aws.find_region()))
+        sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
+    core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
+    bootstrap.update_ec2_stack(stackname, concurrency='serial')
 
 @task
 def kick():

@@ -15,7 +15,8 @@ defaults:
     # repo containing project pillar data (credentials typically)
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
-    private-repo: ssh://git@github.com/elifesciences/builder-private
+    # TODO: hunt down ssh:// remotes
+    private-repo: git@github.com:elifesciences/builder-private
     # default branch to use when creating new instances
     default-branch: master
     # in rare cases we have formulas requiring the states of other formulas
@@ -73,6 +74,7 @@ defaults:
             # elb defaults only used if an 'elb' section present in project
             stickiness: false
             protocol: http
+            additional_listeners: {}
             idle_timeout: 60
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
             healthcheck:
@@ -168,10 +170,12 @@ master-server:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
+            - 8080 # chemist, Github webhooks for formulas
     vagrant: {}
 
 lax:
     subdomain: lax # lax.elifesciences.org
+    intdomain: null
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
@@ -202,6 +206,22 @@ lax:
                 multi-az: true
             ext:
                 size: 10 # GB
+        balanced:
+            description: testing out load balancing for high availability
+            rds:
+                storage: 5
+                multi-az: true
+            ext:
+                size: 10 # GB
+            elb:
+                protocol:
+                    - https
+                additional_listeners:
+                    bot_lax_adaptor:
+                        protocol: https
+                        port: 8001
+                healthcheck:
+                    path: /api/v2/ping
     vagrant:
         box: bento/ubuntu-16.04
         ports:
@@ -328,13 +348,13 @@ journal:
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
-                    - beta
+                    - www
                     - elife
                     - prod
                     - ""
-                    - www
                     # to overwrite a previously used DNS entry
                     - dummydoesnotexistsplaceholder
+                    - dummydoesnotexistsplaceholder2
                 headers:
                     - X-Requested-With
                     - Host
@@ -793,25 +813,16 @@ recommendations:
     formula-repo: https://github.com/elifesciences/recommendations-formula
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
     vagrant:
         ram: 2048
         ports:
             1254: 80
-            1255: 8080
     aws:
         type: t2.medium # 4 GB of RAM: same as search for now.
         ports:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-        sqs:
-            recommendations--{instance}:
-                subscriptions:
-                    - bus-articles--{instance}
-                    - bus-podcast-episodes--{instance}
-                    - bus-subjects--{instance}
-                    - bus-collections--{instance}
 
 personalised-covers:
     domain: false
@@ -915,11 +926,11 @@ figure-viewer:
                 website-configuration:
                     index-document: index.html
 
-reviewer-suggestions:
-    description: data science project
-    subdomain: reviewer-suggestions
-    repo: https://github.com/elifesciences/reviewer-suggestions
-    formula-repo: https://github.com/elifesciences/reviewer-suggestions-formula
+peerscout:
+    description: PeerScout
+    subdomain: peerscout
+    repo: https://github.com/elifesciences/peerscout
+    formula-repo: https://github.com/elifesciences/peerscout-formula
     aws:
         type: t2.xlarge # explicitly 16GB RAM for heavy background processing
         ports:
@@ -936,6 +947,8 @@ reviewer-suggestions:
         prod:
             rds:
                 multi-az: true
+            subdomains:
+                - peerscout
     vagrant:
         ports:
             1241: 80
@@ -1091,7 +1104,7 @@ evanthia-simpler-component:
 crm:
     subdomain: crm # crm.elifesciences.org
     repo: https://github.com/elifesciences/drupal-civi
-    formula-repo: ssh://git@github.com/elifesciences/crm-formula
+    formula-repo: git@github.com:elifesciences/crm-formula
     aws:
         type: t2.medium
         ports:
@@ -1134,12 +1147,15 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
+        ec2: 
+            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         type: t2.small
         ports:
             - 22
             - 443
             - 80
     vagrant:
+        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             1201: 80

@@ -11,6 +11,8 @@ set -xv  # output the scripts and interpolated steps
 
 stackname=$1 # who am I? ll: master-server--2016-01-01
 pillar_repo=$2 # what secrets do I know?
+formulas=$3 # which formulas will I use?
+formula_root="/opt/formulas"
 
 echo "bootstrapping master-minion $stackname"
 
@@ -24,7 +26,7 @@ if [ ! -f /root/.ssh/id_rsa.pub ]; then
 fi
 
 
-# test if master hasn't accepted it's own key yet
+# test if master hasn't accepted its own key yet
 if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     if [ ! -f /etc/salt/pki/minion/minion.pub ]; then
         # master hasn't generated it's own keys yet!
@@ -33,7 +35,10 @@ if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     fi
     # minion keys for master should exist at this point
     mkdir -p /etc/salt/pki/master/minions/
-    cp /etc/salt/pki/minion/minion.pub "/etc/salt/pki/master/minions/$stackname"
+    # TODO: not sure why this is needed?
+    # other nodes usually just start using the master without
+    # their key manually configured
+    #cp /etc/salt/pki/minion/minion.pub "/etc/salt/pki/master/minions/$stackname"
 fi
 
 
@@ -62,6 +67,8 @@ after the setup of the key, complete this process by running builder's 'update' 
 
     ./bldr update:$stackname
 
+Note this key must be added also tom any private formula you want the master-server to use.
+
 ----------"
 
         exit 1
@@ -72,6 +79,26 @@ else
     git reset --hard
     git pull
 fi
+
+# clone all formulas
+mkdir -p $formula_root
+cd $formula_root
+for formula_repo in $formulas
+do
+    pname=${formula_repo##*/} # "personalised-covers-formula"
+    pname=${pname%-formula} # "personalised-covers"
+    echo "Initializing $pname ($formula_repo)"
+    if [ -d "$pname" ]; then
+        (
+            cd "$pname"
+            git reset --hard
+            git clean -d --force
+            git pull --rebase
+        )
+    else
+        git clone "$formula_repo" "$pname"
+    fi
+done
 
 
 # install/update builder
@@ -115,8 +142,10 @@ fi
 cp /opt/builder-private/etc-salt-master /etc/salt/master
 
 cd /srv
-ln -sf /opt/builder-private/pillar
-ln -sf /opt/builder-private/salt
+# on Vagrant, this overwrite /srv/pillar which contains the pillars from the formula
+#ln -sf /opt/builder-private/pillar
+# on Vagrant, this overwrite /srv/salt which contains the formula
+#ln -sf /opt/builder-private/salt
 
 echo "master server configured"
 

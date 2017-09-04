@@ -8,6 +8,7 @@ from functools import partial
 # capture params
 parser = argparse.ArgumentParser()
 parser.add_argument('--env')
+parser.add_argument('--formula', action='store_true', default=False)
 parser.add_argument('pname', nargs='*')
 parser.add_argument('--format', default='yaml')
 args = parser.parse_args()
@@ -28,9 +29,14 @@ if args.pname:
 
 # project list
 else:
-    if args.env: # vagrant/aws
+    if args.formula:
+        # only project formulas
+        output = project.known_formulas()
+    elif args.env: # vagrant/aws
+        # only projects that use given environment
         output = project.filtered_projects(lambda pname, pdata: args.env in pdata).keys()
     else:
+        # all projects
         output = project.project_list()
     output.sort()
 

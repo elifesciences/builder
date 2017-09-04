@@ -9,7 +9,7 @@ formula=$2
 revision=${3:-""}
 
 formula_root="/opt/formulas"
-if [ "$pname" == "builder-private" ]; then
+if [ "$pname" = "builder-private" ]; then
     formula_root="/opt"
 fi
 formula_path="$formula_root/$pname"
