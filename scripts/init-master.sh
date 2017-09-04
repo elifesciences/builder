@@ -124,8 +124,5 @@ if [ -d /vagrant ]; then
     fi
 fi
 
-# replace the master config, if it exists, with the builder-private copy
-cp /opt/builder-private/etc-salt-master /etc/salt/master
-
 echo "master server configured"
 
