@@ -16,8 +16,8 @@ fileserver_backend:
 file_roots:
     base:
     - /opt/builder-private/salt/
-    - /opt/formulas/journal/
-    - /opt/formulas/lax/
+    - /opt/formulas/journal/salt/
+    - /opt/formulas/lax/salt/
     - /opt/formulas/builder-base/
 pillar_roots:
     base:
