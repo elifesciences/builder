@@ -12,7 +12,7 @@ def data(pname, output_format=None):
     ensure(output_format in [None, 'json', 'yaml'], "unknown output format %r" % output_format)
     formatters = {
         'json': core_utils.json_dumps,
-        'yaml': core_utils.ordered_dump,
+        'yaml': core_utils.yaml_dumps,
         None: lambda v: v
     }
     formatter = formatters.get(output_format)

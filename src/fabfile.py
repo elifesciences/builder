@@ -19,7 +19,6 @@ import lax
 import master
 import askmaster
 import buildvars
-import remote_master
 import project
 from deploy import deploy, switch_revision_update_instance
 from lifecycle import start, stop, last_start_time, stop_if_next_hour_is_imminent, update_dns

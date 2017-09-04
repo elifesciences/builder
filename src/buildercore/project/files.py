@@ -20,7 +20,7 @@ def update_project_file(path, value, project_data, project_file):
 
 @testme
 def write_project_file(new_project_data, project_file):
-    data = utils.ordered_dump(new_project_data)
+    data = utils.yaml_dumps(new_project_data)
     # this awful bit of code injects two new lines after before each top level element
     lines = []
     for line in data.split('\n'):
@@ -29,8 +29,7 @@ def write_project_file(new_project_data, project_file):
             lines.append("")
         lines.append(line)
     # all done. convert back to ordereddict
-    #new_project_data = utils.ordered_load(StringIO("\n".join(lines)))
-    open(project_file, 'w').write("\n".join(lines))  # utils.ordered_dump(new_project_data))
+    open(project_file, 'w').write("\n".join(lines))
     return project_file
 
 

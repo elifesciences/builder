@@ -29,6 +29,8 @@ scripts/customize.sh
 scripts/salt/*.minion
 /custom-vagrant/salt/
 /custom-vagrant/pillar/
+/etc-salt-master.template
+/etc-salt-master
 
 .no-install-basebox.flag
 .no-vagrant-s3auth.flag
