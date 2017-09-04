@@ -531,26 +531,22 @@ def find_region(stackname=None):
     return region_list[0]
 
 @testme
-def _find_master(stacks):
-    if len(stacks) == 1:
-        # first item (stackname) of first (and only) result
-        return first(first(stacks))
-
+def find_master_servers(stacks):
+    "returns a list of master servers, oldest to newest"
     msl = filter(lambda triple: is_master_server_stack(first(triple)), stacks)
     msl = map(first, msl) # just stack names
     if len(msl) > 1:
         LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
-    msl = sorted(msl, key=parse_stackname)
-    return first(msl)
+    return sorted(msl, key=parse_stackname) # oldest to newest
 
 def find_master(region):
-    """returns the oldest aws master-server it can find.
+    """returns the *oldest* aws master-server it can find.
 
     Since we are using the oldest, new master-server instances can be provisioned and debugged without being picked up until the older master-server is taken down"""
     stacks = active_aws_stacks(region)
     if not stacks:
         raise NoMasterException("no master servers found in region %r" % region)
-    return _find_master(stacks)
+    return first(find_master_servers(stacks))
 
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
