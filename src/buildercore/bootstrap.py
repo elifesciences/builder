@@ -433,6 +433,7 @@ def download_master_configuration(master_stack):
     fh = StringIO()
     with stack_conn(master_stack):
         operations.get(remote_path='/etc/salt/master.template', local_path=fh, use_sudo=True)
+    fh.seek(0)
     return fh
 
 def expand_master_configuration(master_configuration_template, formulas=None):
@@ -444,7 +445,7 @@ def expand_master_configuration(master_configuration_template, formulas=None):
 
     def basename(formula):
         return re.sub('-formula$', '', os.path.basename(formula))
-    formula_path = '/opt/formulas/%s/'
+    formula_path = '/opt/formulas/%s/salt/'
 
     cfg['file_roots']['base'] = \
         ["/opt/builder-private/salt/"] + \
