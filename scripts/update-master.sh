@@ -7,11 +7,8 @@ set -u # no unbound variables
 set -xv  # output the scripts and interpolated steps
 
 cd /opt/builder-private
-if [ ! -d /vagrant ]; then
-    # NOT vagrant. if this were vagrant, any dev changes would be reset
-    git reset --hard
-    git pull --rebase
-fi
+git reset --hard
+git pull --rebase
 
 # ... then clone/pull all formula repos and update master config
 cd /opt/formulas
@@ -25,8 +22,9 @@ for formula in *; do
 done
 
 service salt-master stop || true
-
-sleep 2
+# wait for salt-master to exit
+master_pid=$(cat /var/run/salt-master.pid)
+timeout 2 tail --pid="$master_pid" -f /dev/null || true
 
 sudo killall -9 salt-master || true
 
