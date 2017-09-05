@@ -21,10 +21,12 @@ for formula in *; do
     )
 done
 
-service salt-master stop || true
-# wait for salt-master to exit
-master_pid=$(cat /var/run/salt-master.pid)
-timeout 2 tail --pid="$master_pid" -f /dev/null || true
+master_pid=$(test -e /var/run/salt-master.pid && cat /var/run/salt-master.pid)
+if [ "$master_pid" != "" ]; then
+    service salt-master stop || true
+    # wait for salt-master to exit
+    timeout 2 tail --pid="$master_pid" -f /dev/null || true
+fi
 
 sudo killall -9 salt-master || true
 
