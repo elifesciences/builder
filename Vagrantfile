@@ -319,6 +319,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             # this script is called regularly on master server to sync project formulas
             project.vm.provision("shell", path: "scripts/update-master.sh", \
                 keep_color: true, privileged: true)
+            project.vm.provision("shell", inline: "sudo cp /vagrant/scripts/update-master.sh /opt/update-master.sh && chmod +x /opt/update-master.sh")
         end
 
         # tell the machine to update itself
