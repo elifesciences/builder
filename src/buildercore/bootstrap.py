@@ -31,15 +31,25 @@ LOG = logging.getLogger(__name__)
 #
 # utils
 #
-
-def run_script(script_path, *script_params):
-    """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
-    ASSUMES YOU ARE CONNECTED TO A STACK"""
-    local_script = join(config.SCRIPTS_PATH, script_path)
+def _put_temporary_script(script_filename):
+    local_script = join(config.SCRIPTS_PATH, script_filename)
     start = datetime.now()
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
-    remote_script = join('/tmp', os.path.basename(script_path) + '-' + timestamp_marker)
+    remote_script = join('/tmp', os.path.basename(script_filename) + '-' + timestamp_marker)
     put(local_script, remote_script)
+    return remote_script
+
+def put_script(script_filename, remote_script):
+    """uploads a script for SCRIPTS_PATH in remote_script location, making it executable
+    ASSUMES YOU ARE CONNECTED TO A STACK"""
+    temporary_script = _put_temporary_script(script_filename)
+    sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
+
+def run_script(script_filename, *script_params):
+    """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
+    ASSUMES YOU ARE CONNECTED TO A STACK"""
+    start = datetime.now()
+    remote_script = _put_temporary_script(script_filename)
 
     def escape_string_parameter(parameter):
         return "'%s'" % parameter
@@ -47,7 +57,7 @@ def run_script(script_path, *script_params):
     retval = sudo(" ".join(cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
-    LOG.info("Executed script %s in %2.4f seconds", script_path, (end - start).total_seconds())
+    LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
     return retval
 
 def prep_ec2_instance():
@@ -524,6 +534,7 @@ def update_ec2_stack(stackname, concurrency):
             master_configuration = expand_master_configuration(master_configuration_template, all_formulas)
             upload_master_configuration(stackname, yaml_dump(master_configuration))
             run_script('update-master.sh', stackname, builder_private_repo)
+            put_script('update-master.sh', '/opt/update-master.sh')
 
         # this will tell the machine to update itself
         run_script('highstate.sh')
