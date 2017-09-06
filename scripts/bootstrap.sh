@@ -127,6 +127,7 @@ else
 fi
 
 echo "$minion_id" > /etc/salt/minion_id
+echo "mysql.unix_socket: '/var/run/mysqld/mysqld.sock'" > /etc/salt/minion.d/mysql-defaults.conf
 
 #  service restart necessary as we've changed the minion's configuration
 service salt-minion restart
