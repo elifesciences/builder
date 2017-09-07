@@ -9,6 +9,7 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing
 it to the correct file etc."""
 
+import copy
 from . import utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
@@ -271,7 +272,7 @@ def render_ext_volume(context, template, node=1):
     args = {
         "InstanceId": Ref(EC2_TITLE_NODE % node),
         "VolumeId": Ref(ec2v),
-        "Device": context_ext['device'],
+        "Device": context_ext.get('device'),
     }
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
     map(template.add_resource, [ec2v, ec2va])
@@ -373,11 +374,14 @@ def render_ec2(context, template):
     # all ec2 nodes in a cluster share the same security group
     secgroup = ec2_security(context)
     template.add_resource(secgroup)
+    suppressed = context['ec2'].get('suppressed', [])
 
-    ec2_instances = []
+    ec2_instances = {}
     for node in range(1, context['ec2']['cluster-size'] + 1):
+        if node in suppressed:
+            continue
         instance = ec2instance(context, node)
-        ec2_instances.append(instance)
+        ec2_instances[node] = instance
         template.add_resource(instance)
 
         outputs = [
@@ -557,7 +561,7 @@ def render_elb(context, template, ec2_instances):
             IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
-        Instances=map(Ref, ec2_instances),
+        Instances=map(Ref, ec2_instances.values()),
         # TODO: from configuration
         Listeners=listeners,
         LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
@@ -763,7 +767,7 @@ def render_elasticache(context, template):
 def render(context):
     template = Template()
 
-    ec2_instances = []
+    ec2_instances = {}
     if context['ec2']:
         ec2_instances = render_ec2(context, template)
 
@@ -771,14 +775,19 @@ def render(context):
         render_rds(context, template)
 
     if context['ext']:
-        for node in range(1, len(ec2_instances) + 1):
-            render_ext_volume(context, template, node)
+        all_nodes = ec2_instances.keys()
+        for node in all_nodes:
+            overrides = context['ec2'].get('overrides', {}).get(node, {})
+            overridden_context = copy.deepcopy(context)
+            overridden_context['ext'].update(overrides.get('ext', {}))
+            render_ext_volume(overridden_context, template, node)
 
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
 
-    # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
+    # hostname is assigned to an ELB, which has priority over
+    # N>=1 EC2 instances
     if context['elb']:
         render_elb(context, template, ec2_instances)
     elif context['ec2']:
