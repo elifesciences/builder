@@ -122,17 +122,18 @@ def _wait_daemons():
     call_while(is_starting_daemons, interval=3, update_msg='Waiting for %s to be detected on %s...' % (path, node_id))
 
 def update_dns(stackname):
+    context = load_context(stackname)
     nodes = find_ec2_instances(stackname, allow_empty=True)
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
+
     if len(nodes) == 0:
         raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _nodes_states(stackname)))
 
-    if len(nodes) > 1:
+    if context['elb']:
         # ELB has its own DNS, EC2 nodes will autoregister
         LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB, nothing to do")
         return
 
-    context = load_context(stackname)
     LOG.info("External full hostname: %s", context['full_hostname'])
     if context['full_hostname']:
         for node in nodes:

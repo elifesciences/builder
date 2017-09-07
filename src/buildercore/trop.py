@@ -786,7 +786,8 @@ def render(context):
     render_sqs(context, template)
     render_s3(context, template)
 
-    # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
+    # hostname is assigned to an ELB, which has priority over
+    # N>=1 EC2 instances
     if context['elb']:
         render_elb(context, template, ec2_instances)
     elif context['ec2']:
