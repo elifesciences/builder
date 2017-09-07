@@ -957,9 +957,12 @@ iiif:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
-                #suppressed: [1]
+                #suppressed: [2]
                 overrides:
                     1:
+                        ext:
+                            type: gp2
+                    2:
                         ext:
                             type: gp2
                 cluster-size: 4
