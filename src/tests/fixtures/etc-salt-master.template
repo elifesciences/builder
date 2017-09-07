@@ -1,0 +1,40 @@
+## /etc/salt/master
+# Salt Master configuration file
+# this file is used as a template. the result lives in /etc/salt/master
+
+## minion key acceptance strategy
+#
+# *pre-seeding* the master with minion pubkeys is a quick way of doing things,
+# but it means those doing the deploys have access to the master server (to 
+# deposit the keys). 
+#
+# *auto-accept* is another approach that simply accepts all incoming minion
+# requests. it's best to limit this to your internal network.
+#
+# *manual* for those who want a human to review and accept and each key request
+#
+
+# accept all keys ...
+auto_accept: True
+# ... but only from within subnet. 
+# this value is replaced by `scripts/init-aws-master.sh` with the internal IP address
+interface: 'replaced-with-private-ip-address'
+
+# default is warn
+log_level: info
+
+# which backend interfaces we should consult to find state infor
+fileserver_backend:
+    - roots
+
+file_roots:
+    base: [] # this value is filled in by builder ...
+# ... and will look similar to:
+#        - /srv/salt/
+#        - /srv/salt/builder-base-formula/
+#        - /srv/salt/formulas/cms-formula/salt/
+#        - /srv/salt/formulas/website/
+
+pillar_roots:
+    base:
+        - /srv/pillar

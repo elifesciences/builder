@@ -1071,6 +1071,8 @@ profiles:
             - 22
             - 80
             - 443
+            - 8081 # orcid-dummy http, where present
+            - 8082 # orcid-dummy https, where present
 
 evanthia-simpler-component:
     subdomain: evanthia-simpler-component

@@ -2,6 +2,7 @@
 # renders a project's final configuration as YAML
 # if run without any arguments, returns a list of known projects
 # requires the builder venv
+# NOTE: we capture this logic here to avoid dealing with Fabric's noisy output
 import sys, os, argparse, json
 from functools import partial
 
@@ -10,6 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--env')
 parser.add_argument('--formula', action='store_true', default=False)
 parser.add_argument('pname', nargs='*')
+parser.add_argument('--task', choices=['project-data', 'salt-master-config'], default='project-data')
 parser.add_argument('--format', default='yaml')
 args = parser.parse_args()
 
@@ -20,14 +22,22 @@ logging.disable(logging.CRITICAL)
 # import buildercore
 src_dir = os.path.abspath('src')
 sys.path.insert(0, src_dir)
-from buildercore import project, utils
+from buildercore import project, utils, bootstrap
 
-# project data
+output = None
+
+# specific project, specific task
 if args.pname:
     pname = args.pname[0] # multiple projects in future?
-    output = project.project_data(pname)
+    
+    if args.task == 'project-data':
+        output = project.project_data(pname)
 
-# project list
+    elif pname == 'master-server' and args.task == 'salt-master-config':
+        master_configuration_template = open('etc-salt-master.template', 'r')
+        output = bootstrap.expand_master_configuration(master_configuration_template)
+
+# many projects
 else:
     if args.formula:
         # only project formulas
@@ -41,7 +51,7 @@ else:
     output.sort()
 
 formats = {
-    'yaml': utils.ordered_dump,
+    'yaml': utils.yaml_dumps,
     'json': partial(json.dumps, indent=4),
 }
 if args.format not in formats:

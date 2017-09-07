@@ -121,7 +121,7 @@ if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.lo
 # reset the minion config and
 # put minion id in dedicated file else salt keeps recreating file
 if [ ! -e /etc/salt/minion ]; then
-    printf "master: $master_ipaddr\nlog_level: info\n" > /etc/salt/minion
+    printf "master: %s\nlog_level: info\n" "$master_ipaddr" > /etc/salt/minion
 else
     echo "Not overwriting existing /etc/salt/minion"
 fi
