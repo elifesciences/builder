@@ -10,7 +10,8 @@ data called a `context`.
 it to the correct file etc."""
 
 import copy
-from . import utils, bvars
+from os.path import join
+from . import config, utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 
@@ -47,6 +48,11 @@ ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
+
+def _read_script(script_filename):
+    path = join(config.SCRIPTS_PATH, script_filename)
+    with open(path, 'r') as fp:
+        return fp.read()
 
 def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
     if not end_port:
@@ -174,6 +180,7 @@ def ec2instance(context, node):
     else:
         subnet_id = lu('project.aws.redundant-subnet-id')
 
+    clean_server = _read_script('.clean-server.sh.fragment')
     project_ec2 = {
         "ImageId": lu('project.aws.ec2.ami'),
         "InstanceType": context['ec2']['type'], # t2.small, m1.medium, etc
@@ -183,7 +190,9 @@ def ec2instance(context, node):
         "Tags": instance_tags(context, node),
 
         "UserData": Base64("""#!/bin/bash
-echo %s > /etc/build-vars.json.b64""" % buildvars_serialization),
+echo %s > /etc/build-vars.json.b64
+
+%s""" % (buildvars_serialization, clean_server)),
     }
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
