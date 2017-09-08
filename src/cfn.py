@@ -106,8 +106,11 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     stackname = core.mk_stackname(pname, instance_id)
     more_context = {'stackname': stackname}
 
-    # prompt user for alternate configurations
     pdata = project.project_data(pname)
+    if alt_config:
+        core_utils.ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")  
+
+    # prompt user for alternate configurations    
     if 'aws-alt' in pdata:
         def helpfn(altkey):
             try:
@@ -327,17 +330,3 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
     except FabricException as e:
         LOG.error(e.message)
         exit(2)
-
-@task
-def project_list():
-    for org, plist in project.org_project_map().items():
-        print org
-        for project_name in plist:
-            print '  ', project_name
-        print
-
-@task
-@requires_project
-@echo_output
-def project_config(pname):
-    return core_utils.remove_ordereddict(project.project_data(pname))
