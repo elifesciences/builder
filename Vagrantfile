@@ -214,6 +214,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     }
 
     config.vm.define INSTANCE_NAME do |project|
+        project.vm.box_check_update = false # don't gab to the internet, please :(
         project.vm.box = prj("box")
         project.vm.box_url = prj("box-url")
         project.vm.host_name = INSTANCE_NAME
