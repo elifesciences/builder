@@ -837,18 +837,18 @@ recommendations:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
-    vagrant:
-        ram: 2048
-        ports:
-            1254: 80
-    aws-alt: {}
     aws:
-        type: t2.medium # 4 GB of RAM: same as search for now.
-        box: bento/ubuntu-16.04
+        type: t2.medium # 4 GB of RAM, same as search for now.
         ports:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
+    aws-alt: {}
+    vagrant:
+        box: bento/ubuntu-16.04
+        ram: 2048
+        ports:
+            1254: 80
 
 personalised-covers:
     domain: false
