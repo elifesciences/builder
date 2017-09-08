@@ -150,12 +150,32 @@ defaults:
         cpucap: 100 # percent (vagrant default)
 
 basebox:
+    formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
             ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22
     vagrant: {}
+
+heavybox:
+    description: a project-less box with a bunch of features turned on
+    formula-repo: https://github.com/elifesciences/basebox-formula
+    aws:
+        ec2:
+            ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
+            masterless: true
+        rds:
+            storage: 5
+            engine: MySQL
+            version: 5.7
+            
+        ports:
+            - 22
+            - 80
+            - 443
+    vagrant: {}
+   
 
 master-server:
     # formula-repo for the 'master-server' project should contain the
@@ -783,12 +803,6 @@ search:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
-    vagrant:
-        ram: 2048
-        ports:
-            1244: 80
-            1245: 8080
-            9920: 9200
     aws:
         type: t2.medium # 4 GB of RAM: once we know more about which software
                         # will be installed, we can choose the right machine
@@ -807,6 +821,13 @@ search:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
+    vagrant:
+        #box: bento/ubuntu-16.04
+        ram: 2048
+        ports:
+            1244: 80
+            1245: 8080
+            9920: 9200
 
 recommendations:
     domain: false
@@ -815,12 +836,15 @@ recommendations:
     formula-repo: https://github.com/elifesciences/recommendations-formula
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
+        - https://github.com/elifesciences/api-dummy-formula
     vagrant:
         ram: 2048
         ports:
             1254: 80
+    aws-alt: {}
     aws:
         type: t2.medium # 4 GB of RAM: same as search for now.
+        box: bento/ubuntu-16.04
         ports:
             - 22
             - 80:
@@ -1042,6 +1066,7 @@ iiif:
                 headers:
                     - Host
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1261: 80
 
