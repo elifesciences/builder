@@ -339,9 +339,6 @@ journal:
                     - elife
                     - prod
                     - ""
-                    # to overwrite a previously used DNS entry
-                    - dummydoesnotexistsplaceholder
-                    - dummydoesnotexistsplaceholder2
                 headers:
                     - X-Requested-With
                     - Host
