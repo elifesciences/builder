@@ -332,12 +332,29 @@ journal:
                 protocol:
                     - https
                     - http
-            # there was a cloudfront configuration here, retrieve it from Git history
-            # we have also created manually a A record aliased to journal--prod ELB, that need to be taken away from Route53
-            # 1. create CDN without that record (only in subdomains_without_dns rather than subdomains, which configures
-            #    it to accept it but does not create the DNS)
-            # 2. remove A record for elifesciences.org
-            # 3. update CDN putting elifesciences.org in subdomains rather than subdomains_without_dns
+            cloudfront:
+                subdomains:
+                    - "{instance}--cdn-journal"
+                    - www
+                    - elife
+                    - prod
+                    - ""
+                    # to overwrite a previously used DNS entry
+                    - dummydoesnotexistsplaceholder
+                    - dummydoesnotexistsplaceholder2
+                headers:
+                    - X-Requested-With
+                    - Host
+                cookies:
+                    - journal
+                    - AWSELB
+                errors: 
+                    domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
+                    pattern: "???.html"
+                    codes:
+                        # ELB with no active instances
+                        503: "/5xx.html"
+                    protocol: http
         cachetest:
             elasticache:
                 engine: redis
