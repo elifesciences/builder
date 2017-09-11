@@ -944,82 +944,41 @@ iiif:
         type: t2.medium
         ports:
             - 22
-            - 80
-            - 443
+            - 80:
+                cidr-ip: 10.0.0.0/16 # ELB only
+        ec2:
+            cluster-size: 2
+        elb:
+            protocol: 
+                - https
+            healthcheck:
+                path: /
+        cloudfront:
+            subdomains: 
+                - "{instance}--cdn-iiif"
+            headers:
+                - Host
+        ext:
+            size: 30 # GB
     aws-alt:
-        # for testing new versions
+        adhoc:
+            description: a single ec2 iiif server available over HTTPS. no ELB, no CDN.
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
+                - 443
+            ec2:
+                cluster-size: 1
+            elb: []
+            cloudfront: []
+            ext: []
         ci:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-            ec2:
-                cluster-size: 2
-            ext:
-                size: 30 # GB
-            elb:
-                protocol: 
-                    - https
-                healthcheck:
-                    path: /
-        end2end:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-            ec2:
-                cluster-size: 2
-                #suppressed: [1]
-            ext:
-                size: 30 # GB
-            elb:
-                protocol: 
-                    - https
-                healthcheck:
-                    path: /
-            cloudfront:
-                subdomains: 
-                    - "{instance}--cdn-iiif"
-                headers:
-                    - Host
-        # manual tests
-        continuumtest:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-            ec2:
-                cluster-size: 2
-            elb:
-                protocol: 
-                    - https
-                healthcheck:
-                    path: /
-            cloudfront:
-                subdomains: 
-                    - "{instance}--cdn-iiif"
-                headers:
-                    - Host
-        prod:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-            ec2:
-                cluster-size: 2
-            ext:
-                size: 30 # GB
-            elb:
-                protocol: 
-                    - https
-                healthcheck:
-                    path: /
-            cloudfront:
-                subdomains: 
-                    - "{instance}--cdn-iiif"
-                    - iiif
-                headers:
-                    - Host
+            description: for testing new versions. no CDN.
+            cloudfront: []
+        continuumtest: 
+            description: manual tests
+            ext: []
     vagrant:
         ports:
             1261: 80
