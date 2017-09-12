@@ -158,7 +158,6 @@ def setup_ec2(stackname, context_ec2):
                 LOG.debug("failed to connect to server ...")
                 return True
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
-        prep_ec2_instance()
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 

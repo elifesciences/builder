@@ -8,11 +8,14 @@ template.
 When an instance of a project is launched on AWS, we need to tweak things a bit
 with no manual steps in some cases, or as few as possible in other cases.
 
-Case 1: Continuous Deployment
-After a successful build and test on the CI server, we want to deploy an instance.
+Case 1: New, standardized environment
+We launch journal--ci, a testing instance for the journal project within the `ci` environment.
 
 Case 2: Ad-hoc instances
-A developer wants a temporary instance deployed for testing or debugging.
+We launch journal--testsomething, a testing instance we will use to check something works as expected.
+
+Case 3: Stack updates
+We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
 import os, json, copy
