@@ -176,7 +176,7 @@ lax:
             - 22
             - 443
             - 80:
-                cidr-ip: 10.0.2.0/24 # internal access only
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 8001 # bot-lax api
         sqs:
             bot-lax-{instance}-inc: {}
