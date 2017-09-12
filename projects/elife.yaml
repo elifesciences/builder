@@ -194,22 +194,24 @@ lax:
                 multi-az: true
             ext:
                 size: 10 # GB
-        balanced:
-            description: testing out load balancing for high availability
-            rds:
-                storage: 5
-                multi-az: true
-            ext:
-                size: 10 # GB
-            elb:
-                protocol:
-                    - https
-                additional_listeners:
-                    bot_lax_adaptor:
-                        protocol: https
-                        port: 8001
-                healthcheck:
-                    path: /api/v2/ping
+        # balanced entry won't be valid until we specify intdomain: False
+        # as the load balancer can't have both the internal and external DNS entries pointing to it
+        #balanced:
+        #    description: testing out load balancing for high availability
+        #    rds:
+        #        storage: 5
+        #        multi-az: true
+        #    ext:
+        #        size: 10 # GB
+        #    elb:
+        #        protocol:
+        #            - https
+        #        additional_listeners:
+        #            bot_lax_adaptor:
+        #                protocol: https
+        #                port: 8001
+        #        healthcheck:
+        #            path: /api/v2/ping
     vagrant:
         box: bento/ubuntu-16.04
         ports:
