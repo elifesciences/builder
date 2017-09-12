@@ -821,8 +821,9 @@ search:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
+    aws-alt: {}
     vagrant:
-        #box: bento/ubuntu-16.04
+        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             1244: 80
