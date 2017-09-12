@@ -168,7 +168,6 @@ master-server:
 
 lax:
     subdomain: lax # lax.elifesciences.org
-    intdomain: null
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
