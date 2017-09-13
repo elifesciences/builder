@@ -688,7 +688,9 @@ api-dummy:
             - 22
             - 443
             - 80
+    aws-alt: {}
     vagrant:
+        box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
         ports:
             1242: 80
 
@@ -977,6 +979,7 @@ peerscout:
             subdomains:
                 - peerscout
     vagrant:
+        box: bento/ubuntu-16.04
         ports:
             1241: 80
         ram: 4096
