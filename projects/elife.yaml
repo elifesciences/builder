@@ -465,6 +465,9 @@ elife-bot:
                 deletion-policy: retain
                 public: true
                 cors: true
+        sns:
+            # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
+            - elife-bot-event-property--{instance}
     aws-alt:
         #prod:
         #    eip: 54.164.145.166
@@ -585,11 +588,27 @@ elife-dashboard:
             description: production-like environment. backed by RDS
             rds:
                 storage: 5
+            sqs:
+                # legacy custom name
+                end2end-event-property-incoming-queue:
+                    subscriptions:
+                        - elife-bot-event-property--end2end
+        continuumtest:
+            sqs:
+                # legacy custom name
+                ct-event-property-incoming-queue:
+                    subscriptions:
+                        - elife-bot-event-property--continuumtest
         prod:
             description: production environment. backed by RDS
             rds:
                 storage: 5
                 multi-az: true
+            sqs:
+                # legacy custom name
+                event-property-incoming-queue:
+                    subscriptions:
+                        - elife-bot-event-property--prod
     vagrant:
         ports:
             1324: 80
