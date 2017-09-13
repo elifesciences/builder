@@ -132,6 +132,7 @@ def update_dns(stackname):
     if context.get('elb', False):
         # ELB has its own DNS, EC2 nodes will autoregister
         LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB, nothing to do")
+        # TODO: time to implement this as there may be an old A record around...
         return
 
     LOG.info("External full hostname: %s", context['full_hostname'])
