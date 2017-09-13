@@ -186,8 +186,19 @@ lax:
             description: RDS backed
             rds:
                 storage: 5
+                # TODO: apply as it must be identical to prod
+                #multi-az: true
             ext:
                 size: 10 # GB
+            elb:
+                protocol:
+                    - https
+                additional_listeners:
+                    bot_lax_adaptor:
+                        protocol: https
+                        port: 8001
+                healthcheck:
+                    path: /api/v2/ping
         prod:
             description: RDS backed
             rds:
