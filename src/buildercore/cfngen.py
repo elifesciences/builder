@@ -20,7 +20,7 @@ We want to add an external volume to an EC2 instance to increase available space
 """
 import os, json, copy
 import re
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, bootstrap, context_handler
@@ -340,8 +340,8 @@ def regenerate_stack(pname, **more_context):
     current_context = context_handler.load_context(more_context['stackname'])
     write_template(more_context['stackname'], json.dumps(current_template))
     context = build_context(pname, existing_context=current_context, **more_context)
-    delta_plus, delta_edit, delta_minus = template_delta(pname, context)
-    return context, delta_plus, delta_edit, delta_minus, current_context
+    delta = template_delta(pname, context)
+    return context, delta, current_context
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
@@ -349,6 +349,8 @@ UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Inst
 
 REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
+
+Delta = namedtuple('Delta', ['plus', 'edit', 'minus'])
 
 def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
@@ -426,7 +428,7 @@ def template_delta(pname, context):
     delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
     delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).iteritems() if o not in template.get('Outputs', {})}
 
-    return (
+    return Delta(
         {
             'Resources': delta_plus_resources,
             'Outputs': delta_plus_outputs,
