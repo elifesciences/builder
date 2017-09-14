@@ -23,6 +23,14 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
         data = self._parse_json(trop.render(context))
         self.assertTrue(isinstance(data['Resources']['AttachedDB'], dict))
+        self.assertEqual(
+            data['Resources']['AttachedDB']['Properties']['Tags'],
+            [
+                {'Key': 'Project', 'Value': 'dummy3'},
+                {'Key': 'Name', 'Value': 'dummy3--test'},
+                {'Key': 'Environment', 'Value': 'test'},
+            ]
+        )
 
     def test_rds_param_groups(self):
         extra = {

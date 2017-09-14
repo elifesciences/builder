@@ -229,6 +229,7 @@ def render_rds(context, template):
     # rds parameter group. None or a Ref
     param_group_ref = rdsdbparams(context, template)
 
+    tags = [t for t in instance_tags(context) if t.Key != 'Owner']
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
@@ -247,7 +248,7 @@ def render_rds(context, template):
         'MasterUserPassword': lu('rds_password'),
         'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'),
         'DeletionPolicy': 'Snapshot',
-        "Tags": instance_tags(context),
+        "Tags": tags,
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default
     }

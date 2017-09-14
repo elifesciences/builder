@@ -35,6 +35,8 @@ LOG = logging.getLogger(__name__)
 def build_context(pname, **more_context): # pylint: disable=too-many-locals
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
+    def from_existing_context(field, default_value):
+        return more_context.get('existing_context', {}).get(field, default_value)
 
     supported_projects = project.project_list()
     assert pname in supported_projects, "Unknown project %r" % pname
@@ -98,12 +100,14 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         mask = subnet_cidr.netmask
         networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
 
-        # alpha-numeric only
-        # TODO: investigate possibility of ambiguous RDS naming here
+        generated_password = utils.random_alphanumeric(length=32)
+        rds_password = from_existing_context('rds_password', generated_password)
         context.update({
             'netmask': networkmask,
             'rds_username': 'root',
-            'rds_password': utils.random_alphanumeric(length=32), # will be saved to build-vars.json
+            'rds_password': rds_password,
+            # alpha-numeric only
+            # TODO: investigate possibility of ambiguous RDS naming here
             'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
             'rds_instance_id': slugify(stackname), # *completely* different to database name
             'rds_params': context['project']['aws']['rds'].get('params', [])
@@ -326,8 +330,9 @@ def generate_stack(pname, **more_context):
 
 def regenerate_stack(pname, **more_context):
     current_template = bootstrap.current_template(more_context['stackname'])
+    current_context = context_handler.load_context(more_context['stackname'])
     write_template(more_context['stackname'], json.dumps(current_template))
-    context = build_context(pname, **more_context)
+    context = build_context(pname, existing_context=current_context, **more_context)
     delta_plus, delta_minus = template_delta(pname, context)
     return context, delta_plus, delta_minus
 
