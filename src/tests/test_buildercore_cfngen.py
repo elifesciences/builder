@@ -104,8 +104,7 @@ class TestBuildercoreCfngen(base.BaseCase):
         "we want to update RDS instances in place to avoid data loss"
         context = self._base_context('dummy2')
         context['project']['aws']['rds']['multi-az'] = True
-        # TODO: wrong stack name, check also the other tests
-        (delta_plus, delta_minus) = cfngen.template_delta('project-with-cloudfront-minimal', context)
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy2', context)
         self.assertEqual(delta_plus['Resources'].keys(), ['AttachedDB'])
         self.assertEqual(delta_plus['Resources']['AttachedDB']['Properties']['MultiAZ'], 'true')
         self.assertEqual(delta_plus['Outputs'].keys(), [])
