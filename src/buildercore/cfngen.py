@@ -350,7 +350,10 @@ UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Inst
 REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
-Delta = namedtuple('Delta', ['plus', 'edit', 'minus'])
+class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
+    @property
+    def non_empty(self):
+        return self.plus['Resources'] or self.plus['Outputs'] or self.edit['Resources'] or self.edit['Outputs'] or self.minus['Resources'] or self.minus['Outputs']
 
 def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.

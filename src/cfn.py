@@ -82,7 +82,7 @@ def update_template(stackname):
 
     context_handler.write_context(stackname, context)
 
-    if delta.plus['Resources'] or delta.plus['Outputs'] or delta.edit['Resources'] or delta.edit['Outputs'] or delta.minus['Resources'] or delta.minus['Outputs']:
+    if delta.non_empty:
         new_template = cfngen.merge_delta(stackname, delta)
         bootstrap.update_template(stackname, new_template)
         # the /etc/buildvars.json file may need to be updated
