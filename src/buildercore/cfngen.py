@@ -35,8 +35,12 @@ LOG = logging.getLogger(__name__)
 def build_context(pname, **more_context): # pylint: disable=too-many-locals
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
+    existing_context = more_context.get('existing_context', {})
+    if 'existing_context' in more_context:
+        del more_context['existing_context']
+
     def from_existing_context(field, default_value):
-        return more_context.get('existing_context', {}).get(field, default_value)
+        return existing_context.get(field, default_value)
 
     supported_projects = project.project_list()
     assert pname in supported_projects, "Unknown project %r" % pname
@@ -392,8 +396,9 @@ def template_delta(pname, context):
         return title_in_old != title_in_new
 
     def legacy_title(title):
-        # some titles were originally EC2Instance rather than EC2Instance1, EC2Instance2 and so on
-        return title.strip("1234567890")
+        # some titles like EC2Instance1 were originally EC2Instance
+        # however, no reason not to let EC2Instance2 be created?
+        return title.strip("1")
 
     delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()
