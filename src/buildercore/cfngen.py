@@ -443,25 +443,25 @@ def template_delta(pname, context):
         }
     )
 
-def merge_delta(stackname, delta_plus, delta_edit, delta_minus):
+def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
-    apply_delta(template, delta_plus, delta_edit, delta_minus)
+    apply_delta(template, delta)
     write_template(stackname, json.dumps(template))
     return template
 
-def apply_delta(template, delta_plus, delta_edit, delta_minus):
-    for component in delta_plus:
+def apply_delta(template, delta):
+    for component in delta.plus:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
         data = template.get(component, {})
-        data.update(delta_plus[component])
+        data.update(delta.plus[component])
         template[component] = data
-    for component in delta_edit:
+    for component in delta.edit:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
         data = template.get(component, {})
-        data.update(delta_edit[component])
+        data.update(delta.edit[component])
         template[component] = data
-    for component in delta_minus:
+    for component in delta.minus:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
-        for title in delta_minus[component]:
+        for title in delta.minus[component]:
             del template[component][title]
