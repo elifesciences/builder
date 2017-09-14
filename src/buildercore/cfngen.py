@@ -392,8 +392,9 @@ def template_delta(pname, context):
         return title_in_old != title_in_new
 
     def legacy_title(title):
-        # some titles were originally EC2Instance rather than EC2Instance1, EC2Instance2 and so on
-        return title.strip("1234567890")
+        # some titles like EC2Instance1 were originally EC2Instance
+        # however, no reason not to let EC2Instance2 be created?
+        return title.strip("1")
 
     delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()
