@@ -340,8 +340,8 @@ def regenerate_stack(pname, **more_context):
     current_context = context_handler.load_context(more_context['stackname'])
     write_template(more_context['stackname'], json.dumps(current_template))
     context = build_context(pname, existing_context=current_context, **more_context)
-    delta_plus, delta_minus = template_delta(pname, context)
-    return context, delta_plus, delta_minus, current_context
+    delta_plus, delta_edit, delta_minus = template_delta(pname, context)
+    return context, delta_plus, delta_edit, delta_minus, current_context
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
@@ -408,12 +408,19 @@ def template_delta(pname, context):
         if (title not in old_template['Resources']
             and (legacy_title(title) not in old_template['Resources'])
             and (title != 'EC2Instance'))
-        or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
     delta_plus_outputs = {
         title: o for (title, o) in template.get('Outputs', {}).items()
         if (title not in old_template.get('Outputs', {}) and not _related_to_ec2(o))
-        or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
+    }
+
+    delta_edit_resources = {
+        title: r for (title, r) in template['Resources'].items()
+        if (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
+    }
+    delta_edit_outputs = {
+        title: o for (title, o) in template.get('Outputs', {}).items()
+        if (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
     delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
@@ -425,23 +432,32 @@ def template_delta(pname, context):
             'Outputs': delta_plus_outputs,
         },
         {
+            'Resources': delta_edit_resources,
+            'Outputs': delta_edit_outputs,
+        },
+        {
             'Resources': delta_minus_resources,
             'Outputs': delta_minus_outputs,
         }
     )
 
-def merge_delta(stackname, delta_plus, delta_minus):
+def merge_delta(stackname, delta_plus, delta_edit, delta_minus):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
-    apply_delta(template, delta_plus, delta_minus)
+    apply_delta(template, delta_plus, delta_edit, delta_minus)
     write_template(stackname, json.dumps(template))
     return template
 
-def apply_delta(template, delta_plus, delta_minus):
+def apply_delta(template, delta_plus, delta_edit, delta_minus):
     for component in delta_plus:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
         data = template.get(component, {})
         data.update(delta_plus[component])
+        template[component] = data
+    for component in delta_edit:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
+        data = template.get(component, {})
+        data.update(delta_edit[component])
         template[component] = data
     for component in delta_minus:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
