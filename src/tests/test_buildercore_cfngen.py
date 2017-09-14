@@ -104,10 +104,21 @@ class TestBuildercoreCfngen(base.BaseCase):
         "we want to update RDS instances in place to avoid data loss"
         context = self._base_context('dummy2')
         context['project']['aws']['rds']['multi-az'] = True
+        # TODO: wrong stack name, check also the other tests
         (delta_plus, delta_minus) = cfngen.template_delta('project-with-cloudfront-minimal', context)
         self.assertEqual(delta_plus['Resources'].keys(), ['AttachedDB'])
         self.assertEqual(delta_plus['Resources']['AttachedDB']['Properties']['MultiAZ'], 'true')
         self.assertEqual(delta_plus['Outputs'].keys(), [])
+
+    def test_template_delta_doesnt_unnecessarily_update_rds(self):
+        "we don't want to update RDS instances more than necessary, since it takes time and may cause reboots or replacements"
+        context = self._base_context('dummy2')
+        updated_context = self._base_context('dummy2', in_memory=True, existing_context=context)
+        (delta_plus, delta_minus) = cfngen.template_delta('dummy2', updated_context)
+        self.assertEqual(delta_plus['Resources'].keys(), [])
+        self.assertEqual(delta_minus['Resources'].keys(), [])
+        self.assertEqual(delta_plus['Outputs'].keys(), [])
+        self.assertEqual(delta_minus['Outputs'].keys(), [])
 
     def test_template_delta_includes_parts_of_cloudfront(self):
         "we want to update CDNs in place given how long it takes to recreate them"
@@ -177,10 +188,11 @@ class TestBuildercoreCfngen(base.BaseCase):
         cfngen.apply_delta(template, delta_plus={'Outputs': {'B': 2}}, delta_minus={})
         self.assertEqual(template, {'Resources': {'A': 1}, 'Outputs': {'B': 2}})
 
-    def _base_context(self, project_name='dummy1'):
+    def _base_context(self, project_name='dummy1', in_memory=False, existing_context=None):
         stackname = '%s--test' % project_name
-        context = cfngen.build_context(project_name, stackname=stackname)
-        context_handler.write_context(stackname, context)
-        template = cfngen.render_template(context)
-        cfngen.write_template(stackname, template)
+        context = cfngen.build_context(project_name, stackname=stackname, existing_context=existing_context if existing_context is not None else {})
+        if not in_memory:
+            context_handler.write_context(stackname, context)
+            template = cfngen.render_template(context)
+            cfngen.write_template(stackname, template)
         return context
