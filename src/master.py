@@ -4,7 +4,7 @@ See `askmaster.py` for tasks that are run on minions."""
 
 import os
 import aws
-from fabric.api import sudo, task, local
+from fabric.api import sudo, local
 from buildercore import core, bootstrap, config, keypair
 from buildercore.utils import last
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
