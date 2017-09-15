@@ -1127,8 +1127,8 @@ profiles:
                 - 22
                 - 80
                 - 443
-                - 8081 # orcid-dummy http, where present
-                - 8082 # orcid-dummy https, where present
+                - 8081 # orcid-dummy http
+                - 8082 # orcid-dummy https
         prod:
             rds:
                 engine: postgres
