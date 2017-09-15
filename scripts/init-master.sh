@@ -31,7 +31,7 @@ if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
     if [ ! -f /etc/salt/pki/minion/minion.pub ]; then
         # master hasn't generated it's own keys yet!
         echo "no minion key for master detected, restarting salt-master"
-        service salt-master restart
+        systemctl restart salt-master 2> /dev/null || service salt-master restart
     fi
     # minion keys for master should exist at this point
     mkdir -p /etc/salt/pki/master/minions/

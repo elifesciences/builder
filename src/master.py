@@ -99,9 +99,3 @@ def remaster_minion(stackname, master_ip=None):
         sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
     bootstrap.update_ec2_stack(stackname, concurrency='serial')
-
-@task
-def kick():
-    stackname = core.find_master(core.find_region())
-    with core.stack_conn(stackname, user=config.BOOTSTRAP_USER):
-        bootstrap.run_script('kick-master.sh')

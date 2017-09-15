@@ -23,11 +23,12 @@ done
 
 master_pid=$(test -e /var/run/salt-master.pid && cat /var/run/salt-master.pid)
 if [ "$master_pid" != "" ]; then
-    service salt-master stop || true
+    systemctl stop salt-master 2> /dev/null || service salt-master stop || true
     # wait for salt-master to exit
     timeout 2 tail --pid="$master_pid" -f /dev/null || true
 fi
 
-sudo killall -9 salt-master || true
+# we were patient and polite, but if it's still running we kill it hard
+killall -9 salt-master || true
 
-service salt-master start
+systemctl start salt-master 2> /dev/null || service salt-master start
