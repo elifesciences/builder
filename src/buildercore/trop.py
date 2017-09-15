@@ -189,7 +189,10 @@ def ec2instance(context, node):
         "SubnetId": subnet_id, # ll: "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
 
+        # https://alestic.com/2010/12/ec2-user-data-output/
         "UserData": Base64("""#!/bin/bash
+set -x
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 echo %s > /etc/build-vars.json.b64
 
 %s""" % (buildvars_serialization, clean_server)),
