@@ -118,19 +118,14 @@ fi
 if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log; fi
 if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
 
+
 # reset the minion config and
 # put minion id in dedicated file else salt keeps recreating file
-if [ ! -e /etc/salt/minion ]; then
-    printf "master: %s\nlog_level: info\n" "$master_ipaddr" > /etc/salt/minion
-else
-    echo "Not overwriting existing /etc/salt/minion"
-fi
-
+printf "master: %s\nlog_level: info\n" "$master_ipaddr" > /etc/salt/minion
 echo "$minion_id" > /etc/salt/minion_id
 
-#  service restart necessary as we've changed the minion's configuration
-service salt-minion restart
-
+# restart salt-minion. necessary as we may have changed minion's configuration
+systemctl restart salt-minion 2> /dev/null || service salt-minion restart
 
 # generate a key for the root user
 # in AWS this is uploaded to the server and moved into place prior to calling 

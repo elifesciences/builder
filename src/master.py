@@ -4,7 +4,7 @@ See `askmaster.py` for tasks that are run on minions."""
 
 import os
 import aws
-from fabric.api import sudo, task, local
+from fabric.api import sudo, local
 from buildercore import core, bootstrap, config, keypair
 from buildercore.utils import last
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
@@ -99,9 +99,3 @@ def remaster_minion(stackname, master_ip=None):
         sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
     bootstrap.update_ec2_stack(stackname, concurrency='serial')
-
-@task
-def kick():
-    stackname = core.find_master(core.find_region())
-    with core.stack_conn(stackname, user=config.BOOTSTRAP_USER):
-        bootstrap.run_script('kick-master.sh')
