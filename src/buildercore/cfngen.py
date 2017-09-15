@@ -40,7 +40,10 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         del more_context['existing_context']
 
     def from_existing_context(field, default_value):
-        return existing_context.get(field, default_value)
+        password = existing_context.get(field)
+        if password:
+            return password
+        return default_value
 
     supported_projects = project.project_list()
     assert pname in supported_projects, "Unknown project %r" % pname

@@ -99,7 +99,9 @@ def ec2_security(context):
     ) # list of strings or dicts
 
 def rds_security(context):
-    "returns a security group for the rds instance. this security group only allows access within the subnet"
+    """returns a security group for the rds instance.
+
+    this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
     engine_ports = {
         'postgres': 5432,
         'mysql': 3306
