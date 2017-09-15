@@ -1118,13 +1118,17 @@ profiles:
             - 22
             - 80
             - 443
-            - 8081 # orcid-dummy http, where present
-            - 8082 # orcid-dummy https, where present
     aws-alt:
         end2end:
             rds:
                 engine: postgres
                 storage: 5 # GB
+            ports:
+                - 22
+                - 80
+                - 443
+                - 8081 # orcid-dummy http, where present
+                - 8082 # orcid-dummy https, where present
         prod:
             rds:
                 engine: postgres
