@@ -135,13 +135,14 @@ defaults:
                 masterless: true
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
+            type: t2.small
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
                 masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
-        # box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
-        box: ubuntu/trusty64 # Ubuntu 14.04
+        box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
+        #box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
         box-url: null
         ip: 192.168.33.44
@@ -191,6 +192,7 @@ master-server:
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
             - 8080 # chemist, Github webhooks for formulas
+    aws-alt: {}
     vagrant: {}
 
 lax:
@@ -243,7 +245,6 @@ lax:
                 healthcheck:
                     path: /api/v2/ping
     vagrant:
-        box: bento/ubuntu-16.04
         ports:
             1239: 80
             1240: 8001
@@ -285,7 +286,6 @@ api-gateway:
                 headers:
                     - Accept
     vagrant:
-        box: bento/ubuntu-16.04
         ports:
             1323: 80
 
@@ -392,7 +392,6 @@ journal:
             elasticache:
                 engine: redis
     vagrant:
-        box: bento/ubuntu-16.04
         ram: 4096
         ports:
             1240: 80
@@ -455,7 +454,6 @@ elife-metrics:
                 multi-az: true
                 storage: 10
     vagrant:
-        box: bento/ubuntu-16.04
         ports:
             1240: 80
 
@@ -498,7 +496,6 @@ elife-bot:
             #               #prefix: null
             #               #suffix: null
     vagrant:
-        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             # loris
@@ -579,7 +576,6 @@ journal-cms:
             ext:
                 size: 30 # GB
     vagrant:
-        box: bento/ubuntu-16.04
         ports:
             1241: 80
         ram: 2048
@@ -606,7 +602,6 @@ elife-dashboard:
                 storage: 5
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-16.04
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
@@ -654,7 +649,6 @@ elife-libraries:
             type: c4.2xlarge
 
     vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
         ram: 1024
 
 elife-alfred:
@@ -673,7 +667,6 @@ elife-alfred:
             type: gp2
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
         ram: 4096
         ports:
             1433: 80
@@ -690,7 +683,6 @@ api-dummy:
             - 80
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
         ports:
             1242: 80
 
@@ -757,10 +749,6 @@ medium:
     subdomain: medium
     repo: https://github.com/elifesciences/medium
     formula-repo: https://github.com/elifesciences/medium-formula
-    vagrant:
-        ram: 1024
-        ports:
-            1243: 80
     aws:
         type: t2.micro
         ports:
@@ -773,6 +761,11 @@ medium:
                 cluster-size: 2
             elb:
                 protocol: http
+    vagrant:
+        ram: 1024
+        ports:
+            1243: 80
+
 
 bus:
     description: see https://github.com/elifesciences/bus
@@ -825,7 +818,6 @@ search:
                     - bus-labs-posts--{instance}
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             1244: 80
@@ -848,7 +840,6 @@ recommendations:
                 cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             1254: 80
@@ -861,11 +852,6 @@ personalised-covers:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
-    vagrant:
-        ram: 1024
-        ports:
-            1246: 80
-            1247: 8080
     aws:
         type: t2.micro # 1 GB of RAM: Unsure memory stats for PDF generation.
         ports:
@@ -875,7 +861,12 @@ personalised-covers:
         s3:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
-
+    aws-alt: {}
+    vagrant:
+        ram: 1024
+        ports:
+            1246: 80
+            1247: 8080
 statusbase:
     subdomain: statusbase
     repo: https://github.com/ep320/statusbase
@@ -924,7 +915,6 @@ observer:
                 multi-az: true
 
     vagrant:
-        box: bento/ubuntu-16.04
         ram: 2048 # metabase, mostly
         ports:
             1239: 80
@@ -979,7 +969,6 @@ peerscout:
             subdomains:
                 - peerscout
     vagrant:
-        box: bento/ubuntu-16.04
         ports:
             1241: 80
         ram: 4096
@@ -1070,7 +1059,6 @@ iiif:
                 headers:
                     - Host
     vagrant:
-        box: bento/ubuntu-16.04
         ports:
             1261: 80
 
@@ -1109,15 +1097,16 @@ profiles:
     subdomain: profiles
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
-    vagrant:
-        ram: 1024
-        ports:
-            1265: 80
     aws:
         ports:
             - 22
             - 80
             - 443
+    aws-alt: {}
+    vagrant:
+        ram: 1024
+        ports:
+            1265: 80
 
 evanthia-simpler-component:
     subdomain: evanthia-simpler-component
@@ -1186,7 +1175,6 @@ elife-xpub:
             - 443
             - 80
     vagrant:
-        box: bento/ubuntu-16.04
         ram: 2048
         ports:
             1201: 80
