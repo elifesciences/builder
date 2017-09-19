@@ -4,7 +4,7 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os, json
+import os, json, re
 from os.path import join
 from pprint import pformat
 from functools import partial
@@ -13,7 +13,7 @@ from . import core, utils, config, keypair, bvars
 from collections import OrderedDict
 from datetime import datetime
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, call_while, ensure, subdict
+from .utils import first, call_while, ensure, subdict, yaml_dump
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, put
@@ -22,7 +22,7 @@ from fabric.contrib import files
 from fabric import operations
 from boto.exception import BotoServerError
 from kids.cache import cache as cached
-from buildercore import context_handler, project
+from buildercore import context_handler, project, utils as core_utils
 from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
@@ -31,15 +31,25 @@ LOG = logging.getLogger(__name__)
 #
 # utils
 #
-
-def run_script(script_path, *script_params):
-    """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
-    ASSUMES YOU ARE CONNECTED TO A STACK"""
-    local_script = join(config.SCRIPTS_PATH, script_path)
+def _put_temporary_script(script_filename):
+    local_script = join(config.SCRIPTS_PATH, script_filename)
     start = datetime.now()
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
-    remote_script = join('/tmp', os.path.basename(script_path) + '-' + timestamp_marker)
+    remote_script = join('/tmp', os.path.basename(script_filename) + '-' + timestamp_marker)
     put(local_script, remote_script)
+    return remote_script
+
+def put_script(script_filename, remote_script):
+    """uploads a script for SCRIPTS_PATH in remote_script location, making it executable
+    ASSUMES YOU ARE CONNECTED TO A STACK"""
+    temporary_script = _put_temporary_script(script_filename)
+    sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
+
+def run_script(script_filename, *script_params):
+    """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
+    ASSUMES YOU ARE CONNECTED TO A STACK"""
+    start = datetime.now()
+    remote_script = _put_temporary_script(script_filename)
 
     def escape_string_parameter(parameter):
         return "'%s'" % parameter
@@ -47,7 +57,7 @@ def run_script(script_path, *script_params):
     retval = sudo(" ".join(cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
-    LOG.info("Executed script %s in %2.4f seconds", script_path, (end - start).total_seconds())
+    LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
     return retval
 
 def prep_ec2_instance():
@@ -148,7 +158,6 @@ def setup_ec2(stackname, context_ec2):
                 LOG.debug("failed to connect to server ...")
                 return True
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
-        prep_ec2_instance()
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
@@ -429,6 +438,37 @@ def download_master_builder_key(stackname):
         operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
     return fh
 
+def download_master_configuration(master_stack):
+    fh = StringIO()
+    with stack_conn(master_stack):
+        operations.get(remote_path='/etc/salt/master.template', local_path=fh, use_sudo=True)
+    fh.seek(0)
+    return fh
+
+def expand_master_configuration(master_configuration_template, formulas=None):
+    "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"
+    cfg = core_utils.ordered_load(master_configuration_template)
+
+    if not formulas:
+        formulas = project.known_formulas() # *all* formulas
+
+    def basename(formula):
+        return re.sub('-formula$', '', os.path.basename(formula))
+    formula_path = '/opt/formulas/%s/salt/'
+
+    cfg['file_roots']['base'] = \
+        ["/opt/builder-private/salt/"] + \
+        [formula_path % basename(f) for f in formulas] + \
+        ["/opt/formulas/builder-base/"]
+    cfg['pillar_roots']['base'] = ["/opt/builder-private/pillar"]
+    # dealt with at the infrastructural level
+    cfg['interface'] = '0.0.0.0'
+    return cfg
+
+def upload_master_configuration(master_stack, master_configuration):
+    with stack_conn(master_stack):
+        operations.put(local_path=master_configuration, remote_path='/etc/salt/master', use_sudo=True)
+
 def update_ec2_stack(stackname, concurrency):
     """installs/updates the ec2 instance attached to the specified stackname.
 
@@ -489,7 +529,11 @@ def update_ec2_stack(stackname, concurrency):
             builder_private_repo = pdata['private-repo']
             all_formulas = project.known_formulas()
             run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
+            master_configuration_template = download_master_configuration(stackname)
+            master_configuration = expand_master_configuration(master_configuration_template, all_formulas)
+            upload_master_configuration(stackname, yaml_dump(master_configuration))
             run_script('update-master.sh', stackname, builder_private_repo)
+            put_script('update-master.sh', '/opt/update-master.sh')
 
         # this will tell the machine to update itself
         run_script('highstate.sh')

@@ -57,12 +57,12 @@ else
         rm -f /etc/apt/sources.list.d/fkrull-deadsnakes-python2_7-trusty.list
 
         # provides python2.7[.13] package and some dependencies
-        add-apt-repository ppa:jonathonf/python-2.7
+        add-apt-repository -y ppa:jonathonf/python-2.7
 
         # provides a recent python-urllib3 (1.13.1-2) because:
         # libpython2.7-stdlib : Breaks: python-urllib3 (< 1.9.1-3) but 1.7.1-1ubuntu4 is to be installed
         # due to the previous PPA
-        add-apt-repository ppa:ross-kallisti/python-urllib3
+        add-apt-repository -y ppa:ross-kallisti/python-urllib3
         upgrade_python=true
     fi
 fi
@@ -118,20 +118,15 @@ fi
 if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log; fi
 if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
 
+
 # reset the minion config and
 # put minion id in dedicated file else salt keeps recreating file
-if [ ! -e /etc/salt/minion ]; then
-    printf "master: $master_ipaddr\nlog_level: info\n" > /etc/salt/minion
-else
-    echo "Not overwriting existing /etc/salt/minion"
-fi
-
+printf "master: %s\nlog_level: info\n" "$master_ipaddr" > /etc/salt/minion
 echo "$minion_id" > /etc/salt/minion_id
 echo "mysql.unix_socket: '/var/run/mysqld/mysqld.sock'" > /etc/salt/minion.d/mysql-defaults.conf
 
-#  service restart necessary as we've changed the minion's configuration
-service salt-minion restart
-
+# restart salt-minion. necessary as we may have changed minion's configuration
+systemctl restart salt-minion 2> /dev/null || service salt-minion restart
 
 # generate a key for the root user
 # in AWS this is uploaded to the server and moved into place prior to calling 

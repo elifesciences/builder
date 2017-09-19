@@ -23,6 +23,14 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
         data = self._parse_json(trop.render(context))
         self.assertTrue(isinstance(data['Resources']['AttachedDB'], dict))
+        self.assertEqual(
+            data['Resources']['AttachedDB']['Properties']['Tags'],
+            [
+                {'Key': 'Project', 'Value': 'dummy3'},
+                {'Key': 'Name', 'Value': 'dummy3--test'},
+                {'Key': 'Environment', 'Value': 'test'},
+            ]
+        )
 
     def test_rds_param_groups(self):
         extra = {
@@ -233,6 +241,56 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'A'
             },
             resources['CnameDNS2']['Properties']
+        )
+
+    def test_clustered_template_suppressing_some_nodes(self):
+        extra = {
+            'stackname': 'project-with-cluster-suppressed--prod',
+        }
+        context = cfngen.build_context('project-with-cluster-suppressed', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertNotIn('EC2Instance1', resources.keys())
+        self.assertIn('EC2Instance2', resources.keys())
+        self.assertIn('EC2Instance3', resources.keys())
+        self.assertNotIn('ExtraStorage1', resources.keys())
+        self.assertIn('ExtraStorage2', resources.keys())
+        self.assertIn('ExtraStorage3', resources.keys())
+
+        self.assertIn('ElasticLoadBalancer', resources.keys())
+        elb = resources['ElasticLoadBalancer']['Properties']
+        self.assertEqual(
+            elb['Instances'],
+            [
+                {
+                    'Ref': 'EC2Instance2',
+                },
+                {
+                    'Ref': 'EC2Instance3',
+                }
+            ]
+        )
+
+    def test_clustered_template_with_node_overrides(self):
+        extra = {
+            'stackname': 'project-with-cluster-overrides--prod',
+        }
+        context = cfngen.build_context('project-with-cluster-overrides', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertIn('EC2Instance1', resources.keys())
+        self.assertIn('EC2Instance2', resources.keys())
+        self.assertIn('ExtraStorage1', resources.keys())
+        self.assertIn('ExtraStorage2', resources.keys())
+        self.assertEqual(
+            resources['ExtraStorage1']['Properties']['Size'],
+            '20'
+        )
+        self.assertEqual(
+            resources['ExtraStorage2']['Properties']['Size'],
+            '10'
         )
 
     def test_multiple_elb_listeners(self):

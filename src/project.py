@@ -20,8 +20,9 @@ def data(pname, output_format=None):
     ensure(output_format in [None, 'json', 'yaml'], "unknown output format %r" % output_format)
     formatters = {
         'json': core_utils.json_dumps,
-        'yaml': core_utils.ordered_dump,
-        None: core_utils.remove_ordereddict
+        'yaml': core_utils.yaml_dumps,
+        #None: core_utils.remove_ordereddict
+        None: lambda v: v
     }
     formatter = formatters.get(output_format)
     return formatter(project.project_data(pname))

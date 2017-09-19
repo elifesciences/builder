@@ -8,11 +8,14 @@ template.
 When an instance of a project is launched on AWS, we need to tweak things a bit
 with no manual steps in some cases, or as few as possible in other cases.
 
-Case 1: Continuous Deployment
-After a successful build and test on the CI server, we want to deploy an instance.
+Case 1: New, standardized environment
+We launch journal--ci, a testing instance for the journal project within the `ci` environment.
 
 Case 2: Ad-hoc instances
-A developer wants a temporary instance deployed for testing or debugging.
+We launch journal--testsomething, a testing instance we will use to check something works as expected.
+
+Case 3: Stack updates
+We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
 import os, json, copy
@@ -32,6 +35,15 @@ LOG = logging.getLogger(__name__)
 def build_context(pname, **more_context): # pylint: disable=too-many-locals
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
+    existing_context = more_context.get('existing_context', {})
+    if 'existing_context' in more_context:
+        del more_context['existing_context']
+
+    def from_existing_context(field, default_value):
+        password = existing_context.get(field)
+        if password:
+            return password
+        return default_value
 
     supported_projects = project.project_list()
     assert pname in supported_projects, "Unknown project %r" % pname
@@ -95,12 +107,14 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         mask = subnet_cidr.netmask
         networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
 
-        # alpha-numeric only
-        # TODO: investigate possibility of ambiguous RDS naming here
+        generated_password = utils.random_alphanumeric(length=32)
+        rds_password = from_existing_context('rds_password', generated_password)
         context.update({
             'netmask': networkmask,
             'rds_username': 'root',
-            'rds_password': utils.random_alphanumeric(length=32), # will be saved to build-vars.json
+            'rds_password': rds_password,
+            # alpha-numeric only
+            # TODO: investigate possibility of ambiguous RDS naming here
             'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
             'rds_instance_id': slugify(stackname), # *completely* different to database name
             'rds_params': context['project']['aws']['rds'].get('params', [])
@@ -323,14 +337,17 @@ def generate_stack(pname, **more_context):
 
 def regenerate_stack(pname, **more_context):
     current_template = bootstrap.current_template(more_context['stackname'])
+    current_context = context_handler.load_context(more_context['stackname'])
     write_template(more_context['stackname'], json.dumps(current_template))
-    context = build_context(pname, **more_context)
+    context = build_context(pname, existing_context=current_context, **more_context)
     delta_plus, delta_minus = template_delta(pname, context)
     return context, delta_plus, delta_minus
 
 
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$']
-REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^.+Queue$']
+# can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS$']
+
+REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 def template_delta(pname, context):
@@ -382,14 +399,15 @@ def template_delta(pname, context):
         return title_in_old != title_in_new
 
     def legacy_title(title):
-        # some titles were originally EC2Instance rather than EC2Instance1, EC2Instance2 and so on
-        return title.strip("1234567890")
+        # some titles like EC2Instance1 were originally EC2Instance
+        # however, no reason not to let EC2Instance2 be created?
+        return title.strip("1")
 
     delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()
         if (title not in old_template['Resources']
             and (legacy_title(title) not in old_template['Resources'])
-            and ('EC2Instance' not in title))
+            and (title != 'EC2Instance'))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
     delta_plus_outputs = {

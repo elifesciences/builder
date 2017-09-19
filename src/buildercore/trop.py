@@ -9,7 +9,9 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing
 it to the correct file etc."""
 
-from . import utils, bvars
+import copy
+from os.path import join
+from . import config, utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 
@@ -46,6 +48,11 @@ ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
+
+def _read_script(script_filename):
+    path = join(config.SCRIPTS_PATH, script_filename)
+    with open(path, 'r') as fp:
+        return fp.read()
 
 def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
     if not end_port:
@@ -92,7 +99,9 @@ def ec2_security(context):
     ) # list of strings or dicts
 
 def rds_security(context):
-    "returns a security group for the rds instance. this security group only allows access within the subnet"
+    """returns a security group for the rds instance.
+
+    this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
     engine_ports = {
         'postgres': 5432,
         'mysql': 3306
@@ -173,6 +182,7 @@ def ec2instance(context, node):
     else:
         subnet_id = lu('project.aws.redundant-subnet-id')
 
+    clean_server = _read_script('.clean-server.sh.fragment') # this file duplicates scripts/prep-stack.sh
     project_ec2 = {
         "ImageId": lu('project.aws.ec2.ami'),
         "InstanceType": context['ec2']['type'], # t2.small, m1.medium, etc
@@ -181,8 +191,13 @@ def ec2instance(context, node):
         "SubnetId": subnet_id, # ll: "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
 
+        # https://alestic.com/2010/12/ec2-user-data-output/
         "UserData": Base64("""#!/bin/bash
-echo %s > /etc/build-vars.json.b64""" % buildvars_serialization),
+set -x
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+echo %s > /etc/build-vars.json.b64
+
+%s""" % (buildvars_serialization, clean_server)),
     }
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
@@ -219,6 +234,7 @@ def render_rds(context, template):
     # rds parameter group. None or a Ref
     param_group_ref = rdsdbparams(context, template)
 
+    tags = [t for t in instance_tags(context) if t.Key != 'Owner']
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
@@ -237,7 +253,7 @@ def render_rds(context, template):
         'MasterUserPassword': lu('rds_password'),
         'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'),
         'DeletionPolicy': 'Snapshot',
-        "Tags": instance_tags(context),
+        "Tags": tags,
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default
     }
@@ -271,7 +287,7 @@ def render_ext_volume(context, template, node=1):
     args = {
         "InstanceId": Ref(EC2_TITLE_NODE % node),
         "VolumeId": Ref(ec2v),
-        "Device": context_ext['device'],
+        "Device": context_ext.get('device'),
     }
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
     map(template.add_resource, [ec2v, ec2va])
@@ -373,11 +389,14 @@ def render_ec2(context, template):
     # all ec2 nodes in a cluster share the same security group
     secgroup = ec2_security(context)
     template.add_resource(secgroup)
+    suppressed = context['ec2'].get('suppressed', [])
 
-    ec2_instances = []
+    ec2_instances = {}
     for node in range(1, context['ec2']['cluster-size'] + 1):
+        if node in suppressed:
+            continue
         instance = ec2instance(context, node)
-        ec2_instances.append(instance)
+        ec2_instances[node] = instance
         template.add_resource(instance)
 
         outputs = [
@@ -557,7 +576,7 @@ def render_elb(context, template, ec2_instances):
             IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
-        Instances=map(Ref, ec2_instances),
+        Instances=map(Ref, ec2_instances.values()),
         # TODO: from configuration
         Listeners=listeners,
         LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
@@ -763,7 +782,7 @@ def render_elasticache(context, template):
 def render(context):
     template = Template()
 
-    ec2_instances = []
+    ec2_instances = {}
     if context['ec2']:
         ec2_instances = render_ec2(context, template)
 
@@ -771,14 +790,19 @@ def render(context):
         render_rds(context, template)
 
     if context['ext']:
-        for node in range(1, len(ec2_instances) + 1):
-            render_ext_volume(context, template, node)
+        all_nodes = ec2_instances.keys()
+        for node in all_nodes:
+            overrides = context['ec2'].get('overrides', {}).get(node, {})
+            overridden_context = copy.deepcopy(context)
+            overridden_context['ext'].update(overrides.get('ext', {}))
+            render_ext_volume(overridden_context, template, node)
 
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
 
-    # TODO: these hostnames will be assigned to an ELB for cluster-size >= 2
+    # hostname is assigned to an ELB, which has priority over
+    # N>=1 EC2 instances
     if context['elb']:
         render_elb(context, template, ec2_instances)
     elif context['ec2']:

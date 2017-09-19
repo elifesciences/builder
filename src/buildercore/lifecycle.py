@@ -122,17 +122,19 @@ def _wait_daemons():
     call_while(is_starting_daemons, interval=3, update_msg='Waiting for %s to be detected on %s...' % (path, node_id))
 
 def update_dns(stackname):
+    context = load_context(stackname)
     nodes = find_ec2_instances(stackname, allow_empty=True)
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
+
     if len(nodes) == 0:
         raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _nodes_states(stackname)))
 
-    if len(nodes) > 1:
+    if context.get('elb', False):
         # ELB has its own DNS, EC2 nodes will autoregister
         LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB, nothing to do")
+        # TODO: time to implement this as there may be an old A record around...
         return
 
-    context = load_context(stackname)
     LOG.info("External full hostname: %s", context['full_hostname'])
     if context['full_hostname']:
         for node in nodes:
@@ -199,15 +201,17 @@ def _nodes_states(stackname, node_ids=None):
             node_index[name] = node_list
         return node_index
 
-    def _unify_node_information(nodes):
+    def _unify_node_information(nodes, name):
         excluding_terminated = [node for node in nodes if node.state != 'terminated']
-        ensure(len(excluding_terminated) == 1, "Nodes in %s have the same name, but a non-terminated state" % excluding_terminated)
-        return excluding_terminated[0]
+        ensure(len(excluding_terminated) <= 1, "Multiple nodes in %s have the same name (%s), but a non-terminated state" % (excluding_terminated, name))
+        if len(excluding_terminated):
+            return excluding_terminated[0]
+        return None
 
     ec2_data = find_ec2_instances(stackname, state=None, node_ids=node_ids)
     by_node_name = _by_node_name(ec2_data)
-    print by_node_name.keys()
-    unified_nodes = {name: _unify_node_information(nodes) for name, nodes in by_node_name.items()}
+    unified_including_terminated = {name: _unify_node_information(nodes, name) for name, nodes in by_node_name.items()}
+    unified_nodes = {name: node for name, node in unified_including_terminated.items() if node is not None}
     return {node.id: node.state for name, node in unified_nodes.items()}
 
 def _connection(stackname):

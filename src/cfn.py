@@ -44,13 +44,13 @@ def ensure_destroyed(stackname):
 @task(alias='aws_update_stack')
 @requires_aws_stack
 @timeit
-def update(stackname, autostart="0"):
+def update(stackname, autostart="0", concurrency='serial'):
     """Updates the environment within the stack's ec2 instance.
     does *not* call Cloudformation's `update` command on the stack"""
     instances = _check_want_to_be_running(stackname, bool(strtobool(autostart)))
     if not instances:
         return
-    return bootstrap.update_stack(stackname, service_list=[], concurrency='serial')
+    return bootstrap.update_stack(stackname, service_list=[], concurrency=concurrency)
 
 @task
 @timeit
@@ -178,16 +178,16 @@ def aws_stack_list():
     return core.active_stack_names(region)
 
 def _pick_node(instance_list, node):
+    instance_list = sorted(instance_list, key=lambda n: n.tags['Name'])
     info = [n for n in instance_list]
 
     def helpfn(pick):
         node = pick - 1
-        return info[node]
+        return "%s (%s, %s)" % (info[node].tags['Name'], info[node].id, info[node].ip_address)
 
     num_instances = len(instance_list)
     if num_instances > 1:
         if not node:
-            # TODO print some more info: ip address, instance id
             node = utils._pick('node', range(1, num_instances + 1), helpfn=helpfn)
         node = int(node) - 1
         instance = instance_list[int(node)]

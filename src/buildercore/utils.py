@@ -1,5 +1,6 @@
 import pytz
 import os, sys, copy, json, time, random, string
+from StringIO import StringIO
 from functools import wraps
 from datetime import datetime
 import yaml
@@ -216,7 +217,19 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
             data.items())
     OrderedDumper.add_representer(OrderedDict, _dict_representer)
     kwds.update({'default_flow_style': default_flow_style, 'indent': indent, 'line_break': line_break})
+    # WARN: if stream is provided, return value is None
     return yaml.dump(data, stream, OrderedDumper, **kwds)
+
+def yaml_dumps(data):
+    "like json.dumps, returns a YAML string"
+    return ordered_dump(data, stream=None)
+
+def yaml_dump(data, stream=None):
+    "writes output to given file-like object or StringIO if stream not provided"
+    if not stream:
+        stream = StringIO()
+    ordered_dump(data, stream)
+    return stream
 
 def remove_ordereddict(data, dangerous=True):
     """turns a nested OrderedDict dict into a regular dictionary.

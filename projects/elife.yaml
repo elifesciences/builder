@@ -28,6 +28,12 @@ defaults:
         ec2:
             # how many EC2 instance per stack instance
             cluster-size: 1
+            # override 'ext' (only supported key)
+            # for some EC2 instances
+            overrides: {}
+            # destroy some EC2 instances in the cluster,
+            # for future re-creation
+            suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
             ami: ami-92002785   # elife 'basebox.2016-11-03'
@@ -176,7 +182,6 @@ heavybox:
             - 80
             - 443
     vagrant: {}
-   
 
 master-server:
     # formula-repo for the 'master-server' project should contain the
@@ -197,7 +202,7 @@ master-server:
 
 lax:
     subdomain: lax # lax.elifesciences.org
-    intdomain: null
+    intdomain: False
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
@@ -205,7 +210,7 @@ lax:
             - 22
             - 443
             - 80:
-                cidr-ip: 10.0.2.0/24 # internal access only
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 8001 # bot-lax api
         sqs:
             bot-lax-{instance}-inc: {}
@@ -219,15 +224,38 @@ lax:
             description: RDS backed
             rds:
                 storage: 5
+                # TODO: apply as it must be identical to prod
+                #multi-az: true
             ext:
                 size: 10 # GB
+            elb:
+                protocol:
+                    - https
+                additional_listeners:
+                    bot_lax_adaptor:
+                        protocol: https
+                        port: 8001
+                healthcheck:
+                    path: /api/v2/ping
         prod:
             description: RDS backed
+            ec2:
+                cluster-size: 2
+                suppressed: [1]
             rds:
                 storage: 5
                 multi-az: true
             ext:
                 size: 10 # GB
+            elb:
+                protocol:
+                    - https
+                additional_listeners:
+                    bot_lax_adaptor:
+                        protocol: https
+                        port: 8001
+                healthcheck:
+                    path: /api/v2/ping
         balanced:
             description: testing out load balancing for high availability
             rds:
@@ -372,9 +400,6 @@ journal:
                     - elife
                     - prod
                     - ""
-                    # to overwrite a previously used DNS entry
-                    - dummydoesnotexistsplaceholder
-                    - dummydoesnotexistsplaceholder2
                 headers:
                     - X-Requested-With
                     - Host
@@ -477,6 +502,9 @@ elife-bot:
                 deletion-policy: retain
                 public: true
                 cors: true
+        sns:
+            # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
+            - elife-bot-event-property--{instance}
     aws-alt:
         #prod:
         #    eip: 54.164.145.166
@@ -596,11 +624,27 @@ elife-dashboard:
             description: production-like environment. backed by RDS
             rds:
                 storage: 5
+            sqs:
+                # legacy custom name
+                end2end-event-property-incoming-queue:
+                    subscriptions:
+                        - elife-bot-event-property--end2end
+        continuumtest:
+            sqs:
+                # legacy custom name
+                ct-event-property-incoming-queue:
+                    subscriptions:
+                        - elife-bot-event-property--continuumtest
         prod:
             description: production environment. backed by RDS
             rds:
                 storage: 5
                 multi-az: true
+            sqs:
+                # legacy custom name
+                event-property-incoming-queue:
+                    subscriptions:
+                        - elife-bot-event-property--prod
     vagrant:
         ports:
             1324: 80
@@ -993,7 +1037,15 @@ iiif:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
-                cluster-size: 2
+                #suppressed: [2]
+                overrides:
+                    1:
+                        ext:
+                            type: gp2
+                    2:
+                        ext:
+                            type: gp2
+                cluster-size: 4
             ext:
                 size: 30 # GB
             elb:
@@ -1008,6 +1060,7 @@ iiif:
                     cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
                 cluster-size: 2
+                #suppressed: [1]
             ext:
                 size: 30 # GB
             elb:
@@ -1102,7 +1155,21 @@ profiles:
             - 22
             - 80
             - 443
-    aws-alt: {}
+    aws-alt:
+        end2end:
+            rds:
+                engine: postgres
+                storage: 5 # GB
+            ports:
+                - 22
+                - 80
+                - 443
+                - 8081 # orcid-dummy http
+                - 8082 # orcid-dummy https
+        prod:
+            rds:
+                engine: postgres
+                storage: 5 # GB
     vagrant:
         ram: 1024
         ports:
@@ -1169,7 +1236,7 @@ elife-xpub:
     aws:
         ec2: 
             ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-        type: t2.small
+        type: t2.medium
         ports:
             - 22
             - 443
