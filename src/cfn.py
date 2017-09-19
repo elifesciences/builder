@@ -73,7 +73,8 @@ def update_template(stackname):
 
     context, delta_plus, delta_minus = cfngen.regenerate_stack(pname, **more_context)
 
-    if context['ec2']:
+    are_there_existing_servers = context['ec2'] and len(context['ec2'].get('suppressed', [])) < context['ec2'].get('cluster-size', 1)
+    if are_there_existing_servers:
         core_lifecycle.start(stackname)
     LOG.info("Create/update: %s", pformat(delta_plus))
     LOG.info("Delete: %s", pformat(delta_minus))
