@@ -341,7 +341,7 @@ def regenerate_stack(pname, **more_context):
     write_template(more_context['stackname'], json.dumps(current_template))
     context = build_context(pname, existing_context=current_context, **more_context)
     delta_plus, delta_minus = template_delta(pname, context)
-    return context, delta_plus, delta_minus
+    return context, delta_plus, delta_minus, current_context
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation

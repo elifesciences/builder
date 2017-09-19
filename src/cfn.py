@@ -71,9 +71,9 @@ def update_template(stackname):
     (pname, _) = core.parse_stackname(stackname)
     more_context = cfngen.choose_config(stackname)
 
-    context, delta_plus, delta_minus = cfngen.regenerate_stack(pname, **more_context)
+    context, delta_plus, delta_minus, current_context = cfngen.regenerate_stack(pname, **more_context)
 
-    if _are_there_existing_servers(context):
+    if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)
     LOG.info("Create/update: %s", pformat(delta_plus))
     LOG.info("Delete: %s", pformat(delta_minus))
@@ -205,7 +205,7 @@ def _are_there_existing_servers(context):
 def _check_want_to_be_running(stackname, autostart=False):
     try:
         context = context_handler.load_context(stackname)
-        if not _are_there_existing_servers(context): 
+        if not _are_there_existing_servers(context):
             return False
 
     except context_handler.MissingContextFile as e:
