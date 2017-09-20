@@ -341,7 +341,7 @@ def regenerate_stack(pname, **more_context):
     write_template(more_context['stackname'], json.dumps(current_template))
     context = build_context(pname, existing_context=current_context, **more_context)
     delta_plus, delta_minus = template_delta(pname, context)
-    return context, delta_plus, delta_minus
+    return context, delta_plus, delta_minus, current_context
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
@@ -412,12 +412,12 @@ def template_delta(pname, context):
     }
     delta_plus_outputs = {
         title: o for (title, o) in template.get('Outputs', {}).items()
-        if (title not in old_template['Outputs'] and not _related_to_ec2(o))
+        if (title not in old_template.get('Outputs', {}) and not _related_to_ec2(o))
         or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
     delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
-    delta_minus_outputs = {o: v for o, v in old_template['Outputs'].iteritems() if o not in template['Outputs']}
+    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).iteritems() if o not in template.get('Outputs', {})}
 
     return (
         {
