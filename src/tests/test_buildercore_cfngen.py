@@ -183,7 +183,7 @@ class TestUpdates(base.BaseCase):
                 'C': 3,
             }
         }
-        cfngen.apply_delta(template, delta_plus={'Resources': {'D': 4}}, delta_edit={'Resources': {'C': 30}}, delta_minus={'Resources': {'B': 2}})
+        cfngen.apply_delta(template, cfngen.Delta({'Resources': {'D': 4}}, {'Resources': {'C': 30}}, {'Resources': {'B': 2}}))
         self.assertEqual(template, {'Resources': {'A': 1, 'C': 30, 'D': 4}})
 
     def test_apply_delta_may_add_components_which_werent_there(self):
@@ -192,7 +192,7 @@ class TestUpdates(base.BaseCase):
                 'A': 1,
             }
         }
-        cfngen.apply_delta(template, delta_plus={'Outputs': {'B': 2}}, delta_edit={}, delta_minus={})
+        cfngen.apply_delta(template, cfngen.Delta({'Outputs': {'B': 2}}, {}, {}))
         self.assertEqual(template, {'Resources': {'A': 1}, 'Outputs': {'B': 2}})
 
     def _base_context(self, project_name='dummy1', in_memory=False, existing_context=None):
