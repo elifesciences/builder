@@ -71,18 +71,19 @@ def update_template(stackname):
     (pname, _) = core.parse_stackname(stackname)
     more_context = cfngen.choose_config(stackname)
 
-    context, delta_plus, delta_minus, current_context = cfngen.regenerate_stack(pname, **more_context)
+    context, delta, current_context = cfngen.regenerate_stack(pname, **more_context)
 
     if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)
-    LOG.info("Create/update: %s", pformat(delta_plus))
-    LOG.info("Delete: %s", pformat(delta_minus))
+    LOG.info("Create: %s", pformat(delta.plus))
+    LOG.info("Update: %s", pformat(delta.edit))
+    LOG.info("Delete: %s", pformat(delta.minus))
     utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template')
 
     context_handler.write_context(stackname, context)
 
-    if delta_plus['Resources'] or delta_plus['Outputs'] or delta_minus['Resources'] or delta_minus['Outputs']:
-        new_template = cfngen.merge_delta(stackname, delta_plus, delta_minus)
+    if delta.non_empty:
+        new_template = cfngen.merge_delta(stackname, delta)
         bootstrap.update_template(stackname, new_template)
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
