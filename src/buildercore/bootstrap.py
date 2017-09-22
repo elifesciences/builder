@@ -517,7 +517,7 @@ def update_ec2_stack(stackname, concurrency):
 
         if is_masterless:
             # order is important.
-            formula_list = '"%s"' % ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
+            formula_list = ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
             prepo = pdata['private-repo']
             # to init the builder-private formula, the masterless instance needs
             # the master-builder key

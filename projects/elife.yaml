@@ -770,6 +770,10 @@ medium:
                 cluster-size: 2
             elb:
                 protocol: http
+        standalone:
+            description: doesn't speak to the master server
+            ec2:
+                masterless: true
 
 bus:
     description: see https://github.com/elifesciences/bus
