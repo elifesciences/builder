@@ -20,7 +20,7 @@ We want to add an external volume to an EC2 instance to increase available space
 """
 import os, json, copy
 import re
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, bootstrap, context_handler
@@ -340,8 +340,8 @@ def regenerate_stack(pname, **more_context):
     current_context = context_handler.load_context(more_context['stackname'])
     write_template(more_context['stackname'], json.dumps(current_template))
     context = build_context(pname, existing_context=current_context, **more_context)
-    delta_plus, delta_minus = template_delta(pname, context)
-    return context, delta_plus, delta_minus
+    delta = template_delta(pname, context)
+    return context, delta, current_context
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
@@ -349,6 +349,11 @@ UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Inst
 
 REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
+
+class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
+    @property
+    def non_empty(self):
+        return self.plus['Resources'] or self.plus['Outputs'] or self.edit['Resources'] or self.edit['Outputs'] or self.minus['Resources'] or self.minus['Outputs']
 
 def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
@@ -408,21 +413,32 @@ def template_delta(pname, context):
         if (title not in old_template['Resources']
             and (legacy_title(title) not in old_template['Resources'])
             and (title != 'EC2Instance'))
-        or (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
     }
     delta_plus_outputs = {
         title: o for (title, o) in template.get('Outputs', {}).items()
-        if (title not in old_template['Outputs'] and not _related_to_ec2(o))
-        or (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
+        if (title not in old_template.get('Outputs', {}) and not _related_to_ec2(o))
+    }
+
+    delta_edit_resources = {
+        title: r for (title, r) in template['Resources'].items()
+        if (_title_is_updatable(title) and _title_has_been_updated(title, 'Resources'))
+    }
+    delta_edit_outputs = {
+        title: o for (title, o) in template.get('Outputs', {}).items()
+        if (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
     delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
-    delta_minus_outputs = {o: v for o, v in old_template['Outputs'].iteritems() if o not in template['Outputs']}
+    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).iteritems() if o not in template.get('Outputs', {})}
 
-    return (
+    return Delta(
         {
             'Resources': delta_plus_resources,
             'Outputs': delta_plus_outputs,
+        },
+        {
+            'Resources': delta_edit_resources,
+            'Outputs': delta_edit_outputs,
         },
         {
             'Resources': delta_minus_resources,
@@ -430,20 +446,25 @@ def template_delta(pname, context):
         }
     )
 
-def merge_delta(stackname, delta_plus, delta_minus):
+def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
-    apply_delta(template, delta_plus, delta_minus)
+    apply_delta(template, delta)
     write_template(stackname, json.dumps(template))
     return template
 
-def apply_delta(template, delta_plus, delta_minus):
-    for component in delta_plus:
+def apply_delta(template, delta):
+    for component in delta.plus:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
         data = template.get(component, {})
-        data.update(delta_plus[component])
+        data.update(delta.plus[component])
         template[component] = data
-    for component in delta_minus:
+    for component in delta.edit:
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
-        for title in delta_minus[component]:
+        data = template.get(component, {})
+        data.update(delta.edit[component])
+        template[component] = data
+    for component in delta.minus:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
+        for title in delta.minus[component]:
             del template[component][title]

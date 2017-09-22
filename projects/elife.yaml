@@ -241,7 +241,6 @@ lax:
             description: RDS backed
             ec2:
                 cluster-size: 2
-                suppressed: [1]
             rds:
                 storage: 5
                 multi-az: true

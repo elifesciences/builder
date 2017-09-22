@@ -71,18 +71,19 @@ def update_template(stackname):
     (pname, _) = core.parse_stackname(stackname)
     more_context = cfngen.choose_config(stackname)
 
-    context, delta_plus, delta_minus = cfngen.regenerate_stack(pname, **more_context)
+    context, delta, current_context = cfngen.regenerate_stack(pname, **more_context)
 
-    if context['ec2']:
+    if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)
-    LOG.info("Create/update: %s", pformat(delta_plus))
-    LOG.info("Delete: %s", pformat(delta_minus))
+    LOG.info("Create: %s", pformat(delta.plus))
+    LOG.info("Update: %s", pformat(delta.edit))
+    LOG.info("Delete: %s", pformat(delta.minus))
     utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template')
 
     context_handler.write_context(stackname, context)
 
-    if delta_plus['Resources'] or delta_plus['Outputs'] or delta_minus['Resources'] or delta_minus['Outputs']:
-        new_template = cfngen.merge_delta(stackname, delta_plus, delta_minus)
+    if delta.non_empty:
+        new_template = cfngen.merge_delta(stackname, delta)
         bootstrap.update_template(stackname, new_template)
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
@@ -197,16 +198,19 @@ def _pick_node(instance_list, node):
     core_utils.ensure(instance.ip_address is not None, "Selected instance does not have a public ip address, are you sure it's running?")
     return instance
 
+
+def _are_there_existing_servers(context):
+    if not 'ec2' in context:
+        # very old stack, canned response
+        return True
+
+    return context['ec2'] and len(context['ec2'].get('suppressed', [])) < context['ec2'].get('cluster-size', 1)
+
 def _check_want_to_be_running(stackname, autostart=False):
     try:
         context = context_handler.load_context(stackname)
-
-        if 'ec2' in context:
-            # early check can only be made if the instance actually declares
-            # ec2 True/False in its context
-            # otherwise, don't make assumptions and go ahead
-            if not context['ec2']:
-                return False
+        if not _are_there_existing_servers(context):
+            return False
 
     except context_handler.MissingContextFile as e:
         LOG.warn(e)
