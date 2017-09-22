@@ -109,9 +109,9 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
     pdata = project.project_data(pname)
     if alt_config:
-        core_utils.ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")  
+        core_utils.ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")
 
-    # prompt user for alternate configurations    
+    # prompt user for alternate configurations
     if 'aws-alt' in pdata:
         def helpfn(altkey):
             try:

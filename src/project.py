@@ -5,7 +5,7 @@ from decorators import requires_project, echo_output
 import utils
 
 @task
-def list():
+def lst():
     for org, plist in project.org_project_map().items():
         print org
         for project_name in plist:
@@ -21,7 +21,7 @@ def data(pname, output_format=None):
     formatters = {
         'json': core_utils.json_dumps,
         'yaml': core_utils.yaml_dumps,
-        #None: core_utils.remove_ordereddict
+        # None: core_utils.remove_ordereddict
         None: lambda v: v
     }
     formatter = formatters.get(output_format)
