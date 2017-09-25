@@ -306,6 +306,7 @@ def _user(use_bootstrap_user):
 
 @task
 @requires_aws_stack
+# pylint: disable-msg=too-many-arguments
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)

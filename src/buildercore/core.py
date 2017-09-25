@@ -234,7 +234,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     public_ips = {ec2['id']: ec2['ip_address'] for ec2 in data}
     nodes = {ec2['id']: int(ec2['tags']['Node']) if 'Node' in ec2['tags'] else 1 for ec2 in data}
     if node:
-        nodes = {k:v for k,v in nodes.items() if v == node}
+        nodes = {k: v for k, v in nodes.items() if v == node}
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
