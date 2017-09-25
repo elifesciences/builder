@@ -440,7 +440,7 @@ def download_master_builder_key(stackname):
 
 def download_master_configuration(master_stack):
     fh = StringIO()
-    with stack_conn(master_stack):
+    with stack_conn(master_stack, username=BOOTSTRAP_USER):
         operations.get(remote_path='/etc/salt/master.template', local_path=fh, use_sudo=True)
     fh.seek(0)
     return fh
@@ -466,7 +466,7 @@ def expand_master_configuration(master_configuration_template, formulas=None):
     return cfg
 
 def upload_master_configuration(master_stack, master_configuration):
-    with stack_conn(master_stack):
+    with stack_conn(master_stack, username=BOOTSTRAP_USER):
         operations.put(local_path=master_configuration, remote_path='/etc/salt/master', use_sudo=True)
 
 def update_ec2_stack(stackname, concurrency):

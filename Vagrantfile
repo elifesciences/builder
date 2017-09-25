@@ -161,6 +161,34 @@ def prj(key, default=nil)
     PRJ['vagrant'].fetch(key, default)
 end
 
+# ask user if they want to use the large amount of RAM requested  
+RAM_CHECK_THRESHOLD = 2048
+if (prj('ram').to_i > RAM_CHECK_THRESHOLD) and ['up'].include? VAGRANT_COMMAND
+    requested = prj('ram')
+    prn "project is requesting an unreasonable amount of RAM (#{requested}MB)"
+    
+    prn "1 - #{RAM_CHECK_THRESHOLD}MB"
+    prn "2 - #{requested}MB"
+    prn "> (#{RAM_CHECK_THRESHOLD}MB)"
+    begin
+        opt = STDIN.gets.chomp.strip.downcase
+        opt = Integer(opt) rescue false
+    rescue Interrupt
+        abort
+    end
+    
+    options = {1 => RAM_CHECK_THRESHOLD, 2 => prj('ram')}
+    
+    if not opt
+        PRJ['vagrant']['ram'] = RAM_CHECK_THRESHOLD
+    elsif options.keys.include? opt
+        PRJ['vagrant']['ram'] = options[opt.to_i]
+    else
+        prn "unrecognized input, quitting"
+        exit()
+    end
+end
+
 # if provisioning died before the custom ssh user (deploy user) can be created,
 # set this to false and it will log-in as the default 'vagrant' user.
 CUSTOM_SSH_KEY = File.expand_path(ENV.fetch("CUSTOM_SSH_KEY", "~/.ssh/id_rsa"))
@@ -191,6 +219,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     }
 
     config.vm.define INSTANCE_NAME do |project|
+        project.vm.box_check_update = false # don't gab to the internet, please :(
         project.vm.box = prj("box")
         project.vm.box_url = prj("box-url")
         project.vm.host_name = INSTANCE_NAME
