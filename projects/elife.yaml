@@ -185,6 +185,15 @@ basebox:
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
 
+heavybox:
+    description: builds as many of the builder-base-formula states as possible
+    formula-repo: https://github.com/elifesciences/heavybox-formula
+    aws:
+        ports:
+            - 22
+    vagrant:
+        ram: 2048
+
 master-server:
     # formula-repo for the 'master-server' project should contain the
     # confidential pillar data, master config and state top file.
@@ -206,6 +215,7 @@ master-server:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
 
 lax:
+    description: article-json store
     subdomain: lax # lax.elifesciences.org
     intdomain: False
     repo: https://github.com/elifesciences/lax.git
@@ -472,6 +482,7 @@ evanthia-prototype:
 
 
 elife-metrics:
+    description: journal-level metrics
     subdomain: metrics # metrics.elifesciences.org
     repo: https://github.com/elifesciences/elife-metrics
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
@@ -983,6 +994,7 @@ statusbase:
             1246: 80
 
 observer:
+    description: article-level reporting
     subdomain: observer # observer.elifesciences.org
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
