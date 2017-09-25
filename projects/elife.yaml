@@ -155,6 +155,13 @@ defaults:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
@@ -844,11 +851,6 @@ medium:
                 cluster-size: 2
             elb:
                 protocol: http
-        # TODO: remove in favour of globally available standalone14.04
-        standalone:
-            description: doesn't speak to the master server
-            ec2:
-                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
