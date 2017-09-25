@@ -148,6 +148,8 @@ defaults:
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
+        # deprecated. all projects have 16.04 support now. explicit trusty images 
+        # are being used until each project is running 16.04 in production
         #box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
         box-url: null
@@ -198,7 +200,8 @@ master-server:
                 cidr-ip: 10.0.0.0/16
             - 8080 # chemist, Github webhooks for formulas
     aws-alt: {}
-    vagrant: {}
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
 
 lax:
     subdomain: lax # lax.elifesciences.org
@@ -272,6 +275,7 @@ lax:
                 healthcheck:
                     path: /api/v2/ping
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1239: 80
             1240: 8001
@@ -313,6 +317,7 @@ api-gateway:
                 headers:
                     - Accept
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1323: 80
 
@@ -416,6 +421,7 @@ journal:
             elasticache:
                 engine: redis
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
         ports:
             1240: 80
@@ -439,6 +445,7 @@ pattern-library:
             subdomains:
                 - ui-patterns
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
         ports:
             1340: 80
@@ -452,6 +459,7 @@ evanthia-prototype:
         ports:
             - 22
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
         ports:
             1340: 80
@@ -478,6 +486,7 @@ elife-metrics:
                 multi-az: true
                 storage: 10
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1240: 80
 
@@ -523,6 +532,7 @@ elife-bot:
             #               #prefix: null
             #               #suffix: null
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
         ports:
             # loris
@@ -603,6 +613,7 @@ journal-cms:
             ext:
                 size: 30 # GB
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1241: 80
         ram: 2048
@@ -645,6 +656,7 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--prod
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
@@ -661,6 +673,7 @@ elife-api:
             - 80
             - 443
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1233: 80
 
@@ -668,6 +681,7 @@ elife-api:
 elife-reporting:
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated    
         ram: 1024
         ports:
             1333: 80
@@ -692,6 +706,7 @@ elife-libraries:
             type: c4.2xlarge
 
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
 
 elife-alfred:
@@ -710,6 +725,7 @@ elife-alfred:
             type: gp2
     aws-alt: {}
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
         ports:
             1433: 80
@@ -726,6 +742,7 @@ api-dummy:
             - 80
     aws-alt: {}
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1242: 80
 
@@ -743,6 +760,7 @@ elife-website:
             description: intended to run temporarily
             type: m4.2xlarge
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 3072
         ports:
             1238: 80
@@ -783,6 +801,7 @@ jats4r-validator:
             - 22
             - 80
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1239: 80
 
@@ -805,6 +824,7 @@ medium:
             elb:
                 protocol: http
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1243: 80
@@ -861,6 +881,7 @@ search:
                     - bus-labs-posts--{instance}
     aws-alt: {}
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
         ports:
             1244: 80
@@ -883,6 +904,7 @@ recommendations:
                 cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
         ports:
             1254: 80
@@ -906,6 +928,7 @@ personalised-covers:
                 deletion-policy: retain
     aws-alt: {}
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1246: 80
@@ -919,6 +942,7 @@ statusbase:
             - 22
             - 80
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1246: 80
 
@@ -958,6 +982,7 @@ observer:
                 multi-az: true
 
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048 # metabase, mostly
         ports:
             1239: 80
@@ -1012,6 +1037,7 @@ peerscout:
             subdomains:
                 - peerscout
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1241: 80
         ram: 4096
@@ -1111,6 +1137,7 @@ iiif:
                 headers:
                     - Host
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1261: 80
 
@@ -1142,6 +1169,7 @@ redirects:
                     - Host
 
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1262: 80
 
@@ -1170,6 +1198,7 @@ profiles:
                 engine: postgres
                 storage: 5 # GB
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1265: 80
@@ -1183,6 +1212,7 @@ evanthia-simpler-component:
         ports:
             - 22
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
         ports:
             1340: 80
@@ -1224,6 +1254,7 @@ crm:
                     log_bin_trust_function_creators: 1
 
     vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
         ports:
             1237: 80
