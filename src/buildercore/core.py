@@ -223,7 +223,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
 class NoPublicIps(Exception):
     pass
 
-def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, **kwargs):
+def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, **kwargs):
     """Executes work on all the EC2 nodes of stackname.
     Optionally connects with the specified username"""
     work_kwargs = {}
@@ -233,6 +233,8 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     data = stack_data(stackname)
     public_ips = {ec2['id']: ec2['ip_address'] for ec2 in data}
     nodes = {ec2['id']: int(ec2['tags']['Node']) if 'Node' in ec2['tags'] else 1 for ec2 in data}
+    if node:
+        nodes = {k:v for k,v in nodes.items() if v == node}
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 

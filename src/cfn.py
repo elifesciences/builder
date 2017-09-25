@@ -306,7 +306,7 @@ def _user(use_bootstrap_user):
 
 @task
 @requires_aws_stack
-def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None):
+def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
     if command is None:
         abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
     LOG.info("Connecting to: %s", stackname)
@@ -330,7 +330,9 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 (run, {'command': command}),
                 username=username,
                 abort_on_prompts=True,
-                concurrency=concurrency_for(stackname, concurrency))
+                concurrency=concurrency_for(stackname, concurrency),
+                node=node
+            )
     except FabricException as e:
         LOG.error(e.message)
         exit(2)

@@ -58,6 +58,7 @@ class TestProvisioning(base.BaseCase):
             lifecycle.start(stackname)
 
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
+            cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel', node=1)
 
             cfn.download_file(stackname, "/bin/ls", "ls", use_bootstrap_user="true")
             self.assertTrue(os.path.isfile("./ls"))
