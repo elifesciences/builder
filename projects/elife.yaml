@@ -844,6 +844,11 @@ medium:
                 cluster-size: 2
             elb:
                 protocol: http
+        # TODO: remove in favour of globally available standalone14.04
+        standalone:
+            description: doesn't speak to the master server
+            ec2:
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
