@@ -35,8 +35,10 @@ defaults:
             # for future re-creation
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
-            # ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
-            ami: ami-92002785   # elife 'basebox.2016-11-03'
+            ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
+            # deprecated. all projects have 16.04 support now. explicit trusty images 
+            # are being used until each project is running 16.04 in production
+            # ami: ami-92002785   # elife 'basebox.2016-11-03'
             # use a master server or go ronin?
             masterless: false
         region: us-east-1
@@ -49,7 +51,10 @@ defaults:
         # necessary for multiple-node EC2 and for ELB
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.3.0/24'
+        # TODO: this will be moved inside aws.ec2
         type: t2.small  # ~ $20/mo
+        # TODO: this will be moved inside aws.ec2
+        # ports: {} 
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -130,20 +135,25 @@ defaults:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
             ec2:
-                ami: ami-9eaa1cf6 # Ubuntu 14.04
-        1604test:
+                ami: ami-1d4e7a66 # Ubuntu 16.04 (Xenial), us-east-1, build date 20170811, hvm:ebs-ssd
+        1604:
             description: uses Ubuntu 16.04 (Xenial) instead of 14.04 (Trusty)
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-        standalone:
-            description: isolated from the master-server. requires access to the builder-private
+        1404:
+            description: uses Ubuntu 14.04 (Trusty) instead of 16.04 (Xenial)
             ec2:
-                masterless: true
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
-            type: t2.small
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
+                masterless: true
+        standalone1404:
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            type: t2.small
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
@@ -165,25 +175,8 @@ basebox:
             ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22
-    vagrant: {}
-
-heavybox:
-    description: a project-less box with a bunch of features turned on
-    formula-repo: https://github.com/elifesciences/basebox-formula
-    aws:
-        ec2:
-            ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
-            masterless: true
-        rds:
-            storage: 5
-            engine: MySQL
-            version: 5.7
-            
-        ports:
-            - 22
-            - 80
-            - 443
-    vagrant: {}
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
 
 master-server:
     # formula-repo for the 'master-server' project should contain the
@@ -191,6 +184,8 @@ master-server:
     # see: https://github.com/elifesciences/builder-private-example
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 4506: # salt publish port
@@ -209,6 +204,8 @@ lax:
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 443
@@ -219,10 +216,6 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
-        standalone:
-            ec2:
-                ami: ami-1d4e7a66
-                masterless: True
         end2end:
             description: RDS backed
             rds:
@@ -285,7 +278,7 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
-            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             # only internal traffic has access to port 80 and http
@@ -330,6 +323,8 @@ journal:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 443
@@ -431,6 +426,8 @@ pattern-library:
     repo: https://github.com/elifesciences/pattern-library
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.small
         ports:
             - 22
@@ -455,6 +452,8 @@ evanthia-prototype:
     repo: https://github.com/code56/node_web_server
     formula-repo: https://github.com/code56/node-web-server-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.small
         ports:
             - 22
@@ -470,6 +469,8 @@ elife-metrics:
     repo: https://github.com/elifesciences/elife-metrics
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 443
@@ -497,6 +498,8 @@ elife-bot:
     domain: false
     subdomain: bot
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium
         ports:
             - 22
@@ -568,6 +571,8 @@ journal-cms:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.small # explicitly 2GB RAM
         ports:
             - 22
@@ -625,6 +630,8 @@ elife-dashboard:
     formula-repo: https://github.com/elifesciences/elife-dashboard-formula
     default-branch: develop
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -668,6 +675,8 @@ elife-api:
     repo: https://github.com/elifesciences/elife-api
     formula-repo: https://github.com/elifesciences/elife-api-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -691,6 +700,8 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.small # 2GB of RAM
         ports:
             - 22
@@ -713,6 +724,8 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.large
         ports:
             - 22
@@ -735,6 +748,8 @@ api-dummy:
     repo: https://github.com/elifesciences/api-dummy
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.micro
         ports:
             - 22
@@ -751,6 +766,8 @@ elife-website:
     repo: https://github.com/elifesciences/elife-website
     formula-repo: https://github.com/elifesciences/elife-website-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -797,6 +814,8 @@ jats4r-validator:
     repo: https://github.com/jats4r/validator
     formula-repo: https://github.com/elifesciences/jats4r-validator-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -812,6 +831,8 @@ medium:
     repo: https://github.com/elifesciences/medium
     formula-repo: https://github.com/elifesciences/medium-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.micro
         ports:
             - 22
@@ -864,6 +885,8 @@ search:
     aws:
         type: t2.medium # 4 GB of RAM: once we know more about which software
                         # will be installed, we can choose the right machine
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80:
@@ -897,6 +920,8 @@ recommendations:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium # 4 GB of RAM, same as search for now.
         ports:
             - 22
@@ -918,6 +943,8 @@ personalised-covers:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.micro # 1 GB of RAM: Unsure memory stats for PDF generation.
         ports:
             - 22
@@ -938,6 +965,8 @@ statusbase:
     repo: https://github.com/ep320/statusbase
     formula-repo: https://github.com/elifesciences/statusbase-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -952,7 +981,7 @@ observer:
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
         ec2:
-            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium
         ports:
             - 22
@@ -965,12 +994,6 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        standalone:
-            description: doesn't speak to the master server. RDS backed
-            ec2:
-                masterless: true
-            rds:
-                storage: 10
         end2end:
             description: production-like environment. RDS backed
             rds:
@@ -980,7 +1003,6 @@ observer:
             rds:
                 storage: 10
                 multi-az: true
-
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048 # metabase, mostly
@@ -1019,6 +1041,8 @@ peerscout:
     repo: https://github.com/elifesciences/peerscout
     formula-repo: https://github.com/elifesciences/peerscout-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.xlarge # explicitly 16GB RAM for heavy background processing
         ports:
             - 22
@@ -1049,6 +1073,8 @@ iiif:
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium
         ports:
             - 22
@@ -1147,6 +1173,8 @@ redirects:
     intdomain: null
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.nano
         ports:
             - 22
@@ -1178,6 +1206,8 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -1208,6 +1238,8 @@ evanthia-simpler-component:
     repo: https://github.com/code56/nodeServerSimplerFig
     formula-repo: https://github.com/code56/simpler-component-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.small
         ports:
             - 22
@@ -1222,6 +1254,8 @@ crm:
     repo: https://github.com/elifesciences/drupal-civi
     formula-repo: git@github.com:elifesciences/crm-formula
     aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium
         ports:
             22: 22
@@ -1264,8 +1298,6 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        ec2: 
-            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         type: t2.medium
         ports:
             - 22
