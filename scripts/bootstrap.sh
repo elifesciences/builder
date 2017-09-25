@@ -123,6 +123,7 @@ if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.lo
 # put minion id in dedicated file else salt keeps recreating file
 printf "master: %s\nlog_level: info\n" "$master_ipaddr" > /etc/salt/minion
 echo "$minion_id" > /etc/salt/minion_id
+echo "mysql.unix_socket: '/var/run/mysqld/mysqld.sock'" > /etc/salt/minion.d/mysql-defaults.conf
 
 # restart salt-minion. necessary as we may have changed minion's configuration
 systemctl restart salt-minion 2> /dev/null || service salt-minion restart
