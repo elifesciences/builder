@@ -332,7 +332,7 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 username=username,
                 abort_on_prompts=True,
                 concurrency=concurrency_for(stackname, concurrency),
-                node=int(node)
+                node=int(node) if node else None
             )
     except FabricException as e:
         LOG.error(e.message)
