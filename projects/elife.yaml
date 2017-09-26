@@ -1281,32 +1281,16 @@ crm:
             22: 22
             80: 80
             443: 443
-    aws-alt:
-        ci:
-            rds:
-                engine: MySQL
-                version: '5.5'
-                storage: 30 # GB
-                type: db.t2.medium
-                params:
-                    log_bin_trust_function_creators: 1
-        end2end:
-            rds:
-                engine: MySQL
-                version: '5.5'
-                storage: 30 # GB
-                type: db.t2.medium
-                params:
-                    log_bin_trust_function_creators: 1
-        prod:
-            rds:
-                engine: MySQL
-                version: '5.5'
-                storage: 30 # GB
-                type: db.t2.medium
-                params:
-                    log_bin_trust_function_creators: 1
-
+        
+        # database is now too large for the instance and requires rds
+        rds:
+            engine: MySQL
+            version: '5.5'
+            storage: 30 # GB
+            type: db.t2.medium
+            params:
+                log_bin_trust_function_creators: 1
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
