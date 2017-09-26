@@ -191,6 +191,7 @@ heavybox:
     aws:
         ports:
             - 22
+    aws-alt: {}
     vagrant:
         ram: 2048
 
