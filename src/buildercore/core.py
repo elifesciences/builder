@@ -235,6 +235,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     nodes = {ec2['id']: int(ec2['tags']['Node']) if 'Node' in ec2['tags'] else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == node}
+        public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
@@ -243,7 +244,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     params.update({'public_ips': public_ips})
     params.update({'nodes': nodes})
 
-    LOG.info("Executing on all ec2 nodes (%s), concurrency %s", public_ips, concurrency)
+    LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
     ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
 
