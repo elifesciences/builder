@@ -63,13 +63,7 @@ def stop(stackname):
     LOG.info("Current states: %s", states)
     _ensure_valid_states(states, {'running', 'stopping', 'stopped'})
     to_be_stopped = _select_nodes_with_state('running', states)
-    if not to_be_stopped:
-        LOG.info("Nodes are all stopped")
-        return
-
-    LOG.info("Nodes to be stopped: %s", to_be_stopped)
-    _connection(stackname).stop_instances(to_be_stopped)
-    _wait_all_in_state(stackname, 'stopped', to_be_stopped)
+    _stop(stackname, to_be_stopped)
 
 def last_start_time(stackname):
     nodes = find_ec2_instances(stackname, allow_empty=True)
@@ -90,9 +84,7 @@ def stop_if_next_hour_is_imminent(stackname, minimum_minutes=55):
 
     to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
     LOG.info("Selected for stopping: %s", to_be_stopped)
-    if to_be_stopped:
-        _connection(stackname).stop_instances(to_be_stopped)
-        _wait_all_in_state(stackname, 'stopped', to_be_stopped)
+    _stop(stackname, to_be_stopped)
 
 def stop_if_running_for(stackname, minimum_minutes=55):
     starting_times = last_start_time(stackname)
@@ -104,10 +96,15 @@ def stop_if_running_for(stackname, minimum_minutes=55):
 
     to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
     LOG.info("Selected for stopping: %s", to_be_stopped)
-    if to_be_stopped:
-        _connection(stackname).stop_instances(to_be_stopped)
-        _wait_all_in_state(stackname, 'stopped', to_be_stopped)
+    _stop(stackname, to_be_stopped)
 
+def _stop(stackname, to_be_stopped):
+    if not to_be_stopped:
+        LOG.info("Nodes are all stopped")
+        return
+
+    _connection(stackname).stop_instances(to_be_stopped)
+    _wait_all_in_state(stackname, 'stopped', to_be_stopped)
 
 def _wait_all_in_state(stackname, state, node_ids):
     def some_node_is_still_not_compliant():
