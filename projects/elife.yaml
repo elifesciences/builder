@@ -1239,6 +1239,7 @@ profiles:
             rds:
                 engine: postgres
                 storage: 5 # GB
+                multi-az: true
             ports:
                 - 22
                 - 80
@@ -1249,6 +1250,7 @@ profiles:
             rds:
                 engine: postgres
                 storage: 5 # GB
+                multi-az: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
