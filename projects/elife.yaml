@@ -817,6 +817,7 @@ anonymous:
 
 # used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
 # this is a free form instance jats4r can do what they like with
+# hosts http://jatswiki.org at the moment
 jats4r:
     aws:
         ec2:
