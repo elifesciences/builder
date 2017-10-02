@@ -235,7 +235,9 @@ lax:
             bot-lax-{instance}-out: {}
     aws-alt:
         end2end:
-            description: RDS backed
+            description: production-like
+            ec2:
+                cluster-size: 2
             rds:
                 storage: 5
                 # TODO: apply as it must be identical to prod
