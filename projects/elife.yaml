@@ -352,6 +352,10 @@ journal:
     aws-alt:
         ci:
             type: t2.medium
+            ports:
+                - 22
+                - 443
+                - 8443 # local-demo, for Tenon.io to access
         end2end:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:
