@@ -163,29 +163,37 @@ end
 
 # ask user if they want to use the large amount of RAM requested  
 RAM_CHECK_THRESHOLD = 2048
-if (prj('ram').to_i > RAM_CHECK_THRESHOLD) and ['up'].include? VAGRANT_COMMAND
+if (prj('ram').to_i > RAM_CHECK_THRESHOLD) and ['up', 'reload'].include? VAGRANT_COMMAND
     requested = prj('ram')
-    prn "project is requesting an unreasonable amount of RAM (#{requested}MB)"
     
-    prn "1 - #{RAM_CHECK_THRESHOLD}MB"
-    prn "2 - #{requested}MB"
-    prn "> (#{RAM_CHECK_THRESHOLD}MB)"
-    begin
-        opt = STDIN.gets.chomp.strip.downcase
-        opt = Integer(opt) rescue false
-    rescue Interrupt
-        abort
-    end
-    
-    options = {1 => RAM_CHECK_THRESHOLD, 2 => prj('ram')}
-    
-    if not opt
-        PRJ['vagrant']['ram'] = RAM_CHECK_THRESHOLD
-    elsif options.keys.include? opt
-        PRJ['vagrant']['ram'] = options[opt.to_i]
-    else
-        prn "unrecognized input, quitting"
-        exit()
+    flag = ".#{PROJECT_NAME}-#{requested}.flag"
+
+    if File.exists?(flag)
+        prn "found #{flag}, skipping excessive ram check"
+    else 
+        prn "project is requesting an unreasonable amount of RAM (#{requested}MB)"
+        
+        prn "1 - #{RAM_CHECK_THRESHOLD}MB"
+        prn "2 - #{requested}MB"
+        prn "> (#{RAM_CHECK_THRESHOLD}MB)"
+        begin
+            opt = STDIN.gets.chomp.strip.downcase
+            opt = Integer(opt) rescue false
+        rescue Interrupt
+            abort
+        end
+        
+        options = {1 => RAM_CHECK_THRESHOLD, 2 => prj('ram')}
+        
+        if not opt
+            PRJ['vagrant']['ram'] = RAM_CHECK_THRESHOLD
+        elsif options.keys.include? opt
+            PRJ['vagrant']['ram'] = options[opt.to_i]
+            FileUtils.touch(flag)
+        else
+            prn "unrecognized input, quitting"
+            exit()
+        end
     end
 end
 

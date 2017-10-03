@@ -32,6 +32,4 @@ scripts/salt/*.minion
 /etc-salt-master.template
 /etc-salt-master
 
-.no-install-basebox.flag
-.no-vagrant-s3auth.flag
-.no-delete-venv.flag
+.*.flag
