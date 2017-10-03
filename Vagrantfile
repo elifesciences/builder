@@ -326,13 +326,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         end
 
         # bootstrap Saltstack
-        project.vm.provision("shell", path: "scripts/bootstrap.sh", \
-            keep_color: true, privileged: true, \
+        project.vm.provision("shell",
+            path: "scripts/bootstrap.sh", \
+            keep_color: true, \
+            privileged: true, \
             args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER)])
 
         # link up formulas
-        project.vm.provision("shell", path: "scripts/init-vagrant-formulas.sh", \
-            keep_color: true, privileged: true, \
+        project.vm.provision("shell", \
+            path: "scripts/init-vagrant-formulas.sh", \
+            keep_color: true, \
+            privileged: true, \
+            env: { 'BUILDER_TOPFILE': ENV['BUILDER_TOPFILE'] }, \
             args: [INSTANCE_NAME])
 
         # configure the instance as if it were a master server
