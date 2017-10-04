@@ -53,6 +53,7 @@ def run_script(script_filename, *script_params, **environment_variables):
 
     def escape_string_parameter(parameter):
         return "'%s'" % parameter
+
     env_string = ['%s=%s' % (k, v) for k, v in environment_variables.items()]
     cmd = ["/bin/bash", remote_script] + map(escape_string_parameter, list(script_params))
     retval = sudo(" ".join(env_string + cmd))
@@ -523,8 +524,11 @@ def update_ec2_stack(stackname, concurrency):
             # to init the builder-private formula, the masterless instance needs
             # the master-builder key
             upload_master_builder_key(master_builder_key)
+            envvars = {
+                'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', '')
+            }
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-formulas.sh', formula_list, prepo, **{'BUILDER_TOPFILE':os.environ.get('BUILDER_TOPFILE', '')})
+            run_script('init-formulas.sh', formula_list, prepo, **envvars)
 
         if is_master:
             builder_private_repo = pdata['private-repo']
