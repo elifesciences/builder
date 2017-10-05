@@ -45,7 +45,7 @@ def put_script(script_filename, remote_script):
     temporary_script = _put_temporary_script(script_filename)
     sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
 
-def run_script(script_filename, *script_params):
+def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
     ASSUMES YOU ARE CONNECTED TO A STACK"""
     start = datetime.now()
@@ -53,8 +53,10 @@ def run_script(script_filename, *script_params):
 
     def escape_string_parameter(parameter):
         return "'%s'" % parameter
+
+    env_string = ['%s=%s' % (k, v) for k, v in environment_variables.items()]
     cmd = ["/bin/bash", remote_script] + map(escape_string_parameter, list(script_params))
-    retval = sudo(" ".join(cmd))
+    retval = sudo(" ".join(env_string + cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
     LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
@@ -522,8 +524,11 @@ def update_ec2_stack(stackname, concurrency):
             # to init the builder-private formula, the masterless instance needs
             # the master-builder key
             upload_master_builder_key(master_builder_key)
+            envvars = {
+                'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', '')
+            }
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-formulas.sh', formula_list, prepo)
+            run_script('init-formulas.sh', formula_list, prepo, **envvars)
 
         if is_master:
             builder_private_repo = pdata['private-repo']
