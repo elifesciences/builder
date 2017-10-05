@@ -36,7 +36,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
-            # deprecated. all projects have 16.04 support now. explicit trusty images 
+            # deprecated. all projects have 16.04 support now. explicit trusty images
             # are being used until each project is running 16.04 in production
             # ami: ami-92002785   # elife 'basebox.2016-11-03'
             # use a master server or go ronin?
@@ -54,7 +54,7 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         type: t2.small  # ~ $20/mo
         # TODO: this will be moved inside aws.ec2
-        # ports: {} 
+        # ports: {}
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -165,7 +165,7 @@ defaults:
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
-        # deprecated. all projects have 16.04 support now. explicit trusty images 
+        # deprecated. all projects have 16.04 support now. explicit trusty images
         # are being used until each project is running 16.04 in production
         #box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
@@ -714,7 +714,7 @@ elife-api:
 elife-reporting:
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated    
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1333: 80
@@ -848,6 +848,7 @@ jats4r-validator:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1239: 80
+
 
 medium:
     description: microservice that gives access to eLife posts on Medium.com
@@ -985,6 +986,25 @@ personalised-covers:
         ports:
             1246: 80
             1247: 8080
+
+schematron-validator:
+    domain: false
+    subdomain: schematron-validator
+    default-branch: master
+    repo: https://github.com/elifesciences/schematron-validator
+    formula-repo: https://github.com/elifesciences/schematron-validator-formula
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 80
+    vagrant:
+        ports:
+            1246: 80
+            1247: 8080
+
 statusbase:
     subdomain: statusbase
     repo: https://github.com/ep320/statusbase
@@ -1289,7 +1309,7 @@ crm:
             22: 22
             80: 80
             443: 443
-        
+
         # database is now too large for the instance and requires rds
         rds:
             engine: MySQL
