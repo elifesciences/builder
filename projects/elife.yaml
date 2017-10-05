@@ -1315,6 +1315,7 @@ elife-xpub:
             - 22
             - 443
             - 80
+    aws-alt: {}
     vagrant:
         ram: 2048
         ports:
