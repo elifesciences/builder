@@ -105,7 +105,7 @@ clone_update() {
     # tell the minion where it can find the formula's state and pillar data
     echo "    - $repo_path/salt/" >> /etc/salt/minion.d/file_roots.conf
 
-    topfile="$repo_path/salt/${BUILDER_TOPFILE-example.top}"
+    topfile="$repo_path/salt/${BUILDER_TOPFILE:-example.top}"
 
     # successively overwrites the top file until the last one (project formula) wins
     if [ -e "$topfile" ]; then
