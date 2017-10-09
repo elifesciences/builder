@@ -234,6 +234,9 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
+        standalone1404:
+            rds:
+                storage: 5
         end2end:
             description: production-like
             ec2:
@@ -1020,6 +1023,9 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
+        standalone1404:
+            rds:
+                storage: 10
         end2end:
             description: production-like environment. RDS backed
             rds:
