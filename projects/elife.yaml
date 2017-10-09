@@ -1341,6 +1341,7 @@ elife-ink:
         ports:
             - 22
             - 80
+            - 3000
     aws-alt:
         standalone:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
