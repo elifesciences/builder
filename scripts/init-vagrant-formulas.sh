@@ -20,7 +20,7 @@ ln -sfn /project/salt/pillar /srv/pillar
 ln -sfn /vagrant/custom-vagrant /srv/custom
 
 # by default the project's top.sls is disabled by file naming. hook that up here
-cd /srv/salt/ && ln -sf example.top top.sls
+cd /srv/salt/ && ln -sf "${BUILDER_TOPFILE:-example.top}" top.sls
 
 # vagrant makes all formula dependencies available, including builder base formula
 
