@@ -991,7 +991,6 @@ personalised-covers:
             1247: 8080
 
 schematron-validator:
-    domain: false
     subdomain: schematron-validator
     default-branch: master
     repo: https://github.com/elifesciences/schematron-validator
