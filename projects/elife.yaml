@@ -1360,7 +1360,8 @@ elife-ink:
         type: t2.medium
         ports:
             - 22
-            - 80
+            - 80 # ink
+            - 443 # ink
             - 3000 # ink
             - 4567 # slanger
             - 4568 # slanger nginx http
