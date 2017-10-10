@@ -1343,7 +1343,11 @@ elife-ink:
             - 80
             - 3000 # ink
             - 4567 # slanger
-            - 8080 # slanger
+            - 4568 # slanger nginx http
+            - 4569 # slanger nginx https
+            - 8080 # slanger api
+            - 8081 # slanger api nginx http
+            - 8082 # slanger api nginx https
     aws-alt:
         standalone:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
