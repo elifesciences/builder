@@ -1099,16 +1099,22 @@ peerscout:
             - 22
             - 80
             - 443
-        rds:
-            storage: 5
-        ext:
-            # external hdd
-            size: 100 # GB
-            device: /dev/sdf
     aws-alt:
+        end2end:
+            rds:
+                storage: 5
+            ext:
+                # external hdd
+                size: 100 # GB
+                device: /dev/sdf
         prod:
             rds:
+                storage: 5
                 multi-az: true
+            ext:
+                # external hdd
+                size: 100 # GB
+                device: /dev/sdf
             subdomains:
                 - peerscout
     vagrant:
