@@ -1359,7 +1359,7 @@ elife-xpub:
 
 elife-ink:
     subdomain: ink
-    repo: https://gitlab.coko.foundation/INK/ink-api
+    repo: git@github.com:elifesciences/elife-ink
     formula-repo: git@github.com:elifesciences/elife-ink-formula
     aws:
         type: t2.medium
