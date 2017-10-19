@@ -544,18 +544,8 @@ elife-bot:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
     aws-alt:
-        #prod:
-        #    eip: 54.164.145.166
-        large:
-            description: intended to run temporarily
-            type: c4.4xlarge
-            ext:
-                size: 160 # GB
-                type: ssd
-                device: /dev/xvdh
         end2end:
             description: speeding up end2end tests
-            type: c4.4xlarge
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
@@ -564,11 +554,6 @@ elife-bot:
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
-        ports:
-            # loris
-            1231: 80
-            # digilib
-            1232: 8080
 
 generic-cdn:
     description: generic CDN for content like PDF, images
