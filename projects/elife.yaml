@@ -365,8 +365,6 @@ journal:
                 cluster-size: 2
             elasticache:
                 engine: redis
-                # temporary, for testing. rollback to default
-                type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
             elb:
                 stickiness:
                     type: cookie
