@@ -411,6 +411,7 @@ journal:
                 cluster-size: 3
             elasticache:
                 engine: redis
+                type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
             elb:
                 stickiness:
                     type: cookie

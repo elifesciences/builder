@@ -761,7 +761,7 @@ def render_elasticache(context, template):
 
     template.add_resource(elasticache.CacheCluster(
         ELASTICACHE_TITLE,
-        CacheNodeType='cache.t2.small',
+        CacheNodeType=context['elasticache']['type'],
         CacheParameterGroupName=Ref(parameter_group),
         CacheSubnetGroupName=Ref(subnet_group),
         Engine='redis',
