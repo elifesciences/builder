@@ -1292,6 +1292,7 @@ annotations:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
