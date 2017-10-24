@@ -1285,8 +1285,6 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.micro
         ports:
             - 22
@@ -1294,7 +1292,6 @@ annotations:
                 cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1248: 80
