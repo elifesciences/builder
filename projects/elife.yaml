@@ -1278,6 +1278,26 @@ profiles:
         ports:
             1265: 80
 
+annotations:
+    description: microservice that gives access to eLife annotations on Hypothes.is
+    domain: false
+    subdomain: annotations
+    repo: https://github.com/elifesciences/annotations
+    formula-repo: https://github.com/elifesciences/annotations-formula
+    aws:
+        ec2:
+            ami: ami-92002785 # Ubuntu 14.04, deprecated
+        type: t2.micro
+        ports:
+            - 22
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        ram: 1024
+        ports:
+            1248: 80
+
 evanthia-simpler-component:
     subdomain: evanthia-simpler-component
     repo: https://github.com/code56/nodeServerSimplerFig
