@@ -1191,7 +1191,7 @@ iiif:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
-                cluster-size: 2
+                cluster-size: 3
             ext:
                 size: 30 # GB
             elb:
