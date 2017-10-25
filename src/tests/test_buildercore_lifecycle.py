@@ -18,7 +18,7 @@ class TestBuildercoreLifecycle(base.BaseCase):
         new.tags = {'Name': 'dummy1--test--1'}
 
         find_ec2_instances.return_value = [old, new]
-        self.assertEqual({'i-456': 'running'}, lifecycle._nodes_states('dummy1--test'))
+        self.assertEqual({'i-456': 'running'}, lifecycle._ec2_nodes_states('dummy1--test'))
 
     @patch('buildercore.lifecycle._stop')
     @patch('buildercore.lifecycle.find_ec2_instances')

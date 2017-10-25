@@ -20,22 +20,22 @@ def start(stackname):
     # update local copy of context from s3
     download_from_s3(stackname, refresh=True)
 
-    states = _nodes_states(stackname)
+    states = _ec2_nodes_states(stackname)
     LOG.info("Current states: %s", states)
-    _ensure_valid_states(states, {'stopped', 'pending', 'running', 'stopping'})
+    _ensure_valid_ec2_states(states, {'stopped', 'pending', 'running', 'stopping'})
 
-    stopping = _select_nodes_with_state('stopping', states)
+    stopping = _select_ec2_nodes_with_state('stopping', states)
     if stopping:
         LOG.info("Nodes are stopping: %s", stopping)
-        _wait_all_in_state(stackname, 'stopped', stopping)
-        states = _nodes_states(stackname)
+        _wait_ec2_all_in_state(stackname, 'stopped', stopping)
+        states = _ec2_nodes_states(stackname)
     LOG.info("Current states: %s", states)
 
-    to_be_started = _select_nodes_with_state('stopped', states)
+    to_be_started = _select_ec2_nodes_with_state('stopped', states)
     if to_be_started:
         LOG.info("Nodes to be started: %s", to_be_started)
-        _connection(stackname).start_instances(to_be_started)
-        _wait_all_in_state(stackname, 'running', to_be_started)
+        _ec2_connection(stackname).start_instances(to_be_started)
+        _wait_ec2_all_in_state(stackname, 'running', to_be_started)
 
         def some_node_is_not_ready():
             try:
@@ -44,7 +44,7 @@ def start(stackname):
                 LOG.info("No public ips available yet: %s", e.message)
                 return True
             except NoRunningInstances as e:
-                # shouldn't be necessary because of _wait_all_in_state() we do before, but the EC2 API is not consistent
+                # shouldn't be necessary because of _wait_ec2_all_in_state() we do before, but the EC2 API is not consistent
                 # and sometimes selecting instances filtering for the `running` state doesn't find them
                 # even if their state is `running` according to the latest API call
                 LOG.info("No running instances yet: %s", e.message)
@@ -59,13 +59,13 @@ def start(stackname):
 def stop(stackname):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
 
-    states = _nodes_states(stackname)
+    states = _ec2_nodes_states(stackname)
     LOG.info("Current states: %s", states)
-    _ensure_valid_states(states, {'running', 'stopping', 'stopped'})
-    to_be_stopped = _select_nodes_with_state('running', states)
+    _ensure_valid_ec2_states(states, {'running', 'stopping', 'stopped'})
+    to_be_stopped = _select_ec2_nodes_with_state('running', states)
     _stop(stackname, to_be_stopped)
 
-def last_start_time(stackname):
+def last_ec2_start_time(stackname):
     nodes = find_ec2_instances(stackname, allow_empty=True)
 
     def _parse_datetime(value):
@@ -73,7 +73,7 @@ def last_start_time(stackname):
     return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
 def stop_if_running_for(stackname, minimum_minutes=55):
-    starting_times = last_start_time(stackname)
+    starting_times = last_ec2_start_time(stackname)
     running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) for (node_id, launch_time) in starting_times.items()}
     LOG.info("Total running times: %s", running_times)
 
@@ -89,18 +89,18 @@ def _stop(stackname, to_be_stopped):
         LOG.info("Nodes are all stopped")
         return
 
-    _connection(stackname).stop_instances(to_be_stopped)
-    _wait_all_in_state(stackname, 'stopped', to_be_stopped)
+    _ec2_connection(stackname).stop_instances(to_be_stopped)
+    _wait_ec2_all_in_state(stackname, 'stopped', to_be_stopped)
 
-def _wait_all_in_state(stackname, state, node_ids):
+def _wait_ec2_all_in_state(stackname, state, node_ids):
     def some_node_is_still_not_compliant():
-        states = _nodes_states(stackname)
+        states = _ec2_nodes_states(stackname)
         LOG.info("states of %s nodes (%s): %s", stackname, node_ids, states)
         return set(states.values()) != {state}
     # TODO: timeout argument
     call_while(some_node_is_still_not_compliant, interval=2, update_msg="waiting for states of nodes to be %s" % state, done_msg="all nodes in state %s" % state)
 
-def _ensure_valid_states(states, valid_states):
+def _ensure_valid_ec2_states(states, valid_states):
     ensure(
         set(states.values()).issubset(valid_states),
         "The states of EC2 nodes are not supported, manual recovery is needed: %s", states
@@ -124,7 +124,7 @@ def update_dns(stackname):
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
 
     if len(nodes) == 0:
-        raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _nodes_states(stackname)))
+        raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _ec2_nodes_states(stackname)))
 
     if context.get('elb', False):
         # ELB has its own DNS, EC2 nodes will autoregister
@@ -177,10 +177,10 @@ def _delete_dns_a_record(stackname, zone_name, name):
     else:
         LOG.info("No DNS record to delete")
 
-def _select_nodes_with_state(interesting_state, states):
+def _select_ec2_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.items() if state == interesting_state]
 
-def _nodes_states(stackname, node_ids=None):
+def _ec2_nodes_states(stackname, node_ids=None):
     """dictionary from instance id to a string state.
     e.g. {'i-6f727961': 'stopped'}"""
 
@@ -211,5 +211,5 @@ def _nodes_states(stackname, node_ids=None):
     unified_nodes = {name: node for name, node in unified_including_terminated.items() if node is not None}
     return {node.id: node.state for name, node in unified_nodes.items()}
 
-def _connection(stackname):
+def _ec2_connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
