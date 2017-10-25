@@ -17,7 +17,7 @@ LOG = logging.getLogger(__name__)
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
 
-    # update local copy of of context from s3
+    # update local copy of context from s3
     download_from_s3(stackname, refresh=True)
 
     states = _nodes_states(stackname)
@@ -71,20 +71,6 @@ def last_start_time(stackname):
     def _parse_datetime(value):
         return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
     return {node.id: _parse_datetime(node.launch_time) for node in nodes}
-
-def stop_if_next_hour_is_imminent(stackname, minimum_minutes=55):
-    maximum_minutes = 60
-    starting_times = last_start_time(stackname)
-    running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) % (maximum_minutes * 60) for (node_id, launch_time) in starting_times.items()}
-    LOG.info("Hourly fraction running times: %s", running_times)
-
-    minimum_running_time = minimum_minutes * 60
-    maximum_running_time = maximum_minutes * 60
-    LOG.info("Interval to select nodes to stop: %s,%s", minimum_running_time, maximum_running_time)
-
-    to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
-    LOG.info("Selected for stopping: %s", to_be_stopped)
-    _stop(stackname, to_be_stopped)
 
 def stop_if_running_for(stackname, minimum_minutes=55):
     starting_times = last_start_time(stackname)
