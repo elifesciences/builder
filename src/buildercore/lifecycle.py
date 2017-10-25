@@ -26,6 +26,7 @@ def start(stackname):
     _ensure_valid_ec2_states(ec2_states, {'stopped', 'pending', 'running', 'stopping'})
 
     stopping = _select_nodes_with_state('stopping', ec2_states)
+    # TODO: sanity check on not stopping on RDS too
     if stopping:
         LOG.info("EC2 nodes are stopping: %s", stopping)
         _wait_ec2_all_in_state(stackname, 'stopped', stopping)
@@ -43,6 +44,7 @@ def start(stackname):
         [_rds_connection(stackname).stop_db_instance(n) for n in rds_to_be_started]
 
 
+    # TODO: polling on rds
     if ec2_to_be_started:
         _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
 
@@ -68,11 +70,13 @@ def start(stackname):
 def stop(stackname):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
 
-    states = _ec2_nodes_states(stackname)
-    LOG.info("Current states: %s", states)
-    _ensure_valid_ec2_states(states, {'running', 'stopping', 'stopped'})
-    to_be_stopped = _select_nodes_with_state('running', states)
-    _stop(stackname, to_be_stopped)
+    ec2_states = _ec2_nodes_states(stackname)
+    rds_states = _rds_nodes_states(stackname)
+    LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
+    _ensure_valid_ec2_states(ec2_states, {'running', 'stopping', 'stopped'})
+    ec2_to_be_stopped = _select_nodes_with_state('running', ec2_states)
+    rds_to_be_stopped = _select_nodes_with_state('available', ec2_states)
+    _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped)
 
 def last_ec2_start_time(stackname):
     nodes = find_ec2_instances(stackname, allow_empty=True)
@@ -93,7 +97,7 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     LOG.info("Selected for stopping: %s", to_be_stopped)
     _stop(stackname, to_be_stopped)
 
-def _stop(stackname, to_be_stopped):
+def _stop(stackname, to_be_stopped, rds_to_be_stopped):
     if not to_be_stopped:
         LOG.info("Nodes are all stopped")
         return
