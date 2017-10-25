@@ -153,6 +153,11 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
+def find_rds_instances(stackname, state='available'):
+    "This uses boto3 because it allows to start/stop instances"
+    conn = boto3.client('rds')
+    all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
+    return all_rds_instances
 
 def _all_nodes_filter(stackname, node_ids):
     query = {

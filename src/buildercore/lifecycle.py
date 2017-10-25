@@ -8,7 +8,7 @@ import re
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
-from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
+from .core import connect_aws_with_stack, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
 from .context_handler import load_context, download_from_s3
 
@@ -20,22 +20,31 @@ def start(stackname):
     # update local copy of context from s3
     download_from_s3(stackname, refresh=True)
 
-    states = _ec2_nodes_states(stackname)
-    LOG.info("Current states: %s", states)
-    _ensure_valid_ec2_states(states, {'stopped', 'pending', 'running', 'stopping'})
+    ec2_states = _ec2_nodes_states(stackname)
+    rds_states = _rds_nodes_states(stackname)
+    LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
+    _ensure_valid_ec2_states(ec2_states, {'stopped', 'pending', 'running', 'stopping'})
 
-    stopping = _select_ec2_nodes_with_state('stopping', states)
+    stopping = _select_nodes_with_state('stopping', ec2_states)
     if stopping:
-        LOG.info("Nodes are stopping: %s", stopping)
+        LOG.info("EC2 nodes are stopping: %s", stopping)
         _wait_ec2_all_in_state(stackname, 'stopped', stopping)
-        states = _ec2_nodes_states(stackname)
-    LOG.info("Current states: %s", states)
+        ec2_states = _ec2_nodes_states(stackname)
+    LOG.info("Current states: %s", ec2_states)
 
-    to_be_started = _select_ec2_nodes_with_state('stopped', states)
-    if to_be_started:
-        LOG.info("Nodes to be started: %s", to_be_started)
-        _ec2_connection(stackname).start_instances(to_be_started)
-        _wait_ec2_all_in_state(stackname, 'running', to_be_started)
+
+    ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
+    rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
+    if ec2_to_be_started:
+        LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
+        _ec2_connection(stackname).start_instances(ec2_to_be_started)
+    if rds_to_be_started:
+        LOG.info("RDS nodes to be started: %s", rds_to_be_started)
+        [_rds_connection(stackname).stop_db_instance(n) for n in rds_to_be_started]
+
+
+    if ec2_to_be_started:
+        _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
 
         def some_node_is_not_ready():
             try:
@@ -62,7 +71,7 @@ def stop(stackname):
     states = _ec2_nodes_states(stackname)
     LOG.info("Current states: %s", states)
     _ensure_valid_ec2_states(states, {'running', 'stopping', 'stopped'})
-    to_be_stopped = _select_ec2_nodes_with_state('running', states)
+    to_be_stopped = _select_nodes_with_state('running', states)
     _stop(stackname, to_be_stopped)
 
 def last_ec2_start_time(stackname):
@@ -177,7 +186,7 @@ def _delete_dns_a_record(stackname, zone_name, name):
     else:
         LOG.info("No DNS record to delete")
 
-def _select_ec2_nodes_with_state(interesting_state, states):
+def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.items() if state == interesting_state]
 
 def _ec2_nodes_states(stackname, node_ids=None):
@@ -210,6 +219,10 @@ def _ec2_nodes_states(stackname, node_ids=None):
     unified_including_terminated = {name: _unify_node_information(nodes, name) for name, nodes in by_node_name.items()}
     unified_nodes = {name: node for name, node in unified_including_terminated.items() if node is not None}
     return {node.id: node.state for name, node in unified_nodes.items()}
+
+def _rds_nodes_states(stackname):
+    return {i['DBInstanceIdentifier']:i['DBInstanceStatus'] for i in find_rds_instances(stackname)}
+
 
 def _ec2_connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
