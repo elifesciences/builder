@@ -7,10 +7,8 @@ LOG = logging.getLogger(__name__)
 
 class TestBuildercoreCfngen(base.BaseCase):
     def setUp(self):
+        super(TestBuildercoreCfngen, self).setUp()
         self.test_region = 'us-east-1'
-
-    def tearDown(self):
-        pass
 
     def test_rendering(self):
         for pname in project.aws_projects().keys():
@@ -38,10 +36,8 @@ class TestBuildercoreCfngen(base.BaseCase):
 
 class TestUpdates(base.BaseCase):
     def setUp(self):
+        super(TestUpdates, self).setUp()
         self.test_region = 'us-east-1'
-
-    def tearDown(self):
-        pass
 
     def test_empty_template_delta(self):
         context = self._base_context()
