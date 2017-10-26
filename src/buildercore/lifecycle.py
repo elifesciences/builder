@@ -5,7 +5,6 @@ The primary reason for doing this is to save on costs."""
 from datetime import datetime
 import logging
 import re
-import boto3
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
@@ -41,7 +40,7 @@ def start(stackname):
         _ec2_connection(stackname).start_instances(ec2_to_be_started)
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
-        [_rds_connection().start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
+        [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
 
     if ec2_to_be_started:
         _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
@@ -114,7 +113,7 @@ def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
     if ec2_to_be_stopped:
         _ec2_connection(stackname).stop_instances(ec2_to_be_stopped)
     if rds_to_be_stopped:
-        [_rds_connection().stop_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_stopped]
+        [_rds_connection(stackname).stop_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_stopped]
 
     if ec2_to_be_stopped:
         _wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_stopped)
@@ -275,4 +274,4 @@ def _ec2_connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
 
 def _rds_connection(stackname):
-    return connect_aws_with_stack(stackname, 'rds', boto3=True)
+    return connect_aws_with_stack(stackname, 'rds', with_boto3=True)

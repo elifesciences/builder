@@ -125,17 +125,17 @@ def boto_s3_conn(region):
     return boto3.client('s3', region)
 
 @cached
-def connect_aws_with_pname(pname, service, boto3=False):
+def connect_aws_with_pname(pname, service, with_boto3=False):
     "convenience"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
     LOG.debug('connecting to a %s instance in region %s', pname, region)
-    if boto3:
+    if with_boto3:
         return boto3.client('rds', region)
     else:
         return connect_aws(service, region)
 
-def connect_aws_with_stack(stackname, service, boto3=False):
+def connect_aws_with_stack(stackname, service, with_boto3=False):
     "convenience"
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service)
@@ -158,7 +158,7 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
 
 def find_rds_instances(stackname, state='available'):
     "This uses boto3 because it allows to start/stop instances"
-    conn = connect_aws_with_stack(stackname, 'rds', boto3=True)
+    conn = connect_aws_with_stack(stackname, 'rds', with_boto3=True)
     all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
     return all_rds_instances
 
