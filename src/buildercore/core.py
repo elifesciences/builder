@@ -138,7 +138,7 @@ def connect_aws_with_pname(pname, service, with_boto3=False):
 def connect_aws_with_stack(stackname, service, with_boto3=False):
     "convenience"
     pname = project_name_from_stackname(stackname)
-    return connect_aws_with_pname(pname, service)
+    return connect_aws_with_pname(pname, service, with_boto3)
 
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname"
