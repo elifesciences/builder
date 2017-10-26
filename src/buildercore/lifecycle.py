@@ -33,7 +33,6 @@ def start(stackname):
         ec2_states = _ec2_nodes_states(stackname)
     LOG.info("Current states: %s", ec2_states)
 
-
     ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
     if ec2_to_be_started:
@@ -47,25 +46,25 @@ def start(stackname):
     # TODO: polling on rds
     if ec2_to_be_started:
         _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
-
-        def some_node_is_not_ready():
-            try:
-                stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
-            except NoPublicIps as e:
-                LOG.info("No public ips available yet: %s", e.message)
-                return True
-            except NoRunningInstances as e:
-                # shouldn't be necessary because of _wait_ec2_all_in_state() we do before, but the EC2 API is not consistent
-                # and sometimes selecting instances filtering for the `running` state doesn't find them
-                # even if their state is `running` according to the latest API call
-                LOG.info("No running instances yet: %s", e.message)
-                return True
-            return False
-        call_while(some_node_is_not_ready, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
+        call_while(_some_node_is_not_ready, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
     else:
         LOG.info("Nodes are all running")
 
     update_dns(stackname)
+
+def _some_node_is_not_ready():
+    try:
+        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+    except NoPublicIps as e:
+        LOG.info("No public ips available yet: %s", e.message)
+        return True
+    except NoRunningInstances as e:
+        # shouldn't be necessary because of _wait_ec2_all_in_state() we do before, but the EC2 API is not consistent
+        # and sometimes selecting instances filtering for the `running` state doesn't find them
+        # even if their state is `running` according to the latest API call
+        LOG.info("No running instances yet: %s", e.message)
+        return True
+    return False
 
 def stop(stackname):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
