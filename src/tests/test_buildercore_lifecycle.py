@@ -43,9 +43,15 @@ class TestBuildercoreLifecycle(base.BaseCase):
 
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
-    def test_start_idempotence(self, find_ec2_instances, find_rds_instances):
+    def test_start_ec2_idempotence(self, find_ec2_instances, find_rds_instances):
         find_ec2_instances.return_value = [self._ec2_instance('running')]
         lifecycle.start('dummy1--test')
+
+    @patch('buildercore.lifecycle.find_rds_instances')
+    @patch('buildercore.lifecycle.find_ec2_instances')
+    def test_start_rds_idempotence(self, find_ec2_instances, find_rds_instances):
+        find_rds_instances.return_value = [self._rds_instance('available')]
+        lifecycle.start('project-with-rds-only--test')
 
     @patch('buildercore.lifecycle.find_ec2_instances')
     def test_ignores_terminated_stacks_that_have_been_replaced_by_a_new_instance(self, find_ec2_instances):
@@ -54,6 +60,22 @@ class TestBuildercoreLifecycle(base.BaseCase):
 
         find_ec2_instances.return_value = [old, new]
         self.assertEqual({'i-456': 'running'}, lifecycle._ec2_nodes_states('dummy1--test'))
+
+    @patch('buildercore.lifecycle._stop')
+    @patch('buildercore.lifecycle.find_rds_instances')
+    @patch('buildercore.lifecycle.find_ec2_instances')
+    def test_stops_ec2_instance(self, find_ec2_instances, find_rds_instances, _stop):
+        find_ec2_instances.return_value = [self._ec2_instance('running')]
+        find_rds_instances.return_value = []
+        lifecycle.stop('dummy1--test')
+
+    @patch('buildercore.lifecycle._stop')
+    @patch('buildercore.lifecycle.find_rds_instances')
+    @patch('buildercore.lifecycle.find_ec2_instances')
+    def test_stops_rds_instance(self, find_ec2_instances, find_rds_instances, _stop):
+        find_ec2_instances.return_value = []
+        find_rds_instances.return_value = [self._rds_instance('available')]
+        lifecycle.stop('project-with-rds-only--test')
 
     @patch('buildercore.lifecycle._stop')
     @patch('buildercore.lifecycle.find_ec2_instances')

@@ -41,7 +41,7 @@ def start(stackname):
         _ec2_connection(stackname).start_instances(ec2_to_be_started)
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
-        [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
+        [_rds_connection().start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
 
     if ec2_to_be_started:
         _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
@@ -103,13 +103,16 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     LOG.info("Selected for stopping: %s", to_be_stopped)
     _stop(stackname, to_be_stopped)
 
-def _stop(stackname, to_be_stopped, rds_to_be_stopped):
-    if not to_be_stopped:
-        LOG.info("Nodes are all stopped")
-        return
+def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
+    if ec2_to_be_stopped:
+        _ec2_connection(stackname).stop_instances(ec2_to_be_stopped)
+    if rds_to_be_stopped:
+        [_rds_connection().stop_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_stopped]
 
-    _ec2_connection(stackname).stop_instances(to_be_stopped)
-    _wait_ec2_all_in_state(stackname, 'stopped', to_be_stopped)
+    if ec2_to_be_stopped:
+        _wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_stopped)
+    if rds_to_be_stopped:
+        _wait_rds_all_in_state(stackname, 'stopped', rds_to_be_stopped)
 
 def _wait_ec2_all_in_state(stackname, state, node_ids):
     return _wait_all_in_state(
@@ -264,5 +267,5 @@ def _rds_nodes_states(stackname):
 def _ec2_connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
 
-def _rds_connection(stackname):
+def _rds_connection():
     return boto3.client('rds')
