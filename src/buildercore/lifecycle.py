@@ -73,15 +73,22 @@ def _some_node_is_not_ready(stackname):
         return True
     return False
 
-def stop(stackname):
+def stop(stackname, services=None):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
+    if not services:
+        services = ['ec2', 'rds']
 
     ec2_states = _ec2_nodes_states(stackname)
     rds_states = _rds_nodes_states(stackname)
     LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
     _ensure_valid_ec2_states(ec2_states, {'running', 'stopping', 'stopped'})
-    ec2_to_be_stopped = _select_nodes_with_state('running', ec2_states)
-    rds_to_be_stopped = _select_nodes_with_state('available', ec2_states)
+
+    ec2_to_be_stopped = []
+    rds_to_be_stopped = []
+    if 'ec2' in services:
+        ec2_to_be_stopped = _select_nodes_with_state('running', ec2_states)
+    if 'rds' in services:
+        rds_to_be_stopped = _select_nodes_with_state('available', ec2_states)
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped)
 
 def last_ec2_start_time(stackname):
@@ -100,10 +107,10 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     LOG.info("Interval to select nodes to stop: %s,+oo", minimum_running_time)
 
     ec2_to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
-    LOG.info("Selected for stopping: %s", ec2_to_be_stopped)
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
+    LOG.info("Selected for stopping: EC2 %s, RDS %s", ec2_to_be_stopped, rds_to_be_stopped)
     if ec2_to_be_stopped:
         _ec2_connection(stackname).stop_instances(ec2_to_be_stopped)
     if rds_to_be_stopped:

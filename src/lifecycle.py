@@ -12,9 +12,12 @@ def start(stackname):
 @task
 @requires_aws_stack
 @timeit
-def stop(stackname):
+def stop(stackname, *services):
     "Stops the nodes of 'stackname' without losing their state. Idempotent"
-    lifecycle.stop(stackname)
+    if services == []:
+        services = ['ec2']
+
+    lifecycle.stop(stackname, services)
 
 @task
 @requires_aws_stack
