@@ -274,5 +274,5 @@ def _rds_nodes_states(stackname):
 def _ec2_connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
 
-def _rds_connection():
-    return boto3.client('rds')
+def _rds_connection(stackname):
+    return connect_aws_with_stack(stackname, 'rds', boto3=True)
