@@ -88,7 +88,7 @@ def stop(stackname, services=None):
     if 'ec2' in services:
         ec2_to_be_stopped = _select_nodes_with_state('running', ec2_states)
     if 'rds' in services:
-        rds_to_be_stopped = _select_nodes_with_state('available', ec2_states)
+        rds_to_be_stopped = _select_nodes_with_state('available', rds_states)
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped)
 
 def last_ec2_start_time(stackname):
