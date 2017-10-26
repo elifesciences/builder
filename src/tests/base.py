@@ -1,5 +1,7 @@
+from datetime import datetime
 import os
 from os.path import join
+from subprocess import check_output
 from unittest import TestCase
 from buildercore import config, project
 
@@ -25,6 +27,11 @@ class BaseCase(TestCase):
         # clear any caches and reload the config module
         project.project_map.cache_clear()
         reload(config)
+
+    def generate_environment_name(self):
+        """to avoid multiple people clashing while running their builds
+           and new builds clashing with older ones"""
+        return check_output('whoami').rstrip() + datetime.utcnow().strftime("%Y%m%d%H%M%S")
 
     # pyline: disable=invalid-name
     def assertAllPairsEqual(self, fn, pair_lst):

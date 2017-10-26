@@ -1,6 +1,4 @@
 import os
-from datetime import datetime
-from subprocess import check_output
 from fabric.api import settings
 from tests import base
 from buildercore import bootstrap, cfngen, lifecycle
@@ -10,15 +8,10 @@ import cfn
 
 from fabfile import PROJECT_DIR
 
-def generate_environment_name():
-    """to avoid multiple people clashing while running their builds
-       and new builds clashing with older ones"""
-    return check_output('whoami').rstrip() + datetime.utcnow().strftime("%Y%m%d%H%M%S")
-
 class TestProvisioning(base.BaseCase):
     def setUp(self):
         self.stacknames = []
-        self.environment = generate_environment_name()
+        self.environment = self.generate_environment_name()
 
     def tearDown(self):
         for stackname in self.stacknames:
@@ -72,7 +65,7 @@ class TestProvisioning(base.BaseCase):
 class TestDeployment(base.BaseCase):
     def setUp(self):
         self.stacknames = []
-        self.environment = generate_environment_name()
+        self.environment = self.generate_environment_name()
 
     def tearDown(self):
         for stackname in self.stacknames:
