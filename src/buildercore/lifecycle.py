@@ -99,9 +99,9 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     minimum_running_time = minimum_minutes * 60
     LOG.info("Interval to select nodes to stop: %s,+oo", minimum_running_time)
 
-    to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
-    LOG.info("Selected for stopping: %s", to_be_stopped)
-    _stop(stackname, to_be_stopped)
+    ec2_to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
+    LOG.info("Selected for stopping: %s", ec2_to_be_stopped)
+    _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
     if ec2_to_be_stopped:
@@ -140,7 +140,7 @@ def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_descri
     # TODO: timeout argument
     call_while(
         some_node_is_still_not_compliant,
-        interval=2, 
+        interval=2,
         update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
         done_msg="all nodes in state %s" % state
     )
@@ -261,7 +261,7 @@ def _ec2_nodes_states(stackname, node_ids=None):
     return {node.id: node.state for name, node in unified_nodes.items()}
 
 def _rds_nodes_states(stackname):
-    return {i['DBInstanceIdentifier']:i['DBInstanceStatus'] for i in find_rds_instances(stackname)}
+    return {i['DBInstanceIdentifier']: i['DBInstanceStatus'] for i in find_rds_instances(stackname)}
 
 
 def _ec2_connection(stackname):

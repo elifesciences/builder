@@ -84,7 +84,7 @@ class TestBuildercoreLifecycle(base.BaseCase):
         find_ec2_instances.return_value = [self._ec2_instance('running', launch_time='2000-01-01T00:00:00.000Z')]
         lifecycle.stop_if_running_for('dummy1--test', 30)
 
-    def _generate_context(self, stackname): 
+    def _generate_context(self, stackname):
         (pname, instance_id) = parse_stackname(stackname)
         context = cfngen.build_context(pname, stackname=stackname)
         context_handler.write_context_locally(stackname, json.dumps(context))
@@ -99,7 +99,7 @@ class TestBuildercoreLifecycle(base.BaseCase):
 
     def _rds_instance(self, state='available', id='i-456'):
         instance = {
-            'DBInstanceIdentifier':id,
+            'DBInstanceIdentifier': id,
             'DBInstanceStatus': state,
         }
         return instance
