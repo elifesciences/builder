@@ -90,15 +90,8 @@ def stop(stackname, services=None):
         rds_to_be_stopped = _select_nodes_with_state('available', rds_states)
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped)
 
-def last_ec2_start_time(stackname):
-    nodes = find_ec2_instances(stackname, allow_empty=True)
-
-    def _parse_datetime(value):
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
-    return {node.id: _parse_datetime(node.launch_time) for node in nodes}
-
 def stop_if_running_for(stackname, minimum_minutes=55):
-    starting_times = last_ec2_start_time(stackname)
+    starting_times = _last_ec2_start_time(stackname)
     running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) for (node_id, launch_time) in starting_times.items()}
     LOG.info("Total running times: %s", running_times)
 
@@ -107,6 +100,13 @@ def stop_if_running_for(stackname, minimum_minutes=55):
 
     ec2_to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
+
+def _last_ec2_start_time(stackname):
+    nodes = find_ec2_instances(stackname, allow_empty=True)
+
+    def _parse_datetime(value):
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+    return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
     LOG.info("Selected for stopping: EC2 %s, RDS %s", ec2_to_be_stopped, rds_to_be_stopped)
