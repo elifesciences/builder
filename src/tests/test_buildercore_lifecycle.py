@@ -1,6 +1,7 @@
 import json
 from mock import patch, MagicMock
 from . import base
+from buildercore.core import parse_stackname
 from buildercore import cfngen, context_handler, lifecycle
 
 
@@ -23,16 +24,20 @@ class TestBuildercoreLifecycle(base.BaseCase):
         ec2_connection.return_value = c
         lifecycle.start('dummy1--test')
 
+    @patch('buildercore.lifecycle._rds_connection')
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
-    def test_start_a_not_running_rds_instance(self, find_ec2_instances, find_rds_instances):
+    def test_start_a_not_running_rds_instance(self, find_ec2_instances, find_rds_instances, rds_connection):
+        self._generate_context('project-with-rds-only--test')
         find_ec2_instances.return_value = []
         find_rds_instances.side_effect = [
-            []
+            [self._rds_instance('stopped')],
+            [self._rds_instance('available')]
         ]
 
-        context = cfngen.build_context('project-with-rds-only', stackname='project-with-rds-only--test')
-        context_handler.write_context_locally('project-with-rds-only--test', json.dumps(context))
+        c = MagicMock()
+        c.start_db_instance = MagicMock()
+        rds_connection.return_value = c
 
         lifecycle.start('project-with-rds-only--test')
 
@@ -57,6 +62,11 @@ class TestBuildercoreLifecycle(base.BaseCase):
         find_ec2_instances.return_value = [self._ec2_instance('running', launch_time='2000-01-01T00:00:00.000Z')]
         lifecycle.stop_if_running_for('dummy1--test', 30)
 
+    def _generate_context(self, stackname): 
+        (pname, instance_id) = parse_stackname(stackname)
+        context = cfngen.build_context(pname, stackname=stackname)
+        context_handler.write_context_locally(stackname, json.dumps(context))
+
     def _ec2_instance(self, state='running', id='i-456', launch_time='2017-01-01T00:00:00.000Z'):
         instance = MagicMock()
         instance.id = id
@@ -65,3 +75,9 @@ class TestBuildercoreLifecycle(base.BaseCase):
         instance.launch_time = launch_time
         return instance
 
+    def _rds_instance(self, state='available', id='i-456'):
+        instance = {
+            'DBInstanceIdentifier':id,
+            'DBInstanceStatus': state,
+        }
+        return instance

@@ -5,6 +5,7 @@ The primary reason for doing this is to save on costs."""
 from datetime import datetime
 import logging
 import re
+import boto3
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
@@ -31,7 +32,7 @@ def start(stackname):
         LOG.info("EC2 nodes are stopping: %s", stopping)
         _wait_ec2_all_in_state(stackname, 'stopped', stopping)
         ec2_states = _ec2_nodes_states(stackname)
-    LOG.info("Current states: %s", ec2_states)
+        LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
 
     ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
@@ -40,19 +41,25 @@ def start(stackname):
         _ec2_connection(stackname).start_instances(ec2_to_be_started)
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
-        [_rds_connection(stackname).stop_db_instance(n) for n in rds_to_be_started]
+        [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
 
-
-    # TODO: polling on rds
     if ec2_to_be_started:
         _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
-        call_while(_some_node_is_not_ready, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
+        call_while(
+            lambda: _some_node_is_not_ready(stackname),
+            interval=2,
+            update_msg="waiting for nodes to be networked",
+            done_msg="all nodes have public ips"
+        )
     else:
-        LOG.info("Nodes are all running")
+        LOG.info("EC2 nodes are all running")
+
+    if rds_to_be_started:
+        _wait_rds_all_in_state(stackname, 'available', rds_to_be_started)
 
     update_dns(stackname)
 
-def _some_node_is_not_ready():
+def _some_node_is_not_ready(stackname):
     try:
         stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
     except NoPublicIps as e:
@@ -105,12 +112,35 @@ def _stop(stackname, to_be_stopped, rds_to_be_stopped):
     _wait_ec2_all_in_state(stackname, 'stopped', to_be_stopped)
 
 def _wait_ec2_all_in_state(stackname, state, node_ids):
+    return _wait_all_in_state(
+        stackname,
+        state,
+        node_ids,
+        lambda: _ec2_nodes_states(stackname),
+        'EC2'
+    )
+
+def _wait_rds_all_in_state(stackname, state, node_ids):
+    return _wait_all_in_state(
+        stackname,
+        state,
+        node_ids,
+        lambda: _rds_nodes_states(stackname),
+        'RDS'
+    )
+
+def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_description):
     def some_node_is_still_not_compliant():
-        states = _ec2_nodes_states(stackname)
-        LOG.info("states of %s nodes (%s): %s", stackname, node_ids, states)
+        states = source_of_states()
+        LOG.info("states of %s %s nodes (%s): %s", stackname, node_description, node_ids, states)
         return set(states.values()) != {state}
     # TODO: timeout argument
-    call_while(some_node_is_still_not_compliant, interval=2, update_msg="waiting for states of nodes to be %s" % state, done_msg="all nodes in state %s" % state)
+    call_while(
+        some_node_is_still_not_compliant,
+        interval=2, 
+        update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
+        done_msg="all nodes in state %s" % state
+    )
 
 def _ensure_valid_ec2_states(states, valid_states):
     ensure(
@@ -233,3 +263,6 @@ def _rds_nodes_states(stackname):
 
 def _ec2_connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
+
+def _rds_connection(stackname):
+    return boto3.client('rds')
