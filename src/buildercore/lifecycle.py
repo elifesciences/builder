@@ -19,9 +19,14 @@ def start(stackname):
 
     # update local copy of context from s3
     download_from_s3(stackname, refresh=True)
+    context = load_context(stackname)
 
+    # TODO: do the same exclusion for EC2
     ec2_states = _ec2_nodes_states(stackname)
-    rds_states = _rds_nodes_states(stackname)
+    if context['project']['aws'].get('rds'):
+        rds_states = _rds_nodes_states(stackname)
+    else:
+        rds_states = {}
     LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
     _ensure_valid_ec2_states(ec2_states, {'stopped', 'pending', 'running', 'stopping'})
 
@@ -76,9 +81,13 @@ def stop(stackname, services=None):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
     if not services:
         services = ['ec2', 'rds']
+    context = load_context(stackname)
 
     ec2_states = _ec2_nodes_states(stackname)
-    rds_states = _rds_nodes_states(stackname)
+    if context['project']['aws'].get('rds'):
+        rds_states = _rds_nodes_states(stackname)
+    else:
+        rds_states = {}
     LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
     _ensure_valid_ec2_states(ec2_states, {'running', 'stopping', 'stopped'})
 
