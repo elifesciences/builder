@@ -6,6 +6,10 @@ from buildercore import cfngen, context_handler, lifecycle
 
 
 class TestBuildercoreLifecycle(base.BaseCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._generate_context('dummy1--test')
+        cls._generate_context('project-with-rds-only--test')
 
     @patch('buildercore.lifecycle._some_node_is_not_ready')
     @patch('buildercore.lifecycle._ec2_connection')
@@ -28,7 +32,6 @@ class TestBuildercoreLifecycle(base.BaseCase):
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
     def test_start_a_not_running_rds_instance(self, find_ec2_instances, find_rds_instances, rds_connection):
-        self._generate_context('project-with-rds-only--test')
         find_ec2_instances.return_value = []
         find_rds_instances.side_effect = [
             [self._rds_instance('stopped')],
@@ -84,7 +87,8 @@ class TestBuildercoreLifecycle(base.BaseCase):
         find_ec2_instances.return_value = [self._ec2_instance('running', launch_time='2000-01-01T00:00:00.000Z')]
         lifecycle.stop_if_running_for('dummy1--test', 30)
 
-    def _generate_context(self, stackname):
+    @staticmethod
+    def _generate_context(stackname):
         (pname, instance_id) = parse_stackname(stackname)
         context = cfngen.build_context(pname, stackname=stackname)
         context_handler.write_context_locally(stackname, json.dumps(context))
