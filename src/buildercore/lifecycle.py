@@ -132,6 +132,10 @@ def _wait_daemons():
 
 def update_dns(stackname):
     context = load_context(stackname)
+    if not context['ec2']:
+        LOG.info("No EC2 nodes expected")
+        return
+
     nodes = find_ec2_instances(stackname, allow_empty=True)
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
 

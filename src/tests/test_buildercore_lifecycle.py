@@ -1,6 +1,7 @@
+import json
 from mock import patch, MagicMock
 from . import base
-from buildercore import lifecycle
+from buildercore import cfngen, context_handler, lifecycle
 
 
 class TestBuildercoreLifecycle(base.BaseCase):
@@ -21,6 +22,19 @@ class TestBuildercoreLifecycle(base.BaseCase):
         c.start_instances = MagicMock()
         ec2_connection.return_value = c
         lifecycle.start('dummy1--test')
+
+    @patch('buildercore.lifecycle.find_rds_instances')
+    @patch('buildercore.lifecycle.find_ec2_instances')
+    def test_start_a_not_running_rds_instance(self, find_ec2_instances, find_rds_instances):
+        find_ec2_instances.return_value = []
+        find_rds_instances.side_effect = [
+            []
+        ]
+
+        context = cfngen.build_context('project-with-rds-only', stackname='project-with-rds-only--test')
+        context_handler.write_context_locally('project-with-rds-only--test', json.dumps(context))
+
+        lifecycle.start('project-with-rds-only--test')
 
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
