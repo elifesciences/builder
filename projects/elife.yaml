@@ -247,7 +247,6 @@ lax:
                 cluster-size: 2
             rds:
                 storage: 5
-                multi-az: true
             ext:
                 size: 10 # GB
             elb:
@@ -1264,7 +1263,6 @@ profiles:
             rds:
                 engine: postgres
                 storage: 5 # GB
-                multi-az: true
             ports:
                 - 22
                 - 80
