@@ -8,7 +8,7 @@ import re
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
-from .core import connect_aws_with_stack, find_ec2_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
+from .core import connect_aws_with_stack, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
 from .context_handler import load_context, download_from_s3
 
@@ -17,104 +17,150 @@ LOG = logging.getLogger(__name__)
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
 
-    # update local copy of of context from s3
+    # update local copy of context from s3
     download_from_s3(stackname, refresh=True)
+    context = load_context(stackname)
 
-    states = _nodes_states(stackname)
-    LOG.info("Current states: %s", states)
-    _ensure_valid_states(states, {'stopped', 'pending', 'running', 'stopping'})
-
-    stopping = _select_nodes_with_state('stopping', states)
-    if stopping:
-        LOG.info("Nodes are stopping: %s", stopping)
-        _wait_all_in_state(stackname, 'stopped', stopping)
-        states = _nodes_states(stackname)
-    LOG.info("Current states: %s", states)
-
-    to_be_started = _select_nodes_with_state('stopped', states)
-    if to_be_started:
-        LOG.info("Nodes to be started: %s", to_be_started)
-        _connection(stackname).start_instances(to_be_started)
-        _wait_all_in_state(stackname, 'running', to_be_started)
-
-        def some_node_is_not_ready():
-            try:
-                stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
-            except NoPublicIps as e:
-                LOG.info("No public ips available yet: %s", e.message)
-                return True
-            except NoRunningInstances as e:
-                # shouldn't be necessary because of _wait_all_in_state() we do before, but the EC2 API is not consistent
-                # and sometimes selecting instances filtering for the `running` state doesn't find them
-                # even if their state is `running` according to the latest API call
-                LOG.info("No running instances yet: %s", e.message)
-                return True
-            return False
-        call_while(some_node_is_not_ready, interval=2, update_msg="waiting for nodes to be networked", done_msg="all nodes have public ips")
+    # TODO: do the same exclusion for EC2
+    ec2_states = _ec2_nodes_states(stackname)
+    if context['project']['aws'].get('rds'):
+        rds_states = _rds_nodes_states(stackname)
     else:
-        LOG.info("Nodes are all running")
+        rds_states = {}
+    LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
+    _ensure_valid_ec2_states(ec2_states, {'stopped', 'pending', 'running', 'stopping'})
+
+    stopping = _select_nodes_with_state('stopping', ec2_states)
+    # TODO: sanity check on not stopping on RDS too
+    if stopping:
+        LOG.info("EC2 nodes are stopping: %s", stopping)
+        _wait_ec2_all_in_state(stackname, 'stopped', stopping)
+        ec2_states = _ec2_nodes_states(stackname)
+        LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
+
+    ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
+    rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
+    if ec2_to_be_started:
+        LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
+        _ec2_connection(stackname).start_instances(ec2_to_be_started)
+    if rds_to_be_started:
+        LOG.info("RDS nodes to be started: %s", rds_to_be_started)
+        [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
+
+    if ec2_to_be_started:
+        _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
+        call_while(
+            lambda: _some_node_is_not_ready(stackname),
+            interval=2,
+            update_msg="waiting for nodes to be networked",
+            done_msg="all nodes have public ips"
+        )
+    else:
+        LOG.info("EC2 nodes are all running")
+
+    if rds_to_be_started:
+        _wait_rds_all_in_state(stackname, 'available', rds_to_be_started)
 
     update_dns(stackname)
 
-def stop(stackname):
+def _some_node_is_not_ready(stackname):
+    try:
+        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+    except NoPublicIps as e:
+        LOG.info("No public ips available yet: %s", e.message)
+        return True
+    except NoRunningInstances as e:
+        # shouldn't be necessary because of _wait_ec2_all_in_state() we do before, but the EC2 API is not consistent
+        # and sometimes selecting instances filtering for the `running` state doesn't find them
+        # even if their state is `running` according to the latest API call
+        LOG.info("No running instances yet: %s", e.message)
+        return True
+    return False
+
+def stop(stackname, services=None):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
+    if not services:
+        services = ['ec2', 'rds']
+    context = load_context(stackname)
 
-    states = _nodes_states(stackname)
-    LOG.info("Current states: %s", states)
-    _ensure_valid_states(states, {'running', 'stopping', 'stopped'})
-    to_be_stopped = _select_nodes_with_state('running', states)
-    _stop(stackname, to_be_stopped)
+    ec2_states = _ec2_nodes_states(stackname)
+    if context['project']['aws'].get('rds'):
+        rds_states = _rds_nodes_states(stackname)
+    else:
+        rds_states = {}
+    LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
+    _ensure_valid_ec2_states(ec2_states, {'running', 'stopping', 'stopped'})
 
-def last_start_time(stackname):
-    nodes = find_ec2_instances(stackname, allow_empty=True)
-
-    def _parse_datetime(value):
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
-    return {node.id: _parse_datetime(node.launch_time) for node in nodes}
-
-def stop_if_next_hour_is_imminent(stackname, minimum_minutes=55):
-    maximum_minutes = 60
-    starting_times = last_start_time(stackname)
-    running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) % (maximum_minutes * 60) for (node_id, launch_time) in starting_times.items()}
-    LOG.info("Hourly fraction running times: %s", running_times)
-
-    minimum_running_time = minimum_minutes * 60
-    maximum_running_time = maximum_minutes * 60
-    LOG.info("Interval to select nodes to stop: %s,%s", minimum_running_time, maximum_running_time)
-
-    to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
-    LOG.info("Selected for stopping: %s", to_be_stopped)
-    _stop(stackname, to_be_stopped)
+    ec2_to_be_stopped = []
+    rds_to_be_stopped = []
+    if 'ec2' in services:
+        ec2_to_be_stopped = _select_nodes_with_state('running', ec2_states)
+    if 'rds' in services:
+        rds_to_be_stopped = _select_nodes_with_state('available', rds_states)
+    _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped)
 
 def stop_if_running_for(stackname, minimum_minutes=55):
-    starting_times = last_start_time(stackname)
+    starting_times = _last_ec2_start_time(stackname)
     running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) for (node_id, launch_time) in starting_times.items()}
     LOG.info("Total running times: %s", running_times)
 
     minimum_running_time = minimum_minutes * 60
     LOG.info("Interval to select nodes to stop: %s,+oo", minimum_running_time)
 
-    to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
-    LOG.info("Selected for stopping: %s", to_be_stopped)
-    _stop(stackname, to_be_stopped)
+    ec2_to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
+    _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
-def _stop(stackname, to_be_stopped):
-    if not to_be_stopped:
-        LOG.info("Nodes are all stopped")
-        return
+def _last_ec2_start_time(stackname):
+    nodes = find_ec2_instances(stackname, allow_empty=True)
 
-    _connection(stackname).stop_instances(to_be_stopped)
-    _wait_all_in_state(stackname, 'stopped', to_be_stopped)
+    def _parse_datetime(value):
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+    return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
-def _wait_all_in_state(stackname, state, node_ids):
+def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
+    LOG.info("Selected for stopping: EC2 %s, RDS %s", ec2_to_be_stopped, rds_to_be_stopped)
+    if ec2_to_be_stopped:
+        _ec2_connection(stackname).stop_instances(ec2_to_be_stopped)
+    if rds_to_be_stopped:
+        [_rds_connection(stackname).stop_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_stopped]
+
+    if ec2_to_be_stopped:
+        _wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_stopped)
+    if rds_to_be_stopped:
+        _wait_rds_all_in_state(stackname, 'stopped', rds_to_be_stopped)
+
+def _wait_ec2_all_in_state(stackname, state, node_ids):
+    return _wait_all_in_state(
+        stackname,
+        state,
+        node_ids,
+        lambda: _ec2_nodes_states(stackname),
+        'EC2'
+    )
+
+def _wait_rds_all_in_state(stackname, state, node_ids):
+    return _wait_all_in_state(
+        stackname,
+        state,
+        node_ids,
+        lambda: _rds_nodes_states(stackname),
+        'RDS'
+    )
+
+def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_description):
     def some_node_is_still_not_compliant():
-        states = _nodes_states(stackname)
-        LOG.info("states of %s nodes (%s): %s", stackname, node_ids, states)
+        states = source_of_states()
+        LOG.info("states of %s %s nodes (%s): %s", stackname, node_description, node_ids, states)
         return set(states.values()) != {state}
     # TODO: timeout argument
-    call_while(some_node_is_still_not_compliant, interval=2, update_msg="waiting for states of nodes to be %s" % state, done_msg="all nodes in state %s" % state)
+    call_while(
+        some_node_is_still_not_compliant,
+        interval=2,
+        update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
+        done_msg="all nodes in state %s" % state
+    )
 
-def _ensure_valid_states(states, valid_states):
+def _ensure_valid_ec2_states(states, valid_states):
     ensure(
         set(states.values()).issubset(valid_states),
         "The states of EC2 nodes are not supported, manual recovery is needed: %s", states
@@ -134,11 +180,15 @@ def _wait_daemons():
 
 def update_dns(stackname):
     context = load_context(stackname)
+    if not context['ec2']:
+        LOG.info("No EC2 nodes expected")
+        return
+
     nodes = find_ec2_instances(stackname, allow_empty=True)
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
 
     if len(nodes) == 0:
-        raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _nodes_states(stackname)))
+        raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _ec2_nodes_states(stackname)))
 
     if context.get('elb', False):
         # ELB has its own DNS, EC2 nodes will autoregister
@@ -194,7 +244,7 @@ def _delete_dns_a_record(stackname, zone_name, name):
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.items() if state == interesting_state]
 
-def _nodes_states(stackname, node_ids=None):
+def _ec2_nodes_states(stackname, node_ids=None):
     """dictionary from instance id to a string state.
     e.g. {'i-6f727961': 'stopped'}"""
 
@@ -225,5 +275,12 @@ def _nodes_states(stackname, node_ids=None):
     unified_nodes = {name: node for name, node in unified_including_terminated.items() if node is not None}
     return {node.id: node.state for name, node in unified_nodes.items()}
 
-def _connection(stackname):
+def _rds_nodes_states(stackname):
+    return {i['DBInstanceIdentifier']: i['DBInstanceStatus'] for i in find_rds_instances(stackname)}
+
+
+def _ec2_connection(stackname):
     return connect_aws_with_stack(stackname, 'ec2')
+
+def _rds_connection(stackname):
+    return connect_aws_with_stack(stackname, 'rds', with_boto3=True)

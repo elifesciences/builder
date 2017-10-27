@@ -6,12 +6,6 @@ import logging
 LOG = logging.getLogger(__name__)
 
 class TestBuildercoreCfngen(base.BaseCase):
-    def setUp(self):
-        self.test_region = 'us-east-1'
-
-    def tearDown(self):
-        pass
-
     def test_rendering(self):
         for pname in project.aws_projects().keys():
             LOG.info('rendering %s', pname)
@@ -37,12 +31,6 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.switch_in_test_settings()
 
 class TestUpdates(base.BaseCase):
-    def setUp(self):
-        self.test_region = 'us-east-1'
-
-    def tearDown(self):
-        pass
-
     def test_empty_template_delta(self):
         context = self._base_context()
         (delta_plus, delta_edit, delta_minus) = cfngen.template_delta('dummy1', context)

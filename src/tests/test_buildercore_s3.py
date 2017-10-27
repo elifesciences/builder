@@ -17,13 +17,13 @@ class SimpleCases(base.BaseCase):
         self.assertFalse(s3.exists(key))
 
     def test_writable(self):
-        key = "test/foo"
+        key = "test/foo-%s" % self.generate_environment_name()
         self.assertFalse(s3.exists(key))
         s3.write(key, "asdf")
         self.assertTrue(s3.exists(key))
 
     def test_overwrite(self):
-        key = "test/foo"
+        key = "test/foo-%s" % self.generate_environment_name()
         self.assertFalse(s3.exists(key))
         s3.write(key, "asdf")
         self.assertRaises(KeyError, s3.write, key, "fdsa")
@@ -32,7 +32,7 @@ class SimpleCases(base.BaseCase):
         # TODO: test content was actually overwritten
 
     def test_delete(self):
-        key = "test/foo"
+        key = "test/foo-%s" % self.generate_environment_name()
         s3.write(key, "asdf")
         self.assertTrue(s3.exists(key))
         s3.delete(key)
@@ -40,16 +40,16 @@ class SimpleCases(base.BaseCase):
 
     def test_list(self):
         keys = [
-            "test/foo",
-            "test/bar",
-            "test/baz"
+            "test/foo-%s" % self.generate_environment_name(),
+            "test/bar-%s" % self.generate_environment_name(),
+            "test/baz-%s" % self.generate_environment_name(),
         ]
         for key in keys:
             s3.write(key, 'asdf')
         self.assertEqual(sorted(keys), sorted(s3.simple_listing("test/")))
 
     def test_download(self):
-        key = "test/baz"
+        key = "test/foo-%s" % self.generate_environment_name()
         expected_contents = "test content"
         expected_output = '/tmp/builder/baz'
         s3.write(key, expected_contents)
