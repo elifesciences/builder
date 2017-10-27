@@ -277,22 +277,6 @@ lax:
                         port: 8001
                 healthcheck:
                     path: /api/v2/ping
-        balanced:
-            description: testing out load balancing for high availability
-            rds:
-                storage: 5
-                multi-az: true
-            ext:
-                size: 10 # GB
-            elb:
-                protocol:
-                    - https
-                additional_listeners:
-                    bot_lax_adaptor:
-                        protocol: https
-                        port: 8001
-                healthcheck:
-                    path: /api/v2/ping
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
