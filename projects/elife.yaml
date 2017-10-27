@@ -247,6 +247,7 @@ lax:
                 cluster-size: 2
             rds:
                 storage: 5
+                backup-retention: 2 # days
             ext:
                 size: 10 # GB
             elb:
@@ -512,6 +513,7 @@ elife-metrics:
             description: end2end environment for metrics. RDS backed
             rds:
                 storage: 5
+                backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed
             rds:
@@ -612,6 +614,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
         continuumtest:
@@ -621,6 +624,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
         prod:
@@ -657,6 +661,7 @@ elife-dashboard:
             description: production-like environment. backed by RDS
             rds:
                 storage: 5
+                backup-retention: 2 # days
             sqs:
                 # legacy custom name
                 end2end-event-property-incoming-queue:
@@ -1035,10 +1040,12 @@ observer:
         standalone1404:
             rds:
                 storage: 10
+                backup-retention: 2 # days
         end2end:
             description: production-like environment. RDS backed
             rds:
                 storage: 10
+                backup-retention: 2 # days
         prod:
             description: production environment. RDS backed
             rds:
@@ -1093,6 +1100,7 @@ peerscout:
         end2end:
             rds:
                 storage: 5
+                backup-retention: 2 # days
             ext:
                 # external hdd
                 size: 100 # GB
@@ -1264,6 +1272,7 @@ profiles:
             rds:
                 engine: postgres
                 storage: 5 # GB
+                backup-retention: 2 # days
             ports:
                 - 22
                 - 80
