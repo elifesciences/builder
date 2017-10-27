@@ -182,10 +182,6 @@ basebox:
             ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22
-    aws-alt:
-        rdstest:
-            rds:
-                storage: 5
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
 
