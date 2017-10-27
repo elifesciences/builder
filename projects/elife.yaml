@@ -888,6 +888,7 @@ bus:
             - bus-labs-posts--{instance}
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
+            - bus-profiles--{instance}
 
 search:
     domain: false
