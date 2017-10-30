@@ -492,7 +492,10 @@ elife-metrics:
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
-                storage: 5
+                # currently:
+                storage: 10
+                # it should normally be
+                # storage: 5
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed
