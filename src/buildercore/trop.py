@@ -142,7 +142,6 @@ def elb_tags(context):
     tags = _generic_tags(context)
     tags.update({
         'Name': '%s--elb' % context['stackname'], # ll: journal--prod--elb
-        'Cluster': context['stackname'], # ll: journal--prod
     })
     return [ec2.Tag(key, value) for key, value in tags.items()]
 
