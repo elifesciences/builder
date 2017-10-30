@@ -182,10 +182,6 @@ basebox:
             ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22
-    aws-alt:
-        rdstest:
-            rds:
-                storage: 5
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
 
@@ -247,6 +243,7 @@ lax:
                 cluster-size: 2
             rds:
                 storage: 5
+                backup-retention: 2 # days
             ext:
                 size: 10 # GB
             elb:
@@ -262,22 +259,6 @@ lax:
             description: RDS backed
             ec2:
                 cluster-size: 2
-            rds:
-                storage: 5
-                multi-az: true
-            ext:
-                size: 10 # GB
-            elb:
-                protocol:
-                    - https
-                additional_listeners:
-                    bot_lax_adaptor:
-                        protocol: https
-                        port: 8001
-                healthcheck:
-                    path: /api/v2/ping
-        balanced:
-            description: testing out load balancing for high availability
             rds:
                 storage: 5
                 multi-az: true
@@ -511,7 +492,11 @@ elife-metrics:
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
-                storage: 5
+                # currently:
+                storage: 10
+                # it should normally be
+                # storage: 5
+                backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed
             rds:
@@ -612,6 +597,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
         continuumtest:
@@ -621,6 +607,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
         prod:
@@ -657,6 +644,7 @@ elife-dashboard:
             description: production-like environment. backed by RDS
             rds:
                 storage: 5
+                backup-retention: 2 # days
             sqs:
                 # legacy custom name
                 end2end-event-property-incoming-queue:
@@ -1035,10 +1023,12 @@ observer:
         standalone1404:
             rds:
                 storage: 10
+                backup-retention: 2 # days
         end2end:
             description: production-like environment. RDS backed
             rds:
                 storage: 10
+                backup-retention: 2 # days
         prod:
             description: production environment. RDS backed
             rds:
@@ -1093,6 +1083,7 @@ peerscout:
         end2end:
             rds:
                 storage: 5
+                backup-retention: 2 # days
             ext:
                 # external hdd
                 size: 100 # GB
@@ -1264,6 +1255,7 @@ profiles:
             rds:
                 engine: postgres
                 storage: 5 # GB
+                backup-retention: 2 # days
             ports:
                 - 22
                 - 80
