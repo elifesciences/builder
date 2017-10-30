@@ -123,7 +123,8 @@ def _generic_tags(context):
         'Project': context['project_name'], # journal
         'Environment': context['instance_id'], # stack instance id
         # the name AWS Console uses to label an instance
-        'Name': context['stackname'] # ll: journal-prod
+        'Name': context['stackname'], # ll: journal-prod
+        'Cluster': context['stackname'], # ll: journal--prod
     }
 
 def instance_tags(context, node=None):
@@ -133,7 +134,6 @@ def instance_tags(context, node=None):
         # this instance is part of a cluster
         tags.update({
             'Name': '%s--%d' % (context['stackname'], node), # ll: journal--prod--1
-            'Cluster': context['stackname'], # ll: journal--prod
             'Node': node, # ll: 1
         })
     return [ec2.Tag(key, str(value)) for key, value in tags.items()]

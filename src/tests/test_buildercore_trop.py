@@ -29,6 +29,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 {'Key': 'Project', 'Value': 'dummy3'},
                 {'Key': 'Name', 'Value': 'dummy3--test'},
                 {'Key': 'Environment', 'Value': 'test'},
+                {'Key': 'Cluster', 'Value': 'dummy3--test'},
             ]
         )
 
@@ -762,6 +763,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'PreferredAvailabilityZone': 'us-east-1a',
                 'NumCacheNodes': 1,
                 'Tags': [
+                    {'Key': 'Cluster', 'Value': 'project-with-elasticache-redis--prod'},
                     {'Key': 'Environment', 'Value': 'prod'},
                     {'Key': 'Name', 'Value': 'project-with-elasticache-redis--prod'},
                     {'Key': 'Owner', 'Value': 'my_user'},
