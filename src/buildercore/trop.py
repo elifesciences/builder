@@ -280,6 +280,7 @@ def render_ext_volume(context, template, node=1):
         "Size": str(context_ext['size']),
         "AvailabilityZone": GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone"),
         "VolumeType": vtype,
+        "Tags": instance_tags(context, node),
     }
     ec2v = ec2.Volume(EXT_TITLE % node, **args)
 

@@ -106,6 +106,14 @@ class TestBuildercoreTrop(base.BaseCase):
                 'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance1', 'AvailabilityZone']},
                 'VolumeType': 'standard',
                 'Size': '200',
+                'Tags': [
+                    {'Key': 'Project', 'Value': 'project-with-ext'},
+                    {'Key': 'Environment', 'Value': 'prod'},
+                    {'Key': 'Name', 'Value': 'project-with-ext--prod--1'},
+                    {'Key': 'Cluster', 'Value': 'project-with-ext--prod'},
+                    {'Key': 'Owner', 'Value': 'my_user'},
+                    {'Key': 'Node', 'Value': '1'},
+                ],
             },
             data['Resources']['ExtraStorage1']['Properties']
         )
