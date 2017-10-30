@@ -722,6 +722,9 @@ elife-libraries:
         powerful2:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.4xlarge
+        powerful3:
+            description: speeding up bot-lax-adaptor tests even more
+            type: c4.8xlarge
 
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
