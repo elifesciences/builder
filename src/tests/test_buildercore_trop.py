@@ -444,6 +444,12 @@ class TestBuildercoreTrop(base.BaseCase):
                 'DeletionPolicy': 'Delete',
                 'Properties': {
                     'BucketName': 'widgets-prod',
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 }
             },
             data['Resources']['WidgetsProdBucket']
@@ -454,6 +460,12 @@ class TestBuildercoreTrop(base.BaseCase):
                 'DeletionPolicy': 'Retain',
                 'Properties': {
                     'BucketName': 'widgets-archive-prod',
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 },
             },
             data['Resources']['WidgetsArchiveProdBucket']
@@ -475,7 +487,13 @@ class TestBuildercoreTrop(base.BaseCase):
                     },
                     'WebsiteConfiguration': {
                         'IndexDocument': 'index.html',
-                    }
+                    },
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 },
             },
             data['Resources']['WidgetsStaticHostingProdBucket']
@@ -510,6 +528,12 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Properties': {
                     'AccessControl': 'PublicRead',
                     'BucketName': 'widgets-just-access-prod',
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 },
             },
             data['Resources']['WidgetsJustAccessProdBucket']

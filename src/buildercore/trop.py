@@ -117,14 +117,15 @@ def rds_security(context):
 #
 
 
-def _generic_tags(context):
-    return {
+def _generic_tags(context, name=True):
+    tags = {
         'Project': context['project_name'], # journal
         'Environment': context['instance_id'], # stack instance id
         # the name AWS Console uses to label an instance
-        'Name': context['stackname'], # ll: journal-prod
         'Cluster': context['stackname'], # ll: journal--prod
     }
+    tags['Name'] = context['stackname'] # ll: journal-prod
+    return tags
 
 def instance_tags(context, node=None):
     # NOTE: RDS and Elasticache instances also call this function
@@ -450,7 +451,8 @@ def render_sqs(context, template):
 def render_s3(context, template):
     for bucket_name in context['s3']:
         props = {
-            'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize()
+            'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize(),
+            'Tags': s3.Tags(**_generic_tags(context, name=False)),
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:
