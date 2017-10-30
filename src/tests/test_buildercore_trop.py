@@ -27,8 +27,8 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['AttachedDB']['Properties']['Tags'],
             [
                 {'Key': 'Project', 'Value': 'dummy3'},
-                {'Key': 'Name', 'Value': 'dummy3--test'},
                 {'Key': 'Environment', 'Value': 'test'},
+                {'Key': 'Name', 'Value': 'dummy3--test'},
                 {'Key': 'Cluster', 'Value': 'dummy3--test'},
             ]
         )
@@ -111,7 +111,6 @@ class TestBuildercoreTrop(base.BaseCase):
                     {'Key': 'Environment', 'Value': 'prod'},
                     {'Key': 'Name', 'Value': 'project-with-ext--prod--1'},
                     {'Key': 'Cluster', 'Value': 'project-with-ext--prod'},
-                    {'Key': 'Owner', 'Value': 'my_user'},
                     {'Key': 'Node', 'Value': '1'},
                 ],
             },
@@ -774,7 +773,6 @@ class TestBuildercoreTrop(base.BaseCase):
                     {'Key': 'Cluster', 'Value': 'project-with-elasticache-redis--prod'},
                     {'Key': 'Environment', 'Value': 'prod'},
                     {'Key': 'Name', 'Value': 'project-with-elasticache-redis--prod'},
-                    {'Key': 'Owner', 'Value': 'my_user'},
                     {'Key': 'Project', 'Value': 'project-with-elasticache-redis'},
                 ],
                 'VpcSecurityGroupIds': [{'Ref': 'ElastiCacheSecurityGroup'}],

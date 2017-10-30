@@ -119,7 +119,6 @@ def rds_security(context):
 
 def _generic_tags(context):
     return {
-        'Owner': context['author'],
         'Project': context['project_name'], # journal
         'Environment': context['instance_id'], # stack instance id
         # the name AWS Console uses to label an instance
@@ -233,7 +232,7 @@ def render_rds(context, template):
     # rds parameter group. None or a Ref
     param_group_ref = rdsdbparams(context, template)
 
-    tags = [t for t in instance_tags(context) if t.Key != 'Owner']
+    tags = [t for t in instance_tags(context)]
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
