@@ -146,5 +146,6 @@ def project_formulas():
 def known_formulas():
     "a simple list of all known project formulas (excluding the private-repo)"
     lst = utils.unique(utils.shallow_flatten(project_formulas().values()))
-    lst.remove(None)
+    if None in lst:
+        lst.remove(None)
     return lst

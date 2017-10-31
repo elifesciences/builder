@@ -125,17 +125,20 @@ def boto_s3_conn(region):
     return boto3.client('s3', region)
 
 @cached
-def connect_aws_with_pname(pname, service):
+def connect_aws_with_pname(pname, service, with_boto3=False):
     "convenience"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
     LOG.debug('connecting to a %s instance in region %s', pname, region)
-    return connect_aws(service, region)
+    if with_boto3:
+        return boto3.client('rds', region)
+    else:
+        return connect_aws(service, region)
 
-def connect_aws_with_stack(stackname, service):
+def connect_aws_with_stack(stackname, service, with_boto3=False):
     "convenience"
     pname = project_name_from_stackname(stackname)
-    return connect_aws_with_pname(pname, service)
+    return connect_aws_with_pname(pname, service, with_boto3)
 
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname"
@@ -153,6 +156,11 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
+def find_rds_instances(stackname, state='available'):
+    "This uses boto3 because it allows to start/stop instances"
+    conn = connect_aws_with_stack(stackname, 'rds', with_boto3=True)
+    all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
+    return all_rds_instances
 
 def _all_nodes_filter(stackname, node_ids):
     query = {

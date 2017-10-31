@@ -117,14 +117,15 @@ def rds_security(context):
 #
 
 
-def _generic_tags(context):
-    return {
-        'Owner': context['author'],
+def _generic_tags(context, name=True):
+    tags = {
         'Project': context['project_name'], # journal
         'Environment': context['instance_id'], # stack instance id
         # the name AWS Console uses to label an instance
-        'Name': context['stackname'] # ll: journal-prod
+        'Cluster': context['stackname'], # ll: journal--prod
     }
+    tags['Name'] = context['stackname'] # ll: journal-prod
+    return tags
 
 def instance_tags(context, node=None):
     # NOTE: RDS and Elasticache instances also call this function
@@ -133,7 +134,6 @@ def instance_tags(context, node=None):
         # this instance is part of a cluster
         tags.update({
             'Name': '%s--%d' % (context['stackname'], node), # ll: journal--prod--1
-            'Cluster': context['stackname'], # ll: journal--prod
             'Node': node, # ll: 1
         })
     return [ec2.Tag(key, str(value)) for key, value in tags.items()]
@@ -142,7 +142,6 @@ def elb_tags(context):
     tags = _generic_tags(context)
     tags.update({
         'Name': '%s--elb' % context['stackname'], # ll: journal--prod--elb
-        'Cluster': context['stackname'], # ll: journal--prod
     })
     return [ec2.Tag(key, value) for key, value in tags.items()]
 
@@ -234,7 +233,7 @@ def render_rds(context, template):
     # rds parameter group. None or a Ref
     param_group_ref = rdsdbparams(context, template)
 
-    tags = [t for t in instance_tags(context) if t.Key != 'Owner']
+    tags = [t for t in instance_tags(context)]
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
@@ -281,6 +280,7 @@ def render_ext_volume(context, template, node=1):
         "Size": str(context_ext['size']),
         "AvailabilityZone": GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone"),
         "VolumeType": vtype,
+        "Tags": instance_tags(context, node),
     }
     ec2v = ec2.Volume(EXT_TITLE % node, **args)
 
@@ -451,7 +451,8 @@ def render_sqs(context, template):
 def render_s3(context, template):
     for bucket_name in context['s3']:
         props = {
-            'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize()
+            'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize(),
+            'Tags': s3.Tags(**_generic_tags(context, name=False)),
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:
@@ -761,7 +762,7 @@ def render_elasticache(context, template):
 
     template.add_resource(elasticache.CacheCluster(
         ELASTICACHE_TITLE,
-        CacheNodeType='cache.t2.small',
+        CacheNodeType=context['elasticache']['type'],
         CacheParameterGroupName=Ref(parameter_group),
         CacheSubnetGroupName=Ref(subnet_group),
         Engine='redis',

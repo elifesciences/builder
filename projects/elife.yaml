@@ -36,7 +36,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-1d4e7a66 # xenial, us-east-1, build date 20170811, hvm:ebs-ssd
-            # deprecated. all projects have 16.04 support now. explicit trusty images 
+            # deprecated. all projects have 16.04 support now. explicit trusty images
             # are being used until each project is running 16.04 in production
             # ami: ami-92002785   # elife 'basebox.2016-11-03'
             # use a master server or go ronin?
@@ -54,7 +54,7 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         type: t2.small  # ~ $20/mo
         # TODO: this will be moved inside aws.ec2
-        # ports: {} 
+        # ports: {}
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -165,7 +165,7 @@ defaults:
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
-        # deprecated. all projects have 16.04 support now. explicit trusty images 
+        # deprecated. all projects have 16.04 support now. explicit trusty images
         # are being used until each project is running 16.04 in production
         #box: ubuntu/trusty64 # Ubuntu 14.04
         # box-url not needed for boxes hosted on Atlas
@@ -243,7 +243,7 @@ lax:
                 cluster-size: 2
             rds:
                 storage: 5
-                multi-az: true
+                backup-retention: 2 # days
             ext:
                 size: 10 # GB
             elb:
@@ -259,22 +259,6 @@ lax:
             description: RDS backed
             ec2:
                 cluster-size: 2
-            rds:
-                storage: 5
-                multi-az: true
-            ext:
-                size: 10 # GB
-            elb:
-                protocol:
-                    - https
-                additional_listeners:
-                    bot_lax_adaptor:
-                        protocol: https
-                        port: 8001
-                healthcheck:
-                    path: /api/v2/ping
-        balanced:
-            description: testing out load balancing for high availability
             rds:
                 storage: 5
                 multi-az: true
@@ -378,6 +362,7 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
+                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                     - AWSELB
@@ -397,6 +382,7 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
+                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                 errors: 
@@ -411,6 +397,7 @@ journal:
                 cluster-size: 3
             elasticache:
                 engine: redis
+                type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
             elb:
                 stickiness:
                     type: cookie
@@ -428,6 +415,7 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
+                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                     - AWSELB
@@ -507,7 +495,7 @@ elife-metrics:
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
-                storage: 5
+                backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed
             rds:
@@ -544,18 +532,8 @@ elife-bot:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
     aws-alt:
-        #prod:
-        #    eip: 54.164.145.166
-        large:
-            description: intended to run temporarily
-            type: c4.4xlarge
-            ext:
-                size: 160 # GB
-                type: ssd
-                device: /dev/xvdh
         end2end:
             description: speeding up end2end tests
-            type: c4.4xlarge
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
@@ -564,11 +542,6 @@ elife-bot:
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
-        ports:
-            # loris
-            1231: 80
-            # digilib
-            1232: 8080
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -623,6 +596,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
         continuumtest:
@@ -632,6 +606,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
         prod:
@@ -668,6 +643,7 @@ elife-dashboard:
             description: production-like environment. backed by RDS
             rds:
                 storage: 5
+                backup-retention: 2 # days
             sqs:
                 # legacy custom name
                 end2end-event-property-incoming-queue:
@@ -717,7 +693,7 @@ elife-api:
 elife-reporting:
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated    
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1333: 80
@@ -742,6 +718,12 @@ elife-libraries:
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
+        powerful2:
+            description: speeding up bot-lax-adaptor tests even more
+            type: c4.4xlarge
+        powerful3:
+            description: speeding up bot-lax-adaptor tests even more
+            type: c4.8xlarge
 
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
@@ -852,6 +834,7 @@ jats4r-validator:
         ports:
             1239: 80
 
+
 medium:
     description: microservice that gives access to eLife posts on Medium.com
     domain: false
@@ -901,6 +884,7 @@ bus:
             - bus-labs-posts--{instance}
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
+            - bus-profiles--{instance}
 
 search:
     domain: false
@@ -988,6 +972,24 @@ personalised-covers:
         ports:
             1246: 80
             1247: 8080
+
+schematron-validator:
+    subdomain: schematron-validator
+    default-branch: master
+    repo: https://github.com/elifesciences/schematron-validator
+    formula-repo: https://github.com/elifesciences/schematron-validator-formula
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 80
+    vagrant:
+        ports:
+            1246: 80
+            1247: 8080
+
 statusbase:
     subdomain: statusbase
     repo: https://github.com/ep320/statusbase
@@ -1026,10 +1028,12 @@ observer:
         standalone1404:
             rds:
                 storage: 10
+                backup-retention: 2 # days
         end2end:
             description: production-like environment. RDS backed
             rds:
                 storage: 10
+                backup-retention: 2 # days
         prod:
             description: production environment. RDS backed
             rds:
@@ -1080,16 +1084,23 @@ peerscout:
             - 22
             - 80
             - 443
-        rds:
-            storage: 5
-        ext:
-            # external hdd
-            size: 100 # GB
-            device: /dev/sdf
     aws-alt:
+        end2end:
+            rds:
+                storage: 5
+                backup-retention: 2 # days
+            ext:
+                # external hdd
+                size: 100 # GB
+                device: /dev/sdf
         prod:
             rds:
+                storage: 5
                 multi-az: true
+            ext:
+                # external hdd
+                size: 100 # GB
+                device: /dev/sdf
             subdomains:
                 - peerscout
     vagrant:
@@ -1180,7 +1191,7 @@ iiif:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
-                cluster-size: 2
+                cluster-size: 3
             ext:
                 size: 30 # GB
             elb:
@@ -1238,8 +1249,6 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -1249,7 +1258,7 @@ profiles:
             rds:
                 engine: postgres
                 storage: 5 # GB
-                multi-az: true
+                backup-retention: 2 # days
             ports:
                 - 22
                 - 80
@@ -1262,10 +1271,27 @@ profiles:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1265: 80
+
+annotations:
+    description: microservice that gives access to eLife annotations on Hypothes.is
+    domain: false
+    subdomain: annotations
+    repo: https://github.com/elifesciences/annotations
+    formula-repo: https://github.com/elifesciences/annotations-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
+    aws-alt: {}
+    vagrant:
+        ram: 1024
+        ports:
+            1248: 80
 
 evanthia-simpler-component:
     subdomain: evanthia-simpler-component
@@ -1295,7 +1321,7 @@ crm:
             22: 22
             80: 80
             443: 443
-        
+
         # database is now too large for the instance and requires rds
         rds:
             engine: MySQL
@@ -1304,7 +1330,10 @@ crm:
             type: db.t2.medium
             params:
                 log_bin_trust_function_creators: 1
-    aws-alt: {}
+    aws-alt:
+        ci:
+            rds:
+                backup-retention: 2 # days
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
@@ -1332,4 +1361,27 @@ elife-xpub:
         ports:
             1201: 80
 
-
+elife-ink:
+    subdomain: ink
+    repo: git@github.com:elifesciences/elife-ink
+    formula-repo: git@github.com:elifesciences/elife-ink-formula
+    aws:
+        type: t2.medium
+        ports:
+            - 22
+            - 443 # ink
+            - 3000 # ink
+            - 4567 # slanger
+            - 4569 # slanger nginx https
+            - 8080 # slanger api
+            - 8082 # slanger api nginx https
+    aws-alt:
+        standalone:
+            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
+            ec2:
+                ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
+                masterless: true
+    vagrant:
+        ram: 4096
+        ports:
+            1223: 80

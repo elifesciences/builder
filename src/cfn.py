@@ -85,13 +85,14 @@ def update_template(stackname):
     if delta.non_empty:
         new_template = cfngen.merge_delta(stackname, delta)
         bootstrap.update_template(stackname, new_template)
-        # the /etc/buildvars.json file may need to be updated
-        buildvars.refresh(stackname, context)
     else:
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
 
-    update(stackname)
+    if _are_there_existing_servers(context):
+        # the /etc/buildvars.json file may need to be updated
+        buildvars.refresh(stackname, context)
+        update(stackname)
 
 
 @task
