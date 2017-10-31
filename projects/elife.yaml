@@ -362,6 +362,7 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
+                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                     - AWSELB
@@ -381,6 +382,7 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
+                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                 errors: 
@@ -413,6 +415,7 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
+                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                     - AWSELB
