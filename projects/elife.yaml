@@ -1330,7 +1330,10 @@ crm:
             type: db.t2.medium
             params:
                 log_bin_trust_function_creators: 1
-    aws-alt: {}
+    aws-alt:
+        ci:
+            rds:
+                backup-retention: 2 # days
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
