@@ -27,8 +27,9 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['AttachedDB']['Properties']['Tags'],
             [
                 {'Key': 'Project', 'Value': 'dummy3'},
-                {'Key': 'Name', 'Value': 'dummy3--test'},
                 {'Key': 'Environment', 'Value': 'test'},
+                {'Key': 'Name', 'Value': 'dummy3--test'},
+                {'Key': 'Cluster', 'Value': 'dummy3--test'},
             ]
         )
 
@@ -105,6 +106,13 @@ class TestBuildercoreTrop(base.BaseCase):
                 'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance1', 'AvailabilityZone']},
                 'VolumeType': 'standard',
                 'Size': '200',
+                'Tags': [
+                    {'Key': 'Project', 'Value': 'project-with-ext'},
+                    {'Key': 'Environment', 'Value': 'prod'},
+                    {'Key': 'Name', 'Value': 'project-with-ext--prod--1'},
+                    {'Key': 'Cluster', 'Value': 'project-with-ext--prod'},
+                    {'Key': 'Node', 'Value': '1'},
+                ],
             },
             data['Resources']['ExtraStorage1']['Properties']
         )
@@ -436,6 +444,12 @@ class TestBuildercoreTrop(base.BaseCase):
                 'DeletionPolicy': 'Delete',
                 'Properties': {
                     'BucketName': 'widgets-prod',
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 }
             },
             data['Resources']['WidgetsProdBucket']
@@ -446,6 +460,12 @@ class TestBuildercoreTrop(base.BaseCase):
                 'DeletionPolicy': 'Retain',
                 'Properties': {
                     'BucketName': 'widgets-archive-prod',
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 },
             },
             data['Resources']['WidgetsArchiveProdBucket']
@@ -467,7 +487,13 @@ class TestBuildercoreTrop(base.BaseCase):
                     },
                     'WebsiteConfiguration': {
                         'IndexDocument': 'index.html',
-                    }
+                    },
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 },
             },
             data['Resources']['WidgetsStaticHostingProdBucket']
@@ -502,6 +528,12 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Properties': {
                     'AccessControl': 'PublicRead',
                     'BucketName': 'widgets-just-access-prod',
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
                 },
             },
             data['Resources']['WidgetsJustAccessProdBucket']
@@ -762,9 +794,9 @@ class TestBuildercoreTrop(base.BaseCase):
                 'PreferredAvailabilityZone': 'us-east-1a',
                 'NumCacheNodes': 1,
                 'Tags': [
+                    {'Key': 'Cluster', 'Value': 'project-with-elasticache-redis--prod'},
                     {'Key': 'Environment', 'Value': 'prod'},
                     {'Key': 'Name', 'Value': 'project-with-elasticache-redis--prod'},
-                    {'Key': 'Owner', 'Value': 'my_user'},
                     {'Key': 'Project', 'Value': 'project-with-elasticache-redis'},
                 ],
                 'VpcSecurityGroupIds': [{'Ref': 'ElastiCacheSecurityGroup'}],
