@@ -288,7 +288,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                     # clone the formula repo if it doesn't exist, else update it
                     if File.exists?(formula_path + "/.git")
                         prn "Updating #{formula_path}..."
-                        prn runcmd("cd #{formula_path}/ && git pull")
+                        prn runcmd("cd #{formula_path}/ && git pull || echo trouble pulling")
                     else
                         prn "Cloning #{formula_path}..."
                         prn runcmd("git clone #{formula} #{formula_path}/")
