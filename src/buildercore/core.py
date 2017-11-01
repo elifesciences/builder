@@ -100,7 +100,7 @@ def connect_aws(service, region):
 
 @cached
 def boto_cfn_conn(region):
-    return connect_aws('cloudformation', region)
+    return boto3.client('cloudformation', region_name=region)
 
 @cached
 def boto_ec2_conn(region):
@@ -466,7 +466,7 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."
-    return (aws_stack.stack_name, aws_stack.stack_status, aws_stack)
+    return (aws_stack['StackName'], aws_stack['StackStatus'], aws_stack)
 
 #
 # lists of aws stacks
@@ -479,7 +479,9 @@ def aws_stacks(region, status=None, formatter=stack_triple):
         status = []
     # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
     # use `.describe_stack` on specific stacks only
-    results = boto_cfn_conn(region).list_stacks(status)
+    paginator = boto_cfn_conn(region).get_paginator('list_stacks')
+    paginator = paginator.paginate(StackStatusFilter=status)
+    results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
     if formatter:
         return map(formatter, results)
     return results
