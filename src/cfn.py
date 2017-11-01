@@ -205,7 +205,15 @@ def _are_there_existing_servers(context):
         # very old stack, canned response
         return True
 
-    return context['ec2'] and len(context['ec2'].get('suppressed', [])) < context['ec2'].get('cluster-size', 1)
+    if isinstance(context['ec2'], bool):
+        LOG.error("bad buildvars in %s: context.ec2 is a boolean?" % context['full_hostname'], extra={'context': str(context)})
+        return True
+    
+    from pprint import pprint
+    pprint(context)
+    num_suppressed = len(context['ec2'].get('suppressed', []))
+    cluster_size = context['ec2'].get('cluster-size', 1)
+    return context['ec2'] and num_suppressed < cluster_size
 
 def _check_want_to_be_running(stackname, autostart=False):
     try:
