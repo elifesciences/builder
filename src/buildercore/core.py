@@ -99,7 +99,7 @@ def connect_aws(service, region):
     return conn.connect_to_region(region)
 
 @cached
-def boto_cfn_conn(region):
+def _boto_cfn_conn(region):
     return boto3.client('cloudformation', region_name=region)
 
 @cached
@@ -473,13 +473,13 @@ def stack_triple(aws_stack):
 #
 
 @cached
-def aws_stacks(region, status=None, formatter=stack_triple):
+def _aws_stacks(region, status=None, formatter=stack_triple):
     "returns *all* stacks, even stacks deleted in the last 90 days"
     if not status:
         status = []
     # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
     # use `.describe_stack` on specific stacks only
-    paginator = boto_cfn_conn(region).get_paginator('list_stacks')
+    paginator = _boto_cfn_conn(region).get_paginator('list_stacks')
     paginator = paginator.paginate(StackStatusFilter=status)
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
     if formatter:
@@ -488,11 +488,11 @@ def aws_stacks(region, status=None, formatter=stack_triple):
 
 def active_aws_stacks(region, *args, **kwargs):
     "returns all stacks that are healthy"
-    return aws_stacks(region, ACTIVE_CFN_STATUS, *args, **kwargs)
+    return _aws_stacks(region, ACTIVE_CFN_STATUS, *args, **kwargs)
 
 def steady_aws_stacks(region):
     "returns all stacks that are not in a transitionary state"
-    return aws_stacks(region, STEADY_CFN_STATUS)
+    return _aws_stacks(region, STEADY_CFN_STATUS)
 
 def active_aws_project_stacks(pname):
     "returns all active stacks for a given project name"
