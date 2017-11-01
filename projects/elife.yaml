@@ -156,11 +156,9 @@ defaults:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
                 masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
@@ -182,6 +180,14 @@ basebox:
             ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
 
@@ -191,7 +197,14 @@ heavybox:
     aws:
         ports:
             - 22
-    aws-alt: {}
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         ram: 2048
 
@@ -234,6 +247,13 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         standalone1404:
             rds:
                 storage: 5
@@ -296,6 +316,13 @@ api-gateway:
             # - 8001: # don't ever expose to public. Kong uses this for API admin
 
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         end2end:
             cloudfront:
                 subdomains: 
@@ -337,6 +364,13 @@ journal:
             - 80:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         ci:
             type: t2.medium
             ports:
@@ -448,6 +482,13 @@ pattern-library:
             - 80
             - 443
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         ci:
             s3:
                 "{instance}-pattern-library":
@@ -492,6 +533,13 @@ elife-metrics:
             - 80
             - 5432
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
@@ -532,6 +580,13 @@ elife-bot:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         end2end:
             description: speeding up end2end tests
             #    end2end-elife-production-final:
@@ -586,6 +641,13 @@ journal-cms:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         restore-test:
             ext:
                 size: 30 # GB
@@ -639,6 +701,13 @@ elife-dashboard:
             - 80
             - 443
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         end2end:
             description: production-like environment. backed by RDS
             rds:
@@ -712,6 +781,13 @@ elife-libraries:
             size: 30 # GB
             type: gp2
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         load:
             description: running load tests
             type: t2.2xlarge
@@ -745,7 +821,14 @@ elife-alfred:
         ext:
             size: 100 # GB
             type: gp2
-    aws-alt: {}
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
@@ -764,11 +847,19 @@ api-dummy:
             - 22
             - 443
             - 80
-    aws-alt: {}
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1242: 80
+
 
 elife-website:
     subdomain: v2
@@ -782,6 +873,13 @@ elife-website:
             - 80
             - 443
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         large:
             description: intended to run temporarily
             type: m4.2xlarge
@@ -829,6 +927,14 @@ jats4r-validator:
         ports:
             - 22
             - 80
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -850,6 +956,13 @@ medium:
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         clustered:
             ec2:
                 cluster-size: 2
@@ -914,7 +1027,14 @@ search:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
-    aws-alt: {}
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
@@ -939,7 +1059,14 @@ recommendations:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt: {}
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
@@ -965,7 +1092,14 @@ personalised-covers:
         s3:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
-    aws-alt: {}
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
@@ -1000,6 +1134,14 @@ statusbase:
         ports:
             - 22
             - 80
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1025,6 +1167,13 @@ observer:
                     - bus-articles--{instance}
                     - bus-metrics--{instance}
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         standalone1404:
             rds:
                 storage: 10
@@ -1085,6 +1234,13 @@ peerscout:
             - 80
             - 443
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         end2end:
             rds:
                 storage: 5
@@ -1124,6 +1280,13 @@ iiif:
             - 80
             - 443
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         # for testing new versions
         ci:
             ports:
@@ -1224,6 +1387,13 @@ redirects:
             - 80
             - 443
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         prod:
             cloudfront:
                 certificate_id: ASCAI7S7LHYV6LTSUGBNM
@@ -1331,6 +1501,13 @@ crm:
             params:
                 log_bin_trust_function_creators: 1
     aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
         ci:
             rds:
                 backup-retention: 2 # days
@@ -1350,12 +1527,7 @@ elife-xpub:
             - 22
             - 443
             - 80
-    aws-alt:
-        standalone:
-            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-                masterless: true
+    aws-alt: {}
     vagrant:
         ram: 2048
         ports:
@@ -1375,12 +1547,7 @@ elife-ink:
             - 4569 # slanger nginx https
             - 8080 # slanger api
             - 8082 # slanger api nginx https
-    aws-alt:
-        standalone:
-            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-                masterless: true
+    aws-alt: {}
     vagrant:
         ram: 4096
         ports:
