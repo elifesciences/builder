@@ -118,6 +118,7 @@ defaults:
             headers: []
             errors: null
             default-ttl: 0 # seconds
+            logging: false
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
