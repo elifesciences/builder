@@ -239,6 +239,8 @@ project-with-cloudfront:
             headers:
                 - Accept
             default-ttl: 5
+            logging:
+                bucket: acme-logs
 
 project-with-cloudfront-minimal:
     repo: ssh://git@github.com/elifesciences/dummy3

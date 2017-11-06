@@ -712,6 +712,12 @@ def render_cloudfront(context, template, origin_hostname):
             ) for code, page in context['cloudfront']['errors']['codes'].items()
         ]
 
+    if context['cloudfront']['logging']:
+        props['Logging'] = cloudfront.Logging(
+            Bucket=context['cloudfront']['logging']['bucket'],
+            Prefix="%s/" % context['stackname']
+        )
+
     if context['cloudfront']['origins']:
         props['CacheBehaviors'] = [
             _cache_behavior(o_id, o['pattern'])
