@@ -714,7 +714,7 @@ def render_cloudfront(context, template, origin_hostname):
 
     if context['cloudfront']['logging']:
         props['Logging'] = cloudfront.Logging(
-            Bucket=context['cloudfront']['logging']['bucket'],
+            Bucket="%s.s3.amazonaws.com" % context['cloudfront']['logging']['bucket'],
             Prefix="%s/" % context['stackname']
         )
 

@@ -613,7 +613,7 @@ class TestBuildercoreTrop(base.BaseCase):
                         'Enabled': 'true',
                         'HttpVersion': 'http2',
                         'Logging': {
-                            'Bucket': 'acme-logs',
+                            'Bucket': 'acme-logs.s3.amazonaws.com',
                             'Prefix': 'project-with-cloudfront--prod/',
                         },
                         'Origins': [
