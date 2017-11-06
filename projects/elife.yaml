@@ -1451,6 +1451,10 @@ annotations:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
+        sqs:
+            annotations--{instance}:
+                subscriptions:
+                    - bus-profiles--{instance}
     aws-alt: {}
     vagrant:
         ram: 1024
