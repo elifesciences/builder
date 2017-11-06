@@ -648,9 +648,9 @@ journal-cms:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
-        restore-test:
+        ci:
             ext:
-                size: 30 # GB
+                size: 5 # GB
         end2end:
             description: production-like environment. backed by RDS
             rds:
