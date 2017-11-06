@@ -407,6 +407,8 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
+                logging:
+                    bucket: elife-cloudfront-logs
         continuumtest:
             elasticache:
                 engine: redis
