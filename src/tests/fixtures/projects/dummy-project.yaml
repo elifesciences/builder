@@ -87,6 +87,7 @@ defaults:
             headers: []
             errors: null
             default-ttl: 300 # seconds
+            logging: false
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -239,6 +240,8 @@ project-with-cloudfront:
             headers:
                 - Accept
             default-ttl: 5
+            logging:
+                bucket: acme-logs
 
 project-with-cloudfront-minimal:
     repo: ssh://git@github.com/elifesciences/dummy3

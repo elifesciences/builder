@@ -52,6 +52,7 @@ class TestUpdates(base.BaseCase):
             "headers": [],
             "errors": None,
             "default-ttl": 300,
+            "logging": False,
         }
         (delta_plus, delta_edit, delta_minus) = cfngen.template_delta('dummy1', context)
         self.assertEqual(delta_plus['Resources'].keys(), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])

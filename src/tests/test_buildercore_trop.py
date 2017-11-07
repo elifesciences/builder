@@ -572,6 +572,9 @@ class TestBuildercoreTrop(base.BaseCase):
                 'compress': True,
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
+                'logging': {
+                    'bucket': 'acme-logs',
+                },
                 'origins': {},
                 'subdomains': ['prod--cdn-of-www.example.org', 'example.org'],
                 'subdomains-without-dns': ['future.example.org'],
@@ -609,6 +612,10 @@ class TestBuildercoreTrop(base.BaseCase):
                         # yes this is a string containing the word 'true'...
                         'Enabled': 'true',
                         'HttpVersion': 'http2',
+                        'Logging': {
+                            'Bucket': 'acme-logs.s3.amazonaws.com',
+                            'Prefix': 'project-with-cloudfront--prod/',
+                        },
                         'Origins': [
                             {
                                 'DomainName': 'prod--www.example.org',
