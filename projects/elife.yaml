@@ -28,6 +28,9 @@ defaults:
         ec2:
             # how many EC2 instance per stack instance
             cluster-size: 1
+            # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
+            # only makes sense if cluster-size > 1
+            dns-internal: False
             # override 'ext' (only supported key)
             # for some EC2 instances
             overrides: {}
@@ -1007,8 +1010,15 @@ search:
     aws:
         type: t2.medium # 4 GB of RAM: once we know more about which software
                         # will be installed, we can choose the right machine
+        #elb: 
+        #    protocol: 
+        #        - http
+        #    healthcheck:
+        #        path: /
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
+            #cluster-size: 2
+            #dns-internal: True
         ports:
             - 22
             - 80:
