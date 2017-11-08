@@ -407,12 +407,8 @@ def template_delta(pname, context):
     def legacy_title(title):
         # some titles like EC2Instance1 were originally EC2Instance
         # however, no reason not to let EC2Instance2 be created?
-        if title == 'EC2Instance1':
-            return 'EC2Instance'
-        if title == 'ExtraStorage1':
-            return 'ExtraStorage'
-        if title == 'MountPoint1':
-            return 'MountPoint'
+        if title in ['EC2Instance1', 'ExtraStorage1', 'MountPoint1']:
+            return title.strip('1')
 
     delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()
