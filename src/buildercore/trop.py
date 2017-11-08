@@ -36,6 +36,7 @@ EXT_TITLE = "ExtraStorage%s"
 EXT_MP_TITLE = "MountPoint%s"
 R53_EXT_TITLE = "ExtDNS"
 R53_INT_TITLE = "IntDNS"
+R53_INT_TITLE_NODE = "IntDNS%s"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
 R53_CNAME_TITLE = "CnameDNS%s"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
@@ -292,7 +293,7 @@ def render_ext_volume(context, template, node=1):
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
     map(template.add_resource, [ec2v, ec2va])
 
-def external_dns_ec2(context):
+def external_dns_ec2_single(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
     dns_record = route53.RecordSetType(
@@ -306,7 +307,7 @@ def external_dns_ec2(context):
     )
     return dns_record
 
-def internal_dns(context):
+def internal_dns_ec2_single(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
     dns_record = route53.RecordSetType(
@@ -415,16 +416,34 @@ def render_ec2(context, template):
     return ec2_instances
 
 def render_ec2_dns(context, template):
-    ensure(context['ec2']['cluster-size'] == 1,
-           "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry: %s" % context)
+    # single ec2 node may get an external hostname
+    if context['full_hostname'] and not context['elb']:
+        ensure(context['ec2']['cluster-size'] == 1,
+               "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry")
 
-    if context['full_hostname']:
-        template.add_resource(external_dns_ec2(context))
+        template.add_resource(external_dns_ec2_single(context))
         [template.add_resource(cname) for cname in cnames(context)]
 
-    # ec2 nodes in a cluster DON'T get an internal hostname
-    if context['int_full_hostname']:
-        template.add_resource(internal_dns(context))
+    # single ec2 node may get an internal hostname
+    if context['int_full_hostname'] and not context['elb']:
+        ensure(context['ec2']['cluster-size'] == 1,
+               "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry")
+        template.add_resource(internal_dns_ec2_single(context))
+
+    # ec2 nodes in a cluster may get a different internal hostname each
+    if context['ec2']['dns-internal']:
+        for node in range(1, context['ec2']['cluster-size'] + 1):
+            hostedzone = context['int_domain'] + "."
+            dns_record = route53.RecordSetType(
+                R53_INT_TITLE_NODE % node,
+                HostedZoneName=hostedzone,
+                Comment="Internal DNS record for EC2 node %s" % node,
+                Name=context['int_node_hostname'] % node,
+                Type="A",
+                TTL="60",
+                ResourceRecords=[GetAtt(EC2_TITLE_NODE % node, "PrivateIp")],
+            )
+            template.add_resource(dns_record)
 
 def render_sns(context, template):
     for topic_name in context['sns']:
@@ -812,7 +831,7 @@ def render(context):
     # N>=1 EC2 instances
     if context['elb']:
         render_elb(context, template, ec2_instances)
-    elif context['ec2']:
+    if context['ec2']:
         render_ec2_dns(context, template)
 
     add_outputs(context, template)
@@ -830,8 +849,7 @@ def add_outputs(context, template):
         ensure(R53_EXT_TITLE in template.resources.keys(), "You want an external DNS entry but there is no resource configuring it: %s" % context)
         template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
 
-    if context['int_full_hostname']:
-        ensure(R53_INT_TITLE in template.resources.keys(), "You want an internal DNS entry but there is no resource configuring it: %s" % context)
+    if R53_INT_TITLE in template.resources.keys():
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
 
