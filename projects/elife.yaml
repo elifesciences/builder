@@ -1010,15 +1010,8 @@ search:
     aws:
         type: t2.medium # 4 GB of RAM: once we know more about which software
                         # will be installed, we can choose the right machine
-        #elb: 
-        #    protocol: 
-        #        - http
-        #    healthcheck:
-        #        path: /
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
-            #cluster-size: 2
-            #dns-internal: True
         ports:
             - 22
             - 80:
@@ -1035,6 +1028,23 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
+        end2end:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
+                #- 4730: # Gearman
+                #    cidr-ip: 10.0.0.0/16 # ELB only
+                #- 9200: # ElasticSearch
+                #    cidr-ip: 10.0.0.0/16 # ELB only
+            ec2:
+                cluster-size: 1
+                dns-internal: True
+            elb: 
+                protocol: 
+                    - http
+                healthcheck:
+                    path: /
         standalone:
             # for now a copy of standalone1404
             # required by masterless module
