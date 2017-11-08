@@ -5,6 +5,7 @@ from collections import OrderedDict
 # from . import core # DONT import core. this module should be relatively independent
 from buildercore import utils
 from buildercore.decorators import testme
+from buildercore.config import AWS_EXCLUDING
 from kids.cache import cache as cached
 
 import logging
@@ -73,14 +74,12 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     utils.deepmerge(global_defaults, default_overrides)
 
     # exceptions.
-    # these values *shouldn't* be merged if they *don't* exist in the project
-    aws_excluding = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache']
     excluding = [
         'aws',
         'vagrant',
         'vagrant-alt',
         'aws-alt',
-        {'aws': aws_excluding},
+        {'aws': AWS_EXCLUDING},
     ]
     project_data = copy.deepcopy(global_defaults)
     utils.deepmerge(project_data, project_list[pname], excluding)
@@ -101,7 +100,7 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         # merge this over top of original aws defaults
         orig_defaults = copy.deepcopy(global_defaults['aws'])
 
-        utils.deepmerge(orig_defaults, project_aws, aws_excluding)
+        utils.deepmerge(orig_defaults, project_aws, AWS_EXCLUDING)
         project_data['aws-alt'][altname] = orig_defaults
 
     for altname, altdata in project_data.get('vagrant-alt', {}).items():
