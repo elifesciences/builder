@@ -845,8 +845,7 @@ def render(context):
     return template.to_json()
 
 def add_outputs(context, template):
-    if context['full_hostname']:
-        ensure(R53_EXT_TITLE in template.resources.keys(), "You want an external DNS entry but there is no resource configuring it: %s" % context)
+    if R53_EXT_TITLE in template.resources.keys():
         template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
 
     if R53_INT_TITLE in template.resources.keys():
