@@ -1038,7 +1038,7 @@ search:
                 - 9200: # ElasticSearch
                     cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
-                cluster-size: 2
+                cluster-size: 1
                 dns-internal: True
             elb: 
                 protocol: 
