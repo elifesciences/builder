@@ -1043,8 +1043,6 @@ search:
             elb: 
                 protocol: 
                     - http
-                healthcheck:
-                    path: /
         standalone:
             # for now a copy of standalone1404
             # required by masterless module
