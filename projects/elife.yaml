@@ -1033,10 +1033,25 @@ search:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # ELB only
-                #- 4730: # Gearman
-                #    cidr-ip: 10.0.0.0/16 # ELB only
-                #- 9200: # ElasticSearch
-                #    cidr-ip: 10.0.0.0/16 # ELB only
+                - 4730: # Gearman
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+                - 9200: # ElasticSearch
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+            ec2:
+                cluster-size: 2
+                dns-internal: True
+            elb: 
+                protocol: 
+                    - http
+        prod:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
+                - 4730: # Gearman
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+                - 9200: # ElasticSearch
+                    cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
                 cluster-size: 1
                 dns-internal: True
