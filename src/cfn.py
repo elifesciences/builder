@@ -206,7 +206,9 @@ def _are_there_existing_servers(context):
         return True
 
     if isinstance(context['ec2'], bool):
-        LOG.error("bad buildvars in %s: context.ec2 is a boolean?", context['full_hostname'], extra={'context': str(context)})
+        if context['ec2'] is False:
+            return False
+        LOG.error("bad buildvars in %s: context.ec2 is True?", context['full_hostname'], extra={'context': str(context)})
         return context['ec2']
 
     num_suppressed = len(context['ec2'].get('suppressed', []))
