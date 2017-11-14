@@ -206,8 +206,9 @@ def _are_there_existing_servers(context):
         return True
 
     if isinstance(context['ec2'], bool):
-        LOG.error("bad buildvars in %s: context.ec2 is a boolean?", context['full_hostname'], extra={'context': str(context)})
-        return True
+        # no ec2 instances or an instance whose buildvars haven't been updated.
+        # either way, the value here can be used as-is
+        return context['ec2']
 
     num_suppressed = len(context['ec2'].get('suppressed', []))
     cluster_size = context['ec2'].get('cluster-size', 1)
