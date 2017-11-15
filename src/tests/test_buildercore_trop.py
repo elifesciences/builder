@@ -251,6 +251,20 @@ class TestBuildercoreTrop(base.BaseCase):
             resources['CnameDNS2']['Properties']
         )
 
+        self.assertIn('IntDNS1', resources.keys())
+        self.assertEqual(
+            {
+                'ResourceRecords': [{'Fn::GetAtt': ['EC2Instance1', 'PrivateIp']}],
+                'HostedZoneName': 'example.internal.',
+                'Name': 'prod--project-with-cluster--1.example.internal',
+                'TTL': '60',
+                'Type': 'A',
+                'Comment': 'Internal DNS record for EC2 node 1',
+            },
+            resources['IntDNS1']['Properties']
+        )
+        self.assertIn('IntDNS2', resources.keys())
+
     def test_clustered_template_suppressing_some_nodes(self):
         extra = {
             'stackname': 'project-with-cluster-suppressed--prod',

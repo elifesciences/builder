@@ -28,6 +28,9 @@ defaults:
         ec2:
             # how many EC2 instance per stack instance
             cluster-size: 1
+            # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
+            # only makes sense if cluster-size > 1
+            dns-internal: False
             # override 'ext' (only supported key)
             # for some EC2 instances
             overrides: {}
@@ -1025,6 +1028,36 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
+        end2end:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
+                - 4730: # Gearman
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+                - 9200: # ElasticSearch
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+            ec2:
+                cluster-size: 1
+                dns-internal: True
+            elb: 
+                protocol: 
+                    - http
+        prod:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # ELB only
+                - 4730: # Gearman
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+                - 9200: # ElasticSearch
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+            ec2:
+                cluster-size: 1
+                dns-internal: True
+            elb: 
+                protocol: 
+                    - http
         standalone:
             # for now a copy of standalone1404
             # required by masterless module

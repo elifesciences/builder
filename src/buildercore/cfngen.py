@@ -346,9 +346,9 @@ def regenerate_stack(pname, **more_context):
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS$', '^ElastiCache$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$']
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$']
 
-REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS$', '^ElastiCache$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$', '^.+Topic$']
+REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
@@ -359,7 +359,7 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
 def template_delta(pname, context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
-    Most of the existing resources are treated as immutable and not put in the delta. Some that support updates like CloudFront are instead included"""
+    Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
 
@@ -407,7 +407,8 @@ def template_delta(pname, context):
     def legacy_title(title):
         # some titles like EC2Instance1 were originally EC2Instance
         # however, no reason not to let EC2Instance2 be created?
-        return title.strip("1")
+        if title in ['EC2Instance1', 'ExtraStorage1', 'MountPoint1']:
+            return title.strip('1')
 
     delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()

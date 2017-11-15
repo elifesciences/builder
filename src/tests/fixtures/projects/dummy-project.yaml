@@ -23,6 +23,7 @@ defaults:
     aws:
         ec2:
             cluster-size: 1
+            dns-internal: False
             # nodes to temporarily delete, for later recreation
             # https://martinfowler.com/bliki/PhoenixServer.html
             suppressed: []
@@ -287,13 +288,12 @@ project-with-cloudfront-origins:
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
-    # no internal domain, while the public 'domain' is true by default
-    intdomain: false
     aws:
         ports:
             - 80
         ec2:
             cluster-size: 2
+            dns-internal: True
         elb: 
             protocol: http
         subdomains:
