@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from shlex import split
 import os, sys
 
 def sh(cmd):
@@ -9,7 +10,7 @@ def sh(cmd):
 def shs(cmd):
     from subprocess import Popen, PIPE
     try:
-        stdout, stderr = Popen(cmd.split(), stdout=PIPE).communicate()
+        stdout, stderr = Popen(split(cmd), stdout=PIPE).communicate()
     except OSError as e:
         raise RuntimeError("Cannot run command `{0}`".format(cmd), e)
     if stderr:
@@ -38,7 +39,7 @@ both_checks = [
     ('make',
      {'all': 'which make'},
      dumb_install_check,
-     lambda x: shs('make -v')),
+     lambda x: shs('make -v').splitlines()[0]),
 
     ('virtualbox',
      {'osx': 'brew cask install virtualbox'},
