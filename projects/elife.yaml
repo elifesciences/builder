@@ -1145,7 +1145,7 @@ schematron-validator:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
-        type: t2.micro
+        type: t2.small # Composer and Java need memory
         ports:
             - 22
             - 80
