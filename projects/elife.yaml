@@ -582,6 +582,7 @@ elife-bot:
                 deletion-policy: retain
                 public: true
                 cors: true
+            "{instance}-elife-bot-sessions":
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
