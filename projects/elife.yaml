@@ -1150,6 +1150,7 @@ schematron-validator:
         ports:
             - 22
             - 80
+            - 443
     vagrant:
         ports:
             1246: 80
