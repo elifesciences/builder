@@ -81,10 +81,8 @@ class TestDeployment(base.BaseCase):
             cfngen.generate_stack(project, stackname=stackname)
             bootstrap.create_stack(stackname)
 
-            # try to wait for both of them to be InService,
-            # health check is based on TCP:22
-            output = cfn.cmd(stackname, 'ls -l /', username=BOOTSTRAP_USER, concurrency='parallel')
-            print output
+            import time
+            time.sleep(30)
 
             output = cfn.cmd(stackname, 'ls -l /', username=BOOTSTRAP_USER, concurrency='blue-green')
             print output
