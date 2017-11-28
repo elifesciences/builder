@@ -1493,7 +1493,11 @@ annotations:
             annotations--{instance}:
                 subscriptions:
                     - bus-profiles--{instance}
-    aws-alt: {}
+    aws-alt:
+        prod:
+            s3:
+                "{instance}-elife-annotations-hypothesis-emails":
+                    # bucket policy http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3 has been added
     vagrant:
         ram: 1024
         ports:
