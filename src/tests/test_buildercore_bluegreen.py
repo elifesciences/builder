@@ -31,6 +31,40 @@ class Primitives(base.BaseCase):
         name = self.concurrency.find_load_balancer('dummy1--test')
         self.assertEquals(name, 'dummy1-ElasticL-ABCDEFGHI')
 
+    def test_ensure_all_in_service_success(self):
+        self.conn.describe_instance_health.return_value = {
+            'InstanceStates': [
+                {
+                    'InstanceId': 'i-10000001',
+                    'State': 'InService',
+                },
+                {
+                    'InstanceId': 'i-10000002',
+                    'State': 'InService',
+                },
+            ],
+        }
+        self.concurrency.ensure_all_in_service('dummy1-ElasticL-ABCDEFGHI')
+
+    def test_ensure_all_in_service_failure(self):
+        self.conn.describe_instance_health.return_value = {
+            'InstanceStates': [
+                {
+                    'InstanceId': 'i-10000001',
+                    'State': 'InService',
+                },
+                {
+                    'InstanceId': 'i-10000002',
+                    'State': 'OutOfService',
+                },
+            ],
+        }
+        self.assertRaises(
+            bluegreen.SomeOutOfServiceInstances,
+            self.concurrency.ensure_all_in_service,
+            'dummy1-ElasticL-ABCDEFGHI'
+        )
+
     def test_divide_by_color(self):
         nodes_params = {
             'key_filename': './dummy1--test.pem',

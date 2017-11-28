@@ -61,25 +61,3 @@ class TestProvisioning(base.BaseCase):
 
             cfn.download_file(stackname, "/bin/pwd", "subfolder/pwd", use_bootstrap_user="true")
             self.assertTrue(os.path.isfile("./subfolder/pwd"))
-
-class TestDeployment(base.BaseCase):
-    def setUp(self):
-        self.stacknames = []
-        self.environment = self.generate_environment_name()
-
-    def tearDown(self):
-        for stackname in self.stacknames:
-            cfn.ensure_destroyed(stackname)
-
-    def test_blue_green_operations(self):
-        with settings(abort_on_prompts=True):
-            project = 'project-with-cluster-integration-tests'
-            stackname = '%s--%s' % (project, self.environment)
-
-            cfn.ensure_destroyed(stackname)
-            self.stacknames.append(stackname)
-            cfngen.generate_stack(project, stackname=stackname)
-            bootstrap.create_stack(stackname)
-
-            output = cfn.cmd(stackname, 'ls -l /', username=BOOTSTRAP_USER, concurrency='blue-green')
-            print output

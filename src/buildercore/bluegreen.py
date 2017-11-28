@@ -16,6 +16,7 @@ class BlueGreenConcurrency(object):
 
     def __call__(self, single_node_work, nodes_params):
         elb_name = self.find_load_balancer(nodes_params['stackname'])
+        self.ensure_all_in_service(elb_name)
         blue, green = self.divide_by_color(nodes_params)
 
         LOG.info("Blue phase on %s: %s", elb_name, self._instance_ids(blue))
@@ -53,6 +54,15 @@ class BlueGreenConcurrency(object):
             subset['public_ips'] = {id: ip for (id, ip) in nodes_params['public_ips'].items() if id in subset['nodes'].keys()}
             return subset
         return subset(is_blue), subset(is_green)
+
+    def ensure_all_in_service(self, elb_name):
+        health = self.conn.describe_instance_health(
+            LoadBalancerName=elb_name,
+        )['InstanceStates']
+        service_status_by_id = {result['InstanceId']: result['State'] for result in health}
+        LOG.info("Instance statuses on %s: %s", elb_name, service_status_by_id)
+        if [bad_status for bad_status in service_status_by_id.values() if bad_status != 'InService']:
+            raise SomeOutOfServiceInstances(service_status_by_id)
 
     def register(self, elb_name, nodes_params):
         LOG.info("Registering on %s: %s", elb_name, self._instance_ids(nodes_params))
@@ -112,3 +122,6 @@ class BlueGreenConcurrency(object):
 
     def _instance_ids(self, nodes_params):
         return nodes_params['nodes'].keys()
+
+class SomeOutOfServiceInstances(RuntimeError):
+    pass
