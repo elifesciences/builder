@@ -61,8 +61,6 @@ def requires_filtered_project(filterfn=None):
 
 
 # pylint: disable=invalid-name
-requires_branch_deployable_project = requires_filtered_project(lambda pname, project: project.get('repo'))
-# pylint: disable=invalid-name
 requires_project = requires_filtered_project(None)
 
 def requires_aws_project_stack(*plist):
