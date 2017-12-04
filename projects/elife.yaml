@@ -762,6 +762,7 @@ elife-dashboard:
         ram: 2048
 
 
+# legacy API, do not use nor upgrade
 elife-api:
     subdomain: api # api.elifesciences.org
     repo: https://github.com/elifesciences/elife-api
