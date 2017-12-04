@@ -15,7 +15,7 @@ fi
 # remove leftover files from AMIs
 rm -rf \
     /etc/cfn-info.json \
-    /etc/salt/pki/minion/minion_master.pub \
+    /etc/salt/pki/minion/* \
     /etc/salt/minion \
     /root/.ssh/* \
     /home/elife/.ssh/* \
