@@ -521,7 +521,7 @@ def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwar
             run_script('init-formulas.sh', formula_list, prepo, **envvars)
 
             # second pass to optionally update formulas to specific revisions
-            for repo, formula, revision in (formula_revisions or []):
+            for repo, formula, revision in formula_revisions or []:
                 run_script('update-master-formula.sh', repo, formula, revision)
 
         if is_master:
