@@ -61,10 +61,10 @@ def parse_validate_repolist(pdata, *repolist):
         arglist.append((repo, known_formula_map[repo], rev))
 
     # test given revisions actually exist in formulas
-    for name, url, revision in arglist:
+    for name, _, revision in arglist:
         path = join(config.PROJECT_PATH, "cloned-projects", name)
         if not os.path.exists(path):
-            LOG.warn("couldn't find formula %r locally, revision check skipped" % path)
+            LOG.warn("couldn't find formula %r locally, revision check skipped", path)
             continue
         
         with lcd(path), settings(warn_only=True):
