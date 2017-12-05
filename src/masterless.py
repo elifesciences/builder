@@ -1,11 +1,14 @@
 import os
+from os.path import join
 from collections import OrderedDict
-from fabric.api import task
+from fabric.api import task, lcd, settings
+from fabric.operations import local
 from decorators import requires_project, requires_aws_stack
-from buildercore import bootstrap, core, context_handler, project
+from buildercore import bootstrap, core, context_handler, project, config
 from buildercore.utils import ensure
 import logging
 from functools import wraps
+
 LOG = logging.getLogger(__name__)
 
 def requires_master_server_access(fn):
@@ -56,6 +59,18 @@ def parse_validate_repolist(pdata, *repolist):
             continue
 
         arglist.append((repo, known_formula_map[repo], rev))
+
+    # test given revisions actually exist in formulas
+    for name, url, revision in arglist:
+        path = join(config.PROJECT_PATH, "cloned-projects", name)
+        if not os.path.exists(path):
+            LOG.warn("couldn't find formula %r locally, revision check skipped" % path)
+            continue
+        
+        with lcd(path), settings(warn_only=True):
+            ensure(local("git fetch --quiet").succeeded, "failed to fetch remote refs for %s" % path)
+            ensure(local("git cat-file -e %s^{commit}" % revision).succeeded, "failed to find ref %r in %s" % (revision, name))
+
     return arglist
 
 #
