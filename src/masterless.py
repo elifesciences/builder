@@ -66,7 +66,7 @@ def parse_validate_repolist(pdata, *repolist):
         if not os.path.exists(path):
             LOG.warn("couldn't find formula %r locally, revision check skipped", path)
             continue
-        
+
         with lcd(path), settings(warn_only=True):
             ensure(local("git fetch --quiet").succeeded, "failed to fetch remote refs for %s" % path)
             ensure(local("git cat-file -e %s^{commit}" % revision).succeeded, "failed to find ref %r in %s" % (revision, name))
