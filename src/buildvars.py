@@ -16,7 +16,7 @@ OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
 
 @debugtask
 @requires_aws_stack
-def switch_revision(stackname, revision=None):
+def switch_revision(stackname, revision=None, concurrency=None):
     if revision is None:
         revision = utils.uin('revision', None)
 
@@ -31,7 +31,7 @@ def switch_revision(stackname, revision=None):
         new_data['revision'] = revision
         _update_remote_bvars(stackname, new_data)
 
-    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER)
+    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
 @debugtask
 @requires_aws_stack
