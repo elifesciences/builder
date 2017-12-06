@@ -3,7 +3,7 @@ from os.path import join
 from collections import OrderedDict
 from fabric.api import task, lcd, settings
 from fabric.operations import local
-from decorators import requires_project, requires_aws_stack
+from decorators import requires_project
 from buildercore import bootstrap, core, context_handler, project, config
 from buildercore.utils import ensure
 import logging
@@ -89,15 +89,6 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
 
     import cfn
     cfn.launch(pname, instance_id, alt_config, formula_revisions=repolist)
-
-
-@task
-@requires_aws_stack
-@requires_master_server_access
-@requires_masterless
-def update(stackname):
-    import cfn
-    return cfn.update(stackname)
 
 #
 #
