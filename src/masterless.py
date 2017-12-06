@@ -1,11 +1,14 @@
 import os
+from os.path import join
 from collections import OrderedDict
-from fabric.api import task
-from decorators import requires_project, requires_aws_stack
-from buildercore import bootstrap, core, context_handler
+from fabric.api import task, lcd, settings
+from fabric.operations import local
+from decorators import requires_project
+from buildercore import bootstrap, core, context_handler, project, config
 from buildercore.utils import ensure
 import logging
 from functools import wraps
+
 LOG = logging.getLogger(__name__)
 
 def requires_master_server_access(fn):
@@ -24,33 +27,13 @@ def requires_masterless(fn):
         return fn(stackname, *args, **kwargs)
     return wrapper
 
-@task
-@requires_project
-@requires_master_server_access
-def launch(pname, instance_id=None):
-    import cfn
-    cfn.launch(pname, instance_id, 'standalone')
-
-@task
-@requires_aws_stack
-@requires_master_server_access
-@requires_masterless
-def update(stackname):
-    import cfn
-    return cfn.update(stackname)
 
 #
 #
 #
 
-@task
-@requires_master_server_access
-@requires_masterless
-def set_versions(stackname, *repolist):
-    "call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"
-    ctx = context_handler.load_context(stackname)
-
-    pdata = ctx['project']
+def parse_validate_repolist(pdata, *repolist):
+    "returns a list of triples"
     known_formulas = pdata.get('formula-dependencies', [])
     known_formulas.extend([
         pdata['formula-repo'],
@@ -58,9 +41,6 @@ def set_versions(stackname, *repolist):
     ])
 
     known_formula_map = OrderedDict(zip(map(os.path.basename, known_formulas), known_formulas))
-
-    if not repolist:
-        return 'nothing to do'
 
     arglist = []
     for user_string in repolist:
@@ -80,11 +60,53 @@ def set_versions(stackname, *repolist):
 
         arglist.append((repo, known_formula_map[repo], rev))
 
-    if not arglist:
+    # test given revisions actually exist in formulas
+    for name, _, revision in arglist:
+        path = join(config.PROJECT_PATH, "cloned-projects", name)
+        if not os.path.exists(path):
+            LOG.warn("couldn't find formula %r locally, revision check skipped", path)
+            continue
+
+        with lcd(path), settings(warn_only=True):
+            ensure(local("git fetch --quiet").succeeded, "failed to fetch remote refs for %s" % path)
+            ensure(local("git cat-file -e %s^{commit}" % revision).succeeded, "failed to find ref %r in %s" % (revision, name))
+
+    return arglist
+
+#
+#
+
+@task
+@requires_project
+@requires_master_server_access
+def launch(pname, instance_id=None, alt_config='standalone', *repolist):
+    pdata = project.project_data(pname)
+    # ensure given alt config has masterless=True
+    ensure(pdata['aws-alt'], "project has no alternate configurations")
+    ensure(alt_config in pdata['aws-alt'], "unknown alt-config %r" % alt_config)
+    ensure(pdata['aws-alt'][alt_config]['ec2']['masterless'], "alternative configuration %r has masterless=False" % alt_config)
+    repolist = parse_validate_repolist(pdata, *repolist)
+
+    import cfn
+    cfn.launch(pname, instance_id, alt_config, formula_revisions=repolist)
+
+#
+#
+#
+
+@task
+@requires_master_server_access
+@requires_masterless
+def set_versions(stackname, *repolist):
+    "call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"
+    ctx = context_handler.load_context(stackname)
+    repolist = parse_validate_repolist(ctx['project'], *repolist)
+
+    if not repolist:
         return 'nothing to do'
 
     def updater():
-        for repo, formula, revision in arglist:
+        for repo, formula, revision in repolist:
             bootstrap.run_script('update-master-formula.sh', repo, formula, revision)
 
     core.stack_all_ec2_nodes(stackname, updater, concurrency='serial')

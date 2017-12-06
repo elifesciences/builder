@@ -164,7 +164,7 @@ def setup_ec2(stackname, context_ec2):
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
 
-def update_sqs_stack(stackname):
+def update_sqs_stack(stackname, **kwargs):
     pdata = project_data_for_stackname(stackname)
     if not pdata['aws']['sqs']:
         return
@@ -307,7 +307,7 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
 
     return queue_configuration
 
-def update_s3_stack(stackname):
+def update_s3_stack(stackname, **kwargs):
     pdata = project_data_for_stackname(stackname)
     if not pdata['aws']['s3']:
         return
@@ -398,29 +398,19 @@ def write_environment_info(stackname, overwrite=False):
 #
 
 @core.requires_active_stack
-def update_stack(stackname, service_list=None, concurrency=None):
+def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
     service_update_fns = OrderedDict([
-        ('ec2', lambda stackname: update_ec2_stack(stackname, concurrency)),
+        ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
         ('sqs', update_sqs_stack)
     ])
-
     if not service_list:
         service_list = service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
 
-    [fn(stackname) for fn in subdict(service_update_fns, service_list).values()]
-
-@core.requires_stack_file
-def create_update(stackname, part_filter=None):
-    if not core.stack_is_active(stackname):
-        LOG.info('stack %s does not exist, creating', stackname)
-        create_stack(stackname)
-    LOG.info('updating stack %s', stackname)
-    update_stack(stackname, part_filter)
-    return stackname
+    [fn(stackname, **kwargs) for fn in subdict(service_update_fns, service_list).values()]
 
 def upload_master_builder_key(key):
     private_key = "/root/.ssh/id_rsa"
@@ -471,7 +461,7 @@ def upload_master_configuration(master_stack, master_configuration):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
         operations.put(local_path=master_configuration, remote_path='/etc/salt/master', use_sudo=True)
 
-def update_ec2_stack(stackname, concurrency):
+def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwargs):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
@@ -520,7 +510,6 @@ def update_ec2_stack(stackname, concurrency):
         if is_masterless:
             # order is important.
             formula_list = ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
-            prepo = pdata['private-repo']
             # to init the builder-private formula, the masterless instance needs
             # the master-builder key
             upload_master_builder_key(master_builder_key)
@@ -528,9 +517,14 @@ def update_ec2_stack(stackname, concurrency):
                 'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', '')
             }
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-formulas.sh', formula_list, prepo, **envvars)
+            run_script('init-formulas.sh', formula_list, pdata['private-repo'], **envvars)
+
+            # second pass to optionally update formulas to specific revisions
+            for repo, formula, revision in formula_revisions or []:
+                run_script('update-master-formula.sh', repo, formula, revision)
 
         if is_master:
+            # it is possible to be a masterless master server
             builder_private_repo = pdata['private-repo']
             all_formulas = project.known_formulas()
             run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))

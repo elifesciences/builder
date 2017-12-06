@@ -134,14 +134,18 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 # these aliases are deprecated
 @task(alias='aws_launch_instance')
 @requires_project
-def launch(pname, instance_id=None, alt_config=None):
+def launch(pname, instance_id=None, alt_config=None, **kwargs):
     try:
         stackname = generate_stack_from_input(pname, instance_id, alt_config)
         pdata = core.project_data_for_stackname(stackname)
 
         print 'attempting to create stack:'
-        print '  stackname: ' + stackname
-        print '  region:    ' + pdata['aws']['region']
+        print '  stackname:\t' + stackname
+        print '  region:\t' + pdata['aws']['region']
+
+        for key, val in kwargs.items():
+            print '  %s:\t%s' % (key, pformat(val))
+
         print
 
         if core.is_master_server_stack(stackname):
@@ -152,11 +156,17 @@ def launch(pname, instance_id=None, alt_config=None):
                 print
                 return
 
-        bootstrap.create_update(stackname)
+        if not core.stack_is_active(stackname):
+            LOG.info('stack %s does not exist, creating', stackname)
+            bootstrap.create_stack(stackname)
+
+        LOG.info('updating stack %s', stackname)
+        bootstrap.update_stack(stackname, **kwargs)
+
         setdefault('.active-stack', stackname)
     except core.NoMasterException as e:
         LOG.warn(e.message)
-        print "\n%s\ntry `./bldr master.create`'" % e.message
+        print "\n%s\nNo master server found, you'll need to `launch` a master-server first." % e.message
 
 @debugtask
 @requires_aws_stack
