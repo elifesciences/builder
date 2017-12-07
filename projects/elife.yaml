@@ -701,6 +701,16 @@ journal-cms:
                 storage: 12 # GB
             ext:
                 size: 30 # GB
+        performance:
+            description: performance-testing environment. backed by RDS
+            rds:
+                type: db.t2.medium
+                engine: MySQL
+                version: '5.7'
+                multi-az: true
+                storage: 12 # GB
+            ext:
+                size: 30 # GB
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
