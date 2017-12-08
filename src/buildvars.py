@@ -1,5 +1,5 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
-from fabric.api import sudo, put
+from fabric.api import sudo, put, task
 from StringIO import StringIO
 from decorators import requires_aws_stack, debugtask
 from buildercore.config import BOOTSTRAP_USER
@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 
 OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
 
-@debugtask
+@task
 @requires_aws_stack
 def switch_revision(stackname, revision=None, concurrency=None):
     if revision is None:
