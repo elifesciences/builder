@@ -43,7 +43,7 @@ CLOUDFRONT_TITLE = 'CloudFrontCDN'
 # from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
 CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
 CLOUDFRONT_ERROR_ORIGIN_ID = 'ErrorsOrigin'
-ELASTICACHE_TITLE = 'ElastiCache'
+ELASTICACHE_TITLE = 'ElastiCache%s'
 ELASTICACHE_SECURITY_GROUP_TITLE = 'ElastiCacheSecurityGroup'
 ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
@@ -785,25 +785,27 @@ def render_elasticache(context, template):
     )
     template.add_resource(parameter_group)
 
-    template.add_resource(elasticache.CacheCluster(
-        ELASTICACHE_TITLE,
-        CacheNodeType=context['elasticache']['type'],
-        CacheParameterGroupName=Ref(parameter_group),
-        CacheSubnetGroupName=Ref(subnet_group),
-        Engine='redis',
-        EngineVersion=context['elasticache']['version'],
-        PreferredAvailabilityZone=context['elasticache']['az'],
-        # we only support Redis, and it only supports 1 node
-        NumCacheNodes=1,
-        Tags=Tags(**_generic_tags(context)),
-        VpcSecurityGroupIds=[Ref(cache_security_group)],
-    ))
+    for cluster in range(1, context['elasticache']['clusters']+1):
+        cluster_title = ELASTICACHE_TITLE % cluster
+        template.add_resource(elasticache.CacheCluster(
+            cluster_title,
+            CacheNodeType=context['elasticache']['type'],
+            CacheParameterGroupName=Ref(parameter_group),
+            CacheSubnetGroupName=Ref(subnet_group),
+            Engine='redis',
+            EngineVersion=context['elasticache']['version'],
+            PreferredAvailabilityZone=context['elasticache']['az'],
+            # we only support Redis, and it only supports 1 node
+            NumCacheNodes=1,
+            Tags=Tags(**_generic_tags(context)),
+            VpcSecurityGroupIds=[Ref(cache_security_group)],
+        ))
 
-    outputs = [
-        mkoutput("ElastiCacheHost", "The hostname on which the cache accepts connections", (ELASTICACHE_TITLE, "RedisEndpoint.Address")),
-        mkoutput("ElastiCachePort", "The port number on which the cache accepts connections", (ELASTICACHE_TITLE, "RedisEndpoint.Port")),
-    ]
-    map(template.add_output, outputs)
+        outputs = [
+            mkoutput("ElastiCacheHost%s" % cluster, "The hostname on which the cache accepts connections", (cluster_title, "RedisEndpoint.Address")),
+            mkoutput("ElastiCachePort%s" % cluster, "The port number on which the cache accepts connections", (cluster_title, "RedisEndpoint.Port")),
+        ]
+        map(template.add_output, outputs)
 
 def render(context):
     template = Template()

@@ -801,10 +801,10 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-elasticache-redis', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertTrue('ElastiCache' in data['Resources'].keys())
-        self.assertTrue('ElastiCacheParameterGroup' in data['Resources'].keys())
-        self.assertTrue('ElastiCacheSecurityGroup' in data['Resources'].keys())
-        self.assertTrue('ElastiCacheSubnetGroup' in data['Resources'].keys())
+        self.assertIn('ElastiCache1', data['Resources'].keys())
+        self.assertIn('ElastiCacheParameterGroup', data['Resources'].keys())
+        self.assertIn('ElastiCacheSecurityGroup', data['Resources'].keys())
+        self.assertIn('ElastiCacheSubnetGroup', data['Resources'].keys())
         self.assertEquals(
             {
                 'CacheNodeType': 'cache.t2.small',
@@ -822,7 +822,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 ],
                 'VpcSecurityGroupIds': [{'Ref': 'ElastiCacheSecurityGroup'}],
             },
-            data['Resources']['ElastiCache']['Properties']
+            data['Resources']['ElastiCache1']['Properties']
         )
         self.assertEquals(
             {
@@ -855,21 +855,36 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCacheSubnetGroup']['Properties']
         )
-        self.assertTrue('ElastiCacheHost' in data['Outputs'])
+        self.assertIn('ElastiCacheHost1', data['Outputs'])
         self.assertEquals(
             {
                 'Description': 'The hostname on which the cache accepts connections',
-                'Value': {'Fn::GetAtt': ['ElastiCache', 'RedisEndpoint.Address']}
+                'Value': {'Fn::GetAtt': ['ElastiCache1', 'RedisEndpoint.Address']}
             },
-            data['Outputs']['ElastiCacheHost']
+            data['Outputs']['ElastiCacheHost1']
         )
+        self.assertIn('ElastiCachePort1', data['Outputs'])
         self.assertEquals(
             {
                 'Description': 'The port number on which the cache accepts connections',
-                'Value': {'Fn::GetAtt': ['ElastiCache', 'RedisEndpoint.Port']}
+                'Value': {'Fn::GetAtt': ['ElastiCache1', 'RedisEndpoint.Port']}
             },
-            data['Outputs']['ElastiCachePort']
+            data['Outputs']['ElastiCachePort1']
         )
+
+    def test_multiple_elasticache_clusters(self):
+        extra = {
+            'stackname': 'project-with-multiple-elasticaches--prod',
+        }
+        context = cfngen.build_context('project-with-multiple-elasticaches', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertIn('ElastiCache1', data['Resources'].keys())
+        self.assertIn('ElastiCache2', data['Resources'].keys())
+        self.assertIn('ElastiCacheHost1', data['Outputs'].keys())
+        self.assertIn('ElastiCachePort1', data['Outputs'].keys())
+        self.assertIn('ElastiCacheHost2', data['Outputs'].keys())
+        self.assertIn('ElastiCachePort2', data['Outputs'].keys())
 
     def _parse_json(self, dump):
         """Parses dump into a dictionary, using strings rather than unicode strings
