@@ -881,10 +881,15 @@ class TestBuildercoreTrop(base.BaseCase):
         data = self._parse_json(cfn_template)
         self.assertIn('ElastiCache1', data['Resources'].keys())
         self.assertIn('ElastiCache2', data['Resources'].keys())
+        # suppressed
+        self.assertNotIn('ElastiCache3', data['Resources'].keys())
         self.assertIn('ElastiCacheHost1', data['Outputs'].keys())
         self.assertIn('ElastiCachePort1', data['Outputs'].keys())
         self.assertIn('ElastiCacheHost2', data['Outputs'].keys())
         self.assertIn('ElastiCachePort2', data['Outputs'].keys())
+        # suppressed
+        self.assertNotIn('ElastiCacheHost3', data['Outputs'].keys())
+        self.assertNotIn('ElastiCachePort3', data['Outputs'].keys())
 
     def _parse_json(self, dump):
         """Parses dump into a dictionary, using strings rather than unicode strings

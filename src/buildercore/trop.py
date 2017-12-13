@@ -785,7 +785,11 @@ def render_elasticache(context, template):
     )
     template.add_resource(parameter_group)
 
+    suppressed = context['elasticache'].get('suppressed', [])
     for cluster in range(1, context['elasticache']['clusters']+1):
+        if cluster in suppressed:
+            continue
+
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
             cluster_title,

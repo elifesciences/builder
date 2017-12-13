@@ -428,4 +428,5 @@ project-with-multiple-elasticaches:
             - 80
         elasticache:
             engine: redis
-            clusters: 2
+            clusters: 3
+            suppressed: [3]
