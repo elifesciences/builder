@@ -430,3 +430,6 @@ project-with-multiple-elasticaches:
             engine: redis
             clusters: 3
             suppressed: [3]
+            overrides:
+                2: 
+                    type: cache.t2.medium

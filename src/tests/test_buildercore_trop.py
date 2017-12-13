@@ -890,6 +890,8 @@ class TestBuildercoreTrop(base.BaseCase):
         # suppressed
         self.assertNotIn('ElastiCacheHost3', data['Outputs'].keys())
         self.assertNotIn('ElastiCachePort3', data['Outputs'].keys())
+        # overridden
+        self.assertEqual('cache.t2.medium', data['Resources']['ElastiCache2']['Properties']['CacheNodeType'])
 
     def _parse_json(self, dump):
         """Parses dump into a dictionary, using strings rather than unicode strings

@@ -790,10 +790,17 @@ def render_elasticache(context, template):
         if cluster in suppressed:
             continue
 
+        # TODO: extract so that it's common with ec2
+        # TODO: unit test
+        overrides = context['elasticache'].get('overrides', {}).get(cluster, {})
+        overridden_context = copy.deepcopy(context)
+        # TODO: extend to all properties
+        overridden_context['elasticache'].update(overrides)
+
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
             cluster_title,
-            CacheNodeType=context['elasticache']['type'],
+            CacheNodeType=overridden_context['elasticache']['type'],
             CacheParameterGroupName=Ref(parameter_group),
             CacheSubnetGroupName=Ref(subnet_group),
             Engine='redis',
