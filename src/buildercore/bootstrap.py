@@ -137,7 +137,8 @@ def _wait_until_in_progress(stackname):
     )
     final_stack = core.describe_stack(stackname)
     events = [(e.resource_status, e.resource_status_reason) for e in final_stack.describe_events()]
-    ensure(final_stack.stack_status in ['CREATE_COMPLETE'], "Failed to create stack: %s.\nEvents: %s", final_stack.stack_status, pformat(events))
+    ensure(final_stack.stack_status in ['CREATE_COMPLETE'],
+           "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
 def setup_ec2(stackname, context_ec2):
     if not context_ec2:

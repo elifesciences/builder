@@ -102,9 +102,7 @@ def update_master():
 @requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     """creates a new CloudFormation file for the given project."""
-    if not instance_id:
-        default_instance_id = core_utils.ymd()
-        instance_id = utils.uin("instance id", default_instance_id)
+    instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
     stackname = core.mk_stackname(pname, instance_id)
     more_context = {'stackname': stackname}
 
@@ -120,6 +118,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
             except KeyError:
                 return None
         if instance_id in pdata['aws-alt'].keys():
+            LOG.info("instance-id found in known alternative configurations. using configuration %r", instance_id)
             more_context['alt-config'] = instance_id
         else:
             default = 'skip this step'

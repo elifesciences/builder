@@ -254,7 +254,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
-    ensure(None not in public_ips.values(), "Public ips are not valid: %s", public_ips, exception_class=NoPublicIps)
+    ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
     def single_node_work():
         try:
@@ -305,13 +305,13 @@ def current_ec2_node_id():
 
     Sample value: 'i-0553487b4b6916bc9'"""
 
-    assert env.host is not None, "This is supposed to be called with settings for connecting to an EC2 instance"
+    ensure(env.host is not None, "This is supposed to be called with settings for connecting to an EC2 instance")
     current_public_ip = env.host
 
-    assert 'public_ips' in env, "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration"
+    ensure('public_ips' in env, "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration")
     matching_instance_ids = [instance_id for (instance_id, public_ip) in env.public_ips.items() if current_public_ip == public_ip]
 
-    assert len(matching_instance_ids) == 1, ("Too many instance ids (%s) pointing to this ip (%s)" % (matching_instance_ids, current_public_ip))
+    ensure(len(matching_instance_ids) == 1, "Too many instance ids (%s) pointing to this ip (%s)" % (matching_instance_ids, current_public_ip))
     return matching_instance_ids[0]
 
 def current_node_id():
@@ -319,12 +319,7 @@ def current_node_id():
 
     Returns a number from 1 to N (usually a small number, like 2) indicating how the current node has been numbered on creation to distinguish it from the others"""
     ec2_id = current_ec2_node_id()
-    ensure(
-        ec2_id in env.nodes,
-        "Can't find %s in %s node map",
-        ec2_id,
-        env.nodes
-    )
+    ensure(ec2_id in env.nodes, "Can't find %s in %s node map" % (ec2_id, env.nodes))
     return env.nodes[ec2_id]
 
 def current_ip():
@@ -346,15 +341,16 @@ def current_stackname():
 def mk_stackname(project_name, instance_id):
     return "%s--%s" % (project_name, instance_id)
 
-# TODO: test these functions
-def parse_stackname(stackname, all_bits=False):
+def parse_stackname(stackname, all_bits=False, idx=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
     if not stackname or not isinstance(stackname, basestring):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--', -1 if all_bits else 1)
-    if len(bits) == 1:
-        raise ValueError("could not parse given stackname %r" % stackname)
+    ensure(len(bits) > 1, "could not parse given stackname %r" % stackname, ValueError)
+    if idx:
+        bit_keys = ['project_name', 'instance_id', 'cluster_id'][:len(bits)]
+        bits = dict(zip(bit_keys, bits))
     return bits
 
 def stackname_parseable(stackname):
@@ -373,9 +369,7 @@ def is_master_server_stack(stackname):
     return 'master-server--' in str(stackname)
 
 def is_prod_stack(stackname):
-    _, instance_id = parse_stackname(stackname)
-    return instance_id in ['master', 'prod']
-
+    return parse_stackname(stackname, idx=True)['instance_id'] in ['master', 'prod']
 
 #
 # stack file wrangling

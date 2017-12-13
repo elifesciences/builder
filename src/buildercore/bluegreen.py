@@ -41,7 +41,7 @@ class BlueGreenConcurrency(object):
         ensure(len(names) >= 1, "No load balancers found")
         tags = self.conn.describe_tags(LoadBalancerNames=names)['TagDescriptions']
         balancers = [lb['LoadBalancerName'] for lb in tags if {'Key': 'Cluster', 'Value': stackname} in lb['Tags']]
-        ensure(len(balancers) == 1, "Expected to find exactly 1 load balancer, but found %s", balancers)
+        ensure(len(balancers) == 1, "Expected to find exactly 1 load balancer, but found %s" % balancers)
         return balancers[0]
 
     def divide_by_color(self, nodes_params):
