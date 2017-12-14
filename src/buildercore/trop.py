@@ -786,26 +786,31 @@ def render_elasticache(context, template):
     template.add_resource(parameter_group)
 
     suppressed = context['elasticache'].get('suppressed', [])
-    for cluster in range(1, context['elasticache']['clusters']+1):
+    for cluster in range(1, context['elasticache']['clusters'] + 1):
         if cluster in suppressed:
             continue
 
         # TODO: extract so that it's common with ec2
         # TODO: unit test
-        overrides = context['elasticache'].get('overrides', {}).get(cluster, {})
-        overridden_context = copy.deepcopy(context)
-        # TODO: extend to all properties
-        overridden_context['elasticache'].update(overrides)
+        def _overridden_component(context, component, index, allowed):
+            overrides = context[component].get('overrides', {}).get(index, {})
+            for element in overrides:
+                ensure(element in allowed, "`%s` override is not allowed for single elasticache clusters" % element)
+            overridden_context = copy.deepcopy(context)
+            overridden_context[component].update(overrides)
+            return overridden_context[component]
+
+        cluster_context = _overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az'])
 
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
             cluster_title,
-            CacheNodeType=overridden_context['elasticache']['type'],
+            CacheNodeType=cluster_context['type'],
             CacheParameterGroupName=Ref(parameter_group),
             CacheSubnetGroupName=Ref(subnet_group),
             Engine='redis',
-            EngineVersion=context['elasticache']['version'],
-            PreferredAvailabilityZone=context['elasticache']['az'],
+            EngineVersion=cluster_context['version'],
+            PreferredAvailabilityZone=cluster_context['az'],
             # we only support Redis, and it only supports 1 node
             NumCacheNodes=1,
             Tags=Tags(**_generic_tags(context)),
