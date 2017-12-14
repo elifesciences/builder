@@ -607,7 +607,13 @@ elife-bot:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
-            s3: {}
+            s3:
+                "{instance}-elife-silent-corrections":
+                    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: delete
+                "{instance}-elife-bot-sessions":
+                    deletion-policy: delete
         end2end:
             description: speeding up end2end tests
             #    end2end-elife-production-final:
