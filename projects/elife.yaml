@@ -607,6 +607,7 @@ elife-bot:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+            s3: {}
         end2end:
             description: speeding up end2end tests
             #    end2end-elife-production-final:
