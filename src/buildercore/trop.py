@@ -270,8 +270,8 @@ def render_rds(context, template):
     ]
     map(template.add_output, outputs)
 
-def render_ext_volume(context, template, node=1):
-    context_ext = context['ext']
+def render_ext_volume(context, context_ext, template, node=1):
+    #context_ext = context['ext']
     vtype = context_ext.get('type', 'standard')
     # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
     if vtype == 'ssd':
@@ -790,16 +790,6 @@ def render_elasticache(context, template):
         if cluster in suppressed:
             continue
 
-        # TODO: extract so that it's common with ec2
-        # TODO: unit test
-        def _overridden_component(context, component, index, allowed):
-            overrides = context[component].get('overrides', {}).get(index, {})
-            for element in overrides:
-                ensure(element in allowed, "`%s` override is not allowed for single elasticache clusters" % element)
-            overridden_context = copy.deepcopy(context)
-            overridden_context[component].update(overrides)
-            return overridden_context[component]
-
         cluster_context = _overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az'])
 
         cluster_title = ELASTICACHE_TITLE % cluster
@@ -834,12 +824,16 @@ def render(context):
         render_rds(context, template)
 
     if context['ext']:
+        # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
+        context['ec2']['ext'] = context['ext']
         all_nodes = ec2_instances.keys()
         for node in all_nodes:
+
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = copy.deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
-            render_ext_volume(overridden_context, template, node)
+            node_context = _overridden_component(context, 'ec2', node, ['ext'])
+            render_ext_volume(overridden_context, node_context.get('ext', {}), template, node)
 
     render_sns(context, template)
     render_sqs(context, template)
@@ -904,3 +898,17 @@ def cnames(context):
 def _is_domain_2nd_level(hostname):
     "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
     return hostname.count(".") == 1
+
+def _overridden_component(context, component, index, allowed):
+    "two-level merging of overrides into one of context's componenets"
+    overrides = context[component].get('overrides', {}).get(index, {})
+    for element in overrides:
+        ensure(element in allowed, "`%s` override is not allowed for single elasticache clusters" % element)
+    overridden_context = copy.deepcopy(context)
+    for key, value in overrides.items():
+        if isinstance(overridden_context[component][key], dict):
+            overridden_context[component][key].update(value)
+        else:
+            overridden_context[component][key] = value
+    return overridden_context[component]
+
