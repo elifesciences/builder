@@ -23,7 +23,7 @@ def set_project_alt(pdata, env, altkey):
     "non-destructive update of given project data with the specified alternative configuration."
     assert env in ['vagrant', 'aws'], "'env' must be either 'vagrant' or 'aws'"
     env_key = env + '-alt'
-    assert altkey in pdata[env_key], "project has no alternative config %r" % altkey
+    assert altkey in pdata[env_key], "project has no alternative config %r. Available: %s" % (altkey, pdata[env_key].keys())
     pdata_copy = copy.deepcopy(pdata) # don't modify the data given to us
     pdata_copy[env] = pdata[env_key][altkey]
     return pdata_copy
