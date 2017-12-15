@@ -135,7 +135,7 @@ defaults:
             version: "2.8.24" # closest to builder-base-formula redis.sls
             configuration:
                 maxmemory-policy: volatile-ttl
-
+            clusters: 1
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
