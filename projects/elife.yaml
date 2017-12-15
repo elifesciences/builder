@@ -1559,14 +1559,6 @@ crm:
             80: 80
             443: 443
 
-        # database is now too large for the instance and requires rds
-        rds:
-            engine: MySQL
-            version: '5.5'
-            storage: 30 # GB
-            type: db.t2.medium
-            params:
-                log_bin_trust_function_creators: 1
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -1580,7 +1572,32 @@ crm:
         ci:
             rds:
                 backup-retention: 2 # days
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
                 deletion-policy: Delete
+
+        end2end:
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
+
+        prod:
+            rds:
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
+
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
