@@ -27,7 +27,7 @@ def regen(output_format='json'):
     formatters = {
         'json': partial(core_utils.json_dumps, indent=4),
         'yaml': core_utils.yaml_dumps,
-        
+
         'default': lambda v: pformat(core_utils.remove_ordereddict(v))
     }
     formatter = formatters.get(output_format if output_format in formatters else 'default')
