@@ -99,11 +99,6 @@ class SimpleCases(base.BaseCase):
         self.assertFalse(core.is_master_server_stack('master-some-project--end2end'))
         self.assertFalse(core.is_master_server_stack('lax--end2end'))
 
-    def test_is_prod_stack(self):
-        self.assertTrue(core.is_prod_stack('lax--prod'))
-        self.assertFalse(core.is_prod_stack('lax--end2end'))
-        self.assertFalse(core.is_prod_stack('lax--ci'))
-
     def test_bad_pname_from_stackname(self):
         expected_error = [
             # project names by themselves. a stackname must be projectname + instance_id

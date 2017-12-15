@@ -368,9 +368,6 @@ def project_name_from_stackname(stackname):
 def is_master_server_stack(stackname):
     return 'master-server--' in str(stackname)
 
-def is_prod_stack(stackname):
-    return parse_stackname(stackname, idx=True)['instance_id'] in ['master', 'prod']
-
 #
 # stack file wrangling
 # stack 'files' are the things on the file system in the `.cfn/stacks/` dir.

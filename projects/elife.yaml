@@ -79,6 +79,7 @@ defaults:
                 # it tells us which subnets we can provision RDS within
                 - subnet-8eea67d7 # elife-dbsubnet-1
                 - subnet-dbc471f0 # elife-dbsubnet-2
+            deletion-policy: Snapshot
 
         # TODO: this will be moved inside aws.ec2
         ext:
@@ -274,6 +275,7 @@ lax:
         standalone1404:
             rds:
                 storage: 5
+                deletion-policy: Delete
         end2end:
             description: production-like
             ec2:
@@ -1234,6 +1236,7 @@ observer:
             rds:
                 storage: 10
                 backup-retention: 2 # days
+                deletion-policy: Delete
         end2end:
             description: production-like environment. RDS backed
             rds:
@@ -1572,9 +1575,12 @@ crm:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+            rds:
+                deletion-policy: Delete
         ci:
             rds:
                 backup-retention: 2 # days
+                deletion-policy: Delete
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048

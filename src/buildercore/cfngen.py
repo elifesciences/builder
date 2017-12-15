@@ -93,9 +93,6 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
            "the project name %r derived from the given `stackname` %r doesn't match" % (bits['project_name'], pname))
     context.update(bits)
 
-    # is this a production instance? if yes, then we'll do things like tweak the dns records ...
-    context['is_prod_instance'] = core.is_prod_stack(stackname)
-
     # hostname data
     context.update(core.hostname_struct(stackname))
 
@@ -151,10 +148,7 @@ def build_context_rds(context, existing_context):
     stackname = context['stackname']
 
     # deletion policy
-    # enforce here rather than allow to be specified in project config
-    deletion_policy = 'Delete'
-    if context['is_prod_instance'] or context['instance_id'] in ['continuumtest', 'end2end']:
-        deletion_policy = 'Snapshot'
+    deletion_policy = utils.lookup(context, 'project.aws.rds.deletion-policy', 'Snapshot')
 
     # used to give mysql a range of valid ip addresses to connect from
     subnet_cidr = netaddr.IPNetwork(context['project']['aws']['subnet-cidr'])
