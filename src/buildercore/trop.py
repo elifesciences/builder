@@ -905,6 +905,7 @@ def overridden_component(context, component, index, allowed):
     for element in overrides:
         ensure(element in allowed, "`%s` override is not allowed for single elasticache clusters" % element)
     overridden_context = copy.deepcopy(context)
+    overridden_context[component].pop('overrides', None)
     for key, value in overrides.items():
         if isinstance(overridden_context[component][key], dict):
             overridden_context[component][key].update(value)

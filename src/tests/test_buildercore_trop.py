@@ -893,6 +893,71 @@ class TestBuildercoreTrop(base.BaseCase):
         # overridden
         self.assertEqual('cache.t2.medium', data['Resources']['ElastiCache2']['Properties']['CacheNodeType'])
 
+    def test_overrides_scalar(self):
+        context = {
+            'elasticache': {
+                'type': 'cache.t2.small',
+                'engine': 'redis',
+                'overrides': {
+                    2: {
+                        'type': 'cache.t2.medium',
+                    }
+                }
+            }
+        }
+        self.assertEqual(
+            {
+                'engine': 'redis',
+                'type': 'cache.t2.small',
+            },
+            trop.overridden_component(context, 'elasticache', 1, ['type'])
+        )
+        self.assertEqual(
+            {
+                'engine': 'redis',
+                'type': 'cache.t2.medium',
+            },
+            trop.overridden_component(context, 'elasticache', 2, ['type'])
+        )
+
+    def test_overrides_dictionary(self):
+        context = {
+            'ec2': {
+                'cluster-size': 2,
+                'ext': {
+                    'size': 30,
+                    'device': '/dev/sdh',
+                },
+                'overrides': {
+                    2: {
+                        'ext': {
+                            'size': 100,
+                        }
+                    }
+                }
+            }
+        }
+        self.assertEqual(
+            {
+                'cluster-size': 2,
+                'ext': {
+                    'device': '/dev/sdh',
+                    'size': 30,
+                }
+            },
+            trop.overridden_component(context, 'ec2', 1, ['ext'])
+        )
+        self.assertEqual(
+            {
+                'cluster-size': 2,
+                'ext': {
+                    'device': '/dev/sdh',
+                    'size': 100,
+                }
+            },
+            trop.overridden_component(context, 'ec2', 2, ['ext'])
+        )
+
     def _parse_json(self, dump):
         """Parses dump into a dictionary, using strings rather than unicode strings
 
