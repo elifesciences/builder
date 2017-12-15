@@ -46,7 +46,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         return default_value
 
     supported_projects = project.project_list()
-    assert pname in supported_projects, "Unknown project %r" % pname
+    assert pname in supported_projects, "Unknown project %r. Known projects: %s" % (pname, supported_projects)
 
     project_data = project.project_data(pname)
 
