@@ -163,7 +163,7 @@ def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_descri
 def _ensure_valid_ec2_states(states, valid_states):
     ensure(
         set(states.values()).issubset(valid_states),
-        "The states of EC2 nodes are not supported, manual recovery is needed: %s", states
+        "The states of EC2 nodes are not supported, manual recovery is needed: %s" % states
     )
 
 def _wait_daemons():
