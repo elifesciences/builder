@@ -790,7 +790,7 @@ def render_elasticache(context, template):
         if cluster in suppressed:
             continue
 
-        cluster_context = _overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az'])
+        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az'])
 
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
@@ -832,7 +832,7 @@ def render(context):
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = copy.deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
-            node_context = _overridden_component(context, 'ec2', node, ['ext'])
+            node_context = overridden_component(context, 'ec2', node, ['ext'])
             render_ext_volume(overridden_context, node_context.get('ext', {}), template, node)
 
     render_sns(context, template)
@@ -899,7 +899,7 @@ def _is_domain_2nd_level(hostname):
     "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
     return hostname.count(".") == 1
 
-def _overridden_component(context, component, index, allowed):
+def overridden_component(context, component, index, allowed):
     "two-level merging of overrides into one of context's componenets"
     overrides = context[component].get('overrides', {}).get(index, {})
     for element in overrides:
@@ -911,4 +911,3 @@ def _overridden_component(context, component, index, allowed):
         else:
             overridden_context[component][key] = value
     return overridden_context[component]
-
