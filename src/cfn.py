@@ -15,7 +15,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 def strtobool(x):
-    return x if isinstance(x, bool) else bool(strtobool(x))
+    return x if isinstance(x, bool) else bool(_strtobool(x))
 
 # these aliases are deprecated
 @task(alias='aws_delete_stack')
