@@ -266,7 +266,7 @@ def mkdir_p(path):
     ensure(os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path)
     return path
 
-def json_dumps(obj, dangerous=False):
+def json_dumps(obj, dangerous=False, **kwargs):
     """drop-in for json.dumps that handles datetime objects.
 
     dangerous=True will replace unserializable values with the string '[unserializable]'.
@@ -278,7 +278,7 @@ def json_dumps(obj, dangerous=False):
             return '[unserializable]'
         else:
             raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
-    return json.dumps(obj, default=json_handler)
+    return json.dumps(obj, default=json_handler, **kwargs)
 
 def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict):

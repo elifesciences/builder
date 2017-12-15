@@ -13,65 +13,62 @@
     ], 
     "aws": {
         "ec2": {
-            "cluster-size": 1,
-            "dns-internal": false,
-            "overrides": {},
-            "suppressed": [],
+            "cluster-size": 1, 
+            "dns-internal": false, 
+            "suppressed": [], 
+            "overrides": {}, 
             "ami": "ami-111111"
-        },
+        }, 
         "type": "t2.small", 
         "region": "us-east-1", 
-        "sns": [],
-        "sqs": [],
-        "s3": [],
         "vpc-id": "vpc-78a2071d", 
         "subnet-id": "subnet-1d4eb46a", 
         "subnet-cidr": "10.0.2.0/24", 
         "redundant-subnet-id": "subnet-7a31dd46", 
         "redundant-subnet-cidr": "10.0.2.0/24", 
+        "sns": [], 
+        "sqs": [], 
+        "s3": [], 
+        "subdomains": [], 
         "ports": [
             22
-        ],
-        "subdomains": []
+        ]
     }, 
     "aws-alt": {
         "fresh": {
             "ec2": {
-                "cluster-size": 1,
-                "dns-internal": false,
-                "overrides": {},
-                "suppressed": [],
+                "cluster-size": 1, 
+                "dns-internal": false, 
+                "suppressed": [], 
+                "overrides": {}, 
                 "ami": "ami-9eaa1cf6"
-            },
+            }, 
             "type": "t2.small", 
             "region": "us-east-1", 
-            "sns": [],
-            "sqs": [],
-            "s3": [],
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
             "redundant-subnet-id": "subnet-7a31dd46", 
             "redundant-subnet-cidr": "10.0.2.0/24", 
+            "sns": [], 
+            "sqs": [], 
+            "s3": [], 
+            "subdomains": [], 
             "ports": [
                 22
             ], 
-            "description": "uses a plain Ubuntu basebox instead of an ami",
-            "subdomains": []
+            "description": "uses a plain Ubuntu basebox instead of an ami"
         }, 
         "alt-config1": {
             "ec2": {
-                "cluster-size": 1,
-                "dns-internal": false,
-                "overrides": {},
-                "suppressed": [],
+                "cluster-size": 1, 
+                "dns-internal": false, 
+                "suppressed": [], 
+                "overrides": {}, 
                 "ami": "ami-111111"
-            },
+            }, 
             "type": "t2.small", 
             "region": "us-east-1", 
-            "sns": [],
-            "sqs": [],
-            "s3": [],
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
@@ -95,10 +92,51 @@
                 "size": 200, 
                 "device": "/dev/sdh"
             }, 
+            "sns": [], 
+            "sqs": [], 
+            "s3": [], 
+            "subdomains": [], 
             "ports": [
                 80
-            ],
-            "subdomains": []
+            ]
+        }, 
+        "alt-config2": {
+            "ec2": {
+                "cluster-size": 1, 
+                "dns-internal": false, 
+                "suppressed": [], 
+                "overrides": {}, 
+                "ami": "ami-111111"
+            }, 
+            "type": "t2.small", 
+            "region": "us-east-1", 
+            "vpc-id": "vpc-78a2071d", 
+            "subnet-id": "subnet-1d4eb46a", 
+            "subnet-cidr": "10.0.2.0/24", 
+            "redundant-subnet-id": "subnet-7a31dd46", 
+            "redundant-subnet-cidr": "10.0.2.0/24", 
+            "rds": {
+                "name": "<defined at generation>", 
+                "multi-az": false, 
+                "engine": "postgres", 
+                "version": "9.4", 
+                "type": "db.t2.small", 
+                "storage": 5, 
+                "backup-retention": 28, 
+                "params": [], 
+                "subnets": [
+                    "subnet-foo", 
+                    "subnet-bar"
+                ], 
+                "deletion-policy": "Delete"
+            }, 
+            "sns": [], 
+            "sqs": [], 
+            "s3": [], 
+            "subdomains": [], 
+            "ports": [
+                22
+            ]
         }
     }, 
     "meta": {
