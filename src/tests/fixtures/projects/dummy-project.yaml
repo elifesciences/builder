@@ -176,7 +176,7 @@ dummy3:
         ports:
             - 22
     aws-alt:
-        # uses an rds backend
+        # uses an rds backend, snapshot on delete
         alt-config1:
             ports:
                 - 80
@@ -184,6 +184,10 @@ dummy3:
                 storage: 15
             ext:
                 size: 200
+        # uses an rds backend, no snapshot on delete
+        alt-config2:
+            rds:
+                deletion-policy: Delete
 
 just-some-sns:
     repo: ssh://git@github.com/elifesciences/dummy3

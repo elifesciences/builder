@@ -13,6 +13,16 @@ class TestBuildercoreTrop(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
+    def _parse_json(self, dump):
+        """Parses dump into a dictionary, using strings rather than unicode strings
+
+        Ridiculously, the yaml module is more helpful in parsing JSON than the json module. Using json.loads() will result in unhelpful error messages like
+        -  'Type': 'AWS::Route53::RecordSet'}
+        +  u'Type': u'AWS::Route53::RecordSet'}
+        that hide the true comparison problem in self.assertEquals().
+        """
+        return yaml.safe_load(dump)
+
     def test_rds_template_contains_rds(self):
         extra = {
             'stackname': 'dummy3--test',
@@ -871,12 +881,24 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Outputs']['ElastiCachePort']
         )
 
-    def _parse_json(self, dump):
-        """Parses dump into a dictionary, using strings rather than unicode strings
+    def test_rds_deletion_policy_snapshot(self):
+        "default rds deletion policy is 'Snapshot'"
+        extra = {
+            'stackname': 'dummy3--test',
+            'alt-config': 'alt-config1'
+        }
+        context = cfngen.build_context('dummy3', **extra)
+        data = self._parse_json(trop.render(context))
+        self.assertEqual(context['rds']['deletion-policy'], "Snapshot")
+        self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Snapshot')
 
-        Ridiculously, the yaml module is more helpful in parsing JSON than the json module. Using json.loads() will result in unhelpful error messages like
-        -  'Type': 'AWS::Route53::RecordSet'}
-        +  u'Type': u'AWS::Route53::RecordSet'}
-        that hide the true comparison problem in self.assertEquals().
-        """
-        return yaml.safe_load(dump)
+    def test_rds_deletion_policy_override(self):
+        "an explicit deletion policy can be specified to override default"
+        extra = {
+            'stackname': 'dummy3--test',
+            'alt-config': 'alt-config2'
+        }
+        context = cfngen.build_context('dummy3', **extra)
+        data = self._parse_json(trop.render(context))
+        self.assertEqual(context['rds']['deletion-policy'], "Delete")
+        self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Delete')

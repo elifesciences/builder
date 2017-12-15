@@ -58,11 +58,12 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'branch': project_data.get('default-branch'),
         'revision': None, # may be used in future to checkout a specific revision of project
 
-        # TODO: shift these rds_ values under an 'rds' key
+        # TODO: shift these rds_ values under the 'rds' key
         'rds_dbname': None, # generated from the instance_id when present
         'rds_username': None, # could possibly live in the project data, but really no need.
         'rds_password': None,
         'rds_instance_id': None,
+        'rds': {},
 
         'ec2': False,
         's3': {},
