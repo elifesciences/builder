@@ -257,20 +257,21 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
     def single_node_work():
-        try:
-            return workfn(**work_kwargs)
-        except NetworkError as err:
-            if str(err.message).startswith('Timed out trying to connect'):
-                LOG.info("Timeout while executing task on a %s node (%s), retrying once on this node", stackname, err.message)
+        for attempt in range(0, 6):
+            try:
                 return workfn(**work_kwargs)
-            else:
-                raise err
-        except config.FabricException as err:
-            LOG.error(str(err).replace("\n", "    "))
-            # not useful to specify more, this will be printed out
-            # but we are already logging it (and printing it on stderr)
-            # which is better
-            raise SystemExit("")
+            except NetworkError as err:
+                if str(err.message).startswith('Timed out trying to connect'):
+                    LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err.message, attempt)
+                    continue
+                else:
+                    raise err
+            except config.FabricException as err:
+                LOG.error(str(err).replace("\n", "    "))
+                # not useful to specify more, this will be printed out
+                # but we are already logging it (and printing it on stderr)
+                # which is better
+                raise SystemExit("")
 
     # something less stateful like a context manager?
     output['aborts'] = False
