@@ -37,7 +37,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     whatever renders the final template"""
 
     supported_projects = project.project_list()
-    ensure(pname in supported_projects,  Known projects: %s" % (pname, supported_projects))
+    ensure(pname in supported_projects, "Unknown project %r. Known projects: %s" % (pname, supported_projects))
 
     project_data = project.project_data(pname)
     if 'alt-config' in more_context:
