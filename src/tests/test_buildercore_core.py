@@ -1,3 +1,4 @@
+from functools import partial
 import json
 from os.path import join
 from . import base
@@ -66,21 +67,37 @@ class SimpleCases(base.BaseCase):
         self.assertAllPairsEqual(core.project_name_from_stackname, expected)
 
     def test_parse_stackname(self):
+        # basic
         expected = [
             ('lax--prod', ['lax', 'prod']),
+            ('lax--prod--1', ['lax', 'prod--1']), # is this really what we're expecting?
             ('journal-cms--end2end', ['journal-cms', 'end2end']),
+            ('journal-cms--end2end--2', ['journal-cms', 'end2end--2']), # again, really?
         ]
         self.assertAllPairsEqual(core.parse_stackname, expected)
+
+        # extended
+        expected = [
+            ('lax--prod', ['lax', 'prod']),
+            ('lax--prod--1', ['lax', 'prod', '1']),
+            ('journal-cms--end2end', ['journal-cms', 'end2end']),
+            ('journal-cms--end2end--2', ['journal-cms', 'end2end', '2']),
+        ]
+        self.assertAllPairsEqual(partial(core.parse_stackname, all_bits=True), expected)
+
+        # as dict
+        expected = [
+            ('lax--prod', {"project_name": 'lax', "instance_id": 'prod'}),
+            ('lax--prod--1', {"project_name": 'lax', "instance_id": 'prod', "cluster_id": '1'}),
+            ('journal-cms--end2end', {"project_name": 'journal-cms', "instance_id": 'end2end'}),
+            ('journal-cms--end2end--2', {"project_name": 'journal-cms', "instance_id": 'end2end', "cluster_id": '2'}),
+        ]
+        self.assertAllPairsEqual(partial(core.parse_stackname, all_bits=True, idx=True), expected)
 
     def test_master_server_stackname(self):
         self.assertTrue(core.is_master_server_stack('master-server--temp'))
         self.assertFalse(core.is_master_server_stack('master-some-project--end2end'))
         self.assertFalse(core.is_master_server_stack('lax--end2end'))
-
-    def test_is_prod_stack(self):
-        self.assertTrue(core.is_prod_stack('lax--prod'))
-        self.assertFalse(core.is_prod_stack('lax--end2end'))
-        self.assertFalse(core.is_prod_stack('lax--ci'))
 
     def test_bad_pname_from_stackname(self):
         expected_error = [

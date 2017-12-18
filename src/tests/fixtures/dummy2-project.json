@@ -13,17 +13,14 @@
     ], 
     "aws": {
         "ec2": {
-            "cluster-size": 1,
-            "dns-internal": false,
-            "overrides": {},
-            "suppressed": [],
+            "cluster-size": 1, 
+            "dns-internal": false, 
+            "suppressed": [], 
+            "overrides": {}, 
             "ami": "ami-111111"
-        },
+        }, 
         "type": "t2.small", 
         "region": "us-east-1", 
-        "sns": [],
-        "sqs": [],
-        "s3": [],
         "vpc-id": "vpc-78a2071d", 
         "subnet-id": "subnet-1d4eb46a", 
         "subnet-cidr": "10.0.2.0/24", 
@@ -43,6 +40,12 @@
                 "subnet-bar"
             ]
         }, 
+        "sns": [], 
+        "sqs": [], 
+        "s3": [], 
+        "subdomains": [
+            "official"
+        ], 
         "ports": [
             22, 
             {
@@ -51,23 +54,19 @@
                     "cidr-ip": "0.0.0.0/0"
                 }
             }
-        ],
-        "subdomains": ["official"]
+        ]
     }, 
     "aws-alt": {
         "fresh": {
             "ec2": {
-                "cluster-size": 1,
-                "dns-internal": false,
-                "overrides": {},
-                "suppressed": [],
+                "cluster-size": 1, 
+                "dns-internal": false, 
+                "suppressed": [], 
+                "overrides": {}, 
                 "ami": "ami-9eaa1cf6"
-            },
+            }, 
             "type": "t2.small", 
             "region": "us-east-1", 
-            "sns": [],
-            "sqs": [],
-            "s3": [],
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
@@ -87,6 +86,12 @@
                     "subnet-bar"
                 ]
             }, 
+            "sns": [], 
+            "sqs": [], 
+            "s3": [], 
+            "subdomains": [
+                "official"
+            ], 
             "ports": [
                 22, 
                 {
@@ -96,22 +101,18 @@
                     }
                 }
             ], 
-            "description": "uses a plain Ubuntu basebox instead of an ami",
-            "subdomains": ["official"]
+            "description": "uses a plain Ubuntu basebox instead of an ami"
         }, 
         "alt-config1": {
             "ec2": {
-                "cluster-size": 1,
-                "dns-internal": false,
-                "overrides": {},
-                "suppressed": [],
+                "cluster-size": 1, 
+                "dns-internal": false, 
+                "suppressed": [], 
+                "overrides": {}, 
                 "ami": "ami-22222"
-            },
+            }, 
             "type": "t2.small", 
             "region": "us-east-1", 
-            "sns": [],
-            "sqs": [],
-            "s3": [],
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
@@ -131,6 +132,12 @@
                     "subnet-bar"
                 ]
             }, 
+            "sns": [], 
+            "sqs": [], 
+            "s3": [], 
+            "subdomains": [
+                "official"
+            ], 
             "ports": [
                 22, 
                 {
@@ -139,8 +146,7 @@
                         "cidr-ip": "0.0.0.0/0"
                     }
                 }
-            ],
-            "subdomains": ["official"]
+            ]
         }
     }, 
     "vagrant": {

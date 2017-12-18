@@ -38,8 +38,8 @@ defaults:
             # for future re-creation
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
-            ami: ami-5730472d # created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171214
+            ami: ami-14a1d06e # created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
             # deprecated. all projects have 16.04 support now. explicit trusty images
             # are being used until each project is running 16.04 in production
             # ami: ami-92002785   # elife 'basebox.2016-11-03'
@@ -79,6 +79,7 @@ defaults:
                 # it tells us which subnets we can provision RDS within
                 - subnet-8eea67d7 # elife-dbsubnet-1
                 - subnet-dbc471f0 # elife-dbsubnet-2
+            deletion-policy: Snapshot
 
         # TODO: this will be moved inside aws.ec2
         ext:
@@ -144,8 +145,8 @@ defaults:
         1604:
             description: uses Ubuntu 16.04 (Xenial) instead of 14.04 (Trusty)
             ec2:
-                ami: ami-5730472d # created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171214
+                ami: ami-14a1d06e # created from basebox--1604
+                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         1404:
             description: uses Ubuntu 14.04 (Trusty) instead of 16.04 (Xenial)
             ec2:
@@ -153,8 +154,8 @@ defaults:
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-5730472d # created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171214
+                ami: ami-14a1d06e # created from basebox--1604
+                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
         standalone1404:
             description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
@@ -165,8 +166,8 @@ defaults:
         standalone:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-5730472d # created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171214
+                ami: ami-14a1d06e # created from basebox--1604
+                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
@@ -274,6 +275,7 @@ lax:
         standalone1404:
             rds:
                 storage: 5
+                deletion-policy: Delete
         end2end:
             description: production-like
             ec2:
@@ -1241,6 +1243,7 @@ observer:
             rds:
                 storage: 10
                 backup-retention: 2 # days
+                deletion-policy: Delete
         end2end:
             description: production-like environment. RDS backed
             rds:
@@ -1571,6 +1574,8 @@ crm:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+            rds:
+                deletion-policy: Delete
         ci:
             rds:
                 backup-retention: 2 # days
@@ -1580,6 +1585,7 @@ crm:
                 type: db.t2.medium
                 params:
                     log_bin_trust_function_creators: 1
+                deletion-policy: Delete
 
         end2end:
             rds:
