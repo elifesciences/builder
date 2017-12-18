@@ -351,9 +351,9 @@ def generate_stack(pname, **more_context):
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$']
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$']
 
-REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$', '^.+Topic$']
+REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
@@ -403,10 +403,11 @@ def template_delta(pname, context):
         title_in_new = dict(template[section][title])
         # ignore UserData changes, it's not useful to update them and cause
         # a needless reboot
-        if title_in_old['Type'] == 'AWS::EC2::Instance':
-            for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
-                title_in_old['Properties'][property_name] = None
-                title_in_new['Properties'][property_name] = None
+        if 'Type' in title_in_old:
+            if title_in_old['Type'] == 'AWS::EC2::Instance':
+                for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
+                    title_in_old['Properties'][property_name] = None
+                    title_in_new['Properties'][property_name] = None
         return title_in_old != title_in_new
 
     def legacy_title(title):
