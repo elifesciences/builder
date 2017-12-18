@@ -403,6 +403,9 @@ journal:
             elasticache:
                 engine: redis
                 clusters: 2
+                overrides:
+                    2:
+                        type: cache.t2.micro
             elb:
                 stickiness:
                     type: cookie
@@ -432,6 +435,8 @@ journal:
         continuumtest:
             elasticache:
                 engine: redis
+                type: cache.t2.micro
+                clusters: 2
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -454,6 +459,10 @@ journal:
             elasticache:
                 engine: redis
                 type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
+                clusters: 2
+                overrides:
+                    2: 
+                        type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
             elb:
                 stickiness:
                     type: cookie
