@@ -35,21 +35,11 @@ LOG = logging.getLogger(__name__)
 def build_context(pname, **more_context): # pylint: disable=too-many-locals
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
-    existing_context = more_context.get('existing_context', {})
-    if 'existing_context' in more_context:
-        del more_context['existing_context']
-
-    def from_existing_context(field, default_value):
-        password = existing_context.get(field)
-        if password:
-            return password
-        return default_value
 
     supported_projects = project.project_list()
-    assert pname in supported_projects, "Unknown project %r" % pname
+    ensure(pname in supported_projects, "Unknown project %r" % pname)
 
     project_data = project.project_data(pname)
-
     if 'alt-config' in more_context:
         project_data = project.set_project_alt(project_data, 'aws', more_context['alt-config'])
 
@@ -58,7 +48,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'project': project_data,
 
         'author': os.environ.get("LOGNAME") or os.getlogin(),
-        'date_rendered': utils.ymd(),
+        'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
 
         # a stackname looks like: <pname>--<instance_id>[--<cluster-id>]
         'stackname': None, # must be provided by whatever is calling this
@@ -67,10 +57,14 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
         'branch': project_data.get('default-branch'),
         'revision': None, # may be used in future to checkout a specific revision of project
+
+        # TODO: shift these rds_ values under the 'rds' key
         'rds_dbname': None, # generated from the instance_id when present
         'rds_username': None, # could possibly live in the project data, but really no need.
         'rds_password': None,
         'rds_instance_id': None,
+        'rds': {},
+
         'ec2': False,
         's3': {},
         'elb': False,
@@ -81,52 +75,33 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'elasticache': False,
     }
 
+    # this is the context data from the currently existing template (if any)
+    # by re-using current values we can avoid making unnecessary changes when
+    # regenerating templates (like random passwords)
+    existing_context = more_context.pop('existing_context', {})
+
     context = copy.deepcopy(defaults)
     context.update(more_context)
 
-    assert context['stackname'] is not None, "a stackname wasn't provided."
+    # proceed with wrangling
+
+    ensure(context['stackname'], "a stackname wasn't provided.")
     stackname = context['stackname']
 
     # stackname data
-    bit_keys = ['project_name', 'instance_id', 'cluster_id']
-    bits = dict(zip(bit_keys, core.parse_stackname(stackname, all_bits=True)))
-    assert bits['project_name'] == pname, \
-        "the project name derived from the `stackname` doesn't match the given project name"
+    bits = core.parse_stackname(stackname, all_bits=True, idx=True)
+    ensure(bits['project_name'] == pname,
+           "the project name %r derived from the given `stackname` %r doesn't match" % (bits['project_name'], pname))
     context.update(bits)
 
     # hostname data
     context.update(core.hostname_struct(stackname))
 
-    # post-processing
-    if 'rds' in context['project']['aws']:
-        default_rds_dbname = slugify(stackname, separator="")
-
-        # used to give mysql a range of valid ip addresses to connect from
-        subnet_cidr = netaddr.IPNetwork(context['project']['aws']['subnet-cidr'])
-        net = subnet_cidr.network
-        mask = subnet_cidr.netmask
-        networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
-
-        generated_password = utils.random_alphanumeric(length=32)
-        rds_password = from_existing_context('rds_password', generated_password)
-        context.update({
-            'netmask': networkmask,
-            'rds_username': 'root',
-            'rds_password': rds_password,
-            # alpha-numeric only
-            # TODO: investigate possibility of ambiguous RDS naming here
-            'rds_dbname': context.get('rds_dbname') or default_rds_dbname, # *must* use 'or' here
-            'rds_instance_id': slugify(stackname), # *completely* different to database name
-            'rds_params': context['project']['aws']['rds'].get('params', [])
-        })
+    # rds
+    context.update(build_context_rds(context, existing_context))
 
     if 'ext' in context['project']['aws']:
         context['ext'] = context['project']['aws']['ext']
-
-    # is this a production instance? if yes, then we'll do things like tweak the dns records ...
-    context.update({
-        'is_prod_instance': core.is_prod_stack(stackname),
-    })
 
     context['ec2'] = context['project']['aws'].get('ec2', True)
     if isinstance(context['ec2'], dict):
@@ -144,10 +119,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     for queue_template_name in context['project']['aws']['sqs']:
         queue_name = _parameterize(queue_template_name)
         queue_configuration = context['project']['aws']['sqs'][queue_template_name]
-        subscriptions = []
-        if 'subscriptions' in queue_configuration:
-            for topic_template_name in queue_configuration['subscriptions']:
-                subscriptions.append(_parameterize(topic_template_name))
+        subscriptions = map(_parameterize, queue_configuration.get('subscriptions', []))
         context['sqs'][queue_name] = subscriptions
 
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
@@ -169,6 +141,40 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     build_context_elasticache(context)
 
     return context
+
+
+def build_context_rds(context, existing_context):
+    if 'rds' not in context['project']['aws']:
+        return {}
+    stackname = context['stackname']
+
+    # deletion policy
+    deletion_policy = utils.lookup(context, 'project.aws.rds.deletion-policy', 'Snapshot')
+
+    # used to give mysql a range of valid ip addresses to connect from
+    subnet_cidr = netaddr.IPNetwork(context['project']['aws']['subnet-cidr'])
+    net = subnet_cidr.network
+    mask = subnet_cidr.netmask
+    networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
+
+    # pull password from existing context, if it exists
+    generated_password = utils.random_alphanumeric(length=32)
+    rds_password = existing_context.get('rds_password', generated_password)
+
+    return {
+        'netmask': networkmask,
+        'rds_username': 'root',
+        'rds_password': rds_password,
+        # alpha-numeric only
+        # TODO: investigate possibility of ambiguous RDS naming here
+        'rds_dbname': context.get('rds_dbname') or slugify(stackname, separator=""), # *must* use 'or' here
+        'rds_instance_id': slugify(stackname), # *completely* different to database name
+        'rds_params': context['project']['aws']['rds'].get('params', []),
+
+        'rds': {
+            'deletion-policy': deletion_policy
+        }
+    }
 
 
 def build_context_elb(context):
@@ -251,26 +257,30 @@ def choose_config(stackname):
 
 def render_template(context, template_type='aws'):
     pname = context['project_name']
-    if template_type not in context['project']:
-        raise ValueError("could not render an %r template for %r: no %r context found" %
-                         (template_type, pname, template_type))
+    msg = "could not render an %r template for %r: no %r context found" % (template_type, pname, template_type)
+    ensure(template_type in context['project'], msg, ValueError)
     if template_type == 'aws':
         return trop.render(context)
+    # are we saving this space for different template types in future?
 
 def write_template(stackname, contents):
+    "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
 
 def read_template(stackname):
+    "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     return json.load(open(output_fname, 'r'))
 
 def validate_aws_template(pname, rendered_template):
+    "remote cloudformation template checks."
     conn = core.connect_aws_with_pname(pname, 'cfn')
     return conn.validate_template(rendered_template)
 
 def more_validation(json_template_str):
+    "local cloudformation template checks. complements the validation AWS does"
     try:
         data = json.loads(json_template_str)
         # case: when "DBInstanceIdentifier" == "lax--temp2"
@@ -278,7 +288,7 @@ def more_validation(json_template_str):
         # must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens.
         dbid = utils.lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
         if dbid:
-            assert '--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid
+            ensure('--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid)
 
         return True
     except BaseException:
@@ -286,6 +296,8 @@ def more_validation(json_template_str):
         raise
 
 def validate_project(pname, **extra):
+    """validates all of project's possible cloudformation templates.
+    only called during testing"""
     import time, boto
     LOG.info('validating %s', pname)
     template = quick_render(pname)
@@ -312,19 +324,16 @@ def validate_project(pname, **extra):
     return True
 
 #
-#
+# create new template
 #
 
 def quick_render(project_name, **more_context):
-    "generates a representative Cloudformation template for given project with dummy values"
+    """generates a representative Cloudformation template for given project with dummy values
+    only called during testing"""
     # set a dummy instance id if one hasn't been set.
     more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
     context = build_context(project_name, **more_context)
     return render_template(context)
-
-#
-#
-#
 
 def generate_stack(pname, **more_context):
     """given a project name and any context overrides, generates a Cloudformation
@@ -336,13 +345,9 @@ def generate_stack(pname, **more_context):
     context_handler.write_context(stackname, context)
     return context, out_fname
 
-def regenerate_stack(pname, **more_context):
-    current_template = bootstrap.current_template(more_context['stackname'])
-    current_context = context_handler.load_context(more_context['stackname'])
-    write_template(more_context['stackname'], json.dumps(current_template))
-    context = build_context(pname, existing_context=current_context, **more_context)
-    delta = template_delta(pname, context)
-    return context, delta, current_context
+#
+# update existing template
+#
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
@@ -457,16 +462,24 @@ def merge_delta(stackname, delta):
 
 def apply_delta(template, delta):
     for component in delta.plus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
         data = template.get(component, {})
         data.update(delta.plus[component])
         template[component] = data
     for component in delta.edit:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
         data = template.get(component, {})
         data.update(delta.edit[component])
         template[component] = data
     for component in delta.minus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized", component)
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
         for title in delta.minus[component]:
             del template[component][title]
+
+def regenerate_stack(pname, **more_context):
+    current_template = bootstrap.current_template(more_context['stackname'])
+    current_context = context_handler.load_context(more_context['stackname'])
+    write_template(more_context['stackname'], json.dumps(current_template))
+    context = build_context(pname, existing_context=current_context, **more_context)
+    delta = template_delta(pname, context)
+    return context, delta, current_context

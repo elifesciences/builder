@@ -99,11 +99,8 @@ class TestBuildercoreUtils(base.BaseCase):
 
     def test_ensure(self):
         utils.ensure(True, "True should allow ensure() to continue")
-        self.assertRaises(AssertionError, lambda: utils.ensure(False, "Error message"))
-        self.assertRaises(AssertionError, lambda: utils.ensure(False, "Error message: %s", "argument"))
+        self.assertRaises(AssertionError, utils.ensure, False, "Error message")
 
         class CustomException(Exception):
             pass
-        self.assertRaises(CustomException, lambda: utils.ensure(False, "Error message", exception_class=CustomException))
-        self.assertRaises(CustomException, lambda: utils.ensure(False, "Error message: %s", "argument", exception_class=CustomException))
-        self.assertRaises(ValueError, lambda: utils.ensure(False, "Error message", random_argument=CustomException))
+        self.assertRaises(CustomException, utils.ensure, False, "Error message", CustomException)

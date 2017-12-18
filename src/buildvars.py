@@ -52,14 +52,10 @@ def _retrieve_build_vars():
         LOG.debug('build vars: %s', buildvars)
 
         # buildvars exist
-        ensure(
-            isinstance(buildvars, dict),
-            'build vars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.',
-            buildvars
-        )
+        ensure(isinstance(buildvars, dict), 'build vars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.' % buildvars)
 
         # nothing important is missing
-        missing_keys = core_utils.missingkeys(buildvars, ['stackname', 'instance_id', 'branch', 'revision', 'is_prod_instance'])
+        missing_keys = core_utils.missingkeys(buildvars, ['stackname', 'instance_id', 'branch', 'revision'])
         ensure(
             len(missing_keys) == 0,
             'build vars are not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys

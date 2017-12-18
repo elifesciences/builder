@@ -234,7 +234,7 @@ def render_rds(context, template):
     # rds parameter group. None or a Ref
     param_group_ref = rdsdbparams(context, template)
 
-    tags = [t for t in instance_tags(context)]
+    tags = instance_tags(context)
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
@@ -252,7 +252,7 @@ def render_rds(context, template):
         'MasterUsername': lu('rds_username'), # pillar data is now UNavailable
         'MasterUserPassword': lu('rds_password'),
         'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'),
-        'DeletionPolicy': 'Snapshot',
+        'DeletionPolicy': lu('rds.deletion-policy'),
         "Tags": tags,
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default

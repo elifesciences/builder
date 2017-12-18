@@ -254,20 +254,11 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
         dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
 
-def ensure(assertion, msg, *args, **kwargs):
+def ensure(assertion, msg, exception_class=AssertionError):
     """intended as a convenient replacement for `assert` statements that
     get compiled away with -O flags"""
-
-    exception_class = AssertionError
-    if 'exception_class' in kwargs:
-        exception_class = kwargs['exception_class']
-        del kwargs['exception_class']
-
-    if len(kwargs):
-        raise ValueError("No other keyword arguments than exception_class are accepted: %s", kwargs)
-
     if not assertion:
-        raise exception_class(msg % args)
+        raise exception_class(msg)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
@@ -275,7 +266,7 @@ def mkdir_p(path):
     ensure(os.access(path, os.W_OK | os.X_OK), "directory isn't writable: %s" % path)
     return path
 
-def json_dumps(obj, dangerous=False):
+def json_dumps(obj, dangerous=False, **kwargs):
     """drop-in for json.dumps that handles datetime objects.
 
     dangerous=True will replace unserializable values with the string '[unserializable]'.
@@ -287,7 +278,7 @@ def json_dumps(obj, dangerous=False):
             return '[unserializable]'
         else:
             raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
-    return json.dumps(obj, default=json_handler)
+    return json.dumps(obj, default=json_handler, **kwargs)
 
 def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict):

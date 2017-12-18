@@ -1,4 +1,4 @@
-from distutils.util import strtobool  # pylint: disable=import-error,no-name-in-module
+from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 from fabric.api import task, local, run, sudo, put, get, abort, settings
 import fabric.state
@@ -13,6 +13,9 @@ from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
 
 import logging
 LOG = logging.getLogger(__name__)
+
+def strtobool(x):
+    return x if isinstance(x, bool) else bool(_strtobool(x))
 
 # these aliases are deprecated
 @task(alias='aws_delete_stack')
@@ -47,7 +50,7 @@ def ensure_destroyed(stackname):
 def update(stackname, autostart="0", concurrency='serial'):
     """Updates the environment within the stack's ec2 instance.
     does *not* call Cloudformation's `update` command on the stack"""
-    instances = _check_want_to_be_running(stackname, bool(strtobool(autostart)))
+    instances = _check_want_to_be_running(stackname, strtobool(autostart))
     if not instances:
         return
     return bootstrap.update_stack(stackname, service_list=[], concurrency=concurrency)
@@ -102,9 +105,7 @@ def update_master():
 @requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     """creates a new CloudFormation file for the given project."""
-    if not instance_id:
-        default_instance_id = core_utils.ymd()
-        instance_id = utils.uin("instance id", default_instance_id)
+    instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
     stackname = core.mk_stackname(pname, instance_id)
     more_context = {'stackname': stackname}
 
@@ -120,6 +121,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
             except KeyError:
                 return None
         if instance_id in pdata['aws-alt'].keys():
+            LOG.info("instance-id found in known alternative configurations. using configuration %r", instance_id)
             more_context['alt-config'] = instance_id
         else:
             default = 'skip this step'
@@ -277,21 +279,20 @@ def _interactive_ssh(command):
 
 @task
 @requires_aws_stack
-def download_file(stackname, path, destination=None, allow_missing="False", use_bootstrap_user="False"):
+def download_file(stackname, path, destination='.', allow_missing="False", use_bootstrap_user="False"):
     """
     Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
 
-    If `allow_missing` is "True", a not existing `path` will be skipped without errors.
+    If `allow_missing` is "True", a non-existant `path` will be skipped without errors.
 
     If `use_bootstrap_user` is "True", the owner_ssh user will be used for connecting instead of the standard deploy user.
 
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
-    if not destination:
-        destination = '.'
-    with stack_conn(stackname, username=_user(use_bootstrap_user)):
-        if _should_be_skipped(path, allow_missing):
-            return
+    allow_missing, use_bootstrap_user = map(strtobool, [allow_missing, use_bootstrap_user])
+    with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER):
+        if allow_missing and not files.exists(path):
+            return # skip download
         get(path, destination, use_sudo=True)
 
 
@@ -308,15 +309,6 @@ def upload_file(stackname, local_path, remote_path, overwrite=False):
             print 'remote file exists, not overwriting'
             exit(1)
         put(local_path, remote_path)
-
-def _should_be_skipped(path, allow_missing):
-    return not files.exists(path) and strtobool(allow_missing)
-
-def _user(use_bootstrap_user):
-    if bool(strtobool(use_bootstrap_user)):
-        return BOOTSTRAP_USER
-    else:
-        return DEPLOY_USER
 
 #
 # these might need a better home
