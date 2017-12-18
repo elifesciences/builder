@@ -402,6 +402,7 @@ journal:
                 cluster-size: 2
             elasticache:
                 engine: redis
+                clusters: 2
             elb:
                 stickiness:
                     type: cookie
