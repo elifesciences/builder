@@ -406,6 +406,8 @@ journal:
                 overrides:
                     2:
                         type: cache.t2.micro
+                        configuration:
+                            maxmemory-policy: allkeys-lru
             elb:
                 stickiness:
                     type: cookie
@@ -437,6 +439,10 @@ journal:
                 engine: redis
                 type: cache.t2.micro
                 clusters: 2
+                overrides:
+                    2:
+                        configuration:
+                            maxmemory-policy: allkeys-lru
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -463,6 +469,8 @@ journal:
                 overrides:
                     2: 
                         type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
+                        configuration:
+                            maxmemory-policy: allkeys-lru
             elb:
                 stickiness:
                     type: cookie
