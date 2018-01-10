@@ -1588,6 +1588,13 @@ crm:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
             rds:
+                backup-retention: 2 # days
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
                 deletion-policy: Delete
         ci:
             rds:
