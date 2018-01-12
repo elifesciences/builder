@@ -24,3 +24,4 @@ from deploy import switch_revision_update_instance
 from lifecycle import start, stop, stop_if_running_for, update_dns
 import masterless
 import fixtures
+import continuum

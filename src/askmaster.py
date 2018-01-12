@@ -9,6 +9,7 @@ from buildercore.core import stack_conn
 import aws
 from buildercore.decorators import osissue
 
+@task
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"
     with stack_conn(core.find_master(aws.find_region())):
@@ -45,4 +46,4 @@ def fail2ban_running():
 
 @task
 def installed_linux():
-    return salt_master_cmd("'dpkg -l | grep -i linux-image'")
+    return salt_master_cmd("'dpkg -l | grep -i linux-image && uname -r'")
