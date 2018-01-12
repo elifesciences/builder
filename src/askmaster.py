@@ -13,7 +13,7 @@ from buildercore.decorators import osissue
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"
     with stack_conn(core.find_master(aws.find_region())):
-        sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
+        return sudo("salt %(minions)s %(module)s %(cmd)s --timeout=2 --no-color " % locals())
 
 @task
 @echo_output
@@ -47,3 +47,78 @@ def fail2ban_running():
 @task
 def installed_linux():
     return salt_master_cmd("'dpkg -l | grep -i linux-image && uname -r'")
+
+
+#
+#
+#
+
+
+
+
+@task
+def patched():
+    #output = str(installed_linux()).splitlines()
+    output = open('src/foo.txt', 'r').readlines()
+    
+    from collections import OrderedDict
+    import string
+
+    # re-group output
+    groups, current = OrderedDict(), None
+    for row in output:
+        # exclude blanks
+        if not row.strip():
+            continue
+        # exclude those that didn't respond
+        if row.strip().startswith('Minion did not return.'):
+            continue
+        # we have a response from a machine
+        if not row.startswith(' '):
+            current = row.strip(':\n')
+            groups[current] = []
+            continue
+
+        # above could be made generic
+
+        # dpkg output parsing
+        row = filter(None, row.strip().split('  '))
+        row = map(string.strip, row)
+        
+        if len(row) > 1:
+            if row[0] == 'rc':
+                continue
+            if row[1].endswith('-virtual'):
+                continue
+
+        groups[current].append(row)
+
+    csvrows = [('instance', 'instance-id', 'running', 'installed', 'running latest', 'needs update', 'needs reboot')]
+    fully_patched = [
+        '3.13.0-139-generic', '3.13.0-139.188',
+        '4.4.0-1047-aws', '4.4.0.1048.50'
+    ]
+    
+    for gname, gitems in groups.items():
+        if not gitems:
+            continue
+        
+        running_patch = gitems[-1][0].strip()
+
+        installed_patches = sorted(gitems[:-1], key=lambda row: row[2])
+        greatest_patch = installed_patches[-1][2] # ignores trailing 'virtual' patch
+
+        running_latest = running_patch in fully_patched # the patch is installed and running
+        needs_update = not running_latest and greatest_patch not in fully_patched # the patch hasn't been downloaded
+        needs_reboot = not running_latest or needs_update # the patch is installed but isn't running
+
+        iid = gname.split('--')[1]
+        row = (gname, iid, running_patch, greatest_patch, running_latest, needs_update, needs_reboot)
+        csvrows.append(row)
+
+    import csv
+    with open('patch-report.csv', 'wb') as csvfile:
+        writer = csv.writer(csvfile)
+        map(writer.writerow, csvrows)
+
+    print 'wrote patch-report.csv'
