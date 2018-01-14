@@ -2,10 +2,8 @@ import os, sys
 from buildercore.utils import second, last
 from buildercore.decorators import osissue
 from fabric.api import local
-
-# totally is assigned :(
-# pylint: disable=global-variable-not-assigned
-CACHE = {}
+from collections import OrderedDict
+from buildercore import utils as core_utils
 
 def rmval(lst, *vals):
     """removes each val in `vals` from `lst`, if it exists.
@@ -117,3 +115,36 @@ def table(rows, keys):
     for row in rows:
         lines.append(', '.join([getattr(row, key) for key in keys]))
     return "\n".join(lines)
+
+
+def writecsv(fname, csvrows):
+    import csv
+    with open(fname, 'wb') as csvfile:
+        writer = csv.writer(csvfile)
+        map(writer.writerow, csvrows)
+    print 'wrote', fname
+
+
+EXCLUDE_ME = 0xDEADC0DE
+
+def parse_salt_master_output(output_lines, parserfn=core_utils.identity):
+    # re-group output
+    groups, current = OrderedDict(), None
+    for row in output_lines:
+        # exclude blanks
+        if not row.strip():
+            continue
+        # exclude those that didn't respond
+        if row.strip().startswith('Minion did not return.'):
+            continue
+        # we have a response from a machine
+        if not row.startswith(' '):
+            current = row.strip(':\n')
+            groups[current] = []
+            continue
+
+        row = parserfn(row)
+        if row != EXCLUDE_ME:
+            groups[current].append(row)
+
+    return groups

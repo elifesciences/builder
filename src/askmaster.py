@@ -6,8 +6,9 @@ from buildercore import core
 from fabric.api import sudo, task
 from decorators import echo_output
 from buildercore.core import stack_conn
-import aws
+import aws, utils
 from buildercore.decorators import osissue
+import string
 
 @task
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
@@ -48,61 +49,38 @@ def fail2ban_running():
 def installed_linux():
     return salt_master_cmd("'dpkg -l | grep -i linux-image && uname -r'")
 
-
 #
 #
 #
-
-
-
 
 @task
 def patched():
     #output = str(installed_linux()).splitlines()
     output = open('src/foo.txt', 'r').readlines()
-    
-    from collections import OrderedDict
-    import string
 
-    # re-group output
-    groups, current = OrderedDict(), None
-    for row in output:
-        # exclude blanks
-        if not row.strip():
-            continue
-        # exclude those that didn't respond
-        if row.strip().startswith('Minion did not return.'):
-            continue
-        # we have a response from a machine
-        if not row.startswith(' '):
-            current = row.strip(':\n')
-            groups[current] = []
-            continue
-
-        # above could be made generic
-
-        # dpkg output parsing
+    def rowfn(row):
+        # parses output of dpkg -l
         row = filter(None, row.strip().split('  '))
         row = map(string.strip, row)
-        
         if len(row) > 1:
             if row[0] == 'rc':
-                continue
+                return utils.EXCLUDE_ME
             if row[1].endswith('-virtual'):
-                continue
+                return utils.EXCLUDE_ME
+        return row
 
-        groups[current].append(row)
+    groups = utils.parse_salt_master_output(output, rowfn)
 
-    csvrows = [('instance', 'instance-id', 'running', 'installed', 'running latest', 'needs update', 'needs reboot')]
     fully_patched = [
         '3.13.0-139-generic', '3.13.0-139.188',
         '4.4.0-1047-aws', '4.4.0.1048.50'
     ]
-    
+
+    csvrows = [('instance', 'instance-id', 'running', 'installed', 'running latest', 'needs update', 'needs reboot')]
     for gname, gitems in groups.items():
         if not gitems:
             continue
-        
+
         running_patch = gitems[-1][0].strip()
 
         installed_patches = sorted(gitems[:-1], key=lambda row: row[2])
@@ -116,9 +94,4 @@ def patched():
         row = (gname, iid, running_patch, greatest_patch, running_latest, needs_update, needs_reboot)
         csvrows.append(row)
 
-    import csv
-    with open('patch-report.csv', 'wb') as csvfile:
-        writer = csv.writer(csvfile)
-        map(writer.writerow, csvrows)
-
-    print 'wrote patch-report.csv'
+    utils.writecsv('patch-report.csv', csvrows)

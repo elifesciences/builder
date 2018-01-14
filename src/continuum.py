@@ -3,7 +3,7 @@ import cfn
 from fabric.api import run, task
 from fabric.context_managers import cd
 from decorators import requires_aws_project_stack, echo_output
-from buildercore import core
+from buildercore import core, config
 
 @task
 @requires_aws_project_stack('lax')
@@ -24,7 +24,7 @@ def observer_backfill(stackname):
 def adhoc_instances():
     def unrecognised(stackname):
         iid = stackname.split('--')[-1]
-        return iid not in ['ci', 'end2end', 'prod', 'continuumtest']
+        return iid not in config.ENVS
     import aws
     region = aws.find_region()
     return filter(unrecognised, core.active_stack_names(region))
