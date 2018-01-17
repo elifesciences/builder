@@ -589,7 +589,6 @@ elife-metrics:
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
     formula-repo: https://github.com/elifesciences/elife-bot-formula
-    domain: false
     subdomain: bot
     aws:
         ec2:
@@ -627,6 +626,10 @@ elife-bot:
                 "{instance}-elife-bot-sessions":
                     deletion-policy: delete
         end2end:
+            ports:
+                - 22
+                - 8020 # exposing FTP contents
+                - 8021 # exposing FTP contents, HTTPS
             description: speeding up end2end tests
             #    end2end-elife-production-final:
             #        sqs-notifications:

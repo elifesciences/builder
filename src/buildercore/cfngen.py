@@ -391,6 +391,8 @@ def template_delta(pname, context):
             template['Resources']['MountPoint']['Properties']['InstanceId']['Ref'] = 'EC2Instance'
         if 'IntDNS' in template['Resources']:
             template['Resources']['IntDNS']['Properties']['ResourceRecords'][0]['Fn::GetAtt'][0] = 'EC2Instance'
+        if 'ExtDNS' in template['Resources']:
+            template['Resources']['ExtDNS']['Properties']['ResourceRecords'][0]['Fn::GetAtt'][0] = 'EC2Instance'
     # end backward compatibility code
 
     def _title_has_been_updated(title, section):
