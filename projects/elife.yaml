@@ -1534,7 +1534,7 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        type: t2.micro
+        type: t2.small
         ports:
             - 22
             - 80:
