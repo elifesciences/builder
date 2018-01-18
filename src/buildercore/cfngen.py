@@ -408,8 +408,7 @@ def template_delta(pname, context):
         if 'Type' in title_in_old:
             if title_in_old['Type'] == 'AWS::EC2::Instance':
                 for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
-                    title_in_old['Properties'][property_name] = None
-                    title_in_new['Properties'][property_name] = None
+                    title_in_new['Properties'][property_name] = title_in_old['Properties'][property_name]
         return title_in_old != title_in_new
 
     def legacy_title(title):
