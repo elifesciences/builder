@@ -55,8 +55,8 @@ def installed_linux():
 
 @task
 def patched():
-    #output = str(installed_linux()).splitlines()
-    output = open('src/foo.txt', 'r').readlines()
+    output = str(installed_linux()).splitlines()
+    #output = open('src/foo.txt', 'r').readlines()
 
     def rowfn(row):
         # parses output of dpkg -l
@@ -73,7 +73,7 @@ def patched():
 
     fully_patched = [
         '3.13.0-139-generic', '3.13.0-139.188',
-        '4.4.0-1047-aws', '4.4.0.1048.50'
+        '4.4.0-1048-aws', '4.4.0.1048.50'
     ]
 
     csvrows = [('instance', 'instance-id', 'running', 'installed', 'running latest', 'needs update', 'needs reboot')]
