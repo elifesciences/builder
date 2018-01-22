@@ -16,7 +16,7 @@ class BlueGreenConcurrency(object):
 
     def __call__(self, single_node_work, nodes_params):
         elb_name = self.find_load_balancer(nodes_params['stackname'])
-        self.ensure_all_in_service(elb_name)
+        self.wait_all_in_service(elb_name)
         blue, green = self.divide_by_color(nodes_params)
 
         LOG.info("Blue phase on %s: %s", elb_name, self._instance_ids(blue))
@@ -55,14 +55,22 @@ class BlueGreenConcurrency(object):
             return subset
         return subset(is_blue), subset(is_green)
 
-    def ensure_all_in_service(self, elb_name):
-        health = self.conn.describe_instance_health(
-            LoadBalancerName=elb_name,
-        )['InstanceStates']
-        service_status_by_id = {result['InstanceId']: result['State'] for result in health}
-        LOG.info("Instance statuses on %s: %s", elb_name, service_status_by_id)
-        if [bad_status for bad_status in service_status_by_id.values() if bad_status != 'InService']:
-            raise SomeOutOfServiceInstances(service_status_by_id)
+    def wait_all_in_service(self, elb_name):
+        def condition():
+            health = self.conn.describe_instance_health(
+                LoadBalancerName=elb_name,
+            )['InstanceStates']
+            service_status_by_id = {result['InstanceId']: result['State'] for result in health}
+            LOG.info("Instance statuses on %s: %s", elb_name, service_status_by_id)
+            return [bad_status for bad_status in service_status_by_id.values() if bad_status != 'InService']
+
+        call_while(
+            condition,
+            interval=5,
+            timeout=60,
+            update_msg='Waiting for all instances to be in service...',
+            exception_class=SomeOutOfServiceInstances
+        )
 
     def register(self, elb_name, nodes_params):
         LOG.info("Registering on %s: %s", elb_name, self._instance_ids(nodes_params))

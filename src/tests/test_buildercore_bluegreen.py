@@ -3,6 +3,12 @@ from . import base
 from mock import patch, MagicMock
 from collections import OrderedDict
 
+def try_only_once(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
+    if not exception_class:
+        exception_class = RuntimeError
+    if fn():
+        raise exception_class("Reached timeout %d while %s" % (timeout, update_msg))
+
 class Primitives(base.BaseCase):
     def setUp(self):
         patcher = patch('buildercore.bluegreen.boto_elb_conn')
@@ -31,7 +37,8 @@ class Primitives(base.BaseCase):
         name = self.concurrency.find_load_balancer('dummy1--test')
         self.assertEquals(name, 'dummy1-ElasticL-ABCDEFGHI')
 
-    def test_ensure_all_in_service_success(self):
+    @patch('buildercore.bluegreen.call_while', side_effect=try_only_once)
+    def test_wait_all_in_service_success(self, call_while):
         self.conn.describe_instance_health.return_value = {
             'InstanceStates': [
                 {
@@ -44,9 +51,10 @@ class Primitives(base.BaseCase):
                 },
             ],
         }
-        self.concurrency.ensure_all_in_service('dummy1-ElasticL-ABCDEFGHI')
+        self.concurrency.wait_all_in_service('dummy1-ElasticL-ABCDEFGHI')
 
-    def test_ensure_all_in_service_failure(self):
+    @patch('buildercore.bluegreen.call_while', side_effect=try_only_once)
+    def test_wait_all_in_service_failure(self, call_while):
         self.conn.describe_instance_health.return_value = {
             'InstanceStates': [
                 {
@@ -61,7 +69,7 @@ class Primitives(base.BaseCase):
         }
         self.assertRaises(
             bluegreen.SomeOutOfServiceInstances,
-            self.concurrency.ensure_all_in_service,
+            self.concurrency.wait_all_in_service,
             'dummy1-ElasticL-ABCDEFGHI'
         )
 
