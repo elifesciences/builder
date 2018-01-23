@@ -289,6 +289,8 @@ project-with-cloudfront-origins:
                 some-bucket:
                     hostname: "{instance}--some-bucket.s3.amazonaws.com"
                     pattern: articles/*
+                    headers:
+                        - Referer
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

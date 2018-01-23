@@ -760,6 +760,13 @@ class TestBuildercoreTrop(base.BaseCase):
             'articles/*',
             distribution_config['CacheBehaviors'][0]['PathPattern'],
         )
+        self.assertEquals(
+            {
+                'Headers': ['Referer'],
+                'QueryString': 'false',
+            },
+            distribution_config['CacheBehaviors'][0]['ForwardedValues'],
+        )
 
     def test_cdn_template_error_pages(self):
         extra = {

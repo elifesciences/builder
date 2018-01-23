@@ -214,7 +214,11 @@ def build_context_cloudfront(context, parameterize):
             'errors': errors,
             'logging': context['project']['aws']['cloudfront'].get('logging', False),
             'origins': OrderedDict([
-                (o_id, {'hostname': parameterize(o['hostname']), 'pattern': o.get('pattern')})
+                (o_id, {
+                    'hostname': parameterize(o['hostname']),
+                    'pattern': o.get('pattern'),
+                    'headers': o.get('headers', []),
+                })
                 for o_id, o in context['project']['aws']['cloudfront']['origins'].items()
             ]),
         }
