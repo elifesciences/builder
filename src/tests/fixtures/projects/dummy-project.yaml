@@ -291,6 +291,8 @@ project-with-cloudfront-origins:
                     pattern: articles/*
                     headers:
                         - Referer
+                    cookies:
+                        - session_id
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

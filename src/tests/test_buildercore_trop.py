@@ -763,6 +763,10 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertEquals(
             {
+                'Cookies': {
+                    'Forward': 'whitelist',
+                    'WhitelistedNames': ['session_id'],
+                },
                 'Headers': ['Referer'],
                 'QueryString': 'false',
             },
@@ -792,6 +796,9 @@ class TestBuildercoreTrop(base.BaseCase):
             [{
                 'DefaultTTL': 300,
                 'ForwardedValues': {
+                    'Cookies': {
+                        'Forward': 'none',
+                    },
                     'Headers': [],
                     # yes this is a string containing the word 'false'...
                     'QueryString': 'false',

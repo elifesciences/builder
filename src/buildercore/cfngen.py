@@ -218,6 +218,7 @@ def build_context_cloudfront(context, parameterize):
                     'hostname': parameterize(o['hostname']),
                     'pattern': o.get('pattern'),
                     'headers': o.get('headers', []),
+                    'cookies': o.get('cookies', []),
                 })
                 for o_id, o in context['project']['aws']['cloudfront']['origins'].items()
             ]),

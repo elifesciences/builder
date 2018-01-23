@@ -637,13 +637,14 @@ def render_cloudfront(context, template, origin_hostname):
         ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
 
     allowed_cnames = context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
-    if context['cloudfront']['cookies']:
-        cookies = cloudfront.Cookies(
-            Forward='whitelist',
-            WhitelistedNames=context['cloudfront']['cookies']
-        )
-    else:
-        cookies = cloudfront.Cookies(
+
+    def _cookies(cookies):
+        if cookies:
+            return cloudfront.Cookies(
+                Forward='whitelist',
+                WhitelistedNames=cookies
+            )
+        return cloudfront.Cookies(
             Forward='none'
         )
 
@@ -682,7 +683,7 @@ def render_cloudfront(context, template, origin_hostname):
             DefaultTTL=context['cloudfront']['default-ttl'],
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
-                Cookies=cookies,
+                Cookies=_cookies(context['cloudfront']['cookies']),
                 Headers=context['cloudfront']['headers'], # 'whitelisted' headers
                 QueryString=True
             ),
@@ -697,11 +698,12 @@ def render_cloudfront(context, template, origin_hostname):
         )
     }
 
-    def _cache_behavior(origin_id, pattern, headers=None):
+    def _cache_behavior(origin_id, pattern, headers=None, cookies=None):
         return cloudfront.CacheBehavior(
             TargetOriginId=origin_id,
             DefaultTTL=context['cloudfront']['default-ttl'],
             ForwardedValues=cloudfront.ForwardedValues(
+                Cookies=_cookies(cookies),
                 QueryString=False,
                 Headers=headers if headers else []
             ),
@@ -743,7 +745,8 @@ def render_cloudfront(context, template, origin_hostname):
             _cache_behavior(
                 o_id,
                 o['pattern'],
-                o['headers']
+                headers=o['headers'],
+                cookies=o['cookies']
             )
             for o_id, o in context['cloudfront']['origins'].items()
             if o['pattern']
