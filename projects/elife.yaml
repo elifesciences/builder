@@ -441,6 +441,9 @@ journal:
                             - Host
                             - CloudFront-Viewer-Country
                             - Referer
+                        cookies:
+                            - journal
+                            - AWSELB
                 #logging:
                 #    bucket: elife-cloudfront-logs
         continuumtest:
@@ -474,6 +477,8 @@ journal:
                             - Host
                             - CloudFront-Viewer-Country
                             - Referer
+                        cookies:
+                            - journal
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
