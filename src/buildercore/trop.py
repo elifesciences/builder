@@ -637,13 +637,14 @@ def render_cloudfront(context, template, origin_hostname):
         ensure(context['full_hostname'], "A public hostname is required to be pointed at by the Cloudfront CDN")
 
     allowed_cnames = context['cloudfront']['subdomains'] + context['cloudfront']['subdomains-without-dns']
-    if context['cloudfront']['cookies']:
-        cookies = cloudfront.Cookies(
-            Forward='whitelist',
-            WhitelistedNames=context['cloudfront']['cookies']
-        )
-    else:
-        cookies = cloudfront.Cookies(
+
+    def _cookies(cookies):
+        if cookies:
+            return cloudfront.Cookies(
+                Forward='whitelist',
+                WhitelistedNames=cookies
+            )
+        return cloudfront.Cookies(
             Forward='none'
         )
 
@@ -674,6 +675,7 @@ def render_cloudfront(context, template, origin_hostname):
         ]
     props = {
         'Aliases': allowed_cnames,
+        'CacheBehaviors': [],
         'DefaultCacheBehavior': cloudfront.DefaultCacheBehavior(
             AllowedMethods=['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
             CachedMethods=['GET', 'HEAD'],
@@ -681,7 +683,7 @@ def render_cloudfront(context, template, origin_hostname):
             DefaultTTL=context['cloudfront']['default-ttl'],
             TargetOriginId=origin,
             ForwardedValues=cloudfront.ForwardedValues(
-                Cookies=cookies,
+                Cookies=_cookies(context['cloudfront']['cookies']),
                 Headers=context['cloudfront']['headers'], # 'whitelisted' headers
                 QueryString=True
             ),
@@ -696,12 +698,14 @@ def render_cloudfront(context, template, origin_hostname):
         )
     }
 
-    def _cache_behavior(origin_id, pattern):
+    def _cache_behavior(origin_id, pattern, headers=None, cookies=None):
         return cloudfront.CacheBehavior(
             TargetOriginId=origin_id,
             DefaultTTL=context['cloudfront']['default-ttl'],
             ForwardedValues=cloudfront.ForwardedValues(
-                QueryString=False
+                Cookies=_cookies(cookies),
+                QueryString=False,
+                Headers=headers if headers else []
             ),
             PathPattern=pattern,
             ViewerProtocolPolicy='allow-all',
@@ -718,10 +722,10 @@ def render_cloudfront(context, template, origin_hostname):
                 OriginProtocolPolicy='https-only' if context['cloudfront']['errors']['protocol'] == 'https' else 'http-only'
             )
         ))
-        props['CacheBehaviors'] = [_cache_behavior(
+        props['CacheBehaviors'].append(_cache_behavior(
             CLOUDFRONT_ERROR_ORIGIN_ID,
             context['cloudfront']['errors']['pattern'],
-        )]
+        ))
         props['CustomErrorResponses'] = [
             cloudfront.CustomErrorResponse(
                 ErrorCode=code,
@@ -737,11 +741,16 @@ def render_cloudfront(context, template, origin_hostname):
         )
 
     if context['cloudfront']['origins']:
-        props['CacheBehaviors'] = [
-            _cache_behavior(o_id, o['pattern'])
+        props['CacheBehaviors'].extend([
+            _cache_behavior(
+                o_id,
+                o['pattern'],
+                headers=o['headers'],
+                cookies=o['cookies']
+            )
             for o_id, o in context['cloudfront']['origins'].items()
             if o['pattern']
-        ]
+        ])
 
     template.add_resource(cloudfront.Distribution(
         CLOUDFRONT_TITLE,
