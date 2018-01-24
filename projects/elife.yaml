@@ -518,6 +518,20 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
+                origins:
+                    CloudFrontCDNOrigin:
+                        hostname: prod--journal.elifesciences.org
+                    LogInOrigin:
+                        hostname: prod--journal.elifesciences.org
+                        pattern: /log-in
+                        headers:
+                            - X-Requested-With
+                            - Host
+                            - CloudFront-Viewer-Country
+                            - Referer
+                        cookies:
+                            - journal
+                            - AWSELB
         cachetest:
             elasticache:
                 engine: redis
