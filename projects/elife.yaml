@@ -419,11 +419,11 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
-                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                     - AWSELB
                 errors: 
+                    # TODO: this is not being deployed to, it's empty
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
@@ -439,7 +439,6 @@ journal:
                         headers:
                             - X-Requested-With
                             - Host
-                            - CloudFront-Viewer-Country
                             - Referer
                         cookies:
                             - journal
@@ -457,7 +456,6 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
-                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                 errors: 
@@ -475,7 +473,6 @@ journal:
                         headers:
                             - X-Requested-With
                             - Host
-                            - CloudFront-Viewer-Country
                             - Referer
                         cookies:
                             - journal
@@ -488,7 +485,7 @@ journal:
                 type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
                 clusters: 2
                 overrides:
-                    2: 
+                    2:
                         type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
             elb:
                 stickiness:
@@ -507,7 +504,6 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
-                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                     - AWSELB
@@ -527,7 +523,6 @@ journal:
                         headers:
                             - X-Requested-With
                             - Host
-                            - CloudFront-Viewer-Country
                             - Referer
                         cookies:
                             - journal
