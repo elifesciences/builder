@@ -1204,6 +1204,10 @@ schematron-validator:
             - 22
             - 80
             - 443
+    aws-alt:
+        prod:
+            subdomains:
+                - schematron
     vagrant:
         ports:
             1246: 80
