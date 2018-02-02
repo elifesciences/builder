@@ -4,7 +4,6 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import httplib
 import os, json, re
 from os.path import join
 from pprint import pformat
@@ -376,12 +375,7 @@ def update_template(stackname, template):
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
-    conn = connect_aws_with_stack(stackname, 'cfn')
-    try:
-        data = conn.describe_stacks(stackname)[0].__dict__
-    except httplib.IncompleteRead as e:
-        LOG.warning("Retrying DescribeStacks API call: %s", e)
-        data = conn.describe_stacks(stackname)[0].__dict__
+    data = core.describe_stack(stackname).__dict__
     data['outputs'] = reduce(utils.conj, map(lambda o: {o.key: o.value}, data['outputs']))
     return utils.exsubdict(data, ['connection', 'parameters'])
 
