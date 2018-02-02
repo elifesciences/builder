@@ -3,6 +3,7 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
+import httplib
 import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
@@ -409,7 +410,11 @@ def stack_json(stackname, parse=False):
 # this function is polled to get the state of the stack when creating/updating/deleting.
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
-    return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
+    try:
+        return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
+    except httplib.IncompleteRead as e:
+        LOG.warning("Retrying once DescribeStacks API call: %s", e)
+        return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 
 class NoRunningInstances(Exception):
     pass
