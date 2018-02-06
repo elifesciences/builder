@@ -421,7 +421,6 @@ journal:
                     - Host
                 cookies:
                     - journal
-                    - AWSELB
                 errors: 
                     # TODO: this is not being deployed to, it's empty
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
@@ -442,7 +441,6 @@ journal:
                             - Referer
                         cookies:
                             - journal
-                            - AWSELB
                 #logging:
                 #    bucket: elife-cloudfront-logs
         continuumtest:
@@ -506,7 +504,6 @@ journal:
                     - Host
                 cookies:
                     - journal
-                    - AWSELB
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -526,7 +523,6 @@ journal:
                             - Referer
                         cookies:
                             - journal
-                            - AWSELB
         cachetest:
             elasticache:
                 engine: redis
