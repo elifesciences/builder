@@ -1323,6 +1323,10 @@ peerscout:
             - 22
             - 80
             - 443
+        ext:
+            # external hdd
+            size: 20 # GB
+            device: /dev/sdf
     aws-alt:
         standalone:
             # for now a copy of standalone1404
