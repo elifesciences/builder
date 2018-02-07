@@ -419,17 +419,28 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
-                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
-                    - AWSELB
                 errors: 
+                    # TODO: this is not being deployed to, it's empty
                     domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
+                origins:
+                    CloudFrontCDNOrigin:
+                        hostname: end2end--journal.elifesciences.org
+                    LogInOrigin:
+                        hostname: end2end--journal.elifesciences.org
+                        pattern: /log-in
+                        headers:
+                            - X-Requested-With
+                            - Host
+                            - Referer
+                        cookies:
+                            - journal
                 #logging:
                 #    bucket: elife-cloudfront-logs
         continuumtest:
@@ -443,7 +454,6 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
-                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
                 errors: 
@@ -452,6 +462,18 @@ journal:
                     codes:
                         503: "/5xx.html"
                     protocol: http
+                origins:
+                    CloudFrontCDNOrigin:
+                        hostname: continuumtest--journal.elifesciences.org
+                    LogInOrigin:
+                        hostname: continuumtest--journal.elifesciences.org
+                        pattern: /log-in
+                        headers:
+                            - X-Requested-With
+                            - Host
+                            - Referer
+                        cookies:
+                            - journal
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -461,7 +483,7 @@ journal:
                 type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
                 clusters: 2
                 overrides:
-                    2: 
+                    2:
                         type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
             elb:
                 stickiness:
@@ -480,10 +502,8 @@ journal:
                 headers:
                     - X-Requested-With
                     - Host
-                    - CloudFront-Viewer-Country
                 cookies:
                     - journal
-                    - AWSELB
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -491,6 +511,18 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
+                origins:
+                    CloudFrontCDNOrigin:
+                        hostname: prod--journal.elifesciences.org
+                    LogInOrigin:
+                        hostname: prod--journal.elifesciences.org
+                        pattern: /log-in
+                        headers:
+                            - X-Requested-With
+                            - Host
+                            - Referer
+                        cookies:
+                            - journal
         cachetest:
             elasticache:
                 engine: redis
@@ -589,7 +621,6 @@ elife-metrics:
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
     formula-repo: https://github.com/elifesciences/elife-bot-formula
-    domain: false
     subdomain: bot
     aws:
         ec2:
@@ -627,6 +658,10 @@ elife-bot:
                 "{instance}-elife-bot-sessions":
                     deletion-policy: delete
         end2end:
+            ports:
+                - 22
+                - 8020 # exposing FTP contents
+                - 8021 # exposing FTP contents, HTTPS
             description: speeding up end2end tests
             #    end2end-elife-production-final:
             #        sqs-notifications:
@@ -717,7 +752,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 multi-az: true
-                storage: 12 # GB
+                storage: 24 # GB
             ext:
                 size: 30 # GB
         performance:
@@ -903,38 +938,6 @@ api-dummy:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1242: 80
-
-
-elife-website:
-    subdomain: v2
-    repo: https://github.com/elifesciences/elife-website
-    formula-repo: https://github.com/elifesciences/elife-website-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        ports:
-            - 22
-            - 80
-            - 443
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
-        large:
-            description: intended to run temporarily
-            type: m4.2xlarge
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 3072
-        ports:
-            1238: 80
-            1326: 8983 # Solr web gui
-            3307: 3306 # mysql
-            6379: 6379 # redis
 
 anonymous:
     description: a server without any eLife credentials; if you log in here, you will be using the anonymous separate AWS account
@@ -1148,7 +1151,6 @@ recommendations:
             1254: 80
 
 personalised-covers:
-    domain: false
     subdomain: personalised-covers
     repo: https://github.com/elifesciences/personalised-covers
     formula-repo: https://github.com/elifesciences/personalised-covers-formula
@@ -1161,8 +1163,8 @@ personalised-covers:
         type: t2.micro # 1 GB of RAM: Unsure memory stats for PDF generation.
         ports:
             - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
+            - 80
+            - 443
         s3:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
@@ -1174,6 +1176,12 @@ personalised-covers:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+            s3:
+                "{instance}-elife-personalised-covers":
+                    deletion-policy: delete
+        prod:
+            subdomains:
+                - covers
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
@@ -1194,6 +1202,10 @@ schematron-validator:
             - 22
             - 80
             - 443
+    aws-alt:
+        prod:
+            subdomains:
+                - schematron
     vagrant:
         ports:
             1246: 80
@@ -1309,6 +1321,10 @@ peerscout:
             - 22
             - 80
             - 443
+        ext:
+            # external hdd
+            size: 20 # GB
+            device: /dev/sdf
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -1528,7 +1544,7 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        type: t2.micro
+        type: t2.small
         ports:
             - 22
             - 80:
@@ -1585,6 +1601,13 @@ crm:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
             rds:
+                backup-retention: 2 # days
+                engine: MySQL
+                version: '5.5'
+                storage: 30 # GB
+                type: db.t2.medium
+                params:
+                    log_bin_trust_function_creators: 1
                 deletion-policy: Delete
         ci:
             rds:

@@ -616,6 +616,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Properties': {
                     'DistributionConfig': {
                         'Aliases': ['prod--cdn-of-www.example.org', 'example.org', 'future.example.org'],
+                        'CacheBehaviors': [],
                         'DefaultCacheBehavior': {
                             'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
                             'CachedMethods': ['GET', 'HEAD'],
@@ -760,6 +761,17 @@ class TestBuildercoreTrop(base.BaseCase):
             'articles/*',
             distribution_config['CacheBehaviors'][0]['PathPattern'],
         )
+        self.assertEquals(
+            {
+                'Cookies': {
+                    'Forward': 'whitelist',
+                    'WhitelistedNames': ['session_id'],
+                },
+                'Headers': ['Referer'],
+                'QueryString': 'false',
+            },
+            distribution_config['CacheBehaviors'][0]['ForwardedValues'],
+        )
 
     def test_cdn_template_error_pages(self):
         extra = {
@@ -784,6 +796,10 @@ class TestBuildercoreTrop(base.BaseCase):
             [{
                 'DefaultTTL': 300,
                 'ForwardedValues': {
+                    'Cookies': {
+                        'Forward': 'none',
+                    },
+                    'Headers': [],
                     # yes this is a string containing the word 'false'...
                     'QueryString': 'false',
                 },
