@@ -1151,7 +1151,6 @@ recommendations:
             1254: 80
 
 personalised-covers:
-    domain: false
     subdomain: personalised-covers
     repo: https://github.com/elifesciences/personalised-covers
     formula-repo: https://github.com/elifesciences/personalised-covers-formula
@@ -1180,6 +1179,9 @@ personalised-covers:
             s3:
                 "{instance}-elife-personalised-covers":
                     deletion-policy: delete
+        prod:
+            subdomains:
+                - covers
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
