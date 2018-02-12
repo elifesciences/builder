@@ -1252,7 +1252,7 @@ observer:
             observer--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-                    - bus-metrics--{instance}
+                    - bus-press-packages--{instance}
     aws-alt:
         standalone:
             # for now a copy of standalone1404
