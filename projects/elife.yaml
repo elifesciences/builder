@@ -755,14 +755,14 @@ journal-cms:
                 storage: 24 # GB
             ext:
                 size: 30 # GB
-        performance:
-            description: performance-testing environment. backed by RDS
+        drupal844:
+            description: production-like environment.
             rds:
-                type: db.t2.medium
+                type: db.t2.small
                 engine: MySQL
                 version: '5.7'
-                multi-az: true
-                storage: 12 # GB
+                storage: 24 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
     vagrant:
