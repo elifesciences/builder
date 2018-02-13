@@ -182,11 +182,21 @@ def setup_sqs(stackname, context_sqs, region):
 
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
+
+    # all subscriptions this stack currently has
+    sublist = all_subs_for_stack(region, stackname)
+    
     for queue_name in context_sqs:
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        subscriptions = context_sqs[queue_name]
+        subscriptions = context_sqs[queue_name] # ll: [bus-articles--prod, ...]
         assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
+
+        # all subscriptions not present in context will be unsubscribed
+        tbd = filter(lambda sub: sub['Topic'] not in subscriptions, subscriptions)
+        for topic_name in tbd:
+            sns.unsubscribe(tpb['TopicArn'])
+
         for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
             # idempotent, works as lookup
@@ -200,6 +210,7 @@ def setup_sqs(stackname, context_sqs, region):
             assert 'SubscribeResult' in response['SubscribeResponse']
             assert 'SubscriptionArn' in response['SubscribeResponse']['SubscribeResult']
             subscription_arn = response['SubscribeResponse']['SubscribeResult']['SubscriptionArn']
+            # this method is not part of boto. see `buildercore.core._set_raw_subscription_attribute`
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
 
