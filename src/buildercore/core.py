@@ -69,7 +69,7 @@ STEADY_CFN_STATUS = [
 
 #
 # sns
-# 
+#
 
 def _set_raw_subscription_attribute(sns_connection, subscription_arn):
     """
@@ -91,8 +91,8 @@ sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscript
 def all_sns_subscriptions(region, stackname=None):
     """returns all subscriptions to all sns topics.
     optionally filtered by subscription endpoints matching given stack"""
-    sns = boto_sns_conn(region)
-    response = sns.get_all_subscriptions() # TODO: needs pagination!
+    conn = boto_sns_conn(region)
+    response = conn.get_all_subscriptions() # TODO: needs pagination!
     subs_list = response['ListSubscriptionsResponse']['ListSubscriptionsResult']['Subscriptions']
     if stackname:
         ''' looks like:
@@ -101,11 +101,11 @@ def all_sns_subscriptions(region, stackname=None):
          u'Protocol': u'sqs',
          u'SubscriptionArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
          u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}'''
-        topic_list = filter(lambda row: row['Endpoint'].endswith(stackname), topic_list)
+        subs_list = filter(lambda row: row['Endpoint'].endswith(stackname), subs_list)
 
     # 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1' => 'bus-articles--substest1'
-    topic_list = map(lambda row: row.update({'Topic': row['TopicArn'].split(':')[-1]}), topic_list)
-    return topic_list
+    map(lambda row: row.update({'Topic': row['TopicArn'].split(':')[-1]}), subs_list)
+    return subs_list
 
 #
 #

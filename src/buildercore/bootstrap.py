@@ -184,8 +184,8 @@ def setup_sqs(stackname, context_sqs, region):
     sns = core.boto_sns_conn(region)
 
     # all subscriptions this stack currently has
-    sublist = all_subs_for_stack(region, stackname)
-    
+    sublist = core.all_sns_subscriptions(region, stackname)
+
     for queue_name in context_sqs:
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
@@ -193,9 +193,8 @@ def setup_sqs(stackname, context_sqs, region):
         assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
 
         # all subscriptions not present in context will be unsubscribed
-        tbd = filter(lambda sub: sub['Topic'] not in subscriptions, subscriptions)
-        for topic_name in tbd:
-            sns.unsubscribe(tpb['TopicArn'])
+        for topic_arn in [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]:
+            sns.unsubscribe(topic_arn)
 
         for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
