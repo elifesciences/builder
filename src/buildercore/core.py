@@ -91,9 +91,17 @@ sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscript
 def all_sns_subscriptions(region, stackname=None):
     """returns all subscriptions to all sns topics.
     optionally filtered by subscription endpoints matching given stack"""
-    conn = boto_sns_conn(region)
-    response = conn.get_all_subscriptions() # TODO: needs pagination!
-    subs_list = response['ListSubscriptionsResponse']['ListSubscriptionsResult']['Subscriptions']
+    conn = boto_sns_conn(region) # boto2
+    subs_list = []
+
+    token = None
+    while True:
+        response = conn.get_all_subscriptions(next_token=token)
+        token = response['ListSubscriptionsResponse']['ListSubscriptionsResult']['NextToken']
+        subs_list.extend(response['ListSubscriptionsResponse']['ListSubscriptionsResult']['Subscriptions'])
+        if not token:
+            break
+
     if stackname:
         ''' looks like:
         {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
@@ -497,7 +505,7 @@ def _aws_stacks(region, status=None, formatter=stack_triple):
         status = []
     # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
     # use `.describe_stack` on specific stacks only
-    paginator = _boto_cfn_conn(region).get_paginator('list_stacks')
+    paginator = _boto_cfn_conn(region).get_paginator('list_stacks') # boto3
     paginator = paginator.paginate(StackStatusFilter=status)
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
     if formatter:
