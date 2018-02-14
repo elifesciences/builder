@@ -88,22 +88,22 @@ def _set_raw_subscription_attribute(sns_connection, subscription_arn):
 
 sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
 
-def all_sns_subscriptions(region, stackname=None):
-    """returns all subscriptions to all sns topics.
-    optionally filtered by subscription endpoints matching given stack"""
+def _all_sns_subscriptions(region):
     conn = boto_sns_conn(region) # boto2
-    subs_list = []
-
-    token = None
+    token, subs_list = None, []
     while True:
         response = conn.get_all_subscriptions(next_token=token)
         token = response['ListSubscriptionsResponse']['ListSubscriptionsResult']['NextToken']
         subs_list.extend(response['ListSubscriptionsResponse']['ListSubscriptionsResult']['Subscriptions'])
         if not token:
-            break
+            return subs_list
 
+def all_sns_subscriptions(region, stackname=None):
+    """returns all subscriptions to all sns topics.
+    optionally filtered by subscription endpoints matching given stack"""
+    subs_list = _all_sns_subscriptions(region)
     if stackname:
-        ''' looks like:
+        ''' a subscription looks like:
         {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
          u'Owner': u'512686554592',
          u'Protocol': u'sqs',
@@ -111,6 +111,7 @@ def all_sns_subscriptions(region, stackname=None):
          u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}'''
         subs_list = filter(lambda row: row['Endpoint'].endswith(stackname), subs_list)
 
+    # add a 'Topic' key for easier filtering downstream
     # 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1' => 'bus-articles--substest1'
     map(lambda row: row.update({'Topic': row['TopicArn'].split(':')[-1]}), subs_list)
     return subs_list
