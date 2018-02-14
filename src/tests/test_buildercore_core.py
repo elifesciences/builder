@@ -150,7 +150,7 @@ class SimpleCases(base.BaseCase):
     def test_all_sns_subscriptions_filters_correctly(self):
         cases = [
             ('lax--prod', []), # lax doesn't subscribe to anything
-            ('observer--prod', ['bus-articles--prod', 'bus-metrics--prod']), 
+            ('observer--prod', ['bus-articles--prod', 'bus-metrics--prod']),
         ]
         fixture = json.load(open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r'))
         with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
