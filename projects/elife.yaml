@@ -657,6 +657,9 @@ elife-bot:
                     deletion-policy: delete
                 "{instance}-elife-bot-sessions":
                     deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
         end2end:
             ports:
                 - 22
@@ -668,6 +671,10 @@ elife-bot:
             #            end2end-incoming-queue: {}
             #               #prefix: null
             #               #suffix: null
+        continuumtest:
+            s3:
+                "{instance}-elife-bot":
+                    deletion-policy: delete
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
