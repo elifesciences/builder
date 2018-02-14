@@ -24,3 +24,6 @@ pillar_roots:
     - /opt/builder-private/pillar
 """
         self.assertEqual(master_configuration_yaml, expected_configuration)
+
+    def test_sub_sqs(self):
+        self.fail()
