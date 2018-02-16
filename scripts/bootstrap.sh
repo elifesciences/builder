@@ -10,7 +10,7 @@ echo "-----------------------------"
 
 if [ ! "$#" -ge 3 ]; then
     echo "Usage: ./bootstrap.sh <version> <minion_id> <install_master> [master_ipaddr]"
-    echo "Example: ./bootstrap.sh 2016.3.4 journal--end2end--1 false 10.0.0.1"
+    echo "Example: ./bootstrap.sh 2017.7.4 journal--end2end--1 false 10.0.0.1"
     exit 1
 fi
 
