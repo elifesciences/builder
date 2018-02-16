@@ -1686,3 +1686,14 @@ elife-ink:
         ram: 4096
         ports:
             1223: 80
+
+
+task-adept:
+    description: production data dumps from TaskAdept
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+        s3:
+            "{instance}-elife-task-adept":
