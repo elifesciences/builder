@@ -675,6 +675,9 @@ elife-bot:
             s3:
                 "{instance}-elife-bot":
                     deletion-policy: delete
+        # temporary: we didn't do this through CloudFormation because the template is too old to be modified successfully
+        #prod:
+        #    type: c5.2xlarge
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
