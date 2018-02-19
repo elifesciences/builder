@@ -4,6 +4,7 @@ from os.path import join
 from . import base
 from buildercore import core, utils, project
 from unittest import skip
+from mock import patch
 
 class SimpleCases(base.BaseCase):
     def setUp(self):
@@ -146,6 +147,17 @@ class SimpleCases(base.BaseCase):
     def test_find_ec2_instances_requiring_a_non_empty_list(self):
         self.assertRaises(core.NoRunningInstances, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
 
+    def test_all_sns_subscriptions_filters_correctly(self):
+        cases = [
+            ('lax--prod', []), # lax doesn't subscribe to anything
+            ('observer--prod', ['bus-articles--prod', 'bus-metrics--prod']),
+        ]
+        fixture = json.load(open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r'))
+        with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
+            for stackname, expected_subs in cases:
+                res = core.all_sns_subscriptions('someregion', stackname)
+                actual_subs = map(lambda sub: sub['Topic'], res)
+                self.assertItemsEqual(expected_subs, actual_subs)
 
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):

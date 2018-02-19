@@ -172,7 +172,18 @@ def update_sqs_stack(stackname, **kwargs):
     context = context_handler.load_context(stackname)
     setup_sqs(stackname, context.get('sqs', {}), pdata['aws']['region'])
 
-def setup_sqs(stackname, context_sqs, region):
+def unsub_sqs(stackname, context_sqs, region, dry_run=False):
+    sublist = core.all_sns_subscriptions(region, stackname)
+    struct = {}
+    for queue_name in context_sqs:
+        subscriptions = context_sqs[queue_name] # ll: [bus-articles--prod, ...]
+        struct[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+    if not dry_run:
+        sns = core.boto_sns_conn(region)
+        [sns.unsubscribe(sub['TopicArn']) for sub in utils.shallow_flatten(struct.values())]
+    return struct
+
+def sub_sqs(stackname, context_sqs, region):
     """
     Connects SQS queues created by Cloud Formation to SNS topics where
     necessary, adding both the subscription and the IAM policy to let the SNS
@@ -182,13 +193,16 @@ def setup_sqs(stackname, context_sqs, region):
 
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
+
     for queue_name in context_sqs:
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        subscriptions = context_sqs[queue_name]
+        subscriptions = context_sqs[queue_name] # ll: [bus-articles--prod, ...]
         assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
+
         for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
+
             # idempotent, works as lookup
             # risky, may subscribe to a typo-filled topic name like 'aarticles'
             # there is no boto method to lookup a topic
@@ -200,8 +214,13 @@ def setup_sqs(stackname, context_sqs, region):
             assert 'SubscribeResult' in response['SubscribeResponse']
             assert 'SubscriptionArn' in response['SubscribeResponse']['SubscribeResult']
             subscription_arn = response['SubscribeResponse']['SubscribeResult']['SubscriptionArn']
+            # this method is not part of boto. see `buildercore.core._set_raw_subscription_attribute`
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
+
+def setup_sqs(stackname, context_sqs, region):
+    unsub_sqs(stackname, context_sqs, region)
+    sub_sqs(stackname, context_sqs, region)
 
 def setup_s3(stackname, context_s3, region, account_id):
     """
