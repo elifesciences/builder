@@ -57,6 +57,17 @@ Note: if you with to use a private key not in `~/.ssh/id_rsa`, you can [customiz
 Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin
 to rebuild the ubuntu/trusty64 box for your own hypervisor.  See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
 
+#### Working with formula branches
+
+Formula projects are cloned to the local _cloned-projects_ directory. Changes will be picked up from there and branches can be used as well.
+
+#### Working with project branches
+
+After starting (`vagrant up`) and login in to (`vagrant ssh`) the VM, run the following command to change the remote commit or branch:
+
+    $ set_local_revision $commitOrBranch
+
+Provisioning (`vagrant provision` or `sudo salt-call state.highstate`) will then checkout the particular commit or branch.
 
 ### AWS (Amazon Web Services)
 
