@@ -186,7 +186,10 @@ def unsub_sqs(stackname, cfn_sqs, region, dry_run=False):
         sns = core.boto_sns_conn(region)
         for sub in utils.shallow_flatten(unsub_map.values()):
             LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
-            sns.unsubscribe(sub['SubscriptionArn'])
+            subarn = sub['SubscriptionArn']
+            sns.set_raw_subscription_attribute(subarn, val=False) # necessary? SQS:SendMessage permission still present
+            sns.unsubscribe(subarn)
+
     return unsub_map
 
 def sub_sqs(stackname, context_sqs, region):
@@ -200,10 +203,12 @@ def sub_sqs(stackname, context_sqs, region):
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
 
-    for queue_name in context_sqs:
+    prj_sqs = project_data_for_stackname(stackname, interpolate=True)['aws']['sqs']
+
+    for queue_name, subscriptions in prj_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        subscriptions = context_sqs[queue_name] # ll: [bus-articles--prod, ...]
+        subscriptions = subscriptions['subscriptions'] # ll: [bus-articles--prod, ...]
         assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
 
         for topic_name in subscriptions:
