@@ -59,11 +59,11 @@ to rebuild the ubuntu/trusty64 box for your own hypervisor.  See the [vagrant an
 
 #### Working with formula branches
 
-Formula projects cloned to the local _cloned-projects_ directory. Changes will be picked up from there and branches can be used as well.
+Formula projects are cloned to the local _cloned-projects_ directory. Changes will be picked up from there and branches can be used as well.
 
 #### Working with project branches
 
-After starting (`vagrant up`) and login in to (`vagrant ssh`) the VM, run the following command to change the commit or branch:
+After starting (`vagrant up`) and login in to (`vagrant ssh`) the VM, run the following command to change the remote commit or branch:
 
     $ set_local_revision $commitOrBranch
 
