@@ -11,7 +11,7 @@ mock==2.0.0
 more-itertools==2.5.0
 netaddr==0.7.19
 pyflakes==1.5.0
-pylint==1.6.5
+pylint==1.8.2
 python-dateutil==2.6.0
 python-slugify==1.2.1
 pytz==2016.10
