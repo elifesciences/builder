@@ -663,9 +663,12 @@ def hostname_struct(stackname):
 #
 #
 
-def project_data_for_stackname(stackname):
+def project_data_for_stackname(stackname, interpolate=False):
     (pname, instance_id) = parse_stackname(stackname)
-    project_data = project.project_data(pname)
+    vals = {
+        'instance': instance_id
+    } if interpolate else {}
+    project_data = project.project_data(pname, format_values=vals)
 
     if 'aws-alt' in project_data and instance_id in project_data['aws-alt']:
         project_data = project.set_project_alt(project_data, 'aws', instance_id)

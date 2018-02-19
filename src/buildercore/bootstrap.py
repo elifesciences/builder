@@ -172,16 +172,22 @@ def update_sqs_stack(stackname, **kwargs):
     context = context_handler.load_context(stackname)
     setup_sqs(stackname, context.get('sqs', {}), pdata['aws']['region'])
 
-def unsub_sqs(stackname, context_sqs, region, dry_run=False):
+def unsub_sqs(stackname, cfn_sqs, region, dry_run=False):
     sublist = core.all_sns_subscriptions(region, stackname)
-    struct = {}
-    for queue_name in context_sqs:
-        subscriptions = context_sqs[queue_name] # ll: [bus-articles--prod, ...]
-        struct[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+    prj_sqs = project_data_for_stackname(stackname, interpolate=True)['aws']['sqs']
+
+    # compare project subscriptions to those actively subscribed to (sublist)
+    unsub_map = {}
+    for queue_name in prj_sqs:
+        subscriptions = prj_sqs[queue_name]['subscriptions'] # ll: [bus-articles--prod, ...]
+        unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+
     if not dry_run:
         sns = core.boto_sns_conn(region)
-        [sns.unsubscribe(sub['TopicArn']) for sub in utils.shallow_flatten(struct.values())]
-    return struct
+        for sub in utils.shallow_flatten(unsub_map.values()):
+            LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
+            sns.unsubscribe(sub['SubscriptionArn'])
+    return unsub_map
 
 def sub_sqs(stackname, context_sqs, region):
     """
