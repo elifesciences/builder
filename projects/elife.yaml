@@ -765,7 +765,7 @@ journal-cms:
                 storage: 24 # GB
             ext:
                 size: 30 # GB
-        drupal844:
+        revisions:
             description: production-like environment.
             rds:
                 type: db.t2.small
