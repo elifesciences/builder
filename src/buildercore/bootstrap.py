@@ -170,14 +170,29 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
 
     # compare project subscriptions to those actively subscribed to (sublist)
     unsub_map = {}
+    permission_map = {}
     for queue_name, subscriptions in new_context.items():
         unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+        permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
 
     if not dry_run:
         sns = core.boto_sns_conn(region)
         for sub in utils.shallow_flatten(unsub_map.values()):
             LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
             sns.unsubscribe(sub['SubscriptionArn'])
+        sqs = core.boto_sqs_conn(region)
+
+        for queue_name, topic_arns in permission_map.items():
+            # not an atomic update, but there's no other way to do it
+            queue = sqs.get_queue(queue_name)
+            policy = json.loads(queue.get_attributes('Policy')['Policy'])
+            def for_unsubbed_topic(statement):
+                return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
+
+            policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy['Statement']))
+
+            LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
+            queue.set_attribute('Policy', json.dumps(policy))
 
     return unsub_map
 
