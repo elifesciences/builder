@@ -491,7 +491,7 @@ def apply_delta(template, delta):
         for title in delta.minus[component]:
             del template[component][title]
 
-#def regenerate_stack_vars(stackname, **more_context):
+# def regenerate_stack_vars(stackname, **more_context):
 #    """returns the current template context and the new context for the given stackname.
 #    use `cfngen.template_delta` to generate a list of changes"""
 #    # fetch context used to build current stack
