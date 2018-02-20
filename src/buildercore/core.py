@@ -80,7 +80,7 @@ def _set_raw_subscription_attribute(sns_connection, subscription_arn):
     """
     params = {
         'AttributeName': 'RawMessageDelivery',
-        'AttributeValue': 'true'
+        'AttributeValue': 'true',
         'SubscriptionArn': subscription_arn
     }
     return sns_connection._make_request('SetSubscriptionAttributes', params)
