@@ -80,7 +80,7 @@ def update_template(stackname):
     LOG.info("Create: %s", pformat(delta.plus))
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
-    utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template')
+    utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template. Notice the delta *only shows changes to the template*, not to the context.')
 
     context_handler.write_context(stackname, context)
 
@@ -95,6 +95,10 @@ def update_template(stackname):
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
         update(stackname)
+
+    if context.get('sqs', {}):
+        bootstrap.update_stack(stackname, service_list=['sqs'])
+
 
 
 @task
