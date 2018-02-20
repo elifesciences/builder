@@ -219,7 +219,7 @@ def sub_sqs(stackname, context_sqs, region):
             sns.set_raw_subscription_attribute(subscription_arn)
 
 def setup_sqs(stackname, context_sqs, region):
-    unsub_sqs(stackname, context_sqs, region)
+    #unsub_sqs(stackname, context_sqs, region)
     sub_sqs(stackname, context_sqs, region)
 
 def setup_s3(stackname, context_s3, region, account_id):
