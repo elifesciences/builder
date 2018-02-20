@@ -164,6 +164,16 @@ def setup_ec2(stackname, context_ec2):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
+def remove_topics_from_sqs_policy(policy, topic_arns):
+    """Removes statements from an SQS policy.
+
+    These statements are created by boto's subscribe_sqs_queue()"""
+
+    def for_unsubbed_topic(statement):
+                return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
+
+    policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy['Statement']))
+    return policy
 
 def unsub_sqs(stackname, new_context, region, dry_run=False):
     sublist = core.all_sns_subscriptions(region, stackname)
@@ -186,15 +196,10 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
             # not an atomic update, but there's no other way to do it
             queue = sqs.get_queue(queue_name)
             policy = json.loads(queue.get_attributes('Policy')['Policy'])
-            def for_unsubbed_topic(statement):
-                return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
-
-            policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy['Statement']))
-
             LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
-            queue.set_attribute('Policy', json.dumps(policy))
+            queue.set_attribute('Policy', json.dumps(remove_topics_from_sqs_policy(policy, topic_arns)))
 
-    return unsub_map
+    return unsub_map, permission_map
 
 def sub_sqs(stackname, context_sqs, region):
     """
