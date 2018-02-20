@@ -72,9 +72,8 @@ def update_template(stackname):
     resources like PublicIP will be inaccessible"""
 
     (pname, _) = core.parse_stackname(stackname)
-    more_context = cfngen.choose_config(stackname)
-
-    context, delta, current_context = cfngen.regenerate_stack(pname, **more_context)
+    more_context = {}
+    context, delta, current_context = cfngen.regenerate_stack(stackname, **more_context)
 
     if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)

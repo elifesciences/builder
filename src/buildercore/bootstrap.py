@@ -24,6 +24,7 @@ from boto.exception import BotoServerError
 from kids.cache import cache as cached
 from buildercore import context_handler, project, utils as core_utils
 from functools import reduce # pylint:disable=redefined-builtin
+import cfngen
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -165,29 +166,19 @@ def setup_ec2(stackname, context_ec2):
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
 
-def update_sqs_stack(stackname, **kwargs):
-    pdata = project_data_for_stackname(stackname)
-    if not pdata['aws']['sqs']:
-        return
-    context = context_handler.load_context(stackname)
-    setup_sqs(stackname, context.get('sqs', {}), pdata['aws']['region'])
-
-def unsub_sqs(stackname, cfn_sqs, region, dry_run=False):
+def unsub_sqs(stackname, new_context, region, dry_run=False):
     sublist = core.all_sns_subscriptions(region, stackname)
-    prj_sqs = project_data_for_stackname(stackname, interpolate=True)['aws']['sqs']
 
     # compare project subscriptions to those actively subscribed to (sublist)
     unsub_map = {}
-    for queue_name in prj_sqs:
-        subscriptions = prj_sqs[queue_name]['subscriptions'] # ll: [bus-articles--prod, ...]
+    for queue_name, subscriptions in new_context.items():
         unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
 
     if not dry_run:
         sns = core.boto_sns_conn(region)
         for sub in utils.shallow_flatten(unsub_map.values()):
             LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
-            subarn = sub['SubscriptionArn']
-            sns.unsubscribe(subarn)
+            sns.unsubscribe(sub['SubscriptionArn'])
 
     return unsub_map
 
@@ -202,12 +193,9 @@ def sub_sqs(stackname, context_sqs, region):
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
 
-    prj_sqs = project_data_for_stackname(stackname, interpolate=True)['aws']['sqs']
-
-    for queue_name, subscriptions in prj_sqs.items():
+    for queue_name, subscriptions in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        subscriptions = subscriptions['subscriptions'] # ll: [bus-articles--prod, ...]
         assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
 
         for topic_name in subscriptions:
@@ -229,8 +217,17 @@ def sub_sqs(stackname, context_sqs, region):
             sns.set_raw_subscription_attribute(subscription_arn)
 
 def setup_sqs(stackname, context_sqs, region):
-    #unsub_sqs(stackname, context_sqs, region)
+    unsub_sqs(stackname, context_sqs, region)
     sub_sqs(stackname, context_sqs, region)
+
+def update_sqs_stack(stackname, **kwargs):
+    current_context, new_context = cfngen.regenerate_stack_vars(stackname)
+    current_context = current_context.get('sqs', {})
+    new_context = new_context.get('sqs', {})
+
+    if new_context or current_context:
+        # stack has/had queues that need to be created/destroyed
+        setup_sqs(stackname, new_context, current_context['project']['aws']['region'])
 
 def setup_s3(stackname, context_s3, region, account_id):
     """

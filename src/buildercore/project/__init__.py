@@ -102,20 +102,11 @@ def project_list(project_locations_list=None):
     "returns a single list of projects, ignoring organization and project data"
     return project_map(project_locations_list).keys()
 
-def project_data(pname, project_locations_list=None, format_values=None):
+def project_data(pname, project_locations_list=None):
     "returns the data for a single project. interpolates {value} strings if `format_values` is non-nil"
     data = project_map(project_locations_list)
     try:
-        pdata = data[pname]
-        if format_values:
-            def fn(x):
-                if isinstance(x, str):
-                    return x.format(**format_values)
-                if isinstance(x, list):
-                    return map(fn, x)
-                return x
-            pdata = utils.nested_dictmap(lambda k, v: (fn(k), fn(v)), pdata)
-        return pdata
+        return data[pname]
     except KeyError:
         raise ValueError("unknown project %r, known projects %r", pname, data.keys())
 
