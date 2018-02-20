@@ -71,7 +71,7 @@ STEADY_CFN_STATUS = [
 # sns
 #
 
-def _set_raw_subscription_attribute(sns_connection, subscription_arn, val=True):
+def _set_raw_subscription_attribute(sns_connection, subscription_arn):
     """
     Works around boto's lack of a SetSubscriptionAttributes call.
 
@@ -80,7 +80,7 @@ def _set_raw_subscription_attribute(sns_connection, subscription_arn, val=True):
     """
     params = {
         'AttributeName': 'RawMessageDelivery',
-        'AttributeValue': 'true' if val else 'false',
+        'AttributeValue': 'true'
         'SubscriptionArn': subscription_arn
     }
     return sns_connection._make_request('SetSubscriptionAttributes', params)

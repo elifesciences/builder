@@ -187,7 +187,6 @@ def unsub_sqs(stackname, cfn_sqs, region, dry_run=False):
         for sub in utils.shallow_flatten(unsub_map.values()):
             LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
             subarn = sub['SubscriptionArn']
-            sns.set_raw_subscription_attribute(subarn, val=False) # necessary? SQS:SendMessage permission still present
             sns.unsubscribe(subarn)
 
     return unsub_map
