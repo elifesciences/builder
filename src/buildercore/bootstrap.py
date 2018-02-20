@@ -170,7 +170,7 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     These statements are created by boto's subscribe_sqs_queue()"""
 
     def for_unsubbed_topic(statement):
-                return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
+        return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
     policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy['Statement']))
     return policy

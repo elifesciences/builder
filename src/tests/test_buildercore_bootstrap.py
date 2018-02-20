@@ -74,8 +74,8 @@ pillar_roots:
             ],
         }
 
-	cleaned = bootstrap.remove_topics_from_sqs_policy(original, ['arn:aws:sns:us-east-1:512686554592:bus-articles--end2end'])
-	self.assertEqual(
+        cleaned = bootstrap.remove_topics_from_sqs_policy(original, ['arn:aws:sns:us-east-1:512686554592:bus-articles--end2end'])
+        self.assertEqual(
             cleaned,
             {
                 'Version': '2008-10-17',
@@ -90,4 +90,4 @@ pillar_roots:
                     },
                 ],
             }
-	)
+        )
