@@ -24,7 +24,6 @@ from boto.exception import BotoServerError
 from kids.cache import cache as cached
 from buildercore import context_handler, project, utils as core_utils
 from functools import reduce # pylint:disable=redefined-builtin
-import cfngen
 
 import logging
 LOG = logging.getLogger(__name__)
