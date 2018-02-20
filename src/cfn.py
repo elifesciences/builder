@@ -73,7 +73,8 @@ def update_template(stackname):
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
-    context, delta, current_context = cfngen.regenerate_stack(stackname, **more_context)
+    current_template = bootstrap.current_template(stackname)
+    context, delta, current_context = cfngen.regenerate_stack(stackname, current_template, **more_context)
 
     if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)

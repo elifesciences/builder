@@ -23,8 +23,7 @@ import re
 from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
-# TODO: remove `bootstrap` to further decoupling
-from . import utils, trop, core, project, context_handler, bootstrap
+from . import utils, trop, core, project, context_handler
 from .utils import ensure
 from .config import STACK_DIR
 
@@ -506,12 +505,11 @@ def apply_delta(template, delta):
 #    pname = core.parse_stackname(stackname)[0]
 #    return current_context, build_context(pname, existing_context=current_context, **more_context)
 
-def regenerate_stack(stackname, **more_context):
+def regenerate_stack(stackname, current_template, **more_context):
    # what is the point of these two lines? it downloads the template body and saves it to disk and never uses it ...
    # It's using the local disk as a cache for the template, rather than calling the API whenever is needed
    # if it was doing something important, it should be it's own function, like `write_cfn_template_to_disk` or whatever
    # as it is, it requires a dependency between cfngen and bootstrap (removed) that shouldn't really exist
-    current_template = bootstrap.current_template(stackname)
     current_context = context_handler.load_context(stackname)
     write_template(stackname, json.dumps(current_template))
     pname = core.project_name_from_stackname(stackname)
