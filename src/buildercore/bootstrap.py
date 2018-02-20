@@ -221,13 +221,12 @@ def setup_sqs(stackname, context_sqs, region):
     sub_sqs(stackname, context_sqs, region)
 
 def update_sqs_stack(stackname, **kwargs):
-    current_context, new_context = cfngen.regenerate_stack_vars(stackname)
+    current_context = context_handler.load_context(stackname)
     current_context_sqs = current_context.get('sqs', {})
-    new_context_sqs = new_context.get('sqs', {})
 
-    if new_context_sqs or current_context_sqs:
-        # stack has/had queues that need to be created/destroyed
-        setup_sqs(stackname, new_context_sqs, current_context['project']['aws']['region'])
+    if current_context_sqs:
+        # stack has/had queues that may need to be created/destroyed
+        setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
 
 def setup_s3(stackname, context_s3, region, account_id):
     """
