@@ -3,12 +3,16 @@
 If you find certain 'types' of tasks accumulating, they might be
 better off in their own module. This module really is for stuff
 that has no home."""
+import os
 from buildercore import core, bootstrap
-from fabric.api import sudo, run, local, task
+from fabric.api import sudo, run, local, task, cd
+from fabric.operations import put as upload, get as download
 from fabric.contrib.console import confirm
-from decorators import echo_output, requires_aws_stack, requires_project, debugtask
+from fabric.contrib.files import exists as remote_file_exists
+from decorators import echo_output, requires_aws_stack, requires_project, requires_aws_project_stack, debugtask
 from buildercore import bakery
 from buildercore.core import stack_conn
+from buildercore.utils import ensure
 import utils
 from buildercore.context_handler import load_context
 
@@ -103,3 +107,19 @@ def remove_minion_key(stackname):
 #
 #
 #
+
+@task
+@requires_aws_project_stack('elife-bot')
+def strip(stackname, pdffile):
+    path, fname = os.path.abspath(pdffile), os.path.basename(pdffile)
+    ensure(os.path.exists(path), "file not found: %s" % path)
+    dest_path = '/home/elife/' + fname
+    with stack_conn(stackname):
+        if not remote_file_exists(dest_path):
+            print "remote file not found, uploading"
+            upload(path, dest_path)
+        with cd('/opt/strip-coverletter'):
+            out_path = '/home/elife/squashed-%s' % fname
+            run('./strip-coverletter.sh %s %s' % (dest_path, out_path))
+        if remote_file_exists(out_path):
+            download(out_path, os.path.basename(out_path))
