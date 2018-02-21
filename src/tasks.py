@@ -3,15 +3,13 @@
 If you find certain 'types' of tasks accumulating, they might be
 better off in their own module. This module really is for stuff
 that has no home."""
-import requests
-from buildercore import core, project, bootstrap
+from buildercore import core, bootstrap
 from fabric.api import sudo, run, local, task
 from fabric.contrib.console import confirm
 from decorators import echo_output, requires_aws_stack, requires_project, debugtask
 from buildercore import bakery
 from buildercore.core import stack_conn
 import utils
-from buildercore.decorators import osissue
 from buildercore.context_handler import load_context
 
 @debugtask
@@ -65,94 +63,6 @@ def _update_syslog(stackname):
         return sudo(cmd)
 
 #
-# LetsEncrypt + ACME client code
-# deprecated. this pair are no longer encouraged.
-#
-
-def acme_enabled(url):
-    "if given url can be hit and it looks like the acme hidden dir exists, return True."
-    url = 'http://' + url + "/.well-known/acme-challenge/" # ll: http://lax.elifesciences.org/.well-known/acme-challenge
-    try:
-        resp = requests.head(url, allow_redirects=False)
-        if 'crm.elifesciences' in url:
-            return resp.status_code == 404 # apache behaves differently to nginx
-        return resp.status_code == 403 # forbidden rather than not found.
-    except (requests.ConnectionError, requests.ConnectTimeout):
-        # couldn't connect for whatever reason
-        return False
-
-@task
-@requires_aws_stack
-@echo_output
-@osissue("*very* useful task. improve with documentation.")
-def fetch_cert(stackname):
-    # NOTE: this was ported from the old builder and won't work with new instances
-    # this isn't a problem because new instances shouldn't be using letsencrypt if
-    # they can avoid it.
-    try:
-        # replicates some logic in builder core
-        pname = core.project_name_from_stackname(stackname)
-        project_data = project.project_data(pname)
-
-        assert 'subdomain' in project_data, "project subdomain not found. quitting"
-
-        instance_id = stackname[len(pname + "-"):]
-        is_prod = instance_id in ['master', 'production']
-
-        # we still have some instances that are the production/master
-        # instances but don't adhere to the naming yet.
-        old_prods = [
-            'elife-ci-2015-11-04',
-        ]
-        if not is_prod and stackname in old_prods:
-            is_prod = True
-
-        hostname_data = core.hostname_struct(stackname)
-        domain_names = [hostname_data['full_hostname']]
-        if is_prod:
-            project_hostname = hostname_data['project_hostname']
-            if acme_enabled(project_hostname):
-                domain_names.append(project_hostname)
-            else:
-                print '* project hostname (%s) doesnt appear to have letsencrypt enabled, ignore' % project_hostname
-
-        print '\nthese hosts will be targeted:'
-        print '* ' + '\n* '.join(domain_names)
-
-        #pillar_data = cfngen.salt_pillar_data(config.PILLAR_DIR)
-        # server = {
-        #    'staging': pillar_data['sys']['webserver']['acme_staging_server'],
-        #    'live': pillar_data['sys']['webserver']['acme_server'],
-        #}
-        server = {
-            'staging': "https://acme-staging.api.letsencrypt.org/directory",
-            'live': "https://acme-v01.api.letsencrypt.org/directory",
-        }
-
-        certtype = utils._pick("certificate type", ['staging', 'live'])
-
-        cmds = [
-            "cd /opt/letsencrypt/",
-            "./fetch-ssl-certs.sh -d %s --server %s" % (" -d ".join(domain_names), server[certtype]),
-            "sudo service nginx reload",
-        ]
-
-        print
-        print 'the following commands will be run:'
-        print ' * ' + '\n * '.join(cmds)
-        print
-
-        if raw_input('enter to continue, ctrl-c to quit') == '':
-            with stack_conn(stackname):
-                return run(" && ".join(cmds))
-
-    except AssertionError as ex:
-        print
-        print "* " + str(ex)
-        print
-        exit(1)
-
-#
 #
 #
 
@@ -189,3 +99,7 @@ def repair_context(stackname):
 @requires_aws_stack
 def remove_minion_key(stackname):
     bootstrap.remove_minion_key(stackname)
+
+#
+#
+#
