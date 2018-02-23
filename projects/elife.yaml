@@ -792,8 +792,10 @@ elife-dashboard:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
-            - 80
-            - 443
+            - 80 # dashboard
+            - 443 # dashboard
+            - 8081 # dashboard_2
+            - 8082 # dashboard_2
     aws-alt:
         standalone:
             # for now a copy of standalone1404
