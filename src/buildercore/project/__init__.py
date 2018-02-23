@@ -103,7 +103,7 @@ def project_list(project_locations_list=None):
     return project_map(project_locations_list).keys()
 
 def project_data(pname, project_locations_list=None):
-    "returns the data for a single project"
+    "returns the data for a single project."
     data = project_map(project_locations_list)
     try:
         return data[pname]

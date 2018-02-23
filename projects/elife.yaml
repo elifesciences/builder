@@ -1702,3 +1702,15 @@ task-adept:
         ec2: false
         s3:
             "{instance}-elife-task-adept":
+
+sample-sqs:
+    description: testing SQS subscriptions
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+        sqs:
+            sample-sqs--{instance}:
+                subscriptions:
+                    - bus-articles--{instance}
+                    - bus-press-packages--{instance}

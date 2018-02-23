@@ -2,6 +2,9 @@ from . import base
 from functools import partial
 from buildercore import utils
 from mock import patch, MagicMock
+import logging
+
+LOG = logging.getLogger(__name__)
 
 class TestBuildercoreUtils(base.BaseCase):
     def setUp(self):
@@ -104,3 +107,35 @@ class TestBuildercoreUtils(base.BaseCase):
         class CustomException(Exception):
             pass
         self.assertRaises(CustomException, utils.ensure, False, "Error message", CustomException)
+
+    def test_nested_dictmap(self):
+        "nested_dictmap transforms a dictionary recursively as expected"
+        vals = {'foo': 'pants', 'bar': 'party'}
+
+        def func(v):
+            return v.format(**vals) if isinstance(v, str) else v
+
+        cases = [
+            # given, expected, fn
+            ({'a': 'b'}, {'a': 'b'}, None), # no function, does nothing
+            ({'a': 'b'}, {'a': 'b'}, lambda k, v: (k, v)), # returns inputs
+            ({'a': 'b'}, {'a': 'b'}, lambda k, v: (LOG.debug(k + v), (k, v))[1]), # side effects
+
+            # keys as well as values are updated
+            ({'a': {'b': {'{foo}': '{bar}'}}}, {'a': {'b': {'pants': 'party'}}}, lambda k, v: (func(k), func(v))),
+        ]
+        for given, expected, fn in cases:
+            self.assertEqual(expected, utils.nested_dictmap(fn, given))
+
+    def test_nested_dictmap_2(self):
+        "nested_dictmap visits replacements too"
+        def fn(k, v):
+            if k == 'a':
+                return k, {'{foo}': v}
+            k = k.format(foo='bar')
+            return k, v
+        cases = [
+            ({'a': 'b'}, {'a': {'bar': 'b'}}, fn),
+        ]
+        for given, expected, func in cases:
+            self.assertEqual(expected, utils.nested_dictmap(func, given))
