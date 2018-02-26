@@ -626,7 +626,7 @@ def delete_stack(stackname):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for AWS to finish deleting stack ...')
-        # TODO: call remove_minion_key()? (from master server)
+        remove_minion_key(stackname)
         keypair.delete_keypair(stackname)
         delete_stack_file(stackname)
         delete_dns(stackname)
