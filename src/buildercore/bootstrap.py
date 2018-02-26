@@ -16,7 +16,7 @@ from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, projec
 from .utils import first, call_while, ensure, subdict, yaml_dump
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
-from fabric.api import sudo, put
+from fabric.api import sudo, put, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from fabric import operations
@@ -458,6 +458,7 @@ def update_stack(stackname, service_list=None, **kwargs):
 
 def upload_master_builder_key(key):
     private_key = "/root/.ssh/id_rsa"
+    LOG.info("upload master builder key to %s", private_key)
     try:
         # NOTE: overwrites any existing master key on machine being updated
         operations.put(local_path=key, remote_path=private_key, use_sudo=True)
@@ -469,9 +470,11 @@ def download_master_builder_key(stackname):
     region = pdata['aws']['region']
     master_stack = core.find_master(region)
     private_key = "/root/.ssh/id_rsa"
+    LOG.info("download master builder key %s:%s", master_stack, private_key)
     fh = StringIO()
     with stack_conn(master_stack):
-        operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
+        with show('exceptions'):
+            operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
     return fh
 
 def download_master_configuration(master_stack):
