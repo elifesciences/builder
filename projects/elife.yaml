@@ -391,11 +391,11 @@ journal:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         ci:
-            type: t2.medium
+            #type: t2.2xlarge
+            type: c4.2xlarge
             ports:
                 - 22
                 - 443
-                - 8443 # local-demo, for Tenon.io to access
         end2end:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:
