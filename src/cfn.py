@@ -53,7 +53,7 @@ def update(stackname, autostart="0", concurrency='serial'):
     instances = _check_want_to_be_running(stackname, strtobool(autostart))
     if not instances:
         return
-    return bootstrap.update_stack(stackname, service_list=[], concurrency=concurrency)
+    return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
 @task
 @timeit
@@ -72,16 +72,16 @@ def update_template(stackname):
     resources like PublicIP will be inaccessible"""
 
     (pname, _) = core.parse_stackname(stackname)
-    more_context = cfngen.choose_config(stackname)
-
-    context, delta, current_context = cfngen.regenerate_stack(pname, **more_context)
+    more_context = {}
+    current_template = bootstrap.current_template(stackname)
+    context, delta, current_context = cfngen.regenerate_stack(stackname, current_template, **more_context)
 
     if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)
     LOG.info("Create: %s", pformat(delta.plus))
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
-    utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template')
+    utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template. Notice the delta *only shows changes to the template*, not to the context.')
 
     context_handler.write_context(stackname, context)
 
@@ -92,15 +92,29 @@ def update_template(stackname):
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
 
+    # TODO: all of the following could possibly be moved
+    # inside bootstrap.update_stack, if it was smart enough
+    # EC2
     if _are_there_existing_servers(context):
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
         update(stackname)
 
+    # SQS
+    if context.get('sqs', {}):
+        bootstrap.update_stack(stackname, service_list=['sqs'])
+
+    # S3
+    if context.get('s3', {}):
+        bootstrap.update_stack(stackname, service_list=['s3'])
+
 
 @task
 def update_master():
-    return bootstrap.update_stack(core.find_master(aws.find_region()))
+    return bootstrap.update_stack(
+        core.find_master(aws.find_region()),
+        service_list=['ec2'] # master-server should be a self-contained EC2 instance
+    )
 
 @requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):

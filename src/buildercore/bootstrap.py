@@ -164,24 +164,42 @@ def setup_ec2(stackname, context_ec2):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
+def remove_topics_from_sqs_policy(policy, topic_arns):
+    """Removes statements from an SQS policy.
 
-def update_sqs_stack(stackname, **kwargs):
-    pdata = project_data_for_stackname(stackname)
-    if not pdata['aws']['sqs']:
-        return
-    context = context_handler.load_context(stackname)
-    setup_sqs(stackname, context.get('sqs', {}), pdata['aws']['region'])
+    These statements are created by boto's subscribe_sqs_queue()"""
 
-def unsub_sqs(stackname, context_sqs, region, dry_run=False):
+    def for_unsubbed_topic(statement):
+        return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
+
+    policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy['Statement']))
+    return policy
+
+def unsub_sqs(stackname, new_context, region, dry_run=False):
     sublist = core.all_sns_subscriptions(region, stackname)
-    struct = {}
-    for queue_name in context_sqs:
-        subscriptions = context_sqs[queue_name] # ll: [bus-articles--prod, ...]
-        struct[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+
+    # compare project subscriptions to those actively subscribed to (sublist)
+    unsub_map = {}
+    permission_map = {}
+    for queue_name, subscriptions in new_context.items():
+        unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+        permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
+
     if not dry_run:
         sns = core.boto_sns_conn(region)
-        [sns.unsubscribe(sub['TopicArn']) for sub in utils.shallow_flatten(struct.values())]
-    return struct
+        for sub in utils.shallow_flatten(unsub_map.values()):
+            LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
+            sns.unsubscribe(sub['SubscriptionArn'])
+        sqs = core.boto_sqs_conn(region)
+
+        for queue_name, topic_arns in permission_map.items():
+            # not an atomic update, but there's no other way to do it
+            queue = sqs.get_queue(queue_name)
+            policy = json.loads(queue.get_attributes('Policy')['Policy'])
+            LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
+            queue.set_attribute('Policy', json.dumps(remove_topics_from_sqs_policy(policy, topic_arns)))
+
+    return unsub_map, permission_map
 
 def sub_sqs(stackname, context_sqs, region):
     """
@@ -194,10 +212,9 @@ def sub_sqs(stackname, context_sqs, region):
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
 
-    for queue_name in context_sqs:
+    for queue_name, subscriptions in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        subscriptions = context_sqs[queue_name] # ll: [bus-articles--prod, ...]
         assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
 
         for topic_name in subscriptions:
@@ -219,8 +236,16 @@ def sub_sqs(stackname, context_sqs, region):
             sns.set_raw_subscription_attribute(subscription_arn)
 
 def setup_sqs(stackname, context_sqs, region):
-    #unsub_sqs(stackname, context_sqs, region)
+    unsub_sqs(stackname, context_sqs, region)
     sub_sqs(stackname, context_sqs, region)
+
+def update_sqs_stack(stackname, **kwargs):
+    current_context = context_handler.load_context(stackname)
+    current_context_sqs = current_context.get('sqs', {})
+
+    if current_context_sqs:
+        # stack has/had queues that may need to be created/destroyed
+        setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
 
 def setup_s3(stackname, context_s3, region, account_id):
     """

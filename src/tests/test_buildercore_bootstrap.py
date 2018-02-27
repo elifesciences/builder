@@ -36,12 +36,58 @@ pillar_roots:
             del context[stackname][1]
 
             actual = bootstrap.unsub_sqs(stackname, context, 'someregion', dry_run=True)
-            expected = {
-                stackname: [{'Endpoint': 'arn:aws:sqs:us-east-1:512686554592:observer--end2end',
-                             'Owner': '512686554592',
-                             'Protocol': 'sqs',
-                             'SubscriptionArn': 'arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end:71f61023-3905-40bb-9f7c-0ce710175212',
-                             'Topic': 'bus-metrics--end2end',
-                             'TopicArn': 'arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end'}]
-            }
+            expected = (
+                {
+                    stackname: [{'Endpoint': 'arn:aws:sqs:us-east-1:512686554592:observer--end2end',
+                                 'Owner': '512686554592',
+                                 'Protocol': 'sqs',
+                                 'SubscriptionArn': 'arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end:71f61023-3905-40bb-9f7c-0ce710175212',
+                                 'Topic': 'bus-metrics--end2end',
+                                 'TopicArn': 'arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end'}]
+                },
+                {
+                    'observer--end2end': ['arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end'],
+                },
+            )
             self.assertEqual(expected, actual)
+
+    def test_remove_topics_from_sqs_policy(self):
+        original = {
+            'Version': '2008-10-17',
+            'Statement': [
+                {
+                    # ...
+                    'Condition': {
+                        'StringLike': {
+                            'aws:SourceArn': 'arn:aws:sns:us-east-1:512686554592:bus-articles--end2end',
+                        },
+                    },
+                },
+                {
+                    # ...
+                    'Condition': {
+                        'StringLike': {
+                            'aws:SourceArn': 'arn:aws:sns:us-east-1:512686554592:bus-press-packages--end2end',
+                        },
+                    },
+                },
+            ],
+        }
+
+        cleaned = bootstrap.remove_topics_from_sqs_policy(original, ['arn:aws:sns:us-east-1:512686554592:bus-articles--end2end'])
+        self.assertEqual(
+            cleaned,
+            {
+                'Version': '2008-10-17',
+                'Statement': [
+                    {
+                        # ...
+                        'Condition': {
+                            'StringLike': {
+                                'aws:SourceArn': 'arn:aws:sns:us-east-1:512686554592:bus-press-packages--end2end',
+                            },
+                        },
+                    },
+                ],
+            }
+        )
