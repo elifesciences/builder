@@ -902,6 +902,22 @@ elife-libraries:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
 
+containers:
+    domain: false
+    subdomain: containers
+    formula-repo: https://github.com/elifesciences/containers-formula
+    aws:
+        type: t2.medium # 4GB of RAM
+        ports:
+            - 22
+        ext:
+            size: 30 # GB
+            type: gp2
+    aws-alt: {}
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        ram: 1024
+
 elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
