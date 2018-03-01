@@ -111,7 +111,7 @@ def remove_minion_key(stackname):
 @task
 @requires_aws_project_stack('elife-bot')
 def strip(stackname, pdffile):
-    path, fname = os.path.abspath(pdffile), os.path.basename(pdffile)
+    path, fname = os.path.abspath(os.path.expanduser(pdffile)), os.path.basename(pdffile)
     ensure(os.path.exists(path), "file not found: %s" % path)
     dest_path = '/home/elife/' + fname
     with stack_conn(stackname):
@@ -120,6 +120,6 @@ def strip(stackname, pdffile):
             upload(path, dest_path)
         with cd('/opt/strip-coverletter'):
             out_path = '/home/elife/squashed-%s' % fname
-            run('./strip-coverletter.sh %s %s' % (dest_path, out_path))
+            run('./strip-coverletter-docker.sh %s %s' % (dest_path, out_path))
         if remote_file_exists(out_path):
             download(out_path, os.path.basename(out_path))
