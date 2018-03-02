@@ -1725,6 +1725,8 @@ exeter-adapter:
     intdomain: False
     aws:
         ec2: false
+        sqs:
+            exeter-adapter--{instance}: {}
     aws-alt:
         continuumtest:
             sqs:
