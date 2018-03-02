@@ -109,12 +109,14 @@ def update_template(stackname):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 
-@task
+# TODO: this task should probably live in `master.py`
+@debugtask # can't be and shouldn't be run by regular user of builder
 def update_master():
-    return bootstrap.update_stack(
-        core.find_master(aws.find_region()),
-        service_list=['ec2'] # master-server should be a self-contained EC2 instance
-    )
+    master_stackname = core.find_master(aws.find_region())
+    bootstrap.update_stack(master_stackname, service_list=[
+        'ec2' # master-server should be a self-contained EC2 instance
+    ])
+    bootstrap.remove_all_orphaned_keys(master_stackname)
 
 @requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
