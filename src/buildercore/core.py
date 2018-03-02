@@ -679,8 +679,8 @@ def ami_name(stackname):
     # elife-api.2015-12-31
     return "%s.%s" % (project_name_from_stackname(stackname), utils.ymd())
 
-def list_dir(stackname, path=None, use_sudo=False):
-    """returns a list of files in a directory (dir_) as absolute paths"""
+def listfiles_remote(stackname, path=None, use_sudo=False):
+    """returns a list of files in a directory at `path` as absolute paths"""
     ensure(path, "path to remote directory required")
     with stack_conn(stackname):
         with hide('output'):
