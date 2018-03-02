@@ -687,6 +687,6 @@ def list_dir(stackname, path=None, use_sudo=False):
             runfn = sudo if use_sudo else run
             path = "%s/*" % path.rstrip("/")
             output = runfn("for i in %s; do echo $i; done" % path)
-            if output == path: # some kind o
+            if output == path: # some kind of bash artifact where it returns `/path/*` when no matches
                 return []
             return output.splitlines()
