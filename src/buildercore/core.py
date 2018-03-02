@@ -13,7 +13,7 @@ from boto import sns
 from boto.exception import BotoServerError
 import boto3
 from contextlib import contextmanager
-from fabric.api import settings, execute, env, parallel, serial
+from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
 from fabric.state import output
 import importlib
@@ -678,3 +678,15 @@ def project_data_for_stackname(stackname):
 def ami_name(stackname):
     # elife-api.2015-12-31
     return "%s.%s" % (project_name_from_stackname(stackname), utils.ymd())
+
+def list_dir(stackname, path=None, use_sudo=False):
+    """returns a list of files in a directory (dir_) as absolute paths"""
+    ensure(path, "path to remote directory required")
+    with stack_conn(stackname):
+        with hide('output'):
+            runfn = sudo if use_sudo else run
+            path = "%s/*" % path.rstrip("/")
+            output = runfn("for i in %s; do echo $i; done" % path)
+            if output == path: # some kind o
+                return []
+            return output.splitlines()

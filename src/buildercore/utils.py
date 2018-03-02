@@ -65,6 +65,14 @@ def complement(pred):
 def splitfilter(func, data):
     return filter(func, data), filter(complement(func), data)
 
+def mkidx(fn, lst):
+    groups = {}
+    for v in lst:
+        key = fn(v)
+        grp = groups.get(key, [])
+        grp.append(v)
+        groups[key] = grp
+    return groups
 
 """
 # NOTE: works, unused.

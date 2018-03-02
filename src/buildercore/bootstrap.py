@@ -608,11 +608,42 @@ def delete_stack_file(stackname):
     return dict(zip(paths, map(_unlink, paths)))
 
 def remove_minion_key(stackname):
+    "removes all keys for all nodes of the given stackname from the master server"
     pdata = project_data_for_stackname(stackname)
     region = pdata['aws']['region']
     master_stack = core.find_master(region)
     with stack_conn(master_stack):
         sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
+
+# TODO: bootstrap.py may not be best place for this
+def master_minion_keys(master_stackname, group_by_stackname=True):
+    "returns a list of paths to minion keys on given master stack, optionally grouped by stackname"
+    # all paths
+    master_stack_key_paths = core.list_dir(master_stackname, "/etc/salt/pki/master/minions/", use_sudo=True)
+    if not group_by_stackname:
+        return master_stack_key_paths
+    # group by stackname. stackname is created by stripping node information off the end.
+    # not all keys will have node information! in these case, we just want the first two 'bits'
+    keyfn = lambda p: "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
+    return utils.mkidx(keyfn, master_stack_key_paths)
+
+# TODO: bootstrap.py may not be best place for this
+def orphaned_keys(master_stackname):
+    "returns a list of paths to keys on the master server that have no corresponding *active* cloudformation stack"
+    region = core.find_region(master_stackname)
+    # ll: ['annotations--continuumtest', 'annotations--end2end', 'annotations--prod', 'anonymous--continuum', 'api-gateway--continuumtest', ...]
+    active_cfn_stack_names = core.active_stack_names(region)
+    grouped_key_files = master_minion_keys(master_stackname)
+    missing_stacks = set(grouped_key_files.keys()).difference(active_cfn_stack_names)
+    missing_paths = utils.subdict(grouped_key_files, missing_stacks)
+    return sorted(utils.shallow_flatten(missing_paths.values()))
+
+# TODO: bootstrap.py may not be best place for this
+def remove_all_orphaned_keys(master_stackname):
+    with stack_conn(master_stackname):
+        for path in orphaned_keys(master_stackname):
+            fname = os.path.basename(path) # prevent accidental deletion of anything not a key
+            sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
 def delete_stack(stackname):
     try:
@@ -626,9 +657,9 @@ def delete_stack(stackname):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for AWS to finish deleting stack ...')
-        remove_minion_key(stackname)
-        keypair.delete_keypair(stackname)
-        delete_stack_file(stackname)
+        # remove_minion_key(stackname) # don't do this. prevents regular users deleting stacks
+        keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)
+        delete_stack_file(stackname) # deletes the local cloudformation template
         delete_dns(stackname)
 
         LOG.info("stack %r deleted", stackname)
