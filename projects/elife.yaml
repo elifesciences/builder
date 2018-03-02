@@ -1728,6 +1728,18 @@ exeter-adapter:
         sqs:
             exeter-adapter--{instance}: {}
     aws-alt:
+        fresh:
+            ec2: false
+        1604:
+            ec2: false
+        1404:
+            ec2: false
+        standalone1604:
+            ec2: false
+        standalone1404:
+            ec2: false
+        standalone:
+            ec2: false
         continuumtest:
             sqs:
                 exeter-adapter--{instance}:
