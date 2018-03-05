@@ -918,7 +918,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCacheParameterGroup']['Properties']
         )
-        self.assertEqual({'Ref':'ElastiCacheParameterGroup'}, data['Resources']['ElastiCache1']['Properties']['CacheParameterGroupName'])
+        self.assertEqual({'Ref': 'ElastiCacheParameterGroup'}, data['Resources']['ElastiCache1']['Properties']['CacheParameterGroupName'])
         # suppressed
         self.assertNotIn('ElastiCache3', data['Resources'].keys())
         self.assertIn('ElastiCacheHost1', data['Outputs'].keys())
@@ -940,7 +940,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCacheParameterGroup2']['Properties']
         )
-        self.assertEqual({'Ref':'ElastiCacheParameterGroup2'}, data['Resources']['ElastiCache2']['Properties']['CacheParameterGroupName'])
+        self.assertEqual({'Ref': 'ElastiCacheParameterGroup2'}, data['Resources']['ElastiCache2']['Properties']['CacheParameterGroupName'])
 
     def test_overrides_scalar(self):
         context = {
