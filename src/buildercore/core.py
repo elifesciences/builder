@@ -13,7 +13,7 @@ from boto import sns
 from boto.exception import BotoServerError
 import boto3
 from contextlib import contextmanager
-from fabric.api import settings, execute, env, parallel, serial
+from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
 from fabric.state import output
 import importlib
@@ -67,6 +67,9 @@ STEADY_CFN_STATUS = [
     'UPDATE_ROLLBACK_COMPLETE',
 ]
 
+#
+# sns
+#
 
 def _set_raw_subscription_attribute(sns_connection, subscription_arn):
     """
@@ -85,6 +88,33 @@ def _set_raw_subscription_attribute(sns_connection, subscription_arn):
 
 sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
 
+def _all_sns_subscriptions(region):
+    conn = boto_sns_conn(region) # boto2
+    token, subs_list = None, []
+    while True:
+        response = conn.get_all_subscriptions(next_token=token)
+        token = response['ListSubscriptionsResponse']['ListSubscriptionsResult']['NextToken']
+        subs_list.extend(response['ListSubscriptionsResponse']['ListSubscriptionsResult']['Subscriptions'])
+        if not token:
+            return subs_list
+
+def all_sns_subscriptions(region, stackname=None):
+    """returns all subscriptions to all sns topics.
+    optionally filtered by subscription endpoints matching given stack"""
+    subs_list = _all_sns_subscriptions(region)
+    if stackname:
+        ''' a subscription looks like:
+        {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
+         u'Owner': u'512686554592',
+         u'Protocol': u'sqs',
+         u'SubscriptionArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
+         u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}'''
+        subs_list = filter(lambda row: row['Endpoint'].endswith(stackname), subs_list)
+
+    # add a 'Topic' key for easier filtering downstream
+    # 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1' => 'bus-articles--substest1'
+    map(lambda row: row.update({'Topic': row['TopicArn'].split(':')[-1]}), subs_list)
+    return subs_list
 
 #
 #
@@ -476,7 +506,7 @@ def _aws_stacks(region, status=None, formatter=stack_triple):
         status = []
     # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
     # use `.describe_stack` on specific stacks only
-    paginator = _boto_cfn_conn(region).get_paginator('list_stacks')
+    paginator = _boto_cfn_conn(region).get_paginator('list_stacks') # boto3
     paginator = paginator.paginate(StackStatusFilter=status)
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
     if formatter:
@@ -636,10 +666,8 @@ def hostname_struct(stackname):
 def project_data_for_stackname(stackname):
     (pname, instance_id) = parse_stackname(stackname)
     project_data = project.project_data(pname)
-
     if 'aws-alt' in project_data and instance_id in project_data['aws-alt']:
         project_data = project.set_project_alt(project_data, 'aws', instance_id)
-
     return project_data
 
 #
@@ -650,3 +678,15 @@ def project_data_for_stackname(stackname):
 def ami_name(stackname):
     # elife-api.2015-12-31
     return "%s.%s" % (project_name_from_stackname(stackname), utils.ymd())
+
+def listfiles_remote(stackname, path=None, use_sudo=False):
+    """returns a list of files in a directory at `path` as absolute paths"""
+    ensure(path, "path to remote directory required")
+    with stack_conn(stackname):
+        with hide('output'):
+            runfn = sudo if use_sudo else run
+            path = "%s/*" % path.rstrip("/")
+            output = runfn("for i in %s; do echo $i; done" % path)
+            if output == path: # some kind of bash artifact where it returns `/path/*` when no matches
+                return []
+            return output.splitlines()

@@ -391,11 +391,11 @@ journal:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         ci:
-            type: t2.medium
+            #type: t2.2xlarge
+            type: c4.2xlarge
             ports:
                 - 22
                 - 443
-                - 8443 # local-demo, for Tenon.io to access
         end2end:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -657,6 +657,9 @@ elife-bot:
                     deletion-policy: delete
                 "{instance}-elife-bot-sessions":
                     deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
         end2end:
             ports:
                 - 22
@@ -668,6 +671,13 @@ elife-bot:
             #            end2end-incoming-queue: {}
             #               #prefix: null
             #               #suffix: null
+        continuumtest:
+            s3:
+                "{instance}-elife-bot":
+                    deletion-policy: delete
+        # temporary: we didn't do this through CloudFormation because the template is too old to be modified successfully
+        #prod:
+        #    type: c5.2xlarge
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
@@ -755,14 +765,14 @@ journal-cms:
                 storage: 24 # GB
             ext:
                 size: 30 # GB
-        performance:
-            description: performance-testing environment. backed by RDS
+        revisions:
+            description: production-like environment.
             rds:
-                type: db.t2.medium
+                type: db.t2.small
                 engine: MySQL
                 version: '5.7'
-                multi-az: true
-                storage: 12 # GB
+                storage: 24 # GB
+                backup-retention: 2 # days
             ext:
                 size: 30 # GB
     vagrant:
@@ -782,8 +792,10 @@ elife-dashboard:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
-            - 80
-            - 443
+            - 80 # dashboard
+            - 443 # dashboard
+            - 8081 # dashboard_2
+            - 8082 # dashboard_2
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -886,6 +898,22 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
 
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        ram: 1024
+
+containers:
+    domain: false
+    subdomain: containers
+    formula-repo: https://github.com/elifesciences/containers-formula
+    aws:
+        type: t2.medium # 4GB of RAM
+        ports:
+            - 22
+        ext:
+            size: 30 # GB
+            type: gp2
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
@@ -1252,7 +1280,7 @@ observer:
             observer--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-                    - bus-metrics--{instance}
+                    - bus-press-packages--{instance}
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -1679,3 +1707,47 @@ elife-ink:
         ram: 4096
         ports:
             1223: 80
+
+
+task-adept:
+    description: production data dumps from TaskAdept
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+        s3:
+            "{instance}-elife-task-adept":
+
+exeter-adapter:
+    description: Exeter history API integration
+    domain: false
+    intdomain: False
+    aws:
+        ec2: false
+        sqs:
+            exeter-adapter--{instance}: {}
+    aws-alt:
+        fresh:
+            ec2: false
+        1604:
+            ec2: false
+        1404:
+            ec2: false
+        standalone1604:
+            ec2: false
+        standalone1404:
+            ec2: false
+        standalone:
+            ec2: false
+        continuumtest:
+            sqs:
+                exeter-adapter--{instance}:
+                    subscriptions:
+                        - elife-bot-event-property--continuumtest
+        prod:
+            sqs:
+                exeter-adapter--{instance}:
+                    subscriptions:
+                        - elife-bot-event-property--prod
+

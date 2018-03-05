@@ -36,6 +36,19 @@ def dictfilter(func, ddict):
 def dictmap(fn, ddict):
     return {key: fn(key, val) for key, val in ddict.items()}
 
+def nested_dictmap(fn, ddict):
+    "`fn` should accept both key and value and return a new key and new value. dictionary values will have `fn` applied to them in turn"
+    if not fn:
+        return ddict
+    for key, val in ddict.items():
+        new_key, new_val = fn(key, val)
+        if isinstance(new_val, dict):
+            new_val = nested_dictmap(fn, new_val)
+        if key != new_key:
+            del ddict[key] # if the key is modified, we don't want it hanging around
+        ddict[new_key] = new_val # always replace value
+    return ddict
+
 def subdict(ddict, key_list):
     return {k: v for k, v in ddict.items() if k in key_list}
 
@@ -52,6 +65,14 @@ def complement(pred):
 def splitfilter(func, data):
     return filter(func, data), filter(complement(func), data)
 
+def mkidx(fn, lst):
+    groups = {}
+    for v in lst:
+        key = fn(v)
+        grp = groups.get(key, [])
+        grp.append(v)
+        groups[key] = grp
+    return groups
 
 """
 # NOTE: works, unused.

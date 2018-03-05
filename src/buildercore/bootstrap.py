@@ -16,11 +16,11 @@ from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, projec
 from .utils import first, call_while, ensure, subdict, yaml_dump
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
-from fabric.api import sudo, put
+from fabric.api import sudo, put, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from fabric import operations
-from boto.exception import BotoServerError
+from boto.exception import BotoServerError, SQSError
 from kids.cache import cache as cached
 from buildercore import context_handler, project, utils as core_utils
 from functools import reduce # pylint:disable=redefined-builtin
@@ -164,15 +164,56 @@ def setup_ec2(stackname, context_ec2):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
+def remove_topics_from_sqs_policy(policy, topic_arns):
+    """Removes statements from an SQS policy.
 
-def update_sqs_stack(stackname, **kwargs):
-    pdata = project_data_for_stackname(stackname)
-    if not pdata['aws']['sqs']:
-        return
-    context = context_handler.load_context(stackname)
-    setup_sqs(stackname, context.get('sqs', {}), pdata['aws']['region'])
+    These statements are created by boto's subscribe_sqs_queue()"""
 
-def setup_sqs(stackname, context_sqs, region):
+    def for_unsubbed_topic(statement):
+        return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
+
+    policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy.get('Statement', [])))
+    if policy['Statement']:
+        return policy
+    else:
+        return None
+
+def unsub_sqs(stackname, new_context, region, dry_run=False):
+    sublist = core.all_sns_subscriptions(region, stackname)
+
+    # compare project subscriptions to those actively subscribed to (sublist)
+    unsub_map = {}
+    permission_map = {}
+    for queue_name, subscriptions in new_context.items():
+        unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+        permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
+
+    if not dry_run:
+        sns = core.boto_sns_conn(region)
+        for sub in utils.shallow_flatten(unsub_map.values()):
+            LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
+            sns.unsubscribe(sub['SubscriptionArn'])
+        sqs = core.boto_sqs_conn(region)
+
+        for queue_name, topic_arns in permission_map.items():
+            # not an atomic update, but there's no other way to do it
+            queue = sqs.get_queue(queue_name)
+            attributes = queue.get_attributes('Policy')
+            policy = json.loads(attributes.get('Policy', '{}'))
+            LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
+            new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
+            if new_policy:
+                new_policy_dump = json.dumps(new_policy)
+                try:
+                    queue.set_attribute('Policy', new_policy_dump)
+                except SQSError:
+                    LOG.exception("Policy: %s", new_policy_dump)
+            else:
+                queue.set_attribute('Policy', '')
+
+    return unsub_map, permission_map
+
+def sub_sqs(stackname, context_sqs, region):
     """
     Connects SQS queues created by Cloud Formation to SNS topics where
     necessary, adding both the subscription and the IAM policy to let the SNS
@@ -182,13 +223,15 @@ def setup_sqs(stackname, context_sqs, region):
 
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
-    for queue_name in context_sqs:
+
+    for queue_name, subscriptions in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        subscriptions = context_sqs[queue_name]
         assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
+
         for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
+
             # idempotent, works as lookup
             # risky, may subscribe to a typo-filled topic name like 'aarticles'
             # there is no boto method to lookup a topic
@@ -200,8 +243,21 @@ def setup_sqs(stackname, context_sqs, region):
             assert 'SubscribeResult' in response['SubscribeResponse']
             assert 'SubscriptionArn' in response['SubscribeResponse']['SubscribeResult']
             subscription_arn = response['SubscribeResponse']['SubscribeResult']['SubscriptionArn']
+            # this method is not part of boto. see `buildercore.core._set_raw_subscription_attribute`
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
+
+def setup_sqs(stackname, context_sqs, region):
+    unsub_sqs(stackname, context_sqs, region)
+    sub_sqs(stackname, context_sqs, region)
+
+def update_sqs_stack(stackname, **kwargs):
+    current_context = context_handler.load_context(stackname)
+    current_context_sqs = current_context.get('sqs', {})
+
+    if current_context_sqs:
+        # stack has/had queues that may need to be created/destroyed
+        setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
 
 def setup_s3(stackname, context_s3, region, account_id):
     """
@@ -414,6 +470,7 @@ def update_stack(stackname, service_list=None, **kwargs):
 
 def upload_master_builder_key(key):
     private_key = "/root/.ssh/id_rsa"
+    LOG.info("upload master builder key to %s", private_key)
     try:
         # NOTE: overwrites any existing master key on machine being updated
         operations.put(local_path=key, remote_path=private_key, use_sudo=True)
@@ -425,9 +482,11 @@ def download_master_builder_key(stackname):
     region = pdata['aws']['region']
     master_stack = core.find_master(region)
     private_key = "/root/.ssh/id_rsa"
+    LOG.info("download master builder key %s:%s", master_stack, private_key)
     fh = StringIO()
     with stack_conn(master_stack):
-        operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
+        with show('exceptions'):
+            operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
     return fh
 
 def download_master_configuration(master_stack):
@@ -564,11 +623,42 @@ def delete_stack_file(stackname):
     return dict(zip(paths, map(_unlink, paths)))
 
 def remove_minion_key(stackname):
+    "removes all keys for all nodes of the given stackname from the master server"
     pdata = project_data_for_stackname(stackname)
     region = pdata['aws']['region']
     master_stack = core.find_master(region)
     with stack_conn(master_stack):
         sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
+
+# TODO: bootstrap.py may not be best place for this
+def master_minion_keys(master_stackname, group_by_stackname=True):
+    "returns a list of paths to minion keys on given master stack, optionally grouped by stackname"
+    # all paths
+    master_stack_key_paths = core.listfiles_remote(master_stackname, "/etc/salt/pki/master/minions/", use_sudo=True)
+    if not group_by_stackname:
+        return master_stack_key_paths
+    # group by stackname. stackname is created by stripping node information off the end.
+    # not all keys will have node information! in these case, we just want the first two 'bits'
+    keyfn = lambda p: "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
+    return utils.mkidx(keyfn, master_stack_key_paths)
+
+# TODO: bootstrap.py may not be best place for this
+def orphaned_keys(master_stackname):
+    "returns a list of paths to keys on the master server that have no corresponding *active* cloudformation stack"
+    region = core.find_region(master_stackname)
+    # ll: ['annotations--continuumtest', 'annotations--end2end', 'annotations--prod', 'anonymous--continuum', 'api-gateway--continuumtest', ...]
+    active_cfn_stack_names = core.active_stack_names(region)
+    grouped_key_files = master_minion_keys(master_stackname)
+    missing_stacks = set(grouped_key_files.keys()).difference(active_cfn_stack_names)
+    missing_paths = utils.subdict(grouped_key_files, missing_stacks)
+    return sorted(utils.shallow_flatten(missing_paths.values()))
+
+# TODO: bootstrap.py may not be best place for this
+def remove_all_orphaned_keys(master_stackname):
+    with stack_conn(master_stackname):
+        for path in orphaned_keys(master_stackname):
+            fname = os.path.basename(path) # prevent accidental deletion of anything not a key
+            sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
 def delete_stack(stackname):
     try:
@@ -582,9 +672,9 @@ def delete_stack(stackname):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for AWS to finish deleting stack ...')
-        # TODO: call remove_minion_key()? (from master server)
-        keypair.delete_keypair(stackname)
-        delete_stack_file(stackname)
+        # remove_minion_key(stackname) # don't do this. prevents regular users deleting stacks
+        keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)
+        delete_stack_file(stackname) # deletes the local cloudformation template
         delete_dns(stackname)
 
         LOG.info("stack %r deleted", stackname)

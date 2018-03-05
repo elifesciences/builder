@@ -189,3 +189,8 @@ def repair_context(stackname):
 @requires_aws_stack
 def remove_minion_key(stackname):
     bootstrap.remove_minion_key(stackname)
+
+@task
+@requires_aws_stack
+def download_master_builder_key(stackname):
+    print "Key is %s characters long" % len(str(bootstrap.download_master_builder_key(stackname)))

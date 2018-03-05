@@ -116,7 +116,7 @@ def requires_steady_stack(func):
             return
         stackname = first(args) or os.environ.get('INSTANCE')
         if not stackname or stackname not in keys:
-            stackname = utils._pick("stack", keys, helpfn=helpfn, default_file=deffile('.active-stack'))
+            stackname = utils._pick("stack", sorted(keys), helpfn=helpfn, default_file=deffile('.active-stack'))
         return func(stackname, *args[1:], **kwargs)
     return call
 
