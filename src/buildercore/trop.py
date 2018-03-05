@@ -771,6 +771,22 @@ def elasticache_security_group(context):
                           ingress_ports,
                           "ElastiCache security group")
 
+def elasticache_default_parameter_group(context):
+    return elasticache.ParameterGroup(
+        ELASTICACHE_PARAMETER_GROUP_TITLE,
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s' % context['stackname'],
+        Properties=context['elasticache']['configuration']
+    )
+
+def elasticache_overridden_parameter_group(context, cluster_context, cluster):
+    return elasticache.ParameterGroup(
+        "%s%d" % (ELASTICACHE_PARAMETER_GROUP_TITLE, cluster),
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s cluster %d' % (context['stackname'], cluster),
+        Properties=cluster_context['configuration']
+    )
+
 def render_elasticache(context, template):
     ensure(context['elasticache']['engine'] == 'redis', 'We only support Redis as ElastiCache engine at this time')
 
@@ -784,12 +800,7 @@ def render_elasticache(context, template):
     )
     template.add_resource(subnet_group)
 
-    parameter_group = elasticache.ParameterGroup(
-        ELASTICACHE_PARAMETER_GROUP_TITLE,
-        CacheParameterGroupFamily='redis2.8',
-        Description='ElastiCache parameter group for %s' % context['stackname'],
-        Properties=context['elasticache']['configuration']
-    )
+    parameter_group = elasticache_default_parameter_group(context)
     template.add_resource(parameter_group)
 
     suppressed = context['elasticache'].get('suppressed', [])
@@ -798,15 +809,9 @@ def render_elasticache(context, template):
             continue
 
         cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az', 'configuration'])
-        print cluster_context['configuration']
 
         if cluster_context['configuration'] != context['elasticache']['configuration']:
-            cluster_parameter_group = elasticache.ParameterGroup(
-                "%s%d" % (ELASTICACHE_PARAMETER_GROUP_TITLE, cluster),
-                CacheParameterGroupFamily='redis2.8',
-                Description='ElastiCache parameter group for %s cluster %d' % (context['stackname'], cluster),
-                Properties=cluster_context['configuration']
-            )
+            cluster_parameter_group = elasticache_overridden_parameter_group(context, cluster_context, cluster)
             template.add_resource(cluster_parameter_group)
             cluster_cache_parameter_group_name = Ref(cluster_parameter_group)
         else:
