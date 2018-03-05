@@ -942,6 +942,15 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertEqual({'Ref': 'ElastiCacheParameterGroup2'}, data['Resources']['ElastiCache2']['Properties']['CacheParameterGroupName'])
 
+    def test_fully_overridden_elasticache_clusters_does_not_have_default_parameter_group(self):
+        extra = {
+            'stackname': 'project-with-fully-overridden-elasticaches--prod',
+        }
+        context = cfngen.build_context('project-with-fully-overridden-elasticaches', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertNotIn('ElastiCacheParameterGroup', data['Resources'].keys())
+
     def test_overrides_scalar(self):
         context = {
             'elasticache': {

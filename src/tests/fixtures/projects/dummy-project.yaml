@@ -445,3 +445,24 @@ project-with-multiple-elasticaches:
                     type: cache.t2.medium
                     configuration:
                         maxmemory-policy: volatile-ttl
+
+project-with-fully-overridden-elasticaches:
+    domain: False
+    intdomain: False
+    subdomain: www
+    aws:
+        ec2: false
+        ports:
+            - 80
+        elasticache:
+            engine: redis
+            clusters: 2
+            configuration:
+                maxmemory-policy: volatile-lru
+            overrides:
+                1:
+                    configuration:
+                        maxmemory-policy: volatile-ttl
+                2: 
+                    configuration:
+                        maxmemory-policy: volatile-ttl

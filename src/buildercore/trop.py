@@ -801,9 +801,9 @@ def render_elasticache(context, template):
     template.add_resource(subnet_group)
 
     parameter_group = elasticache_default_parameter_group(context)
-    template.add_resource(parameter_group)
 
     suppressed = context['elasticache'].get('suppressed', [])
+    default_parameter_group_use = False
     for cluster in range(1, context['elasticache']['clusters'] + 1):
         if cluster in suppressed:
             continue
@@ -816,6 +816,7 @@ def render_elasticache(context, template):
             cluster_cache_parameter_group_name = Ref(cluster_parameter_group)
         else:
             cluster_cache_parameter_group_name = Ref(parameter_group)
+            default_parameter_group_use = True
 
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
@@ -837,6 +838,9 @@ def render_elasticache(context, template):
             mkoutput("ElastiCachePort%s" % cluster, "The port number on which the cache accepts connections", (cluster_title, "RedisEndpoint.Port")),
         ]
         map(template.add_output, outputs)
+
+    if default_parameter_group_use:
+        template.add_resource(parameter_group)
 
 def render(context):
     template = Template()
