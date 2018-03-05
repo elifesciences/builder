@@ -771,7 +771,6 @@ def elasticache_security_group(context):
                           ingress_ports,
                           "ElastiCache security group")
 
-
 def render_elasticache(context, template):
     ensure(context['elasticache']['engine'] == 'redis', 'We only support Redis as ElastiCache engine at this time')
 
@@ -798,13 +797,26 @@ def render_elasticache(context, template):
         if cluster in suppressed:
             continue
 
-        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az'])
+        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az', 'configuration'])
+        print cluster_context['configuration']
+
+        if cluster_context['configuration'] != context['elasticache']['configuration']:
+            cluster_parameter_group = elasticache.ParameterGroup(
+                "%s%d" % (ELASTICACHE_PARAMETER_GROUP_TITLE, cluster),
+                CacheParameterGroupFamily='redis2.8',
+                Description='ElastiCache parameter group for %s cluster %d' % (context['stackname'], cluster),
+                Properties=cluster_context['configuration']
+            )
+            template.add_resource(cluster_parameter_group)
+            cluster_cache_parameter_group_name = Ref(cluster_parameter_group)
+        else:
+            cluster_cache_parameter_group_name = Ref(parameter_group)
 
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
             cluster_title,
             CacheNodeType=cluster_context['type'],
-            CacheParameterGroupName=Ref(parameter_group),
+            CacheParameterGroupName=cluster_cache_parameter_group_name,
             CacheSubnetGroupName=Ref(subnet_group),
             Engine='redis',
             EngineVersion=cluster_context['version'],

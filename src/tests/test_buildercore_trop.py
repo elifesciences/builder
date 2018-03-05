@@ -907,6 +907,18 @@ class TestBuildercoreTrop(base.BaseCase):
         data = self._parse_json(cfn_template)
         self.assertIn('ElastiCache1', data['Resources'].keys())
         self.assertIn('ElastiCache2', data['Resources'].keys())
+        # default parameter group
+        self.assertEqual(
+            {
+                'CacheParameterGroupFamily': 'redis2.8',
+                'Description': 'ElastiCache parameter group for project-with-multiple-elasticaches--prod',
+                'Properties': {
+                    'maxmemory-policy': 'volatile-lru',
+                },
+            },
+            data['Resources']['ElastiCacheParameterGroup']['Properties']
+        )
+        self.assertEqual({'Ref':'ElastiCacheParameterGroup'}, data['Resources']['ElastiCache1']['Properties']['CacheParameterGroupName'])
         # suppressed
         self.assertNotIn('ElastiCache3', data['Resources'].keys())
         self.assertIn('ElastiCacheHost1', data['Outputs'].keys())
@@ -918,6 +930,17 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertNotIn('ElastiCachePort3', data['Outputs'].keys())
         # overridden
         self.assertEqual('cache.t2.medium', data['Resources']['ElastiCache2']['Properties']['CacheNodeType'])
+        self.assertEqual(
+            {
+                'CacheParameterGroupFamily': 'redis2.8',
+                'Description': 'ElastiCache parameter group for project-with-multiple-elasticaches--prod cluster 2',
+                'Properties': {
+                    'maxmemory-policy': 'volatile-ttl',
+                },
+            },
+            data['Resources']['ElastiCacheParameterGroup2']['Properties']
+        )
+        self.assertEqual({'Ref':'ElastiCacheParameterGroup2'}, data['Resources']['ElastiCache2']['Properties']['CacheParameterGroupName'])
 
     def test_overrides_scalar(self):
         context = {

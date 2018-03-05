@@ -437,7 +437,11 @@ project-with-multiple-elasticaches:
         elasticache:
             engine: redis
             clusters: 3
+            configuration:
+                maxmemory-policy: volatile-lru
             suppressed: [3]
             overrides:
                 2: 
                     type: cache.t2.medium
+                    configuration:
+                        maxmemory-policy: volatile-ttl
