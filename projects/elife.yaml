@@ -526,9 +526,6 @@ journal:
                             - Referer
                         cookies:
                             - journal
-        cachetest:
-            elasticache:
-                engine: redis
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
