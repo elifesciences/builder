@@ -135,7 +135,7 @@ defaults:
                 - subnet-c4033af8 # elife-cache-subnet-2
             version: "2.8.24" # closest to builder-base-formula redis.sls
             configuration:
-                maxmemory-policy: volatile-lru
+                maxmemory-policy: volatile-ttl
             clusters: 1
     aws-alt:
         fresh:
@@ -404,6 +404,9 @@ journal:
                 engine: redis
                 clusters: 2
                 overrides:
+                    1:
+                        configuration:
+                            maxmemory-policy: volatile-lru
                     2:
                         type: cache.t2.micro
             elb:
