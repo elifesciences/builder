@@ -1719,14 +1719,35 @@ task-adept:
         s3:
             "{instance}-elife-task-adept":
 
-sample-sqs:
-    description: testing SQS subscriptions
-    domain: null
-    intdomain: null
+exeter-adapter:
+    description: Exeter history API integration
+    domain: false
+    intdomain: False
     aws:
         ec2: false
         sqs:
-            sample-sqs--{instance}:
-                subscriptions:
-                    - bus-articles--{instance}
-                    - bus-press-packages--{instance}
+            exeter-adapter--{instance}: {}
+    aws-alt:
+        fresh:
+            ec2: false
+        1604:
+            ec2: false
+        1404:
+            ec2: false
+        standalone1604:
+            ec2: false
+        standalone1404:
+            ec2: false
+        standalone:
+            ec2: false
+        continuumtest:
+            sqs:
+                exeter-adapter--{instance}:
+                    subscriptions:
+                        - elife-bot-event-property--continuumtest
+        prod:
+            sqs:
+                exeter-adapter--{instance}:
+                    subscriptions:
+                        - elife-bot-event-property--prod
+

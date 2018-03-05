@@ -91,3 +91,21 @@ pillar_roots:
                 ],
             }
         )
+
+    def test_remove_all_topics_from_sqs_policy(self):
+        original = {
+            'Version': '2008-10-17',
+            'Statement': [
+                {
+                    # ...
+                    'Condition': {
+                        'StringLike': {
+                            'aws:SourceArn': 'arn:aws:sns:us-east-1:512686554592:bus-articles--end2end',
+                        },
+                    },
+                },
+            ],
+        }
+
+        cleaned = bootstrap.remove_topics_from_sqs_policy(original, ['arn:aws:sns:us-east-1:512686554592:bus-articles--end2end'])
+        self.assertIsNone(cleaned)

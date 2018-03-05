@@ -20,7 +20,7 @@ from fabric.api import sudo, put, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from fabric import operations
-from boto.exception import BotoServerError
+from boto.exception import BotoServerError, SQSError
 from kids.cache import cache as cached
 from buildercore import context_handler, project, utils as core_utils
 from functools import reduce # pylint:disable=redefined-builtin
@@ -172,8 +172,11 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     def for_unsubbed_topic(statement):
         return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
-    policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy['Statement']))
-    return policy
+    policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy.get('Statement', [])))
+    if policy['Statement']:
+        return policy
+    else:
+        return None
 
 def unsub_sqs(stackname, new_context, region, dry_run=False):
     sublist = core.all_sns_subscriptions(region, stackname)
@@ -195,9 +198,18 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
         for queue_name, topic_arns in permission_map.items():
             # not an atomic update, but there's no other way to do it
             queue = sqs.get_queue(queue_name)
-            policy = json.loads(queue.get_attributes('Policy')['Policy'])
+            attributes = queue.get_attributes('Policy')
+            policy = json.loads(attributes.get('Policy', '{}'))
             LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
-            queue.set_attribute('Policy', json.dumps(remove_topics_from_sqs_policy(policy, topic_arns)))
+            new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
+            if new_policy:
+                new_policy_dump = json.dumps(new_policy)
+                try:
+                    queue.set_attribute('Policy', new_policy_dump)
+                except SQSError:
+                    LOG.exception("Policy: %s", new_policy_dump)
+            else:
+                queue.set_attribute('Policy', '')
 
     return unsub_map, permission_map
 
