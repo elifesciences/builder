@@ -404,13 +404,8 @@ journal:
                 engine: redis
                 clusters: 2
                 overrides:
-                    1:
-                        configuration:
-                            maxmemory-policy: volatile-ttl
                     2:
                         type: cache.t2.micro
-                        configuration:
-                            maxmemory-policy: volatile-ttl
             elb:
                 stickiness:
                     type: cookie
@@ -453,13 +448,6 @@ journal:
                 engine: redis
                 type: cache.t2.micro
                 clusters: 2
-                overrides:
-                    1:
-                        configuration:
-                            maxmemory-policy: volatile-ttl
-                    2:
-                        configuration:
-                            maxmemory-policy: volatile-ttl
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -495,12 +483,7 @@ journal:
                 type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
                 clusters: 2
                 overrides:
-                    1:
-                        configuration:
-                            maxmemory-policy: volatile-ttl
                     2:
-                        configuration:
-                            maxmemory-policy: volatile-ttl
                         type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
             elb:
                 stickiness:
