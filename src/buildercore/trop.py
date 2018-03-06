@@ -771,6 +771,21 @@ def elasticache_security_group(context):
                           ingress_ports,
                           "ElastiCache security group")
 
+def elasticache_default_parameter_group(context):
+    return elasticache.ParameterGroup(
+        ELASTICACHE_PARAMETER_GROUP_TITLE,
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s' % context['stackname'],
+        Properties=context['elasticache']['configuration']
+    )
+
+def elasticache_overridden_parameter_group(context, cluster_context, cluster):
+    return elasticache.ParameterGroup(
+        "%s%d" % (ELASTICACHE_PARAMETER_GROUP_TITLE, cluster),
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s cluster %d' % (context['stackname'], cluster),
+        Properties=cluster_context['configuration']
+    )
 
 def render_elasticache(context, template):
     ensure(context['elasticache']['engine'] == 'redis', 'We only support Redis as ElastiCache engine at this time')
@@ -785,26 +800,29 @@ def render_elasticache(context, template):
     )
     template.add_resource(subnet_group)
 
-    parameter_group = elasticache.ParameterGroup(
-        ELASTICACHE_PARAMETER_GROUP_TITLE,
-        CacheParameterGroupFamily='redis2.8',
-        Description='ElastiCache parameter group for %s' % context['stackname'],
-        Properties=context['elasticache']['configuration']
-    )
-    template.add_resource(parameter_group)
+    parameter_group = elasticache_default_parameter_group(context)
 
     suppressed = context['elasticache'].get('suppressed', [])
+    default_parameter_group_use = False
     for cluster in range(1, context['elasticache']['clusters'] + 1):
         if cluster in suppressed:
             continue
 
-        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az'])
+        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az', 'configuration'])
+
+        if cluster_context['configuration'] != context['elasticache']['configuration']:
+            cluster_parameter_group = elasticache_overridden_parameter_group(context, cluster_context, cluster)
+            template.add_resource(cluster_parameter_group)
+            cluster_cache_parameter_group_name = Ref(cluster_parameter_group)
+        else:
+            cluster_cache_parameter_group_name = Ref(parameter_group)
+            default_parameter_group_use = True
 
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
             cluster_title,
             CacheNodeType=cluster_context['type'],
-            CacheParameterGroupName=Ref(parameter_group),
+            CacheParameterGroupName=cluster_cache_parameter_group_name,
             CacheSubnetGroupName=Ref(subnet_group),
             Engine='redis',
             EngineVersion=cluster_context['version'],
@@ -820,6 +838,9 @@ def render_elasticache(context, template):
             mkoutput("ElastiCachePort%s" % cluster, "The port number on which the cache accepts connections", (cluster_title, "RedisEndpoint.Port")),
         ]
         map(template.add_output, outputs)
+
+    if default_parameter_group_use:
+        template.add_resource(parameter_group)
 
 def render(context):
     template = Template()
