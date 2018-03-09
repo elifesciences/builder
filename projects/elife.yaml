@@ -441,8 +441,6 @@ journal:
                             - Referer
                         cookies:
                             - journal
-                #logging:
-                #    bucket: elife-cloudfront-logs
         continuumtest:
             elasticache:
                 engine: redis
@@ -523,6 +521,8 @@ journal:
                             - Referer
                         cookies:
                             - journal
+                logging:
+                    bucket: elife-cloudfront-logs
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
