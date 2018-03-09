@@ -182,6 +182,10 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
         ec2_instances = [i for i in all_ec2_instances if i.state == state]
     else:
         ec2_instances = all_ec2_instances
+
+    # multiple instances are sorted by node asc
+    ec2_instances = sorted(ec2_instances, key=lambda ec2inst: ec2inst.tags.get('Node', 0))
+
     LOG.debug("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
@@ -248,11 +252,16 @@ def _ec2_connection_params(stackname, username, **kwargs):
     return params
 
 @contextmanager
-def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
+def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     if 'user' in kwargs:
         LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
 
-    data = stack_data(stackname, ensure_single_instance=True)[0]
+    data = stack_data(stackname, ensure_single_instance=False)
+    ensure(len(data) == 1 or node, "stack is clustered and no node specified")
+    if node:
+        ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
+        node = int(node) - 1 # decrement to a zero-based value
+    data = data[node or 0] # data is ordered by node
     public_ip = data['ip_address']
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
