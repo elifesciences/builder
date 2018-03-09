@@ -847,7 +847,14 @@ elife-api:
             - 22
             - 80
             - 443
-    aws-alt: {}
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
