@@ -847,6 +847,7 @@ elife-api:
             - 22
             - 80
             - 443
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
