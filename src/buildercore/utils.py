@@ -11,6 +11,9 @@ from more_itertools import unique_everseen
 import logging
 LOG = logging.getLogger(__name__)
 
+def identity(x):
+    return x
+
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
     return [item for sublist in lst for item in sublist]

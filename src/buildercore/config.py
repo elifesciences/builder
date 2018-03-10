@@ -27,11 +27,15 @@ class FabricException(Exception):
 env.abort_exception = FabricException
 
 
+ENVS = [
+    'ci', 'end2end', 'prod', 'continuumtest',
+    'demo', 'continuumtestpreview', 'preview'
+]
+
 # dirs are relative
 # paths are absolute
 # a file is an absolute path to a file
 # filenames are names of files without any other context
-
 
 # these users should probably be specified in the project/org config file
 # as 'defaults'. deploy user especially
