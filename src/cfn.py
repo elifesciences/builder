@@ -295,7 +295,7 @@ def _interactive_ssh(command):
 
 @task
 @requires_aws_stack
-def download_file(stackname, path, destination='.', allow_missing="False", use_bootstrap_user="False"):
+def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):
     """
     Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
 
@@ -306,7 +306,7 @@ def download_file(stackname, path, destination='.', allow_missing="False", use_b
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
     allow_missing, use_bootstrap_user = map(strtobool, [allow_missing, use_bootstrap_user])
-    with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER):
+    with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
         if allow_missing and not files.exists(path):
             return # skip download
         get(path, destination, use_sudo=True)
