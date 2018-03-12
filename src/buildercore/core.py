@@ -103,12 +103,12 @@ def all_sns_subscriptions(region, stackname=None):
     optionally filtered by subscription endpoints matching given stack"""
     subs_list = _all_sns_subscriptions(region)
     if stackname:
-        ''' a subscription looks like:
-        {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
-         u'Owner': u'512686554592',
-         u'Protocol': u'sqs',
-         u'SubscriptionArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
-         u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}'''
+        # a subscription looks like:
+        # {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
+        #  u'Owner': u'512686554592',
+        #  u'Protocol': u'sqs',
+        #  u'SubscriptionArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
+        #  u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}
         subs_list = filter(lambda row: row['Endpoint'].endswith(stackname), subs_list)
 
     # add a 'Topic' key for easier filtering downstream
@@ -163,8 +163,7 @@ def connect_aws_with_pname(pname, service, with_boto3=False):
     LOG.debug('connecting to a %s instance in region %s', pname, region)
     if with_boto3:
         return boto3.client('rds', region)
-    else:
-        return connect_aws(service, region)
+    return connect_aws(service, region)
 
 def connect_aws_with_stack(stackname, service, with_boto3=False):
     "convenience"
@@ -694,7 +693,7 @@ def listfiles_remote(stackname, path=None, use_sudo=False):
         with hide('output'):
             runfn = sudo if use_sudo else run
             path = "%s/*" % path.rstrip("/")
-            output = runfn("for i in %s; do echo $i; done" % path)
-            if output == path: # some kind of bash artifact where it returns `/path/*` when no matches
+            stdout = runfn("for i in %s; do echo $i; done" % path)
+            if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
                 return []
-            return output.splitlines()
+            return stdout.splitlines()

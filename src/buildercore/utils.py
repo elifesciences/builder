@@ -77,19 +77,6 @@ def mkidx(fn, lst):
         groups[key] = grp
     return groups
 
-"""
-# NOTE: works, unused.
-def deep_exclude(ddict, excluding):
-    child_exclude, parent_exclude = splitfilter(lambda v: isinstance(v, dict), excluding)
-    child_exclude = first(child_exclude) or {}
-    for key, val in ddict.items():
-        if key in parent_exclude:
-            del ddict[key]
-            continue
-        if isinstance(val, dict):
-            deep_exclude(ddict[key], child_exclude.get(key, []))
-"""
-
 def deepmerge(into, from_here, excluding=None):
     "destructive deep merge of `into` with values `from_here`"
     if not excluding:
@@ -183,36 +170,6 @@ def updatein(data, path, newval, create=False):
 def random_alphanumeric(length=32):
     rand = random.SystemRandom()
     return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
-
-
-'''
-# works, but the !include function is unused
-def yaml_load(stream):
-    # http://stackoverflow.com/questions/528281/how-can-i-include-an-yaml-file-inside-another
-    # http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
-    class Loader(yaml.Loader):
-        def __init__(self, stream):
-            self._root = os.path.split(stream.name)[0]
-            super(Loader, self).__init__(stream)
-
-        def _include(self, node):
-            filename = join(self._root, self.construct_scalar(node))
-            with open(filename, 'r') as f:
-                return yaml.load(f, Loader)
-
-        def _construct_mapping(self, node):
-            self.flatten_mapping(node)
-            return OrderedDict(self.construct_pairs(node))
-
-    Loader.add_constructor('!include', Loader._include)
-    mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
-    Loader.add_constructor(mapping_tag, Loader._construct_mapping)
-
-    return yaml.load(stream, Loader)
-
-def yaml_loads(string):
-    return yaml_load(StringIO(string))
-'''
 
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
     # pylint: disable=too-many-ancestors

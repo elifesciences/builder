@@ -13,11 +13,9 @@ LOG = logging.getLogger(__name__)
 
 
 @testme
-def update_project_file(path, value, project_data, project_file):
-    # if not project_data:
-    #    project_data = utils.ordered_load(open(project_file, 'r'))
-    utils.updatein(project_data, path, value, create=True)
-    return project_data
+def update_project_file(path, value, pdata, project_file):
+    utils.updatein(pdata, path, value, create=True)
+    return pdata
 
 @testme
 def write_project_file(new_project_data, project_file):
@@ -81,18 +79,18 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         'aws-alt',
         {'aws': AWS_EXCLUDING},
     ]
-    project_data = copy.deepcopy(global_defaults)
-    utils.deepmerge(project_data, project_list[pname], excluding)
+    pdata = copy.deepcopy(global_defaults)
+    utils.deepmerge(pdata, project_list[pname], excluding)
 
     # merge in any per-project overrides
     # DO NOT use exclusions here
     project_overrides = _merge_snippets(pname, snippets)
-    utils.deepmerge(project_data, project_overrides)
+    utils.deepmerge(pdata, project_overrides)
 
     # handle the alternate configurations
-    for altname, altdata in project_data.get('aws-alt', {}).items():
+    for altname, altdata in pdata.get('aws-alt', {}).items():
         # take project's *current aws state*,
-        project_aws = copy.deepcopy(project_data['aws'])
+        project_aws = copy.deepcopy(pdata['aws'])
 
         # merge in any overrides
         utils.deepmerge(project_aws, altdata)
@@ -101,14 +99,14 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         orig_defaults = copy.deepcopy(global_defaults['aws'])
 
         utils.deepmerge(orig_defaults, project_aws, AWS_EXCLUDING)
-        project_data['aws-alt'][altname] = orig_defaults
+        pdata['aws-alt'][altname] = orig_defaults
 
-    for altname, altdata in project_data.get('vagrant-alt', {}).items():
+    for altname, altdata in pdata.get('vagrant-alt', {}).items():
         orig = copy.deepcopy(altdata)
-        utils.deepmerge(altdata, project_data['vagrant'])
+        utils.deepmerge(altdata, pdata['vagrant'])
         utils.deepmerge(altdata, orig)
 
-    return project_data
+    return pdata
 
 def project_file_name(project_file):
     "returns the name of the project file without the extension"
