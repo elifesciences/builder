@@ -245,8 +245,7 @@ def complete_domain(host, default_main):
         return default_main
     elif is_complete:
         return host
-    else:
-        return host + '.' + default_main # something + '.' + elifesciences.org
+    return host + '.' + default_main # something + '.' + elifesciences.org
 
 def build_context_subdomains(context):
     context['subdomains'] = [complete_domain(s, context['project']['domain']) for s in context['project']['aws'].get('subdomains', [])]

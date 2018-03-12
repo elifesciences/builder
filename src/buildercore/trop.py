@@ -522,8 +522,7 @@ def _add_bucket_policy(template, bucket_title, bucket_name):
 def _elb_protocols(context):
     if isinstance(context['elb']['protocol'], str):
         return [context['elb']['protocol']]
-    else:
-        return context['elb']['protocol']
+    return context['elb']['protocol']
 
 def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
@@ -912,16 +911,15 @@ def cnames(context):
                     GetAtt(ELB_TITLE, "DNSName")
                 )
             )
-        else:
-            hostedzone = context['domain'] + "."
-            return route53.RecordSetType(
-                R53_CNAME_TITLE % (i + 1),
-                HostedZoneName=hostedzone,
-                Name=hostname,
-                Type="CNAME",
-                TTL="60",
-                ResourceRecords=[context['full_hostname']],
-            )
+        hostedzone = context['domain'] + "."
+        return route53.RecordSetType(
+            R53_CNAME_TITLE % (i + 1),
+            HostedZoneName=hostedzone,
+            Name=hostname,
+            Type="CNAME",
+            TTL="60",
+            ResourceRecords=[context['full_hostname']],
+        )
     return [entry(hostname, i) for i, hostname in enumerate(context['subdomains'])]
 
 def _is_domain_2nd_level(hostname):

@@ -103,8 +103,7 @@ def walk_nested_struct(val, fn):
         return {key: walk_nested_struct(i, fn) for key, i in val.items()}
     elif isinstance(val, list):
         return [walk_nested_struct(i, fn) for i in val]
-    else:
-        return fn(val)
+    return fn(val)
 
 def mkdirp(path):
     return os.system("mkdir -p %s" % path) == 0

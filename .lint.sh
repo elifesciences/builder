@@ -20,7 +20,7 @@ pylint -E *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py src/
 # presence of these warnings are a failure
 pylint *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py \
     --disable=all --reports=n --score=n \
-    --enable=redefined-builtin 2> /dev/null
+    --enable=redefined-builtin,pointless-string-statement,no-else-return,redefined-outer-name 2> /dev/null
 
 echo "scrubbing"
 . .scrub.sh 2> /dev/null
