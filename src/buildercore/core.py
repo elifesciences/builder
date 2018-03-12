@@ -257,11 +257,11 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
         LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
 
     data = stack_data(stackname, ensure_single_instance=False)
-    ensure(len(data) == 1 or node, "stack is clustered and no node specified")
+    ensure(len(data) == 1 or node, "stack is clustered with %s nodes and no specific node provided" % len(data))
     if node:
         ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
-        node = int(node) - 1 # decrement to a zero-based value
-    data = data[node or 0] # data is ordered by node
+        didx = int(node) - 1 # decrement to a zero-based value
+    data = data[didx or 0] # data is ordered by node
     public_ip = data['ip_address']
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
