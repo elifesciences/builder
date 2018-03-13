@@ -762,13 +762,13 @@ journal-cms:
                 storage: 24 # GB
             ext:
                 size: 30 # GB
-        revisions:
+        unpublished:
             description: production-like environment.
             rds:
                 type: db.t2.small
                 engine: MySQL
                 version: '5.7'
-                storage: 24 # GB
+                storage: 6 # GB
                 backup-retention: 2 # days
             ext:
                 size: 30 # GB
