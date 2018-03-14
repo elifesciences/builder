@@ -7,6 +7,7 @@ from buildercore import utils
 from buildercore.decorators import testme
 from buildercore.config import AWS_EXCLUDING
 from kids.cache import cache as cached
+from functools import reduce
 
 import logging
 LOG = logging.getLogger(__name__)
