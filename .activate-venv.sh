@@ -13,12 +13,18 @@ else
     echo "* the no-delete-venv flag is set. preserving venv"
 fi
 
-if [ ! -d venv ]; then
-    # build venv if one doesn't exist
-    virtualenv --python=`which python2` venv
+python=/usr/bin/python3.5
+py=${python##*/} # ll: python3.5
+
+# build venv if one doesn't exist OR 
+# venv exists but the right python isn't installed
+if [ ! -e "venv/bin/$py" ]; then
+    echo "could not find venv/bin/$py, recreating venv"
+    rm -rf venv
+    $python -m venv venv
 fi
 
-. ./venv/bin/activate
+source venv/bin/activate
 
 if [ "$(uname)" = "Darwin" ]; then
     # 'ARCHFLAGS' fixes a problem with OSX refusing to compile a dependency
