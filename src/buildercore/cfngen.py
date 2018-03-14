@@ -449,8 +449,8 @@ def template_delta(context):
         if (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
-    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
-    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).iteritems() if o not in template.get('Outputs', {})}
+    delta_minus_resources = {r: v for r, v in old_template['Resources'].items() if r not in template['Resources'] and _title_is_removable(r)}
+    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).items() if o not in template.get('Outputs', {})}
 
     return Delta(
         {

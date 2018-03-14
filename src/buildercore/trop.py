@@ -572,7 +572,7 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
-    for _, listener in context['elb']['additional_listeners'].iteritems():
+    for _, listener in context['elb']['additional_listeners'].items():
         listeners.append(elb.Listener(
             InstanceProtocol='HTTP',
             InstancePort=str(listener['port']),
