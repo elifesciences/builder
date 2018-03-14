@@ -22,14 +22,14 @@ def strtobool(x):
 @requires_steady_stack
 def destroy(stackname):
     "tell aws to delete a stack."
-    print 'this is a BIG DEAL. you cannot recover from this.'
-    print 'type the name of the stack to continue or anything else to quit'
-    uin = raw_input('> ')
+    print('this is a BIG DEAL. you cannot recover from this.')
+    print('type the name of the stack to continue or anything else to quit')
+    uin = input('> ')
     if not uin or not uin.strip().lower() == stackname.lower():
         import difflib
-        print 'you needed to type "%s" to continue.' % stackname
-        print 'got:'
-        print '\n'.join(difflib.ndiff([stackname], [uin]))
+        print('you needed to type "%s" to continue.' % stackname)
+        print('got:')
+        print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
     return bootstrap.delete_stack(stackname)
 
@@ -39,7 +39,7 @@ def ensure_destroyed(stackname):
         return bootstrap.delete_stack(stackname)
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
-            print "Not even the CloudFormation template exists anymore, exiting idempotently"
+            print("Not even the CloudFormation template exists anymore, exiting idempotently")
             return
         raise
 
@@ -157,21 +157,21 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
         stackname = generate_stack_from_input(pname, instance_id, alt_config)
         pdata = core.project_data_for_stackname(stackname)
 
-        print 'attempting to create stack:'
-        print '  stackname:\t' + stackname
-        print '  region:\t' + pdata['aws']['region']
+        print('attempting to create stack:')
+        print('  stackname:\t' + stackname)
+        print('  region:\t' + pdata['aws']['region'])
 
         for key, val in kwargs.items():
-            print '  %s:\t%s' % (key, pformat(val))
+            print('  %s:\t%s' % (key, pformat(val)))
 
-        print
+        print()
 
         if core.is_master_server_stack(stackname):
             if not checks.can_access_builder_private(pname):
-                print "failed to access your organisation's 'builder-private' repository:"
-                print '  ' + pdata['private-repo']
-                print "you'll need access to this repository to add a deploy key later"
-                print
+                print("failed to access your organisation's 'builder-private' repository:")
+                print('  ' + pdata['private-repo'])
+                print("you'll need access to this repository to add a deploy key later")
+                print()
                 return
 
         if not core.stack_is_active(stackname):
@@ -184,7 +184,7 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
         setdefault('.active-stack', stackname)
     except core.NoMasterException as e:
         LOG.warn(e.message)
-        print "\n%s\nNo master server found, you'll need to `launch` a master-server first." % e.message
+        print("\n%s\nNo master server found, you'll need to `launch` a master-server first." % e.message)
 
 @debugtask
 @requires_aws_stack
@@ -218,7 +218,7 @@ def _pick_node(instance_list, node):
     num_instances = len(instance_list)
     if num_instances > 1:
         if not node:
-            node = utils._pick('node', range(1, num_instances + 1), helpfn=helpfn)
+            node = utils._pick('node', list(range(1, num_instances + 1)), helpfn=helpfn)
         node = int(node) - 1
         instance = instance_list[int(node)]
     else:
@@ -316,13 +316,13 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 @requires_aws_stack
 def upload_file(stackname, local_path, remote_path, overwrite=False):
     with stack_conn(stackname):
-        print 'stack:', stackname
-        print 'local:', local_path
-        print 'remote:', remote_path
-        print 'overwrite:', overwrite
-        raw_input('continue?')
+        print('stack:', stackname)
+        print('local:', local_path)
+        print('remote:', remote_path)
+        print('overwrite:', overwrite)
+        input('continue?')
         if files.exists(remote_path) and not overwrite:
-            print 'remote file exists, not overwriting'
+            print('remote file exists, not overwriting')
             exit(1)
         put(local_path, remote_path)
 

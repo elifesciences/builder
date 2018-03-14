@@ -37,9 +37,9 @@ def ami_for_project(pname):
     }
     results = conn.get_all_images(**kwargs)
 
-    print results
+    print(results)
 
-    print len(results), "results"
+    print(len(results), "results")
 
     return utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
 
@@ -52,11 +52,11 @@ def create_ami(stackname):
     pname = core.project_name_from_stackname(stackname)
     msg = "this will create a new AMI for the project %r. Continue?" % pname
     if not confirm(msg, default=False):
-        print 'doing nothing'
+        print('doing nothing')
         return
     amiid = bakery.create_ami(stackname)
-    print 'AWS has created AMI with id', amiid
-    print 'update project file with new ami %s. these changes must be merged and committed manually' % amiid
+    print('AWS has created AMI with id', amiid)
+    print('update project file with new ami %s. these changes must be merged and committed manually' % amiid)
 
 @requires_aws_stack
 def _update_syslog(stackname):
@@ -114,10 +114,10 @@ def fetch_cert(stackname):
             if acme_enabled(project_hostname):
                 domain_names.append(project_hostname)
             else:
-                print '* project hostname (%s) doesnt appear to have letsencrypt enabled, ignore' % project_hostname
+                print('* project hostname (%s) doesnt appear to have letsencrypt enabled, ignore' % project_hostname)
 
-        print '\nthese hosts will be targeted:'
-        print '* ' + '\n* '.join(domain_names)
+        print('\nthese hosts will be targeted:')
+        print('* ' + '\n* '.join(domain_names))
 
         #pillar_data = cfngen.salt_pillar_data(config.PILLAR_DIR)
         # server = {
@@ -137,19 +137,19 @@ def fetch_cert(stackname):
             "sudo service nginx reload",
         ]
 
-        print
-        print 'the following commands will be run:'
-        print ' * ' + '\n * '.join(cmds)
-        print
+        print()
+        print('the following commands will be run:')
+        print(' * ' + '\n * '.join(cmds))
+        print()
 
-        if raw_input('enter to continue, ctrl-c to quit') == '':
+        if input('enter to continue, ctrl-c to quit') == '':
             with stack_conn(stackname):
                 return run(" && ".join(cmds))
 
     except AssertionError as ex:
-        print
-        print "* " + str(ex)
-        print
+        print()
+        print("* " + str(ex))
+        print()
         exit(1)
 
 #
@@ -193,4 +193,4 @@ def remove_minion_key(stackname):
 @task
 @requires_aws_stack
 def download_master_builder_key(stackname):
-    print "Key is %s characters long" % len(str(bootstrap.download_master_builder_key(stackname)))
+    print("Key is %s characters long" % len(str(bootstrap.download_master_builder_key(stackname))))

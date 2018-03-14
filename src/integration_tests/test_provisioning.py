@@ -29,7 +29,7 @@ class TestProvisioning(base.BaseCase):
                 os.unlink(path)
             elif os.path.isdir(path):
                 # assumes dir is empty
-                print 'should be empty:', os.listdir(path)
+                print('should be empty:', os.listdir(path))
                 os.rmdir(path)
             self.assertFalse(os.path.exists(path), "failed to delete path %r in tearDown" % path)
 

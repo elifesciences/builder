@@ -3,7 +3,7 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import httplib
+import http.client
 import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
@@ -382,7 +382,7 @@ def mk_stackname(project_name, instance_id):
 
 def parse_stackname(stackname, all_bits=False, idx=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
-    if not stackname or not isinstance(stackname, basestring):
+    if not stackname or not isinstance(stackname, str):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--', -1 if all_bits else 1)
@@ -449,7 +449,7 @@ def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     try:
         return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
-    except httplib.IncompleteRead as e:
+    except http.client.IncompleteRead as e:
         LOG.warning("Retrying once DescribeStacks API call: %s", e)
         return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 

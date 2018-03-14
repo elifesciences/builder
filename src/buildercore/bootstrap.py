@@ -8,7 +8,7 @@ import os, json, re
 from os.path import join
 from pprint import pformat
 from functools import partial
-from StringIO import StringIO
+from io import StringIO
 from . import core, utils, config, keypair, bvars
 from collections import OrderedDict
 from datetime import datetime

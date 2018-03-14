@@ -1,6 +1,6 @@
 import pytz
 import os, sys, copy, json, time, random, string
-from StringIO import StringIO
+from io import StringIO
 from functools import wraps
 from datetime import datetime
 import yaml
@@ -264,7 +264,7 @@ def json_dumps(obj, dangerous=False, **kwargs):
 def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict):
         raise ValueError("lookup context must be a dictionary")
-    if not isinstance(path, basestring):
+    if not isinstance(path, str):
         raise ValueError("path must be a string, given %r", path)
     try:
         bits = path.split('.', 1)

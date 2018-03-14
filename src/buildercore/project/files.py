@@ -124,8 +124,8 @@ def project_dir_path(project_file):
             os.mkdir(path)
         except BaseException:
             import subprocess
-            print "Debugging os.mkdir(path) failure"
-            print subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT)
+            print("Debugging os.mkdir(path) failure")
+            print(subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT))
             raise
     return path
 

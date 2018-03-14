@@ -1,5 +1,5 @@
 from os.path import join
-from StringIO import StringIO
+from io import StringIO
 import json, base64
 from fabric.api import get
 

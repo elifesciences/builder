@@ -447,7 +447,7 @@ class TestBuildercoreTrop(base.BaseCase):
             'stackname': 'project-with-s3--prod',
         }
         context = cfngen.build_context('project-with-s3', **extra)
-        self.assertEquals(
+        self.assertEqual(
             {
                 'sqs-notifications': {},
                 'deletion-policy': 'delete',
@@ -590,7 +590,7 @@ class TestBuildercoreTrop(base.BaseCase):
             'stackname': 'project-with-cloudfront--prod',
         }
         context = cfngen.build_context('project-with-cloudfront', **extra)
-        self.assertEquals(
+        self.assertEqual(
             {
                 'certificate_id': 'dummy...',
                 'compress': True,
@@ -707,7 +707,7 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Forward': 'none',
             },
@@ -723,11 +723,11 @@ class TestBuildercoreTrop(base.BaseCase):
         data = self._parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
         distribution_config = data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']
-        self.assertEquals(
+        self.assertEqual(
             ['prod--cdn.example.org'],
             distribution_config['Aliases']
         )
-        self.assertEquals(
+        self.assertEqual(
             [
                 {
                     'CustomOriginConfig': {
@@ -748,20 +748,20 @@ class TestBuildercoreTrop(base.BaseCase):
             ],
             distribution_config['Origins']
         )
-        self.assertEquals(
+        self.assertEqual(
             'default-bucket',
             distribution_config['DefaultCacheBehavior']['TargetOriginId'],
         )
-        self.assertEquals(1, len(distribution_config['CacheBehaviors']))
-        self.assertEquals(
+        self.assertEqual(1, len(distribution_config['CacheBehaviors']))
+        self.assertEqual(
             'some-bucket',
             distribution_config['CacheBehaviors'][0]['TargetOriginId'],
         )
-        self.assertEquals(
+        self.assertEqual(
             'articles/*',
             distribution_config['CacheBehaviors'][0]['PathPattern'],
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Cookies': {
                     'Forward': 'whitelist',
@@ -781,7 +781,7 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
-        self.assertEquals(
+        self.assertEqual(
             {
                 'CustomOriginConfig': {
                     'HTTPSPort': 443,
@@ -792,7 +792,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['Origins'][1]
         )
-        self.assertEquals(
+        self.assertEqual(
             [{
                 'DefaultTTL': 300,
                 'ForwardedValues': {
@@ -809,7 +809,7 @@ class TestBuildercoreTrop(base.BaseCase):
             }],
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CacheBehaviors']
         )
-        self.assertEquals(
+        self.assertEqual(
             [
                 {
                     'ErrorCode': 502,
@@ -831,7 +831,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('ElastiCacheParameterGroup', data['Resources'].keys())
         self.assertIn('ElastiCacheSecurityGroup', data['Resources'].keys())
         self.assertIn('ElastiCacheSubnetGroup', data['Resources'].keys())
-        self.assertEquals(
+        self.assertEqual(
             {
                 'CacheNodeType': 'cache.t2.small',
                 'CacheParameterGroupName': {'Ref': 'ElastiCacheParameterGroup'},
@@ -850,7 +850,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCache1']['Properties']
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'CacheParameterGroupFamily': 'redis2.8',
                 'Description': 'ElastiCache parameter group for project-with-elasticache-redis--prod',
@@ -860,7 +860,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCacheParameterGroup']['Properties']
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'GroupDescription': 'ElastiCache security group',
                 'SecurityGroupIngress': [{
@@ -874,7 +874,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCacheSecurityGroup']['Properties']
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Description': 'a group of subnets for this cache instance.',
                 'SubnetIds': ['subnet-foo', 'subnet-bar'],
@@ -882,7 +882,7 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['ElastiCacheSubnetGroup']['Properties']
         )
         self.assertIn('ElastiCacheHost1', data['Outputs'])
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Description': 'The hostname on which the cache accepts connections',
                 'Value': {'Fn::GetAtt': ['ElastiCache1', 'RedisEndpoint.Address']}
@@ -890,7 +890,7 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Outputs']['ElastiCacheHost1']
         )
         self.assertIn('ElastiCachePort1', data['Outputs'])
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Description': 'The port number on which the cache accepts connections',
                 'Value': {'Fn::GetAtt': ['ElastiCache1', 'RedisEndpoint.Port']}

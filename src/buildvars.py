@@ -1,6 +1,6 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
 from fabric.api import sudo, put, task
-from StringIO import StringIO
+from io import StringIO
 from decorators import requires_aws_stack, debugtask
 from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
@@ -24,7 +24,7 @@ def switch_revision(stackname, revision=None, concurrency=None):
         buildvars = _retrieve_build_vars()
 
         if 'revision' in buildvars and revision == buildvars['revision']:
-            print 'FYI, the instance is already on that revision!'
+            print('FYI, the instance is already on that revision!')
             return
 
         new_data = buildvars

@@ -73,7 +73,7 @@ def requires_aws_project_stack(*plist):
             region = aws.find_region(stackname)
             asl = core.active_stack_names(region)
             if not asl:
-                print '\nno AWS stacks exist, cannot continue.'
+                print('\nno AWS stacks exist, cannot continue.')
                 return
 
             def pname_startswith(stack):
@@ -112,7 +112,7 @@ def requires_steady_stack(func):
         idx = dict(zip(keys, ss))
         helpfn = lambda pick: idx[pick][1]
         if not keys:
-            print '\nno AWS stacks *in a steady state* exist, cannot continue.'
+            print('\nno AWS stacks *in a steady state* exist, cannot continue.')
             return
         stackname = first(args) or os.environ.get('INSTANCE')
         if not stackname or stackname not in keys:
@@ -127,10 +127,10 @@ def requires_feature(key, silent=False):
         def wrap2(*args, **kwargs):
             if config.feature_enabled(key):
                 return func(*args, **kwargs)
-            print
-            print "feature %r is disabled." % key
-            print "you can enable it with \"%s: True\" in your `settings.yml` file" % key
-            print
+            print()
+            print("feature %r is disabled." % key)
+            print("you can enable it with \"%s: True\" in your `settings.yml` file" % key)
+            print()
             exit(1)
         return wrap2
     return wrap1
@@ -153,10 +153,10 @@ def echo_output(func):
         if _sole_task(func.__name__):
             res = func(*args, **kwargs)
             errcho('output:') # printing to stderr avoids corrupting structured data
-            if isinstance(res, str) or isinstance(res, unicode):
-                print res
+            if isinstance(res, str)`:
+                print(res)
             else:
-                print pformat(remove_ordereddict(res))
+                print(pformat(remove_ordereddict(res)))
             return res
         return func(*args, **kwargs)
     return _wrapper

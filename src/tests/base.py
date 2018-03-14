@@ -6,6 +6,7 @@ from unittest import TestCase
 from buildercore import config, project
 
 import logging
+import imp
 LOG = logging.getLogger(__name__)
 
 class BaseCase(TestCase):
@@ -26,7 +27,7 @@ class BaseCase(TestCase):
     def switch_out_test_settings(self):
         # clear any caches and reload the config module
         project.project_map.cache_clear()
-        reload(config)
+        imp.reload(config)
 
     def generate_environment_name(self):
         """to avoid multiple people clashing while running their builds

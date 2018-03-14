@@ -130,8 +130,8 @@ def render(pname):
     out = json.dumps(render_template(pname), indent=4)
     fname = template_path(pname, '.json')
     open(fname, 'w').write(out)
-    print out
-    print 'wrote', fname
+    print(out)
+    print('wrote', fname)
     return fname
 
 def validate(pname):
@@ -177,7 +177,7 @@ def generate_meta(pname):
         old_versions = [ov for ov in old_meta['versions'] if ov['version'] != nv['version']]
         meta['versions'].extend(old_versions)
     json.dump(meta, open(fname, 'w'), indent=4)
-    print 'wrote', fname
+    print('wrote', fname)
 
 @debugtask
 @requires_project
@@ -191,14 +191,14 @@ def upload_box(pname):
     "uploads the box and it's metadata to S3"
     box = template_path(pname, "vagrant.box")
     cmd = "aws s3 cp %s %s" % (box, config.PACKER_BOX_S3_PATH)
-    print 'uploading box ...'
-    print cmd
+    print('uploading box ...')
+    print(cmd)
     assert os.system(cmd) == 0, "failed to upload box to s3"
 
     meta = template_path(pname, "meta.json")
     cmd = "aws s3 cp %s %s --content-encoding application/json" % (meta, config.PACKER_BOX_S3_PATH)
-    print 'uploading meta ...'
-    print cmd
+    print('uploading meta ...')
+    print(cmd)
     assert os.system(cmd) == 0, "failed to upload meta to s3"
 
 @debugtask
@@ -245,7 +245,7 @@ def update_project_file(pname):
     for path, new_val in updates:
         project_data = project.update_project_file(path, new_val, project_data)
     project.write_project_file(project_data)
-    print 'wrote', project_file
+    print('wrote', project_file)
     return project_data
 
 @task
@@ -282,11 +282,11 @@ def download_box(pname):
     "just download the vagrant .box for given project"
     boxurl = box_url(pname)
     if not boxurl.startswith('s3://'):
-        print 'this task only downloads from s3. unhandled url', boxurl
+        print('this task only downloads from s3. unhandled url', boxurl)
         exit(1)
     dest = join('/tmp', os.path.basename(boxurl))
     if os.path.exists(dest):
-        print 'file %s already exists, skipping download. move or rename the file to re-download' % dest
+        print('file %s already exists, skipping download. move or rename the file to re-download' % dest)
         return dest
     cmd = "aws s3 cp %s %s" % (boxurl, dest)
     assert local(cmd).return_code == 0, "failed to successfully download %s" % boxurl
@@ -310,14 +310,14 @@ def install_box(pname):
     macs appear to have a problem maintaining a connection to S3,
     so this task downloads it for Vagrant and then adds it from the filesystem"""
     if box_installed(pname):
-        print 'the .box file for %r has already been installed (%s)' % (pname, prj(pname, 'vagrant.box'))
+        print('the .box file for %r has already been installed (%s)' % (pname, prj(pname, 'vagrant.box')))
         return
     dest = download_box(pname)
     with settings(warn_only=True):
         cmd = "vagrant box add %s %s" % (prj(pname, 'vagrant.box'), dest)
         retval = local(cmd).return_code
         if retval == 0 and os.path.exists(dest):
-            print 'removing downloaded file ...'
+            print('removing downloaded file ...')
             local('rm -i %s' % dest)
 
 @task

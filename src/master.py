@@ -27,9 +27,9 @@ def write_missing_keypairs_to_s3():
 
     to_upload = set(local_keys).difference(set(remote_keys))
 
-    print 'remote:', remote_keys
-    print 'local:', local_keys
-    print 'to upload:', to_upload
+    print('remote:', remote_keys)
+    print('local:', local_keys)
+    print('to upload:', to_upload)
 
     def write(key):
         stackname = os.path.splitext(key)[0]
@@ -92,7 +92,7 @@ def remaster_minion(stackname, master_ip=None):
             raise core.NoMasterException("no master servers found")
         master_ip = core.stack_data(newest_master)[0]['private_ip_address']
 
-    print 're-mastering %s to %s' % (stackname, master_ip)
+    print('re-mastering %s to %s' % (stackname, master_ip))
 
     def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have

@@ -45,17 +45,17 @@ def parse_validate_repolist(pdata, *repolist):
     arglist = []
     for user_string in repolist:
         if '@' not in user_string:
-            print 'skipping %r, no revision component' % user_string
+            print('skipping %r, no revision component' % user_string)
             continue
 
         repo, rev = user_string.split('@')
 
         if not rev.strip():
-            print 'skipping %r, empty revision component' % user_string
+            print('skipping %r, empty revision component' % user_string)
             continue
 
         if repo not in known_formula_map:
-            print 'skipping %r, unknown formula. known formulas: %s' % (repo, ', '.join(known_formula_map.keys()))
+            print('skipping %r, unknown formula. known formulas: %s' % (repo, ', '.join(known_formula_map.keys())))
             continue
 
         arglist.append((repo, known_formula_map[repo], rev))

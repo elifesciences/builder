@@ -33,7 +33,7 @@ def write(key, something, overwrite=False):
     k = Key(builder_bucket())
     k.key = key
     LOG.info("writing key %s", key, extra={'key': key})
-    if isinstance(something, basestring):
+    if isinstance(something, str):
         k.set_contents_from_string(something)
     elif isinstance(something, file):
         k.set_contents_from_file(something)
