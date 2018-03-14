@@ -153,7 +153,7 @@ def echo_output(func):
         if _sole_task(func.__name__):
             res = func(*args, **kwargs)
             errcho('output:') # printing to stderr avoids corrupting structured data
-            if isinstance(res, str)`:
+            if isinstance(res, str):
                 print(res)
             else:
                 print(pformat(remove_ordereddict(res)))
