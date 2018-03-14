@@ -4,7 +4,7 @@ from boto import s3
 from boto.s3.key import Key
 from . import config
 from kids.cache import cache as cached
-
+from io import IOBase
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def write(key, something, overwrite=False):
     LOG.info("writing key %s", key, extra={'key': key})
     if isinstance(something, str):
         k.set_contents_from_string(something)
-    elif isinstance(something, file):
+    elif isinstance(something, IOBase):
         k.set_contents_from_file(something)
     else:
         raise ValueError("boto can't handle anything much else besides strings and files")
