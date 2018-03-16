@@ -762,16 +762,6 @@ journal-cms:
                 storage: 24 # GB
             ext:
                 size: 30 # GB
-        unpublished:
-            description: production-like environment.
-            rds:
-                type: db.t2.small
-                engine: MySQL
-                version: '5.7'
-                storage: 6 # GB
-                backup-retention: 2 # days
-            ext:
-                size: 30 # GB
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
