@@ -119,16 +119,16 @@ class SimpleCases(base.BaseCase):
             'master-server--2016-01-01',
             'master-server--master--ci',
         ]
-        results = map(core.is_master_server_stack, true_cases)
-        self.assertTrue(all(results), "not all master servers identified: %r" % zip(true_cases, results))
+        results = list(map(core.is_master_server_stack, true_cases))
+        self.assertTrue(all(results), "not all master servers identified: %r" % list(zip(true_cases, results)))
 
     def test_master_server_identified_false_cases(self):
         false_cases = [
             'master-server', # *stack* names not project names
             '', None, 123, {}, [], self
         ]
-        results = map(core.is_master_server_stack, false_cases)
-        self.assertFalse(all(results), "not all false cases identified: %r" % zip(false_cases, results))
+        results = list(map(core.is_master_server_stack, false_cases))
+        self.assertFalse(all(results), "not all false cases identified: %r" % list(zip(false_cases, results)))
 
     def test_find_region(self):
         self.assertEqual(core.find_region(), "us-east-1")
@@ -156,7 +156,7 @@ class SimpleCases(base.BaseCase):
         with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
             for stackname, expected_subs in cases:
                 res = core.all_sns_subscriptions('someregion', stackname)
-                actual_subs = map(lambda sub: sub['Topic'], res)
+                actual_subs = [sub['Topic'] for sub in res]
                 self.assertItemsEqual(expected_subs, actual_subs)
 
 class TestCoreNewProjectData(base.BaseCase):

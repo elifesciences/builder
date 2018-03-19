@@ -6,6 +6,7 @@ import utils
 from utils import walk_nested_struct
 from decorators import requires_project, echo_output, debugtask
 from buildercore import config, utils as core_utils, project
+from buildercore.utils import lfilter, lmap
 import os, json
 from datetime import datetime
 from buildercore.decorators import osissue
@@ -82,7 +83,7 @@ def template_path(pname, suffix):
 def vagrant_path(boxname):
     boxname = boxname.replace('/', '-VAGRANTSLASH-')
     subpath = os.path.expanduser(join("~/.vagrant.d", 'boxes', boxname))
-    subdirs = filter(os.path.isdir, map(lambda p: join(subpath, p), os.listdir(subpath)))
+    subdirs = lfilter(os.path.isdir, map(lambda p: join(subpath, p), os.listdir(subpath)))
     latest = os.path.basename(max(subdirs, key=os.path.getmtime))
     path = join(subpath, latest, 'virtualbox', 'box.ovf')
     assert os.path.exists(path), "couldn't find path: %s" % path
@@ -254,7 +255,7 @@ def add_all_boxes():
     projects = project.project_list()
     # kinda gross because everything is keyed to the project, but works nicely
     boxes = {prj(pname, 'vagrant.box'): pname for pname in projects.keys()}
-    return map(add_box, boxes.values())
+    return lmap(add_box, boxes.values())
 
 
 #

@@ -129,7 +129,7 @@ class BlueGreenConcurrency(object):
         return [{'InstanceId': instance_id} for instance_id in self._instance_ids(nodes_params)]
 
     def _instance_ids(self, nodes_params):
-        return nodes_params['nodes'].keys()
+        return list(nodes_params['nodes'].keys())
 
 class SomeOutOfServiceInstances(RuntimeError):
     pass

@@ -44,7 +44,7 @@ def delete(key):
     "deletes a single key from the builder bucket"
     # legacy prefixes
     protected = ['boxes/', 'cfn/', 'private/']
-    if not all(map(lambda prefix: not key.startswith(prefix), protected)):
+    if not all([not key.startswith(prefix) for prefix in protected]):
         msg = "you tried to delete a key with a protected prefix"
         LOG.warn(msg, extra={'key': key, 'protected': protected})
         raise ValueError(msg)
@@ -73,7 +73,7 @@ def listing(prefix):
 
 def simple_listing(prefix):
     "returns a realized list of the names of the keys from the `list` function. "
-    return map(lambda key: key.name, listing(prefix))
+    return [key.name for key in listing(prefix)]
 
 def download(key, output_path):
     assert not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path

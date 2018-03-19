@@ -24,7 +24,7 @@ def isint(v):
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
-    return [item for sublist in lst for item in sublist]
+    return [item for sublist in list(lst) for item in sublist]
 
 def unique(lst):
     return list(unique_everseen(lst))
@@ -74,7 +74,7 @@ def complement(pred):
     return wrapper
 
 def splitfilter(func, data):
-    return filter(func, data), filter(complement(func), data)
+    return lfilter(func, data), lfilter(complement(func), data)
 
 def mkidx(fn, lst):
     groups = {}
@@ -113,7 +113,7 @@ def errcho(x):
 def nth(x, n):
     "returns the nth value in x or None"
     try:
-        return x[n]
+        return list(x)[n]
     except (KeyError, IndexError):
         return None
     except TypeError:
@@ -138,7 +138,6 @@ def last(x):
 def firstnn(x):
     "returns the first non-nil value in x"
     return first(filter(lambda v: v is not None, x))
-    # return first(filter(None, x))
 
 # pylint: disable=too-many-arguments
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
@@ -203,7 +202,7 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     def _dict_representer(dumper, data):
         return dumper.represent_mapping(
             yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-            data.items())
+            list(data.items()))
     OrderedDumper.add_representer(OrderedDict, _dict_representer)
     kwds.update({'default_flow_style': default_flow_style, 'indent': indent, 'line_break': line_break})
     # WARN: if stream is provided, return value is None
@@ -228,7 +227,7 @@ def remove_ordereddict(data, dangerous=True):
 
 def listfiles(path, ext_list=None):
     "returns a list of absolute paths for given dir"
-    path_list = map(lambda fname: os.path.abspath(join(path, fname)), os.listdir(path))
+    path_list = [os.path.abspath(join(path, fname)) for fname in os.listdir(path)]
     if ext_list:
         path_list = filter(lambda path: os.path.splitext(path)[1] in ext_list, path_list)
     return sorted(filter(os.path.isfile, path_list))

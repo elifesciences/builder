@@ -14,10 +14,9 @@ from os.path import join
 from . import config, utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
-
 from functools import partial
+from .utils import first, ensure, subdict, lmap
 import logging
-from .utils import first, ensure, subdict
 
 LOG = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': map(complex_ingress, ingress_structs)
+        'SecurityGroupIngress': lmap(complex_ingress, ingress_structs)
     })
 
 def ec2_security(context):
@@ -262,13 +261,13 @@ def render_rds(context, template):
         data['DBParameterGroupName'] = param_group_ref
 
     rdbi = rds.DBInstance(RDS_TITLE, **data)
-    map(template.add_resource, [rsn, rdbi, vpcdbsg])
+    lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
 
     outputs = [
         mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
         mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),
     ]
-    map(template.add_output, outputs)
+    lmap(template.add_output, outputs)
 
 def render_ext_volume(context, context_ext, template, node=1):
     vtype = context_ext.get('type', 'standard')
@@ -290,7 +289,7 @@ def render_ext_volume(context, context_ext, template, node=1):
         "Device": context_ext.get('device'),
     }
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
-    map(template.add_resource, [ec2v, ec2va])
+    lmap(template.add_resource, [ec2v, ec2va])
 
 def external_dns_ec2_single(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -405,7 +404,7 @@ def render_ec2(context, template):
             mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
             mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
         ]
-        map(template.add_output, outputs)
+        lmap(template.add_output, outputs)
 
     # all ec2 nodes in a cluster share the same keypair
     template.add_parameter(Parameter(KEYPAIR, **{
@@ -594,7 +593,7 @@ def render_elb(context, template, ec2_instances):
             IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
-        Instances=map(Ref, ec2_instances.values()),
+        Instances=lmap(Ref, ec2_instances.values()),
         # TODO: from configuration
         Listeners=listeners,
         LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
@@ -836,7 +835,7 @@ def render_elasticache(context, template):
             mkoutput("ElastiCacheHost%s" % cluster, "The hostname on which the cache accepts connections", (cluster_title, "RedisEndpoint.Address")),
             mkoutput("ElastiCachePort%s" % cluster, "The port number on which the cache accepts connections", (cluster_title, "RedisEndpoint.Port")),
         ]
-        map(template.add_output, outputs)
+        lmap(template.add_output, outputs)
 
     if default_parameter_group_use:
         template.add_resource(parameter_group)
@@ -854,9 +853,8 @@ def render(context):
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
-        all_nodes = ec2_instances.keys()
+        all_nodes = list(ec2_instances.keys())
         for node in all_nodes:
-
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = copy.deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
@@ -871,6 +869,7 @@ def render(context):
     # N>=1 EC2 instances
     if context['elb']:
         render_elb(context, template, ec2_instances)
+
     if context['ec2']:
         render_ec2_dns(context, template)
 

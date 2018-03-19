@@ -24,7 +24,7 @@ from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, context_handler
-from .utils import ensure
+from .utils import ensure, lmap
 from .config import STACK_DIR
 
 import logging
@@ -131,7 +131,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     for queue_template_name in context['project']['aws']['sqs']:
         queue_name = _parameterize(queue_template_name)
         queue_configuration = context['project']['aws']['sqs'][queue_template_name]
-        subscriptions = map(_parameterize, queue_configuration.get('subscriptions', []))
+        subscriptions = lmap(_parameterize, queue_configuration.get('subscriptions', []))
         context['sqs'][queue_name] = subscriptions
 
     # future: build what is necessary for buildercore.bootstrap.setup_s3()

@@ -2,7 +2,7 @@ import os
 from os.path import join
 import utils
 from buildercore import core, project, config
-from buildercore.utils import first, remove_ordereddict, errcho
+from buildercore.utils import first, remove_ordereddict, errcho, lfilter
 from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
@@ -80,7 +80,7 @@ def requires_aws_project_stack(*plist):
                 for pname in plist:
                     if stack.startswith(pname):
                         return stack
-            asl = filter(pname_startswith, asl)
+            asl = lfilter(pname_startswith, asl)
             if not stackname or stackname not in asl:
                 stackname = utils._pick("stack", asl)
             return func(stackname, *args, **kwargs)

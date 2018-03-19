@@ -4,6 +4,7 @@ import os, shutil
 from os.path import join
 from . import core, utils, config, s3
 from .core import stack_pem
+from .utils import lfilter
 from .decorators import if_enabled
 
 import logging
@@ -90,10 +91,10 @@ def delete_keypair(stackname):
 
 @if_enabled('write-keypairs-to-s3')
 def all_in_s3():
-    return filter(None, map(os.path.basename, s3.simple_listing(config.KEYPAIR_PREFIX)))
+    return lfilter(None, map(os.path.basename, s3.simple_listing(config.KEYPAIR_PREFIX)))
 
 def all_locally():
     "all keypairs on the filesystem"
     keys = os.listdir(config.KEYPAIR_PATH)
     key_paths = map(lambda fname: join(config.KEYPAIR_PATH, fname), keys)
-    return filter(os.path.isfile, key_paths)
+    return lfilter(os.path.isfile, key_paths)

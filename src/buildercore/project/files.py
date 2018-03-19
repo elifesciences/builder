@@ -137,7 +137,7 @@ def find_snippets(project_file):
     fnames = filter(lambda fname: fname.endswith('.yaml'), fnames)
     path_list = map(lambda fname: join(path, fname), fnames)
     path_list = sorted(filter(os.path.isfile, path_list))
-    return map(lambda p: utils.ordered_load(open(p, 'r')), path_list)
+    return [utils.ordered_load(open(p, 'r')) for p in path_list]
 
 
 #

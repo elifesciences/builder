@@ -23,6 +23,7 @@ from fabric import operations
 from boto.exception import BotoServerError, SQSError
 from kids.cache import cache as cached
 from buildercore import context_handler, project, utils as core_utils
+from buildercore.utils import lmap
 from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
@@ -55,7 +56,7 @@ def run_script(script_filename, *script_params, **environment_variables):
         return "'%s'" % parameter
 
     env_string = ['%s=%s' % (k, v) for k, v in environment_variables.items()]
-    cmd = ["/bin/bash", remote_script] + map(escape_string_parameter, list(script_params))
+    cmd = ["/bin/bash", remote_script] + lmap(escape_string_parameter, list(script_params))
     retval = sudo(" ".join(env_string + cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
@@ -172,7 +173,7 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     def for_unsubbed_topic(statement):
         return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
-    policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy.get('Statement', [])))
+    policy['Statement'] = list([s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)])
     if policy['Statement']:
         return policy
     return None
@@ -462,7 +463,7 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('sqs', update_sqs_stack)
     ])
     if not service_list:
-        service_list = service_update_fns.keys()
+        service_list = list(service_update_fns.keys())
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
 
     [fn(stackname, **kwargs) for fn in subdict(service_update_fns, service_list).values()]

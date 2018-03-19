@@ -23,12 +23,12 @@ def rmval(lst, *vals):
 def git_remote_branches(url):
     # in: [('asdf', 'refs/heads/develop'), ('fdas', 'refs/heads/master',) ...]
     # out: ['develop', 'master', ...]
-    return map(lambda ref: last(second(ref).split('/')), _git_remote_refs(url))
+    return [last(second(ref).split('/')) for ref in _git_remote_refs(url)]
 
 def _git_remote_refs(url):
     cmd = "git ls-remote --heads %s" % url
     output = local(cmd, capture=True)
-    return map(lambda line: line.split(), output.splitlines())
+    return [line.split() for line in output.splitlines()]
 
 def errcho(x):
     sys.stderr.write(x)

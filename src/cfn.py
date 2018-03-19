@@ -10,6 +10,7 @@ from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
+from buildercore.utils import lmap
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -141,7 +142,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
             more_context['alt-config'] = instance_id
         else:
             default = 'skip this step'
-            alt_config_choices = [default] + pdata['aws-alt'].keys()
+            alt_config_choices = [default] + list(pdata['aws-alt'].keys())
             if not alt_config:
                 alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
             if alt_config != default:
@@ -305,7 +306,7 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
-    allow_missing, use_bootstrap_user = map(strtobool, [allow_missing, use_bootstrap_user])
+    allow_missing, use_bootstrap_user = lmap(strtobool, [allow_missing, use_bootstrap_user])
     with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
         if allow_missing and not files.exists(path):
             return # skip download
