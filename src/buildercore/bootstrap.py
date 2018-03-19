@@ -89,8 +89,7 @@ def create_stack(stackname):
 
 def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "simply creates the stack of resources on AWS, talking to CloudFormation."
-    if not parameters:
-        parameters = []
+    parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
@@ -102,11 +101,12 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
-
         return True
+
     except StackTakingALongTimeToComplete as err:
-        LOG.info("Stack taking a long time to complete: %s", err.message)
+        LOG.info("Stack taking a long time to complete: %s", err)
         raise
+
     except BotoServerError as err:
         if err.message.endswith(' already exists'):
             LOG.debug(err.message)
@@ -114,9 +114,11 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
         on_error()
         raise
+
     except KeyboardInterrupt:
         LOG.debug("caught keyboard interrupt, cancelling...")
         return False
+
     except BaseException:
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         on_error()

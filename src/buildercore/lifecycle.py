@@ -67,13 +67,13 @@ def _some_node_is_not_ready(stackname):
     try:
         stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
     except NoPublicIps as e:
-        LOG.info("No public ips available yet: %s", e.message)
+        LOG.info("No public ips available yet: %s", e)
         return True
     except NoRunningInstances as e:
         # shouldn't be necessary because of _wait_ec2_all_in_state() we do before, but the EC2 API is not consistent
         # and sometimes selecting instances filtering for the `running` state doesn't find them
         # even if their state is `running` according to the latest API call
-        LOG.info("No running instances yet: %s", e.message)
+        LOG.info("No running instances yet: %s", e)
         return True
     return False
 

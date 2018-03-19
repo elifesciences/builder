@@ -50,7 +50,7 @@ def download_keypair(stackname):
         local('chmod 400 -R %s' % path)
         return path
     except EnvironmentError as err:
-        LOG.info(err.message)
+        LOG.info(err)
 
 #
 #

@@ -181,11 +181,11 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
 
         LOG.info('updating stack %s', stackname)
         bootstrap.update_stack(stackname, **kwargs)
-
         setdefault('.active-stack', stackname)
+
     except core.NoMasterException as e:
-        LOG.warn(e.message)
-        print("\n%s\nNo master server found, you'll need to `launch` a master-server first." % e.message)
+        LOG.warn(e)
+        print("\n%s\nNo master server found, you'll need to `launch` a master-server first." % e)
 
 @debugtask
 @requires_aws_stack
@@ -362,5 +362,5 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 node=int(node) if node else None
             )
     except FabricException as e:
-        LOG.error(e.message)
+        LOG.error(e)
         exit(2)

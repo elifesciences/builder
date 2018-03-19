@@ -254,7 +254,7 @@ def add_all_boxes():
     #_, projects = core.all_projects()
     projects = project.project_list()
     # kinda gross because everything is keyed to the project, but works nicely
-    boxes = {prj(pname, 'vagrant.box'): pname for pname in projects.keys()}
+    boxes = {prj(pname, 'vagrant.box'): pname for pname in projects}
     return lmap(add_box, boxes.values())
 
 

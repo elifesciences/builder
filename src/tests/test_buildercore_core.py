@@ -157,7 +157,9 @@ class SimpleCases(base.BaseCase):
             for stackname, expected_subs in cases:
                 res = core.all_sns_subscriptions('someregion', stackname)
                 actual_subs = [sub['Topic'] for sub in res]
-                self.assertItemsEqual(expected_subs, actual_subs)
+                #self.assertItemsEqual(expected_subs, actual_subs)
+                # https://bugs.python.org/issue17866
+                self.assertCountEqual(expected_subs, actual_subs)
 
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):
