@@ -7,9 +7,17 @@ import yaml
 from collections import OrderedDict, Iterable
 from os.path import join
 from more_itertools import unique_everseen
-
 import logging
+
 LOG = logging.getLogger(__name__)
+
+lmap = lambda func, *iterable: list(map(func, *iterable))
+
+lfilter = lambda func, *iterable: list(filter(func, *iterable))
+
+keys = lambda d: list(d.keys())
+
+lzip = lambda *iterable: list(zip(*iterable))
 
 def isint(v):
     return str(v).isdigit()
