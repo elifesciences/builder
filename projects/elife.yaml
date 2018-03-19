@@ -663,6 +663,10 @@ elife-bot:
                 - 8020 # exposing FTP contents
                 - 8021 # exposing FTP contents, HTTPS
             description: speeding up end2end tests
+            s3:
+                "{instance}-elife-silent-corrections":
+                    sqs-notifications:
+                        end2end-incoming-queue: {}
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
@@ -670,11 +674,18 @@ elife-bot:
             #               #suffix: null
         continuumtest:
             s3:
+                "{instance}-elife-silent-corrections":
+                    sqs-notifications:
+                        ct-incoming-queue: {}
                 "{instance}-elife-bot":
                     deletion-policy: delete
-        # temporary: we didn't do this through CloudFormation because the template is too old to be modified successfully
-        #prod:
-        #    type: c5.2xlarge
+        prod:
+            # don't change type through CloudFormation because the template is too old to be modified successfully
+            #type: c5.2xlarge
+            s3:
+                "{instance}-elife-silent-corrections":
+                    sqs-notifications:
+                        incoming-queue: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
