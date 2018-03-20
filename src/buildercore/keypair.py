@@ -68,7 +68,9 @@ def create_keypair(stackname):
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
     key = ec2.create_key_pair(stackname)
     # write to fs
-    key.save(config.KEYPAIR_PATH) # exclude the filename
+    # py3 issue here: https://github.com/boto/boto/issues/3782
+    # key.save(config.KEYPAIR_PATH) # exclude the filename
+    key.save(config.KEYPAIR_PATH.encode()) # says string but requires byte array
     # write to s3
     write_keypair_to_s3(stackname)
     return expected_key
