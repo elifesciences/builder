@@ -26,7 +26,7 @@ keys = lambda d: list(d.keys())
 lzip = lambda *iterable: list(zip(*iterable))
 
 def isint(v):
-    return str(v).isdigit()
+    return str(v).lstrip('-+').isdigit()
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
@@ -118,7 +118,7 @@ def errcho(x):
 
 def nth(x, n):
     "returns the nth value in x or None"
-    ensure(str(n).isdigit(), "n must be an integer", TypeError)
+    ensure(isint(n), "n must be an integer", TypeError)
     try:
         return list(x)[n]
     except (KeyError, IndexError):

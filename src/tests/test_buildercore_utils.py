@@ -23,6 +23,13 @@ class TestBuildercoreUtils(base.BaseCase):
         for given, expected in case_list:
             self.assertEqual(utils.shallow_flatten(given), expected)
 
+    def test_isint(self):
+        expected_true = [
+            1, 0, -1,
+            "1", "0", "-1"
+        ]
+        self.assertAllTrue(utils.isint, expected_true)
+
     def test_nth(self):
         expected_vals = [
             ('a', 0, 'a'),

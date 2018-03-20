@@ -38,22 +38,20 @@ class BaseCase(TestCase):
     def assertAllPairsEqual(self, fn, pair_lst):
         "given a function and a list of (given, expected) asserts all fn(given) == expected"
         for given, expected in pair_lst:
-            with self.subTest(expected=expected):
+            with self.subTest(given=given):
                 actual = fn(given)
                 self.assertEqual(expected, actual, "failed, %r != %r" % (expected, actual))
 
     # pyline: disable=invalid-name
-    def assertAllEqual(self, fn, lst):
+    def assertAllTrue(self, fn, lst):
         "given a function a list of values, asserts all fn(value) are true"
         for x in lst:
-            with self.subTest(expected=x):
-                y = fn(x)
-                self.assertEqual(x, y, "failed, %r != %r" % (x, y))
+            with self.subTest(given=x):
+                self.assertTrue(fn(x), "failed, fn(%s) != True" % x)
 
     # pyline: disable=invalid-name
-    def assertAllNotEqual(self, fn, lst):
+    def assertAllNotTrue(self, fn, lst):
         "given a function a list of values, asserts all fn(value) are NOT true"
         for x in lst:
-            with self.subTest(expected=x):
-                y = fn(x)
-                self.assertNotEqual(x, y, "failed, %r == %r" % (x, y))
+            with self.subTest(given=x):
+                self.assertNotEqual(fn(x), "failed, fn(%s) != False" % x)
