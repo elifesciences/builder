@@ -25,9 +25,11 @@ class TestBuildercoreCfngen(base.BaseCase):
         self.switch_out_test_settings()
 
         for pname in project.aws_projects().keys():
-            self.assertTrue(cfngen.validate_project(pname))
-            sleep(0.5)
+            with self.subTest(pname):
+                self.assertTrue(cfngen.validate_project(pname))
+                sleep(0.5)
 
+        # todo: does this need to live in a try: ... finally: ... ?
         self.switch_in_test_settings()
 
 class TestUpdates(base.BaseCase):
@@ -55,7 +57,7 @@ class TestUpdates(base.BaseCase):
             "logging": False,
         }
         (delta_plus, delta_edit, delta_minus) = cfngen.template_delta(context)
-        self.assertEqual(list(delta_plus['Resources'].keys()), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])
+        self.assertCountEqual(list(delta_plus['Resources'].keys()), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])
         self.assertEqual(list(delta_plus['Outputs'].keys()), ['DomainName'])
 
     def test_template_delta_does_not_include_cloudfront_if_there_are_no_modifications(self):
@@ -122,7 +124,7 @@ class TestUpdates(base.BaseCase):
             "custom-subdomain.example.org"
         ]
         (delta_plus, delta_edit, delta_minus) = cfngen.template_delta(context)
-        self.assertEqual(list(delta_edit['Resources'].keys()), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])
+        self.assertCountEqual(list(delta_edit['Resources'].keys()), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])
         self.assertEqual(delta_edit['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org.')
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
 
@@ -141,7 +143,7 @@ class TestUpdates(base.BaseCase):
         context['elb']['protocol'] = 'https'
         context['elb']['certificate'] = 'DUMMY_CERTIFICATE'
         (delta_plus, delta_edit, delta_minus) = cfngen.template_delta(context)
-        self.assertEqual(list(delta_edit['Resources'].keys()), ['ElasticLoadBalancer', 'ELBSecurityGroup'])
+        self.assertCountEqual(list(delta_edit['Resources'].keys()), ['ElasticLoadBalancer', 'ELBSecurityGroup'])
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
 
     def test_template_delta_includes_new_external_volumes(self):
@@ -152,10 +154,10 @@ class TestUpdates(base.BaseCase):
             'device': '/dev/sdh',
         }
         (delta_plus, delta_edit, delta_minus) = cfngen.template_delta(context)
-        self.assertEqual(list(delta_plus['Resources'].keys()), ['MountPoint1', 'ExtraStorage1'])
+        self.assertCountEqual(list(delta_plus['Resources'].keys()), ['MountPoint1', 'ExtraStorage1'])
         self.assertEqual(delta_plus['Resources']['ExtraStorage1']['Properties']['Size'], '10')
         self.assertEqual(delta_plus['Resources']['MountPoint1']['Properties']['Device'], '/dev/sdh')
-        self.assertEqual(list(delta_plus['Outputs'].keys()), [])
+        self.assertCountEqual(list(delta_plus['Outputs'].keys()), [])
 
     def test_template_delta_includes_removal_of_subdomains(self):
         context = self._base_context('dummy2')

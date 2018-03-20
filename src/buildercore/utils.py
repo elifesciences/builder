@@ -11,6 +11,12 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+def ensure(assertion, msg, exception_class=AssertionError):
+    """intended as a convenient replacement for `assert` statements that
+    get compiled away with -O flags"""
+    if not assertion:
+        raise exception_class(msg)
+
 lmap = lambda func, *iterable: list(map(func, *iterable))
 
 lfilter = lambda func, *iterable: list(filter(func, *iterable))
@@ -112,6 +118,7 @@ def errcho(x):
 
 def nth(x, n):
     "returns the nth value in x or None"
+    ensure(str(n).isdigit(), "n must be an integer", TypeError)
     try:
         return list(x)[n]
     except (KeyError, IndexError):
@@ -241,12 +248,6 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
     if not dt:
         dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
-
-def ensure(assertion, msg, exception_class=AssertionError):
-    """intended as a convenient replacement for `assert` statements that
-    get compiled away with -O flags"""
-    if not assertion:
-        raise exception_class(msg)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)

@@ -139,7 +139,7 @@ class SimpleCases(base.BaseCase):
             core.find_region()
             self.fail("Shouldn't be able to choose a region")
         except core.MultipleRegionsError as e:
-            self.assertEqual(["us-east-1", "eu-central-1"], e.regions())
+            self.assertCountEqual(["us-east-1", "eu-central-1"], e.regions())
 
     def test_find_ec2_instances(self):
         self.assertEqual([], core.find_ec2_instances('dummy1--prod', allow_empty=True))

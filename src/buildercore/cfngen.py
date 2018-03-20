@@ -206,6 +206,7 @@ def build_context_cloudfront(context, parameterize):
     def build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
     if 'cloudfront' in context['project']['aws']:
+        errors = None
         if context['project']['aws']['cloudfront']['errors']:
             errors = {
                 'domain': parameterize(context['project']['aws']['cloudfront']['errors']['domain']),
@@ -213,8 +214,6 @@ def build_context_cloudfront(context, parameterize):
                 'codes': context['project']['aws']['cloudfront']['errors']['codes'],
                 'protocol': context['project']['aws']['cloudfront']['errors']['protocol'],
             }
-        else:
-            errors = None
         context['cloudfront'] = {
             'subdomains': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains']],
             'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains-without-dns']],
@@ -306,6 +305,7 @@ def more_validation(json_template_str):
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
 
+# TODO: shift this into testing and make each validation call a subTest
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
     only called during testing"""

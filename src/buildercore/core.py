@@ -8,7 +8,7 @@ import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
-from .utils import ensure, first, lookup, lmap, lfilter
+from .utils import ensure, first, lookup, lmap, lfilter, unique
 from boto import sns
 from boto.exception import BotoServerError
 import boto3
@@ -570,7 +570,7 @@ def find_region(stackname=None):
 
     all_projects = project.project_map()
     all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
-    region_list = list(set(filter(None, all_regions))) # remove any Nones, make unique, make a list
+    region_list = unique(filter(None, all_regions)) # remove any Nones, make unique, make a list
     if not region_list:
         raise EnvironmentError("no regions available at all!")
     if len(region_list) > 1:

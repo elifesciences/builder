@@ -80,5 +80,5 @@ def download(key, output_path):
     k = builder_bucket().get_key(key)
     assert k, ("Cannot find %s in bucket %s" % (key, builder_bucket()))
     LOG.info("downloading key %s", key, extra={'key': key})
-    k.get_contents_to_file(open(output_path, 'w'))
+    k.get_contents_to_file(open(output_path, 'wb'))
     return output_path

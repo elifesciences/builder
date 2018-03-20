@@ -4,10 +4,10 @@ import json, base64
 from fabric.api import get
 
 def decode_bvars(contents):
-    return json.loads(base64.b64decode(contents))
+    return json.loads(base64.b64decode(contents).encode())
 
 def encode_bvars(contents):
-    return base64.b64encode(json.dumps(contents))
+    return base64.b64encode(json.dumps(contents).encode())
 
 def read_from_current_host():
     "returns the buildvars from the CURRENTLY CONNECTED host"

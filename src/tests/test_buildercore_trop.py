@@ -1,4 +1,4 @@
-import json, yaml
+import json  # , yaml
 import os
 from os.path import join
 from . import base
@@ -21,7 +21,8 @@ class TestBuildercoreTrop(base.BaseCase):
         +  u'Type': u'AWS::Route53::RecordSet'}
         that hide the true comparison problem in self.assertEquals().
         """
-        return yaml.safe_load(dump)
+        # return yaml.safe_load(dump) # slightly improved in python3?
+        return json.loads(dump)
 
     def test_rds_template_contains_rds(self):
         extra = {
@@ -33,7 +34,8 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
         data = self._parse_json(trop.render(context))
         self.assertTrue(isinstance(data['Resources']['AttachedDB'], dict))
-        self.assertEqual(
+        # "Test that sequence first contains the same elements as second, regardless of their order."
+        self.assertCountEqual(
             data['Resources']['AttachedDB']['Properties']['Tags'],
             [
                 {'Key': 'Project', 'Value': 'dummy3'},
@@ -111,7 +113,7 @@ class TestBuildercoreTrop(base.BaseCase):
         data = self._parse_json(cfn_template)
         self.assertIn('MountPoint1', list(data['Resources'].keys()))
         self.assertIn('ExtraStorage1', list(data['Resources'].keys()))
-        self.assertEqual(
+        self.assertCountEqual(
             {
                 'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance1', 'AvailabilityZone']},
                 'VolumeType': 'standard',

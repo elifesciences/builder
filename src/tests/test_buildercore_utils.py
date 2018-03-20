@@ -39,11 +39,18 @@ class TestBuildercoreUtils(base.BaseCase):
         vals = [
             ('a', 1),
             ([], 1),
-            ({}, 'a'),
+            #({}, 'a'), # now raises a TypeError
         ]
         expected = None
         for data, n in vals:
             self.assertEqual(expected, utils.nth(data, n))
+
+    def test_bad_nths(self):
+        vals = [
+            ({}, 'a', TypeError),
+        ]
+        for data, n, exc in vals:
+            self.assertRaises(exc, utils.nth, data, n)
 
     def test_lu(self):
         data = {
