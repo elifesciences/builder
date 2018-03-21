@@ -5,8 +5,10 @@ from buildercore import bootstrap, cfngen, lifecycle
 from buildercore.config import BOOTSTRAP_USER
 import buildvars
 import cfn
-
 from fabfile import PROJECT_DIR
+import logging
+
+logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
 class TestProvisioning(base.BaseCase):
     def setUp(self):
