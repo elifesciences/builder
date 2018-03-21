@@ -2,7 +2,7 @@ import os
 from os.path import join
 import utils
 from buildercore import core, project, config
-from buildercore.utils import first, remove_ordereddict, errcho, lfilter
+from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap
 from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
@@ -108,7 +108,7 @@ def requires_steady_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
         ss = core.steady_aws_stacks(aws.find_region())
-        keys = map(first, ss)
+        keys = lmap(first, ss)
         idx = dict(zip(keys, ss))
         helpfn = lambda pick: idx[pick][1]
         if not keys:
