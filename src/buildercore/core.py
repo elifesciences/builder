@@ -157,16 +157,16 @@ def boto_s3_conn(region):
 
 @cached
 def connect_aws_with_pname(pname, service, with_boto3=False):
-    "convenience"
+    "convenience. returns a boto client for a service in same region as given project"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
     LOG.debug('connecting to a %s instance in region %s', pname, region)
     if with_boto3:
-        return boto3.client('rds', region)
+        return boto3.client('rds', region) # BUG: this should be `service`, right?
     return connect_aws(service, region)
 
 def connect_aws_with_stack(stackname, service, with_boto3=False):
-    "convenience"
+    "convenience. returns a boto client for a service in same region as given project instance"
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service, with_boto3)
 
