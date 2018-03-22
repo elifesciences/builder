@@ -1391,6 +1391,28 @@ peerscout:
             1241: 80
         ram: 4096
 
+sciencebeam-texture:
+    description: Sciencebeam and Texture proof of concept
+    subdomain: sciencebeam-texture
+    repo: https://github.com/elifesciences/sciencebeam-texture
+    formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
+    aws:
+        type: t2.small # 2 GB RAM
+        ports:
+            - 22
+            - 80 # texture
+            - 443 # texture
+        ext:
+            size: 10 # GB
+    aws-alt:
+        demo:
+            subdomains:
+                - sciencebeam-texture
+    vagrant:
+        ports:
+            1222: 80
+        ram: 2048
+
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
     subdomain: iiif
