@@ -1391,7 +1391,6 @@ sciencebeam-texture:
             - 22
             - 80 # texture
             - 443 # texture
-            - 8075 # sciencebeam API
         ext:
             size: 10 # GB
     aws-alt:
