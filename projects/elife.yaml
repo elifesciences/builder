@@ -917,7 +917,7 @@ containers:
         ports:
             - 22
         ext:
-            size: 30 # GB
+            size: 100 # GB
             type: gp2
     aws-alt: {}
     vagrant:
