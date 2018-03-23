@@ -677,6 +677,9 @@ def project_data_for_stackname(stackname):
         project_data = project.set_project_alt(project_data, 'aws', instance_id)
     return project_data
 
+def region_for_stackname(stackname):
+    return project_data_for_stackname(stackname)['aws']['region']
+
 #
 # might be better off in bakery.py?
 #
