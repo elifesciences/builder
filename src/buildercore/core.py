@@ -162,7 +162,7 @@ def connect_aws_with_pname(pname, service, with_boto3=False):
     region = pdata['aws']['region']
     LOG.debug('connecting to a %s instance in region %s', pname, region)
     if with_boto3:
-        return boto3.client('rds', region) # BUG: this should be `service`, right?
+        return boto3.client(service, region)
     return connect_aws(service, region)
 
 def connect_aws_with_stack(stackname, service, with_boto3=False):
