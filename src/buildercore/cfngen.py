@@ -23,8 +23,8 @@ import re
 from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
-from . import utils, trop, core, project, bootstrap, context_handler
-from .utils import ensure
+from . import utils, trop, core, project, context_handler
+from .utils import ensure, lmap
 from .config import STACK_DIR
 
 import logging
@@ -39,9 +39,22 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     supported_projects = project.project_list()
     ensure(pname in supported_projects, "Unknown project %r. Known projects: %s" % (pname, supported_projects))
 
+    # this is the context data from the currently existing template (if any)
+    # by re-using current values we can avoid making unnecessary changes when
+    # regenerating templates (like random passwords)
+    existing_context = more_context.pop('existing_context', {})
+
+    # order is important. prefer the alt-config in more_context (explicit) over
+    # any existing context (implicit)
+    alt_config = utils.firstnn([
+        more_context.get('alt-config'),
+        existing_context.get('alt-config')
+    ])
+
     project_data = project.project_data(pname)
-    if 'alt-config' in more_context:
-        project_data = project.set_project_alt(project_data, 'aws', more_context['alt-config'])
+    if alt_config:
+        project_data = project.set_project_alt(project_data, 'aws', alt_config)
+        more_context['alt-config'] = alt_config
 
     defaults = {
         'project_name': pname,
@@ -54,6 +67,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'stackname': None, # must be provided by whatever is calling this
         'instance_id': None, # derived from the stackname
         'cluster_id': None, # derived from the stackname
+
+        'alt-config': None,
 
         'branch': project_data.get('default-branch'),
         'revision': None, # may be used in future to checkout a specific revision of project
@@ -75,16 +90,13 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'elasticache': False,
     }
 
-    # this is the context data from the currently existing template (if any)
-    # by re-using current values we can avoid making unnecessary changes when
-    # regenerating templates (like random passwords)
-    existing_context = more_context.pop('existing_context', {})
-
     context = copy.deepcopy(defaults)
     context.update(more_context)
 
     # proceed with wrangling
 
+    # TODO: don't like this. if a stackname is required, make it a parameter.
+    # stackname used to be derived inside this func from pname + id + cluster number
     ensure(context['stackname'], "a stackname wasn't provided.")
     stackname = context['stackname']
 
@@ -119,7 +131,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     for queue_template_name in context['project']['aws']['sqs']:
         queue_name = _parameterize(queue_template_name)
         queue_configuration = context['project']['aws']['sqs'][queue_template_name]
-        subscriptions = map(_parameterize, queue_configuration.get('subscriptions', []))
+        subscriptions = lmap(_parameterize, queue_configuration.get('subscriptions', []))
         context['sqs'][queue_name] = subscriptions
 
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
@@ -194,6 +206,7 @@ def build_context_cloudfront(context, parameterize):
     def build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
     if 'cloudfront' in context['project']['aws']:
+        errors = None
         if context['project']['aws']['cloudfront']['errors']:
             errors = {
                 'domain': parameterize(context['project']['aws']['cloudfront']['errors']['domain']),
@@ -201,8 +214,6 @@ def build_context_cloudfront(context, parameterize):
                 'codes': context['project']['aws']['cloudfront']['errors']['codes'],
                 'protocol': context['project']['aws']['cloudfront']['errors']['protocol'],
             }
-        else:
-            errors = None
         context['cloudfront'] = {
             'subdomains': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains']],
             'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains-without-dns']],
@@ -233,8 +244,7 @@ def complete_domain(host, default_main):
         return default_main
     elif is_complete:
         return host
-    else:
-        return host + '.' + default_main # something + '.' + elifesciences.org
+    return host + '.' + default_main # something + '.' + elifesciences.org
 
 def build_context_subdomains(context):
     context['subdomains'] = [complete_domain(s, context['project']['domain']) for s in context['project']['aws'].get('subdomains', [])]
@@ -243,19 +253,14 @@ def build_context_elasticache(context):
     if 'elasticache' in context['project']['aws']:
         context['elasticache'] = context['project']['aws']['elasticache']
 
-def choose_config(stackname):
-    (pname, instance_id) = core.parse_stackname(stackname)
+def choose_alt_config(stackname):
+    """returns the name of the alt-config you think the user would want, based on given stackname"""
+    pname, instance_id = core.parse_stackname(stackname)
     pdata = project.project_data(pname)
-    more_context = {
-        'stackname': stackname,
-    }
     if instance_id in project.project_alt_config_names(pdata):
-        LOG.info("using alternate AWS configuration %r", instance_id)
-        # TODO there must be a single place where alt-config is switched in
-        # hopefully as deep in the stack as possible to hide it away
-        more_context['alt-config'] = instance_id
+        # instance_id exactly matches an alternative config. use that.
+        return instance_id
 
-    return more_context
 #
 #
 #
@@ -300,6 +305,7 @@ def more_validation(json_template_str):
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
 
+# TODO: shift this into testing and make each validation call a subTest
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
     only called during testing"""
@@ -356,9 +362,9 @@ def generate_stack(pname, **more_context):
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$']
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$']
 
-REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$', '^.+Topic$']
+REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
@@ -366,7 +372,7 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
     def non_empty(self):
         return self.plus['Resources'] or self.plus['Outputs'] or self.edit['Resources'] or self.edit['Outputs'] or self.minus['Resources'] or self.minus['Outputs']
 
-def template_delta(pname, context):
+def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
@@ -443,8 +449,8 @@ def template_delta(pname, context):
         if (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
-    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
-    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).iteritems() if o not in template.get('Outputs', {})}
+    delta_minus_resources = {r: v for r, v in old_template['Resources'].items() if r not in template['Resources'] and _title_is_removable(r)}
+    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).items() if o not in template.get('Outputs', {})}
 
     return Delta(
         {
@@ -484,10 +490,29 @@ def apply_delta(template, delta):
         for title in delta.minus[component]:
             del template[component][title]
 
-def regenerate_stack(pname, **more_context):
-    current_template = bootstrap.current_template(more_context['stackname'])
-    current_context = context_handler.load_context(more_context['stackname'])
-    write_template(more_context['stackname'], json.dumps(current_template))
+# def regenerate_stack_vars(stackname, **more_context):
+#    """returns the current template context and the new context for the given stackname.
+#    use `cfngen.template_delta` to generate a list of changes"""
+#    # fetch context used to build current stack
+#    current_context = context_handler.load_context(stackname)
+#    # don't rely on 'alt-config' being present in the current context, or if it is present,
+#    # don't assume that alt-config existed when the current context existed. for example:
+#    # `prod` used a local db before, same as default, but now a `prod` alt-config gets RDS
+#    more_context['alt-config'] = choose_alt_config(stackname)
+#    # build the context again, but this time re-use some current values/config
+#    more_context['stackname'] = stackname # TODO: purge this crap
+#    pname = core.parse_stackname(stackname)[0]
+#    return current_context, build_context(pname, existing_context=current_context, **more_context)
+
+def regenerate_stack(stackname, current_template, **more_context):
+   # what is the point of these two lines? it downloads the template body and saves it to disk and never uses it ...
+   # It's using the local disk as a cache for the template, rather than calling the API whenever is needed
+   # if it was doing something important, it should be it's own function, like `write_cfn_template_to_disk` or whatever
+   # as it is, it requires a dependency between cfngen and bootstrap (removed) that shouldn't really exist
+    current_context = context_handler.load_context(stackname)
+    write_template(stackname, json.dumps(current_template))
+    pname = core.project_name_from_stackname(stackname)
+    more_context['stackname'] = stackname # TODO: purge this crap
     context = build_context(pname, existing_context=current_context, **more_context)
-    delta = template_delta(pname, context)
+    delta = template_delta(context)
     return context, delta, current_context

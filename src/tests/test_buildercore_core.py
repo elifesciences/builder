@@ -4,6 +4,7 @@ from os.path import join
 from . import base
 from buildercore import core, utils, project
 from unittest import skip
+from mock import patch
 
 class SimpleCases(base.BaseCase):
     def setUp(self):
@@ -118,16 +119,16 @@ class SimpleCases(base.BaseCase):
             'master-server--2016-01-01',
             'master-server--master--ci',
         ]
-        results = map(core.is_master_server_stack, true_cases)
-        self.assertTrue(all(results), "not all master servers identified: %r" % zip(true_cases, results))
+        results = list(map(core.is_master_server_stack, true_cases))
+        self.assertTrue(all(results), "not all master servers identified: %r" % list(zip(true_cases, results)))
 
     def test_master_server_identified_false_cases(self):
         false_cases = [
             'master-server', # *stack* names not project names
             '', None, 123, {}, [], self
         ]
-        results = map(core.is_master_server_stack, false_cases)
-        self.assertFalse(all(results), "not all false cases identified: %r" % zip(false_cases, results))
+        results = list(map(core.is_master_server_stack, false_cases))
+        self.assertFalse(all(results), "not all false cases identified: %r" % list(zip(false_cases, results)))
 
     def test_find_region(self):
         self.assertEqual(core.find_region(), "us-east-1")
@@ -138,14 +139,27 @@ class SimpleCases(base.BaseCase):
             core.find_region()
             self.fail("Shouldn't be able to choose a region")
         except core.MultipleRegionsError as e:
-            self.assertEqual(["us-east-1", "eu-central-1"], e.regions())
+            self.assertCountEqual(["us-east-1", "eu-central-1"], e.regions())
 
     def test_find_ec2_instances(self):
-        self.assertEquals([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
+        self.assertEqual([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
 
     def test_find_ec2_instances_requiring_a_non_empty_list(self):
         self.assertRaises(core.NoRunningInstances, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
 
+    def test_all_sns_subscriptions_filters_correctly(self):
+        cases = [
+            ('lax--prod', []), # lax doesn't subscribe to anything
+            ('observer--prod', ['bus-articles--prod', 'bus-metrics--prod']),
+        ]
+        fixture = json.load(open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r'))
+        with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
+            for stackname, expected_subs in cases:
+                res = core.all_sns_subscriptions('someregion', stackname)
+                actual_subs = [sub['Topic'] for sub in res]
+                #self.assertItemsEqual(expected_subs, actual_subs)
+                # https://bugs.python.org/issue17866
+                self.assertCountEqual(expected_subs, actual_subs)
 
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):

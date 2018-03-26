@@ -7,10 +7,10 @@ import utils
 @task
 def lst():
     for org, plist in project.org_project_map().items():
-        print org
+        print(org)
         for project_name in plist:
-            print '  ', project_name
-        print
+            print('  ', project_name)
+        print()
 
 @task
 @requires_project

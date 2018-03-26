@@ -6,7 +6,7 @@ import os
 import aws
 from fabric.api import sudo, local
 from buildercore import core, bootstrap, config, keypair
-from buildercore.utils import last
+from buildercore.utils import last, lmap
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
@@ -23,19 +23,19 @@ def write_missing_keypairs_to_s3():
     "uploads any missing ec2 keys to S3 if they're present locally"
     remote_keys = keypair.all_in_s3()
     local_paths = keypair.all_locally()
-    local_keys = map(os.path.basename, local_paths)
+    local_keys = lmap(os.path.basename, local_paths)
 
     to_upload = set(local_keys).difference(set(remote_keys))
 
-    print 'remote:', remote_keys
-    print 'local:', local_keys
-    print 'to upload:', to_upload
+    print('remote:', remote_keys)
+    print('local:', local_keys)
+    print('to upload:', to_upload)
 
     def write(key):
         stackname = os.path.splitext(key)[0]
         keypair.write_keypair_to_s3(stackname)
 
-    map(write, to_upload)
+    lmap(write, to_upload)
 
 def write_missing_context_to_s3():
     pass
@@ -50,7 +50,7 @@ def download_keypair(stackname):
         local('chmod 400 -R %s' % path)
         return path
     except EnvironmentError as err:
-        LOG.info(err.message)
+        LOG.info(err)
 
 #
 #
@@ -70,7 +70,7 @@ def server_access():
 
 @echo_output
 def aws_update_many_projects(pname_list):
-    minions = ' or '.join(map(lambda pname: pname + "-*", pname_list))
+    minions = ' or '.join([pname + "-*" for pname in pname_list])
     region = aws.find_region()
     with core.stack_conn(core.find_master(region)):
         sudo("salt -C '%s' state.highstate --retcode-passthrough" % minions)
@@ -92,7 +92,7 @@ def remaster_minion(stackname, master_ip=None):
             raise core.NoMasterException("no master servers found")
         master_ip = core.stack_data(newest_master)[0]['private_ip_address']
 
-    print 're-mastering %s to %s' % (stackname, master_ip)
+    print('re-mastering %s to %s' % (stackname, master_ip))
 
     def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have

@@ -14,4 +14,4 @@ LOG = logging.getLogger(__name__)
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
     buildvars.switch_revision(stackname, revision)
-    bootstrap.update_stack(stackname, concurrency=concurrency_for(stackname, concurrency))
+    bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency_for(stackname, concurrency))

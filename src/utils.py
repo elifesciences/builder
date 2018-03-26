@@ -23,12 +23,12 @@ def rmval(lst, *vals):
 def git_remote_branches(url):
     # in: [('asdf', 'refs/heads/develop'), ('fdas', 'refs/heads/master',) ...]
     # out: ['develop', 'master', ...]
-    return map(lambda ref: last(second(ref).split('/')), _git_remote_refs(url))
+    return [last(second(ref).split('/')) for ref in _git_remote_refs(url)]
 
 def _git_remote_refs(url):
     cmd = "git ls-remote --heads %s" % url
     output = local(cmd, capture=True)
-    return map(lambda line: line.split(), output.splitlines())
+    return [line.split() for line in output.splitlines()]
 
 def errcho(x):
     sys.stderr.write(x)
@@ -48,13 +48,13 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
             # default value doesn't appear in pick list, ignore given default
             default = None
     while True:
-        print "%s (%s)" % (message, name)
+        print("%s (%s)" % (message, name))
         for i, pick in enumerate(pick_list):
-            print i + 1, '-', pick
+            print(i + 1, '-', pick)
             if helpfn:
                 helptext = helpfn(pick)
                 if helptext:
-                    print '    "%s"\n' % str(helptext)
+                    print('    "%s"\n' % str(helptext))
         prompt = '> '
         if not default and len(pick_list) == 1:
             default = pick_list[0]
@@ -64,10 +64,10 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
         if not uinput or not uinput.lower().strip():
             if default:
                 return pick_list[pick_list.index(default)]
-            print 'input is required\n'
+            print('input is required\n')
             continue
-        elif not uinput.isdigit() or int(uinput) not in range(1, len(pick_list) + 1):
-            print 'a digit within the range of choices is required'
+        elif not uinput.isdigit() or int(uinput) not in list(range(1, len(pick_list) + 1)):
+            print('a digit within the range of choices is required')
             continue
         choice = pick_list[int(uinput) - 1]
         if default_file:
@@ -90,11 +90,11 @@ def uin(param, default=0xDEADBEEF):
         return userin
 
 def get_input(message):
-    return raw_input(message)
+    return input(message)
 
 def confirm(message):
-    print message
-    print 'press any key to confirm (ctrl-c to quit)'
+    print(message)
+    print('press any key to confirm (ctrl-c to quit)')
     get_input('')
 
 def walk_nested_struct(val, fn):
@@ -103,8 +103,7 @@ def walk_nested_struct(val, fn):
         return {key: walk_nested_struct(i, fn) for key, i in val.items()}
     elif isinstance(val, list):
         return [walk_nested_struct(i, fn) for i in val]
-    else:
-        return fn(val)
+    return fn(val)
 
 def mkdirp(path):
     return os.system("mkdir -p %s" % path) == 0

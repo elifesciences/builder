@@ -1,19 +1,37 @@
 import pytz
 import os, sys, copy, json, time, random, string
-from StringIO import StringIO
+from io import StringIO, BytesIO
 from functools import wraps
 from datetime import datetime
 import yaml
 from collections import OrderedDict, Iterable
 from os.path import join
 from more_itertools import unique_everseen
-
 import logging
+from fabric.operations import get, put
+
 LOG = logging.getLogger(__name__)
+
+def ensure(assertion, msg, exception_class=AssertionError):
+    """intended as a convenient replacement for `assert` statements that
+    get compiled away with -O flags"""
+    if not assertion:
+        raise exception_class(msg)
+
+lmap = lambda func, *iterable: list(map(func, *iterable))
+
+lfilter = lambda func, *iterable: list(filter(func, *iterable))
+
+keys = lambda d: list(d.keys())
+
+lzip = lambda *iterable: list(zip(*iterable))
+
+def isint(v):
+    return str(v).lstrip('-+').isdigit()
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
-    return [item for sublist in lst for item in sublist]
+    return [item for sublist in list(lst) for item in sublist]
 
 def unique(lst):
     return list(unique_everseen(lst))
@@ -36,6 +54,19 @@ def dictfilter(func, ddict):
 def dictmap(fn, ddict):
     return {key: fn(key, val) for key, val in ddict.items()}
 
+def nested_dictmap(fn, ddict):
+    "`fn` should accept both key and value and return a new key and new value. dictionary values will have `fn` applied to them in turn"
+    if not fn:
+        return ddict
+    for key, val in ddict.items():
+        new_key, new_val = fn(key, val)
+        if isinstance(new_val, dict):
+            new_val = nested_dictmap(fn, new_val)
+        if key != new_key:
+            del ddict[key] # if the key is modified, we don't want it hanging around
+        ddict[new_key] = new_val # always replace value
+    return ddict
+
 def subdict(ddict, key_list):
     return {k: v for k, v in ddict.items() if k in key_list}
 
@@ -50,21 +81,16 @@ def complement(pred):
     return wrapper
 
 def splitfilter(func, data):
-    return filter(func, data), filter(complement(func), data)
+    return lfilter(func, data), lfilter(complement(func), data)
 
-
-"""
-# NOTE: works, unused.
-def deep_exclude(ddict, excluding):
-    child_exclude, parent_exclude = splitfilter(lambda v: isinstance(v, dict), excluding)
-    child_exclude = first(child_exclude) or {}
-    for key, val in ddict.items():
-        if key in parent_exclude:
-            del ddict[key]
-            continue
-        if isinstance(val, dict):
-            deep_exclude(ddict[key], child_exclude.get(key, []))
-"""
+def mkidx(fn, lst):
+    groups = {}
+    for v in lst:
+        key = fn(v)
+        grp = groups.get(key, [])
+        grp.append(v)
+        groups[key] = grp
+    return groups
 
 def deepmerge(into, from_here, excluding=None):
     "destructive deep merge of `into` with values `from_here`"
@@ -93,8 +119,9 @@ def errcho(x):
 
 def nth(x, n):
     "returns the nth value in x or None"
+    ensure(isint(n), "n must be an integer", TypeError)
     try:
-        return x[n]
+        return list(x)[n]
     except (KeyError, IndexError):
         return None
     except TypeError:
@@ -119,7 +146,6 @@ def last(x):
 def firstnn(x):
     "returns the first non-nil value in x"
     return first(filter(lambda v: v is not None, x))
-    # return first(filter(None, x))
 
 # pylint: disable=too-many-arguments
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
@@ -160,36 +186,6 @@ def random_alphanumeric(length=32):
     rand = random.SystemRandom()
     return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
 
-
-'''
-# works, but the !include function is unused
-def yaml_load(stream):
-    # http://stackoverflow.com/questions/528281/how-can-i-include-an-yaml-file-inside-another
-    # http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
-    class Loader(yaml.Loader):
-        def __init__(self, stream):
-            self._root = os.path.split(stream.name)[0]
-            super(Loader, self).__init__(stream)
-
-        def _include(self, node):
-            filename = join(self._root, self.construct_scalar(node))
-            with open(filename, 'r') as f:
-                return yaml.load(f, Loader)
-
-        def _construct_mapping(self, node):
-            self.flatten_mapping(node)
-            return OrderedDict(self.construct_pairs(node))
-
-    Loader.add_constructor('!include', Loader._include)
-    mapping_tag = yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
-    Loader.add_constructor(mapping_tag, Loader._construct_mapping)
-
-    return yaml.load(stream, Loader)
-
-def yaml_loads(string):
-    return yaml_load(StringIO(string))
-'''
-
 def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
     # pylint: disable=too-many-ancestors
     class OrderedLoader(loader_class):
@@ -214,7 +210,7 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     def _dict_representer(dumper, data):
         return dumper.represent_mapping(
             yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-            data.items())
+            list(data.items()))
     OrderedDumper.add_representer(OrderedDict, _dict_representer)
     kwds.update({'default_flow_style': default_flow_style, 'indent': indent, 'line_break': line_break})
     # WARN: if stream is provided, return value is None
@@ -239,7 +235,7 @@ def remove_ordereddict(data, dangerous=True):
 
 def listfiles(path, ext_list=None):
     "returns a list of absolute paths for given dir"
-    path_list = map(lambda fname: os.path.abspath(join(path, fname)), os.listdir(path))
+    path_list = [os.path.abspath(join(path, fname)) for fname in os.listdir(path)]
     if ext_list:
         path_list = filter(lambda path: os.path.splitext(path)[1] in ext_list, path_list)
     return sorted(filter(os.path.isfile, path_list))
@@ -253,12 +249,6 @@ def ymd(dt=None, fmt="%Y-%m-%d"):
     if not dt:
         dt = datetime.now() # TODO: replace this with a utcnow()
     return dt.strftime(fmt)
-
-def ensure(assertion, msg, exception_class=AssertionError):
-    """intended as a convenient replacement for `assert` statements that
-    get compiled away with -O flags"""
-    if not assertion:
-        raise exception_class(msg)
 
 def mkdir_p(path):
     os.system("mkdir -p %s" % path)
@@ -283,7 +273,7 @@ def json_dumps(obj, dangerous=False, **kwargs):
 def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict):
         raise ValueError("lookup context must be a dictionary")
-    if not isinstance(path, basestring):
+    if not isinstance(path, str):
         raise ValueError("path must be a string, given %r", path)
     try:
         bits = path.split('.', 1)
@@ -319,3 +309,33 @@ def hasallkeys(ddict, key_list):
 def missingkeys(ddict, key_list):
     "returns all keys in key_list that are not in given ddict"
     return [key for key in key_list if key not in ddict]
+
+
+def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
+    "wrapper around fabric.operations.get"
+    label = label or remote_path
+    msg = "downloading %s" % label
+    LOG.info(msg)
+    local_path = local_path or BytesIO()
+    get(remote_path, local_path, use_sudo=use_sudo)
+    if isinstance(local_path, BytesIO):
+        if return_stream:
+            local_path.seek(0) # reset stream's internal pointer
+            return local_path
+        return local_path.getvalue().decode() # return a string
+    return local_path
+
+def fab_put(local_path, remote_path, use_sudo=False, label=None):
+    "wrapper around fabric.operations.put"
+    label = label or local_path
+    msg = "uploading %s to %s" % (label, remote_path)
+    LOG.info(msg)
+    put(local_path=local_path, remote_path=remote_path, use_sudo=use_sudo)
+    return remote_path
+
+def fab_put_data(data, remote_path, use_sudo=False):
+    ensure(isinstance(data, bytes) or isinstance(data, str), "data must be bytes or a string that can be encoded to bytes")
+    data = data if isinstance(data, bytes) else data.encode()
+    bytestream = BytesIO(data)
+    label = "%s bytes" % bytestream.getbuffer().nbytes
+    return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)

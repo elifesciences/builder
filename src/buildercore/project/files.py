@@ -7,17 +7,16 @@ from buildercore import utils
 from buildercore.decorators import testme
 from buildercore.config import AWS_EXCLUDING
 from kids.cache import cache as cached
+from functools import reduce
 
 import logging
 LOG = logging.getLogger(__name__)
 
 
 @testme
-def update_project_file(path, value, project_data, project_file):
-    # if not project_data:
-    #    project_data = utils.ordered_load(open(project_file, 'r'))
-    utils.updatein(project_data, path, value, create=True)
-    return project_data
+def update_project_file(path, value, pdata, project_file):
+    utils.updatein(pdata, path, value, create=True)
+    return pdata
 
 @testme
 def write_project_file(new_project_data, project_file):
@@ -81,18 +80,18 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         'aws-alt',
         {'aws': AWS_EXCLUDING},
     ]
-    project_data = copy.deepcopy(global_defaults)
-    utils.deepmerge(project_data, project_list[pname], excluding)
+    pdata = copy.deepcopy(global_defaults)
+    utils.deepmerge(pdata, project_list[pname], excluding)
 
     # merge in any per-project overrides
     # DO NOT use exclusions here
     project_overrides = _merge_snippets(pname, snippets)
-    utils.deepmerge(project_data, project_overrides)
+    utils.deepmerge(pdata, project_overrides)
 
     # handle the alternate configurations
-    for altname, altdata in project_data.get('aws-alt', {}).items():
+    for altname, altdata in pdata.get('aws-alt', {}).items():
         # take project's *current aws state*,
-        project_aws = copy.deepcopy(project_data['aws'])
+        project_aws = copy.deepcopy(pdata['aws'])
 
         # merge in any overrides
         utils.deepmerge(project_aws, altdata)
@@ -101,14 +100,14 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         orig_defaults = copy.deepcopy(global_defaults['aws'])
 
         utils.deepmerge(orig_defaults, project_aws, AWS_EXCLUDING)
-        project_data['aws-alt'][altname] = orig_defaults
+        pdata['aws-alt'][altname] = orig_defaults
 
-    for altname, altdata in project_data.get('vagrant-alt', {}).items():
+    for altname, altdata in pdata.get('vagrant-alt', {}).items():
         orig = copy.deepcopy(altdata)
-        utils.deepmerge(altdata, project_data['vagrant'])
+        utils.deepmerge(altdata, pdata['vagrant'])
         utils.deepmerge(altdata, orig)
 
-    return project_data
+    return pdata
 
 def project_file_name(project_file):
     "returns the name of the project file without the extension"
@@ -126,8 +125,8 @@ def project_dir_path(project_file):
             os.mkdir(path)
         except BaseException:
             import subprocess
-            print "Debugging os.mkdir(path) failure"
-            print subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT)
+            print("Debugging os.mkdir(path) failure")
+            print(subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT))
             raise
     return path
 
@@ -138,7 +137,7 @@ def find_snippets(project_file):
     fnames = filter(lambda fname: fname.endswith('.yaml'), fnames)
     path_list = map(lambda fname: join(path, fname), fnames)
     path_list = sorted(filter(os.path.isfile, path_list))
-    return map(lambda p: utils.ordered_load(open(p, 'r')), path_list)
+    return [utils.ordered_load(open(p, 'r')) for p in path_list]
 
 
 #

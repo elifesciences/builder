@@ -2,6 +2,7 @@
 import ssl, socket
 from dateutil.parser import parse
 from . import utils, project, core
+from .utils import lmap
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -78,13 +79,13 @@ def project_certificates(pname):
     subdomain = pdata.get('subdomain')
     if subdomain:
         project_stacks = core.stack_names(core.active_aws_project_stacks(pname))
-        return map(stack_certificate, project_stacks)
+        return lmap(stack_certificate, project_stacks)
     return []
 
 def all_certificates(region=None):
     "returns certificate information for all active instances of all projects"
     region = region or core.find_region()
-    return map(stack_certificate, core.active_stack_names(region))
+    return lmap(stack_certificate, core.active_stack_names(region))
 
 def certificate_report(region=None):
     certs = all_certificates(region)

@@ -17,13 +17,13 @@ LOG = logging.getLogger(__name__)
 def project_alt_config_names(pdata, env='aws'):
     "returns names of all alternate configurations for given project data and environment (default aws)"
     assert env in ['vagrant', 'aws'], "'env' must be either 'vagrant' or 'aws'"
-    return pdata.get(env + '-alt', {}).keys()
+    return list(pdata.get(env + '-alt', {}).keys())
 
 def set_project_alt(pdata, env, altkey):
     "non-destructive update of given project data with the specified alternative configuration."
     assert env in ['vagrant', 'aws'], "'env' must be either 'vagrant' or 'aws'"
     env_key = env + '-alt'
-    assert altkey in pdata[env_key], "project has no alternative config %r. Available: %s" % (altkey, pdata[env_key].keys())
+    assert altkey in pdata[env_key], "project has no alternative config %r. Available: %s" % (altkey, list(pdata[env_key].keys()))
     pdata_copy = copy.deepcopy(pdata) # don't modify the data given to us
     pdata_copy[env] = pdata[env_key][altkey]
     return pdata_copy
@@ -81,7 +81,7 @@ def org_project_map(project_locations_list=None):
 def org_map(project_locations_list=None):
     "returns a map of {org => project names} excluding project data"
     opm = org_project_map(project_locations_list)
-    return {org: pdata.keys() for org, pdata in opm.items()}
+    return {org: list(pdata.keys()) for org, pdata in opm.items()}
 
 @cache
 def project_map(project_locations_list=None):
@@ -101,10 +101,10 @@ def project_map(project_locations_list=None):
 
 def project_list(project_locations_list=None):
     "returns a single list of projects, ignoring organization and project data"
-    return project_map(project_locations_list).keys()
+    return list(project_map(project_locations_list).keys())
 
 def project_data(pname, project_locations_list=None):
-    "returns the data for a single project"
+    "returns the data for a single project."
     data = project_map(project_locations_list)
     try:
         return data[pname]

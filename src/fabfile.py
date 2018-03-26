@@ -15,7 +15,6 @@ import metrics
 # packer functionality not tested properly since going public
 #import packer
 import tasks
-import lax
 import master
 import askmaster
 import buildvars

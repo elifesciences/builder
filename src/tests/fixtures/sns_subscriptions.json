@@ -1,0 +1,1930 @@
+[
+    {
+        "Topic": "bus-profiles--pr-9", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-9", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-9", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-9:0a24a1c5-0f16-4d5b-91f9-5ea0fa7f6766"
+    }, 
+    {
+        "Topic": "bus-subjects--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end:258f3fa6-8141-4bd4-8bf1-bed43badb7b0"
+    }, 
+    {
+        "Topic": "bus-articles--pr-44-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-44-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-44-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-44-base-update:272453b5-de3c-4dd4-a45e-3156912ec981"
+    }, 
+    {
+        "Topic": "bus-articles--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod:2ef1bb31-eedb-48fd-aa48-b185b8b505a3"
+    }, 
+    {
+        "Topic": "TechAlerts", 
+        "Endpoint": "techalerts@elifesciences.org", 
+        "Protocol": "email", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:TechAlerts", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:TechAlerts:33ab5713-f13f-44fa-a963-2fa150928295"
+    }, 
+    {
+        "Topic": "bus-collections--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--prod:3ba6d247-63db-49d6-b433-09d2f2927794"
+    }, 
+    {
+        "Topic": "bus-articles--mltest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest:441b0ca8-c9bf-4932-8cd9-4168392f2414"
+    }, 
+    {
+        "Topic": "bus-metrics--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end:477ffdee-5f5c-45c0-a8b0-55a0509881de"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--continuumtest:5374e676-a312-4bb7-81fb-82369340dae5"
+    }, 
+    {
+        "Topic": "bus-articles--fakeenv", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:bus-dogfood-fakeenv", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--fakeenv", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--fakeenv:5c5bbae7-39c2-406b-8fc6-95f85e9e6cbf"
+    }, 
+    {
+        "Topic": "bus-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:5cbde80b-0380-444b-8ec5-669217733918"
+    }, 
+    {
+        "Topic": "bus-interviews--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--continuumtest:60387142-8ed0-4a0a-941c-c6121becb239"
+    }, 
+    {
+        "Topic": "bus-articles--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod:62f06897-0d89-48d4-91b9-d5f18d9a66f9"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-6-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-6-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-6-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-6-base-update:63d773ee-b287-4b6d-8d97-f8a6e58e296b"
+    }, 
+    {
+        "Topic": "bus-articles--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test1:67e7f67e-25e6-4a52-b101-c7e93df3d76e"
+    }, 
+    {
+        "Topic": "bus-articles--observer-formula-pr-1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--observer-formula-pr-1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--observer-formula-pr-1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--observer-formula-pr-1:740036d9-d0b8-42d8-8896-bf4aba04f045"
+    }, 
+    {
+        "Topic": "bus-articles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest:79c2bd95-2a2e-4a95-86e7-a4cae67e5278"
+    }, 
+    {
+        "Topic": "bus-collections--search-formula-pr-23", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-23", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-23", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-23:7d880bc7-c02c-4475-848c-6c37f59c9c38"
+    }, 
+    {
+        "Topic": "bus-articles--pr-43-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-43-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-43-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-43-base-update:8648728f-abcf-4726-8359-9fe948e839d8"
+    }, 
+    {
+        "Topic": "bus-events--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-events--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-events--ci:8ffc608a-e01e-413d-b5b3-f87045792d4b"
+    }, 
+    {
+        "Topic": "bus-collections--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--ci:971dc7b0-8bfb-4622-8097-200804ba193e"
+    }, 
+    {
+        "Topic": "bus-blog-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--end2end:b32a318b-32b1-4b97-92a1-cb31d79f0377"
+    }, 
+    {
+        "Topic": "bus-metrics--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--prod:b46e6688-ee53-40f8-ade3-1a0eabd81027"
+    }, 
+    {
+        "Topic": "bus-interviews--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--end2end:bd386599-3d6e-41cb-aafd-d8f0d9c32fc8"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-3", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-3", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-3", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-3:c1b3ee75-c45a-4315-9a1f-3911887ff95a"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--ci:d5ff25c4-4c50-49c0-8f29-faeb7d7d44cf"
+    }, 
+    {
+        "Topic": "bus-articles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest:e5425964-acf3-4a04-8a69-41e0215e3e18"
+    }, 
+    {
+        "Topic": "bus-articles--performance", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--performance", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--performance", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--performance:e889fa38-5d6e-4e30-8467-9fcd720ce075"
+    }, 
+    {
+        "Topic": "bus-articles--substest1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--substest1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--substest1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff"
+    }, 
+    {
+        "Topic": "post-eif-result-topic", 
+        "Endpoint": "arn:aws:sqs:eu-west-1:512686554592:bot-test-event-monitor-queue", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:post-eif-result-topic", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:post-eif-result-topic:fddbd0f3-cffb-480d-a7ff-d81d75638509"
+    }, 
+    {
+        "Topic": "bus-subjects--search-formula-pr-25", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-25", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-25", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-25:00643f40-1be2-46da-b1f7-157dd71bfd64"
+    }, 
+    {
+        "Topic": "bus-metrics--standalone1604", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--standalone1604", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--standalone1604", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--standalone1604:00e73195-f222-48ec-8f90-1e2848295f2b"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-43-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-43-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-43-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-43-fresh:01150ec2-9f7d-44e9-b6f9-0dd1a0d6d67c"
+    }, 
+    {
+        "Topic": "bus-metrics--mltest7", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest7", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest7", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest7:020541f6-ce84-4caa-8666-e2e099d20043"
+    }, 
+    {
+        "Topic": "bus-collections--search-formula-pr-25", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-25", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-25", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-25:0639fa12-e226-49d2-9658-865672a84af7"
+    }, 
+    {
+        "Topic": "bus-interviews--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--continuumtest:096a65ca-7334-4a9c-8e07-818a04f335e4"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--ci:0bfdb0fd-b055-496d-8c3b-e5133f33d676"
+    }, 
+    {
+        "Topic": "bus-blog-articles--search-formula-pr-25", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-25", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-25", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-25:0fa5d0ba-e3ce-43f4-aacd-8228d5cd2e7f"
+    }, 
+    {
+        "Topic": "bus-profiles--annotations-formula-pr-test", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--annotations-formula-pr-test", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-test", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-test:150a64a6-a1aa-42e0-b02a-c77825898854"
+    }, 
+    {
+        "Topic": "bus-profiles--annotations-formula-pr-8", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--annotations-formula-pr-8", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-8", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-8:286772b2-2a02-4779-9ba7-e423fbae5b28"
+    }, 
+    {
+        "Topic": "bus-subjects--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--continuumtest:3feec909-b169-4f89-a993-5ed73533b5d9"
+    }, 
+    {
+        "Topic": "bus-articles--pr-6-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-6-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-6-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-6-fresh:4cc337ca-e4f5-4d21-9645-b789ba5b2424"
+    }, 
+    {
+        "Topic": "bus-blog-articles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--ci:54841e89-d049-4c74-ac06-62bc3ed83cf8"
+    }, 
+    {
+        "Topic": "bus-subjects--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end:5581d845-9f0d-402f-98a2-e2c312f81da7"
+    }, 
+    {
+        "Topic": "bus-articles--pr-4", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-4", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-4", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-4:56011b36-6ae0-47d4-87bb-dded9239b5f3"
+    }, 
+    {
+        "Topic": "bus-metrics--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--continuumtest:576e1ccd-fc00-4a39-b54d-e788d0e01014"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-44-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-44-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-44-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-44-fresh:66c0846e-1059-4d4a-bd79-b36050a3b888"
+    }, 
+    {
+        "Topic": "bus-metrics--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--1604test1:6a542163-271b-4fad-bbfe-5b14af1eab04"
+    }, 
+    {
+        "Topic": "bus-blog-articles--search-formula-pr-23", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-23", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-23", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-23:6bc719a4-099f-4d96-b402-df65d8d6ae23"
+    }, 
+    {
+        "Topic": "bus-articles--apprdstest3", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--apprdstest3", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--apprdstest3", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--apprdstest3:709a5328-036f-4f43-89ee-e841ae00c49b"
+    }, 
+    {
+        "Topic": "bus-metrics--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--end2end:71f61023-3905-40bb-9f7c-0ce710175212"
+    }, 
+    {
+        "Topic": "bus-profiles--annotations-formula-pr-4", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--annotations-formula-pr-4", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-4", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-4:75248117-faf0-4205-9b17-2de37367ed90"
+    }, 
+    {
+        "Topic": "bus-metrics--apprdstest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--apprdstest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--apprdstest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--apprdstest2:7f6b2c5a-ff1a-4f37-88eb-8fce8875ed8c"
+    }, 
+    {
+        "Topic": "elife-bot-event-property--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:end2end-event-property-incoming-queue", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:elife-bot-event-property--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:elife-bot-event-property--end2end:855f3ead-71af-48fa-a356-54e18d91392a"
+    }, 
+    {
+        "Topic": "bus-articles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci:8a63ff74-1ec1-46bb-a980-ef0b41b08967"
+    }, 
+    {
+        "Topic": "bus-articles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest:8bcec7bf-8fe9-4701-a342-d6cab1f7835b"
+    }, 
+    {
+        "Topic": "bus-metrics--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--prod:8cd7d656-a50e-4630-9ea4-2853ece0a6ca"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-15-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-15-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15-fresh:95d611cb-dbc8-447a-bb6c-7f059ac2a082"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-2:ab3d504f-2111-477e-886c-d24347ddcc83"
+    }, 
+    {
+        "Topic": "bus-articles--pr-3", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-3", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-3", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-3:adb667e9-0110-493a-8d2a-448fdf5572b5"
+    }, 
+    {
+        "Topic": "bus-collections--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--continuumtest:b182ec60-7d43-4c42-8067-ae34baccf801"
+    }, 
+    {
+        "Topic": "bus-blog-articles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--continuumtest:cf62818d-557e-4d4a-bdfb-496428a8f36e"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--1604test1:daacc423-01bd-473a-9058-fad2cd864b79"
+    }, 
+    {
+        "Topic": "bus-articles--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod:db6c4af1-ae8c-4c85-970a-679a84c32acc"
+    }, 
+    {
+        "Topic": "bus-profiles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--continuumtest:e8422e93-941f-4387-a852-1998945bceff"
+    }, 
+    {
+        "Topic": "bus-subjects--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--prod:e9f8fcfd-0e90-4374-9d56-e6cbd3be05e2"
+    }, 
+    {
+        "Topic": "bus-metrics--2017-07-31", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--2017-07-31", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--2017-07-31", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--2017-07-31:f15ef25e-9b2d-43c4-b1fd-9cfee7e7cc40"
+    }, 
+    {
+        "Topic": "bus-metrics--2018-01-29", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--2018-01-29", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--2018-01-29", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--2018-01-29:f7ab7d4a-7fc2-4dc1-b3b4-b1b52577d976"
+    }, 
+    {
+        "Topic": "bus-articles--search-formula-pr-25", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-25", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-25", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-25:03878b13-1a21-4528-9983-fba42f8808fa"
+    }, 
+    {
+        "Topic": "bus-articles--drupal844", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--drupal844", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--drupal844", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--drupal844:04dd5618-2263-4454-91aa-18ee2d15ad5b"
+    }, 
+    {
+        "Topic": "bus-metrics--1604test2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--1604test2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--1604test2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--1604test2:0bc9534c-50ad-463c-9155-3f4a3cf03b08"
+    }, 
+    {
+        "Topic": "bus-articles--rdstest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--rdstest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--rdstest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--rdstest2:11ed052c-25ef-43e5-b07e-907e7804ab5f"
+    }, 
+    {
+        "Topic": "bus-articles--pr-44-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-44-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-44-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-44-fresh:14a3520b-750a-440f-a850-e3c5c57886d0"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-15", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-15", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15:19540f37-9fc2-4871-a59b-73e8ccf8983e"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--prod:1b330494-8b0c-4101-a0d0-eef4a48f7068"
+    }, 
+    {
+        "Topic": "bus-metrics--mltest3", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest3", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest3", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest3:2740d09e-164e-4bd8-98a1-fa7c655cc3f8"
+    }, 
+    {
+        "Topic": "bus-metrics--journal-cms-formula-pr-41", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--journal-cms-formula-pr-41", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--journal-cms-formula-pr-41", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--journal-cms-formula-pr-41:2fb090f7-c22d-43c3-8b38-0e4afafece8d"
+    }, 
+    {
+        "Topic": "bus-subjects--search-formula-pr-27", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-27", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-27", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-27:348d7ea5-3ad0-4beb-8c5a-ae6060b52772"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-13", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-13", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-13", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-13:4000e1b0-a519-4bd5-b14f-0d3b60376d27"
+    }, 
+    {
+        "Topic": "bus-articles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci:415e3380-dea8-49da-a687-ad15465f6244"
+    }, 
+    {
+        "Topic": "bus-blog-articles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--continuumtest:44d0f155-ef54-4a85-8fc8-fe140b3ebaa4"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--search-formula-pr-24", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-24", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-24", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-24:51945012-a395-44e6-8d94-7f847738220b"
+    }, 
+    {
+        "Topic": "bus-collections--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end:5578b4ac-661e-4b85-9977-bafa0bfb5fe5"
+    }, 
+    {
+        "Topic": "bus-subjects--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--continuumtest:5b346133-0305-4a23-b15c-55b56b7c5016"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-12", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-12", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-12", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-12:5df4d241-fbcc-499c-9702-af1feda56d71"
+    }, 
+    {
+        "Topic": "bus-blog-articles--search-formula-pr-27", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-27", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-27", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-27:644dc7fc-3747-4c12-a246-2137c64ca568"
+    }, 
+    {
+        "Topic": "exp-workflow-starter-topic", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:exp-workflow-starter-queue", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:exp-workflow-starter-topic", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:exp-workflow-starter-topic:6af82171-bd22-495b-a568-f2a721138b8f"
+    }, 
+    {
+        "Topic": "bus-articles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci:6b9c2aea-c57a-46df-8b51-5c0f710b591a"
+    }, 
+    {
+        "Topic": "bus-collections--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--prod:702ea964-429d-487d-b315-8ad949ee501d"
+    }, 
+    {
+        "Topic": "bus-collections--search-formula-pr-26", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-26", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-26", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-26:73ab5d16-432a-4db5-a885-7a5f9e6b92b4"
+    }, 
+    {
+        "Topic": "bus-subjects--search-formula-pr-24", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-24", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-24", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-24:8b989f7d-5cbe-4ff2-84f2-e62ee240196f"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-5", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-5", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-5", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-5:8d1fc068-7c73-40d9-8d92-713ef903d530"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-43-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-43-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-43-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-43-base-update:a3acc07a-5ce6-4a74-8f46-da6b084542a0"
+    }, 
+    {
+        "Topic": "bus-subjects--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end:a4a02153-fa80-4d77-9799-383fbdc15e06"
+    }, 
+    {
+        "Topic": "bus-events--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-events--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-events--end2end:a66a7123-c577-46e7-b050-a7ccb9a442c9"
+    }, 
+    {
+        "Topic": "bus-articles--pr-43-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-43-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-43-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-43-fresh:ade174b5-764a-4bd5-8dd2-f8b51a81aaee"
+    }, 
+    {
+        "Topic": "bus-interviews--search-formula-pr-25", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-25", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-25", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-25:b3b259b6-ca3e-479e-addf-14dffa3685cc"
+    }, 
+    {
+        "Topic": "bus-articles--mltest4", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest4", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest4", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest4:b809f560-3604-422f-ae8e-bbd4307e19cb"
+    }, 
+    {
+        "Topic": "bus-profiles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--ci:c3b7c41f-46e8-404d-a2f9-6a67f7e202b9"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-4", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-4", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-4", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-4:c4c3841f-effc-4f04-a746-f98dd06ff55e"
+    }, 
+    {
+        "Topic": "bus-collections--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--ci:d2a3f616-a094-4263-b18e-8fd93b5ed5a3"
+    }, 
+    {
+        "Topic": "bus-labs-posts--search-formula-pr-23", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-23", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-23", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-23:edb00655-e39c-45c3-a1dd-38553374e2c1"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-16-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-16-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-16-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-16-fresh:f1bd4f6d-17f5-4200-81df-105e2024204a"
+    }, 
+    {
+        "Topic": "bus-articles--fakeenv", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:bus-dogfood-fakeenv", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--fakeenv", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--fakeenv:f42b09a0-512f-46a7-8512-85a9c593b15a"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--search-formula-pr-27", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-27", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-27", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-27:f6dc603c-97f3-4ca5-84f1-674d0c463664"
+    }, 
+    {
+        "Topic": "bus-metrics--mltest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest:f9cf23ec-f42b-430e-8770-1c58023dd131"
+    }, 
+    {
+        "Topic": "bus-blog-articles--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--prod:024a8a24-babd-48c5-bae7-e134cb69712a"
+    }, 
+    {
+        "Topic": "bus-metrics--restore-test", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--restore-test", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--restore-test", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--restore-test:037b1335-031e-42c5-9757-fd2436b5c6bc"
+    }, 
+    {
+        "Topic": "elife-bot-event-property--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:ct-event-property-incoming-queue", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:elife-bot-event-property--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:elife-bot-event-property--continuumtest:0af63590-14c1-4b0d-a85a-142b12bc4544"
+    }, 
+    {
+        "Topic": "bus-subjects--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--ci:0ea80ad6-e669-4483-bf72-36f29c241f29"
+    }, 
+    {
+        "Topic": "bus-interviews--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--prod:1c7e6afa-2587-44ba-b1bb-e78d3221740a"
+    }, 
+    {
+        "Topic": "bus-articles--dbpermstest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--dbpermstest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--dbpermstest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--dbpermstest2:2658708f-217a-47fb-8a4f-64bb4686401d"
+    }, 
+    {
+        "Topic": "bus-events--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-events--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-events--end2end:32674759-6d8b-4e0d-b1c6-39138a428a87"
+    }, 
+    {
+        "Topic": "bus-press-packages--dbpermstest1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--dbpermstest1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-press-packages--dbpermstest1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-press-packages--dbpermstest1:34e3b5c7-5d23-430d-8542-c948d9172237"
+    }, 
+    {
+        "Topic": "bus-blog-articles--search-formula-pr-26", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-26", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-26", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-26:3d85c1c4-36cd-40c4-8a3f-d6fb38953264"
+    }, 
+    {
+        "Topic": "bus-profiles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--end2end:4218a82b-d849-419f-b719-5c12969622af"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-44-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--pr-44-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-44-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-44-base-update:464e8615-9522-48c1-875a-5ecfa9ea0e29"
+    }, 
+    {
+        "Topic": "bus-collections--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end:4b2100dc-b680-4e2e-bf13-00b2e4a8ce6e"
+    }, 
+    {
+        "Topic": "bus-articles--journal-cms-formula-pr-41", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--journal-cms-formula-pr-41", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--journal-cms-formula-pr-41", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--journal-cms-formula-pr-41:4d812320-a44a-4237-ab35-4ae397601019"
+    }, 
+    {
+        "Topic": "bus-profiles--annotations-formula-pr-5", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--annotations-formula-pr-5", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-5", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-5:5ad19f16-42a2-494c-8c67-b4f7b6dacd6e"
+    }, 
+    {
+        "Topic": "bus-articles--1604test2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--1604test2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test2:6141180d-4077-4622-b759-3f4b833773bb"
+    }, 
+    {
+        "Topic": "bus-articles--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--prod:7e83751a-f82a-44ba-9352-ef537a655a6c"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--search-formula-pr-23", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-23", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-23", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-23:7f5d7437-2fb4-42aa-9798-6e1f41d88742"
+    }, 
+    {
+        "Topic": "bus-articles--2017-04-282", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--2017-04-282", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--2017-04-282", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--2017-04-282:80cd58e6-a0c6-4980-9bb1-a1ebd4e13fda"
+    }, 
+    {
+        "Topic": "bus-metrics--mltest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest2:80fb441a-f002-46a6-9422-36735f79fc3b"
+    }, 
+    {
+        "Topic": "bus-articles--search-formula-pr-23", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-23", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-23", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-23:8d219907-fae8-433e-82b0-8ebecc2c9252"
+    }, 
+    {
+        "Topic": "bus-articles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest:8f4073b2-c335-4bc4-a60a-11b2ccb723df"
+    }, 
+    {
+        "Topic": "bus-metrics--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--ci:93921f92-e022-4115-b82f-60c07b608ac7"
+    }, 
+    {
+        "Topic": "bus-collections--search-formula-pr-24", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-24", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-24", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-24:a092b209-9cc8-4185-9e4d-4e64a85b03fe"
+    }, 
+    {
+        "Topic": "bus-blog-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--end2end:a1f1aae1-874b-4a51-bae7-995cb95e97e2"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end:a3d90680-75bf-48af-9633-d030155802b0"
+    }, 
+    {
+        "Topic": "bus-subjects--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--continuumtest:a954c7f3-cbfe-42af-8336-8ed7f17b0e14"
+    }, 
+    {
+        "Topic": "bus-articles--mltest3", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest3", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest3", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest3:af621618-5d40-478c-9dd8-bd64672b3f77"
+    }, 
+    {
+        "Topic": "articles-end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:articles-end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:articles-end2end:b07c7e2f-4c28-455f-82b9-3f2231832ee8"
+    }, 
+    {
+        "Topic": "bus-collections--search-formula-pr-27", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-27", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-27", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--search-formula-pr-27:cafe7568-f3b4-4d2a-9248-e69e3fa63f2f"
+    }, 
+    {
+        "Topic": "bus-articles--journal-cms-formula-pr-42", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--journal-cms-formula-pr-42", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--journal-cms-formula-pr-42", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--journal-cms-formula-pr-42:ce32fbb8-93b2-4f16-98b4-94564b2b4cd1"
+    }, 
+    {
+        "Topic": "bus-labs-posts--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--end2end:df9747fc-a8fd-43d7-8a9c-d6bb81faab73"
+    }, 
+    {
+        "Topic": "bus-events--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-events--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-events--prod:e17ec95c-1043-4ab7-a430-e609bd8771b1"
+    }, 
+    {
+        "Topic": "bus-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:e502d961-1fab-44a4-8955-e2fdbc2150f5"
+    }, 
+    {
+        "Topic": "bus-collections--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--continuumtest:e9e8da8b-395d-4e97-bd99-0c0423e5b91e"
+    }, 
+    {
+        "Topic": "bus-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:ec7d4865-1a35-4d6f-bb2b-3ba4d90a5bff"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--continuumtest:ed1d6060-f924-4855-b7b9-3f301e6f52df"
+    }, 
+    {
+        "Topic": "bus-blog-articles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--ci:f05f68e6-89bd-49f4-bb32-074dae702a95"
+    }, 
+    {
+        "Topic": "bus-labs-posts--search-formula-pr-25", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-25", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-25", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-25:fd0abf64-6e64-4ef8-8fe1-13cb9a6ea0e6"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--ci:038f6409-2516-444b-ad60-788202bb5a76"
+    }, 
+    {
+        "Topic": "bus-metrics--observer-formula-pr-1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--observer-formula-pr-1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--observer-formula-pr-1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--observer-formula-pr-1:03948ee7-9285-42c1-9895-30b4cb0ebbb7"
+    }, 
+    {
+        "Topic": "bus-metrics--apprdstest1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--apprdstest1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--apprdstest1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--apprdstest1:07466282-a30b-417b-8256-804ede1cb19d"
+    }, 
+    {
+        "Topic": "bus-articles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:bus-dogfood-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci:2a71026d-188c-4bc8-8b45-0a373b10c92f"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-16-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-16-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-16-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-16-base-update:33e525cf-a7ae-4065-973c-3c4c22aa8185"
+    }, 
+    {
+        "Topic": "bus-articles--2017-07-31", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--2017-07-31", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--2017-07-31", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--2017-07-31:37156d57-f5aa-43bf-ad96-41d182895649"
+    }, 
+    {
+        "Topic": "bus-articles--restore-test", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--restore-test", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--restore-test", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--restore-test:3bbe191d-5937-4e66-95b4-2175d42a7572"
+    }, 
+    {
+        "Topic": "bus-collections--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--continuumtest:47a8b2d2-c01f-4f14-912a-11d8b5230813"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-11", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-11", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-11", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-11:4c9c183a-842c-49d2-a9aa-c427cf0e17f6"
+    }, 
+    {
+        "Topic": "bus-blog-articles--search-formula-pr-24", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-24", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-24", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--search-formula-pr-24:54034485-05b8-41e5-a124-851ac0b024be"
+    }, 
+    {
+        "Topic": "bus-articles--search-formula-pr-27", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-27", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-27", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-27:64f3fe93-66a2-49ed-a715-798053614676"
+    }, 
+    {
+        "Topic": "bus-metrics--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--continuumtest:65dea4e0-9bf8-497f-ae41-9a218bb1b8e1"
+    }, 
+    {
+        "Topic": "bus-subjects--search-formula-pr-26", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-26", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-26", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-26:77527109-5477-4cd4-98b6-ffd368629044"
+    }, 
+    {
+        "Topic": "bus-articles--pr-6-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-6-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-6-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-6-base-update:77a65f53-1193-40e9-860c-39f3a4568b0c"
+    }, 
+    {
+        "Topic": "bus-articles--mltest6", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest6", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest6", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest6:7ea9c915-b6d1-40f2-874f-f2c6fa322ce5"
+    }, 
+    {
+        "Topic": "bus-metrics--mltest4", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest4", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest4", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest4:7f7cf67a-2a04-44a1-8c3c-d81b9f8533a7"
+    }, 
+    {
+        "Topic": "bus-collections--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end:8b255197-4098-43c9-9cf2-953c7bbf9eda"
+    }, 
+    {
+        "Topic": "bus-articles--2018-01-29", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--2018-01-29", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--2018-01-29", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--2018-01-29:8d3f3b25-0444-4dd7-b2c8-9e17b2133fd4"
+    }, 
+    {
+        "Topic": "bus-articles--mltest7", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest7", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest7", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest7:8f07ec76-fabd-43c0-a297-23176894c76e"
+    }, 
+    {
+        "Topic": "bus-subjects--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--1604test1:904af4b4-3530-4993-8f34-c46021a0d20d"
+    }, 
+    {
+        "Topic": "bus-profiles--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--prod:963fb2b6-3496-4363-a8e4-a34dd0b39cc2"
+    }, 
+    {
+        "Topic": "bus-interviews--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--end2end:9eebf93f-548d-42f9-a8d4-7431970d4859"
+    }, 
+    {
+        "Topic": "bus-articles--apprdstest1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--apprdstest1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--apprdstest1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--apprdstest1:a8f5cf81-a43d-4a87-84fa-00338ff45427"
+    }, 
+    {
+        "Topic": "bus-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:b35c4783-46ab-4397-89b2-5911a4997940"
+    }, 
+    {
+        "Topic": "bus-press-packages--dbpermstest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--dbpermstest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-press-packages--dbpermstest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-press-packages--dbpermstest2:b790d529-d3a2-40af-b14a-2046283b5713"
+    }, 
+    {
+        "Topic": "bus-interviews--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--end2end:ba4efbbd-8f4b-4c13-85d7-edc79e227354"
+    }, 
+    {
+        "Topic": "elife-bot-event-property--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:event-property-incoming-queue", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:elife-bot-event-property--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:elife-bot-event-property--prod:c8a3b7d4-dc8b-4d54-9206-c89016d0d755"
+    }, 
+    {
+        "Topic": "bus-collections--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--1604test1:cbf5aa5d-2216-458f-8c84-1cd06c71f03b"
+    }, 
+    {
+        "Topic": "bus-labs-posts--search-formula-pr-24", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-24", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-24", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-24:ce6e4793-6830-4d5a-9dcf-b7028129166f"
+    }, 
+    {
+        "Topic": "bus-interviews--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--ci:cf10dc79-adc5-4da9-8267-8410a09a6c48"
+    }, 
+    {
+        "Topic": "bus-metrics--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--ci:d48a5f12-b6e9-4693-acde-403ae1d0d5d8"
+    }, 
+    {
+        "Topic": "bus-press-packages--substest1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--substest1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-press-packages--substest1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-press-packages--substest1:da7eba27-c971-497b-9954-dcd312b59113"
+    }, 
+    {
+        "Topic": "bus-labs-posts--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--prod:e04af0a2-ee02-4636-b33b-1cf1901b583d"
+    }, 
+    {
+        "Topic": "bus-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:bus-dogfood-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:e4e30673-d792-430e-9a65-c0c92ea39ec7"
+    }, 
+    {
+        "Topic": "bus-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:ecada285-d88e-4445-b9c9-e3b07ce9e51b"
+    }, 
+    {
+        "Topic": "articles-ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:articles-ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:articles-ci:f6a1681a-b683-4d21-a89f-b40dc536a0af"
+    }, 
+    {
+        "Topic": "bus-articles--pr-2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-2:036efa6f-1b57-4384-8381-ca01fdb3ef36"
+    }, 
+    {
+        "Topic": "bus-metrics--mltest6", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest6", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest6", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest6:0a481c03-8e0b-4dc1-8330-423ddd2c2c7c"
+    }, 
+    {
+        "Topic": "bus-collections--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--ci:1511dc0f-7d96-4106-9aff-8513b6eed576"
+    }, 
+    {
+        "Topic": "bus-interviews--search-formula-pr-23", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-23", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-23", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-23:1b0df6f1-2ccc-436e-8031-350486f5bc1f"
+    }, 
+    {
+        "Topic": "bus-interviews--search-formula-pr-26", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-26", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-26", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-26:2652ee7d-c754-4753-a4a4-841cd9dbec49"
+    }, 
+    {
+        "Topic": "bus-articles--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--continuumtest:394808ff-74e8-4566-865f-f3502990d360"
+    }, 
+    {
+        "Topic": "bus-labs-posts--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--continuumtest:3996b72d-aa72-4951-8b6b-28ec9feb08c9"
+    }, 
+    {
+        "Topic": "bus-articles--standalone1604", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--standalone1604", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--standalone1604", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--standalone1604:4093defa-f194-4ed6-9f85-5e29d0ec8eab"
+    }, 
+    {
+        "Topic": "bus-subjects--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--prod:4cad9c9b-ec52-4792-807e-e5b60af82dfa"
+    }, 
+    {
+        "Topic": "bus-articles--pr-5", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-5", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-5", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--pr-5:67b90b0e-eb91-4810-8509-97630acf96df"
+    }, 
+    {
+        "Topic": "bus-metrics--pr-6-fresh", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--pr-6-fresh", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-6-fresh", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--pr-6-fresh:7470b00c-49b6-4701-a818-9eb6c8ac48bf"
+    }, 
+    {
+        "Topic": "bus-articles--mltest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest2:7a2e3114-389f-454e-a9f1-ba82a652c625"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-15-manual", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-15-manual", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15-manual", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15-manual:81421672-a93a-4bcf-9bc1-7524452d54e0"
+    }, 
+    {
+        "Topic": "bus-metrics--1604test", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--1604test", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--1604test", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--1604test:903d578b-07b9-4f7c-9b07-bd86a0c9d933"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end:a92e1570-26cc-46a4-8bbf-97184cb43a23"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-15-base-update", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-15-base-update", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15-base-update", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-15-base-update:b1b160a4-8673-4824-be2d-0d19b159a366"
+    }, 
+    {
+        "Topic": "bus-articles--mltest5", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest5", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest5", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--mltest5:b38e025d-aee2-4ebd-8941-04668002fd52"
+    }, 
+    {
+        "Topic": "bus-metrics--2017-04-282", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--2017-04-282", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--2017-04-282", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--2017-04-282:b6376151-aea8-435f-bb21-ad6cbff315ef"
+    }, 
+    {
+        "Topic": "bus-events--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-events--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-events--ci:c16a6062-0248-41c3-9fcd-d5f37f8008c9"
+    }, 
+    {
+        "Topic": "bus-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:recommendations--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:c5b4e6b0-bd09-4640-9ca1-9b78fc456376"
+    }, 
+    {
+        "Topic": "bus-subjects--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--ci:c78299c9-16aa-4794-80a4-d6eeaeedede2"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--prod", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--prod", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--prod", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--prod:d5e77aeb-04c4-4590-92ad-667093866835"
+    }, 
+    {
+        "Topic": "bus-labs-posts--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--ci:e79924d8-2695-4dcb-b431-3c0688a2e113"
+    }, 
+    {
+        "Topic": "bus-metrics--rdstest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--rdstest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--rdstest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--rdstest2:e84ae8d1-d138-4dd1-ae96-ab9a6a677e0d"
+    }, 
+    {
+        "Topic": "bus-metrics--performance", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--performance", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--performance", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--performance:ea09b919-3f27-42c5-acd3-61da8090c52a"
+    }, 
+    {
+        "Topic": "bus-articles--legacy-db-removal", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--legacy-db-removal", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--legacy-db-removal", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--legacy-db-removal:fd608d26-d9ea-41ad-aa76-9af3a7b44a5b"
+    }, 
+    {
+        "Topic": "bus-articles--dbpermstest1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--dbpermstest1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--dbpermstest1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--dbpermstest1:fd66a761-75ac-4f3f-a921-c6b3d3c5d628"
+    }, 
+    {
+        "Topic": "bus-blog-articles--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--1604test1:026228d5-2c99-4ebd-b664-584c3da62a8c"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--search-formula-pr-25", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-25", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-25", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-25:03e921a4-1920-4ae0-9f5e-d40070a7227f"
+    }, 
+    {
+        "Topic": "bus-articles--search-formula-pr-26", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-26", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-26", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-26:0515b005-364f-43a0-8ead-f39ee9acc593"
+    }, 
+    {
+        "Topic": "bus-metrics--legacy-db-removal", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--legacy-db-removal", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--legacy-db-removal", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--legacy-db-removal:0ced786a-4752-4247-abf8-418b1f2f910f"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end:0cfc4b0b-358c-4d2b-b9d6-0ec660a78b91"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--search-formula-pr-26", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-26", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-26", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--search-formula-pr-26:0dd004bb-d2c4-45d9-827a-cf5e83ddec24"
+    }, 
+    {
+        "Topic": "bus-metrics--drupal844", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--drupal844", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--drupal844", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--drupal844:107d2e08-ad2e-411c-8a29-559b5325790b"
+    }, 
+    {
+        "Topic": "bus-articles--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--ci:14ed09ec-26f6-44c7-8140-96eed86c0490"
+    }, 
+    {
+        "Topic": "bus-labs-posts--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--1604test1:25e1c8be-6152-49e5-a615-d40b4fb29b67"
+    }, 
+    {
+        "Topic": "bus-metrics--mltest5", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--mltest5", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest5", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--mltest5:2d8b90cd-2b64-467a-9e46-b05acc39ee7c"
+    }, 
+    {
+        "Topic": "bus-events--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-events--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-events--end2end:3fd208c7-883e-4e32-84f5-f916493a0f2e"
+    }, 
+    {
+        "Topic": "bus-collections--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-collections--end2end:57e6bba7-669d-47d5-b126-1d7185323c76"
+    }, 
+    {
+        "Topic": "bus-blog-articles--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-blog-articles--end2end:63c7a030-ac6e-45c9-8a5d-1812c6e8645c"
+    }, 
+    {
+        "Topic": "bus-interviews--search-formula-pr-24", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-24", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-24", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-24:675da84e-d039-4c28-aab2-7010d9608858"
+    }, 
+    {
+        "Topic": "bus-profiles--annotations-formula-pr-3", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--annotations-formula-pr-3", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-3", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--annotations-formula-pr-3:6b9094ce-bc2f-4d58-b3f7-8a26088df324"
+    }, 
+    {
+        "Topic": "bus-labs-posts--search-formula-pr-27", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-27", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-27", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-27:758e6db9-c796-4e03-a03b-36d5da401a4d"
+    }, 
+    {
+        "Topic": "bus-interviews--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--ci:855f92b4-a300-409a-ae45-ce3d882d807e"
+    }, 
+    {
+        "Topic": "bus-subjects--ci", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-ci", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--ci", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--ci:886dc4f9-0aba-4e13-b6df-aa2839ecb152"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search-end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--end2end:90b76e7b-8133-469b-b5eb-9a0379a75e81"
+    }, 
+    {
+        "Topic": "bus-articles--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test1:91d6962d-2868-4a9b-95ee-6306dfef1d3f"
+    }, 
+    {
+        "Topic": "bus-metrics--apprdstest3", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--apprdstest3", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--apprdstest3", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--apprdstest3:92f826e0-5e49-4870-a563-81f0713addb2"
+    }, 
+    {
+        "Topic": "bus-labs-posts--search-formula-pr-26", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-26", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-26", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--search-formula-pr-26:a36d1714-1c92-4a44-8930-7d3f31a5eca1"
+    }, 
+    {
+        "Topic": "bus-interviews--1604test1", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--1604test1", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--1604test1", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--1604test1:a5ae9a53-5eea-4250-bc1b-e3fac84fa04a"
+    }, 
+    {
+        "Topic": "bus-podcast-episodes--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-podcast-episodes--continuumtest:a7b85c53-c070-40d1-957d-39ebc906dd01"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-14", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-14", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-14", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-14:ac9ac870-6ca5-481b-bec3-c41291dc99b0"
+    }, 
+    {
+        "Topic": "bus-articles--search-formula-pr-24", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-24", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-24", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--search-formula-pr-24:af085184-3cdb-484d-88bb-6e01f8d4f959"
+    }, 
+    {
+        "Topic": "bus-metrics--journal-cms-formula-pr-42", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:journal-cms--journal-cms-formula-pr-42", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--journal-cms-formula-pr-42", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-metrics--journal-cms-formula-pr-42:bc084051-f1a5-432d-a068-4611416dd6c6"
+    }, 
+    {
+        "Topic": "bus-articles--apprdstest2", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--apprdstest2", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--apprdstest2", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--apprdstest2:c2dd27da-a759-4458-be14-861b468b04e1"
+    }, 
+    {
+        "Topic": "bus-subjects--end2end", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--end2end", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--end2end:c7123707-d2bd-4f82-9f3b-bb884139547d"
+    }, 
+    {
+        "Topic": "bus-interviews--search-formula-pr-27", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-27", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-27", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-interviews--search-formula-pr-27:d46d610d-2541-4dec-aca9-91decb75bfdb"
+    }, 
+    {
+        "Topic": "bus-subjects--search-formula-pr-23", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--search-formula-pr-23", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-23", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-subjects--search-formula-pr-23:ecc46c9e-67da-4114-a9be-60d8ca09ff9f"
+    }, 
+    {
+        "Topic": "bus-articles--1604test", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--1604test", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--1604test:ee033423-fa78-40b3-9b35-78abfca9099a"
+    }, 
+    {
+        "Topic": "bus-labs-posts--continuumtest", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:search--continuumtest", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--continuumtest", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-labs-posts--continuumtest:f2b113fc-08e6-4e4e-aa57-88a46450af45"
+    }, 
+    {
+        "Topic": "bus-profiles--pr-10", 
+        "Endpoint": "arn:aws:sqs:us-east-1:512686554592:annotations--pr-10", 
+        "Protocol": "sqs", 
+        "Owner": "512686554592", 
+        "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-10", 
+        "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-profiles--pr-10:f908d2b5-23b5-49b8-a3e2-4c249c2b13ac"
+    }
+]
