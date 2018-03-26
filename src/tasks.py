@@ -39,9 +39,9 @@ def ami_for_project(pname):
     }
     results = conn.get_all_images(**kwargs)
 
-    print results
+    print(results)
 
-    print len(results), "results"
+    print(len(results), "results")
 
     return utils.table(results, ['id', 'root_device_type', 'virtualization_type', 'name'])
 
@@ -54,11 +54,11 @@ def create_ami(stackname):
     pname = core.project_name_from_stackname(stackname)
     msg = "this will create a new AMI for the project %r. Continue?" % pname
     if not confirm(msg, default=False):
-        print 'doing nothing'
+        print('doing nothing')
         return
     amiid = bakery.create_ami(stackname)
-    print 'AWS has created AMI with id', amiid
-    print 'update project file with new ami %s. these changes must be merged and committed manually' % amiid
+    print('AWS has created AMI with id', amiid)
+    print('update project file with new ami %s. these changes must be merged and committed manually' % amiid)
 
 @requires_aws_stack
 def _update_syslog(stackname):
@@ -104,6 +104,11 @@ def repair_context(stackname):
 def remove_minion_key(stackname):
     bootstrap.remove_minion_key(stackname)
 
+@task
+@requires_aws_stack
+def download_master_builder_key(stackname):
+    print("Key is %s characters long" % len(str(bootstrap.download_master_builder_key(stackname))))
+
 #
 #
 #
@@ -116,7 +121,7 @@ def strip(stackname, pdffile):
     dest_path = '/home/elife/' + fname
     with stack_conn(stackname):
         if not remote_file_exists(dest_path):
-            print "remote file not found, uploading"
+            print("remote file not found, uploading")
             upload(path, dest_path)
         with cd('/opt/strip-coverletter'):
             out_path = '/home/elife/squashed-%s' % fname

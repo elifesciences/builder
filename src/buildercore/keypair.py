@@ -4,6 +4,7 @@ import os, shutil
 from os.path import join
 from . import core, utils, config, s3
 from .core import stack_pem
+from .utils import lfilter
 from .decorators import if_enabled
 
 import logging
@@ -65,9 +66,12 @@ def create_keypair(stackname):
     "creates the ec2 keypair and writes it to s3"
     expected_key = stack_pem(stackname, die_if_exists=True)
     ec2 = core.connect_aws_with_stack(stackname, 'ec2')
-    key = ec2.create_key_pair(stackname)
+    keypair = ec2.create_key_pair(stackname)
     # write to fs
-    key.save(config.KEYPAIR_PATH) # exclude the filename
+    # py3 issue here: https://github.com/boto/boto/issues/3782
+    # key.save(config.KEYPAIR_PATH) # exclude the filename
+    keypair.material = keypair.material.encode()
+    keypair.save(config.KEYPAIR_PATH)
     # write to s3
     write_keypair_to_s3(stackname)
     return expected_key
@@ -90,10 +94,10 @@ def delete_keypair(stackname):
 
 @if_enabled('write-keypairs-to-s3')
 def all_in_s3():
-    return filter(None, map(os.path.basename, s3.simple_listing(config.KEYPAIR_PREFIX)))
+    return lfilter(None, map(os.path.basename, s3.simple_listing(config.KEYPAIR_PREFIX)))
 
 def all_locally():
     "all keypairs on the filesystem"
     keys = os.listdir(config.KEYPAIR_PATH)
     key_paths = map(lambda fname: join(config.KEYPAIR_PATH, fname), keys)
-    return filter(os.path.isfile, key_paths)
+    return lfilter(os.path.isfile, key_paths)

@@ -135,7 +135,7 @@ defaults:
                 - subnet-c4033af8 # elife-cache-subnet-2
             version: "2.8.24" # closest to builder-base-formula redis.sls
             configuration:
-                maxmemory-policy: volatile-ttl
+                maxmemory-policy: volatile-lru
             clusters: 1
     aws-alt:
         fresh:
@@ -441,8 +441,6 @@ journal:
                             - Referer
                         cookies:
                             - journal
-                #logging:
-                #    bucket: elife-cloudfront-logs
         continuumtest:
             elasticache:
                 engine: redis
@@ -523,9 +521,8 @@ journal:
                             - Referer
                         cookies:
                             - journal
-        cachetest:
-            elasticache:
-                engine: redis
+                logging:
+                    bucket: elife-cloudfront-logs
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
@@ -666,6 +663,10 @@ elife-bot:
                 - 8020 # exposing FTP contents
                 - 8021 # exposing FTP contents, HTTPS
             description: speeding up end2end tests
+            s3:
+                "{instance}-elife-silent-corrections":
+                    sqs-notifications:
+                        end2end-incoming-queue: {}
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
@@ -673,11 +674,18 @@ elife-bot:
             #               #suffix: null
         continuumtest:
             s3:
+                "{instance}-elife-silent-corrections":
+                    sqs-notifications:
+                        ct-incoming-queue: {}
                 "{instance}-elife-bot":
                     deletion-policy: delete
-        # temporary: we didn't do this through CloudFormation because the template is too old to be modified successfully
-        #prod:
-        #    type: c5.2xlarge
+        prod:
+            # don't change type through CloudFormation because the template is too old to be modified successfully
+            #type: c5.2xlarge
+            s3:
+                "{instance}-elife-silent-corrections":
+                    sqs-notifications:
+                        incoming-queue: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
@@ -765,16 +773,6 @@ journal-cms:
                 storage: 24 # GB
             ext:
                 size: 30 # GB
-        revisions:
-            description: production-like environment.
-            rds:
-                type: db.t2.small
-                engine: MySQL
-                version: '5.7'
-                storage: 24 # GB
-                backup-retention: 2 # days
-            ext:
-                size: 30 # GB
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -850,6 +848,14 @@ elife-api:
             - 22
             - 80
             - 443
+    aws-alt:
+        standalone:
+            # for now a copy of standalone1404
+            # required by masterless module
+            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -898,6 +904,22 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
 
+    vagrant:
+        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        ram: 1024
+
+containers:
+    domain: false
+    subdomain: containers
+    formula-repo: https://github.com/elifesciences/containers-formula
+    aws:
+        type: t2.medium # 4GB of RAM
+        ports:
+            - 22
+        ext:
+            size: 100 # GB
+            type: gp2
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
@@ -1369,6 +1391,28 @@ peerscout:
             1241: 80
         ram: 4096
 
+sciencebeam-texture:
+    description: Sciencebeam and Texture proof of concept
+    subdomain: sciencebeam-texture
+    repo: https://github.com/elifesciences/sciencebeam-texture
+    formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
+    aws:
+        type: t2.small # 2 GB RAM
+        ports:
+            - 22
+            - 80 # texture
+            - 443 # texture
+        ext:
+            size: 10 # GB
+    aws-alt:
+        demo:
+            subdomains:
+                - sciencebeam-texture
+    vagrant:
+        ports:
+            1222: 80
+        ram: 2048
+
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
     subdomain: iiif
@@ -1703,14 +1747,35 @@ task-adept:
         s3:
             "{instance}-elife-task-adept":
 
-sample-sqs:
-    description: testing SQS subscriptions
-    domain: null
-    intdomain: null
+exeter-adapter:
+    description: Exeter history API integration
+    domain: false
+    intdomain: False
     aws:
         ec2: false
         sqs:
-            sample-sqs--{instance}:
-                subscriptions:
-                    - bus-articles--{instance}
-                    - bus-press-packages--{instance}
+            exeter-adapter--{instance}: {}
+    aws-alt:
+        fresh:
+            ec2: false
+        1604:
+            ec2: false
+        1404:
+            ec2: false
+        standalone1604:
+            ec2: false
+        standalone1404:
+            ec2: false
+        standalone:
+            ec2: false
+        continuumtest:
+            sqs:
+                exeter-adapter--{instance}:
+                    subscriptions:
+                        - elife-bot-event-property--continuumtest
+        prod:
+            sqs:
+                exeter-adapter--{instance}:
+                    subscriptions:
+                        - elife-bot-event-property--prod
+

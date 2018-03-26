@@ -10,6 +10,7 @@ from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
+from buildercore.utils import lmap
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -22,14 +23,14 @@ def strtobool(x):
 @requires_steady_stack
 def destroy(stackname):
     "tell aws to delete a stack."
-    print 'this is a BIG DEAL. you cannot recover from this.'
-    print 'type the name of the stack to continue or anything else to quit'
-    uin = raw_input('> ')
+    print('this is a BIG DEAL. you cannot recover from this.')
+    print('type the name of the stack to continue or anything else to quit')
+    uin = input('> ')
     if not uin or not uin.strip().lower() == stackname.lower():
         import difflib
-        print 'you needed to type "%s" to continue.' % stackname
-        print 'got:'
-        print '\n'.join(difflib.ndiff([stackname], [uin]))
+        print('you needed to type "%s" to continue.' % stackname)
+        print('got:')
+        print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
     return bootstrap.delete_stack(stackname)
 
@@ -39,7 +40,7 @@ def ensure_destroyed(stackname):
         return bootstrap.delete_stack(stackname)
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
-            print "Not even the CloudFormation template exists anymore, exiting idempotently"
+            print("Not even the CloudFormation template exists anymore, exiting idempotently")
             return
         raise
 
@@ -109,12 +110,14 @@ def update_template(stackname):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 
-@task
+# TODO: this task should probably live in `master.py`
+@debugtask # can't be and shouldn't be run by regular user of builder
 def update_master():
-    return bootstrap.update_stack(
-        core.find_master(aws.find_region()),
-        service_list=['ec2'] # master-server should be a self-contained EC2 instance
-    )
+    master_stackname = core.find_master(aws.find_region())
+    bootstrap.update_stack(master_stackname, service_list=[
+        'ec2' # master-server should be a self-contained EC2 instance
+    ])
+    bootstrap.remove_all_orphaned_keys(master_stackname)
 
 @requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
@@ -139,7 +142,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
             more_context['alt-config'] = instance_id
         else:
             default = 'skip this step'
-            alt_config_choices = [default] + pdata['aws-alt'].keys()
+            alt_config_choices = [default] + list(pdata['aws-alt'].keys())
             if not alt_config:
                 alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
             if alt_config != default:
@@ -155,21 +158,21 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
         stackname = generate_stack_from_input(pname, instance_id, alt_config)
         pdata = core.project_data_for_stackname(stackname)
 
-        print 'attempting to create stack:'
-        print '  stackname:\t' + stackname
-        print '  region:\t' + pdata['aws']['region']
+        print('attempting to create stack:')
+        print('  stackname:\t' + stackname)
+        print('  region:\t' + pdata['aws']['region'])
 
         for key, val in kwargs.items():
-            print '  %s:\t%s' % (key, pformat(val))
+            print('  %s:\t%s' % (key, pformat(val)))
 
-        print
+        print()
 
         if core.is_master_server_stack(stackname):
             if not checks.can_access_builder_private(pname):
-                print "failed to access your organisation's 'builder-private' repository:"
-                print '  ' + pdata['private-repo']
-                print "you'll need access to this repository to add a deploy key later"
-                print
+                print("failed to access your organisation's 'builder-private' repository:")
+                print('  ' + pdata['private-repo'])
+                print("you'll need access to this repository to add a deploy key later")
+                print()
                 return
 
         if not core.stack_is_active(stackname):
@@ -178,11 +181,11 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
 
         LOG.info('updating stack %s', stackname)
         bootstrap.update_stack(stackname, **kwargs)
-
         setdefault('.active-stack', stackname)
+
     except core.NoMasterException as e:
-        LOG.warn(e.message)
-        print "\n%s\nNo master server found, you'll need to `launch` a master-server first." % e.message
+        LOG.warn(e)
+        print("\n%s\nNo master server found, you'll need to `launch` a master-server first." % e)
 
 @debugtask
 @requires_aws_stack
@@ -216,7 +219,7 @@ def _pick_node(instance_list, node):
     num_instances = len(instance_list)
     if num_instances > 1:
         if not node:
-            node = utils._pick('node', range(1, num_instances + 1), helpfn=helpfn)
+            node = utils._pick('node', list(range(1, num_instances + 1)), helpfn=helpfn)
         node = int(node) - 1
         instance = instance_list[int(node)]
     else:
@@ -293,7 +296,7 @@ def _interactive_ssh(command):
 
 @task
 @requires_aws_stack
-def download_file(stackname, path, destination='.', allow_missing="False", use_bootstrap_user="False"):
+def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):
     """
     Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
 
@@ -303,8 +306,8 @@ def download_file(stackname, path, destination='.', allow_missing="False", use_b
 
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
-    allow_missing, use_bootstrap_user = map(strtobool, [allow_missing, use_bootstrap_user])
-    with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER):
+    allow_missing, use_bootstrap_user = lmap(strtobool, [allow_missing, use_bootstrap_user])
+    with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
         if allow_missing and not files.exists(path):
             return # skip download
         get(path, destination, use_sudo=True)
@@ -314,13 +317,13 @@ def download_file(stackname, path, destination='.', allow_missing="False", use_b
 @requires_aws_stack
 def upload_file(stackname, local_path, remote_path, overwrite=False):
     with stack_conn(stackname):
-        print 'stack:', stackname
-        print 'local:', local_path
-        print 'remote:', remote_path
-        print 'overwrite:', overwrite
-        raw_input('continue?')
+        print('stack:', stackname)
+        print('local:', local_path)
+        print('remote:', remote_path)
+        print('overwrite:', overwrite)
+        input('continue?')
         if files.exists(remote_path) and not overwrite:
-            print 'remote file exists, not overwriting'
+            print('remote file exists, not overwriting')
             exit(1)
         put(local_path, remote_path)
 
@@ -359,5 +362,5 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 node=int(node) if node else None
             )
     except FabricException as e:
-        LOG.error(e.message)
+        LOG.error(e)
         exit(2)

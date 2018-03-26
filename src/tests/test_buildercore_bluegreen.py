@@ -35,7 +35,7 @@ class Primitives(base.BaseCase):
             ]
         }
         name = self.concurrency.find_load_balancer('dummy1--test')
-        self.assertEquals(name, 'dummy1-ElasticL-ABCDEFGHI')
+        self.assertEqual(name, 'dummy1-ElasticL-ABCDEFGHI')
 
     @patch('buildercore.bluegreen.call_while', side_effect=try_only_once)
     def test_wait_all_in_service_success(self, call_while):
@@ -87,7 +87,7 @@ class Primitives(base.BaseCase):
             'stackname': 'dummy1--test',
             'user': 'ubuntu'
         }
-        self.assertEquals(
+        self.assertEqual(
             self.concurrency.divide_by_color(nodes_params),
             (
                 {

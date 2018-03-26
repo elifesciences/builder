@@ -15,10 +15,10 @@ def _hackgibson():
 def lst():
     _hackgibson()
     for org, plist in project.org_project_map().items():
-        print org
+        print(org)
         for project_name in plist:
-            print '  ', project_name
-        print
+            print('  ', project_name)
+        print()
 
 @debugtask
 def regen(output_format='json'):
@@ -33,10 +33,10 @@ def regen(output_format='json'):
     formatter = formatters.get(output_format if output_format in formatters else 'default')
 
     for org, plist in project.org_project_map().items():
-        print org
+        print(org)
         for pname in plist:
             fix = formatter(project.project_data(pname))
             output_path = join(fixtures_dir, "%s-project.%s" % (pname, output_format))
             with open(output_path, 'w') as fh:
                 fh.write(fix)
-            print '- wrote', output_path
+            print('- wrote', output_path)

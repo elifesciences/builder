@@ -3,17 +3,17 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import httplib
+import http.client
 import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
-from .utils import ensure, first, lookup
+from .utils import ensure, first, lookup, lmap, lfilter, unique
 from boto import sns
 from boto.exception import BotoServerError
 import boto3
 from contextlib import contextmanager
-from fabric.api import settings, execute, env, parallel, serial
+from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
 from fabric.state import output
 import importlib
@@ -103,17 +103,17 @@ def all_sns_subscriptions(region, stackname=None):
     optionally filtered by subscription endpoints matching given stack"""
     subs_list = _all_sns_subscriptions(region)
     if stackname:
-        ''' a subscription looks like:
-        {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
-         u'Owner': u'512686554592',
-         u'Protocol': u'sqs',
-         u'SubscriptionArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
-         u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}'''
-        subs_list = filter(lambda row: row['Endpoint'].endswith(stackname), subs_list)
+        # a subscription looks like:
+        # {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
+        #  u'Owner': u'512686554592',
+        #  u'Protocol': u'sqs',
+        #  u'SubscriptionArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
+        #  u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}
+        subs_list = lfilter(lambda row: row['Endpoint'].endswith(stackname), subs_list)
 
     # add a 'Topic' key for easier filtering downstream
     # 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1' => 'bus-articles--substest1'
-    map(lambda row: row.update({'Topic': row['TopicArn'].split(':')[-1]}), subs_list)
+    lmap(lambda row: row.update({'Topic': row['TopicArn'].split(':')[-1]}), subs_list)
     return subs_list
 
 #
@@ -157,17 +157,16 @@ def boto_s3_conn(region):
 
 @cached
 def connect_aws_with_pname(pname, service, with_boto3=False):
-    "convenience"
+    "convenience. returns a boto client for a service in same region as given project"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
     LOG.debug('connecting to a %s instance in region %s', pname, region)
     if with_boto3:
-        return boto3.client('rds', region)
-    else:
-        return connect_aws(service, region)
+        return boto3.client(service, region)
+    return connect_aws(service, region)
 
 def connect_aws_with_stack(stackname, service, with_boto3=False):
-    "convenience"
+    "convenience. returns a boto client for a service in same region as given project instance"
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service, with_boto3)
 
@@ -182,6 +181,10 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
         ec2_instances = [i for i in all_ec2_instances if i.state == state]
     else:
         ec2_instances = all_ec2_instances
+
+    # multiple instances are sorted by node asc
+    ec2_instances = sorted(ec2_instances, key=lambda ec2inst: ec2inst.tags.get('Node', 0))
+
     LOG.debug("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
@@ -248,11 +251,15 @@ def _ec2_connection_params(stackname, username, **kwargs):
     return params
 
 @contextmanager
-def stack_conn(stackname, username=config.DEPLOY_USER, **kwargs):
+def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     if 'user' in kwargs:
         LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
 
-    data = stack_data(stackname, ensure_single_instance=True)[0]
+    data = stack_data(stackname, ensure_single_instance=False)
+    ensure(len(data) == 1 or node, "stack is clustered with %s nodes and no specific node provided" % len(data))
+    node and ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
+    didx = int(node) - 1 if node else 0 # decrement to a zero-based value
+    data = data[didx] # data is ordered by node
     public_ip = data['ip_address']
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
@@ -324,11 +331,11 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
 def serial_work(single_node_work, params):
     with settings(**params):
-        return execute(serial(single_node_work), hosts=params['public_ips'].values())
+        return execute(serial(single_node_work), hosts=list(params['public_ips'].values()))
 
 def parallel_work(single_node_work, params):
     with settings(**params):
-        return execute(parallel(single_node_work), hosts=params['public_ips'].values())
+        return execute(parallel(single_node_work), hosts=list(params['public_ips'].values()))
 
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
@@ -375,7 +382,7 @@ def mk_stackname(project_name, instance_id):
 
 def parse_stackname(stackname, all_bits=False, idx=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
-    if not stackname or not isinstance(stackname, basestring):
+    if not stackname or not isinstance(stackname, str):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--', -1 if all_bits else 1)
@@ -415,7 +422,7 @@ def parse_stack_file_name(stack_filename):
 def stack_files():
     "returns a list of manually created cloudformation stacknames"
     stacks = glob.glob("%s/*.json" % config.STACK_PATH)
-    return map(parse_stack_file_name, stacks)
+    return lmap(parse_stack_file_name, stacks)
 
 def stack_path(stackname, relative=False):
     "returns the full path to a stack JSON file given a stackname"
@@ -442,7 +449,7 @@ def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     try:
         return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
-    except httplib.IncompleteRead as e:
+    except http.client.IncompleteRead as e:
         LOG.warning("Retrying once DescribeStacks API call: %s", e)
         return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 
@@ -459,7 +466,7 @@ def stack_data(stackname, ensure_single_instance=False):
 
         def ec2data(ec2):
             return ec2.__dict__
-        return map(ec2data, ec2_instances)
+        return lmap(ec2data, ec2_instances)
 
     except Exception:
         LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
@@ -510,7 +517,7 @@ def _aws_stacks(region, status=None, formatter=stack_triple):
     paginator = paginator.paginate(StackStatusFilter=status)
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
     if formatter:
-        return map(formatter, results)
+        return lmap(formatter, results)
     return results
 
 def active_aws_stacks(region, *args, **kwargs):
@@ -526,12 +533,12 @@ def active_aws_project_stacks(pname):
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
     fn = lambda t: project_name_from_stackname(first(t)) == pname
-    return filter(fn, active_aws_stacks(region))
+    return lfilter(fn, active_aws_stacks(region))
 
 def stack_names(stack_list, only_parseable=True):
     results = sorted(map(first, stack_list))
     if only_parseable:
-        return filter(stackname_parseable, results)
+        return lfilter(stackname_parseable, results)
     return results
 
 def active_stack_names(region):
@@ -563,7 +570,7 @@ def find_region(stackname=None):
 
     all_projects = project.project_map()
     all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
-    region_list = list(set(filter(None, all_regions))) # remove any Nones, make unique, make a list
+    region_list = unique(filter(None, all_regions)) # remove any Nones, make unique, make a list
     if not region_list:
         raise EnvironmentError("no regions available at all!")
     if len(region_list) > 1:
@@ -573,8 +580,8 @@ def find_region(stackname=None):
 @testme
 def find_master_servers(stacks):
     "returns a list of master servers, oldest to newest"
-    msl = filter(lambda triple: is_master_server_stack(first(triple)), stacks)
-    msl = map(first, msl) # just stack names
+    msl = lfilter(lambda triple: is_master_server_stack(first(triple)), stacks)
+    msl = lmap(first, msl) # just stack names
     if len(msl) > 1:
         LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
     return sorted(msl, key=parse_stackname) # oldest to newest
@@ -678,3 +685,15 @@ def project_data_for_stackname(stackname):
 def ami_name(stackname):
     # elife-api.2015-12-31
     return "%s.%s" % (project_name_from_stackname(stackname), utils.ymd())
+
+def listfiles_remote(stackname, path=None, use_sudo=False):
+    """returns a list of files in a directory at `path` as absolute paths"""
+    ensure(path, "path to remote directory required")
+    with stack_conn(stackname):
+        with hide('output'):
+            runfn = sudo if use_sudo else run
+            path = "%s/*" % path.rstrip("/")
+            stdout = runfn("for i in %s; do echo $i; done" % path)
+            if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
+                return []
+            return stdout.splitlines()

@@ -25,7 +25,7 @@ class TestCfn(base.BaseCase):
         self._dummy_instance_is_active(find_ec2_instances, active_stack_names)
         owner_ssh('dummy1--prod')
         (args, _) = local.call_args
-        self.assertRegexpMatches(args[0], 'ssh ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem')
+        self.assertRegex(args[0], 'ssh ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem')
 
     # all non-interactive cases
     def test_generate_stack_from_input(self):

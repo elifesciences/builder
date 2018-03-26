@@ -21,6 +21,6 @@ class TestFiles(base.BaseCase):
 
     def test_dummy2_aws_alt_should_not_have_incomplete_defaults_for_cloudfront(self):
         dummy2 = files.project_data('dummy2', self.project_file)
-        self.assertIn('rds', dummy2['aws-alt']['alt-config1'].keys())
-        self.assertNotIn('elb', dummy2['aws-alt']['alt-config1'].keys())
-        self.assertNotIn('cloudfront', dummy2['aws-alt']['alt-config1'].keys())
+        self.assertIn('rds', list(dummy2['aws-alt']['alt-config1'].keys()))
+        self.assertNotIn('elb', list(dummy2['aws-alt']['alt-config1'].keys()))
+        self.assertNotIn('cloudfront', list(dummy2['aws-alt']['alt-config1'].keys()))

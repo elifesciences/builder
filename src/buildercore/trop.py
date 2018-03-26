@@ -14,10 +14,9 @@ from os.path import join
 from . import config, utils, bvars
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
-
 from functools import partial
+from .utils import first, ensure, subdict, lmap
 import logging
-from .utils import first, ensure, subdict
 
 LOG = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': map(complex_ingress, ingress_structs)
+        'SecurityGroupIngress': lmap(complex_ingress, ingress_structs)
     })
 
 def ec2_security(context):
@@ -262,13 +261,13 @@ def render_rds(context, template):
         data['DBParameterGroupName'] = param_group_ref
 
     rdbi = rds.DBInstance(RDS_TITLE, **data)
-    map(template.add_resource, [rsn, rdbi, vpcdbsg])
+    lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
 
     outputs = [
         mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
         mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),
     ]
-    map(template.add_output, outputs)
+    lmap(template.add_output, outputs)
 
 def render_ext_volume(context, context_ext, template, node=1):
     vtype = context_ext.get('type', 'standard')
@@ -290,7 +289,7 @@ def render_ext_volume(context, context_ext, template, node=1):
         "Device": context_ext.get('device'),
     }
     ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
-    map(template.add_resource, [ec2v, ec2va])
+    lmap(template.add_resource, [ec2v, ec2va])
 
 def external_dns_ec2_single(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -405,7 +404,7 @@ def render_ec2(context, template):
             mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
             mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
         ]
-        map(template.add_output, outputs)
+        lmap(template.add_output, outputs)
 
     # all ec2 nodes in a cluster share the same keypair
     template.add_parameter(Parameter(KEYPAIR, **{
@@ -522,8 +521,7 @@ def _add_bucket_policy(template, bucket_title, bucket_name):
 def _elb_protocols(context):
     if isinstance(context['elb']['protocol'], str):
         return [context['elb']['protocol']]
-    else:
-        return context['elb']['protocol']
+    return context['elb']['protocol']
 
 def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
@@ -573,7 +571,7 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
-    for _, listener in context['elb']['additional_listeners'].iteritems():
+    for _, listener in context['elb']['additional_listeners'].items():
         listeners.append(elb.Listener(
             InstanceProtocol='HTTP',
             InstancePort=str(listener['port']),
@@ -595,7 +593,7 @@ def render_elb(context, template, ec2_instances):
             IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
-        Instances=map(Ref, ec2_instances.values()),
+        Instances=lmap(Ref, ec2_instances.values()),
         # TODO: from configuration
         Listeners=listeners,
         LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
@@ -771,6 +769,21 @@ def elasticache_security_group(context):
                           ingress_ports,
                           "ElastiCache security group")
 
+def elasticache_default_parameter_group(context):
+    return elasticache.ParameterGroup(
+        ELASTICACHE_PARAMETER_GROUP_TITLE,
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s' % context['stackname'],
+        Properties=context['elasticache']['configuration']
+    )
+
+def elasticache_overridden_parameter_group(context, cluster_context, cluster):
+    return elasticache.ParameterGroup(
+        "%s%d" % (ELASTICACHE_PARAMETER_GROUP_TITLE, cluster),
+        CacheParameterGroupFamily='redis2.8',
+        Description='ElastiCache parameter group for %s cluster %d' % (context['stackname'], cluster),
+        Properties=cluster_context['configuration']
+    )
 
 def render_elasticache(context, template):
     ensure(context['elasticache']['engine'] == 'redis', 'We only support Redis as ElastiCache engine at this time')
@@ -785,26 +798,29 @@ def render_elasticache(context, template):
     )
     template.add_resource(subnet_group)
 
-    parameter_group = elasticache.ParameterGroup(
-        ELASTICACHE_PARAMETER_GROUP_TITLE,
-        CacheParameterGroupFamily='redis2.8',
-        Description='ElastiCache parameter group for %s' % context['stackname'],
-        Properties=context['elasticache']['configuration']
-    )
-    template.add_resource(parameter_group)
+    parameter_group = elasticache_default_parameter_group(context)
 
     suppressed = context['elasticache'].get('suppressed', [])
+    default_parameter_group_use = False
     for cluster in range(1, context['elasticache']['clusters'] + 1):
         if cluster in suppressed:
             continue
 
-        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az'])
+        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az', 'configuration'])
+
+        if cluster_context['configuration'] != context['elasticache']['configuration']:
+            cluster_parameter_group = elasticache_overridden_parameter_group(context, cluster_context, cluster)
+            template.add_resource(cluster_parameter_group)
+            cluster_cache_parameter_group_name = Ref(cluster_parameter_group)
+        else:
+            cluster_cache_parameter_group_name = Ref(parameter_group)
+            default_parameter_group_use = True
 
         cluster_title = ELASTICACHE_TITLE % cluster
         template.add_resource(elasticache.CacheCluster(
             cluster_title,
             CacheNodeType=cluster_context['type'],
-            CacheParameterGroupName=Ref(parameter_group),
+            CacheParameterGroupName=cluster_cache_parameter_group_name,
             CacheSubnetGroupName=Ref(subnet_group),
             Engine='redis',
             EngineVersion=cluster_context['version'],
@@ -819,7 +835,10 @@ def render_elasticache(context, template):
             mkoutput("ElastiCacheHost%s" % cluster, "The hostname on which the cache accepts connections", (cluster_title, "RedisEndpoint.Address")),
             mkoutput("ElastiCachePort%s" % cluster, "The port number on which the cache accepts connections", (cluster_title, "RedisEndpoint.Port")),
         ]
-        map(template.add_output, outputs)
+        lmap(template.add_output, outputs)
+
+    if default_parameter_group_use:
+        template.add_resource(parameter_group)
 
 def render(context):
     template = Template()
@@ -834,9 +853,8 @@ def render(context):
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
-        all_nodes = ec2_instances.keys()
+        all_nodes = list(ec2_instances.keys())
         for node in all_nodes:
-
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = copy.deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
@@ -851,6 +869,7 @@ def render(context):
     # N>=1 EC2 instances
     if context['elb']:
         render_elb(context, template, ec2_instances)
+
     if context['ec2']:
         render_ec2_dns(context, template)
 
@@ -891,16 +910,15 @@ def cnames(context):
                     GetAtt(ELB_TITLE, "DNSName")
                 )
             )
-        else:
-            hostedzone = context['domain'] + "."
-            return route53.RecordSetType(
-                R53_CNAME_TITLE % (i + 1),
-                HostedZoneName=hostedzone,
-                Name=hostname,
-                Type="CNAME",
-                TTL="60",
-                ResourceRecords=[context['full_hostname']],
-            )
+        hostedzone = context['domain'] + "."
+        return route53.RecordSetType(
+            R53_CNAME_TITLE % (i + 1),
+            HostedZoneName=hostedzone,
+            Name=hostname,
+            Type="CNAME",
+            TTL="60",
+            ResourceRecords=[context['full_hostname']],
+        )
     return [entry(hostname, i) for i, hostname in enumerate(context['subdomains'])]
 
 def _is_domain_2nd_level(hostname):

@@ -4,7 +4,7 @@ from buildercore import cfngen, context_handler
 
 class TestBuildercoreContext(base.BaseCase):
     def setUp(self):
-        print context_handler.delete_context_from_s3('dummy1--prod')
+        print(context_handler.delete_context_from_s3('dummy1--prod'))
 
     def test_storing_a_context_on_s3_and_retrieving_it_from_a_new_client(self):
         stackname = 'dummy1--prod'

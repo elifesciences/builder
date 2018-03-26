@@ -24,7 +24,7 @@ from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
 from . import utils, trop, core, project, context_handler
-from .utils import ensure
+from .utils import ensure, lmap
 from .config import STACK_DIR
 
 import logging
@@ -131,7 +131,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     for queue_template_name in context['project']['aws']['sqs']:
         queue_name = _parameterize(queue_template_name)
         queue_configuration = context['project']['aws']['sqs'][queue_template_name]
-        subscriptions = map(_parameterize, queue_configuration.get('subscriptions', []))
+        subscriptions = lmap(_parameterize, queue_configuration.get('subscriptions', []))
         context['sqs'][queue_name] = subscriptions
 
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
@@ -206,6 +206,7 @@ def build_context_cloudfront(context, parameterize):
     def build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
     if 'cloudfront' in context['project']['aws']:
+        errors = None
         if context['project']['aws']['cloudfront']['errors']:
             errors = {
                 'domain': parameterize(context['project']['aws']['cloudfront']['errors']['domain']),
@@ -213,8 +214,6 @@ def build_context_cloudfront(context, parameterize):
                 'codes': context['project']['aws']['cloudfront']['errors']['codes'],
                 'protocol': context['project']['aws']['cloudfront']['errors']['protocol'],
             }
-        else:
-            errors = None
         context['cloudfront'] = {
             'subdomains': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains']],
             'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains-without-dns']],
@@ -245,8 +244,7 @@ def complete_domain(host, default_main):
         return default_main
     elif is_complete:
         return host
-    else:
-        return host + '.' + default_main # something + '.' + elifesciences.org
+    return host + '.' + default_main # something + '.' + elifesciences.org
 
 def build_context_subdomains(context):
     context['subdomains'] = [complete_domain(s, context['project']['domain']) for s in context['project']['aws'].get('subdomains', [])]
@@ -307,6 +305,7 @@ def more_validation(json_template_str):
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
 
+# TODO: shift this into testing and make each validation call a subTest
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
     only called during testing"""
@@ -363,9 +362,9 @@ def generate_stack(pname, **more_context):
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$']
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$']
 
-REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^ElastiCacheParameterGroup$', '^ElastiCacheSecurityGroup$', '^ElastiCacheSubnetGroup$', '^.+Topic$']
+REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
@@ -450,8 +449,8 @@ def template_delta(context):
         if (_title_is_updatable(title) and _title_has_been_updated(title, 'Outputs'))
     }
 
-    delta_minus_resources = {r: v for r, v in old_template['Resources'].iteritems() if r not in template['Resources'] and _title_is_removable(r)}
-    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).iteritems() if o not in template.get('Outputs', {})}
+    delta_minus_resources = {r: v for r, v in old_template['Resources'].items() if r not in template['Resources'] and _title_is_removable(r)}
+    delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).items() if o not in template.get('Outputs', {})}
 
     return Delta(
         {
