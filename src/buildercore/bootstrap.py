@@ -8,21 +8,18 @@ import os, json, re
 from os.path import join
 from pprint import pformat
 from functools import partial
-from StringIO import StringIO
-from . import core, utils, config, keypair, bvars
 from collections import OrderedDict
 from datetime import datetime
+from . import utils, config, keypair, bvars, core, context_handler, project
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, call_while, ensure, subdict, yaml_dump
+from .utils import first, call_while, ensure, subdict, yaml_dump, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
-from fabric.api import sudo, put, show
+from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
-from fabric import operations
 from boto.exception import BotoServerError, SQSError
 from kids.cache import cache as cached
-from buildercore import context_handler, project, utils as core_utils
 from functools import reduce # pylint:disable=redefined-builtin
 
 import logging
@@ -36,8 +33,7 @@ def _put_temporary_script(script_filename):
     start = datetime.now()
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_filename) + '-' + timestamp_marker)
-    put(local_script, remote_script)
-    return remote_script
+    return fab_put(local_script, remote_script)
 
 def put_script(script_filename, remote_script):
     """uploads a script for SCRIPTS_PATH in remote_script location, making it executable
@@ -55,7 +51,7 @@ def run_script(script_filename, *script_params, **environment_variables):
         return "'%s'" % parameter
 
     env_string = ['%s=%s' % (k, v) for k, v in environment_variables.items()]
-    cmd = ["/bin/bash", remote_script] + map(escape_string_parameter, list(script_params))
+    cmd = ["/bin/bash", remote_script] + lmap(escape_string_parameter, list(script_params))
     retval = sudo(" ".join(env_string + cmd))
     sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
@@ -88,8 +84,7 @@ def create_stack(stackname):
 
 def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "simply creates the stack of resources on AWS, talking to CloudFormation."
-    if not parameters:
-        parameters = []
+    parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
@@ -101,11 +96,12 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
-
         return True
+
     except StackTakingALongTimeToComplete as err:
-        LOG.info("Stack taking a long time to complete: %s", err.message)
+        LOG.info("Stack taking a long time to complete: %s", err)
         raise
+
     except BotoServerError as err:
         if err.message.endswith(' already exists'):
             LOG.debug(err.message)
@@ -113,9 +109,11 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
         on_error()
         raise
+
     except KeyboardInterrupt:
         LOG.debug("caught keyboard interrupt, cancelling...")
         return False
+
     except BaseException:
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         on_error()
@@ -172,7 +170,7 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     def for_unsubbed_topic(statement):
         return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
-    policy['Statement'] = list(filter(lambda s: not for_unsubbed_topic(s), policy.get('Statement', [])))
+    policy['Statement'] = list([s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)])
     if policy['Statement']:
         return policy
     return None
@@ -444,7 +442,7 @@ def write_environment_info(stackname, overwrite=False):
     if not files.exists("/etc/cfn-info.json") or overwrite:
         LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
         infr_config = utils.json_dumps(template_info(stackname))
-        return put(StringIO(infr_config), "/etc/cfn-info.json", use_sudo=True)
+        return fab_put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
     LOG.debug('cfn outputs found, skipping')
     return []
 
@@ -462,7 +460,7 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('sqs', update_sqs_stack)
     ])
     if not service_list:
-        service_list = service_update_fns.keys()
+        service_list = list(service_update_fns.keys())
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
 
     [fn(stackname, **kwargs) for fn in subdict(service_update_fns, service_list).values()]
@@ -472,7 +470,7 @@ def upload_master_builder_key(key):
     LOG.info("upload master builder key to %s", private_key)
     try:
         # NOTE: overwrites any existing master key on machine being updated
-        operations.put(local_path=key, remote_path=private_key, use_sudo=True)
+        fab_put(local_path=key, remote_path=private_key, use_sudo=True)
     finally:
         key.close()
 
@@ -481,23 +479,17 @@ def download_master_builder_key(stackname):
     region = pdata['aws']['region']
     master_stack = core.find_master(region)
     private_key = "/root/.ssh/id_rsa"
-    LOG.info("download master builder key %s:%s", master_stack, private_key)
-    fh = StringIO()
     with stack_conn(master_stack):
-        with show('exceptions'):
-            operations.get(remote_path=private_key, local_path=fh, use_sudo=True)
-    return fh
+        with show('exceptions'): # I actually get better exceptions with this disabled
+            return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
 
 def download_master_configuration(master_stack):
-    fh = StringIO()
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
-        operations.get(remote_path='/etc/salt/master.template', local_path=fh, use_sudo=True)
-    fh.seek(0)
-    return fh
+        return fab_get('/etc/salt/master.template', use_sudo=True, return_stream=True)
 
 def expand_master_configuration(master_configuration_template, formulas=None):
     "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"
-    cfg = core_utils.ordered_load(master_configuration_template)
+    cfg = utils.ordered_load(master_configuration_template)
 
     if not formulas:
         formulas = project.known_formulas() # *all* formulas
@@ -515,9 +507,9 @@ def expand_master_configuration(master_configuration_template, formulas=None):
     cfg['interface'] = '0.0.0.0'
     return cfg
 
-def upload_master_configuration(master_stack, master_configuration):
+def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
-        operations.put(local_path=master_configuration, remote_path='/etc/salt/master', use_sudo=True)
+        fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
 def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwargs):
     """installs/updates the ec2 instance attached to the specified stackname.
@@ -552,7 +544,7 @@ def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwar
             # if it also doesn't exist on the filesystem, die horribly.
             # regular updates shouldn't have to deal with this.
             pem = stack_pem(stackname, die_if_doesnt_exist=True)
-            put(pem, "/root/.ssh/id_rsa", use_sudo=True)
+            fab_put(pem, "/root/.ssh/id_rsa", use_sudo=True)
 
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)

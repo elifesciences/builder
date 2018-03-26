@@ -1,12 +1,12 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
 from fabric.api import sudo, put, task
-from StringIO import StringIO
+from io import StringIO
 from decorators import requires_aws_stack, debugtask
 from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
 from buildercore import utils as core_utils, trop
-from buildercore.utils import ensure
+from buildercore.utils import ensure, lmap
 from pprint import pprint
 import utils
 import logging
@@ -24,7 +24,7 @@ def switch_revision(stackname, revision=None, concurrency=None):
         buildvars = _retrieve_build_vars()
 
         if 'revision' in buildvars and revision == buildvars['revision']:
-            print 'FYI, the instance is already on that revision!'
+            print('FYI, the instance is already on that revision!')
             return
 
         new_data = buildvars
@@ -111,7 +111,7 @@ def _update_remote_bvars(stackname, buildvars):
         # make a backup
         'if [ -f /etc/build-vars.json.b64 ]; then cp /etc/build-vars.json.b64 /tmp/build-vars.json.b64.%s; fi;' % fid,
     ]
-    map(sudo, cmds)
+    lmap(sudo, cmds)
     put(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
     LOG.info("%r updated", stackname)
 

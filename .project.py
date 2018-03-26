@@ -44,7 +44,7 @@ else:
         output = project.known_formulas()
     elif args.env: # vagrant/aws
         # only projects that use given environment
-        output = project.filtered_projects(lambda pname, pdata: args.env in pdata).keys()
+        output = list(project.filtered_projects(lambda pname, pdata: args.env in pdata).keys())
     else:
         # all projects
         output = project.project_list()
@@ -55,7 +55,7 @@ formats = {
     'json': partial(json.dumps, indent=4),
 }
 if args.format not in formats:
-    print 'unknown format: %s' % args.format
-    print 'known formats: %s' % formats.keys()
+    print('unknown format: %s' % args.format)
+    print('known formats: %s' % list(formats.keys()))
     exit(1)
-print formats[args.format](output)
+print(formats[args.format](output))

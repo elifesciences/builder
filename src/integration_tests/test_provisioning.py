@@ -5,8 +5,10 @@ from buildercore import bootstrap, cfngen, lifecycle
 from buildercore.config import BOOTSTRAP_USER
 import buildvars
 import cfn
-
 from fabfile import PROJECT_DIR
+import logging
+
+logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
 class TestProvisioning(base.BaseCase):
     def setUp(self):
@@ -29,7 +31,7 @@ class TestProvisioning(base.BaseCase):
                 os.unlink(path)
             elif os.path.isdir(path):
                 # assumes dir is empty
-                print 'should be empty:', os.listdir(path)
+                print('should be empty:', os.listdir(path))
                 os.rmdir(path)
             self.assertFalse(os.path.exists(path), "failed to delete path %r in tearDown" % path)
 

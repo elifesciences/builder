@@ -1,4 +1,4 @@
-import json, yaml
+import json  # , yaml
 import os
 from os.path import join
 from . import base
@@ -21,7 +21,8 @@ class TestBuildercoreTrop(base.BaseCase):
         +  u'Type': u'AWS::Route53::RecordSet'}
         that hide the true comparison problem in self.assertEquals().
         """
-        return yaml.safe_load(dump)
+        # return yaml.safe_load(dump) # slightly improved in python3?
+        return json.loads(dump)
 
     def test_rds_template_contains_rds(self):
         extra = {
@@ -33,7 +34,8 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
         data = self._parse_json(trop.render(context))
         self.assertTrue(isinstance(data['Resources']['AttachedDB'], dict))
-        self.assertEqual(
+        # "Test that sequence first contains the same elements as second, regardless of their order."
+        self.assertCountEqual(
             data['Resources']['AttachedDB']['Properties']['Tags'],
             [
                 {'Key': 'Project', 'Value': 'dummy3'},
@@ -73,12 +75,12 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('just-some-sns', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertEqual(['WidgetsProdTopic'], data['Resources'].keys())
+        self.assertEqual(['WidgetsProdTopic'], list(data['Resources'].keys()))
         self.assertEqual(
             {'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}},
             data['Resources']['WidgetsProdTopic']
         )
-        self.assertEqual(['WidgetsProdTopicArn'], data['Outputs'].keys())
+        self.assertEqual(['WidgetsProdTopicArn'], list(data['Outputs'].keys()))
         self.assertEqual(
             {'Value': {'Ref': 'WidgetsProdTopic'}},
             data['Outputs']['WidgetsProdTopicArn']
@@ -91,12 +93,12 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-sqs', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertEqual(['ProjectWithSqsIncomingProdQueue'], data['Resources'].keys())
+        self.assertEqual(['ProjectWithSqsIncomingProdQueue'], list(data['Resources'].keys()))
         self.assertEqual(
             {'Type': 'AWS::SQS::Queue', 'Properties': {'QueueName': 'project-with-sqs-incoming-prod'}},
             data['Resources']['ProjectWithSqsIncomingProdQueue']
         )
-        self.assertEqual(['ProjectWithSqsIncomingProdQueueArn'], data['Outputs'].keys())
+        self.assertEqual(['ProjectWithSqsIncomingProdQueueArn'], list(data['Outputs'].keys()))
         self.assertEqual(
             {'Value': {'Fn::GetAtt': ['ProjectWithSqsIncomingProdQueue', 'Arn']}},
             data['Outputs']['ProjectWithSqsIncomingProdQueueArn']
@@ -109,9 +111,9 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-ext', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertIn('MountPoint1', data['Resources'].keys())
-        self.assertIn('ExtraStorage1', data['Resources'].keys())
-        self.assertEqual(
+        self.assertIn('MountPoint1', list(data['Resources'].keys()))
+        self.assertIn('ExtraStorage1', list(data['Resources'].keys()))
+        self.assertCountEqual(
             {
                 'AvailabilityZone': {'Fn::GetAtt': ['EC2Instance1', 'AvailabilityZone']},
                 'VolumeType': 'standard',
@@ -143,9 +145,9 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertIn('EC2Instance1', resources.keys())
-        self.assertIn('EC2Instance2', resources.keys())
-        self.assertIn('StackSecurityGroup', resources.keys())
+        self.assertIn('EC2Instance1', list(resources.keys()))
+        self.assertIn('EC2Instance2', list(resources.keys()))
+        self.assertIn('StackSecurityGroup', list(resources.keys()))
 
         # different subnets, placed in different Availability Zones
         self.assertEqual(resources['EC2Instance1']['Properties']['SubnetId'], 'subnet-1d4eb46a')
@@ -173,10 +175,10 @@ class TestBuildercoreTrop(base.BaseCase):
             resources['EC2Instance1']['Properties']['Tags']
         )
         outputs = data['Outputs']
-        self.assertIn('InstanceId1', outputs.keys())
+        self.assertIn('InstanceId1', list(outputs.keys()))
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
-        self.assertIn('ElasticLoadBalancer', resources.keys())
+        self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']
         self.assertEqual(elb['Scheme'], 'internet-facing')
         self.assertEqual(1, len(elb['Listeners']))
@@ -225,12 +227,12 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             resources['ElasticLoadBalancer']['Properties']['Tags']
         )
-        self.assertNotIn('IntDNS', resources.keys())
+        self.assertNotIn('IntDNS', list(resources.keys()))
         dns = resources['ExtDNS']['Properties']
-        self.assertIn('AliasTarget', dns.keys())
+        self.assertIn('AliasTarget', list(dns.keys()))
         self.assertEqual(dns['Name'], 'prod--project-with-cluster.example.org')
-        self.assertIn('DomainName', outputs.keys())
-        self.assertIn('CnameDNS1', resources.keys())
+        self.assertIn('DomainName', list(outputs.keys()))
+        self.assertIn('CnameDNS1', list(resources.keys()))
         self.assertEqual(
             {
                 'AliasTarget': {
@@ -245,7 +247,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             resources['CnameDNS1']['Properties']
         )
-        self.assertIn('CnameDNS2', resources.keys())
+        self.assertIn('CnameDNS2', list(resources.keys()))
         self.assertEqual(
             {
                 'AliasTarget': {
@@ -261,7 +263,7 @@ class TestBuildercoreTrop(base.BaseCase):
             resources['CnameDNS2']['Properties']
         )
 
-        self.assertIn('IntDNS1', resources.keys())
+        self.assertIn('IntDNS1', list(resources.keys()))
         self.assertEqual(
             {
                 'ResourceRecords': [{'Fn::GetAtt': ['EC2Instance1', 'PrivateIp']}],
@@ -273,7 +275,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             resources['IntDNS1']['Properties']
         )
-        self.assertIn('IntDNS2', resources.keys())
+        self.assertIn('IntDNS2', list(resources.keys()))
 
     def test_clustered_template_suppressing_some_nodes(self):
         extra = {
@@ -283,14 +285,14 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertNotIn('EC2Instance1', resources.keys())
-        self.assertIn('EC2Instance2', resources.keys())
-        self.assertIn('EC2Instance3', resources.keys())
-        self.assertNotIn('ExtraStorage1', resources.keys())
-        self.assertIn('ExtraStorage2', resources.keys())
-        self.assertIn('ExtraStorage3', resources.keys())
+        self.assertNotIn('EC2Instance1', list(resources.keys()))
+        self.assertIn('EC2Instance2', list(resources.keys()))
+        self.assertIn('EC2Instance3', list(resources.keys()))
+        self.assertNotIn('ExtraStorage1', list(resources.keys()))
+        self.assertIn('ExtraStorage2', list(resources.keys()))
+        self.assertIn('ExtraStorage3', list(resources.keys()))
 
-        self.assertIn('ElasticLoadBalancer', resources.keys())
+        self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']
         self.assertEqual(
             elb['Instances'],
@@ -312,10 +314,10 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertIn('EC2Instance1', resources.keys())
-        self.assertIn('EC2Instance2', resources.keys())
-        self.assertIn('ExtraStorage1', resources.keys())
-        self.assertIn('ExtraStorage2', resources.keys())
+        self.assertIn('EC2Instance1', list(resources.keys()))
+        self.assertIn('EC2Instance2', list(resources.keys()))
+        self.assertIn('ExtraStorage1', list(resources.keys()))
+        self.assertIn('ExtraStorage2', list(resources.keys()))
         self.assertEqual(
             resources['ExtraStorage1']['Properties']['Size'],
             '20'
@@ -333,7 +335,7 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertIn('ElasticLoadBalancer', resources.keys())
+        self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']
         listeners = elb['Listeners']
         self.assertEqual(
@@ -356,7 +358,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 },
             ]
         )
-        self.assertIn('ELBSecurityGroup', resources.keys())
+        self.assertIn('ELBSecurityGroup', list(resources.keys()))
         elb_security_group_ingress = resources['ELBSecurityGroup']['Properties']['SecurityGroupIngress']
         self.assertEqual(
             [
@@ -403,7 +405,7 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertIn('CnameDNS1', resources.keys())
+        self.assertIn('CnameDNS1', list(resources.keys()))
         dns = resources['CnameDNS1']['Properties']
         self.assertEqual(
             dns,
@@ -424,7 +426,7 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertIn('ElasticLoadBalancer', resources.keys())
+        self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']
         self.assertEqual(
             elb['AppCookieStickinessPolicy'],
@@ -447,7 +449,7 @@ class TestBuildercoreTrop(base.BaseCase):
             'stackname': 'project-with-s3--prod',
         }
         context = cfngen.build_context('project-with-s3', **extra)
-        self.assertEquals(
+        self.assertEqual(
             {
                 'sqs-notifications': {},
                 'deletion-policy': 'delete',
@@ -459,9 +461,9 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertTrue('WidgetsProdBucket' in data['Resources'].keys())
-        self.assertTrue('WidgetsArchiveProdBucket' in data['Resources'].keys())
-        self.assertTrue('WidgetsStaticHostingProdBucket' in data['Resources'].keys())
+        self.assertTrue('WidgetsProdBucket' in list(data['Resources'].keys()))
+        self.assertTrue('WidgetsArchiveProdBucket' in list(data['Resources'].keys()))
+        self.assertTrue('WidgetsStaticHostingProdBucket' in list(data['Resources'].keys()))
         self.assertEqual(
             {
                 'Type': 'AWS::S3::Bucket',
@@ -590,7 +592,7 @@ class TestBuildercoreTrop(base.BaseCase):
             'stackname': 'project-with-cloudfront--prod',
         }
         context = cfngen.build_context('project-with-cloudfront', **extra)
-        self.assertEquals(
+        self.assertEqual(
             {
                 'certificate_id': 'dummy...',
                 'compress': True,
@@ -609,7 +611,7 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
         self.assertEqual(
             {
                 'Type': 'AWS::CloudFront::Distribution',
@@ -660,7 +662,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['CloudFrontCDN']
         )
-        self.assertTrue('CloudFrontCDNDNS1' in data['Resources'].keys())
+        self.assertTrue('CloudFrontCDNDNS1' in list(data['Resources'].keys()))
         self.assertEqual(
             {
                 'Type': 'AWS::Route53::RecordSet',
@@ -679,7 +681,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['CloudFrontCDNDNS1']
         )
-        self.assertTrue('CloudFrontCDNDNS2' in data['Resources'].keys())
+        self.assertTrue('CloudFrontCDNDNS2' in list(data['Resources'].keys()))
         self.assertEqual(
             {
                 'Type': 'AWS::Route53::RecordSet',
@@ -706,8 +708,8 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-cloudfront-minimal', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
-        self.assertEquals(
+        self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
+        self.assertEqual(
             {
                 'Forward': 'none',
             },
@@ -721,13 +723,13 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-cloudfront-origins', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
+        self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
         distribution_config = data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']
-        self.assertEquals(
+        self.assertEqual(
             ['prod--cdn.example.org'],
             distribution_config['Aliases']
         )
-        self.assertEquals(
+        self.assertEqual(
             [
                 {
                     'CustomOriginConfig': {
@@ -748,20 +750,20 @@ class TestBuildercoreTrop(base.BaseCase):
             ],
             distribution_config['Origins']
         )
-        self.assertEquals(
+        self.assertEqual(
             'default-bucket',
             distribution_config['DefaultCacheBehavior']['TargetOriginId'],
         )
-        self.assertEquals(1, len(distribution_config['CacheBehaviors']))
-        self.assertEquals(
+        self.assertEqual(1, len(distribution_config['CacheBehaviors']))
+        self.assertEqual(
             'some-bucket',
             distribution_config['CacheBehaviors'][0]['TargetOriginId'],
         )
-        self.assertEquals(
+        self.assertEqual(
             'articles/*',
             distribution_config['CacheBehaviors'][0]['PathPattern'],
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Cookies': {
                     'Forward': 'whitelist',
@@ -780,8 +782,8 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-cloudfront-error-pages', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertTrue('CloudFrontCDN' in data['Resources'].keys())
-        self.assertEquals(
+        self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
+        self.assertEqual(
             {
                 'CustomOriginConfig': {
                     'HTTPSPort': 443,
@@ -792,7 +794,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['Origins'][1]
         )
-        self.assertEquals(
+        self.assertEqual(
             [{
                 'DefaultTTL': 300,
                 'ForwardedValues': {
@@ -809,7 +811,7 @@ class TestBuildercoreTrop(base.BaseCase):
             }],
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CacheBehaviors']
         )
-        self.assertEquals(
+        self.assertEqual(
             [
                 {
                     'ErrorCode': 502,
@@ -827,11 +829,11 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-elasticache-redis', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertIn('ElastiCache1', data['Resources'].keys())
-        self.assertIn('ElastiCacheParameterGroup', data['Resources'].keys())
-        self.assertIn('ElastiCacheSecurityGroup', data['Resources'].keys())
-        self.assertIn('ElastiCacheSubnetGroup', data['Resources'].keys())
-        self.assertEquals(
+        self.assertIn('ElastiCache1', list(data['Resources'].keys()))
+        self.assertIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
+        self.assertIn('ElastiCacheSecurityGroup', list(data['Resources'].keys()))
+        self.assertIn('ElastiCacheSubnetGroup', list(data['Resources'].keys()))
+        self.assertEqual(
             {
                 'CacheNodeType': 'cache.t2.small',
                 'CacheParameterGroupName': {'Ref': 'ElastiCacheParameterGroup'},
@@ -850,7 +852,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCache1']['Properties']
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'CacheParameterGroupFamily': 'redis2.8',
                 'Description': 'ElastiCache parameter group for project-with-elasticache-redis--prod',
@@ -860,7 +862,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCacheParameterGroup']['Properties']
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'GroupDescription': 'ElastiCache security group',
                 'SecurityGroupIngress': [{
@@ -874,7 +876,7 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['ElastiCacheSecurityGroup']['Properties']
         )
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Description': 'a group of subnets for this cache instance.',
                 'SubnetIds': ['subnet-foo', 'subnet-bar'],
@@ -882,7 +884,7 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['ElastiCacheSubnetGroup']['Properties']
         )
         self.assertIn('ElastiCacheHost1', data['Outputs'])
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Description': 'The hostname on which the cache accepts connections',
                 'Value': {'Fn::GetAtt': ['ElastiCache1', 'RedisEndpoint.Address']}
@@ -890,7 +892,7 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Outputs']['ElastiCacheHost1']
         )
         self.assertIn('ElastiCachePort1', data['Outputs'])
-        self.assertEquals(
+        self.assertEqual(
             {
                 'Description': 'The port number on which the cache accepts connections',
                 'Value': {'Fn::GetAtt': ['ElastiCache1', 'RedisEndpoint.Port']}
@@ -905,8 +907,8 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-multiple-elasticaches', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertIn('ElastiCache1', data['Resources'].keys())
-        self.assertIn('ElastiCache2', data['Resources'].keys())
+        self.assertIn('ElastiCache1', list(data['Resources'].keys()))
+        self.assertIn('ElastiCache2', list(data['Resources'].keys()))
         # default parameter group
         self.assertEqual(
             {
@@ -920,14 +922,14 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertEqual({'Ref': 'ElastiCacheParameterGroup'}, data['Resources']['ElastiCache1']['Properties']['CacheParameterGroupName'])
         # suppressed
-        self.assertNotIn('ElastiCache3', data['Resources'].keys())
-        self.assertIn('ElastiCacheHost1', data['Outputs'].keys())
-        self.assertIn('ElastiCachePort1', data['Outputs'].keys())
-        self.assertIn('ElastiCacheHost2', data['Outputs'].keys())
-        self.assertIn('ElastiCachePort2', data['Outputs'].keys())
+        self.assertNotIn('ElastiCache3', list(data['Resources'].keys()))
+        self.assertIn('ElastiCacheHost1', list(data['Outputs'].keys()))
+        self.assertIn('ElastiCachePort1', list(data['Outputs'].keys()))
+        self.assertIn('ElastiCacheHost2', list(data['Outputs'].keys()))
+        self.assertIn('ElastiCachePort2', list(data['Outputs'].keys()))
         # suppressed
-        self.assertNotIn('ElastiCacheHost3', data['Outputs'].keys())
-        self.assertNotIn('ElastiCachePort3', data['Outputs'].keys())
+        self.assertNotIn('ElastiCacheHost3', list(data['Outputs'].keys()))
+        self.assertNotIn('ElastiCachePort3', list(data['Outputs'].keys()))
         # overridden
         self.assertEqual('cache.t2.medium', data['Resources']['ElastiCache2']['Properties']['CacheNodeType'])
         self.assertEqual(
@@ -949,7 +951,7 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-fully-overridden-elasticaches', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        self.assertNotIn('ElastiCacheParameterGroup', data['Resources'].keys())
+        self.assertNotIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
 
     def test_overrides_scalar(self):
         context = {

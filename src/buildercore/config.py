@@ -14,6 +14,7 @@ import os
 from os.path import join
 from fabric.api import env
 from buildercore import utils
+from buildercore.utils import lmap, lfilter
 from kids.cache import cache
 import logging
 
@@ -39,7 +40,7 @@ ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
 
-PROJECT_PATH = os.getcwdu() # ll: /path/to/elife-builder/
+PROJECT_PATH = os.getcwd() # ll: /path/to/elife-builder/
 SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
 
 TEMP_PATH = "/tmp/"
@@ -58,7 +59,7 @@ KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # ll: /.../cfn/keypairs/
 SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # ll: /.../scripts/
 
 # create all necessary paths and ensure they are writable
-map(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
+lmap(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
 
 # logging
 
@@ -147,7 +148,7 @@ def _parse_loc(loc):
 def parse_loc_list(loc_list):
     "wrangle the list of paths the user gave us. expand if they specify a directory, etc"
     # give the convenient user-form some structure
-    p_loc_list = map(_parse_loc, loc_list)
+    p_loc_list = lmap(_parse_loc, loc_list)
     # do some post processing
 
     def expand_dirs(triple):
@@ -163,7 +164,7 @@ def parse_loc_list(loc_list):
     p_loc_list = utils.shallow_flatten(map(expand_dirs, p_loc_list))
 
     # remove any bogus values
-    p_loc_list = filter(None, p_loc_list)
+    p_loc_list = lfilter(None, p_loc_list)
 
     # remove any duplicates. can happen when we expand dir => files
     p_loc_list = utils.unique(p_loc_list)

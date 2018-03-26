@@ -59,7 +59,7 @@ class TestUtils(base.BaseCase):
         utils.mkdirp(".")
 
     def test_pwd(self):
-        self.assertRegexpMatches(utils.pwd(), "^/.*/src$")
+        self.assertRegex(utils.pwd(), "^/.*/src$")
 
     def test_table(self):
         class AnObject():

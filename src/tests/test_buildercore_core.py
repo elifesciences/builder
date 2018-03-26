@@ -119,16 +119,16 @@ class SimpleCases(base.BaseCase):
             'master-server--2016-01-01',
             'master-server--master--ci',
         ]
-        results = map(core.is_master_server_stack, true_cases)
-        self.assertTrue(all(results), "not all master servers identified: %r" % zip(true_cases, results))
+        results = list(map(core.is_master_server_stack, true_cases))
+        self.assertTrue(all(results), "not all master servers identified: %r" % list(zip(true_cases, results)))
 
     def test_master_server_identified_false_cases(self):
         false_cases = [
             'master-server', # *stack* names not project names
             '', None, 123, {}, [], self
         ]
-        results = map(core.is_master_server_stack, false_cases)
-        self.assertFalse(all(results), "not all false cases identified: %r" % zip(false_cases, results))
+        results = list(map(core.is_master_server_stack, false_cases))
+        self.assertFalse(all(results), "not all false cases identified: %r" % list(zip(false_cases, results)))
 
     def test_find_region(self):
         self.assertEqual(core.find_region(), "us-east-1")
@@ -139,10 +139,10 @@ class SimpleCases(base.BaseCase):
             core.find_region()
             self.fail("Shouldn't be able to choose a region")
         except core.MultipleRegionsError as e:
-            self.assertEqual(["us-east-1", "eu-central-1"], e.regions())
+            self.assertCountEqual(["us-east-1", "eu-central-1"], e.regions())
 
     def test_find_ec2_instances(self):
-        self.assertEquals([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
+        self.assertEqual([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
 
     def test_find_ec2_instances_requiring_a_non_empty_list(self):
         self.assertRaises(core.NoRunningInstances, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
@@ -156,8 +156,10 @@ class SimpleCases(base.BaseCase):
         with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
             for stackname, expected_subs in cases:
                 res = core.all_sns_subscriptions('someregion', stackname)
-                actual_subs = map(lambda sub: sub['Topic'], res)
-                self.assertItemsEqual(expected_subs, actual_subs)
+                actual_subs = [sub['Topic'] for sub in res]
+                #self.assertItemsEqual(expected_subs, actual_subs)
+                # https://bugs.python.org/issue17866
+                self.assertCountEqual(expected_subs, actual_subs)
 
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):

@@ -13,7 +13,7 @@ def find_region(stackname=None):
     try:
         return core.find_region(stackname)
     except MultipleRegionsError as e:
-        print "many possible regions found!"
+        print("many possible regions found!")
         return utils._pick('region', e.regions())
 
 def stack_list(region=None):

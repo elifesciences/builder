@@ -7,6 +7,7 @@ from buildercore import utils
 from buildercore.decorators import testme
 from buildercore.config import AWS_EXCLUDING
 from kids.cache import cache as cached
+from functools import reduce
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -124,8 +125,8 @@ def project_dir_path(project_file):
             os.mkdir(path)
         except BaseException:
             import subprocess
-            print "Debugging os.mkdir(path) failure"
-            print subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT)
+            print("Debugging os.mkdir(path) failure")
+            print(subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT))
             raise
     return path
 
@@ -136,7 +137,7 @@ def find_snippets(project_file):
     fnames = filter(lambda fname: fname.endswith('.yaml'), fnames)
     path_list = map(lambda fname: join(path, fname), fnames)
     path_list = sorted(filter(os.path.isfile, path_list))
-    return map(lambda p: utils.ordered_load(open(p, 'r')), path_list)
+    return [utils.ordered_load(open(p, 'r')) for p in path_list]
 
 
 #
