@@ -24,9 +24,10 @@ import logging
 class FabricException(Exception):
     pass
 
-
 env.abort_exception = FabricException
 
+class ConfigurationException(Exception):
+    pass
 
 # dirs are relative
 # paths are absolute

@@ -14,7 +14,7 @@ from . import utils, config, keypair, bvars, core, context_handler, project
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER, TERRAFORM_DIR
+from .config import BOOTSTRAP_USER, TERRAFORM_DIR, ConfigurationException
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
@@ -167,7 +167,10 @@ def setup_ec2(stackname, context_ec2):
 def setup_terraform(stackname, context):
     if not context.get('fastly'):
         return
-
+    if context.get('fastly'):
+        if 'FASTLY_API_KEY' not in os.environ:
+            raise ConfigurationException("You must provide a FASTLY_API_KEY environment variable to provision Fastly resources")
+    
     working_dir = join(TERRAFORM_DIR, stackname)
     t = Terraform(working_dir=working_dir)
     t.init(input=False, capture_output=False, raise_on_error=True)
