@@ -38,6 +38,7 @@ R53_INT_TITLE = "IntDNS"
 R53_INT_TITLE_NODE = "IntDNS%s"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
 R53_CNAME_TITLE = "CnameDNS%s"
+R53_FASTLY_TITLE = "FastlyDNS%s"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
 # from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
 CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
@@ -48,6 +49,8 @@ ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
+
+FASTLY_GLOBAL = 'nonssl.global.fastly.net.'
 
 def _read_script(script_filename):
     path = join(config.SCRIPTS_PATH, script_filename)
@@ -376,6 +379,24 @@ def external_dns_cloudfront(context):
         i = i + 1
 
     return dns_records
+
+def external_dns_fastly(context):
+    "additional CNAME DNS entries pointing to a Fastly CDN"
+    assert isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built"
+
+    def entry(hostname, i):
+        if _is_domain_2nd_level(hostname):
+            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
+        hostedzone = context['domain'] + "."
+        return route53.RecordSetType(
+            R53_FASTLY_TITLE % (i + 1),
+            HostedZoneName=hostedzone,
+            Name=hostname,
+            Type="CNAME",
+            TTL="60",
+            ResourceRecords=[FASTLY_GLOBAL],
+        )
+    return [entry(hostname, i) for i, hostname in enumerate(context['fastly']['subdomains'])]
 
 #
 # render_* funcs
@@ -758,6 +779,11 @@ def render_cloudfront(context, template, origin_hostname):
     for dns in external_dns_cloudfront(context):
         template.add_resource(dns)
 
+def render_fastly(context, template):
+    "WARNING: only creates Route53 DNS entries, delegating the rest of the setup to Terraform"
+    for dns in external_dns_fastly(context):
+        template.add_resource(dns)
+
 def elasticache_security_group(context):
     "returns a security group for the ElastiCache instances. this security group only allows access within the VPC"
     engine_ports = {
@@ -877,6 +903,9 @@ def render(context):
 
     if context['cloudfront']:
         render_cloudfront(context, template, origin_hostname=context['full_hostname'])
+
+    if context['fastly']:
+        render_fastly(context, template)
 
     if context['elasticache']:
         render_elasticache(context, template)
