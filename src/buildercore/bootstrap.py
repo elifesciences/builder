@@ -12,7 +12,7 @@ from collections import OrderedDict
 from datetime import datetime
 from . import utils, config, keypair, bvars, core, context_handler, project
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, call_while, ensure, subdict, yaml_dump, lmap, fab_get, fab_put, fab_put_data
+from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, show
@@ -580,7 +580,7 @@ def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwar
             run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
             master_configuration_template = download_master_configuration(stackname)
             master_configuration = expand_master_configuration(master_configuration_template, all_formulas)
-            upload_master_configuration(stackname, yaml_dump(master_configuration))
+            upload_master_configuration(stackname, yaml_dumps(master_configuration))
             run_script('update-master.sh', stackname, builder_private_repo)
             put_script('update-master.sh', '/opt/update-master.sh')
 
