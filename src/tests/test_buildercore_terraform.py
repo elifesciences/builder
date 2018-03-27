@@ -43,4 +43,3 @@ class TestBuildercoreTerraform(base.BaseCase):
             },
             data
         )
-
