@@ -149,6 +149,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['s3'][bucket_name].update(configuration if configuration else {})
 
     build_context_cloudfront(context, parameterize=_parameterize)
+    build_context_fastly(context, parameterize=_parameterize)
     build_context_subdomains(context)
     build_context_elasticache(context)
 
@@ -233,6 +234,18 @@ def build_context_cloudfront(context, parameterize):
                 })
                 for o_id, o in context['project']['aws']['cloudfront']['origins'].items()
             ]),
+        }
+    else:
+        context['cloudfront'] = False
+
+def build_context_fastly(context, parameterize):
+    def build_subdomain(x):
+        return complete_domain(parameterize(x), context['domain'])
+    if 'fastly' in context['project']['aws']:
+        context['fastly'] = {
+            'subdomains': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
+            # future use
+            'subdomains-without-dns': [],
         }
     else:
         context['cloudfront'] = False

@@ -294,6 +294,16 @@ project-with-cloudfront-origins:
                     cookies:
                         - session_id
 
+project-with-fastly-minimal:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        fastly:
+            subdomains:
+                - "{instance}--cdn-of-www"
+
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
