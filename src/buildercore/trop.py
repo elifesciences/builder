@@ -12,6 +12,7 @@ it to the correct file etc."""
 import copy
 from os.path import join
 from . import config, utils, bvars
+from config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
