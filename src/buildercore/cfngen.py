@@ -392,10 +392,16 @@ UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Inst
 REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
-class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
+class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
     @property
     def non_empty(self):
-        return self.plus['Resources'] or self.plus['Outputs'] or self.edit['Resources'] or self.edit['Outputs'] or self.minus['Resources'] or self.minus['Outputs']
+        return self.plus['Resources'] \
+            or self.plus['Outputs'] \
+            or self.edit['Resources'] \
+            or self.edit['Outputs'] \
+            or self.minus['Resources'] \
+            or self.minus['Outputs'] \
+            or self.terraform
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
@@ -403,6 +409,9 @@ def template_delta(context):
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
+    new_terraform_template_file = None
+    if context.get('fastly'):
+        new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -489,7 +498,8 @@ def template_delta(context):
         {
             'Resources': delta_minus_resources,
             'Outputs': delta_minus_outputs,
-        }
+        },
+        new_terraform_template_file
     )
 
 def merge_delta(stackname, delta):
@@ -497,6 +507,7 @@ def merge_delta(stackname, delta):
     template = read_template(stackname)
     apply_delta(template, delta)
     write_template(stackname, json.dumps(template))
+    write_terraform_template(stackname, delta.terraform)
     return template
 
 def apply_delta(template, delta):

@@ -1,4 +1,5 @@
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
+import json
 from pprint import pformat
 from fabric.api import task, local, run, sudo, put, get, abort, settings
 import fabric.state
@@ -82,6 +83,7 @@ def update_template(stackname):
     LOG.info("Create: %s", pformat(delta.plus))
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
+    LOG.info("New Terraform generated file: %s", pformat(json.loads(delta.terraform)))
     utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template. Notice the delta *only shows changes to the template*, not to the context.')
 
     context_handler.write_context(stackname, context)
