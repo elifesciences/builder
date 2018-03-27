@@ -14,13 +14,14 @@ from . import utils, config, keypair, bvars, core, context_handler, project
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER
+from .config import BOOTSTRAP_USER, TERRAFORM_DIR
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from boto.exception import BotoServerError, SQSError
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
+from python_terraform import Terraform
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ def create_stack(stackname):
     return _create_generic_stack(stackname, parameters, on_start, on_error)
 
 def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
-    "simply creates the stack of resources on AWS, talking to CloudFormation."
+    "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
     parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
@@ -96,6 +97,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context['ec2'])
+        setup_terraform(stackname, context)
         return True
 
     except StackTakingALongTimeToComplete as err:
@@ -161,6 +163,15 @@ def setup_ec2(stackname, context_ec2):
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
+
+def setup_terraform(stackname, context):
+    if not context.get('fastly'):
+        return
+
+    working_dir = join(TERRAFORM_DIR, stackname)
+    t = Terraform(working_dir=working_dir)
+    t.init(input=False, capture_output=False, raise_on_error=True)
+    t.apply(input=False, capture_output=False, raise_on_error=True)
 
 def remove_topics_from_sqs_policy(policy, topic_arns):
     """Removes statements from an SQS policy.
