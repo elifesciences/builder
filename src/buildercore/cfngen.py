@@ -293,11 +293,13 @@ def write_template(stackname, contents):
     return output_fname
 
 def write_terraform_template(stackname, contents):
-    output_dir = os.path.join(TERRAFORM_DIR, stackname)
-    mkdir_p(output_dir)
-    output_fname = os.path.join(output_dir, "generated.tf")
-    open(output_fname, 'w').write(contents)
-    return output_fname
+    "optionally, store a terraform configuration file for the stack"
+    if contents:
+        output_dir = os.path.join(TERRAFORM_DIR, stackname)
+        mkdir_p(output_dir)
+        output_fname = os.path.join(output_dir, "generated.tf")
+        open(output_fname, 'w').write(contents)
+        return output_fname
 
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
