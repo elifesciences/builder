@@ -23,9 +23,9 @@ import re
 from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
-from . import utils, trop, core, project, context_handler
-from .utils import ensure, lmap
-from .config import STACK_DIR
+from . import utils, terraform, trop, core, project, context_handler
+from .utils import ensure, lmap, mkdir_p
+from .config import STACK_DIR, TERRAFORM_DIR
 
 import logging
 
@@ -292,6 +292,13 @@ def write_template(stackname, contents):
     open(output_fname, 'w').write(contents)
     return output_fname
 
+def write_terraform_template(stackname, contents):
+    output_dir = os.path.join(TERRAFORM_DIR, stackname)
+    mkdir_p(output_dir)
+    output_fname = os.path.join(output_dir, "generated.tf")
+    open(output_fname, 'w').write(contents)
+    return output_fname
+
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
@@ -363,11 +370,14 @@ def generate_stack(pname, **more_context):
     """given a project name and any context overrides, generates a Cloudformation
     stack file, writes it to file and returns a pair of (context, stackfilename)"""
     context = build_context(pname, **more_context)
-    template = render_template(context)
+    cloudformation_template = render_template(context)
+    terraform_template = terraform.render(context)
     stackname = context['stackname']
-    out_fname = write_template(stackname, template)
+
     context_handler.write_context(stackname, context)
-    return context, out_fname
+    cloudformation_template_file = write_template(stackname, cloudformation_template)
+    terraform_template_file = write_terraform_template(stackname, terraform_template)
+    return context, cloudformation_template_file, terraform_template_file
 
 #
 # update existing template

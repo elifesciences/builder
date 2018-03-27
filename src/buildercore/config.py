@@ -52,6 +52,7 @@ CONTEXT_DIR = join(CFN, "contexts") # ll: ./.cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
 KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
+TERRAFORM_DIR = join(CFN, "terraform")
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/
 CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # ll: /.../cfn/contexts/

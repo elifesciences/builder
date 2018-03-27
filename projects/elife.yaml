@@ -333,7 +333,9 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
-
+        fastly:
+            subdomains:
+                - "{instance}--fastly-gateway"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
