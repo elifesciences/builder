@@ -109,6 +109,10 @@ def update_template(stackname):
     if context.get('s3', {}):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
+    # Fastly via Terraform
+    if context.get('fastly', {}):
+        bootstrap.update_stack(stackname, service_list=['fastly'])
+
 
 # TODO: this task should probably live in `master.py`
 @debugtask

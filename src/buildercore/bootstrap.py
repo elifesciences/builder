@@ -272,6 +272,14 @@ def update_sqs_stack(stackname, **kwargs):
         # stack has/had queues that may need to be created/destroyed
         setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
 
+def update_terraform_stack(stackname, **kwargs):
+    if 'FASTLY_API_KEY' not in os.environ:
+        raise ConfigurationException("You must provide a FASTLY_API_KEY environment variable to provision Fastly resources")
+    
+    working_dir = join(TERRAFORM_DIR, stackname)
+    t = Terraform(working_dir=working_dir)
+    t.apply(input=False, capture_output=False, raise_on_error=True)
+
 def setup_s3(stackname, context_s3, region, account_id):
     """
     Connects S3 buckets (existing or created by Cloud Formation) to SQS queues
@@ -473,7 +481,8 @@ def update_stack(stackname, service_list=None, **kwargs):
     service_update_fns = OrderedDict([
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
-        ('sqs', update_sqs_stack)
+        ('sqs', update_sqs_stack),
+        ('fastly', update_terraform_stack)
     ])
     if not service_list:
         service_list = list(service_update_fns.keys())
