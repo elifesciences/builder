@@ -1,6 +1,6 @@
 import pytz
 import os, sys, copy, json, time, random, string
-from io import StringIO, BytesIO
+from io import BytesIO
 from functools import wraps
 from datetime import datetime
 import yaml
@@ -200,9 +200,15 @@ def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict
     return yaml.load(stream, OrderedLoader)
 
 def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
+    "wrapper around the yaml.dump function with sensible defaults for formatting"
     indent = 4
     line_break = '\n'
     # pylint: disable=too-many-ancestors
+
+    if isinstance(data, bytes):
+        # simple bytestrings are treated as regular (utf-8) strings and not binary data
+        # this doesn't apply to bytestrings used as keys or values in a list
+        data = data.decode()
 
     class OrderedDumper(dumper_class):
         pass
@@ -217,15 +223,12 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 def yaml_dumps(data):
-    "like json.dumps, returns a YAML string"
-    return ordered_dump(data, stream=None)
+    "like json.dumps, returns a YAML string. alias for `ordered_dump`"
+    return ordered_dump(data)
 
-def yaml_dump(data, stream=None):
-    "writes output to given file-like object or StringIO if stream not provided"
-    if not stream:
-        stream = StringIO()
+def yaml_dump(data, stream):
+    "like json.dump, writes output to given file-like object. returns nothing"
     ordered_dump(data, stream)
-    return stream
 
 def remove_ordereddict(data, dangerous=True):
     """turns a nested OrderedDict dict into a regular dictionary.
