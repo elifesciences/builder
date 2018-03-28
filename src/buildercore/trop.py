@@ -382,15 +382,15 @@ def external_dns_cloudfront(context):
     return dns_records
 
 def external_dns_fastly(context):
-    "additional CNAME DNS entries pointing to a Fastly CDN"
-    assert isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built"
+    "a Fastly CDN requires additional CNAME DNS entries pointing at it"
+    ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built")
 
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):
             raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
         hostedzone = context['domain'] + "."
         return route53.RecordSetType(
-            R53_FASTLY_TITLE % (i + 1),
+            R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
             HostedZoneName=hostedzone,
             Name=hostname,
             Type="CNAME",
@@ -870,13 +870,10 @@ def render_elasticache(context, template):
 def render(context):
     template = Template()
 
-    ec2_instances = {}
-    if context['ec2']:
-        ec2_instances = render_ec2(context, template)
+    ec2_instances = render_ec2(context, template) if context['ec2'] else {}
+    context['rds_instance_id'] and render_rds(context, template)
 
-    if context['rds_instance_id']:
-        render_rds(context, template)
-
+    # TODO: move to a render_ext
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
@@ -894,22 +891,14 @@ def render(context):
 
     # hostname is assigned to an ELB, which has priority over
     # N>=1 EC2 instances
-    if context['elb']:
-        render_elb(context, template, ec2_instances)
-
-    if context['ec2']:
-        render_ec2_dns(context, template)
+    context['elb'] and render_elb(context, template, ec2_instances)
+    context['ec2'] and render_ec2_dns(context, template)
 
     add_outputs(context, template)
 
-    if context['cloudfront']:
-        render_cloudfront(context, template, origin_hostname=context['full_hostname'])
-
-    if context['fastly']:
-        render_fastly(context, template)
-
-    if context['elasticache']:
-        render_elasticache(context, template)
+    context['cloudfront'] and render_cloudfront(context, template, origin_hostname=context['full_hostname'])
+    context['fastly'] and render_fastly(context, template)
+    context['elasticache'] and render_elasticache(context, template)
 
     return template.to_json()
 
