@@ -32,6 +32,27 @@ class TestBuildercoreCfngen(base.BaseCase):
         # todo: does this need to live in a try: ... finally: ... ?
         self.switch_in_test_settings()
 
+class TestBuildContext(base.BaseCase):
+    def test_existing_alt_config(self):
+        stackname = 'dummy2--test'
+        more_context = {
+            'stackname': stackname,
+            'alt-config': 'alt-config1',
+        }
+        context = cfngen.build_context('dummy2', **more_context)
+        self.assertEqual(context['alt-config'], 'alt-config1')
+        self.assertEqual(context['ec2']['ami'], 'ami-22222')
+
+    def test_not_existing_alt_config(self):
+        stackname = 'dummy2--test'
+        more_context = {
+            'stackname': stackname,
+            'alt-config': 'my-custom-adhoc-instance',
+        }
+        context = cfngen.build_context('dummy2', **more_context)
+        self.assertEqual(context['alt-config'], 'my-custom-adhoc-instance')
+        self.assertEqual(context['ec2']['ami'], 'ami-111111')
+
 class TestUpdates(base.BaseCase):
     def test_empty_template_delta(self):
         context = self._base_context()
