@@ -909,7 +909,6 @@ elife-libraries:
         ram: 1024
 
 containers:
-    domain: false
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
