@@ -1397,7 +1397,7 @@ sciencebeam-texture:
     repo: https://github.com/elifesciences/sciencebeam-texture
     formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
     aws:
-        type: t2.small # 2 GB RAM
+        type: t2.medium # 4 GB RAM
         ports:
             - 22
             - 80 # texture

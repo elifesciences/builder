@@ -6,12 +6,21 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-class TestBuildercoreUtils(base.BaseCase):
+class Simple(base.BaseCase):
     def setUp(self):
         pass
 
     def tearDown(self):
         pass
+
+    def test_ordered_dump(self):
+        case_list = [
+            ("1", "'1'\n"),
+            ({}, "{}\n"),
+            # simple bytestrings are treated as regular strings
+            (b"1", "'1'\n"),
+        ]
+        self.assertAllPairsEqual(utils.ordered_dump, case_list)
 
     def test_shallow_flatten(self):
         case_list = [

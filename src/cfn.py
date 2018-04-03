@@ -111,7 +111,7 @@ def update_template(stackname):
 
 
 # TODO: this task should probably live in `master.py`
-@debugtask # can't be and shouldn't be run by regular user of builder
+@debugtask
 def update_master():
     master_stackname = core.find_master(aws.find_region())
     bootstrap.update_stack(master_stackname, service_list=[
