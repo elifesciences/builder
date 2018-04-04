@@ -89,6 +89,7 @@ defaults:
             errors: null
             default-ttl: 300 # seconds
             logging: false
+        # TODO: maybe move this into a 'terraform'/'terraform-alt' key separate from 'aws' and 'aws-alt'
         fastly:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
