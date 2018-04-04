@@ -117,7 +117,7 @@ PACKER_BOX_S3_PATH = "s3://%s" % join(PACKER_BOX_BUCKET, PACKER_BOX_KEY)
 PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PACKER_BOX_KEY)
 
 # these sections *shouldn't* be merged if they *don't* exist in the project
-AWS_EXCLUDING = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache']
+AWS_EXCLUDING = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache', 'fastly']
 
 #
 # settings

@@ -383,7 +383,7 @@ def external_dns_cloudfront(context):
 
 def external_dns_fastly(context):
     "a Fastly CDN requires additional CNAME DNS entries pointing at it"
-    ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built")
+    ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built: %s" % context)
 
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):

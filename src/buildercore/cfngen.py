@@ -243,7 +243,7 @@ def build_context_fastly(context, parameterize):
             'subdomains-without-dns': [],
         }
     else:
-        context['cloudfront'] = False
+        context['fastly'] = False
 
 def complete_domain(host, default_main):
     is_main = host == ''
@@ -415,6 +415,8 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
             self.minus['Outputs'],
             self.terraform
         ])
+_empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
+Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
@@ -423,7 +425,7 @@ def template_delta(context):
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
     new_terraform_template_file = None
-    if context.get('fastly'):
+    if context['fastly']:
         new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):

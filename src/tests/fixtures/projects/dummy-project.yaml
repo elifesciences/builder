@@ -89,6 +89,8 @@ defaults:
             errors: null
             default-ttl: 300 # seconds
             logging: false
+        fastly:
+            subdomains: []
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
