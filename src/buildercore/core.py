@@ -3,7 +3,11 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import http.client
+try:
+    import http.client
+except ImportError:
+    import httplib
+
 import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES

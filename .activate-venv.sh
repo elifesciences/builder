@@ -13,16 +13,22 @@ else
     echo "* the no-delete-venv flag is set. preserving venv"
 fi
 
-python=/usr/bin/python3.5
-py=${python##*/} # ll: python3.5
-
-# build venv if one doesn't exist OR 
-# venv exists but the right python isn't installed
-if [ ! -e "venv/bin/$py" ]; then
-    echo "could not find venv/bin/$py, recreating venv"
-    rm -rf venv
+if [ ! -f .use-python-3.flag ]; then
+    virtualenv --python=`which python2` venv
+    echo "using python2"
+else
+    python=/usr/bin/python3.5
     $python -m venv venv
+    echo "using python 3"
 fi
+
+## build venv if one doesn't exist OR
+## venv exists but the right python isn't installed
+#if [ ! -e "venv/bin/$py" ]; then
+#    echo "could not find venv/bin/$py, recreating venv"
+#    rm -rf venv
+#    $python -m venv venv
+#fi
 
 source venv/bin/activate
 
