@@ -69,21 +69,25 @@ def requires_aws_project_stack(*plist):
 
     def wrap1(func):
         @wraps(func)
-        def _wrapper(stackname=None, *args, **kwargs):
+        def _wrapper(stackname, *args, **kwargs):
+            stackname = stackname or os.environ.get('INSTANCE')
             region = aws.find_region(stackname)
-            asl = core.active_stack_names(region)
-            if not asl:
-                print('\nno AWS stacks exist, cannot continue.')
-                return
+            if not stackname:
+                asl = core.active_stack_names(region)
+                if not asl:
+                    print('\nno AWS stacks exist, cannot continue.')
+                    return
 
-            def pname_startswith(stack):
-                for pname in plist:
-                    if stack.startswith(pname):
-                        return stack
-            asl = lfilter(pname_startswith, asl)
-            if not stackname or stackname not in asl:
-                stackname = utils._pick("stack", asl)
-            return func(stackname, *args, **kwargs)
+                def pname_startswith(stack):
+                    for pname in plist:
+                        if stack.startswith(pname):
+                            return stack
+                asl = lfilter(pname_startswith, asl)
+                if not stackname or stackname not in asl:
+                    stackname = utils._pick("stack", asl, default_file=deffile('.active-stack'))
+            res = func(stackname, *args, **kwargs)
+            setdefault('.active-stack', stackname)
+            return res
         return _wrapper
     return wrap1
 
