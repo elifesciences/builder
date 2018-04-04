@@ -90,6 +90,7 @@ defaults:
             default-ttl: 300 # seconds
             logging: false
         fastly:
+            # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
         subdomains: []
         elasticache:
