@@ -26,7 +26,7 @@ class FabricException(Exception):
 
 env.abort_exception = FabricException
 
-class ConfigurationException(Exception):
+class ConfigurationError(Exception):
     pass
 
 # dirs are relative
@@ -53,6 +53,8 @@ CONTEXT_DIR = join(CFN, "contexts") # ll: ./.cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
 KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
+# the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
+# perhaps a namechange from .cfn to .state or something later
 TERRAFORM_DIR = join(CFN, "terraform")
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/

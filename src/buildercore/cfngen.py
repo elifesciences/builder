@@ -301,6 +301,10 @@ def read_template(stackname):
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     return json.load(open(output_fname, 'r'))
 
+#
+#
+#
+
 def validate_aws_template(pname, rendered_template):
     "remote cloudformation template checks."
     conn = core.connect_aws_with_pname(pname, 'cfn')
@@ -321,6 +325,10 @@ def more_validation(json_template_str):
     except BaseException:
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
+
+#
+#
+#
 
 # TODO: shift this into testing and make each validation call a subTest
 def validate_project(pname, **extra):
@@ -387,16 +395,26 @@ UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Inst
 REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
+# CloudFormation is nicely chopped up into:
+# * what to add
+# * what to modify
+# * what to remove
+# What we see here is the new Terraform generated.tf file, containing all resources (just Fastly so far).
+# We can do a diff with the current one which would already be an improvement, but ultimately the source of truth
+# is changing it and running a terraform plan to see proposed changes. We should however roll it back if the user
+# doesn't confirm.
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
     @property
     def non_empty(self):
-        return self.plus['Resources'] \
-            or self.plus['Outputs'] \
-            or self.edit['Resources'] \
-            or self.edit['Outputs'] \
-            or self.minus['Resources'] \
-            or self.minus['Outputs'] \
-            or self.terraform
+        return any([
+            self.plus['Resources'],
+            self.plus['Outputs'],
+            self.edit['Resources'],
+            self.edit['Outputs'],
+            self.minus['Resources'],
+            self.minus['Outputs'],
+            self.terraform
+        ])
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
@@ -422,6 +440,7 @@ def template_delta(context):
     def _title_is_removable(title):
         return len([p for p in REMOVABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
 
+    # TODO: investigate if this is still necessary
     # start backward compatibility code
     # back for when EC2Instance was the title rather than EC2Instance1
     if 'EC2Instance' in old_template['Resources']:
