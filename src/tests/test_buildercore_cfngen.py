@@ -14,7 +14,7 @@ class TestBuildercoreCfngen(base.BaseCase):
     def test_validation(self):
         "dummy projects and their alternative configurations pass validation"
         for pname in project.aws_projects().keys():
-            self.assertTrue(cfngen.validate_project(pname))
+            cfngen.validate_project(pname)
             sleep(0.25)
 
     def test_validation_elife_projects(self):
@@ -26,7 +26,7 @@ class TestBuildercoreCfngen(base.BaseCase):
 
         for pname in project.aws_projects().keys():
             with self.subTest(pname):
-                self.assertTrue(cfngen.validate_project(pname))
+                cfngen.validate_project(pname)
                 sleep(0.5)
 
         # todo: does this need to live in a try: ... finally: ... ?
