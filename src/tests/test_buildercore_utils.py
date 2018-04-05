@@ -40,7 +40,7 @@ class Simple(base.BaseCase):
         self.assertAllTrue(utils.isint, expected_true)
 
     def test_isstr(self):
-        expected_true = ['', b''] if utils.gtpy2() else ['', r'', u'']
+        expected_true = [''] if utils.gtpy2() else ['', r'', u'']
         self.assertAllTrue(utils.isstr, expected_true)
 
     def test_nth(self):
