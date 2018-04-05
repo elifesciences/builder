@@ -3,6 +3,7 @@ import boto
 from boto import s3
 from boto.s3.key import Key
 from . import config
+from .utils import isstr
 from kids.cache import cache as cached
 from io import IOBase
 import logging
@@ -33,7 +34,7 @@ def write(key, something, overwrite=False):
     k = Key(builder_bucket())
     k.key = key
     LOG.info("writing key %s", key, extra={'key': key})
-    if isinstance(something, str):
+    if isstr(something):
         k.set_contents_from_string(something)
     elif isinstance(something, IOBase):
         k.set_contents_from_file(something)

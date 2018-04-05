@@ -29,6 +29,14 @@ lzip = lambda *iterable: list(zip(*iterable))
 def isint(v):
     return str(v).lstrip('-+').isdigit()
 
+def isstr(v):
+    # TODO: python2 warning
+    try:
+        basestring
+    except NameError:
+        basestring = str
+    return isinstance(v, basestring)
+
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
     return [item for sublist in list(lst) for item in sublist]
@@ -280,7 +288,7 @@ def json_dumps(obj, dangerous=False, **kwargs):
 def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict):
         raise ValueError("lookup context must be a dictionary")
-    if not isinstance(path, str):
+    if not isstr(path):
         raise ValueError("path must be a string, given %r", path)
     try:
         bits = path.split('.', 1)
@@ -341,7 +349,7 @@ def fab_put(local_path, remote_path, use_sudo=False, label=None):
     return remote_path
 
 def fab_put_data(data, remote_path, use_sudo=False):
-    ensure(isinstance(data, bytes) or isinstance(data, str), "data must be bytes or a string that can be encoded to bytes")
+    ensure(isinstance(data, bytes) or isstr(data), "data must be bytes or a string that can be encoded to bytes")
     data = data if isinstance(data, bytes) else data.encode()
     bytestream = BytesIO(data)
     label = "%s bytes" % bytestream.getbuffer().nbytes if gtpy2() else "? bytes"

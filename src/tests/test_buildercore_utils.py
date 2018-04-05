@@ -136,7 +136,7 @@ class Simple(base.BaseCase):
         vals = {'foo': 'pants', 'bar': 'party'}
 
         def func(v):
-            return v.format(**vals) if isinstance(v, str) else v
+            return v.format(**vals) if utils.isstr(v) else v
 
         cases = [
             # given, expected, fn

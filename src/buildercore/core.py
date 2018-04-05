@@ -12,7 +12,7 @@ import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
-from .utils import ensure, first, lookup, lmap, lfilter, unique
+from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 from boto import sns
 from boto.exception import BotoServerError
 import boto3
@@ -386,7 +386,7 @@ def mk_stackname(project_name, instance_id):
 
 def parse_stackname(stackname, all_bits=False, idx=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
-    if not stackname or not isinstance(stackname, str):
+    if not stackname or not isstr(stackname):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--', -1 if all_bits else 1)
