@@ -22,8 +22,9 @@ class BaseCase(TestCase):
     def assertCountEqual(self, *args):
         parent = super(BaseCase, self)
         if not hasattr(parent, 'assertCountEqual'):
-            return self.assertItemsEqual(*args)
-        return parent.assertCountEqual(*args)
+            self.assertItemsEqual(*args)
+        else:
+            parent.assertCountEqual(*args)
 
     def switch_in_test_settings(self, new_settings='dummy-settings.yaml'):
         self.original_settings_file = config.SETTINGS_FILE

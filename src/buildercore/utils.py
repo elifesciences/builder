@@ -201,7 +201,7 @@ def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict
 
 def gtpy2():
     "predicate: greater than python 2?"
-    return sys.version_info[:2] > (2,7)
+    return sys.version_info[:2] > (2, 7)
 
 def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
     "wrapper around the yaml.dump function with sensible defaults for formatting"
