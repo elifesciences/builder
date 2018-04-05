@@ -39,6 +39,10 @@ class Simple(base.BaseCase):
         ]
         self.assertAllTrue(utils.isint, expected_true)
 
+    def test_isstr(self):
+        expected_true = [''] if utils.gtpy2() else ['', r'', u'']
+        self.assertAllTrue(utils.isstr, expected_true)
+
     def test_nth(self):
         expected_vals = [
             ('a', 0, 'a'),
@@ -136,7 +140,7 @@ class Simple(base.BaseCase):
         vals = {'foo': 'pants', 'bar': 'party'}
 
         def func(v):
-            return v.format(**vals) if isinstance(v, str) else v
+            return v.format(**vals) if utils.isstr(v) else v
 
         cases = [
             # given, expected, fn
