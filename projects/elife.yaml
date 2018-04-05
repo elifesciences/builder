@@ -1709,6 +1709,10 @@ elife-xpub:
             - 22
             - 443
             - 80
+        ext:
+            # external hdd
+            size: 10 # GB
+            device: /dev/sdh
     aws-alt: {}
     vagrant:
         ram: 2048
