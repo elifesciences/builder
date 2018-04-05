@@ -32,10 +32,10 @@ def isint(v):
 def isstr(v):
     # TODO: python2 warning
     try:
-        basestring
+        return isinstance(v, basestring)
     except NameError:
-        basestring = str
-    return isinstance(v, basestring)
+        # no basestring in py3
+        return isinstance(v, str)
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"

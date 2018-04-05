@@ -387,7 +387,7 @@ def mk_stackname(project_name, instance_id):
 def parse_stackname(stackname, all_bits=False, idx=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
     if not stackname or not isstr(stackname):
-        raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
+        raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % stackname)
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--', -1 if all_bits else 1)
     ensure(len(bits) > 1, "could not parse given stackname %r" % stackname, ValueError)
