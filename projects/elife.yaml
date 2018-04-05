@@ -550,6 +550,7 @@ pattern-library:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         ci:
+            ec2: false
             s3:
                 "{instance}-pattern-library":
                     public: true
