@@ -39,7 +39,10 @@ if [ "$(uname)" = "Darwin" ]; then
     # 'ARCHFLAGS' fixes a problem with OSX refusing to compile a dependency
     export ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future"
     # at time of writing, macs dont have ipython and a lower version of Fabric
-    pip install -r mac-requirements.txt
+    pip install -r py2-requirements.txt
+elif [ ! -f .use-python-3.flag ]; then
+    # on Python2, sticking to Fabric rather than Fabric3
+    pip install -r py2-requirements.txt
 else
     pip install -r requirements.txt
 fi
