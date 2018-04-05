@@ -2,7 +2,13 @@ from datetime import datetime
 import os
 from os.path import join
 from subprocess import check_output
-from unittest2 import TestCase # TODO: python2 warning
+try:
+    # Python 3
+    # pylint: disable-msg=import-error
+    from unittest2 import TestCase
+except ImportError:
+    # Python2
+    from unittest import TestCase
 from buildercore import config, project
 import logging
 import imp
