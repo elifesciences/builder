@@ -25,7 +25,7 @@ def destroy(stackname):
     "tell aws to delete a stack."
     print('this is a BIG DEAL. you cannot recover from this.')
     print('type the name of the stack to continue or anything else to quit')
-    uin = input('> ')
+    uin = utils.get_input('> ')
     if not uin or not uin.strip().lower() == stackname.lower():
         import difflib
         print('you needed to type "%s" to continue.' % stackname)
@@ -321,7 +321,7 @@ def upload_file(stackname, local_path, remote_path, overwrite=False):
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
-        input('continue?')
+        utils.get_input('continue?')
         if files.exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
             exit(1)

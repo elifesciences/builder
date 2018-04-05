@@ -142,7 +142,7 @@ def fetch_cert(stackname):
         print(' * ' + '\n * '.join(cmds))
         print()
 
-        if input('enter to continue, ctrl-c to quit') == '':
+        if utils.get_input('enter to continue, ctrl-c to quit') == '':
             with stack_conn(stackname):
                 return run(" && ".join(cmds))
 
