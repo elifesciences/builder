@@ -50,7 +50,7 @@ if ! command -v python2.7; then
     upgrade_python=true
 else
     # python found, check installed version
-    python_version=$(dpkg-query -W --showformat='${Version}' python2.7) # e.g. 2.7.5-5ubuntu3
+    python_version=$(dpkg-query -W --showformat="\${Version}" python2.7) # e.g. 2.7.5-5ubuntu3
     if dpkg --compare-versions "$python_version" lt 2.7.12; then
         # we used this, which is not available anymore, to provide a more recent Python 2.7
         # let's remove it to avoid apt-get update errors
