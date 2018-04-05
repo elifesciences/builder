@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+# TODO: is this still necessary?
 # always recreate the virtualenv by default
 # UNLESS a flag has been set
 if [ ! -f .no-delete-venv.flag ]; then
@@ -13,23 +14,25 @@ else
     echo "* the no-delete-venv flag is set. preserving venv"
 fi
 
+# prefer python2 over python3
 if [ ! -f .use-python-3.flag ]; then
-    virtualenv --python=`which python2` venv
-    echo "using python2"
+    # highest installed version of py2
+    python=$(which python2)
 else
+    # python 3.5
     python=/usr/bin/python3.5
-    $python -m venv venv
-    echo "using python 3"
 fi
 
-## build venv if one doesn't exist OR
-## venv exists but the right python isn't installed
-#if [ ! -e "venv/bin/$py" ]; then
-#    echo "could not find venv/bin/$py, recreating venv"
-#    rm -rf venv
-#    $python -m venv venv
-#fi
+py=${python##*/} # ll: python3.5
+echo "using $py"
 
+if [ ! -e "venv/bin/$py" ]; then
+    echo "could not find venv/bin/$py, recreating venv"
+    rm -rf venv
+fi
+
+# create+activate venv
+virtualenv --python=$python venv
 source venv/bin/activate
 
 if [ "$(uname)" = "Darwin" ]; then
