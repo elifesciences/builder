@@ -55,7 +55,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'project_name': pname,
         'project': project_data,
 
-        'author': os.environ.get("LOGNAME") or os.getlogin(),
+        'author': os.environ.get("LOGNAME") or 'unknown',
         'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
 
         # a stackname looks like: <pname>--<instance_id>[--<cluster-id>]
