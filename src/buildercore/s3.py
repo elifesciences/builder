@@ -37,8 +37,11 @@ def write(key, something, overwrite=False):
         k.set_contents_from_string(something)
     elif isinstance(something, IOBase):
         k.set_contents_from_file(something)
+    elif isinstance(something, file):
+        # TODO: py2 warning
+        k.set_contents_from_file(something)
     else:
-        raise ValueError("boto can't handle anything much else besides strings and files")
+        raise ValueError("boto can't handle value of type %r, just strings and files" % type(something))
 
 def delete(key):
     "deletes a single key from the builder bucket"

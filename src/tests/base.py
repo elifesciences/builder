@@ -2,11 +2,11 @@ from datetime import datetime
 import os
 from os.path import join
 from subprocess import check_output
-from unittest import TestCase
+from unittest2 import TestCase # TODO: python2 warning
 from buildercore import config, project
-
 import logging
 import imp
+
 LOG = logging.getLogger(__name__)
 
 class BaseCase(TestCase):
@@ -17,6 +17,13 @@ class BaseCase(TestCase):
     def __init__(self, *args, **kwargs):
         super(BaseCase, self).__init__(*args, **kwargs)
         self.switch_in_test_settings()
+
+    # TODO: python2 warning
+    def assertCountEqual(self, *args):
+        parent = super(BaseCase, self)
+        if not hasattr(parent, 'assertCountEqual'):
+            return self.assertItemsEqual(*args)
+        return parent.assertCountEqual(*args)
 
     def switch_in_test_settings(self, new_settings='dummy-settings.yaml'):
         self.original_settings_file = config.SETTINGS_FILE
