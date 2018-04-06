@@ -1,9 +1,8 @@
 """
-Generates AWS CloudFormation (cfn) templates.
+Generates AWS CloudFormation (cfn) or Terraform templates.
 
 Marshalls a collection of project information together in the `build_context()`
-function, then passes this Troposphere in `trop.py` to generate the final cfn
-template.
+function, then generates templates.
 
 When an instance of a project is launched on AWS, we need to tweak things a bit
 with no manual steps in some cases, or as few as possible in other cases.
@@ -23,7 +22,7 @@ import re
 from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
-from . import utils, terraform, trop, core, project, context_handler
+from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap, mkdir_p
 from .config import STACK_DIR, TERRAFORM_DIR
 
@@ -273,14 +272,6 @@ def choose_alt_config(stackname):
 #
 #
 
-def render_template(context, template_type='aws'):
-    pname = context['project_name']
-    msg = "could not render an %r template for %r: no %r context found" % (template_type, pname, template_type)
-    ensure(template_type in context['project'], msg, ValueError)
-    if template_type == 'aws':
-        return trop.render(context)
-    # are we saving this space for different template types in future?
-
 def write_cloudformation_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
@@ -367,13 +358,13 @@ def quick_render(project_name, **more_context):
     # set a dummy instance id if one hasn't been set.
     more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
     context = build_context(project_name, **more_context)
-    return render_template(context)
+    return cloudformation.render_template(context)
 
 def generate_stack(pname, **more_context):
     """given a project name and any context overrides, generates a Cloudformation
     stack file, writes it to file and returns a pair of (context, stackfilename)"""
     context = build_context(pname, **more_context)
-    cloudformation_template = render_template(context)
+    cloudformation_template = cloudformation.render_template(context)
     terraform_template = terraform.render(context)
     stackname = context['stackname']
 
@@ -421,7 +412,7 @@ def template_delta(context):
 
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
-    template = json.loads(render_template(context))
+    template = json.loads(cloudformation.render_template(context))
     new_terraform_template_file = '{}'
     if context['fastly']:
         new_terraform_template_file = terraform.render(context)

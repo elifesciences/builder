@@ -1,5 +1,5 @@
 from . import base
-from buildercore import cfngen, project, context_handler
+from buildercore import cfngen, project, context_handler, cloudformation
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -190,6 +190,6 @@ class TestUpdates(base.BaseCase):
         context = cfngen.build_context(project_name, stackname=stackname, existing_context=existing_context if existing_context is not None else {})
         if not in_memory:
             context_handler.write_context(stackname, context)
-            template = cfngen.render_template(context)
+            template = cloudformation.render_template(context)
             cfngen.write_cloudformation_template(stackname, template)
         return context
