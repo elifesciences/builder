@@ -2,7 +2,7 @@ import os
 from os.path import join
 import utils
 from buildercore import core, project, config
-from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap
+from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr
 from functools import wraps
 from fabric.api import env, task
 from pprint import pformat
@@ -153,7 +153,7 @@ def echo_output(func):
         if _sole_task(func.__name__):
             res = func(*args, **kwargs)
             errcho('output:') # printing to stderr avoids corrupting structured data
-            if isinstance(res, str):
+            if isstr(res):
                 print(res)
             else:
                 print(pformat(remove_ordereddict(res)))

@@ -16,7 +16,7 @@ from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
-from .utils import first, ensure, subdict, lmap
+from .utils import first, ensure, subdict, lmap, isstr
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -541,7 +541,7 @@ def _add_bucket_policy(template, bucket_title, bucket_name):
     ))
 
 def _elb_protocols(context):
-    if isinstance(context['elb']['protocol'], str):
+    if isstr(context['elb']['protocol']):
         return [context['elb']['protocol']]
     return context['elb']['protocol']
 
@@ -912,7 +912,7 @@ def add_outputs(context, template):
 
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"
-    assert isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built"
+    ensure(isstr(context['domain']), "A 'domain' must be specified for CNAMEs to be built")
 
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):

@@ -555,6 +555,7 @@ pattern-library:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         ci:
+            ec2: false
             s3:
                 "{instance}-pattern-library":
                     public: true
@@ -1714,6 +1715,10 @@ elife-xpub:
             - 22
             - 443
             - 80
+        ext:
+            # external hdd
+            size: 10 # GB
+            device: /dev/sdh
     aws-alt: {}
     vagrant:
         ram: 2048
