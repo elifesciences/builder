@@ -59,8 +59,8 @@ def update(stackname, autostart="0", concurrency='serial'):
 
 @task
 @timeit
-def update_template(stackname):
-    """Limited update of the Cloudformation template.
+def update_infrastructure(stackname):
+    """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
 
