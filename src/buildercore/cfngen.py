@@ -281,7 +281,7 @@ def render_template(context, template_type='aws'):
         return trop.render(context)
     # are we saving this space for different template types in future?
 
-def write_template(stackname, contents):
+def write_cloudformation_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
@@ -378,7 +378,7 @@ def generate_stack(pname, **more_context):
     stackname = context['stackname']
 
     context_handler.write_context(stackname, context)
-    cloudformation_template_file = write_template(stackname, cloudformation_template)
+    cloudformation_template_file = write_cloudformation_template(stackname, cloudformation_template)
     terraform_template_file = write_terraform_template(stackname, terraform_template)
     return context, cloudformation_template_file, terraform_template_file
 
@@ -520,7 +520,7 @@ def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
     apply_delta(template, delta)
-    write_template(stackname, json.dumps(template))
+    write_cloudformation_template(stackname, json.dumps(template))
     write_terraform_template(stackname, delta.terraform)
     return template
 
@@ -560,7 +560,7 @@ def regenerate_stack(stackname, current_template, **more_context):
    # if it was doing something important, it should be it's own function, like `write_cfn_template_to_disk` or whatever
    # as it is, it requires a dependency between cfngen and bootstrap (removed) that shouldn't really exist
     current_context = context_handler.load_context(stackname)
-    write_template(stackname, json.dumps(current_template))
+    write_cloudformation_template(stackname, json.dumps(current_template))
     (pname, instance_id) = core.parse_stackname(stackname)
     more_context['stackname'] = stackname # TODO: purge this crap
     more_context['alt-config'] = instance_id
