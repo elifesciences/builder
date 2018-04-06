@@ -5,6 +5,9 @@ RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
 def render(context):
+    if not context['fastly']:
+        return None
+
     ensure(len(context['fastly']['subdomains']) == 1, "Only 1 subdomain for Fastly CDNs is supported")
 
     tf_file = {
