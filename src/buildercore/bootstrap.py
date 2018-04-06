@@ -470,12 +470,16 @@ def write_environment_info(stackname, overwrite=False):
 @core.requires_active_stack
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
-    then only those services will be updated"""
+    then only those services will be updated
+    
+    Has too many responsibilities:
+        - ec2: deploys
+        - s3, sqs, ...: infrastructure updates"""
     service_update_fns = OrderedDict([
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
         ('sqs', update_sqs_stack),
-        ('fastly', update_terraform_stack)
+        ('terraform', update_terraform_stack)
     ])
     if not service_list:
         service_list = list(service_update_fns.keys())

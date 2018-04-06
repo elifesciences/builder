@@ -113,7 +113,7 @@ def update_template(stackname):
 
     # Fastly via Terraform
     if context.get('fastly', {}):
-        bootstrap.update_stack(stackname, service_list=['fastly'])
+        bootstrap.update_stack(stackname, service_list=['terraform'])
 
 
 # TODO: this task should probably live in `master.py`
