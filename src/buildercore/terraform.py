@@ -6,7 +6,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
 def render(context):
     if not context['fastly']:
-        return None
+        return '{}'
 
     ensure(len(context['fastly']['subdomains']) == 1, "Only 1 subdomain for Fastly CDNs is supported")
 
