@@ -421,10 +421,6 @@ def master(region, key):
 # bootstrap stack
 #
 
-def current_template(stackname):
-    conn = connect_aws_with_stack(stackname, 'cfn')
-    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
-
 def update_template(stackname, template):
     conn = connect_aws_with_stack(stackname, 'cfn')
     parameters = []
@@ -471,7 +467,7 @@ def write_environment_info(stackname, overwrite=False):
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated
-    
+
     Has too many responsibilities:
         - ec2: deploys
         - s3, sqs, ...: infrastructure updates"""

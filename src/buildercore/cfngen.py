@@ -540,27 +540,17 @@ def apply_delta(template, delta):
         for title in delta.minus[component]:
             del template[component][title]
 
-# def regenerate_stack_vars(stackname, **more_context):
-#    """returns the current template context and the new context for the given stackname.
-#    use `cfngen.template_delta` to generate a list of changes"""
-#    # fetch context used to build current stack
-#    current_context = context_handler.load_context(stackname)
-#    # don't rely on 'alt-config' being present in the current context, or if it is present,
-#    # don't assume that alt-config existed when the current context existed. for example:
-#    # `prod` used a local db before, same as default, but now a `prod` alt-config gets RDS
-#    more_context['alt-config'] = choose_alt_config(stackname)
-#    # build the context again, but this time re-use some current values/config
-#    more_context['stackname'] = stackname # TODO: purge this crap
-#    pname = core.parse_stackname(stackname)[0]
-#    return current_context, build_context(pname, existing_context=current_context, **more_context)
+def _current_cloudformation_template(stackname):
+    "retrieves a template from the CloudFormation API, using it as the source of truth"
+    conn = core.connect_aws_with_stack(stackname, 'cfn')
+    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
 
-def regenerate_stack(stackname, current_template, **more_context):
-   # what is the point of these two lines? it downloads the template body and saves it to disk and never uses it ...
-   # It's using the local disk as a cache for the template, rather than calling the API whenever is needed
-   # if it was doing something important, it should be it's own function, like `write_cfn_template_to_disk` or whatever
-   # as it is, it requires a dependency between cfngen and bootstrap (removed) that shouldn't really exist
+def download_cloudformation_template(stackname):
+    write_cloudformation_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
+
+def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)
-    write_cloudformation_template(stackname, json.dumps(current_template))
+    download_cloudformation_template(stackname)
     (pname, instance_id) = core.parse_stackname(stackname)
     more_context['stackname'] = stackname # TODO: purge this crap
     more_context['alt-config'] = instance_id
