@@ -289,7 +289,7 @@ def write_cloudformation_template(stackname, contents):
 
 def write_terraform_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
-    if contents:
+    if json.loads(contents):
         output_dir = os.path.join(TERRAFORM_DIR, stackname)
         mkdir_p(output_dir)
         output_fname = os.path.join(output_dir, "generated.tf")
@@ -422,7 +422,7 @@ def template_delta(context):
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(render_template(context))
-    new_terraform_template_file = None
+    new_terraform_template_file = '{}'
     if context['fastly']:
         new_terraform_template_file = terraform.render(context)
 
