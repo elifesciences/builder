@@ -106,6 +106,7 @@ logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 # where the builder can write stuff that should persist across installations/users
 # like ec2 instance keypairs
 BUILDER_BUCKET = 'elife-builder'
+BUILDER_REGION = 'us-east-1'
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 

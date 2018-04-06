@@ -14,7 +14,7 @@ from . import utils, config, keypair, bvars, core, context_handler, project
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER, TERRAFORM_DIR, ConfigurationError
+from .config import BOOTSTRAP_USER, BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
@@ -164,12 +164,25 @@ def setup_ec2(stackname, context_ec2):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
+# TODO: move into terraform module
 def setup_terraform(stackname, context):
     if not context.get('fastly'):
         return
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     t = Terraform(working_dir=working_dir)
+    with open('%s/backend.tf' % working_dir) as fp:
+        fp.write(json.dumps({
+            'terraform': {
+                'backend': {
+                    's3': {
+                        'bucket': BUILDER_BUCKET,
+                        'key': 'terraform/%s.tfstate' % stackname,
+                        'region': BUILDER_REGION,
+                    },
+                },
+            },
+        }))
     t.init(input=False, capture_output=False, raise_on_error=True)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
