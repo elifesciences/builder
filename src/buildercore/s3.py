@@ -47,6 +47,9 @@ def write(key, something, overwrite=False):
     if isstr(something):
         k.put(Body=something.encode()) # bytes
     elif isinstance(something, IOBase):
+        # this seek() here is interesting
+        # the check in isstr above is actually moving it's pointer
+        something.seek(0)
         k.put(Body=something) # py3 file
     # TODO: py2 warning
     elif isinstance(something, file):
@@ -65,7 +68,8 @@ def delete(key):
     if not exists(key):
         return True
     LOG.info("deleting key %s", key, extra={'key': key})
-    k = builder_bucket().Object(key).delete()
+    k = builder_bucket().Object(key)
+    k.delete()
     # http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Object.wait_until_not_exists
     k.wait_until_not_exists()
     return True
@@ -96,7 +100,7 @@ def simple_listing(prefix):
 
 def download(key, output_path):
     ensure(not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path)
-    ensure(exists(key), "key %r not found in bucket %r" % (key, config.BUCKET))
+    ensure(exists(key), "key %r not found in bucket %r" % (key, config.BUILDER_BUCKET))
     LOG.info("downloading key %s", key, extra={'key': key})
     builder_bucket().Object(key).download_file(output_path)
     return output_path
