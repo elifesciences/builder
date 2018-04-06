@@ -96,9 +96,8 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
-        setup_ec2(stackname, context['ec2'])
-        # since setup_ec2 doesn't actually set up, this may have to be moved
         setup_terraform(stackname, context)
+        setup_ec2(stackname, context['ec2'])
         return True
 
     except StackTakingALongTimeToComplete as err:
@@ -142,7 +141,6 @@ def _wait_until_in_progress(stackname):
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
 def setup_ec2(stackname, context_ec2):
-    # TODO: misleading name, doesn't set up anything but only waits
     if not context_ec2:
         return
 
