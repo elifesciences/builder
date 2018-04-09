@@ -240,6 +240,7 @@ def build_context_fastly(context, parameterize):
             'subdomains': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
             # future use
             'subdomains-without-dns': [],
+            'dns': context['project']['aws']['fastly']['dns'],
         }
     else:
         context['fastly'] = False
