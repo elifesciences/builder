@@ -57,7 +57,8 @@ def update(stackname, autostart="0", concurrency='serial'):
         return
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
-@task
+# DEPRECATED: remove alias
+@task(alias='update_template')
 @timeit
 def update_infrastructure(stackname):
     """Limited update of the Cloudformation template and/or Terraform template.
