@@ -21,6 +21,7 @@ for formula in *; do
     )
 done
 
+# BUG: when /var/run/salt-master.pid not present it causes script to exit
 master_pid=$(test -e /var/run/salt-master.pid && cat /var/run/salt-master.pid)
 if [ "$master_pid" != "" ]; then
     systemctl stop salt-master 2> /dev/null || service salt-master stop || true
