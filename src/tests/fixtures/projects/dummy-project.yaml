@@ -89,6 +89,10 @@ defaults:
             errors: null
             default-ttl: 300 # seconds
             logging: false
+        # TODO: maybe move this into a 'terraform'/'terraform-alt' key separate from 'aws' and 'aws-alt'
+        fastly:
+            # fastly defaults only used if a 'fastly' section present in project
+            subdomains: []
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -293,6 +297,16 @@ project-with-cloudfront-origins:
                         - Referer
                     cookies:
                         - session_id
+
+project-with-fastly-minimal:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        fastly:
+            subdomains:
+                - "{instance}--cdn-of-www"
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

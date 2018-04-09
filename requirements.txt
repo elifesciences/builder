@@ -14,6 +14,7 @@ pyflakes==1.6.0
 pylint==1.8.2
 python-dateutil==2.7.0
 python-slugify==1.2.4
+git+https://github.com/beelit94/python-terraform.git@develop#egg=python-terraform
 pytz==2018.3
 PyYAML==3.12
 requests==2.18.4
