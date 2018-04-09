@@ -137,7 +137,7 @@ def remaster_all_minions(new_master_stackname):
             for stackname in stack_list:
                 try:
                     if stackname in remastered_list:
-                        LOG.info("already updated: %s", stackname)
+                        LOG.info("already updated, skipping stack: %s", stackname)
                         continue
                     LOG.info("*" * 80)
                     LOG.info("updating: %s" % stackname)
@@ -145,7 +145,7 @@ def remaster_all_minions(new_master_stackname):
                     remaster_minion(stackname, new_master_stackname)
                     open('remastered.txt', 'a').write("%s\n" % stackname)
                 except KeyboardInterrupt:
-                    LOG.warn("skipping stack: %s", stackname)
+                    LOG.warn("ctrl-c, skipping stack: %s", stackname)
                     time.sleep(1)
                 except:
                     LOG.exception("unhandled exception updating stack: %s", stackname)
