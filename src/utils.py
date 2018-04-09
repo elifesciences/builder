@@ -1,5 +1,5 @@
 import os, sys
-from buildercore.utils import second, last
+from buildercore.utils import second, last, gtpy2
 from buildercore.decorators import osissue
 from fabric.api import local
 
@@ -35,6 +35,10 @@ def errcho(x):
     sys.stderr.write("\n")
     sys.stderr.flush()
     return x
+
+def get_input(message):
+    fn = input if gtpy2() else raw_input
+    return fn(message)
 
 @osissue("renamed from `_pick` to something. `choose` ?")
 def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
@@ -89,8 +93,6 @@ def uin(param, default=0xDEADBEEF):
             continue
         return userin
 
-def get_input(message):
-    return input(message)
 
 def confirm(message):
     print(message)

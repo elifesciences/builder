@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+# TODO: is this still necessary?
 # always recreate the virtualenv by default
 # UNLESS a flag has been set
 if [ ! -f .no-delete-venv.flag ]; then
@@ -13,24 +14,35 @@ else
     echo "* the no-delete-venv flag is set. preserving venv"
 fi
 
-python=/usr/bin/python3.5
-py=${python##*/} # ll: python3.5
+# prefer python2 over python3
+if [ ! -f .use-python-3.flag ]; then
+    # highest installed version of py2
+    python=$(which python2)
+else
+    # python 3.5
+    python=/usr/bin/python3.5
+fi
 
-# build venv if one doesn't exist OR 
-# venv exists but the right python isn't installed
+py=${python##*/} # ll: python3.5
+echo "using $py"
+
 if [ ! -e "venv/bin/$py" ]; then
     echo "could not find venv/bin/$py, recreating venv"
     rm -rf venv
-    $python -m venv venv
 fi
 
+# create+activate venv
+virtualenv --python=$python venv
 source venv/bin/activate
 
 if [ "$(uname)" = "Darwin" ]; then
     # 'ARCHFLAGS' fixes a problem with OSX refusing to compile a dependency
     export ARCHFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future"
     # at time of writing, macs dont have ipython and a lower version of Fabric
-    pip install -r mac-requirements.txt
+    pip install -r py2-requirements.txt
+elif [ ! -f .use-python-3.flag ]; then
+    # on Python2, sticking to Fabric rather than Fabric3
+    pip install -r py2-requirements.txt
 else
     pip install -r requirements.txt
 fi

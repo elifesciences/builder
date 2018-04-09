@@ -18,6 +18,7 @@ def update_project_file(path, value, pdata, project_file):
     utils.updatein(pdata, path, value, create=True)
     return pdata
 
+# TODO: deletion candidate
 @testme
 def write_project_file(new_project_data, project_file):
     data = utils.yaml_dumps(new_project_data)

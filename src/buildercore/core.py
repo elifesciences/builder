@@ -3,12 +3,16 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-import http.client
+try:
+    import http.client as http_client
+except ImportError:
+    import httplib as http_client
+
 import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
-from .utils import ensure, first, lookup, lmap, lfilter, unique
+from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 from boto import sns
 from boto.exception import BotoServerError
 import boto3
@@ -382,8 +386,8 @@ def mk_stackname(project_name, instance_id):
 
 def parse_stackname(stackname, all_bits=False, idx=False):
     "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
-    if not stackname or not isinstance(stackname, str):
-        raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % str(stackname))
+    if not stackname or not isstr(stackname):
+        raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % stackname)
     # https://docs.python.org/2/library/stdtypes.html#str.split
     bits = stackname.split('--', -1 if all_bits else 1)
     ensure(len(bits) > 1, "could not parse given stackname %r" % stackname, ValueError)
@@ -449,7 +453,7 @@ def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     try:
         return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
-    except http.client.IncompleteRead as e:
+    except http_client.IncompleteRead as e:
         LOG.warning("Retrying once DescribeStacks API call: %s", e)
         return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
 

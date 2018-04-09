@@ -44,23 +44,18 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     # regenerating templates (like random passwords)
     existing_context = more_context.pop('existing_context', {})
 
-    # order is important. prefer the alt-config in more_context (explicit) over
-    # any existing context (implicit)
-    alt_config = utils.firstnn([
-        more_context.get('alt-config'),
-        existing_context.get('alt-config')
-    ])
+    # order is important. always use the alt-config in more_context (explicit) also when regenerating
+    alt_config = more_context.get('alt-config')
 
     project_data = project.project_data(pname)
-    if alt_config:
+    if alt_config and project_data.get('aws-alt', {}).get(alt_config):
         project_data = project.set_project_alt(project_data, 'aws', alt_config)
-        more_context['alt-config'] = alt_config
 
     defaults = {
         'project_name': pname,
         'project': project_data,
 
-        'author': os.environ.get("LOGNAME") or os.getlogin(),
+        'author': os.environ.get("LOGNAME") or 'unknown',
         'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
 
         # a stackname looks like: <pname>--<instance_id>[--<cluster-id>]
@@ -511,8 +506,9 @@ def regenerate_stack(stackname, current_template, **more_context):
    # as it is, it requires a dependency between cfngen and bootstrap (removed) that shouldn't really exist
     current_context = context_handler.load_context(stackname)
     write_template(stackname, json.dumps(current_template))
-    pname = core.project_name_from_stackname(stackname)
+    (pname, instance_id) = core.parse_stackname(stackname)
     more_context['stackname'] = stackname # TODO: purge this crap
+    more_context['alt-config'] = instance_id
     context = build_context(pname, existing_context=current_context, **more_context)
     delta = template_delta(context)
     return context, delta, current_context

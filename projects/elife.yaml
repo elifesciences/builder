@@ -550,6 +550,7 @@ pattern-library:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         ci:
+            ec2: false
             s3:
                 "{instance}-pattern-library":
                     public: true
@@ -909,7 +910,6 @@ elife-libraries:
         ram: 1024
 
 containers:
-    domain: false
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
@@ -1397,7 +1397,7 @@ sciencebeam-texture:
     repo: https://github.com/elifesciences/sciencebeam-texture
     formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
     aws:
-        type: t2.small # 2 GB RAM
+        type: t2.medium # 4 GB RAM
         ports:
             - 22
             - 80 # texture
@@ -1710,6 +1710,10 @@ elife-xpub:
             - 22
             - 443
             - 80
+        ext:
+            # external hdd
+            size: 10 # GB
+            device: /dev/sdh
     aws-alt: {}
     vagrant:
         ram: 2048

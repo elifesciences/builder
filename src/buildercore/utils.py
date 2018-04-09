@@ -1,6 +1,6 @@
 import pytz
 import os, sys, copy, json, time, random, string
-from io import StringIO, BytesIO
+from io import BytesIO
 from functools import wraps
 from datetime import datetime
 import yaml
@@ -28,6 +28,14 @@ lzip = lambda *iterable: list(zip(*iterable))
 
 def isint(v):
     return str(v).lstrip('-+').isdigit()
+
+def isstr(v):
+    # TODO: python2 warning
+    try:
+        return isinstance(v, basestring)
+    except NameError:
+        # no basestring in py3
+        return isinstance(v, str)
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
@@ -199,10 +207,20 @@ def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
 
+def gtpy2():
+    "predicate: greater than python 2?"
+    return sys.version_info[:2] > (2, 7)
+
 def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
+    "wrapper around the yaml.dump function with sensible defaults for formatting"
     indent = 4
     line_break = '\n'
     # pylint: disable=too-many-ancestors
+
+    if gtpy2() and isinstance(data, bytes):
+        # simple bytestrings are treated as regular (utf-8) strings and not binary data in python3+
+        # this doesn't apply to bytestrings used as keys or values in a list
+        data = data.decode()
 
     class OrderedDumper(dumper_class):
         pass
@@ -217,15 +235,12 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 def yaml_dumps(data):
-    "like json.dumps, returns a YAML string"
-    return ordered_dump(data, stream=None)
+    "like json.dumps, returns a YAML string. alias for `ordered_dump`"
+    return ordered_dump(data)
 
-def yaml_dump(data, stream=None):
-    "writes output to given file-like object or StringIO if stream not provided"
-    if not stream:
-        stream = StringIO()
+def yaml_dump(data, stream):
+    "like json.dump, writes output to given file-like object. returns nothing"
     ordered_dump(data, stream)
-    return stream
 
 def remove_ordereddict(data, dangerous=True):
     """turns a nested OrderedDict dict into a regular dictionary.
@@ -273,7 +288,7 @@ def json_dumps(obj, dangerous=False, **kwargs):
 def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict):
         raise ValueError("lookup context must be a dictionary")
-    if not isinstance(path, str):
+    if not isstr(path):
         raise ValueError("path must be a string, given %r", path)
     try:
         bits = path.split('.', 1)
@@ -334,8 +349,8 @@ def fab_put(local_path, remote_path, use_sudo=False, label=None):
     return remote_path
 
 def fab_put_data(data, remote_path, use_sudo=False):
-    ensure(isinstance(data, bytes) or isinstance(data, str), "data must be bytes or a string that can be encoded to bytes")
+    ensure(isinstance(data, bytes) or isstr(data), "data must be bytes or a string that can be encoded to bytes")
     data = data if isinstance(data, bytes) else data.encode()
     bytestream = BytesIO(data)
-    label = "%s bytes" % bytestream.getbuffer().nbytes
+    label = "%s bytes" % bytestream.getbuffer().nbytes if gtpy2() else "? bytes"
     return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)

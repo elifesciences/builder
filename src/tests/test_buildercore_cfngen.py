@@ -1,4 +1,3 @@
-from time import sleep
 from . import base
 from buildercore import cfngen, project, context_handler
 
@@ -11,26 +10,26 @@ class TestBuildercoreCfngen(base.BaseCase):
             LOG.info('rendering %s', pname)
             cfngen.quick_render(pname)
 
-    def test_validation(self):
-        "dummy projects and their alternative configurations pass validation"
-        for pname in project.aws_projects().keys():
-            self.assertTrue(cfngen.validate_project(pname))
-            sleep(0.25)
+class TestBuildContext(base.BaseCase):
+    def test_existing_alt_config(self):
+        stackname = 'dummy2--test'
+        more_context = {
+            'stackname': stackname,
+            'alt-config': 'alt-config1',
+        }
+        context = cfngen.build_context('dummy2', **more_context)
+        self.assertEqual(context['alt-config'], 'alt-config1')
+        self.assertEqual(context['ec2']['ami'], 'ami-22222')
 
-    def test_validation_elife_projects(self):
-        "elife projects (and their alternative configurations) that come with the builder pass validation"
-
-        # HERE BE DRAGONS
-        # resets the testing config.SETTINGS_FILE we set in the base.BaseCase class
-        self.switch_out_test_settings()
-
-        for pname in project.aws_projects().keys():
-            with self.subTest(pname):
-                self.assertTrue(cfngen.validate_project(pname))
-                sleep(0.5)
-
-        # todo: does this need to live in a try: ... finally: ... ?
-        self.switch_in_test_settings()
+    def test_not_existing_alt_config(self):
+        stackname = 'dummy2--test'
+        more_context = {
+            'stackname': stackname,
+            'alt-config': 'my-custom-adhoc-instance',
+        }
+        context = cfngen.build_context('dummy2', **more_context)
+        self.assertEqual(context['alt-config'], 'my-custom-adhoc-instance')
+        self.assertEqual(context['ec2']['ami'], 'ami-111111')
 
 class TestUpdates(base.BaseCase):
     def test_empty_template_delta(self):
