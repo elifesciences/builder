@@ -186,7 +186,7 @@ def _init_terraform(stackname):
 def setup_terraform(stackname, context):
     if not context.get('fastly'):
         return
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. Get it at https://manage.fastly.com/account/personal/tokens", ConfigurationError)
 
     t = _init_terraform(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
@@ -286,7 +286,7 @@ def update_sqs_stack(stackname, **kwargs):
         setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
 
 def update_terraform_stack(stackname, **kwargs):
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. Get it at https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     t = _init_terraform(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
