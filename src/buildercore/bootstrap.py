@@ -551,10 +551,10 @@ def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwar
 
         salt_version = pdata['salt']
         install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
-        master_ip = master(region, 'private_ip_address')
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
+        master_ip = build_vars.get('ec2').get('master_ip', master(region, 'private_ip_address'))
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
 
         if is_masterless:
