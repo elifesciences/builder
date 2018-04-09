@@ -2,7 +2,7 @@
 
 See `askmaster.py` for tasks that are run on minions."""
 
-import os
+import os, time
 import aws
 from fabric.api import sudo, local
 from buildercore import core, bootstrap, config, keypair, project, utils
@@ -83,14 +83,13 @@ def aws_update_projects(pname):
 
 @debugtask
 @requires_aws_stack
-def remaster_minion(stackname, master_ip=None):
+def remaster_minion(stackname, new_master_stackname):
     "tell minion who their new master is. deletes any existing master key on minion"
-
-    if not master_ip:
-        newest_master = last(core.find_master_servers(core.active_aws_stacks(core.find_region())))
-        if not newest_master:
-            raise core.NoMasterException("no master servers found")
-        master_ip = core.stack_data(newest_master)[0]['private_ip_address']
+    # TODO: turn this into a decorator
+    import cfn
+    instances = cfn._check_want_to_be_running(stackname, 1)
+    
+    master_ip = core.stack_data(new_master_stackname)[0]['private_ip_address']
 
     print('re-mastering %s to %s' % (stackname, master_ip))
 
@@ -98,7 +97,7 @@ def remaster_minion(stackname, master_ip=None):
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
         sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
-    bootstrap.update_ec2_stack(stackname, concurrency='serial')
+    bootstrap.update_ec2_stack(stackname, concurrency='serial', master_ip=master_ip)
 
 @debugtask
 @requires_aws_stack
@@ -134,19 +133,24 @@ def remaster_all_minions(new_master_stackname):
             continue        
         stack_list = sorted(stack_idx[pname], key=sortbyenv)
         LOG.info("%r instances: %s" % (pname, ", ".join(stack_list)))
-        
-        for stackname in stack_list:
-            try:
-                if stackname in remastered_list:
-                    LOG.info("already updated: %s", stackname)
-                    continue
-                LOG.info("updating: %s" % stackname)
-                #cfn.update_template(stackname)
-                #remaster_minion(stackname)
-                open('remastered.txt', 'a').write("%s\n" % stackname)
-            except KeyboardInterrupt:
-                LOG.warn("skipping stack: %s", stackname)
-            except:
-                LOG.exception("unhandled exception updating stack: %s", stackname)
+        try:
+            for stackname in stack_list:
+                try:
+                    if stackname in remastered_list:
+                        LOG.info("already updated: %s", stackname)
+                        continue
+                    LOG.info("*" * 80)
+                    LOG.info("updating: %s" % stackname)
+                    cfn.update_template(stackname)
+                    remaster_minion(stackname, new_master_stackname)
+                    open('remastered.txt', 'a').write("%s\n" % stackname)
+                except KeyboardInterrupt:
+                    LOG.warn("skipping stack: %s", stackname)
+                    time.sleep(1)
+                except:
+                    LOG.exception("unhandled exception updating stack: %s", stackname)
+        except KeyboardInterrupt:
+            LOG.warn("quitting")
+            break
 
     LOG.info("wrote 'remastered.txt'")
