@@ -5,8 +5,8 @@ See `askmaster.py` for tasks that are run on minions."""
 import os
 import aws
 from fabric.api import sudo, local
-from buildercore import core, bootstrap, config, keypair
-from buildercore.utils import last, lmap
+from buildercore import core, bootstrap, config, keypair, project, utils
+from buildercore.utils import last, lmap, exsubdict
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
@@ -99,3 +99,54 @@ def remaster_minion(stackname, master_ip=None):
         sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
     bootstrap.update_ec2_stack(stackname, concurrency='serial')
+
+@debugtask
+@requires_aws_stack
+def remaster_all_minions(new_master_stackname):
+    import cfn
+    LOG.info('new master is: %s', new_master_stackname)
+    ec2stacks = project.ec2_projects()
+    ignore = [
+        'master-server',
+        'jats4r',
+    ]
+    ec2stacks = exsubdict(ec2stacks, ignore)
+    pname_list = sorted(ec2stacks.keys()) # lets do this alphabetically
+
+    # only update ec2 instances in the same region as the new master
+    region = aws.find_region(new_master_stackname)
+    active_stacks = core.active_stack_names(region)
+    stack_idx = utils.mkidx(lambda v: core.parse_stackname(v)[0], active_stacks)
+
+    def sortbyenv(n):
+        adhoc = 0 # do these first
+        order = {
+            'continuumtest': 1,
+            'ci': 2,
+            'end2end': 3,
+            'prod': 4, # update prod last
+        }
+        return order.get(core.parse_stackname(n)[-1], adhoc)
+
+    remastered_list = open('remastered.txt', 'r').readlines() if os.path.exists('remastered.txt') else []
+    for pname in pname_list:
+        if pname not in stack_idx:
+            continue        
+        stack_list = sorted(stack_idx[pname], key=sortbyenv)
+        LOG.info("%r instances: %s" % (pname, ", ".join(stack_list)))
+        
+        for stackname in stack_list:
+            try:
+                if stackname in remastered_list:
+                    LOG.info("already updated: %s", stackname)
+                    continue
+                LOG.info("updating: %s" % stackname)
+                #cfn.update_template(stackname)
+                #remaster_minion(stackname)
+                open('remastered.txt', 'a').write("%s\n" % stackname)
+            except KeyboardInterrupt:
+                LOG.warn("skipping stack: %s", stackname)
+            except:
+                LOG.exception("unhandled exception updating stack: %s", stackname)
+
+    LOG.info("wrote 'remastered.txt'")

@@ -69,6 +69,7 @@ LOG_FILE = join(LOG_PATH, "app.log") # /.../logs/app.log
 utils.mkdir_p(LOG_PATH)
 
 FORMAT = logging.Formatter("%(asctime)s - %(levelname)s - %(processName)s - %(name)s - %(message)s")
+CONSOLE_FORMAT = logging.Formatter("%(levelname)s - %(name)s - %(message)s")
 
 # http://docs.python.org/2/howto/logging-cookbook.html
 ROOTLOG = logging.getLogger() # important! this is the *root LOG*
@@ -78,7 +79,7 @@ ROOTLOG.setLevel(logging.DEBUG) # *default* output level for all LOGs
 # StreamHandler sends to stderr by default
 H1 = logging.StreamHandler()
 H1.setLevel(logging.INFO) # output level for *this handler*
-H1.setFormatter(FORMAT)
+H1.setFormatter(CONSOLE_FORMAT)
 
 
 # FileHandler sends to a named file
