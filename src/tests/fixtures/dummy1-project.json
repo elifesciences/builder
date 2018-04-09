@@ -17,7 +17,8 @@
             "dns-internal": false, 
             "suppressed": [], 
             "overrides": {}, 
-            "ami": "ami-9eaa1cf6"
+            "ami": "ami-9eaa1cf6",
+            "master_ip": "10.0.2.42"
         }, 
         "type": "t2.micro", 
         "region": "us-east-1", 
