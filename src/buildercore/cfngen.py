@@ -1,9 +1,8 @@
 """
-Generates AWS CloudFormation (cfn) templates.
+Generates AWS CloudFormation (cfn) or Terraform templates.
 
 Marshalls a collection of project information together in the `build_context()`
-function, then passes this Troposphere in `trop.py` to generate the final cfn
-template.
+function, then generates templates.
 
 When an instance of a project is launched on AWS, we need to tweak things a bit
 with no manual steps in some cases, or as few as possible in other cases.
@@ -23,9 +22,9 @@ import re
 from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
-from . import utils, trop, core, project, context_handler
-from .utils import ensure, lmap
-from .config import STACK_DIR
+from . import utils, cloudformation, terraform, core, project, context_handler
+from .utils import ensure, lmap, mkdir_p
+from .config import STACK_DIR, TERRAFORM_DIR
 
 import logging
 
@@ -144,6 +143,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['s3'][bucket_name].update(configuration if configuration else {})
 
     build_context_cloudfront(context, parameterize=_parameterize)
+    build_context_fastly(context, parameterize=_parameterize)
     build_context_subdomains(context)
     build_context_elasticache(context)
 
@@ -232,6 +232,18 @@ def build_context_cloudfront(context, parameterize):
     else:
         context['cloudfront'] = False
 
+def build_context_fastly(context, parameterize):
+    def build_subdomain(x):
+        return complete_domain(parameterize(x), context['domain'])
+    if 'fastly' in context['project']['aws']:
+        context['fastly'] = {
+            'subdomains': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
+            # future use
+            'subdomains-without-dns': [],
+        }
+    else:
+        context['fastly'] = False
+
 def complete_domain(host, default_main):
     is_main = host == ''
     is_complete = host.count(".") > 0
@@ -260,24 +272,29 @@ def choose_alt_config(stackname):
 #
 #
 
-def render_template(context, template_type='aws'):
-    pname = context['project_name']
-    msg = "could not render an %r template for %r: no %r context found" % (template_type, pname, template_type)
-    ensure(template_type in context['project'], msg, ValueError)
-    if template_type == 'aws':
-        return trop.render(context)
-    # are we saving this space for different template types in future?
-
-def write_template(stackname, contents):
+def write_cloudformation_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
 
+def write_terraform_template(stackname, contents):
+    "optionally, store a terraform configuration file for the stack"
+    if json.loads(contents):
+        output_dir = os.path.join(TERRAFORM_DIR, stackname)
+        mkdir_p(output_dir)
+        output_fname = os.path.join(output_dir, "generated.tf")
+        open(output_fname, 'w').write(contents)
+        return output_fname
+
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     return json.load(open(output_fname, 'r'))
+
+#
+#
+#
 
 def validate_aws_template(pname, rendered_template):
     "remote cloudformation template checks."
@@ -299,6 +316,10 @@ def more_validation(json_template_str):
     except BaseException:
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
+
+#
+#
+#
 
 # TODO: shift this into testing and make each validation call a subTest
 def validate_project(pname, **extra):
@@ -325,9 +346,7 @@ def validate_project(pname, **extra):
     except boto.connection.BotoServerError:
         msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
         LOG.exception(msg)
-        return False
-
-    return True
+        raise
 
 #
 # create new template
@@ -339,17 +358,20 @@ def quick_render(project_name, **more_context):
     # set a dummy instance id if one hasn't been set.
     more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
     context = build_context(project_name, **more_context)
-    return render_template(context)
+    return cloudformation.render_template(context)
 
 def generate_stack(pname, **more_context):
     """given a project name and any context overrides, generates a Cloudformation
     stack file, writes it to file and returns a pair of (context, stackfilename)"""
     context = build_context(pname, **more_context)
-    template = render_template(context)
+    cloudformation_template = cloudformation.render_template(context)
+    terraform_template = terraform.render(context)
     stackname = context['stackname']
-    out_fname = write_template(stackname, template)
+
     context_handler.write_context(stackname, context)
-    return context, out_fname
+    cloudformation_template_file = write_cloudformation_template(stackname, cloudformation_template)
+    terraform_template_file = write_terraform_template(stackname, terraform_template)
+    return context, cloudformation_template_file, terraform_template_file
 
 #
 # update existing template
@@ -357,22 +379,43 @@ def generate_stack(pname, **more_context):
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$']
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$']
 
-REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
+REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
-class Delta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
+# CloudFormation is nicely chopped up into:
+# * what to add
+# * what to modify
+# * what to remove
+# What we see here is the new Terraform generated.tf file, containing all resources (just Fastly so far).
+# We can do a diff with the current one which would already be an improvement, but ultimately the source of truth
+# is changing it and running a terraform plan to see proposed changes. We should however roll it back if the user
+# doesn't confirm.
+class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
     @property
     def non_empty(self):
-        return self.plus['Resources'] or self.plus['Outputs'] or self.edit['Resources'] or self.edit['Outputs'] or self.minus['Resources'] or self.minus['Outputs']
+        return any([
+            self.plus['Resources'],
+            self.plus['Outputs'],
+            self.edit['Resources'],
+            self.edit['Outputs'],
+            self.minus['Resources'],
+            self.minus['Outputs'],
+            self.terraform
+        ])
+_empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
+Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
-    template = json.loads(render_template(context))
+    template = json.loads(cloudformation.render_template(context))
+    new_terraform_template_file = '{}'
+    if context['fastly']:
+        new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -388,6 +431,7 @@ def template_delta(context):
     def _title_is_removable(title):
         return len([p for p in REMOVABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
 
+    # TODO: investigate if this is still necessary
     # start backward compatibility code
     # back for when EC2Instance was the title rather than EC2Instance1
     if 'EC2Instance' in old_template['Resources']:
@@ -459,14 +503,16 @@ def template_delta(context):
         {
             'Resources': delta_minus_resources,
             'Outputs': delta_minus_outputs,
-        }
+        },
+        new_terraform_template_file
     )
 
 def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
     apply_delta(template, delta)
-    write_template(stackname, json.dumps(template))
+    write_cloudformation_template(stackname, json.dumps(template))
+    write_terraform_template(stackname, delta.terraform)
     return template
 
 def apply_delta(template, delta):
@@ -485,27 +531,17 @@ def apply_delta(template, delta):
         for title in delta.minus[component]:
             del template[component][title]
 
-# def regenerate_stack_vars(stackname, **more_context):
-#    """returns the current template context and the new context for the given stackname.
-#    use `cfngen.template_delta` to generate a list of changes"""
-#    # fetch context used to build current stack
-#    current_context = context_handler.load_context(stackname)
-#    # don't rely on 'alt-config' being present in the current context, or if it is present,
-#    # don't assume that alt-config existed when the current context existed. for example:
-#    # `prod` used a local db before, same as default, but now a `prod` alt-config gets RDS
-#    more_context['alt-config'] = choose_alt_config(stackname)
-#    # build the context again, but this time re-use some current values/config
-#    more_context['stackname'] = stackname # TODO: purge this crap
-#    pname = core.parse_stackname(stackname)[0]
-#    return current_context, build_context(pname, existing_context=current_context, **more_context)
+def _current_cloudformation_template(stackname):
+    "retrieves a template from the CloudFormation API, using it as the source of truth"
+    conn = core.connect_aws_with_stack(stackname, 'cfn')
+    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
 
-def regenerate_stack(stackname, current_template, **more_context):
-   # what is the point of these two lines? it downloads the template body and saves it to disk and never uses it ...
-   # It's using the local disk as a cache for the template, rather than calling the API whenever is needed
-   # if it was doing something important, it should be it's own function, like `write_cfn_template_to_disk` or whatever
-   # as it is, it requires a dependency between cfngen and bootstrap (removed) that shouldn't really exist
+def download_cloudformation_template(stackname):
+    write_cloudformation_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
+
+def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)
-    write_template(stackname, json.dumps(current_template))
+    download_cloudformation_template(stackname)
     (pname, instance_id) = core.parse_stackname(stackname)
     more_context['stackname'] = stackname # TODO: purge this crap
     more_context['alt-config'] = instance_id

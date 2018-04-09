@@ -24,9 +24,10 @@ import logging
 class FabricException(Exception):
     pass
 
-
 env.abort_exception = FabricException
 
+class ConfigurationError(Exception):
+    pass
 
 # dirs are relative
 # paths are absolute
@@ -52,6 +53,9 @@ CONTEXT_DIR = join(CFN, "contexts") # ll: ./.cfn/stacks
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
 KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
+# the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
+# perhaps a namechange from .cfn to .state or something later
+TERRAFORM_DIR = join(CFN, "terraform")
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/
 CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # ll: /.../cfn/contexts/
@@ -103,6 +107,7 @@ logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 # where the builder can write stuff that should persist across installations/users
 # like ec2 instance keypairs
 BUILDER_BUCKET = 'elife-builder'
+BUILDER_REGION = 'us-east-1'
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 
@@ -114,7 +119,7 @@ PACKER_BOX_S3_PATH = "s3://%s" % join(PACKER_BOX_BUCKET, PACKER_BOX_KEY)
 PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PACKER_BOX_KEY)
 
 # these sections *shouldn't* be merged if they *don't* exist in the project
-AWS_EXCLUDING = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache']
+AWS_EXCLUDING = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache', 'fastly']
 
 #
 # settings

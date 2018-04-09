@@ -124,6 +124,9 @@ defaults:
             errors: null
             default-ttl: 0 # seconds
             logging: false
+        fastly:
+            # fastly defaults only used if a 'fastly' section present in project
+            subdomains: []
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -232,8 +235,7 @@ master-server:
     # see: https://github.com/elifesciences/builder-private-example
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
+        ec2: {}
         ports:
             - 22
             - 4506: # salt publish port
@@ -243,8 +245,7 @@ master-server:
                 cidr-ip: 10.0.0.0/16
             - 8080 # chemist, Github webhooks for formulas
     aws-alt: {}
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+    vagrant: {}
 
 lax:
     description: article-json store
@@ -333,7 +334,9 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
-
+        fastly:
+            subdomains:
+                - "{instance}--fastly-gateway"
     aws-alt:
         standalone:
             # for now a copy of standalone1404

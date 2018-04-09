@@ -1,4 +1,5 @@
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
+import json
 from pprint import pformat
 from fabric.api import task, local, run, sudo, put, get, abort, settings
 import fabric.state
@@ -56,10 +57,11 @@ def update(stackname, autostart="0", concurrency='serial'):
         return
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
-@task
+# DEPRECATED: remove alias
+@task(alias='update_template')
 @timeit
-def update_template(stackname):
-    """Limited update of the Cloudformation template.
+def update_infrastructure(stackname):
+    """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
 
@@ -74,14 +76,14 @@ def update_template(stackname):
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
-    current_template = bootstrap.current_template(stackname)
-    context, delta, current_context = cfngen.regenerate_stack(stackname, current_template, **more_context)
+    context, delta, current_context = cfngen.regenerate_stack(stackname, **more_context)
 
     if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)
     LOG.info("Create: %s", pformat(delta.plus))
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
+    LOG.info("New Terraform generated file: %s", pformat(json.loads(delta.terraform)))
     utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template. Notice the delta *only shows changes to the template*, not to the context.')
 
     context_handler.write_context(stackname, context)
@@ -108,6 +110,10 @@ def update_template(stackname):
     # S3
     if context.get('s3', {}):
         bootstrap.update_stack(stackname, service_list=['s3'])
+
+    # Fastly via Terraform
+    if context.get('fastly', {}):
+        bootstrap.update_stack(stackname, service_list=['terraform'])
 
 
 # TODO: this task should probably live in `master.py`

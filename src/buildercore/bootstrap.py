@@ -14,13 +14,14 @@ from . import utils, config, keypair, bvars, core, context_handler, project
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER
+from .config import BOOTSTRAP_USER, BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from boto.exception import BotoServerError, SQSError
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
+from python_terraform import Terraform
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ def create_stack(stackname):
     return _create_generic_stack(stackname, parameters, on_start, on_error)
 
 def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
-    "simply creates the stack of resources on AWS, talking to CloudFormation."
+    "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
     parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
@@ -95,6 +96,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
+        setup_terraform(stackname, context)
         setup_ec2(stackname, context['ec2'])
         return True
 
@@ -161,6 +163,33 @@ def setup_ec2(stackname, context_ec2):
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
+
+def _init_terraform(stackname):
+    working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
+    t = Terraform(working_dir=working_dir)
+    with open('%s/backend.tf' % working_dir, 'w') as fp:
+        fp.write(json.dumps({
+            'terraform': {
+                'backend': {
+                    's3': {
+                        'bucket': BUILDER_BUCKET,
+                        'key': 'terraform/%s.tfstate' % stackname,
+                        'region': BUILDER_REGION,
+                    },
+                },
+            },
+        }))
+    t.init(input=False, capture_output=False, raise_on_error=True)
+    return t
+
+# TODO: move into terraform module
+def setup_terraform(stackname, context):
+    if not context.get('fastly'):
+        return
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+
+    t = _init_terraform(stackname)
+    t.apply(input=False, capture_output=False, raise_on_error=True)
 
 def remove_topics_from_sqs_policy(policy, topic_arns):
     """Removes statements from an SQS policy.
@@ -255,6 +284,11 @@ def update_sqs_stack(stackname, **kwargs):
     if current_context_sqs:
         # stack has/had queues that may need to be created/destroyed
         setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
+
+def update_terraform_stack(stackname, **kwargs):
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+    t = _init_terraform(stackname)
+    t.apply(input=False, capture_output=False, raise_on_error=True)
 
 def setup_s3(stackname, context_s3, region, account_id):
     """
@@ -404,10 +438,6 @@ def master(region, key):
 # bootstrap stack
 #
 
-def current_template(stackname):
-    conn = connect_aws_with_stack(stackname, 'cfn')
-    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
-
 def update_template(stackname, template):
     conn = connect_aws_with_stack(stackname, 'cfn')
     parameters = []
@@ -453,11 +483,16 @@ def write_environment_info(stackname, overwrite=False):
 @core.requires_active_stack
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
-    then only those services will be updated"""
+    then only those services will be updated
+
+    Has too many responsibilities:
+        - ec2: deploys
+        - s3, sqs, ...: infrastructure updates"""
     service_update_fns = OrderedDict([
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
-        ('sqs', update_sqs_stack)
+        ('sqs', update_sqs_stack),
+        ('terraform', update_terraform_stack)
     ])
     if not service_list:
         service_list = list(service_update_fns.keys())
