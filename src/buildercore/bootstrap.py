@@ -164,14 +164,10 @@ def setup_ec2(stackname, context_ec2):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
-# TODO: move into terraform module
-def setup_terraform(stackname, context):
-    if not context.get('fastly'):
-        return
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+def _init_terraform(stackname):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     t = Terraform(working_dir=working_dir)
-    with open('%s/backend.tf' % working_dir) as fp:
+    with open('%s/backend.tf' % working_dir, 'w') as fp:
         fp.write(json.dumps({
             'terraform': {
                 'backend': {
@@ -184,6 +180,15 @@ def setup_terraform(stackname, context):
             },
         }))
     t.init(input=False, capture_output=False, raise_on_error=True)
+    return t
+
+# TODO: move into terraform module
+def setup_terraform(stackname, context):
+    if not context.get('fastly'):
+        return
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+
+    t = _init_terraform(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
 def remove_topics_from_sqs_policy(policy, topic_arns):
@@ -282,8 +287,7 @@ def update_sqs_stack(stackname, **kwargs):
 
 def update_terraform_stack(stackname, **kwargs):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
-    working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
-    t = Terraform(working_dir=working_dir)
+    t = _init_terraform(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
 def setup_s3(stackname, context_s3, region, account_id):
