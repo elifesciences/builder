@@ -150,8 +150,10 @@ def updates(servicename):
             # use the given context first else load it up. good for testing
             context = context or context_handler.load_context(stackname)
             # only update service if stack is using given service
+            LOG.info("Try to update '%s'", servicename)
             if context.get(servicename):
                 return fn(stackname, context, **kwargs)
+            LOG.info("Skipped '%s' as not in the context", servicename)
         return wrap2
     return wrap1
 
@@ -494,8 +496,7 @@ def update_stack(stackname, service_list=None, **kwargs):
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
     context = context_handler.load_context(stackname)
     for servicename, fn in subdict(service_update_fns, service_list).items():
-        if context.get(servicename):
-            fn(stackname, context, **kwargs)
+        fn(stackname, context, **kwargs)
 
 def upload_master_builder_key(key):
     private_key = "/root/.ssh/id_rsa"
