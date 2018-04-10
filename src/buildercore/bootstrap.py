@@ -14,7 +14,7 @@ from . import utils, config, keypair, bvars, core, context_handler, project, ter
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER, ConfigurationError
+from .config import BOOTSTRAP_USER
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
@@ -180,9 +180,7 @@ def setup_ec2(stackname, context):
 # we might need a mapping somewhere of which services are provided by terraform.
 @updates('fastly')
 def update_terraform_stack(stackname, context, **kwargs):
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
-    t = terraform.init(stackname)
-    t.apply(input=False, capture_output=False, raise_on_error=True)
+    terraform.update(stackname)
 
 def remove_topics_from_sqs_policy(policy, topic_arns):
     """Removes statements from an SQS policy.

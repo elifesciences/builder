@@ -1,8 +1,9 @@
 import json
+import os
 from os.path import join
 from python_terraform import Terraform
 from buildercore.utils import ensure
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
+from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -56,6 +57,11 @@ def init(stackname):
         }))
     t.init(input=False, capture_output=False, raise_on_error=True)
     return t
+
+def update(stackname):
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+    t = init(stackname)
+    t.apply(input=False, capture_output=False, raise_on_error=True)
 
 def destroy(stackname):
     pass
