@@ -6,7 +6,7 @@ envname="${1:-default}"
 
 export PYTHONPATH="src"
 pytest --junitxml=build/pytest-$envname.xml src/tests
-pytest --junitxml=build/pytest-$envname.xml src/integration_tests
+pytest -s --junitxml=build/pytest-$envname.xml src/integration_tests
 
 covered=$(coverage report | grep TOTAL | awk '{print $6}' | sed 's/%//')
 if [ $covered -lt 67 ]; then
