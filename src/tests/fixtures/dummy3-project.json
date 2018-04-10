@@ -17,7 +17,8 @@
             "dns-internal": false, 
             "suppressed": [], 
             "overrides": {}, 
-            "ami": "ami-111111"
+            "ami": "ami-111111",
+            "master_ip": "10.0.2.42"
         }, 
         "type": "t2.small", 
         "region": "us-east-1", 
@@ -41,7 +42,8 @@
                 "dns-internal": false, 
                 "suppressed": [], 
                 "overrides": {}, 
-                "ami": "ami-9eaa1cf6"
+                "ami": "ami-9eaa1cf6",
+                "master_ip": "10.0.2.42"
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 
@@ -65,7 +67,8 @@
                 "dns-internal": false, 
                 "suppressed": [], 
                 "overrides": {}, 
-                "ami": "ami-111111"
+                "ami": "ami-111111",
+                "master_ip": "10.0.2.42"
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 
@@ -106,7 +109,8 @@
                 "dns-internal": false, 
                 "suppressed": [], 
                 "overrides": {}, 
-                "ami": "ami-111111"
+                "ami": "ami-111111",
+                "master_ip": "10.0.2.42"
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 
