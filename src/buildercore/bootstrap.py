@@ -146,9 +146,7 @@ def _wait_until_in_progress(stackname):
 
 def updates(servicename):
     def wrap1(fn):
-        def wrap2(stackname, context=None, **kwargs):
-            # use the given context first else load it up. good for testing
-            context = context or context_handler.load_context(stackname)
+        def wrap2(stackname, context, **kwargs):
             # only update service if stack is using given service
             LOG.info("Try to update '%s'", servicename)
             if context.get(servicename):
