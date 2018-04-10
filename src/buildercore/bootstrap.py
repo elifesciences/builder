@@ -248,7 +248,6 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
 
-@updates('sqs')
 def update_sqs_stack(stackname, context, **kwargs):
     region = context['project']['aws']['region'] # is this value suspect?
     unsub_sqs(stackname, context['sqs'], region)
