@@ -12,7 +12,7 @@ elifePipeline {
             try {
                     sh './project_tests.sh'
             } finally {
-                step([$class: "JUnitResultArchiver", testResults: "build/junit-*.xml"])
+                step([$class: "JUnitResultArchiver", testResults: "build/pytest-*.xml"])
             }
         }
     }
