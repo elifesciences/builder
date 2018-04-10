@@ -286,6 +286,11 @@ def update_sqs_stack(stackname, **kwargs):
         setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
 
 def update_terraform_stack(stackname, **kwargs):
+    # TODO: this seems to be a common pattern. suggest passing the context to each of these update_* functions
+    context = context_handler.load_context(stackname)
+    # or is it context['project'].get('fastly') ?
+    if not context.get('fastly'):
+        return
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
     t = _init_terraform(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
