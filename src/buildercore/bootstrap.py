@@ -96,8 +96,8 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
-        setup_terraform(stackname, context)
-        setup_ec2(stackname, context['ec2'])
+        update_terraform_stack(stackname, context)
+        setup_ec2(stackname, context)
         return True
 
     except StackTakingALongTimeToComplete as err:
@@ -140,10 +140,23 @@ def _wait_until_in_progress(stackname):
     ensure(final_stack.stack_status in ['CREATE_COMPLETE'],
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
-def setup_ec2(stackname, context_ec2):
-    if not context_ec2:
-        return
+#
+#
+#
 
+def updates(servicename):
+    def wrap1(fn):
+        def wrap2(stackname, context=None, **kwargs):
+            # use the given context first else load it up. good for testing
+            context = context or context_handler.load_context(stackname)
+            # only update service if stack is using given service
+            if context.get(servicename):
+                return fn(stackname, context, **kwargs)
+        return wrap2
+    return wrap1
+
+@updates('ec2')
+def setup_ec2(stackname, context):
     def _setup_ec2_node():
         def is_resourcing():
             try:
@@ -183,11 +196,10 @@ def _init_terraform(stackname):
     return t
 
 # TODO: move into terraform module
-def setup_terraform(stackname, context):
-    if not context.get('fastly'):
-        return
+# we might need a mapping somewhere of which services are provided by terraform.
+@updates('fastly')
+def update_terraform_stack(stackname, context, **kwargs):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
-
     t = _init_terraform(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
@@ -273,36 +285,27 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
 
-def setup_sqs(stackname, context_sqs, region):
-    unsub_sqs(stackname, context_sqs, region)
-    sub_sqs(stackname, context_sqs, region)
+@updates('sqs')
+def update_sqs_stack(stackname, context, **kwargs):
+    region = context['project']['aws']['region'] # is this value suspect?
+    unsub_sqs(stackname, context['sqs'], region)
+    sub_sqs(stackname, context['sqs'], region)
 
-def update_sqs_stack(stackname, **kwargs):
-    current_context = context_handler.load_context(stackname)
-    current_context_sqs = current_context.get('sqs', {})
-
-    if current_context_sqs:
-        # stack has/had queues that may need to be created/destroyed
-        setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
-
-def update_terraform_stack(stackname, **kwargs):
-    # TODO: this seems to be a common pattern. suggest passing the context to each of these update_* functions
-    context = context_handler.load_context(stackname)
-    # or is it context['project'].get('fastly') ?
-    if not context.get('fastly'):
-        return
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
-    t = _init_terraform(stackname)
-    t.apply(input=False, capture_output=False, raise_on_error=True)
-
-def setup_s3(stackname, context_s3, region, account_id):
+@updates('s3')
+def update_s3_stack(stackname, context):
     """
     Connects S3 buckets (existing or created by Cloud Formation) to SQS queues
     that will be notified of files being added there.
 
     This function adds also a Statement to the Policy of the involved queue so that this bucket can send messages to it.
     """
-    assert isinstance(context_s3, dict), ("Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
+    context_s3 = context['s3']
+
+    # pdata = project_data_for_stackname(stackname) # suspect.
+    pdata = context['project'] # more likely
+    region = pdata['aws']['region'] # region is now pulled from context['project']['aws']['region'] like sqs. but is this correct?
+
+    ensure(isinstance(context_s3, dict), "Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
 
     s3 = core.boto_s3_conn(region)
     for bucket_name in context_s3:
@@ -400,18 +403,6 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
 
     return queue_configuration
 
-def update_s3_stack(stackname, **kwargs):
-    pdata = project_data_for_stackname(stackname)
-    if not pdata['aws']['s3']:
-        return
-    context = context_handler.load_context(stackname)
-
-    if 's3' not in context:
-        # old instance of the stack that hasn't any S3 buckets
-        return
-
-    setup_s3(stackname, context['s3'], pdata['aws']['region'], pdata['aws']['account_id'])
-
 
 #
 #  attached stack resources, ec2 data
@@ -499,11 +490,12 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('sqs', update_sqs_stack),
         ('terraform', update_terraform_stack)
     ])
-    if not service_list:
-        service_list = list(service_update_fns.keys())
+    service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
-
-    [fn(stackname, **kwargs) for fn in subdict(service_update_fns, service_list).values()]
+    context = context_handler.load_context(stackname)
+    for servicename, fn in subdict(service_update_fns, service_list).items():
+        if context.get(servicename):
+            fn(stackname, context, **kwargs)
 
 def upload_master_builder_key(key):
     private_key = "/root/.ssh/id_rsa"
@@ -551,7 +543,8 @@ def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
-def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwargs):
+@updates('ec2')
+def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, **kwargs):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
@@ -559,7 +552,6 @@ def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwar
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
-    ctx = context_handler.load_context(stackname)
     pdata = ctx['project']
     # backward compatibility: old instances may not have 'ec2' key
     # consider it true if missing, as newer stacks e.g. bus--prod
