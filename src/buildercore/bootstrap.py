@@ -10,18 +10,17 @@ from pprint import pformat
 from functools import partial
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, keypair, bvars, core, context_handler, project
+from . import utils, config, keypair, bvars, core, context_handler, project, terraform
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER, BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
+from .config import BOOTSTRAP_USER, ConfigurationError
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 from boto.exception import BotoServerError, SQSError
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
-from python_terraform import Terraform
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -177,30 +176,12 @@ def setup_ec2(stackname, context):
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
-def _init_terraform(stackname):
-    working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
-    t = Terraform(working_dir=working_dir)
-    with open('%s/backend.tf' % working_dir, 'w') as fp:
-        fp.write(json.dumps({
-            'terraform': {
-                'backend': {
-                    's3': {
-                        'bucket': BUILDER_BUCKET,
-                        'key': 'terraform/%s.tfstate' % stackname,
-                        'region': BUILDER_REGION,
-                    },
-                },
-            },
-        }))
-    t.init(input=False, capture_output=False, raise_on_error=True)
-    return t
-
 # TODO: move into terraform module
 # we might need a mapping somewhere of which services are provided by terraform.
 @updates('fastly')
 def update_terraform_stack(stackname, context, **kwargs):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
-    t = _init_terraform(stackname)
+    t = terraform.init(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
 def remove_topics_from_sqs_policy(policy, topic_arns):
