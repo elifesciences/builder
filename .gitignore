@@ -1,5 +1,6 @@
 *.pyc
 .tox/
+/.pytest_cache/
 settings.yml
 *~
 
