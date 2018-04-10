@@ -11,6 +11,7 @@ from functools import partial
 from collections import OrderedDict
 from datetime import datetime
 from . import utils, config, keypair, bvars, core, context_handler, project, terraform
+from .context_handler import only_if as updates
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
@@ -95,7 +96,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
-        update_terraform_stack(stackname, context)
+        terraform.update(stackname, context)
         setup_ec2(stackname, context)
         return True
 
@@ -143,17 +144,6 @@ def _wait_until_in_progress(stackname):
 #
 #
 
-def updates(servicename):
-    def wrap1(fn):
-        def wrap2(stackname, context, **kwargs):
-            # only update service if stack is using given service
-            LOG.info("Try to update '%s'", servicename)
-            if context.get(servicename):
-                return fn(stackname, context, **kwargs)
-            LOG.info("Skipped '%s' as not in the context", servicename)
-        return wrap2
-    return wrap1
-
 @updates('ec2')
 def setup_ec2(stackname, context):
     def _setup_ec2_node():
@@ -175,12 +165,6 @@ def setup_ec2(stackname, context):
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
-
-# TODO: move into terraform module
-# we might need a mapping somewhere of which services are provided by terraform.
-@updates('fastly')
-def update_terraform_stack(stackname, context, **kwargs):
-    terraform.update(stackname)
 
 def remove_topics_from_sqs_policy(policy, topic_arns):
     """Removes statements from an SQS policy.
@@ -467,7 +451,7 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
         ('sqs', update_sqs_stack),
-        ('terraform', update_terraform_stack)
+        ('terraform', lambda stackname, context: terraform.update(stackname, context))
     ])
     service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
