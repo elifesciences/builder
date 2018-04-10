@@ -201,7 +201,7 @@ def _init_terraform(stackname):
 # we might need a mapping somewhere of which services are provided by terraform.
 @updates('fastly')
 def update_terraform_stack(stackname, context, **kwargs):
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. Get it at https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     t = _init_terraform(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
@@ -287,7 +287,6 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
 
-@updates('sqs')
 def update_sqs_stack(stackname, context, **kwargs):
     region = context['project']['aws']['region'] # is this value suspect?
     unsub_sqs(stackname, context['sqs'], region)

@@ -129,6 +129,8 @@ defaults:
         fastly:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
+            dns:
+                cname: u2.shared.global.fastly.net
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
