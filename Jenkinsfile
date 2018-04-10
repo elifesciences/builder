@@ -10,6 +10,7 @@ elifePipeline {
 
         stage 'Test', {
             sh './project_tests.sh'
+            step([$class: "JUnitResultArchiver", testResults: "build/junit-*.xml"])
         }
     }
 }
