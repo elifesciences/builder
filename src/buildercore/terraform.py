@@ -65,5 +65,8 @@ def update(stackname, context):
     t = init(stackname)
     t.apply(input=False, capture_output=False, raise_on_error=True)
 
-def destroy(stackname):
-    pass
+@only_if('fastly')
+def destroy(stackname, context):
+    t = init(stackname)
+    t.destroy(input=False, capture_output=False, raise_on_error=True)
+    # TODO: also destroy files

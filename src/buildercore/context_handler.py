@@ -55,15 +55,16 @@ def download_from_s3(stackname, refresh=False):
 
 def only_if(servicename):
     """Decorator that only executes an update function if the context contains a particular servicename that would need it"""
-    def wrap1(fn):
-        def wrap2(stackname, context, **kwargs):
+    def decorate_with_only_if(fn):
+        def decorated_with_only_if(stackname, context, **kwargs):
             # only update service if stack is using given service
             LOG.info("Try to update '%s'", servicename)
             if context.get(servicename):
+                # TODO: context is not always necessary in fn implementations. Can we avoid passing it when not needed?
                 return fn(stackname, context, **kwargs)
             LOG.info("Skipped '%s' as not in the context", servicename)
-        return wrap2
-    return wrap1
+        return decorated_with_only_if
+    return decorate_with_only_if
 
 class MissingContextFile(RuntimeError):
     pass

@@ -647,6 +647,8 @@ def remove_all_orphaned_keys(master_stackname):
 
 def delete_stack(stackname):
     try:
+        context = context_handler.load_context(stackname)
+        terraform.destroy(stackname, context)
         connect_aws_with_stack(stackname, 'cfn').delete_stack(stackname)
 
         def is_deleting(stackname):
