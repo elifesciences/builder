@@ -98,5 +98,4 @@ def remaster_minion(stackname, master_ip=None):
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
         sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
-    context = None # will be supplied for us
-    bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
+    bootstrap.update_stack(stackname, service_list=['ec2'], concurrency='serial')
