@@ -112,6 +112,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     context['ec2'] = context['project']['aws'].get('ec2', True)
     if isinstance(context['ec2'], dict):
         context['ec2']['type'] = context['project']['aws']['type']
+        if context['ec2'].get('masterless') and context['ec2'].get('master_ip'):
+            del context['ec2']['master_ip']
 
     build_context_elb(context)
 

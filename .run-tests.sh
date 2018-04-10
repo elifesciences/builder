@@ -2,17 +2,19 @@
 
 set -e # everything must pass
 
-args="$*"
-module='tests'
+args="$@"
+modules='tests'
 if [ ! -z "$args" ]; then
-    module="$args"
+    modules="$args"
 fi
 
 export PYTHONPATH="src"
-green -vv --quiet-coverage "$module"
+for m in $modules; do
+    green -vv --quiet-coverage "$m"
+done
 
 # only report coverage if we're running a complete set of tests
-if [ "tests integrations_tests" = "$module" ]; then
+if [ "tests integration_tests" = "$module" ]; then
     # is only run if tests pass
     covered=$(coverage report | grep TOTAL | awk '{print $6}' | sed 's/%//')
     if [ $covered -lt 67 ]; then
