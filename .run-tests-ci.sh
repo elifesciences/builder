@@ -11,7 +11,6 @@ fi
 
 export PYTHONPATH="src"
 coverage run -m pytest \
-    --cov=src \
     -s \
     --junitxml=build/pytest-$envname.xml \
     src/tests src/integration_tests
