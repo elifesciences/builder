@@ -14,14 +14,16 @@ elifePipeline {
 
         def pythons = ['py27', 'py35']
         for (int i = 0; i < images.size(); i++) {
+            def actions = [:]
             def python = pythons.get(i)
-            stage "Python ${python}", {
+            actions["Python ${python}"] = {
                 try {
                     sh "tox -e ${python}"
                 } finally {
                     step([$class: "JUnitResultArchiver", testResults: "build/pytest-${python}.xml"])
                 }
             }
+            parallel actions
         }
     }
 }
