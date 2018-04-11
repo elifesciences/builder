@@ -95,8 +95,7 @@ def update_infrastructure(stackname):
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
 
-    # TODO: all of the following could possibly be moved
-    # inside bootstrap.update_stack, if it was smart enough
+    # TODO: move inside bootstrap.update_stack
     # EC2
     if _are_there_existing_servers(context):
         # the /etc/buildvars.json file may need to be updated

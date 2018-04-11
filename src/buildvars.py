@@ -86,6 +86,7 @@ def fix(stackname):
 
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
+# TODO: deletion candidate. can only ever do a shallow update
 @debugtask
 @requires_aws_stack
 def force(stackname, field, value):
@@ -143,7 +144,7 @@ def refresh(stackname, context):
                 node = 1
 
         new_buildvars = trop.build_vars(context, int(node))
-        new_buildvars['revision'] = old_buildvars.get('revision')
+        new_buildvars['revision'] = old_buildvars.get('revision') # TODO: is this still necessary?
         _update_remote_bvars(stackname, new_buildvars)
 
     stack_all_ec2_nodes(stackname, _refresh_buildvars, username=BOOTSTRAP_USER)

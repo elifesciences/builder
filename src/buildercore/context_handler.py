@@ -1,4 +1,14 @@
-"handles the storage of context from AWS"
+# Handles the storage of 'context' with AWS
+#
+# To build services we first create a simple dictionary of data about
+# the service we want to build. This is called the 'context'.
+# This data is serialised to JSON and stored locally and on AWS S3.
+# A subset of this data is stored on the EC2 instance, if an EC2
+# instance exists, and are called `build_vars`.
+#
+# See cfngen.py for building the context
+# See cloudformation.py and trop.py for rendering Cloudformation templates with this context data
+# See terraform.py for rendering Terraform templates with this context data
 
 import os, json
 from os.path import join
