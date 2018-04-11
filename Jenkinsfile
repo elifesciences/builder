@@ -13,7 +13,7 @@ elifePipeline {
         }
 
         def pythons = ['py27', 'py35']
-        for (int i = 0; i < images.size(); i++) {
+        for (int i = 0; i < pythons.size(); i++) {
             def actions = [:]
             def python = pythons.get(i)
             actions["Python ${python}"] = {
