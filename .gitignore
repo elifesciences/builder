@@ -26,6 +26,7 @@ packer/
 packer_cache/
 downloads
 .coverage.*
+.coverage
 projects/*/
 scripts/customize.sh
 scripts/salt/*.minion
