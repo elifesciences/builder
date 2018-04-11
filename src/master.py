@@ -6,7 +6,7 @@ import os, time
 import aws
 from fabric.api import sudo, local
 from buildercore import core, bootstrap, config, keypair, project, utils
-from buildercore.utils import last, lmap, exsubdict
+from buildercore.utils import lmap, exsubdict
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
@@ -87,8 +87,8 @@ def remaster_minion(stackname, new_master_stackname):
     "tell minion who their new master is. deletes any existing master key on minion"
     # TODO: turn this into a decorator
     import cfn
-    instances = cfn._check_want_to_be_running(stackname, 1)
-    
+    cfn._check_want_to_be_running(stackname, 1)
+
     master_ip = core.stack_data(new_master_stackname)[0]['private_ip_address']
 
     print('re-mastering %s to %s' % (stackname, master_ip))
@@ -131,7 +131,7 @@ def remaster_all_minions(new_master_stackname):
     remastered_list = open('remastered.txt', 'r').readlines() if os.path.exists('remastered.txt') else []
     for pname in pname_list:
         if pname not in stack_idx:
-            continue        
+            continue
         stack_list = sorted(stack_idx[pname], key=sortbyenv)
         LOG.info("%r instances: %s" % (pname, ", ".join(stack_list)))
         try:
@@ -148,7 +148,7 @@ def remaster_all_minions(new_master_stackname):
                 except KeyboardInterrupt:
                     LOG.warn("ctrl-c, skipping stack: %s", stackname)
                     time.sleep(1)
-                except:
+                except BaseException:
                     LOG.exception("unhandled exception updating stack: %s", stackname)
         except KeyboardInterrupt:
             LOG.warn("quitting")
