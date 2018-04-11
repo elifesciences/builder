@@ -107,10 +107,19 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         context['ext'] = context['project']['aws']['ext']
 
     # ec2
-    context['ec2'] = context['project']['aws'].get('ec2', True)
-    if isinstance(context['ec2'], dict):
-        context['ec2']['type'] = context['project']['aws']['type']
-        context = set_master_address(context)
+    # TODO: this is a problem. using the default 'True' preserves the behaviour of
+    # when 'ec2: True' meant, 'use defaults with nothing changed'
+    # but now I need to store master ip info there.
+    #context['ec2'] = context['project']['aws'].get('ec2', True)
+    context['ec2'] = context['project']['aws']['ec2']
+    if context['ec2'] == True:
+        context['ec2'] = {}
+        context['project']['aws']['ec2'] = {}
+        LOG.warn("stack needs it's context refreshed: %s", stackname)
+        # we can now assume these will always be dicts
+
+    context['ec2']['type'] = context['project']['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
+    context = set_master_address(context)
 
     build_context_elb(context)
 

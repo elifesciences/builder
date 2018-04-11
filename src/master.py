@@ -107,7 +107,14 @@ def remaster(stackname, new_master_stackname):
     print('re-mastering %s to %s' % (stackname, master_ip))
 
     context = context_handler.load_context(stackname)
-    if context.get('ec2', {}).get('master_ip') == master_ip:
+    if context.get('ec2') == True:
+        # TODO: duplicates bad ec2 data wrangling in cfngen.build_context
+        # ec2 == True for some reason, which is completely useless
+        LOG.warn("bad context for stack: %s", stackname)
+        context['ec2'] = {}
+        context['project']['aws']['ec2'] = {}
+
+    if context['ec2'].get('master_ip') == master_ip:
         LOG.info("already remastered: %s", stackname)
         try:
             utils.get_input('any key to skip, ctrl-c to carry on')
@@ -151,6 +158,21 @@ def remaster_all(new_master_stackname):
         'jats4r',
     ]
     ec2stacks = exsubdict(ec2stacks, ignore)
+
+    def sortbypname(n):
+        unknown = 9
+        porder = {
+            #'observer': 1,
+            'elife-metrics': 2,
+            'lax': 3,
+            'basebox': 4,
+            'containers': 5,
+            'elife-dashboard': 6,
+            'elife-ink': 7
+        }
+        return porder.get(n, unknown)
+
+    # pname_list = sorted(ec2stacks.keys(), key=sortbypname) # lets do this alphabetically
     pname_list = sorted(ec2stacks.keys()) # lets do this alphabetically
 
     # only update ec2 instances in the same region as the new master
