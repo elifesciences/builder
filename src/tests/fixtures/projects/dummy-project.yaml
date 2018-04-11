@@ -30,6 +30,7 @@ defaults:
             overrides: {}
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-9eaa1cf6  # Ubuntu 14.04
+            master_ip: 10.0.2.42
         type: t2.small
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
@@ -93,6 +94,8 @@ defaults:
         fastly:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
+            dns:
+                cname: something.fastly.net
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project

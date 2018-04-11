@@ -97,7 +97,8 @@ def remaster_minion(stackname, new_master_stackname):
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
         sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
-    bootstrap.update_ec2_stack(stackname, concurrency='serial', master_ip=master_ip)
+    context = None # will be supplied for us
+    bootstrap.update_ec2_stack(stackname, context, concurrency='serial', master_ip=master_ip)
 
 @debugtask
 @requires_aws_stack
