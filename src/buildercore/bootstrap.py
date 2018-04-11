@@ -450,7 +450,7 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
         ('sqs', update_sqs_stack),
-        ('terraform', lambda stackname, context: terraform.update(stackname, context))
+        ('terraform', terraform.update)
     ])
     service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
