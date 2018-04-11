@@ -25,7 +25,11 @@ elifePipeline {
         }
         // currently unstable due to CloudFormation rate limiting
         //parallel actions
-        actions["Test py27"]() 
-        actions["Test py35"]() 
+        stage "Test py27", {
+            actions["Test py27"]() 
+        }
+        stage "Test py35", {
+            actions["Test py35"]() 
+        }
     }
 }
