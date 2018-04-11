@@ -3,9 +3,9 @@
 See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
-import aws
+import aws, buildvars
 from fabric.api import sudo, local
-from buildercore import core, bootstrap, config, keypair, project, utils
+from buildercore import core, bootstrap, config, keypair, project, utils, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
@@ -81,29 +81,43 @@ def aws_update_projects(pname):
     "calls state.highstate on ALL projects matching <projectname>-*"
     return aws_update_many_projects([pname])
 
+@cached
+def cached_master_ip(stackname):
+    return core.stack_data(stackname)[0]['private_ip_address']
+
 @debugtask
 @requires_aws_stack
 def remaster_minion(stackname, new_master_stackname):
     "tell minion who their new master is. deletes any existing master key on minion"
     # TODO: turn this into a decorator
     import cfn
+    # start the machine if it's stopped
+    # you might also want to acquire a lock so alfred doesn't stop things
     cfn._check_want_to_be_running(stackname, 1)
 
-    master_ip = core.stack_data(new_master_stackname)[0]['private_ip_address']
-
+    master_ip = cached_master_ip(new_master_stackname)
     print('re-mastering %s to %s' % (stackname, master_ip))
 
+    context = context_handler.load_context(stackname)
+    context = cfngen.set_master_address(context, master_ip) # mutator
+
+    # update context
+    context_handler.write_context(stackname, context)
+
+    # update buildvars
+    buildvars.refresh(stackname, context)
+
+    # remove knowledge of old master
     def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
-        sudo("sed -i -e 's/^master:.*$/master: %s/g' /etc/salt/minion" % master_ip)
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
-    context = None # will be supplied for us
-    bootstrap.update_ec2_stack(stackname, context, concurrency='serial', master_ip=master_ip)
+
+    # update ec2 nodes
+    bootstrap.update_ec2_stack(stackname, context)
 
 @debugtask
 @requires_aws_stack
 def remaster_all_minions(new_master_stackname):
-    import cfn
     LOG.info('new master is: %s', new_master_stackname)
     ec2stacks = project.ec2_projects()
     ignore = [
@@ -142,7 +156,6 @@ def remaster_all_minions(new_master_stackname):
                         continue
                     LOG.info("*" * 80)
                     LOG.info("updating: %s" % stackname)
-                    cfn.update_template(stackname)
                     remaster_minion(stackname, new_master_stackname)
                     open('remastered.txt', 'a').write("%s\n" % stackname)
                 except KeyboardInterrupt:
