@@ -15,7 +15,7 @@ elifePipeline {
         }
         for (int i = 0; i < pythons.size(); i++) {
             def python = pythons.get(i)
-            actions["Python ${python}"] = {
+            actions["Test ${python}"] = {
                 try {
                     sh "tox -e ${python}"
                 } finally {
@@ -23,6 +23,9 @@ elifePipeline {
                 }
             }
         }
-        parallel actions
+        // currently unstable due to CloudFormation rate limiting
+        //parallel actions
+        actions["Test py27"]() 
+        actions["Test py35"]() 
     }
 }
