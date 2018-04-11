@@ -150,7 +150,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
 def set_master_address(data, master_ip=None):
     "can update both context and buildvars data"
-    master_ip = master_ip or data['ec2'].get('master_ip') #or data['project']['aws']['ec2']['master_ip']
+    master_ip = master_ip or data['ec2'].get('master_ip')  # or data['project']['aws']['ec2']['master_ip']
     ensure(master_ip, "a master-ip was neither explicitly given nor found in the data provided")
     data['ec2']['master_ip'] = master_ip
     if 'aws' in data['project']:

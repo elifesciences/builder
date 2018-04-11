@@ -3,15 +3,23 @@
 See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
-import aws, buildvars
+import aws, buildvars, utils
 from fabric.api import sudo, local
-from buildercore import core, bootstrap, config, keypair, project, utils, cfngen, context_handler
-from buildercore.utils import lmap, exsubdict
+from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
+from buildercore.utils import lmap, exsubdict, mkidx
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
 
 LOG = logging.getLogger(__name__)
+
+@debugtask
+def update(master_stackname=None):
+    master_stackname = master_stackname or core.find_master(aws.find_region())
+    bootstrap.update_stack(master_stackname, service_list=[
+        'ec2' # master-server should be a self-contained EC2 instance
+    ])
+    bootstrap.remove_all_orphaned_keys(master_stackname)
 
 #
 #
@@ -87,7 +95,7 @@ def cached_master_ip(stackname):
 
 @debugtask
 @requires_aws_stack
-def remaster_minion(stackname, new_master_stackname):
+def remaster(stackname, new_master_stackname):
     "tell minion who their new master is. deletes any existing master key on minion"
     # TODO: turn this into a decorator
     import cfn
@@ -99,25 +107,43 @@ def remaster_minion(stackname, new_master_stackname):
     print('re-mastering %s to %s' % (stackname, master_ip))
 
     context = context_handler.load_context(stackname)
+    if context.get('ec2', {}).get('master_ip') == master_ip:
+        LOG.info("already remastered: %s", stackname)
+        try:
+            utils.get_input('any key to skip, ctrl-c to carry on')
+            return
+        except KeyboardInterrupt:
+            LOG.info("not skipping")
+
+    LOG.info("setting new master address")
     context = cfngen.set_master_address(context, master_ip) # mutator
 
+    LOG.info("upgrading salt client")
+    pdata = core.project_data_for_stackname(stackname)
+    context['project']['salt'] = pdata['salt']
+
     # update context
+    LOG.info("updating context")
     context_handler.write_context(stackname, context)
 
     # update buildvars
+    LOG.info("updating buildvars")
     buildvars.refresh(stackname, context)
 
     # remove knowledge of old master
     def work():
         sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
+    LOG.info("removing old master key from minion")
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
 
     # update ec2 nodes
+    LOG.info("updating nodes")
     bootstrap.update_ec2_stack(stackname, context)
+    return True
 
 @debugtask
 @requires_aws_stack
-def remaster_all_minions(new_master_stackname):
+def remaster_all(new_master_stackname):
     LOG.info('new master is: %s', new_master_stackname)
     ec2stacks = project.ec2_projects()
     ignore = [
@@ -130,7 +156,7 @@ def remaster_all_minions(new_master_stackname):
     # only update ec2 instances in the same region as the new master
     region = aws.find_region(new_master_stackname)
     active_stacks = core.active_stack_names(region)
-    stack_idx = utils.mkidx(lambda v: core.parse_stackname(v)[0], active_stacks)
+    stack_idx = mkidx(lambda v: core.parse_stackname(v)[0], active_stacks)
 
     def sortbyenv(n):
         adhoc = 0 # do these first
@@ -140,23 +166,28 @@ def remaster_all_minions(new_master_stackname):
             'end2end': 3,
             'prod': 4, # update prod last
         }
-        return order.get(core.parse_stackname(n)[-1], adhoc)
+        pname, iid = core.parse_stackname(n)
+        return order.get(iid, adhoc)
 
-    remastered_list = open('remastered.txt', 'r').readlines() if os.path.exists('remastered.txt') else []
+    remastered_list = open('remastered.txt', 'r').read().splitlines() if os.path.exists('remastered.txt') else []
+
     for pname in pname_list:
         if pname not in stack_idx:
             continue
-        stack_list = sorted(stack_idx[pname], key=sortbyenv)
-        LOG.info("%r instances: %s" % (pname, ", ".join(stack_list)))
+        project_stack_list = sorted(stack_idx[pname], key=sortbyenv)
+        LOG.info("%r instances: %s" % (pname, ", ".join(project_stack_list)))
         try:
-            for stackname in stack_list:
+            for stackname in project_stack_list:
                 try:
                     if stackname in remastered_list:
                         LOG.info("already updated, skipping stack: %s", stackname)
                         continue
                     LOG.info("*" * 80)
                     LOG.info("updating: %s" % stackname)
-                    remaster_minion(stackname, new_master_stackname)
+                    utils.get_input('continue? ctrl-c to quit')
+                    if not remaster(stackname, new_master_stackname):
+                        LOG.warn("failed to remaster %s, stopping further remasters to project %r", stackname, pname)
+                        break
                     open('remastered.txt', 'a').write("%s\n" % stackname)
                 except KeyboardInterrupt:
                     LOG.warn("ctrl-c, skipping stack: %s", stackname)

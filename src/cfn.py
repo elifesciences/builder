@@ -115,7 +115,7 @@ def update_infrastructure(stackname):
         bootstrap.update_stack(stackname, service_list=['terraform'])
 
 
-# TODO: this task should probably live in `master.py`
+# TODO: deprecated, this task now lives in `master.py`
 @debugtask
 def update_master():
     master_stackname = core.find_master(aws.find_region())
