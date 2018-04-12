@@ -13,17 +13,15 @@ def render(context):
     if not context['fastly']:
         return '{}'
 
-    ensure(len(context['fastly']['subdomains']) == 1, "Only 1 subdomain for Fastly CDNs is supported")
-
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {
                 # must be unique but only in a certain context like this, use some constants
                 RESOURCE_NAME_FASTLY: {
                     'name': context['stackname'],
-                    'domain': {
-                        'name': context['fastly']['subdomains'][0],
-                    },
+                    'domain': [
+                        {'name': subdomain} for subdomain in context['fastly']['subdomains']
+                    ],
                     'backend': {
                         'address': context['full_hostname'],
                         'name': context['stackname'],

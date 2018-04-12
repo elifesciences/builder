@@ -26,12 +26,49 @@ class TestBuildercoreTerraform(base.BaseCase):
                         # must be unique but only in a certain context like this, use some constants
                         'fastly-cdn': {
                             'name': 'project-with-fastly-minimal--prod',
-                            'domain': {
+                            'domain': [{
                                 'name': 'prod--cdn-of-www.example.org'
-                            },
+                            }],
                             'backend': {
                                 'address': 'prod--www.example.org',
                                 'name': 'project-with-fastly-minimal--prod',
+                                'port': 443,
+                                'use_ssl': True,
+                                'ssl_check_cert': False
+                            },
+                            'force_destroy': True
+                        }
+                    }
+                },
+            },
+            data
+        )
+
+    def test_fastly_template_complex(self):
+        extra = {
+            'stackname': 'project-with-fastly-complex--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-complex', **extra)
+        terraform_template = terraform.render(context)
+        data = json.loads(terraform_template)
+        self.assertEqual(
+            {
+                'resource': {
+                    'fastly_service_v1': {
+                        # must be unique but only in a certain context like this, use some constants
+                        'fastly-cdn': {
+                            'name': 'project-with-fastly-complex--prod',
+                            'domain': [
+                                {
+                                    'name': 'prod--cdn1-of-www.example.org'
+                                },
+                                {
+                                    'name': 'prod--cdn2-of-www.example.org'
+                                },
+                            ],
+                            'backend': {
+                                'address': 'prod--www.example.org',
+                                'name': 'project-with-fastly-complex--prod',
                                 'port': 443,
                                 'use_ssl': True,
                                 'ssl_check_cert': False
