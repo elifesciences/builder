@@ -6,7 +6,7 @@ elifePipeline {
     lock('builder') {
         stage 'Update', {
             sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent'
-            sh 'rm -r .tox'
+            sh 'rm -rf .tox'
         }
 
         def pythons = ['py27', 'py35']

@@ -42,7 +42,9 @@ class BaseCase(TestCase):
     def generate_environment_name(self):
         """to avoid multiple people clashing while running their builds
            and new builds clashing with older ones"""
-        return "%s-%s-%s" % (check_output('whoami').rstrip().decode(), datetime.utcnow().strftime("%Y%m%d%H%M%S"), randint(1, 1000000))
+        who = check_output('whoami').rstrip().decode()
+        now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        return "-".join([who, now, str(randint(1, 1000000))])
 
     # pyline: disable=invalid-name
     def assertAllPairsEqual(self, fn, pair_lst):
