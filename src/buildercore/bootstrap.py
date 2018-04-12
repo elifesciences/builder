@@ -293,7 +293,7 @@ def update_sqs_stack(stackname, context, **kwargs):
     sub_sqs(stackname, context['sqs'], region)
 
 @updates('s3')
-def update_s3_stack(stackname, context):
+def update_s3_stack(stackname, context, **kwargs):
     """
     Connects S3 buckets (existing or created by Cloud Formation) to SQS queues
     that will be notified of files being added there.
