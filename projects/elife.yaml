@@ -338,9 +338,6 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-gateway"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -349,9 +346,18 @@ api-gateway:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+        end2end:
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-gateway"
+        continuumtest:
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-gateway"
         prod:
             fastly:
                 subdomains:
+                    - "{instance}--cdn-gateway"
                     - api
             cloudfront:
                 subdomains: []
