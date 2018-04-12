@@ -20,8 +20,6 @@ We want to add an external volume to an EC2 instance to increase available space
 import os, json, copy
 import re
 from collections import OrderedDict, namedtuple
-import backoff
-import boto
 import netaddr
 from slugify import slugify
 from . import utils, cloudformation, terraform, core, project, context_handler
@@ -301,15 +299,6 @@ def read_template(stackname):
 #
 #
 
-def _log_backoff(event):
-    LOG.warn("Backing off in validating project %s", event['args'][0])
-
-@backoff.on_exception(backoff.expo, boto.connection.BotoServerError, on_backoff=_log_backoff, max_time=30)
-def validate_aws_template(pname, rendered_template):
-    "remote cloudformation template checks."
-    conn = core.connect_aws_with_pname(pname, 'cfn')
-    return conn.validate_template(rendered_template)
-
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"
     try:
@@ -338,7 +327,7 @@ def validate_project(pname, **extra):
     template = quick_render(pname)
     pdata = project.project_data(pname)
     altconfig = None
-    validate_aws_template(pname, template)
+    cloudformation.validate_template(pname, template)
     more_validation(template)
     # validate all alternative configurations
     for altconfig in pdata.get('aws-alt', {}).keys():
@@ -347,7 +336,7 @@ def validate_project(pname, **extra):
             'alt-config': altconfig
         }
         template = quick_render(pname, **extra)
-        validate_aws_template(pname, template)
+        cloudformation.validate_template(pname, template)
 
 #
 # create new template
