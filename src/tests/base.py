@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 from os.path import join
+from random import randint
 from subprocess import check_output
 # pylint: disable-msg=import-error
 from unittest2 import TestCase
@@ -41,7 +42,7 @@ class BaseCase(TestCase):
     def generate_environment_name(self):
         """to avoid multiple people clashing while running their builds
            and new builds clashing with older ones"""
-        return check_output('whoami').rstrip().decode() + datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        return "%s-%s-%s" % (check_output('whoami').rstrip().decode(), datetime.utcnow().strftime("%Y%m%d%H%M%S"), randint(1, 1000000))
 
     # pyline: disable=invalid-name
     def assertAllPairsEqual(self, fn, pair_lst):
