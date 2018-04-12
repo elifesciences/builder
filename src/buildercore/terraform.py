@@ -43,7 +43,7 @@ def render(context):
 
 def init(stackname):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
-    t = Terraform(working_dir=working_dir)
+    terraform = Terraform(working_dir=working_dir)
     with open('%s/backend.tf' % working_dir, 'w') as fp:
         fp.write(json.dumps({
             'terraform': {
@@ -56,17 +56,17 @@ def init(stackname):
                 },
             },
         }))
-    t.init(input=False, capture_output=False, raise_on_error=True)
-    return t
+    terraform.init(input=False, capture_output=False, raise_on_error=True)
+    return terraform
 
 @only_if('fastly')
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
-    t = init(stackname)
-    t.apply(input=False, capture_output=False, raise_on_error=True)
+    terraform = init(stackname)
+    terraform.apply(input=False, capture_output=False, raise_on_error=True)
 
 @only_if('fastly')
 def destroy(stackname, context):
-    t = init(stackname)
-    t.destroy(input=False, capture_output=False, raise_on_error=True)
+    terraform = init(stackname)
+    terraform.destroy(input=False, capture_output=False, raise_on_error=True)
     # TODO: also destroy files
