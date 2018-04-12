@@ -40,10 +40,10 @@ def ensure_destroyed(stackname):
     try:
         return bootstrap.delete_stack(stackname)
     except context_handler.MissingContextFile as e:
-        print("Context does not exist anymore or was never created, exiting idempotently")
+        LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
-            print("Not even the CloudFormation template exists anymore, exiting idempotently")
+            LOG.warn("Not even the CloudFormation template exists anymore, exiting idempotently")
             return
         raise
 
