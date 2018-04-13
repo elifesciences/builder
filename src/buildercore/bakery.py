@@ -54,25 +54,6 @@ def basebox():
     "returns most recent basebox ami"
     return utils.last(find_ami("basebox"))
 
-@testme
-@osissue("nothing appears to be using this function")
-def project_ami(projectname, base_ami_override=None):
-    """returns most recent project ami OR
-    the base ami override if one has been specified OR
-    the most recent basebox ami, otherwise None if none
-    of those things can be found.
-
-    This lets us say "if the elife-website project has
-    it's own ami, use that, otherwise, use this Ubuntu 12.04
-    ami override."
-
-    or "if the elife-api doesn't have it's own project ami and
-    has no other special requirements, use the basebox ami for Ubuntu 14.04"""
-    # pylint: disable=no-member
-    base_ami_override = type('_', (object,), {'id': base_ami_override})()
-    obj = utils.last(find_ami(projectname)) or base_ami_override.id or basebox()
-    return obj.id if hasattr(obj, 'id') else obj
-
 def update_ami():
     "we don't update AMIs! we create new ones from a running stack and then delete old ones"
     pass
