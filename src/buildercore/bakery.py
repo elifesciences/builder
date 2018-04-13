@@ -48,11 +48,3 @@ def find_ami(projectname=None):
 
     # when filtered by project, most recent ami is the last item
     return sorted(results, key=lambda image: image.name)
-
-def update_ami():
-    "we don't update AMIs! we create new ones from a running stack and then delete old ones"
-    pass
-
-def destroy_ami():
-    "finds any old AMI images and deletes them."
-    pass
