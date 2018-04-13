@@ -72,7 +72,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'name': 'project-with-fastly-complex--prod',
                                 'port': 443,
                                 'use_ssl': True,
-                                'ssl_check_cert': False
+                                'ssl_cert_hostname': 'prod--www.example.org',
+                                'ssl_check_cert': True
                             },
                             'force_destroy': True
                         }
