@@ -9,11 +9,12 @@ elifePipeline {
             sh 'rm -rf .tox'
         }
 
-        def pythons = ['py27', 'py35']
-        def actions = [:]
-        actions['Static checking'] = {
+        stage 'Static checking', {
             elifeLocalTests()
         }
+
+        def pythons = ['py27', 'py35']
+        def actions = [:]
         for (int i = 0; i < pythons.size(); i++) {
             def python = pythons.get(i)
             actions["Test ${python}"] = {
@@ -26,7 +27,6 @@ elifePipeline {
         }
         // currently unstable due to CloudFormation rate limiting
         //parallel actions
-        actions["Static checking"]()
         stage "Test py27", {
             actions["Test py27"]() 
         }
