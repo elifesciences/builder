@@ -33,18 +33,3 @@ def create_ami(stackname):
         return image.state == 'pending'
     utils.call_while(is_pending, update_msg="Waiting for AWS to bake AMI %s ... " % ami_id)
     return str(ami_id) # this should be used to update the stack templates
-
-def find_ami(projectname=None):
-    "finds the AMI for the given project"
-    kwargs = {
-        'owners': ['self'], # otherwise you get *all* (public) images on AWS
-        'filters': {},
-    }
-    if projectname:
-        kwargs['filters']['name'] = '%s.*' % projectname
-
-    conn = core.connect_aws_with_pname(projectname, 'ec2')
-    results = conn.get_all_images(**kwargs)
-
-    # when filtered by project, most recent ami is the last item
-    return sorted(results, key=lambda image: image.name)
