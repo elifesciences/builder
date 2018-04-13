@@ -49,11 +49,6 @@ def find_ami(projectname=None):
     # when filtered by project, most recent ami is the last item
     return sorted(results, key=lambda image: image.name)
 
-@osissue("only packer.py is using this. might be better off in there.")
-def basebox():
-    "returns most recent basebox ami"
-    return utils.last(find_ami("basebox"))
-
 def update_ami():
     "we don't update AMIs! we create new ones from a running stack and then delete old ones"
     pass
