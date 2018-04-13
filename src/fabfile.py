@@ -12,8 +12,6 @@ from cfn import *
 # aws tasks are not working for some reason.. possibly circular dependency
 import aws
 import metrics
-# packer functionality not tested properly since going public
-#import packer
 import tasks
 import master
 import askmaster
