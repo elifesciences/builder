@@ -27,10 +27,8 @@ def render(context):
                         'name': context['stackname'],
                         'port': 443,
                         'use_ssl': True,
-                        'ssl_check_cert': False # bad option
-                        # it's for minimal fuss. Before we start customizing this, a lot of the risk to be tackled
-                        # is integrating everything together with a good lifecycle for adding, modifying and removing
-                        # CDNs that point to CloudFormation-managed resources.
+                        'ssl_cert_hostname': context['full_hostname'],
+                        'ssl_check_cert': True,
                     },
                     'force_destroy': True
                 }
