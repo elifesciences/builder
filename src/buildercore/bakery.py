@@ -5,9 +5,7 @@ We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
 from buildercore import core, utils, bootstrap, config
-from .decorators import osissue, testme
 
-@testme
 def ami_name(stackname):
     # elife-api.2015-12-31
     return "%s.%s" % (core.project_name_from_stackname(stackname), utils.ymd())
@@ -20,7 +18,7 @@ def create_ami(stackname):
     ec2 = core.find_ec2_instances(stackname)[0]
     kwargs = {
         'instance_id': ec2.id,
-        'name': core.ami_name(stackname),
+        'name': ami_name(stackname),
         'no_reboot': True,
         #'dry_run': True
     }
