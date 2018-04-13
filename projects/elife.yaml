@@ -945,6 +945,9 @@ elife-alfred:
         ext:
             size: 100 # GB
             type: gp2
+        s3:
+            "{instance}-elife-alfred":
+                deletion-policy: retain
     aws-alt:
         prod:
             subdomains:
