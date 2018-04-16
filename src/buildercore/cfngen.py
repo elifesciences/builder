@@ -118,8 +118,9 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         LOG.warn("stack needs it's context refreshed: %s", stackname)
         # we can now assume these will always be dicts
 
-    context['ec2']['type'] = context['project']['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
-    context = set_master_address(context)
+    if isinstance(context['ec2'], dict): # the other case is aws.ec2 == False
+        context['ec2']['type'] = context['project']['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
+        context = set_master_address(context)
 
     build_context_elb(context)
 
