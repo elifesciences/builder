@@ -21,9 +21,6 @@ venv/
 logs/
 public/
 private/
-packer/
-!packer/*-meta.json
-packer_cache/
 downloads
 .coverage.*
 .coverage

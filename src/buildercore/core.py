@@ -681,15 +681,6 @@ def project_data_for_stackname(stackname):
         project_data = project.set_project_alt(project_data, 'aws', instance_id)
     return project_data
 
-#
-# might be better off in bakery.py?
-#
-
-@testme
-def ami_name(stackname):
-    # elife-api.2015-12-31
-    return "%s.%s" % (project_name_from_stackname(stackname), utils.ymd())
-
 def listfiles_remote(stackname, path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     ensure(path, "path to remote directory required")
