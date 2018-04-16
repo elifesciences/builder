@@ -15,6 +15,7 @@ LOG = logging.getLogger(__name__)
 
 @debugtask
 def update(master_stackname=None):
+    "same as `cfn.update` but also removes any orphaned minion keys"
     master_stackname = master_stackname or core.find_master(aws.find_region())
     bootstrap.update_stack(master_stackname, service_list=[
         'ec2' # master-server should be a self-contained EC2 instance
@@ -45,6 +46,7 @@ def write_missing_keypairs_to_s3():
 
     lmap(write, to_upload)
 
+# TODO: implement or remove
 def write_missing_context_to_s3():
     pass
 
@@ -76,6 +78,7 @@ def server_access():
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
     return result.return_code == 0
 
+# TODO: deletion candidate
 @echo_output
 def aws_update_many_projects(pname_list):
     minions = ' or '.join([pname + "-*" for pname in pname_list])
@@ -83,6 +86,7 @@ def aws_update_many_projects(pname_list):
     with core.stack_conn(core.find_master(region)):
         sudo("salt -C '%s' state.highstate --retcode-passthrough" % minions)
 
+# TODO: deletion candidate
 @debugtask
 @requires_project
 def aws_update_projects(pname):
@@ -90,8 +94,9 @@ def aws_update_projects(pname):
     return aws_update_many_projects([pname])
 
 @cached
-def cached_master_ip(stackname):
-    return core.stack_data(stackname)[0]['private_ip_address']
+def _cached_master_ip(master_stackname):
+    "provides a small time saving when remastering many minions"
+    return core.stack_data(master_stackname)[0]['private_ip_address']
 
 @debugtask
 @requires_aws_stack
@@ -103,8 +108,8 @@ def remaster(stackname, new_master_stackname):
     # you might also want to acquire a lock so alfred doesn't stop things
     cfn._check_want_to_be_running(stackname, 1)
 
-    master_ip = cached_master_ip(new_master_stackname)
-    print('re-mastering %s to %s' % (stackname, master_ip))
+    master_ip = _cached_master_ip(new_master_stackname)
+    LOG.info('re-mastering %s to %s', stackname, master_ip)
 
     context = context_handler.load_context(stackname)
     if context.get('ec2') == True:
@@ -113,6 +118,10 @@ def remaster(stackname, new_master_stackname):
         LOG.warn("bad context for stack: %s", stackname)
         context['ec2'] = {}
         context['project']['aws']['ec2'] = {}
+
+    if context.get('ec2') == False:
+        LOG.info("ec2 == False, skipping %s", stackname)
+        return
 
     if context['ec2'].get('master_ip') == master_ip:
         LOG.info("already remastered: %s", stackname)
@@ -145,8 +154,23 @@ def remaster(stackname, new_master_stackname):
 
     # update ec2 nodes
     LOG.info("updating nodes")
-    bootstrap.update_ec2_stack(stackname, context)
+    bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
     return True
+
+# TODO: extract just the salt update part from `remaster`
+@debugtask
+@requires_aws_stack
+def update_salt(stackname):
+    current_master_stack = core.find_master_for_stack(stackname)
+    return remaster(stackname, current_master_stack)
+
+# TODO: extract just the salt update part from `remaster`
+@debugtask
+def update_salt_master(region=None):
+    "update the version of Salt installed on the master-server."
+    region = region or aws.find_region()
+    current_master_stackname = core.find_master(region)
+    return remaster(current_master_stackname, current_master_stackname)
 
 @debugtask
 @requires_aws_stack
@@ -203,6 +227,7 @@ def remaster_all(new_master_stackname):
                 try:
                     if stackname in remastered_list:
                         LOG.info("already updated, skipping stack: %s", stackname)
+                        open('remastered.txt', 'a').write("%s\n" % stackname)
                         continue
                     LOG.info("*" * 80)
                     LOG.info("updating: %s" % stackname)
