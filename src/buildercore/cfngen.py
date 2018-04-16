@@ -329,11 +329,6 @@ def read_template(stackname):
 #
 #
 
-def validate_aws_template(pname, rendered_template):
-    "remote cloudformation template checks."
-    conn = core.connect_aws_with_pname(pname, 'cfn')
-    return conn.validate_template(rendered_template)
-
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"
     try:
@@ -358,28 +353,20 @@ def more_validation(json_template_str):
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
     only called during testing"""
-    import time, boto
     LOG.info('validating %s', pname)
     template = quick_render(pname)
     pdata = project.project_data(pname)
     altconfig = None
-    try:
-        validate_aws_template(pname, template)
-        more_validation(template)
-        # validate all alternative configurations
-        for altconfig in pdata.get('aws-alt', {}).keys():
-            LOG.info('validating %s, %s', pname, altconfig)
-            extra = {
-                'alt-config': altconfig
-            }
-            template = quick_render(pname, **extra)
-            validate_aws_template(pname, template)
-            time.sleep(0.5) # be nice, avoid any rate limiting
-
-    except boto.connection.BotoServerError:
-        msg = "failed:\n" + template + "\n%s (%s) template failed validation" % (pname, altconfig if altconfig else 'normal')
-        LOG.exception(msg)
-        raise
+    cloudformation.validate_template(pname, template)
+    more_validation(template)
+    # validate all alternative configurations
+    for altconfig in pdata.get('aws-alt', {}).keys():
+        LOG.info('validating %s, %s', pname, altconfig)
+        extra = {
+            'alt-config': altconfig
+        }
+        template = quick_render(pname, **extra)
+        cloudformation.validate_template(pname, template)
 
 #
 # create new template

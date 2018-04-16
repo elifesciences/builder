@@ -1,7 +1,9 @@
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 import json
 from pprint import pformat
+import backoff
 from fabric.api import task, local, run, sudo, put, get, abort, settings
+import fabric.exceptions
 import fabric.state
 from fabric.contrib import files
 import aws, utils, buildvars
@@ -314,11 +316,15 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
     allow_missing, use_bootstrap_user = lmap(strtobool, [allow_missing, use_bootstrap_user])
-    with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
-        if allow_missing and not files.exists(path):
-            return # skip download
-        get(path, destination, use_sudo=True)
 
+    @backoff.on_exception(backoff.expo, fabric.exceptions.NetworkError, max_time=60)
+    def _download(path, destination):
+        with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
+            if allow_missing and not files.exists(path):
+                return # skip download
+            get(path, destination, use_sudo=True)
+
+    _download(path, destination)
 
 @task
 @requires_aws_stack
