@@ -8,7 +8,7 @@ import re
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 from . import config
-from .core import connect_aws_with_stack, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
+from .core import boto_conn, connect_aws_with_stack, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
 from .context_handler import load_context, download_from_s3
 
@@ -120,7 +120,7 @@ def _last_ec2_start_time(stackname):
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
     LOG.info("Selected for stopping: EC2 %s, RDS %s", ec2_to_be_stopped, rds_to_be_stopped)
     if ec2_to_be_stopped:
-        _ec2_connection(stackname).stop_instances(ec2_to_be_stopped)
+        _ec2_connection(stackname).filter(InstanceIDs=ec2_to_be_stopped).stop()
     if rds_to_be_stopped:
         [_rds_connection(stackname).stop_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_stopped]
 
@@ -278,9 +278,8 @@ def _ec2_nodes_states(stackname, node_ids=None):
 def _rds_nodes_states(stackname):
     return {i['DBInstanceIdentifier']: i['DBInstanceStatus'] for i in find_rds_instances(stackname)}
 
-
 def _ec2_connection(stackname):
-    return connect_aws_with_stack(stackname, 'ec2')
+    return boto_conn(stackname, 'ec2')
 
 def _rds_connection(stackname):
-    return connect_aws_with_stack(stackname, 'rds', with_boto3=True)
+    return boto_conn(stackname, 'rds')

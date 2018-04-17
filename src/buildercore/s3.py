@@ -1,7 +1,6 @@
 import os
-import boto3
 from botocore.exceptions import ClientError
-from . import config
+from . import config, core
 from .utils import isstr, ensure
 from kids.cache import cache as cached
 from io import IOBase
@@ -9,15 +8,12 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def connect_s3(region='us-east-1'):
-    return boto3.resource('s3', region_name=region)
-
 @cached
 def builder_bucket():
     "returns connection to the bucket where builder stores templates and credentials."
     try:
         nom, region = config.BUILDER_BUCKET, config.BUILDER_REGION
-        resource = connect_s3(region)
+        resource = core.boto_resource('s3', region)
         bucket = resource.Bucket(nom)
         ensure(bucket in resource.buckets.all(), "bucket %r in region %r does not exist" % (nom, region))
         return bucket

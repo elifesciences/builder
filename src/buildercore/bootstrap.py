@@ -220,7 +220,7 @@ def sub_sqs(stackname, context_sqs, region):
     necessary, adding both the subscription and the IAM policy to let the SNS
     topic write to the queue
     """
-    assert isinstance(context_sqs, dict), ("Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
+    ensure(isinstance(context_sqs, dict), "Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
 
     sqs = core.boto_sqs_conn(region)
     sns = core.boto_sns_conn(region)
@@ -269,7 +269,7 @@ def update_s3_stack(stackname, context, **kwargs):
 
     ensure(isinstance(context_s3, dict), "Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
 
-    s3 = core.boto_s3_conn(region)
+    s3 = core.boto_client('s3', region) # TODO: port to s3.resource if possible
     for bucket_name in context_s3:
         LOG.info('Setting NotificationConfiguration for bucket %s', bucket_name, extra={'stackname': stackname})
         if 'sqs-notifications' in context_s3[bucket_name]:
@@ -370,27 +370,15 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
 #  attached stack resources, ec2 data
 #
 
-@core.requires_active_stack
-def stack_resources(stackname):
-    "returns a list of resources provisioned by the given stack"
-    return connect_aws_with_stack(stackname, 'cfn').describe_stack_resources(stackname)
-
-def ec2_instance_data(stackname):
-    "returns the ec2 instance data from the first ec2 instance the stack has"
-    assert stackname, "stackname must be valid, not None"
-    ec2 = first([r for r in stack_resources(stackname) if r.resource_type == "AWS::EC2::Instance"])
-    conn = connect_aws_with_stack(stackname, 'ec2')
-    return conn.get_only_instances([ec2.physical_resource_id])[0]
-
 @cached
 def master_data(region):
     "returns the ec2 instance data for the master-server"
     stackname = core.find_master(region)
-    assert stackname, ("Cannot find the master in region %s" % region)
-    return ec2_instance_data(stackname)
+    master_inst = first(core.find_ec2_instances(stackname))
+    return master_inst.meta.data
 
 def master(region, key):
-    return getattr(master_data(region), key)
+    return master_data(region)[key]
 
 #
 # bootstrap stack
@@ -553,7 +541,7 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
-        master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'private_ip_address'))
+        master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'PrivateIpAddress'))
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
 
         if is_masterless:
