@@ -76,6 +76,7 @@ def nested_dictmap(fn, ddict):
     return ddict
 
 def subdict(ddict, key_list):
+    # aka delall rmkeys
     return {k: v for k, v in ddict.items() if k in key_list}
 
 def exsubdict(ddict, key_list):
