@@ -1,4 +1,14 @@
-"handles the storage of context from AWS"
+# Handles the storage of 'context' with AWS
+#
+# To build services we first create a simple dictionary of data about
+# the service we want to build. This is called the 'context'.
+# This data is serialised to JSON and stored locally and on AWS S3.
+# A subset of this data is stored on the EC2 instance, if an EC2
+# instance exists, and are called `build_vars`.
+#
+# See cfngen.py for building the context
+# See cloudformation.py and trop.py for rendering Cloudformation templates with this context data
+# See terraform.py for rendering Terraform templates with this context data
 
 import os, json
 from os.path import join
@@ -52,6 +62,19 @@ def download_from_s3(stackname, refresh=False):
         os.unlink(expected_path)
     s3.download(key, expected_path)
     return True
+
+def only_if(servicename):
+    """Decorator that only executes an update function if the context contains a particular servicename that would need it"""
+    def decorate_with_only_if(fn):
+        def decorated_with_only_if(stackname, context, **kwargs):
+            # only update service if stack is using given service
+            LOG.info("Try to update '%s'", servicename)
+            if context.get(servicename):
+                # TODO: context is not always necessary in fn implementations. Can we avoid passing it when not needed?
+                return fn(stackname, context, **kwargs)
+            LOG.info("Skipped '%s' as not in the context", servicename)
+        return decorated_with_only_if
+    return decorate_with_only_if
 
 class MissingContextFile(RuntimeError):
     pass

@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2016.3.6' # the version of salt these project use
+    salt: '2017.7.5' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -45,6 +45,8 @@ defaults:
             # ami: ami-92002785   # elife 'basebox.2016-11-03'
             # use a master server or go ronin?
             masterless: false
+            # optional: pin a master server for all new instances of a project
+            master_ip: 10.0.2.198
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
@@ -124,6 +126,11 @@ defaults:
             errors: null
             default-ttl: 0 # seconds
             logging: false
+        fastly:
+            # fastly defaults only used if a 'fastly' section present in project
+            subdomains: []
+            dns:
+                cname: u2.shared.global.fastly.net
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -232,8 +239,7 @@ master-server:
     # see: https://github.com/elifesciences/builder-private-example
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
+        ec2: {}
         ports:
             - 22
             - 4506: # salt publish port
@@ -243,8 +249,7 @@ master-server:
                 cidr-ip: 10.0.0.0/16
             - 8080 # chemist, Github webhooks for formulas
     aws-alt: {}
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+    vagrant: {}
 
 lax:
     description: article-json store
@@ -333,7 +338,6 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
-
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -343,20 +347,21 @@ api-gateway:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         end2end:
-            cloudfront:
-                subdomains: 
+            fastly:
+                subdomains:
                     - "{instance}--cdn-gateway"
-                headers:
-                    - Accept
         continuumtest:
-            cloudfront:
-                subdomains: 
+            fastly:
+                subdomains:
                     - "{instance}--cdn-gateway"
-                headers:
-                    - Accept
         prod:
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-gateway"
+                    - api
             cloudfront:
-                subdomains: 
+                subdomains: []
+                subdomains-without-dns: 
                     - "{instance}--cdn-gateway"
                     - api
                 headers:
@@ -938,6 +943,9 @@ elife-alfred:
         ext:
             size: 100 # GB
             type: gp2
+        s3:
+            "{instance}-elife-alfred":
+                deletion-policy: retain
     aws-alt:
         prod:
             subdomains:

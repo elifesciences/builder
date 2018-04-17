@@ -10,7 +10,8 @@ from pprint import pformat
 from functools import partial
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, keypair, bvars, core, context_handler, project
+from . import utils, config, keypair, bvars, core, context_handler, project, terraform
+from .context_handler import only_if as updates
 from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
@@ -83,7 +84,7 @@ def create_stack(stackname):
     return _create_generic_stack(stackname, parameters, on_start, on_error)
 
 def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
-    "simply creates the stack of resources on AWS, talking to CloudFormation."
+    "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
     parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
@@ -95,7 +96,8 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
-        setup_ec2(stackname, context['ec2'])
+        terraform.update(stackname, context)
+        setup_ec2(stackname, context)
         return True
 
     except StackTakingALongTimeToComplete as err:
@@ -138,10 +140,12 @@ def _wait_until_in_progress(stackname):
     ensure(final_stack.stack_status in ['CREATE_COMPLETE'],
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
-def setup_ec2(stackname, context_ec2):
-    if not context_ec2:
-        return
+#
+#
+#
 
+@updates('ec2')
+def setup_ec2(stackname, context):
     def _setup_ec2_node():
         def is_resourcing():
             try:
@@ -244,26 +248,26 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns.set_raw_subscription_attribute(subscription_arn)
 
-def setup_sqs(stackname, context_sqs, region):
-    unsub_sqs(stackname, context_sqs, region)
-    sub_sqs(stackname, context_sqs, region)
+def update_sqs_stack(stackname, context, **kwargs):
+    region = context['project']['aws']['region'] # is this value suspect?
+    unsub_sqs(stackname, context['sqs'], region)
+    sub_sqs(stackname, context['sqs'], region)
 
-def update_sqs_stack(stackname, **kwargs):
-    current_context = context_handler.load_context(stackname)
-    current_context_sqs = current_context.get('sqs', {})
-
-    if current_context_sqs:
-        # stack has/had queues that may need to be created/destroyed
-        setup_sqs(stackname, current_context_sqs, current_context['project']['aws']['region'])
-
-def setup_s3(stackname, context_s3, region, account_id):
+@updates('s3')
+def update_s3_stack(stackname, context, **kwargs):
     """
     Connects S3 buckets (existing or created by Cloud Formation) to SQS queues
     that will be notified of files being added there.
 
     This function adds also a Statement to the Policy of the involved queue so that this bucket can send messages to it.
     """
-    assert isinstance(context_s3, dict), ("Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
+    context_s3 = context['s3']
+
+    # pdata = project_data_for_stackname(stackname) # suspect.
+    pdata = context['project'] # more likely
+    region = pdata['aws']['region'] # region is now pulled from context['project']['aws']['region'] like sqs. but is this correct?
+
+    ensure(isinstance(context_s3, dict), "Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
 
     s3 = core.boto_s3_conn(region)
     for bucket_name in context_s3:
@@ -361,18 +365,6 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
 
     return queue_configuration
 
-def update_s3_stack(stackname, **kwargs):
-    pdata = project_data_for_stackname(stackname)
-    if not pdata['aws']['s3']:
-        return
-    context = context_handler.load_context(stackname)
-
-    if 's3' not in context:
-        # old instance of the stack that hasn't any S3 buckets
-        return
-
-    setup_s3(stackname, context['s3'], pdata['aws']['region'], pdata['aws']['account_id'])
-
 
 #
 #  attached stack resources, ec2 data
@@ -403,10 +395,6 @@ def master(region, key):
 #
 # bootstrap stack
 #
-
-def current_template(stackname):
-    conn = connect_aws_with_stack(stackname, 'cfn')
-    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
 
 def update_template(stackname, template):
     conn = connect_aws_with_stack(stackname, 'cfn')
@@ -453,17 +441,22 @@ def write_environment_info(stackname, overwrite=False):
 @core.requires_active_stack
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
-    then only those services will be updated"""
+    then only those services will be updated
+
+    Has too many responsibilities:
+        - ec2: deploys
+        - s3, sqs, ...: infrastructure updates"""
     service_update_fns = OrderedDict([
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
-        ('sqs', update_sqs_stack)
+        ('sqs', update_sqs_stack),
+        ('terraform', terraform.update)
     ])
-    if not service_list:
-        service_list = list(service_update_fns.keys())
+    service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
-
-    [fn(stackname, **kwargs) for fn in subdict(service_update_fns, service_list).values()]
+    context = context_handler.load_context(stackname)
+    for servicename, fn in subdict(service_update_fns, service_list).items():
+        fn(stackname, context, **kwargs)
 
 def upload_master_builder_key(key):
     private_key = "/root/.ssh/id_rsa"
@@ -511,7 +504,8 @@ def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
-def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwargs):
+@updates('ec2')
+def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, **kwargs):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
@@ -519,17 +513,22 @@ def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwar
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
-    ctx = context_handler.load_context(stackname)
     pdata = ctx['project']
     # backward compatibility: old instances may not have 'ec2' key
     # consider it true if missing, as newer stacks e.g. bus--prod
     # would have it explicitly set to False
     default_ec2 = {'masterless': False, 'cluster-size': 1}
     ec2 = pdata['aws'].get('ec2', default_ec2)
+
+    # TODO: check no longer necessary
     if not ec2:
         return
+
+    # TODO: check if any active stacks still have ec2: True in their context
+    # and refresh their context then remove this check
     if ec2 is True:
         ec2 = default_ec2
+
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
     is_masterless = ec2.get('masterless', False)
@@ -551,10 +550,10 @@ def update_ec2_stack(stackname, concurrency=None, formula_revisions=None, **kwar
 
         salt_version = pdata['salt']
         install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
-        master_ip = master(region, 'private_ip_address')
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
+        master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'private_ip_address'))
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
 
         if is_masterless:
@@ -653,6 +652,8 @@ def remove_all_orphaned_keys(master_stackname):
 
 def delete_stack(stackname):
     try:
+        context = context_handler.load_context(stackname)
+        terraform.destroy(stackname, context)
         connect_aws_with_stack(stackname, 'cfn').delete_stack(stackname)
 
         def is_deleting(stackname):

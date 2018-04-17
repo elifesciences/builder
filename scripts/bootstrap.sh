@@ -10,7 +10,7 @@ echo "-----------------------------"
 
 if [ ! "$#" -ge 3 ]; then
     echo "Usage: ./bootstrap.sh <version> <minion_id> <install_master> [master_ipaddr]"
-    echo "Example: ./bootstrap.sh 2016.3.4 journal--end2end--1 false 10.0.0.1"
+    echo "Example: ./bootstrap.sh 2017.7.x journal--end2end--1 false 10.0.0.1"
     exit 1
 fi
 
@@ -119,6 +119,8 @@ if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log
 if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
 
 
+# BUG: during a minion's re-mastering the `master: ...` value may get reset if the instance is 
+# updated by another process before the old master is turned off.
 # reset the minion config and
 # put minion id in dedicated file else salt keeps recreating file
 printf "master: %s\nlog_level: info\n" "$master_ipaddr" > /etc/salt/minion

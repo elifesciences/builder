@@ -1,5 +1,7 @@
 *.pyc
 .tox/
+/build/
+/.pytest_cache/
 settings.yml
 *~
 
@@ -19,11 +21,9 @@ venv/
 logs/
 public/
 private/
-packer/
-!packer/*-meta.json
-packer_cache/
 downloads
 .coverage.*
+.coverage
 projects/*/
 scripts/customize.sh
 scripts/salt/*.minion

@@ -1,6 +1,9 @@
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
+import json
 from pprint import pformat
+import backoff
 from fabric.api import task, local, run, sudo, put, get, abort, settings
+import fabric.exceptions
 import fabric.state
 from fabric.contrib import files
 import aws, utils, buildvars
@@ -38,9 +41,11 @@ def destroy(stackname):
 def ensure_destroyed(stackname):
     try:
         return bootstrap.delete_stack(stackname)
+    except context_handler.MissingContextFile as e:
+        LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
-            print("Not even the CloudFormation template exists anymore, exiting idempotently")
+            LOG.warn("Not even the CloudFormation template exists anymore, exiting idempotently")
             return
         raise
 
@@ -56,10 +61,11 @@ def update(stackname, autostart="0", concurrency='serial'):
         return
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
-@task
+# DEPRECATED: remove alias
+@task(alias='update_template')
 @timeit
-def update_template(stackname):
-    """Limited update of the Cloudformation template.
+def update_infrastructure(stackname):
+    """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
 
@@ -74,14 +80,14 @@ def update_template(stackname):
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
-    current_template = bootstrap.current_template(stackname)
-    context, delta, current_context = cfngen.regenerate_stack(stackname, current_template, **more_context)
+    context, delta, current_context = cfngen.regenerate_stack(stackname, **more_context)
 
     if _are_there_existing_servers(current_context):
         core_lifecycle.start(stackname)
     LOG.info("Create: %s", pformat(delta.plus))
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
+    LOG.info("New Terraform generated file: %s", pformat(json.loads(delta.terraform)))
     utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template. Notice the delta *only shows changes to the template*, not to the context.')
 
     context_handler.write_context(stackname, context)
@@ -93,8 +99,7 @@ def update_template(stackname):
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
 
-    # TODO: all of the following could possibly be moved
-    # inside bootstrap.update_stack, if it was smart enough
+    # TODO: move inside bootstrap.update_stack
     # EC2
     if _are_there_existing_servers(context):
         # the /etc/buildvars.json file may need to be updated
@@ -109,8 +114,12 @@ def update_template(stackname):
     if context.get('s3', {}):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
+    # Fastly via Terraform
+    if context.get('fastly', {}):
+        bootstrap.update_stack(stackname, service_list=['terraform'])
 
-# TODO: this task should probably live in `master.py`
+
+# TODO: deprecated, this task now lives in `master.py`
 @debugtask
 def update_master():
     master_stackname = core.find_master(aws.find_region())
@@ -307,11 +316,15 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
     allow_missing, use_bootstrap_user = lmap(strtobool, [allow_missing, use_bootstrap_user])
-    with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
-        if allow_missing and not files.exists(path):
-            return # skip download
-        get(path, destination, use_sudo=True)
 
+    @backoff.on_exception(backoff.expo, fabric.exceptions.NetworkError, max_time=60)
+    def _download(path, destination):
+        with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
+            if allow_missing and not files.exists(path):
+                return # skip download
+            get(path, destination, use_sudo=True)
+
+    _download(path, destination)
 
 @task
 @requires_aws_stack

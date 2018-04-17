@@ -12,6 +12,7 @@ it to the correct file etc."""
 import copy
 from os.path import join
 from . import config, utils, bvars
+from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
@@ -38,6 +39,7 @@ R53_INT_TITLE = "IntDNS"
 R53_INT_TITLE_NODE = "IntDNS%s"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
 R53_CNAME_TITLE = "CnameDNS%s"
+R53_FASTLY_TITLE = "FastlyDNS%s"
 CLOUDFRONT_TITLE = 'CloudFrontCDN'
 # from http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-aliastarget.html
 CLOUDFRONT_HOSTED_ZONE_ID = 'Z2FDTNDATAQYW2'
@@ -48,6 +50,9 @@ ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
+
+FASTLY_GLOBAL = 'nonssl.global.fastly.net.'
+FASTLY_SSL = 'u2.shared.global.fastly.net'
 
 def _read_script(script_filename):
     path = join(config.SCRIPTS_PATH, script_filename)
@@ -116,13 +121,15 @@ def rds_security(context):
 #
 #
 
-
 def _generic_tags(context, name=True):
     tags = {
         'Project': context['project_name'], # journal
         'Environment': context['instance_id'], # stack instance id
         # the name AWS Console uses to label an instance
         'Cluster': context['stackname'], # ll: journal--prod
+
+        # potential new tags
+        # 'Masterless': context['masterless'] # True or False
     }
     tags['Name'] = context['stackname'] # ll: journal-prod
     return tags
@@ -155,7 +162,9 @@ def mkoutput(title, desc, val):
 #
 
 def build_vars(context, node):
-    buildvars = dict(context)
+    """returns a subset of given context data with some extra node information
+    that will be encoded and stored on the ec2 instance"""
+    buildvars = copy.deepcopy(context)
 
     # preseve some of the project data. all of it is too much
     keepers = [
@@ -376,6 +385,27 @@ def external_dns_cloudfront(context):
         i = i + 1
 
     return dns_records
+
+def external_dns_fastly(context):
+    "a Fastly CDN requires additional CNAME DNS entries pointing at it"
+    ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built: %s" % context)
+
+    # may be used to point to TLS servers
+    cname = context['fastly']['dns'].get('cname', FASTLY_GLOBAL)
+
+    def entry(hostname, i):
+        if _is_domain_2nd_level(hostname):
+            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
+        hostedzone = context['domain'] + "."
+        return route53.RecordSetType(
+            R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
+            HostedZoneName=hostedzone,
+            Name=hostname,
+            Type="CNAME",
+            TTL="60",
+            ResourceRecords=[cname],
+        )
+    return [entry(hostname, i) for i, hostname in enumerate(context['fastly']['subdomains'])]
 
 #
 # render_* funcs
@@ -758,6 +788,11 @@ def render_cloudfront(context, template, origin_hostname):
     for dns in external_dns_cloudfront(context):
         template.add_resource(dns)
 
+def render_fastly(context, template):
+    "WARNING: only creates Route53 DNS entries, delegating the rest of the setup to Terraform"
+    for dns in external_dns_fastly(context):
+        template.add_resource(dns)
+
 def elasticache_security_group(context):
     "returns a security group for the ElastiCache instances. this security group only allows access within the VPC"
     engine_ports = {
@@ -843,13 +878,10 @@ def render_elasticache(context, template):
 def render(context):
     template = Template()
 
-    ec2_instances = {}
-    if context['ec2']:
-        ec2_instances = render_ec2(context, template)
+    ec2_instances = render_ec2(context, template) if context['ec2'] else {}
+    context['rds_instance_id'] and render_rds(context, template)
 
-    if context['rds_instance_id']:
-        render_rds(context, template)
-
+    # TODO: move to a render_ext
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
@@ -867,19 +899,14 @@ def render(context):
 
     # hostname is assigned to an ELB, which has priority over
     # N>=1 EC2 instances
-    if context['elb']:
-        render_elb(context, template, ec2_instances)
-
-    if context['ec2']:
-        render_ec2_dns(context, template)
+    context['elb'] and render_elb(context, template, ec2_instances)
+    context['ec2'] and render_ec2_dns(context, template)
 
     add_outputs(context, template)
 
-    if context['cloudfront']:
-        render_cloudfront(context, template, origin_hostname=context['full_hostname'])
-
-    if context['elasticache']:
-        render_elasticache(context, template)
+    context['cloudfront'] and render_cloudfront(context, template, origin_hostname=context['full_hostname'])
+    context['fastly'] and render_fastly(context, template)
+    context['elasticache'] and render_elasticache(context, template)
 
     return template.to_json()
 

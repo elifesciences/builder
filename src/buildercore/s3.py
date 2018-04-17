@@ -16,7 +16,7 @@ def connect_s3(region='us-east-1'):
 def builder_bucket():
     "returns connection to the bucket where builder stores templates and credentials."
     try:
-        nom, region = config.BUILDER_BUCKET
+        nom, region = config.BUILDER_BUCKET, config.BUILDER_REGION
         resource = connect_s3(region)
         bucket = resource.Bucket(nom)
         ensure(bucket in resource.buckets.all(), "bucket %r in region %r does not exist" % (nom, region))
