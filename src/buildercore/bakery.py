@@ -5,9 +5,7 @@ We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
 from buildercore import core, utils, bootstrap, config
-from .decorators import osissue, testme
 
-@testme
 def ami_name(stackname):
     # elife-api.2015-12-31
     return "%s.%s" % (core.project_name_from_stackname(stackname), utils.ymd())
@@ -20,7 +18,7 @@ def create_ami(stackname):
     ec2 = core.find_ec2_instances(stackname)[0]
     kwargs = {
         'instance_id': ec2.id,
-        'name': core.ami_name(stackname),
+        'name': ami_name(stackname),
         'no_reboot': True,
         #'dry_run': True
     }
@@ -33,50 +31,3 @@ def create_ami(stackname):
         return image.state == 'pending'
     utils.call_while(is_pending, update_msg="Waiting for AWS to bake AMI %s ... " % ami_id)
     return str(ami_id) # this should be used to update the stack templates
-
-def find_ami(projectname=None):
-    "finds the AMI for the given project"
-    kwargs = {
-        'owners': ['self'], # otherwise you get *all* (public) images on AWS
-        'filters': {},
-    }
-    if projectname:
-        kwargs['filters']['name'] = '%s.*' % projectname
-
-    conn = core.connect_aws_with_pname(projectname, 'ec2')
-    results = conn.get_all_images(**kwargs)
-
-    # when filtered by project, most recent ami is the last item
-    return sorted(results, key=lambda image: image.name)
-
-@osissue("only packer.py is using this. might be better off in there.")
-def basebox():
-    "returns most recent basebox ami"
-    return utils.last(find_ami("basebox"))
-
-@testme
-@osissue("nothing appears to be using this function")
-def project_ami(projectname, base_ami_override=None):
-    """returns most recent project ami OR
-    the base ami override if one has been specified OR
-    the most recent basebox ami, otherwise None if none
-    of those things can be found.
-
-    This lets us say "if the elife-website project has
-    it's own ami, use that, otherwise, use this Ubuntu 12.04
-    ami override."
-
-    or "if the elife-api doesn't have it's own project ami and
-    has no other special requirements, use the basebox ami for Ubuntu 14.04"""
-    # pylint: disable=no-member
-    base_ami_override = type('_', (object,), {'id': base_ami_override})()
-    obj = utils.last(find_ami(projectname)) or base_ami_override.id or basebox()
-    return obj.id if hasattr(obj, 'id') else obj
-
-def update_ami():
-    "we don't update AMIs! we create new ones from a running stack and then delete old ones"
-    pass
-
-def destroy_ami():
-    "finds any old AMI images and deletes them."
-    pass

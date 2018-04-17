@@ -121,13 +121,15 @@ def rds_security(context):
 #
 #
 
-
 def _generic_tags(context, name=True):
     tags = {
         'Project': context['project_name'], # journal
         'Environment': context['instance_id'], # stack instance id
         # the name AWS Console uses to label an instance
         'Cluster': context['stackname'], # ll: journal--prod
+
+        # potential new tags
+        # 'Masterless': context['masterless'] # True or False
     }
     tags['Name'] = context['stackname'] # ll: journal-prod
     return tags
@@ -160,7 +162,9 @@ def mkoutput(title, desc, val):
 #
 
 def build_vars(context, node):
-    buildvars = dict(context)
+    """returns a subset of given context data with some extra node information
+    that will be encoded and stored on the ec2 instance"""
+    buildvars = copy.deepcopy(context)
 
     # preseve some of the project data. all of it is too much
     keepers = [

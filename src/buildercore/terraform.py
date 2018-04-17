@@ -13,26 +13,22 @@ def render(context):
     if not context['fastly']:
         return '{}'
 
-    ensure(len(context['fastly']['subdomains']) == 1, "Only 1 subdomain for Fastly CDNs is supported")
-
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {
                 # must be unique but only in a certain context like this, use some constants
                 RESOURCE_NAME_FASTLY: {
                     'name': context['stackname'],
-                    'domain': {
-                        'name': context['fastly']['subdomains'][0],
-                    },
+                    'domain': [
+                        {'name': subdomain} for subdomain in context['fastly']['subdomains']
+                    ],
                     'backend': {
                         'address': context['full_hostname'],
                         'name': context['stackname'],
                         'port': 443,
                         'use_ssl': True,
-                        'ssl_check_cert': False # bad option
-                        # it's for minimal fuss. Before we start customizing this, a lot of the risk to be tackled
-                        # is integrating everything together with a good lifecycle for adding, modifying and removing
-                        # CDNs that point to CloudFormation-managed resources.
+                        'ssl_cert_hostname': context['full_hostname'],
+                        'ssl_check_cert': True,
                     },
                     'force_destroy': True
                 }

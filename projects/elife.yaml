@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2016.3.6' # the version of salt these project use
+    salt: '2017.7.5' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -338,9 +338,6 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
-        fastly:
-            subdomains:
-                - "{instance}--fastly-gateway"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -350,20 +347,21 @@ api-gateway:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
         end2end:
-            cloudfront:
-                subdomains: 
+            fastly:
+                subdomains:
                     - "{instance}--cdn-gateway"
-                headers:
-                    - Accept
         continuumtest:
-            cloudfront:
-                subdomains: 
+            fastly:
+                subdomains:
                     - "{instance}--cdn-gateway"
-                headers:
-                    - Accept
         prod:
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-gateway"
+                    - api
             cloudfront:
-                subdomains: 
+                subdomains: []
+                subdomains-without-dns: 
                     - "{instance}--cdn-gateway"
                     - api
                 headers:

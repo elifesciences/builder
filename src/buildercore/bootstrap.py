@@ -519,10 +519,16 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
     # would have it explicitly set to False
     default_ec2 = {'masterless': False, 'cluster-size': 1}
     ec2 = pdata['aws'].get('ec2', default_ec2)
+
+    # TODO: check no longer necessary
     if not ec2:
         return
+
+    # TODO: check if any active stacks still have ec2: True in their context
+    # and refresh their context then remove this check
     if ec2 is True:
         ec2 = default_ec2
+
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
     is_masterless = ec2.get('masterless', False)
@@ -547,7 +553,7 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
-        master_ip = build_vars.get('ec2').get('master_ip', master(region, 'private_ip_address'))
+        master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'private_ip_address'))
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
 
         if is_masterless:

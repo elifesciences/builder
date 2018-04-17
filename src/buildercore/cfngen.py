@@ -1,8 +1,5 @@
 """
-Generates AWS CloudFormation (cfn) or Terraform templates.
-
-Marshalls a collection of project information together in the `build_context()`
-function, then generates templates.
+Marshalls a collection of project information together in to a dictionary called the `context`.
 
 When an instance of a project is launched on AWS, we need to tweak things a bit
 with no manual steps in some cases, or as few as possible in other cases.
@@ -109,11 +106,21 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     if 'ext' in context['project']['aws']:
         context['ext'] = context['project']['aws']['ext']
 
-    context['ec2'] = context['project']['aws'].get('ec2', True)
-    if isinstance(context['ec2'], dict):
-        context['ec2']['type'] = context['project']['aws']['type']
-        if context['ec2'].get('masterless') and context['ec2'].get('master_ip'):
-            del context['ec2']['master_ip']
+    # ec2
+    # TODO: this is a problem. using the default 'True' preserves the behaviour of
+    # when 'ec2: True' meant, 'use defaults with nothing changed'
+    # but now I need to store master ip info there.
+    #context['ec2'] = context['project']['aws'].get('ec2', True)
+    context['ec2'] = context['project']['aws']['ec2']
+    if context['ec2'] == True:
+        context['ec2'] = {}
+        context['project']['aws']['ec2'] = {}
+        LOG.warn("stack needs it's context refreshed: %s", stackname)
+        # we can now assume these will always be dicts
+
+    if isinstance(context['ec2'], dict): # the other case is aws.ec2 == False
+        context['ec2']['type'] = context['project']['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
+        context = set_master_address(context)
 
     build_context_elb(context)
 
@@ -151,6 +158,18 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     return context
 
+def set_master_address(data, master_ip=None):
+    "can update both context and buildvars data"
+    master_ip = master_ip or data['ec2'].get('master_ip')  # or data['project']['aws']['ec2']['master_ip']
+    ensure(master_ip, "a master-ip was neither explicitly given nor found in the data provided")
+    data['ec2']['master_ip'] = master_ip
+    if 'aws' in data['project']:
+        # context (rather than buildvars)
+        data['project']['aws']['ec2']['master_ip'] = master_ip
+        if data['ec2'].get('masterless'):
+            # this is a masterless instance, delete key
+            del data['project']['aws']['ec2']['master_ip']
+    return data
 
 def build_context_rds(context, existing_context):
     if 'rds' not in context['project']['aws']:
@@ -275,14 +294,17 @@ def choose_alt_config(stackname):
 #
 #
 
+# TODO: move to cloudformation.py
 def write_cloudformation_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
     open(output_fname, 'w').write(contents)
     return output_fname
 
+# TODO: move to terraform.py
 def write_terraform_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
+    # if the template isn't empty ...?
     if json.loads(contents):
         output_dir = os.path.join(TERRAFORM_DIR, stackname)
         mkdir_p(output_dir)
@@ -290,6 +312,15 @@ def write_terraform_template(stackname, contents):
         open(output_fname, 'w').write(contents)
         return output_fname
 
+# TODO: prefer this single dispatch function for handling creation of template files
+def write_template(stackname, contents):
+    "writes any provider templates and returns a list of paths to templates"
+    # cfn = cloudformation.write_template(stackname, contents)
+    # tfm = terraform.write_template(stackname, contents)
+    # return [cfn, tfm]
+    pass
+
+# TODO: perhaps add terraform support?
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(STACK_DIR, stackname + ".json")
@@ -371,7 +402,7 @@ def generate_stack(pname, **more_context):
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
 UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$']
 
-REMOVABLE_TITLE_PATTERNS = ['^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
+REMOVABLE_TITLE_PATTERNS = ['^CloudFront.*', '^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 # CloudFormation is nicely chopped up into:

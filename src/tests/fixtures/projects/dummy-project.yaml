@@ -311,6 +311,17 @@ project-with-fastly-minimal:
             subdomains:
                 - "{instance}--cdn-of-www"
 
+project-with-fastly-complex:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        fastly:
+            subdomains:
+                - "{instance}--cdn1-of-www"
+                - "{instance}--cdn2-of-www"
+
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
