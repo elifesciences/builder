@@ -29,7 +29,9 @@ to complete the update. All Salt states shown should be green.
 Whenever a change is made to the formulas, or to your `builder-private` repository, or a minion is destroyed, the master server needs to be updated. It will do so every hour through a cron job but can also be run immediately with:
 
 	./bldr master.update:master-server--prod
-	
+
+This `master.update` will do a regular `update` first but then perform any master-server specific tasks.
+
 ## replacing the master server
 
 The first step in replacing a master server is to launch a new instance. 
@@ -50,6 +52,7 @@ To re-master *all* minions:
     
 The process of re-mastering a minion roughly follows:
 
+* ensure new `aws.ec2.master_ip` value is shared with your team to avoid accidental regressions during migration
 * replace the value of `aws.ec2.master_ip` in the `context` data
 * refresh the `build_vars` with this new data
 * remove the old master server's public key from the minion
