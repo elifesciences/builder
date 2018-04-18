@@ -349,7 +349,6 @@ def more_validation(json_template_str):
 #
 #
 
-# TODO: shift this into testing and make each validation call a subTest
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
     only called during testing"""
