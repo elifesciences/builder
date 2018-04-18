@@ -70,7 +70,7 @@ def requires_aws_project_stack(*plist):
     def wrap1(func):
         @wraps(func)
         def _wrapper(stackname=None, *args, **kwargs):
-            region = aws.find_region(stackname)
+            region = utils.find_region(stackname)
             asl = core.active_stack_names(region)
             if not asl:
                 print('\nno AWS stacks exist, cannot continue.')
@@ -91,7 +91,7 @@ def requires_aws_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
         stackname = first(args) or os.environ.get('INSTANCE')
-        region = aws.find_region(stackname)
+        region = utils.find_region(stackname)
         if stackname:
             args = args[1:]
             return func(stackname, *args, **kwargs)
@@ -107,7 +107,7 @@ def requires_aws_stack(func):
 def requires_steady_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
-        ss = core.steady_aws_stacks(aws.find_region())
+        ss = core.steady_aws_stacks(utils.find_region())
         keys = lmap(first, ss)
         idx = dict(zip(keys, ss))
         helpfn = lambda pick: idx[pick][1]
@@ -160,8 +160,3 @@ def echo_output(func):
             return res
         return func(*args, **kwargs)
     return _wrapper
-
-
-# avoid circular dependencies.
-# TODO: this is a design smell. refactor.
-import aws
