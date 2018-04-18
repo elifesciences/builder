@@ -212,11 +212,11 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
         filters.append({'Name': 'instance-id', 'Values': node_ids})
 
     # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.ServiceResource.instances
-    ec2_instances = conn.instances.filter(Filters=filters)
+    ec2_instances = list(conn.instances.filter(Filters=filters))
 
     # hack, see problems with query above. this problem hasn't been replicated (yet) on boto3
     if state:
-        ec2_instances = [i for i in ec2_instances if i.state == state]
+        ec2_instances = [i for i in ec2_instances if i.state['Name'] == state]
 
     LOG.debug("find_ec2_instances returned: %s", [(e.id, e.state) for e in ec2_instances])
 
@@ -475,19 +475,21 @@ def stack_json(stackname, parse=False):
 
 # DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
+# TODO: wrap this is a @backoff
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
+    cfn = boto_conn(stackname, 'cloudformation')
     try:
-        return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
+        return first(list(cfn.stacks.filter(StackName=stackname)))
     except http_client.IncompleteRead as e:
         LOG.warning("Retrying once DescribeStacks API call: %s", e)
-        return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
+        return first(list(cfn.stacks.filter(StackName=stackname)))
 
 class NoRunningInstances(Exception):
     pass
 
 def stack_data(stackname, ensure_single_instance=False):
-    """like `describe_stack`, but returns a list of dictionaries"""
+    "like `describe_stack`, but returns a list of dictionaries"
     try:
         ec2_instances = find_ec2_instances(stackname)
 
@@ -495,11 +497,11 @@ def stack_data(stackname, ensure_single_instance=False):
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
 
         def ec2data(ec2):
-            return ec2.__dict__
+            return ec2.meta.data
         return lmap(ec2data, ec2_instances)
 
     except Exception:
-        LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
+        LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
         raise
 
 
@@ -510,16 +512,15 @@ def stack_is_active(stackname):
 
 def stack_is(stackname, acceptable_states, terminal_states=None):
     "returns True if the given stack is in one of acceptable_states"
-    if terminal_states is None:
-        terminal_states = []
+    terminal_states = terminal_states or []
     try:
         description = describe_stack(stackname)
         if description.stack_status in terminal_states:
-            LOG.error("stack_status is '%s', cannot move from that\nDescription: %s", description.stack_status, vars(description))
+            LOG.error("stack_status is '%s', cannot move from that\nDescription: %s", description.stack_status, description.meta.data)
             raise RuntimeError("stack status is '%s'" % description.stack_status)
         result = description.stack_status in acceptable_states
         if not result:
-            LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, vars(description))
+            LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, description.meta.data)
         return result
     except BotoServerError as err:
         if err.message.endswith('does not exist'):
