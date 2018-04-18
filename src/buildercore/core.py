@@ -557,11 +557,9 @@ def active_aws_project_stacks(pname):
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
     def fn(triple):
-        try:
-            return project_name_from_stackname(first(triple)) == pname
-        except ValueError:
-            LOG.warn("encounted unparseable stackname: %r", (triple,))
-            return None
+        stackname = first(triple)
+        if stackname_parseable(stackname):
+            return project_name_from_stackname(stackname) == pname
     return lfilter(fn, active_aws_stacks(region))
 
 def stack_names(stack_list, only_parseable=True):
