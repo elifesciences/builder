@@ -13,7 +13,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-@debugtask
 def update(master_stackname=None):
     "same as `cfn.update` but also removes any orphaned minion keys"
     master_stackname = master_stackname or core.find_master(utils.find_region())
