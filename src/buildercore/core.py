@@ -536,7 +536,7 @@ def stack_triple(aws_stack):
 #@cached # disable until finished debugging
 def _aws_stacks(region, status=None, formatter=stack_triple):
     "returns all stacks, even stacks deleted in the last 90 days, optionally filtered by status"
-    # NOTE: uses the client rather than the resource. resource cannot filter by stack status
+    # NOTE: uses client rather than resource. resource cannot filter by stack status
     paginator = boto_client('cloudformation', region).get_paginator('list_stacks')
     paginator = paginator.paginate(StackStatusFilter=status or [])
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
@@ -556,7 +556,12 @@ def active_aws_project_stacks(pname):
     "returns all active stacks for a given project name"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
-    fn = lambda t: project_name_from_stackname(first(t)) == pname
+    def fn(triple):
+        try:
+            return project_name_from_stackname(first(triple)) == pname
+        except ValueError:
+            LOG.warn("encounted unparseable stackname: %r", (triple,))
+            return None
     return lfilter(fn, active_aws_stacks(region))
 
 def stack_names(stack_list, only_parseable=True):
