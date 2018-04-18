@@ -127,6 +127,7 @@ def all_sns_subscriptions(region, stackname=None):
 # TODO: remove
 def connect_aws(service, region):
     "connects to given service using the region in the "
+    LOG.warn("boto2 and `connect_aws` are deprecated. please use `boto_resource`, `boto_client` and `boto_conn`")
     aliases = {
         'cfn': 'cloudformation'
     }
@@ -156,7 +157,7 @@ def boto_sqs_conn(region):
 # TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
 @cached
 def connect_aws_with_pname(pname, service, with_boto3=False):
-    "DEPERECATED, use boto_conn. convenience. returns a boto client for a service in same region as given project"
+    "convenience. returns a boto client for a service in same region as given project"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
     LOG.debug('connecting to a %s instance in region %s', pname, region)
@@ -166,7 +167,7 @@ def connect_aws_with_pname(pname, service, with_boto3=False):
 
 # TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
 def connect_aws_with_stack(stackname, service, with_boto3=False):
-    "DEPRECATED, use boto_conn. convenience. returns a boto client for a service in same region as given project instance"
+    "convenience. returns a boto client for a service in same region as given project instance"
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service, with_boto3)
 
@@ -478,7 +479,7 @@ def stack_json(stackname, parse=False):
 # DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
 # TODO: wrap this is a @backoff
-# TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
+# TODO: catch botocore.exception.ClientError, check for 'does not exist', raise a more specific error
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     cfn = boto_conn(stackname, 'cloudformation')
