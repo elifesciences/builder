@@ -106,7 +106,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         LOG.info("Stack taking a long time to complete: %s", err)
         raise
 
-    except botocore.exception.ClientError as err:
+    except botocore.exceptions.ClientError as err:
         # TODO: is this ' already exists' check different from the other 'does not exist' check?
         # if so, can we get a list of these messages somewhere?
         if err.message.endswith(' already exists'):
@@ -398,7 +398,7 @@ def update_template(stackname, template):
     try:
         conn = core.describe_stack(stackname)
         conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
-    except botocore.exception.ClientError as ex:
+    except botocore.exceptions.ClientError as ex:
         if ex.message == 'No updates are to be performed.':
             return
         raise
@@ -607,7 +607,7 @@ def delete_stack_file(stackname):
         core.describe_stack(stackname) # triggers exception if NOT exists
         LOG.warning('stack %r still exists, refusing to delete stack files. delete active stack first.', stackname)
         return
-    except botocore.exception.ClientError as ex:
+    except botocore.exceptions.ClientError as ex:
         if not ex.message.endswith('does not exist'):
             LOG.exception("unhandled exception attempting to confirm if stack %r exists", stackname)
             raise
@@ -672,7 +672,7 @@ def delete_stack(stackname):
         def is_deleting(stackname):
             try:
                 return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
-            except botocore.exception.ClientError as err:
+            except botocore.exceptions.ClientError as err:
                 if err.message.endswith('does not exist'):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
@@ -684,5 +684,5 @@ def delete_stack(stackname):
         delete_dns(stackname)
         LOG.info("stack %r deleted", stackname)
 
-    except botocore.exception.ClientError as err:
+    except botocore.exceptions.ClientError as err:
         LOG.exception("[%s: %s] %s (request-id: %s)", err.status, err.reason, err.message, err.request_id)

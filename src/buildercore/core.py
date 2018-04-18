@@ -479,7 +479,7 @@ def stack_json(stackname, parse=False):
 # DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
 # TODO: wrap this is a @backoff
-# TODO: catch botocore.exception.ClientError, check for 'does not exist', raise a more specific error
+# TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     cfn = boto_conn(stackname, 'cloudformation')
