@@ -57,7 +57,8 @@ def init(stackname):
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
-                    'version': PROVIDER_FASTLY_VERSION,
+                    # exact version constraint
+                    'version': "= %s" % PROVIDER_FASTLY_VERSION,
                 },
             },
         }))
