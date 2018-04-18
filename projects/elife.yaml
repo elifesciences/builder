@@ -1487,6 +1487,9 @@ iiif:
                     - "{instance}--cdn-iiif"
                 headers:
                     - Host
+            fastly:
+                subdomains-without-dns:
+                    - "{instance}--cdn-iiif"
         # manual tests
         continuumtest:
             ports:
