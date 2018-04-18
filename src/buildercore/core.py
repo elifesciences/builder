@@ -105,7 +105,7 @@ def _all_sns_subscriptions(region):
 def all_sns_subscriptions(region, stackname=None):
     """returns all subscriptions to all sns topics.
     optionally filtered by subscription endpoints matching given stack"""
-    subs_list = _all_sns_subscriptions(region)
+    subs_list = _all_sns_subscriptions(region) # boto2
     if stackname:
         # a subscription looks like:
         # {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
@@ -478,6 +478,7 @@ def stack_json(stackname, parse=False):
 # DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
 # TODO: wrap this is a @backoff
+# TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
     cfn = boto_conn(stackname, 'cloudformation')
@@ -556,12 +557,14 @@ def active_aws_project_stacks(pname):
     "returns all active stacks for a given project name"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
+
     def fn(triple):
         stackname = first(triple)
         if stackname_parseable(stackname):
             return project_name_from_stackname(stackname) == pname
     return lfilter(fn, active_aws_stacks(region))
 
+# TODO: consider removing `only_parseable` parameter.
 def stack_names(stack_list, only_parseable=True):
     results = sorted(map(first, stack_list))
     if only_parseable:
