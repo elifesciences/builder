@@ -234,7 +234,7 @@ def find_rds_instances(stackname, state='available'):
     all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
     return all_rds_instances
 
-# preserved for the commentary, but this is for boto2
+# NOTE: preserved for the commentary, but this is for boto2
 def _all_nodes_filter(stackname, node_ids):
     query = {
         # tag-key+tag-value is misleading here:
@@ -288,7 +288,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     node and ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
     didx = int(node) - 1 if node else 0 # decrement to a zero-based value
     data = data[didx] # data is ordered by node
-    public_ip = data['ip_address']
+    public_ip = data['PublicIpAddress']
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
     with settings(**params):
@@ -305,11 +305,12 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         workfn, work_kwargs = workfn
 
     data = stack_data(stackname)
-    public_ips = {ec2['id']: ec2['ip_address'] for ec2 in data}
-    nodes = {ec2['id']: int(ec2['tags']['Node']) if 'Node' in ec2['tags'] else 1 for ec2 in data}
+    public_ips = {ec2['InstanceId']: ec2['PublicIpAddress'] for ec2 in data}
+    nodes = {ec2['InstanceId']: int(tags2dict(ec2['tags'])['Node']) if 'Node' in tags2dict(ec2['tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == node}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
@@ -324,6 +325,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
+    # TODO: candidate for a @backoff decorator
     def single_node_work():
         for attempt in range(0, 6):
             try:
@@ -488,8 +490,8 @@ def describe_stack(stackname):
 class NoRunningInstances(Exception):
     pass
 
+# TODO: misleading name, this returns a list of raw boto3 EC2.Instance data
 def stack_data(stackname, ensure_single_instance=False):
-    "like `describe_stack`, but returns a list of dictionaries"
     try:
         ec2_instances = find_ec2_instances(stackname)
 
