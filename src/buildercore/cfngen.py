@@ -259,8 +259,7 @@ def build_context_fastly(context, parameterize):
     if 'fastly' in context['project']['aws']:
         context['fastly'] = {
             'subdomains': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
-            # future use
-            'subdomains-without-dns': [],
+            'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
             'dns': context['project']['aws']['fastly']['dns'],
         }
     else:

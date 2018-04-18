@@ -67,6 +67,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 {
                                     'name': 'prod--cdn2-of-www.example.org'
                                 },
+                                {
+                                    'name': 'future.example.org'
+                                },
                             ],
                             'backend': {
                                 'address': 'prod--www.example.org',

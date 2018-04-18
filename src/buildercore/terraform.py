@@ -13,6 +13,7 @@ def render(context):
     if not context['fastly']:
         return '{}'
 
+    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {
@@ -20,7 +21,7 @@ def render(context):
                 RESOURCE_NAME_FASTLY: {
                     'name': context['stackname'],
                     'domain': [
-                        {'name': subdomain} for subdomain in context['fastly']['subdomains']
+                        {'name': subdomain} for subdomain in all_allowed_subdomains
                     ],
                     'backend': {
                         'address': context['full_hostname'],
