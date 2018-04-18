@@ -326,6 +326,17 @@ def missingkeys(ddict, key_list):
     "returns all keys in key_list that are not in given ddict"
     return [key for key in key_list if key not in ddict]
 
+def renkey(ddict, oldkey, newkey):
+    "mutator. renames a key in-place in given ddict from oldkey to newkey"
+    if oldkey in ddict:
+        ddict[newkey] = ddict[oldkey]
+        del ddict[oldkey]
+    return ddict
+
+def renkeys(ddict, pair_list):
+    "mutator"
+    for oldkey, newkey in pair_list:
+        renkey(ddict, oldkey, newkey)
 
 def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
     "wrapper around fabric.operations.get"

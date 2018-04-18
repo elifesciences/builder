@@ -19,7 +19,8 @@ from .config import BOOTSTRAP_USER
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
-from boto.exception import BotoServerError, SQSError
+from boto.exception import SQSError
+import botocore
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
 
@@ -135,8 +136,10 @@ def _wait_until_in_progress(stackname):
         update_msg='Waiting for AWS to finish creating stack ...',
         exception_class=StackTakingALongTimeToComplete
     )
+
     final_stack = core.describe_stack(stackname)
-    events = [(e.resource_status, e.resource_status_reason) for e in final_stack.describe_events()]
+    # NOTE: stack.events.all|filter|limit can take 5+ seconds to complete regardless of events returned
+    events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
     ensure(final_stack.stack_status in ['CREATE_COMPLETE'],
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
@@ -404,9 +407,24 @@ def update_template(stackname, template):
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
-    data = core.describe_stack(stackname).__dict__
-    data['outputs'] = reduce(utils.conj, map(lambda o: {o.key: o.value}, data['outputs']))
-    return utils.exsubdict(data, ['connection', 'parameters'])
+    # data = core.describe_stack(stackname).__dict__ # original boto2 approach, never officially supported
+    data = core.describe_stack(stackname).meta.data # boto3
+
+    # looking at the entire set of formulas, all usage is cfn.outputs, cfn.stack_id and cfn.stack_name
+    # in the interests of being explicit on what is supported, I'm changing what this now returns
+    keepers = OrderedDict([
+        ('StackName', 'stack_name'),
+        ('StackId', 'stack_id'),
+        ('Outputs', 'outputs')
+    ])
+
+    # preserve the lowercase+underscore formatting of original struct
+    utils.renkeys(data, keepers.items()) # in-place changes
+
+    # replaces the standand list-of-dicts 'outputs' with a simpler dict
+    data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
+
+    return utils.subdict(data, keepers.values())
 
 def write_environment_info(stackname, overwrite=False):
     """Looks for /etc/cfn-info.json and writes one if not found.
@@ -582,7 +600,7 @@ def delete_stack_file(stackname):
         core.describe_stack(stackname) # triggers exception if NOT exists
         LOG.warning('stack %r still exists, refusing to delete stack files. delete active stack first.', stackname)
         return
-    except BotoServerError as ex:
+    except botocore.exception.ClientError as ex:
         if not ex.message.endswith('does not exist'):
             LOG.exception("unhandled exception attempting to confirm if stack %r exists", stackname)
             raise

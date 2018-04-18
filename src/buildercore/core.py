@@ -494,18 +494,12 @@ class NoRunningInstances(Exception):
 def stack_data(stackname, ensure_single_instance=False):
     try:
         ec2_instances = find_ec2_instances(stackname)
-
         if len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
-
-        def ec2data(ec2):
-            return ec2.meta.data
-        return lmap(ec2data, ec2_instances)
-
+        return [ec2.meta.data for ec2 in ec2_instances]
     except Exception:
         LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
         raise
-
 
 # DO NOT CACHE
 def stack_is_active(stackname):
