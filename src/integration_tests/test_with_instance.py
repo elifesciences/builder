@@ -27,7 +27,7 @@ class One(base.BaseCase):
 
         self.stacknames = []
         self.environment = base.generate_environment_name()
-        self.temp_dir, self.rm_temp_dir = utils.tempdir()
+        # self.temp_dir, self.rm_temp_dir = utils.tempdir()
 
         # debugging only, where we keep an instance up between processes
         self.state, self.statefile = {}, '/tmp/.open-test-instances.txt'
@@ -63,8 +63,8 @@ class One(base.BaseCase):
             for stackname in self.stacknames:
                 cfn.ensure_destroyed(stackname)
         print('removing temp dir')
-        self.rm_temp_dir()
-        self.assertFalse(os.path.exists(self.temp_dir), "failed to delete path %r in tearDown" % self.temp_dir)
+        # self.rm_temp_dir()
+        # self.assertFalse(os.path.exists(self.temp_dir), "failed to delete path %r in tearDown" % self.temp_dir)
 
     def test_bootstrap_idempotence(self):
         "the same stack cannot be created multiple times"
