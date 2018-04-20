@@ -87,5 +87,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
     def _parse_template(self, terraform_template):
-        """use yaml to load JSON due to https://stackoverflow.com/a/16373377/91590"""
+        """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
+        
+        https://stackoverflow.com/a/16373377/91590"""
         return yaml.safe_load(terraform_template)
