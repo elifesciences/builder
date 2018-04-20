@@ -6,6 +6,7 @@ from buildercore.utils import ensure
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
 
+PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
@@ -49,6 +50,15 @@ def init(stackname):
                         'key': 'terraform/%s.tfstate' % stackname,
                         'region': BUILDER_REGION,
                     },
+                },
+            },
+        }))
+    with open('%s/providers.tf' % working_dir, 'w') as fp:
+        fp.write(json.dumps({
+            'provider': {
+                'fastly': {
+                    # exact version constraint
+                    'version': "= %s" % PROVIDER_FASTLY_VERSION,
                 },
             },
         }))
