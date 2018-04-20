@@ -11,6 +11,13 @@ import imp
 
 LOG = logging.getLogger(__name__)
 
+def generate_environment_name():
+    """to avoid multiple people clashing while running their builds
+       and new builds clashing with older ones"""
+    who = check_output('whoami').rstrip().decode()
+    now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    return "-".join([who, now, str(randint(1, 1000000))]) # ll: luke-20180420022437-51631
+
 class BaseCase(TestCase):
     maxDiff = None
     this_dir = os.path.realpath(os.path.dirname(__file__))
@@ -39,12 +46,6 @@ class BaseCase(TestCase):
         project.project_map.cache_clear()
         imp.reload(config)
 
-    def generate_environment_name(self):
-        """to avoid multiple people clashing while running their builds
-           and new builds clashing with older ones"""
-        who = check_output('whoami').rstrip().decode()
-        now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        return "-".join([who, now, str(randint(1, 1000000))])
 
     # pyline: disable=invalid-name
     def assertAllPairsEqual(self, fn, pair_lst):

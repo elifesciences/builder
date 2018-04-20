@@ -13,7 +13,7 @@ logging.disable(logging.NOTSET) # re-enables logging during integration testing
 class TestProvisioning(base.BaseCase):
     def setUp(self):
         self.stacknames = []
-        self.environment = self.generate_environment_name()
+        self.environment = base.generate_environment_name()
 
     def tearDown(self):
         for stackname in self.stacknames:

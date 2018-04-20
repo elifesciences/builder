@@ -9,6 +9,7 @@ from os.path import join
 from more_itertools import unique_everseen
 import logging
 from fabric.operations import get, put
+import tempfile, shutil
 
 LOG = logging.getLogger(__name__)
 
@@ -366,3 +367,8 @@ def fab_put_data(data, remote_path, use_sudo=False):
     bytestream = BytesIO(data)
     label = "%s bytes" % bytestream.getbuffer().nbytes if gtpy2() else "? bytes"
     return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)
+
+def tempdir():
+    # usage: tempdir, killer = tempdir(); killer()
+    name = tempfile.mkdtemp()
+    return (name, lambda: shutil.rmtree(name))
