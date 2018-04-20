@@ -1505,12 +1505,12 @@ iiif:
                 healthcheck:
                     path: /
             cloudfront:
-                subdomains: 
+                subdomains-without-dns: 
                     - "{instance}--cdn-iiif"
                 headers:
                     - Host
             fastly:
-                subdomains-without-dns:
+                subdomains:
                     - "{instance}--cdn-iiif"
         prod:
             ports:
