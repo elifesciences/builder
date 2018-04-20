@@ -3,9 +3,7 @@ from fabric.api import settings
 from tests import base
 from buildercore import bootstrap, cfngen, lifecycle, utils, core
 from buildercore.config import BOOTSTRAP_USER
-import buildvars
 import cfn
-from fabfile import PROJECT_DIR
 import logging
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
@@ -30,7 +28,7 @@ class One(base.BaseCase):
         self.stacknames = []
         self.environment = base.generate_environment_name()
         self.temp_dir, self.rm_temp_dir = utils.tempdir()
-        
+
         # debugging only, where we keep an instance up between processes
         self.state, self.statefile = {}, '/tmp/.open-test-instances.txt'
         if self.reuse_existing_stack and os.path.exists(self.statefile):
@@ -50,9 +48,9 @@ class One(base.BaseCase):
             self.context, self.cfn_template, _ = cfngen.generate_stack(project, stackname=self.stackname)
             self.region = self.context['project']['aws']['region']
             bootstrap.create_stack(self.stackname)
-            
+
             lifecycle.start(self.stackname)
-        
+
     @classmethod
     def tearDownClass(self): # cls, not self
         print('tearing down')
@@ -71,7 +69,7 @@ class One(base.BaseCase):
     def test_bootstrap_idempotence(self):
         "the same stack cannot be created multiple times"
         bootstrap.create_stack(self.stackname)
-        
+
     def test_bootstrap_wait_until_in_progress(self):
         bootstrap._wait_until_in_progress(self.stackname)
         bootstrap.setup_ec2(self.stackname, self.context)
@@ -79,7 +77,7 @@ class One(base.BaseCase):
     def test_bootstrap_update_template_no_updates(self):
         "a template with no changes can be updated with no problems"
         bootstrap.update_template(self.stackname, json.load(open(self.cfn_template, 'r')))
-        
+
     def test_bootstrap_run_script(self):
         with core.stack_conn(self.stackname, username=BOOTSTRAP_USER):
             bootstrap.run_script('test.sh')
@@ -102,7 +100,7 @@ class One(base.BaseCase):
         }
         self.assertTrue(utils.hasallkeys(resp, expecting.keys()))
         self.assertTrue(utils.hasallkeys(resp['outputs'], expecting['outputs'].keys()))
-        
+
     def test_bootstrap_write_environment_info(self):
         with core.stack_conn(self.stackname, username=BOOTSTRAP_USER):
             bootstrap.write_environment_info(self.stackname, overwrite=False)

@@ -46,8 +46,8 @@ class BaseCase(TestCase):
         project.project_map.cache_clear()
         imp.reload(config)
 
-
     # pyline: disable=invalid-name
+
     def assertAllPairsEqual(self, fn, pair_lst):
         "given a function and a list of (given, expected) asserts all fn(given) == expected"
         for given, expected in pair_lst:
