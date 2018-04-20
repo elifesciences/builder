@@ -42,7 +42,7 @@ def start(stackname):
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
     if ec2_to_be_started:
         LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
-        _ec2_connection(stackname).start_instances(ec2_to_be_started)
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_started).start()
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
         [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
@@ -120,7 +120,7 @@ def _last_ec2_start_time(stackname):
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
     LOG.info("Selected for stopping: EC2 %s, RDS %s", ec2_to_be_stopped, rds_to_be_stopped)
     if ec2_to_be_stopped:
-        _ec2_connection(stackname).filter(InstanceIDs=ec2_to_be_stopped).stop()
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_stopped).stop()
     if rds_to_be_stopped:
         [_rds_connection(stackname).stop_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_stopped]
 
