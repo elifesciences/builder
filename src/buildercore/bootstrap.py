@@ -642,7 +642,8 @@ def remove_minion_key(stackname):
 def master_minion_keys(master_stackname, group_by_stackname=True):
     "returns a list of paths to minion keys on given master stack, optionally grouped by stackname"
     # all paths
-    master_stack_key_paths = core.listfiles_remote(master_stackname, "/etc/salt/pki/master/minions/", use_sudo=True)
+    with stack_conn(master_stackname):
+        master_stack_key_paths = core.listfiles_remote("/etc/salt/pki/master/minions/", use_sudo=True)
     if not group_by_stackname:
         return master_stack_key_paths
     # group by stackname. stackname is created by stripping node information off the end.

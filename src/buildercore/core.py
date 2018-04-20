@@ -504,10 +504,6 @@ def stack_data(stackname, ensure_single_instance=False):
         raise
 
 # DO NOT CACHE
-def stack_is_active(stackname):
-    "returns True if the given stack is in a completed state"
-    return stack_is(stackname, ACTIVE_CFN_STATUS)
-
 def stack_is(stackname, acceptable_states, terminal_states=None):
     "returns True if the given stack is in one of acceptable_states"
     terminal_states = terminal_states or []
@@ -526,6 +522,10 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
         LOG.warning("unhandled exception testing state of stack %r", stackname)
         raise
 
+# DO NOT CACHE
+def stack_is_active(stackname):
+    "returns True if the given stack is in a completed state"
+    return stack_is(stackname, ACTIVE_CFN_STATUS)
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."
@@ -708,14 +708,13 @@ def project_data_for_stackname(stackname):
         project_data = project.set_project_alt(project_data, 'aws', instance_id)
     return project_data
 
-def listfiles_remote(stackname, path=None, use_sudo=False):
+def listfiles_remote(path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     ensure(path, "path to remote directory required")
-    with stack_conn(stackname):
-        with hide('output'):
-            runfn = sudo if use_sudo else run
-            path = "%s/*" % path.rstrip("/")
-            stdout = runfn("for i in %s; do echo $i; done" % path)
-            if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
-                return []
-            return stdout.splitlines()
+    with hide('output'):
+        runfn = sudo if use_sudo else run
+        path = "%s/*" % path.rstrip("/")
+        stdout = runfn("for i in %s; do echo $i; done" % path)
+        if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
+            return []
+        return stdout.splitlines()
