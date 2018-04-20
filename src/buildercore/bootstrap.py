@@ -78,7 +78,7 @@ def create_stack(stackname):
     on_start = _noop
     on_error = _noop
     if pdata['aws']['ec2']:
-        parameters.append(('KeyName', stackname))
+        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
@@ -86,6 +86,10 @@ def create_stack(stackname):
 
 def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
+    if core.stack_is_active(stackname):
+        LOG.info("stack exists") # avoid on_start handler
+        return True
+
     parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
@@ -143,7 +147,7 @@ def _wait_until_in_progress(stackname):
     final_stack = core.describe_stack(stackname)
     # NOTE: stack.events.all|filter|limit can take 5+ seconds to complete regardless of events returned
     events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
-    ensure(final_stack.stack_status in ['CREATE_COMPLETE'],
+    ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
 #
@@ -394,12 +398,13 @@ def update_template(stackname, template):
     parameters = []
     pdata = project_data_for_stackname(stackname)
     if pdata['aws']['ec2']:
-        parameters.append(('KeyName', stackname))
+        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
     try:
         conn = core.describe_stack(stackname)
         conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
     except botocore.exceptions.ClientError as ex:
-        if ex.message == 'No updates are to be performed.':
+        # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
+        if ex.response['Error']['Message'] == 'No updates are to be performed.':
             return
         raise
 

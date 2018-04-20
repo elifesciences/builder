@@ -14,8 +14,8 @@ from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR 
 from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 from boto import sns
-from boto.exception import BotoServerError
 import boto3
+import botocore
 from contextlib import contextmanager
 from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
@@ -307,7 +307,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     data = stack_data(stackname)
     public_ips = {ec2['InstanceId']: ec2['PublicIpAddress'] for ec2 in data}
-    nodes = {ec2['InstanceId']: int(tags2dict(ec2['tags'])['Node']) if 'Node' in tags2dict(ec2['tags']) else 1 for ec2 in data}
+    nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == node}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
@@ -520,7 +520,7 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
         if not result:
             LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, description.meta.data)
         return result
-    except BotoServerError as err:
+    except botocore.exceptions.ClientError as err:
         if err.message.endswith('does not exist'):
             return False
         LOG.warning("unhandled exception testing state of stack %r", stackname)
