@@ -474,21 +474,17 @@ def stack_json(stackname, parse=False):
 # this function is polled to get the state of the stack when creating/updating/deleting.
 # TODO: wrap this is a @backoff
 # TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
-def describe_stack(stackname):
+def describe_stack(stackname, allow_missing=False):
     "returns the full details of a stack given it's name or ID"
     cfn = boto_conn(stackname, 'cloudformation')
     try:
-        return first(list(cfn.stacks.filter(StackName=stackname)))
-    except http_client.IncompleteRead as e:
-        LOG.warning("Retrying once DescribeStacks API call: %s", e)
-        return first(list(cfn.stacks.filter(StackName=stackname)))
-
-# temporary, merge handling into describe_stack somehow
-def get_stack(stackname):
-    try:
-        return describe_stack(stackname)
+        try:
+            return first(list(cfn.stacks.filter(StackName=stackname)))
+        except http_client.IncompleteRead as e:
+            LOG.warning("Retrying once DescribeStacks API call: %s", e)
+            return first(list(cfn.stacks.filter(StackName=stackname)))
     except botocore.exceptions.ClientError as ex:
-        if ex.response['Error']['Message'].endswith('does not exist'):
+        if allow_missing and ex.response['Error']['Message'].endswith('does not exist'):
             return None
         raise
 

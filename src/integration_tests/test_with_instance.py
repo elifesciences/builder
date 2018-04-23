@@ -42,7 +42,7 @@ class One(base.BaseCase):
             old_env = old_state.get('environment')
 
             # test if the old stack still exists ...
-            if old_env and core.get_stack(project + "--" + old_env):
+            if old_env and core.describe_stack(project + "--" + old_env, allow_missing=True):
                 self.state = old_state
                 self.environment = old_env
             else:
