@@ -37,6 +37,21 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
                             },
+                            'gzip': {
+                                'name': 'default',
+                                'content_types': ['application/javascript', 'application/json',
+                                                  'application/vnd.ms-fontobject',
+                                                  'application/x-font-opentype',
+                                                  'application/x-font-truetype',
+                                                  'application/x-font-ttf',
+                                                  'application/x-javascript', 'application/xml',
+                                                  'font/eot', 'font/opentype', 'font/otf',
+                                                  'image/svg+xml', 'image/vnd.microsoft.icon',
+                                                  'text/css', 'text/html', 'text/javascript',
+                                                  'text/plain', 'text/xml'],
+                                'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
+                                               'ttf'],
+                            },
                             'force_destroy': True
                         }
                     }
@@ -77,6 +92,21 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True
+                            },
+                            'gzip': {
+                                'name': 'default',
+                                'content_types': ['application/javascript', 'application/json',
+                                                  'application/vnd.ms-fontobject',
+                                                  'application/x-font-opentype',
+                                                  'application/x-font-truetype',
+                                                  'application/x-font-ttf',
+                                                  'application/x-javascript', 'application/xml',
+                                                  'font/eot', 'font/opentype', 'font/otf',
+                                                  'image/svg+xml', 'image/vnd.microsoft.icon',
+                                                  'text/css', 'text/html', 'text/javascript',
+                                                  'text/plain', 'text/xml'],
+                                'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
+                                               'ttf'],
                             },
                             'force_destroy': True
                         }
