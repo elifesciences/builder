@@ -10,6 +10,14 @@ PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
+FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
+                     'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
+                     'application/x-font-opentype', 'application/x-font-truetype',
+                     'application/x-font-ttf', 'application/xml', 'font/eot', 'font/opentype',
+                     'font/otf', 'image/svg+xml', 'image/vnd.microsoft.icon', 'text/plain',
+                     'text/xml']
+FASTLY_GZIP_EXTENSIONS = ['css', 'js', 'html', 'eot', 'ico', 'otf', 'ttf', 'json']
+
 def render(context):
     if not context['fastly']:
         return '{}'
@@ -33,6 +41,10 @@ def render(context):
                     },
                     'gzip': {
                         'name': context['stackname'],
+                        # shouldn't need to replicate the defaults
+                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
+                        'content_types': FASTLY_GZIP_TYPES,
+                        'extensions': FASTLY_GZIP_EXTENSIONS,
                     },
                     'force_destroy': True
                 }
