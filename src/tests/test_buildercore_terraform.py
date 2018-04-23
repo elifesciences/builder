@@ -1,5 +1,5 @@
-import json  # , yaml
 import os
+import yaml
 from os.path import join
 from . import base
 from buildercore import cfngen, terraform
@@ -18,7 +18,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         }
         context = cfngen.build_context('project-with-fastly-minimal', **extra)
         terraform_template = terraform.render(context)
-        data = json.loads(terraform_template)
+        data = self._parse_template(terraform_template)
         self.assertEqual(
             {
                 'resource': {
@@ -66,7 +66,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         }
         context = cfngen.build_context('project-with-fastly-complex', **extra)
         terraform_template = terraform.render(context)
-        data = json.loads(terraform_template)
+        data = self._parse_template(terraform_template)
         self.assertEqual(
             {
                 'resource': {
@@ -80,6 +80,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'name': 'prod--cdn2-of-www.example.org'
+                                },
+                                {
+                                    'name': 'future.example.org'
                                 },
                             ],
                             'backend': {
@@ -112,3 +115,8 @@ class TestBuildercoreTerraform(base.BaseCase):
             },
             data
         )
+
+    def _parse_template(self, terraform_template):
+        """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
+        https://stackoverflow.com/a/16373377/91590"""
+        return yaml.safe_load(terraform_template)

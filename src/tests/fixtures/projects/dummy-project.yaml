@@ -94,6 +94,7 @@ defaults:
         fastly:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
+            subdomains-without-dns: []
             dns:
                 cname: something.fastly.net
         subdomains: []
@@ -321,6 +322,8 @@ project-with-fastly-complex:
             subdomains:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
+            subdomains-without-dns:
+                - "future"
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
