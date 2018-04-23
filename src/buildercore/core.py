@@ -550,9 +550,9 @@ def active_aws_stacks(region, *args, **kwargs):
     "returns all stacks that are healthy"
     return _aws_stacks(region, ACTIVE_CFN_STATUS, *args, **kwargs)
 
-def steady_aws_stacks(region):
+def steady_aws_stacks(region, *args, **kwargs):
     "returns all stacks that are not in a transitionary state"
-    return _aws_stacks(region, STEADY_CFN_STATUS)
+    return _aws_stacks(region, STEADY_CFN_STATUS, *args, **kwargs)
 
 def active_aws_project_stacks(pname):
     "returns all active stacks for a given project name"

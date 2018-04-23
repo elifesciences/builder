@@ -126,8 +126,13 @@ class One(base.BaseCase):
         self.assertRaises(RuntimeError, core.stack_is, self.stackname, ['fubar'], core.ACTIVE_CFN_STATUS)
 
     def test_core_active_aws_stacks(self):
-        self.assertTrue(len(core.active_aws_stacks(self.region)) >= 1)
-        self.assertTrue(len(core.steady_aws_stacks(self.region)) >= 1)
+        active_stacks = core.active_aws_stacks(self.region, formatter=lambda stack: stack['StackName'])
+        self.assertTrue(self.stackname in active_stacks)
+
+    def test_core_steady_aws_stacks(self):
+        "a 'steady' stack is a stack that isn't in transition from one state to another"
+        steady_stacks = core.steady_aws_stacks(self.region, formatter=lambda stack: stack['StackName'])
+        self.assertTrue(self.stackname in steady_stacks)
 
     def test_core_listfiles_remote(self):
         with core.stack_conn(self.stackname, username=BOOTSTRAP_USER):
