@@ -43,8 +43,8 @@ def render(context):
                         'name': 'default',
                         # shouldn't need to replicate the defaults
                         # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
-                        'content_types': FASTLY_GZIP_TYPES,
-                        'extensions': FASTLY_GZIP_EXTENSIONS,
+                        'content_types': sorted(FASTLY_GZIP_TYPES),
+                        'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
                     'force_destroy': True
                 }
