@@ -7,8 +7,8 @@ import logging
 import re
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
-from . import config
-from .core import connect_aws_with_stack, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
+from . import config, core
+from .core import boto_conn, connect_aws_with_stack, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
 from .context_handler import load_context, download_from_s3
 
@@ -42,7 +42,7 @@ def start(stackname):
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
     if ec2_to_be_started:
         LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
-        _ec2_connection(stackname).start_instances(ec2_to_be_started)
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_started).start()
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
         [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
@@ -120,7 +120,7 @@ def _last_ec2_start_time(stackname):
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
     LOG.info("Selected for stopping: EC2 %s, RDS %s", ec2_to_be_stopped, rds_to_be_stopped)
     if ec2_to_be_stopped:
-        _ec2_connection(stackname).stop_instances(ec2_to_be_stopped)
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_stopped).stop()
     if rds_to_be_stopped:
         [_rds_connection(stackname).stop_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_stopped]
 
@@ -199,7 +199,7 @@ def update_dns(stackname):
     LOG.info("External full hostname: %s", context['full_hostname'])
     if context['full_hostname']:
         for node in nodes:
-            _update_dns_a_record(stackname, context['domain'], context['full_hostname'], node.ip_address)
+            _update_dns_a_record(stackname, context['domain'], context['full_hostname'], node.public_ip_address)
 
     # We don't strictly need to do this, as the private ip address
     # inside a VPC should stay the same. For consistency we update all DNS
@@ -252,7 +252,7 @@ def _ec2_nodes_states(stackname, node_ids=None):
         "{'lax--end2end--1': [old_terminated_ec2, current_ec2]}"
         node_index = {}
         for node in ec2_data:
-            name = node.tags['Name']
+            name = core.tags2dict(node.tags)['Name']
             # start legacy name: pattern-library--prod -> pattern-library--prod--1
             if not re.match(".*--[0-9]+", name):
                 name = name + "--1"
@@ -263,7 +263,7 @@ def _ec2_nodes_states(stackname, node_ids=None):
         return node_index
 
     def _unify_node_information(nodes, name):
-        excluding_terminated = [node for node in nodes if node.state != 'terminated']
+        excluding_terminated = [node for node in nodes if node.state['Name'] != 'terminated']
         ensure(len(excluding_terminated) <= 1, "Multiple nodes in %s have the same name (%s), but a non-terminated state" % (excluding_terminated, name))
         if len(excluding_terminated):
             return excluding_terminated[0]
@@ -273,14 +273,13 @@ def _ec2_nodes_states(stackname, node_ids=None):
     by_node_name = _by_node_name(ec2_data)
     unified_including_terminated = {name: _unify_node_information(nodes, name) for name, nodes in by_node_name.items()}
     unified_nodes = {name: node for name, node in unified_including_terminated.items() if node is not None}
-    return {node.id: node.state for name, node in unified_nodes.items()}
+    return {node.id: node.state['Name'] for name, node in unified_nodes.items()}
 
 def _rds_nodes_states(stackname):
     return {i['DBInstanceIdentifier']: i['DBInstanceStatus'] for i in find_rds_instances(stackname)}
 
-
 def _ec2_connection(stackname):
-    return connect_aws_with_stack(stackname, 'ec2')
+    return boto_conn(stackname, 'ec2')
 
 def _rds_connection(stackname):
-    return connect_aws_with_stack(stackname, 'rds', with_boto3=True)
+    return boto_conn(stackname, 'rds')

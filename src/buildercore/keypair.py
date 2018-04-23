@@ -65,28 +65,22 @@ def delete_keypair_from_fs(stackname):
 def create_keypair(stackname):
     "creates the ec2 keypair and writes it to s3"
     expected_key = stack_pem(stackname, die_if_exists=True)
-    ec2 = core.connect_aws_with_stack(stackname, 'ec2')
-    keypair = ec2.create_key_pair(stackname)
-    # write to fs
+    ec2 = core.boto_conn(stackname, 'ec2')
+    keypair = ec2.create_key_pair(KeyName=stackname)
     # py3 issue here: https://github.com/boto/boto/issues/3782
     # key.save(config.KEYPAIR_PATH) # exclude the filename
-    keypair.material = keypair.material.encode()
-    keypair.save(config.KEYPAIR_PATH)
-    # write to s3
+    #keypair.material = keypair.material.encode()
+    open(expected_key, 'w').write(keypair.key_material)
     write_keypair_to_s3(stackname)
     return expected_key
 
 def delete_keypair(stackname):
     "deletes the keypair from ec2, s3 and locally if it exists"
-    ec2 = core.connect_aws_with_stack(stackname, 'ec2')
-    # delete from aws
-    ec2.delete_key_pair(stackname)
-    # delete from s3
-    delete_keypair_from_s3(stackname)
-    # delete from fs
-    # TODO: shift this into own func
-    # just while debugging, move the deleted key to a 'deleted' dir
-    delete_keypair_from_fs(stackname)
+    ec2 = core.boto_conn(stackname, 'ec2')
+    keypair = ec2.KeyPair(stackname)
+    keypair.delete() # delete from aws
+    delete_keypair_from_s3(stackname) # delete from s3
+    delete_keypair_from_fs(stackname) # delete from fs
 
 #
 #

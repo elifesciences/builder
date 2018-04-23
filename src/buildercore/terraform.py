@@ -10,10 +10,19 @@ PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
+FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
+                     'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
+                     'application/x-font-opentype', 'application/x-font-truetype',
+                     'application/x-font-ttf', 'application/xml', 'font/eot', 'font/opentype',
+                     'font/otf', 'image/svg+xml', 'image/vnd.microsoft.icon', 'text/plain',
+                     'text/xml']
+FASTLY_GZIP_EXTENSIONS = ['css', 'js', 'html', 'eot', 'ico', 'otf', 'ttf', 'json']
+
 def render(context):
     if not context['fastly']:
         return '{}'
 
+    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {
@@ -21,7 +30,7 @@ def render(context):
                 RESOURCE_NAME_FASTLY: {
                     'name': context['stackname'],
                     'domain': [
-                        {'name': subdomain} for subdomain in context['fastly']['subdomains']
+                        {'name': subdomain} for subdomain in all_allowed_subdomains
                     ],
                     'backend': {
                         'address': context['full_hostname'],
@@ -39,6 +48,13 @@ def render(context):
                         # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
                         'timer_support': True,
                         'xff': 'leave',
+                    },
+                    'gzip': {
+                        'name': 'default',
+                        # shouldn't need to replicate the defaults
+                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
+                        'content_types': sorted(FASTLY_GZIP_TYPES),
+                        'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
                     'force_destroy': True
                 }
@@ -76,7 +92,7 @@ def init(stackname):
 
 @only_if('fastly')
 def update(stackname, context):
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname)
     terraform.apply(input=False, capture_output=False, raise_on_error=True)
 

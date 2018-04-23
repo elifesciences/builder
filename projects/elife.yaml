@@ -116,6 +116,7 @@ defaults:
         s3: {}
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
+            subdomains: []
             subdomains-without-dns: []
             domains: []
             origins: {}
@@ -129,6 +130,7 @@ defaults:
         fastly:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
+            subdomains-without-dns: []
             dns:
                 cname: u2.shared.global.fastly.net
         subdomains: []
@@ -1482,10 +1484,13 @@ iiif:
                 healthcheck:
                     path: /
             cloudfront:
-                subdomains: 
+                subdomains-without-dns: 
                     - "{instance}--cdn-iiif"
                 headers:
                     - Host
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-iiif"
         # manual tests
         continuumtest:
             ports:
@@ -1500,10 +1505,13 @@ iiif:
                 healthcheck:
                     path: /
             cloudfront:
-                subdomains: 
+                subdomains-without-dns: 
                     - "{instance}--cdn-iiif"
                 headers:
                     - Host
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-iiif"
         prod:
             ports:
                 - 22
@@ -1519,11 +1527,18 @@ iiif:
                 healthcheck:
                     path: /
             cloudfront:
-                subdomains: 
+                subdomains-without-dns:
                     - "{instance}--cdn-iiif"
+                subdomains:
+                    - "{instance}--placeholder-iiif"
                     - iiif
                 headers:
                     - Host
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-iiif"
+                subdomains-without-dns:
+                    - iiif
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:

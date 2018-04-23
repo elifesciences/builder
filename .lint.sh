@@ -17,7 +17,7 @@ echo "pylint"
 # E1129=doesn't like Fabric's context manager
 # E1101=no-member, temporary while python2 is still supported
 # E0602=undefined-variable, temporary while python2 is still supported
-pylint -E *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py src/tests/*.py \
+pylint -E *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py src/tests/*.py src/integration_tests/*.py \
     --disable=E1129 \
     --disable=E1101 \
     --disable=E0602 2> /dev/null
