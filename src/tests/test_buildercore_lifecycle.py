@@ -96,8 +96,9 @@ class TestBuildercoreLifecycle(base.BaseCase):
     def _ec2_instance(self, state='running', id='i-456', launch_time='2017-01-01T00:00:00.000Z'):
         instance = MagicMock()
         instance.id = id
-        instance.state = state
-        instance.tags = {'Name': 'dummy1--test--1'}
+        state_codes = {'running': 16}
+        instance.state = {'Code': state_codes.get(state, -1), 'Name': state} # 'Code' should vary but probably isn't being used
+        instance.tags = [{'Key': 'Name', 'Value': 'dummy1--test--1'}]
         instance.launch_time = launch_time
         return instance
 

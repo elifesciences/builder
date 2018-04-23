@@ -74,7 +74,7 @@ def server_access():
     access may be available through presence of the master-server's bootstrap user's
     identify file OR current user is in master server's allowed_keys list"""
     stackname = core.find_master(core.find_region())
-    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['ip_address']
+    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['PublicIpAddress']
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
     return result.return_code == 0
 
@@ -96,7 +96,7 @@ def aws_update_projects(pname):
 @cached
 def _cached_master_ip(master_stackname):
     "provides a small time saving when remastering many minions"
-    return core.stack_data(master_stackname)[0]['private_ip_address']
+    return core.stack_data(master_stackname)[0]['PrivateIpAddress']
 
 @debugtask
 @requires_aws_stack

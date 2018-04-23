@@ -11,7 +11,7 @@ def try_only_once(fn, interval=5, timeout=600, update_msg="waiting ...", done_ms
 
 class Primitives(base.BaseCase):
     def setUp(self):
-        patcher = patch('buildercore.bluegreen.boto_elb_conn')
+        patcher = patch('buildercore.bluegreen.boto_client')
         self.addCleanup(patcher.stop)
         elb_conn_factory = patcher.start()
         self.conn = MagicMock()

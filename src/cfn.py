@@ -10,10 +10,10 @@ import utils, buildvars
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 from buildercore.concurrency import concurrency_for
-from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
+from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY, FabricException
-from buildercore.utils import lmap
+from buildercore.utils import lmap, ensure
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
     pdata = project.project_data(pname)
     if alt_config:
-        core_utils.ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")
+        ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")
 
     # prompt user for alternate configurations
     if 'aws-alt' in pdata:
@@ -218,12 +218,12 @@ def aws_stack_list():
     return core.active_stack_names(region)
 
 def _pick_node(instance_list, node):
-    instance_list = sorted(instance_list, key=lambda n: n.tags['Name'])
-    info = [n for n in instance_list]
+    instance_list = sorted(instance_list, key=lambda n: tags2dict(n.tags)['Name'])
+    info = [n for n in instance_list] #
 
     def helpfn(pick):
         node = pick - 1
-        return "%s (%s, %s)" % (info[node].tags['Name'], info[node].id, info[node].ip_address)
+        return "%s (%s, %s)" % (tags2dict(info[node].tags)['Name'], info[node].id, info[node].public_ip_address)
 
     num_instances = len(instance_list)
     if num_instances > 1:
@@ -232,9 +232,9 @@ def _pick_node(instance_list, node):
         node = int(node) - 1
         instance = instance_list[int(node)]
     else:
-        assert node == 1 or node is None, "You can't specify a node different from 1 for a single-instance stack"
+        ensure(node == 1 or node is None, "You can't specify a node different from 1 for a single-instance stack")
         instance = instance_list[0]
-    core_utils.ensure(instance.ip_address is not None, "Selected instance does not have a public ip address, are you sure it's running?")
+    ensure(instance.public_ip_address, "Selected instance does not have a public ip address, are you sure it's running?")
     return instance
 
 
@@ -272,8 +272,8 @@ def _check_want_to_be_running(stackname, autostart=False):
             return False
 
     core_lifecycle.start(stackname)
-    # to get the ip addresses that are assigned to the now-running instances
-    # and that weren't there before
+    # another call to get the ip addresses that are assigned to the now-running
+    # instances and that weren't there before
     return core.find_ec2_instances(stackname)
 
 @task
@@ -282,7 +282,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
-    public_ip = _pick_node(instances, node).ip_address
+    public_ip = _pick_node(instances, node).public_ip_address
     _interactive_ssh("ssh %s@%s -i %s" % (username, public_ip, USER_PRIVATE_KEY))
 
 @task
@@ -292,7 +292,7 @@ def owner_ssh(stackname, node=None):
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
-    public_ip = _pick_node(instances, node).ip_address
+    public_ip = _pick_node(instances, node).public_ip_address
     # -i identify file
     _interactive_ssh("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
 

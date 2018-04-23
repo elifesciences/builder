@@ -88,10 +88,8 @@ H1.setFormatter(CONSOLE_FORMAT)
 
 # FileHandler sends to a named file
 H2 = logging.FileHandler(LOG_FILE)
-if 'LOG_LEVEL_FILE' in os.environ:
-    H2.setLevel(getattr(logging, os.environ['LOG_LEVEL_FILE']))
-else:
-    H2.setLevel(logging.INFO)
+_log_level = os.environ.get('LOG_LEVEL_FILE', 'INFO')
+H2.setLevel(getattr(logging, _log_level))
 H2.setFormatter(FORMAT)
 
 ROOTLOG.addHandler(H1)
@@ -123,15 +121,20 @@ AWS_EXCLUDING = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache', 'fastly']
 
 #
 # settings
-# believe it or not but buildercore.config is NOT the place to be putting settings
+# believe it or not but buildercore.config is NOT the place for user config
 #
 
-if 'SETTINGS_FILE' in os.environ:
-    SETTINGS_FILE = os.environ['SETTINGS_FILE']
-else:
-    SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
+SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
+SETTINGS_FILE = os.environ.get('SETTINGS_FILE', SETTINGS_FILE)
 
 USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
+#
+# testing
+#
+
+# 'Test With Instance', see integration_tests.test_with_instance
+TWI_REUSE_STACK = os.environ.get('BLDR_TWI_REUSE_STACK', '0') == '1' # use existing test stack if exists
+TWI_CLEANUP = os.environ.get('BLDR_TWI_CLEANUP', '1') == '1' # tear down test stack after testing
 
 #
 # logic
@@ -189,9 +192,8 @@ def parse(settings_data):
 
 @cache
 def app(settings_path=None):
-    if not settings_path:
-        # set default here so tests can change the value of SETTINGS_FILE
-        settings_path = SETTINGS_FILE
+    # set default here so tests can change the value of SETTINGS_FILE
+    settings_path = settings_path or SETTINGS_FILE
     LOG.debug("using settings path %r", settings_path)
     return parse(load(settings_path))
 

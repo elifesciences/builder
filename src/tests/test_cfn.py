@@ -36,7 +36,8 @@ class TestCfn(base.BaseCase):
     def _dummy_instance_is_active(self, find_ec2_instances, active_stack_names):
         active_stack_names.return_value = ['dummy1--prod']
         instance = MagicMock()
-        instance.ip_address = '54.54.54.54'
+        instance.public_ip_address = '54.54.54.54'
+        instance.tags = [{'Key': 'Name', 'Value': 'dummy1--test--1'}]
         find_ec2_instances.return_value = [
             instance
         ]

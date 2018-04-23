@@ -5,14 +5,14 @@ The nodes inside a stack are divided into two groups: blue and green. Actions ar
 nodes_params is a data structure (dictionary) .
 TODO: make nodes_params a named tuple"""
 import logging
-from .core import boto_elb_conn, parallel_work
+from .core import boto_client, parallel_work
 from .utils import ensure, call_while
 
 LOG = logging.getLogger(__name__)
 
 class BlueGreenConcurrency(object):
     def __init__(self, region):
-        self.conn = boto_elb_conn(region)
+        self.conn = boto_client('elb', region)
 
     def __call__(self, single_node_work, nodes_params):
         elb_name = self.find_load_balancer(nodes_params['stackname'])
