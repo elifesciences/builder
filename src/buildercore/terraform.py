@@ -31,6 +31,9 @@ def render(context):
                         'ssl_cert_hostname': context['full_hostname'],
                         'ssl_check_cert': True,
                     },
+                    'gzip': {
+                        'name': context['stackname'],
+                    },
                     'force_destroy': True
                 }
             }
