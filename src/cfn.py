@@ -6,7 +6,7 @@ from fabric.api import task, local, run, sudo, put, get, abort, settings
 import fabric.exceptions
 import fabric.state
 from fabric.contrib import files
-import aws, utils, buildvars
+import utils, buildvars
 from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 from buildercore.concurrency import concurrency_for
@@ -122,7 +122,7 @@ def update_infrastructure(stackname):
 # TODO: deprecated, this task now lives in `master.py`
 @debugtask
 def update_master():
-    master_stackname = core.find_master(aws.find_region())
+    master_stackname = core.find_master(utils.find_region())
     bootstrap.update_stack(master_stackname, service_list=[
         'ec2' # master-server should be a self-contained EC2 instance
     ])
@@ -214,7 +214,7 @@ def pillar(stackname):
 @echo_output
 def aws_stack_list():
     "returns a list of realized stacks. does not include deleted stacks"
-    region = aws.find_region()
+    region = utils.find_region()
     return core.active_stack_names(region)
 
 def _pick_node(instance_list, node):

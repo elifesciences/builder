@@ -1,7 +1,7 @@
 import os, sys
 from buildercore.utils import second, last, gtpy2
-from buildercore.decorators import osissue
 from fabric.api import local
+from buildercore import core
 
 # totally is assigned :(
 # pylint: disable=global-variable-not-assigned
@@ -40,7 +40,6 @@ def get_input(message):
     fn = input if gtpy2() else raw_input
     return fn(message)
 
-@osissue("renamed from `_pick` to something. `choose` ?")
 def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
     default = None
     if default_file:
@@ -118,3 +117,12 @@ def table(rows, keys):
     for row in rows:
         lines.append(', '.join([getattr(row, key) for key in keys]))
     return "\n".join(lines)
+
+def find_region(stackname=None):
+    """tries to find the region, but falls back to user input if there are multiple regions available.
+    Uses stackname, if provided, to filter the available regions"""
+    try:
+        return core.find_region(stackname)
+    except core.MultipleRegionsError as e:
+        print("many possible regions found!")
+        return _pick('region', e.regions())
