@@ -1527,11 +1527,18 @@ iiif:
                 healthcheck:
                     path: /
             cloudfront:
-                subdomains: 
+                subdomains-without-dns:
                     - "{instance}--cdn-iiif"
+                subdomains:
+                    - "{instance}--placeholder-iiif"
                     - iiif
                 headers:
                     - Host
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-iiif"
+                subdomains-without-dns:
+                    - iiif
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
