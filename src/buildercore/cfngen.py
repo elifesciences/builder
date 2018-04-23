@@ -554,8 +554,8 @@ def apply_delta(template, delta):
 
 def _current_cloudformation_template(stackname):
     "retrieves a template from the CloudFormation API, using it as the source of truth"
-    conn = core.connect_aws_with_stack(stackname, 'cfn')
-    return json.loads(conn.get_template(stackname)['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
+    cfn = core.boto_conn(stackname, 'cloudformation', client=True)
+    return cfn.get_template(StackName=stackname)['TemplateBody']
 
 def download_cloudformation_template(stackname):
     write_cloudformation_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
