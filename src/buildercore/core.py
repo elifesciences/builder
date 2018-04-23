@@ -13,7 +13,6 @@ from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
-from boto import sns # boto2
 import boto3
 import botocore
 from contextlib import contextmanager
@@ -75,23 +74,6 @@ STEADY_CFN_STATUS = [
 # sns
 #
 
-def _set_raw_subscription_attribute(sns_connection, subscription_arn):
-    """
-    Works around boto's lack of a SetSubscriptionAttributes call.
-
-    boto doesn't (yet) expose SetSubscriptionAttributes, so here's a
-    monkeypatch specifically for turning on the RawMessageDelivery attribute.
-    """
-    params = {
-        'AttributeName': 'RawMessageDelivery',
-        'AttributeValue': 'true',
-        'SubscriptionArn': subscription_arn
-    }
-    return sns_connection._make_request('SetSubscriptionAttributes', params)
-
-
-sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
-
 def _all_sns_subscriptions(region):
     paginator = boto_client('sns', region).get_paginator('list_subscriptions')
     return utils.shallow_flatten([page['Subscriptions'] for page in paginator.paginate()])
@@ -137,16 +119,6 @@ def boto_client(service, region):
     it excludes some convenient functionality, like automatic pagination.
     prefer the service resource over the client"""
     return boto3.client(service, region_name=region)
-
-# TODO: remove
-@cached
-def boto_sns_conn(region):
-    return connect_aws('sns', region)
-
-# TODO: remove
-@cached
-def boto_sqs_conn(region):
-    return connect_aws('sqs', region)
 
 # TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
 @cached
@@ -534,7 +506,7 @@ def stack_triple(aws_stack):
 # lists of aws stacks
 #
 
-#@cached # disable until finished debugging
+@cached # disable until finished debugging
 def _aws_stacks(region, status=None, formatter=stack_triple):
     "returns all stacks, even stacks deleted in the last 90 days, optionally filtered by status"
     # NOTE: uses client rather than resource. resource cannot filter by stack status
