@@ -403,6 +403,7 @@ def update_template(stackname, template):
     except botocore.exceptions.ClientError as ex:
         # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
         if ex.response['Error']['Message'] == 'No updates are to be performed.':
+            LOG.info(str(ex), extra={'response': ex.response})
             return
         raise
 
