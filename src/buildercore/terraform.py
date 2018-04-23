@@ -31,6 +31,10 @@ def render(context):
                         'ssl_cert_hostname': context['full_hostname'],
                         'ssl_check_cert': True,
                     },
+                    'request_setting': {
+                        'name': 'default',
+                        'force_ssl': True,
+                    },
                     'force_destroy': True
                 }
             }

@@ -37,6 +37,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
                             },
+                            'request_setting': {
+                                'name': 'default',
+                                'force_ssl': True,
+                            },
                             'force_destroy': True
                         }
                     }
@@ -74,6 +78,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True
+                            },
+                            'request_setting': {
+                                'name': 'default',
+                                'force_ssl': True,
                             },
                             'force_destroy': True
                         }
