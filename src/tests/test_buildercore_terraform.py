@@ -38,7 +38,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_check_cert': True,
                             },
                             'gzip': {
-                                'name': 'project-with-fastly-minimal--prod',
+                                'name': 'default',
                                 'content_types': ['text/html', 'application/x-javascript',
                                                   'text/css', 'application/javascript',
                                                   'text/javascript', 'application/json',
@@ -91,7 +91,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_check_cert': True
                             },
                             'gzip': {
-                                'name': 'project-with-fastly-complex--prod',
+                                'name': 'default',
                                 'content_types': ['text/html', 'application/x-javascript',
                                                   'text/css', 'application/javascript',
                                                   'text/javascript', 'application/json',

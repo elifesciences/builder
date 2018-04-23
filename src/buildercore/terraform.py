@@ -40,7 +40,7 @@ def render(context):
                         'ssl_check_cert': True,
                     },
                     'gzip': {
-                        'name': context['stackname'],
+                        'name': 'default',
                         # shouldn't need to replicate the defaults
                         # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
                         'content_types': FASTLY_GZIP_TYPES,
