@@ -112,7 +112,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
 
     except botocore.exceptions.ClientError as err:
         if err.response['Error']['Code'] == 'AlreadyExistsException':
-            LOG.debug(err.message)
+            LOG.debug(err)
             return False
         LOG.exception("unhandled boto ClientError attempting to create stack", extra={'stackname': stackname, 'parameters': parameters, 'response': err.response})
         on_error()
@@ -612,7 +612,7 @@ def delete_stack_file(stackname):
         LOG.warning('stack %r still exists, refusing to delete stack files. delete active stack first.', stackname)
         return
     except botocore.exceptions.ClientError as ex:
-        if not ex.message.endswith('does not exist'):
+        if not ex.response['Error']['Message'].endswith('does not exist'):
             LOG.exception("unhandled exception attempting to confirm if stack %r exists", stackname)
             raise
     ext_list = [
@@ -678,7 +678,7 @@ def delete_stack(stackname):
             try:
                 return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
             except botocore.exceptions.ClientError as err:
-                if err.message.endswith('does not exist'):
+                if err.response['Error']['Message'].endswith('does not exist'):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for AWS to finish deleting stack ...')
@@ -689,5 +689,9 @@ def delete_stack(stackname):
         delete_dns(stackname)
         LOG.info("stack %r deleted", stackname)
 
-    except botocore.exceptions.ClientError as err:
-        LOG.exception("[%s: %s] %s (request-id: %s)", err.status, err.reason, err.message, err.request_id)
+    except botocore.exceptions.ClientError as ex:
+        msg = "[%s: %s] %s (request-id: %s)"
+        meta = ex.response['ResponseMetadata']
+        err = ex.response['Error']
+        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})

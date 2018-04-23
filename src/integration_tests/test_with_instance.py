@@ -34,14 +34,24 @@ class One(base.BaseCase):
 
         # debugging only, where we keep an instance up between processes
         self.state, self.statefile = {}, '/tmp/.open-test-instances.txt'
+        project = 'dummy1'
+
         if self.reuse_existing_stack and os.path.exists(self.statefile):
-            self.state = json.load(open(self.statefile, 'r'))
-            self.environment = self.state.get('environment', self.environment)
+            # evidence of a previous instance and we've been told to re-use old instances
+            old_state = json.load(open(self.statefile, 'r'))
+            old_env = old_state.get('environment')
+
+            # test if the old stack still exists ...
+            if old_env and core.get_stack(project + "--" + old_env):
+                self.state = old_state
+                self.environment = old_env
+            else:
+                # nope. old statefile is bogus, delete it
+                os.unlink(self.statefile)
 
         self.state['environment'] = self.environment # will be saved later
 
         with settings(abort_on_prompts=True):
-            project = 'dummy1'
             self.stackname = '%s--%s' % (project, self.environment)
             self.stacknames.append(self.stackname)
 

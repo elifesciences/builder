@@ -332,8 +332,8 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
-                if str(err.message).startswith('Timed out trying to connect'):
-                    LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err.message, attempt)
+                if str(err).startswith('Timed out trying to connect'):
+                    LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
                     continue
                 else:
                     raise err
@@ -489,6 +489,15 @@ def describe_stack(stackname):
         LOG.warning("Retrying once DescribeStacks API call: %s", e)
         return first(list(cfn.stacks.filter(StackName=stackname)))
 
+# temporary, merge handling into describe_stack somehow
+def get_stack(stackname):
+    try:
+        return describe_stack(stackname)
+    except botocore.exceptions.ClientError as ex:
+        if ex.response['Error']['Message'].endswith('does not exist'):
+            return None
+        raise
+
 class NoRunningInstances(Exception):
     pass
 
@@ -517,7 +526,7 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
             LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, description.meta.data)
         return result
     except botocore.exceptions.ClientError as err:
-        if err.message.endswith('does not exist'):
+        if err.response['Error']['Message'].endswith('does not exist'):
             return False
         LOG.warning("unhandled exception testing state of stack %r", stackname)
         raise

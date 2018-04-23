@@ -321,7 +321,8 @@ def lu(context, *paths, **kwargs):
     return v
 
 def hasallkeys(ddict, key_list):
-    return all(map(ddict.has_key, key_list))
+    "predicate, returns true if all keys in given key_list are present in dictionary ddict"
+    return all([key in ddict for key in key_list])
 
 def missingkeys(ddict, key_list):
     "returns all keys in key_list that are not in given ddict"
