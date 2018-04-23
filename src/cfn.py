@@ -12,7 +12,7 @@ from buildercore import core, cfngen, utils as core_utils, bootstrap, project, c
 from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes
 from buildercore.decorators import PredicateException
-from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, FabricException
+from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY, FabricException
 from buildercore.utils import lmap
 
 import logging
@@ -283,7 +283,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
     if not instances:
         return
     public_ip = _pick_node(instances, node).ip_address
-    _interactive_ssh("ssh %s@%s" % (username, public_ip))
+    _interactive_ssh("ssh %s@%s -i %s" % (username, public_ip, USER_PRIVATE_KEY))
 
 @task
 @requires_aws_stack

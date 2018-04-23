@@ -131,6 +131,7 @@ if 'SETTINGS_FILE' in os.environ:
 else:
     SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
 
+USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
 #
 # logic
