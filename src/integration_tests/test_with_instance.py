@@ -1,12 +1,15 @@
 import os, json
 from fabric.api import settings
 from tests import base
-from buildercore import bootstrap, cfngen, lifecycle, utils, core
+from buildercore import bootstrap, cfngen, lifecycle, utils, core, config
 from buildercore.config import BOOTSTRAP_USER
 import cfn
 import logging
+import mock
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
+
+LOG = logging.getLogger(__name__)
 
 # the intent here is:
 # * launch an ec2 instance without running highstate
@@ -22,8 +25,8 @@ class One(base.BaseCase):
         # this will read the instance name from a temporary file (if it exists) and
         # look for that, creating it if doesn't exist yet
         # also ensure self.cleanup is False so the instance isn't destroyed after tests complete
-        self.reuse_existing_stack = False
-        self.cleanup = True
+        self.reuse_existing_stack = config.TWI_REUSE_STACK
+        self.cleanup = config.TWI_CLEANUP
 
         self.stacknames = []
         self.environment = base.generate_environment_name()
@@ -53,22 +56,27 @@ class One(base.BaseCase):
 
     @classmethod
     def tearDownClass(self): # cls, not self
-        print('tearing down')
         super(One, self).tearDownClass()
-        if self.reuse_existing_stack:
-            print('dumping state')
-            json.dump(self.state, open(self.statefile, 'w'))
-        if self.cleanup:
-            print('cleaning up')
-            for stackname in self.stacknames:
-                cfn.ensure_destroyed(stackname)
-        print('removing temp dir')
-        # self.rm_temp_dir()
-        # self.assertFalse(os.path.exists(self.temp_dir), "failed to delete path %r in tearDown" % self.temp_dir)
+        try:
+            if self.reuse_existing_stack:
+                json.dump(self.state, open(self.statefile, 'w'))
+            if self.cleanup:
+                for stackname in self.stacknames:
+                    cfn.ensure_destroyed(stackname)
+            # self.rm_temp_dir()
+            # self.assertFalse(os.path.exists(self.temp_dir), "failed to delete path %r in tearDown" % self.temp_dir)
+        except BaseException:
+            # important, as anything in body will silently fail
+            LOG.exception('uncaught error tearing down test class')
 
-    def test_bootstrap_idempotence(self):
+    def test_bootstrap_create_stack_idempotence(self):
         "the same stack cannot be created multiple times"
         bootstrap.create_stack(self.stackname)
+
+    def test_bootstrap_create_stack_already_exists(self):
+        "if we force the same stack to be created multiple times, the error is successfully caught and logged"
+        with mock.patch('buildercore.bootstrap.core.stack_is_active', side_effect=[False]):
+            self.assertFalse(bootstrap._create_generic_stack(self.stackname))
 
     def test_bootstrap_wait_until_in_progress(self):
         bootstrap._wait_until_in_progress(self.stackname)

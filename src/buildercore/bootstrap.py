@@ -111,12 +111,10 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         raise
 
     except botocore.exceptions.ClientError as err:
-        # TODO: is this ' already exists' check different from the other 'does not exist' check?
-        # if so, can we get a list of these messages somewhere?
-        if err.message.endswith(' already exists'):
+        if err.response['Error']['Code'] == 'AlreadyExistsException':
             LOG.debug(err.message)
             return False
-        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
+        LOG.exception("unhandled boto ClientError attempting to create stack", extra={'stackname': stackname, 'parameters': parameters, 'response': err.response})
         on_error()
         raise
 
