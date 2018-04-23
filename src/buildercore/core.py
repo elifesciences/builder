@@ -13,7 +13,7 @@ from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
-from boto import sns
+from boto import sns # boto2
 import boto3
 import botocore
 from contextlib import contextmanager
@@ -93,19 +93,13 @@ def _set_raw_subscription_attribute(sns_connection, subscription_arn):
 sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
 
 def _all_sns_subscriptions(region):
-    conn = boto_sns_conn(region) # boto2
-    token, subs_list = None, []
-    while True:
-        response = conn.get_all_subscriptions(next_token=token)
-        token = response['ListSubscriptionsResponse']['ListSubscriptionsResult']['NextToken']
-        subs_list.extend(response['ListSubscriptionsResponse']['ListSubscriptionsResult']['Subscriptions'])
-        if not token:
-            return subs_list
+    paginator = boto_client('sns', region).get_paginator('list_subscriptions')
+    return utils.shallow_flatten([page['Subscriptions'] for page in paginator.paginate()])
 
 def all_sns_subscriptions(region, stackname=None):
     """returns all subscriptions to all sns topics.
     optionally filtered by subscription endpoints matching given stack"""
-    subs_list = _all_sns_subscriptions(region) # boto2
+    subs_list = _all_sns_subscriptions(region)
     if stackname:
         # a subscription looks like:
         # {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
