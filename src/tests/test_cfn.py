@@ -16,7 +16,7 @@ class TestCfn(base.BaseCase):
     def test_ssh_task(self, find_ec2_instances, active_stack_names, local):
         self._dummy_instance_is_active(find_ec2_instances, active_stack_names)
         ssh('dummy1--prod')
-        local.assert_called_with('ssh elife@54.54.54.54')
+        local.assert_called_with('ssh elife@54.54.54.54 -i ~/.ssh/id_rsa')
 
     @patch('cfn.local')
     @patch('buildercore.core.active_stack_names')
