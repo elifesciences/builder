@@ -40,6 +40,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'request_setting': {
                                 'name': 'default',
                                 'force_ssl': True,
+                                'timer_support': True,
+                                'xff': 'leave',
                             },
                             'force_destroy': True
                         }
@@ -82,6 +84,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'request_setting': {
                                 'name': 'default',
                                 'force_ssl': True,
+                                'timer_support': True,
+                                'xff': 'leave',
                             },
                             'force_destroy': True
                         }

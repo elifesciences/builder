@@ -34,6 +34,11 @@ def render(context):
                     'request_setting': {
                         'name': 'default',
                         'force_ssl': True,
+                        # shouldn't need to replicate the defaults
+                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
+                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
+                        'timer_support': True,
+                        'xff': 'leave',
                     },
                     'force_destroy': True
                 }
