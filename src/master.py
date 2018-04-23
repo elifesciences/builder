@@ -4,7 +4,7 @@ See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
 import buildvars, utils
-from fabric.api import sudo, local
+from fabric.api import sudo, local, task
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
@@ -13,7 +13,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-@debugtask
+@task
 def update(master_stackname=None):
     "same as `cfn.update` but also removes any orphaned minion keys"
     master_stackname = master_stackname or core.find_master(utils.find_region())
