@@ -12,14 +12,15 @@ from collections import OrderedDict
 from datetime import datetime
 from . import utils, config, keypair, bvars, core, context_handler, project, terraform
 from .context_handler import only_if as updates
-from .core import connect_aws_with_stack, stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
+from .core import stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
-from boto.exception import BotoServerError, SQSError
+import boto # boto2
+import botocore
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
 
@@ -38,13 +39,13 @@ def _put_temporary_script(script_filename):
 
 def put_script(script_filename, remote_script):
     """uploads a script for SCRIPTS_PATH in remote_script location, making it executable
-    ASSUMES YOU ARE CONNECTED TO A STACK"""
+    WARN: assumes you are connected to a stack"""
     temporary_script = _put_temporary_script(script_filename)
     sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
 
 def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
-    ASSUMES YOU ARE CONNECTED TO A STACK"""
+    WARN: assumes you are connected to a stack"""
     start = datetime.now()
     remote_script = _put_temporary_script(script_filename)
 
@@ -77,7 +78,7 @@ def create_stack(stackname):
     on_start = _noop
     on_error = _noop
     if pdata['aws']['ec2']:
-        parameters.append(('KeyName', stackname))
+        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
@@ -85,14 +86,19 @@ def create_stack(stackname):
 
 def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
+    if core.stack_is_active(stackname):
+        LOG.info("stack exists") # avoid on_start handler
+        return True
+
     parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
     stack_body = core.stack_json(stackname)
     try:
         on_start()
-        conn = connect_aws_with_stack(stackname, 'cfn')
-        conn.create_stack(stackname, stack_body, parameters=parameters)
+        conn = core.boto_conn(stackname, 'cloudformation')
+        # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
+        conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
@@ -104,11 +110,11 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         LOG.info("Stack taking a long time to complete: %s", err)
         raise
 
-    except BotoServerError as err:
-        if err.message.endswith(' already exists'):
-            LOG.debug(err.message)
+    except botocore.exceptions.ClientError as err:
+        if err.response['Error']['Code'] == 'AlreadyExistsException':
+            LOG.debug(err)
             return False
-        LOG.exception("unhandled Boto exception attempting to create stack", extra={'stackname': stackname, 'parameters': parameters})
+        LOG.exception("unhandled boto ClientError attempting to create stack", extra={'stackname': stackname, 'parameters': parameters, 'response': err.response})
         on_error()
         raise
 
@@ -135,9 +141,11 @@ def _wait_until_in_progress(stackname):
         update_msg='Waiting for AWS to finish creating stack ...',
         exception_class=StackTakingALongTimeToComplete
     )
+
     final_stack = core.describe_stack(stackname)
-    events = [(e.resource_status, e.resource_status_reason) for e in final_stack.describe_events()]
-    ensure(final_stack.stack_status in ['CREATE_COMPLETE'],
+    # NOTE: stack.events.all|filter|limit can take 5+ seconds to complete regardless of events returned
+    events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
+    ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
 #
@@ -149,10 +157,9 @@ def setup_ec2(stackname, context):
     def _setup_ec2_node():
         def is_resourcing():
             try:
-                # we have an issue where the stack is created, however the security group
+                # we have an issue where the stack is created, but the security group
                 # hasn't been attached or ssh isn't running yet and we can't get in.
-                # this waits until a connection can be made and a file is found before continuing.
-                # moreover, call until:
+                # this waits until:
                 # - bootstrap user exists and we can access it through SSH
                 # - cloud-init has finished running
                 #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
@@ -180,7 +187,7 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     return None
 
 def unsub_sqs(stackname, new_context, region, dry_run=False):
-    sublist = core.all_sns_subscriptions(region, stackname)
+    sublist = core.all_sns_subscriptions(region, stackname) # boto2
 
     # compare project subscriptions to those actively subscribed to (sublist)
     unsub_map = {}
@@ -190,11 +197,11 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
         permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
 
     if not dry_run:
-        sns = core.boto_sns_conn(region)
+        sns = core.boto_sns_conn(region) # boto2
         for sub in utils.shallow_flatten(unsub_map.values()):
             LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
             sns.unsubscribe(sub['SubscriptionArn'])
-        sqs = core.boto_sqs_conn(region)
+        sqs = core.boto_sqs_conn(region) # boto2
 
         for queue_name, topic_arns in permission_map.items():
             # not an atomic update, but there's no other way to do it
@@ -207,7 +214,7 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
                 new_policy_dump = json.dumps(new_policy)
                 try:
                     queue.set_attribute('Policy', new_policy_dump)
-                except SQSError:
+                except boto.exception.SQSError: # boto2
                     LOG.exception("Policy: %s", new_policy_dump)
             else:
                 queue.set_attribute('Policy', '')
@@ -220,15 +227,15 @@ def sub_sqs(stackname, context_sqs, region):
     necessary, adding both the subscription and the IAM policy to let the SNS
     topic write to the queue
     """
-    assert isinstance(context_sqs, dict), ("Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
+    ensure(isinstance(context_sqs, dict), "Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
 
-    sqs = core.boto_sqs_conn(region)
-    sns = core.boto_sns_conn(region)
+    sqs = core.boto_sqs_conn(region) # boto2
+    sns = core.boto_sns_conn(region) # boto2
 
     for queue_name, subscriptions in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         queue = sqs.lookup(queue_name)
-        assert isinstance(subscriptions, list), ("Not a list of topics: %s" % subscriptions)
+        ensure(isinstance(subscriptions, list), "Not a list of topics: %s" % subscriptions)
 
         for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
@@ -269,7 +276,7 @@ def update_s3_stack(stackname, context, **kwargs):
 
     ensure(isinstance(context_s3, dict), "Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
 
-    s3 = core.boto_s3_conn(region)
+    s3 = core.boto_client('s3', region)
     for bucket_name in context_s3:
         LOG.info('Setting NotificationConfiguration for bucket %s', bucket_name, extra={'stackname': stackname})
         if 'sqs-notifications' in context_s3[bucket_name]:
@@ -286,12 +293,12 @@ def update_s3_stack(stackname, context, **kwargs):
 
 def _queue_configurations(stackname, queues, bucket_name, region):
     """Builds the QueueConfigurations element for configuring notifications coming from bucket_name"""
-    assert isinstance(queues, dict), ("Not a dictionary of queue names pointing to their notification specifications: %s" % queues)
+    ensure(isinstance(queues, dict), "Not a dictionary of queue names pointing to their notification specifications: %s" % queues)
 
     queue_configurations = []
     for queue_name in queues:
         notification_specification = queues[queue_name]
-        assert isinstance(notification_specification, dict), ("Not a dictionary of queue specification parameters: %s" % queues)
+        ensure(isinstance(notification_specification, dict), "Not a dictionary of queue specification parameters: %s" % queues)
         queue_arn = _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region)
         queue_configurations.append(_sqs_notification_configuration(queue_arn, notification_specification))
     return queue_configurations
@@ -307,7 +314,7 @@ def _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region):
     # instead, you will get an error when trying to set the
     # NotificationConfiguration on the bucket later.
     # This also has to be idempotent... basically we are reiventing CloudFormation in Python because they don't support creating a bucket, a queue and their connection in a single template (you have to create a template without the linkage and then edit it and update it.)
-    sqs = core.boto_sqs_conn(region)
+    sqs = core.boto_sqs_conn(region) # boto2
     queue = sqs.lookup(queue_name)
     attributes = sqs.get_queue_attributes(queue, 'Policy')
     if 'Policy' in attributes:
@@ -370,55 +377,64 @@ def _sqs_notification_configuration(queue_arn, notification_specification):
 #  attached stack resources, ec2 data
 #
 
-@core.requires_active_stack
-def stack_resources(stackname):
-    "returns a list of resources provisioned by the given stack"
-    return connect_aws_with_stack(stackname, 'cfn').describe_stack_resources(stackname)
-
-def ec2_instance_data(stackname):
-    "returns the ec2 instance data from the first ec2 instance the stack has"
-    assert stackname, "stackname must be valid, not None"
-    ec2 = first([r for r in stack_resources(stackname) if r.resource_type == "AWS::EC2::Instance"])
-    conn = connect_aws_with_stack(stackname, 'ec2')
-    return conn.get_only_instances([ec2.physical_resource_id])[0]
-
 @cached
 def master_data(region):
     "returns the ec2 instance data for the master-server"
     stackname = core.find_master(region)
-    assert stackname, ("Cannot find the master in region %s" % region)
-    return ec2_instance_data(stackname)
+    master_inst = first(core.find_ec2_instances(stackname))
+    return master_inst.meta.data
 
 def master(region, key):
-    return getattr(master_data(region), key)
+    return master_data(region)[key]
 
 #
 # bootstrap stack
 #
 
+# TODO: consider moving to cloudformation.py
 def update_template(stackname, template):
-    conn = connect_aws_with_stack(stackname, 'cfn')
     parameters = []
     pdata = project_data_for_stackname(stackname)
     if pdata['aws']['ec2']:
-        parameters.append(('KeyName', stackname))
+        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
     try:
-        conn.update_stack(stackname, json.dumps(template), parameters=parameters)
-    except BotoServerError as ex:
-        if ex.message == 'No updates are to be performed.':
+        conn = core.describe_stack(stackname)
+        conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
+    except botocore.exceptions.ClientError as ex:
+        # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
+        if ex.response['Error']['Message'] == 'No updates are to be performed.':
+            LOG.info(str(ex), extra={'response': ex.response})
             return
         raise
 
     def stack_is_updating():
         return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
-    call_while(stack_is_updating, interval=2, timeout=7200, update_msg="waiting for template of %s to be updated" % stackname, done_msg="template of %s is in state UPDATE_COMPLETE" % stackname)
+
+    waiting = "waiting for template of %s to be updated" % stackname
+    done = "template of %s is in state UPDATE_COMPLETE" % stackname
+    call_while(stack_is_updating, interval=2, timeout=7200, update_msg=waiting, done_msg=done)
 
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
-    data = core.describe_stack(stackname).__dict__
-    data['outputs'] = reduce(utils.conj, map(lambda o: {o.key: o.value}, data['outputs']))
-    return utils.exsubdict(data, ['connection', 'parameters'])
+    # data = core.describe_stack(stackname).__dict__ # original boto2 approach, never officially supported
+    data = core.describe_stack(stackname).meta.data # boto3
+
+    # looking at the entire set of formulas, all usage is cfn.outputs, cfn.stack_id and cfn.stack_name
+    # in the interests of being explicit on what is supported, I'm changing what this now returns
+    keepers = OrderedDict([
+        ('StackName', 'stack_name'),
+        ('StackId', 'stack_id'),
+        ('Outputs', 'outputs')
+    ])
+
+    # preserve the lowercase+underscore formatting of original struct
+    utils.renkeys(data, keepers.items()) # in-place changes
+
+    # replaces the standand list-of-dicts 'outputs' with a simpler dict
+    data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
+
+    return utils.subdict(data, keepers.values())
 
 def write_environment_info(stackname, overwrite=False):
     """Looks for /etc/cfn-info.json and writes one if not found.
@@ -553,7 +569,7 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
-        master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'private_ip_address'))
+        master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'PrivateIpAddress'))
         run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
 
         if is_masterless:
@@ -590,12 +606,13 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
 
 @core.requires_stack_file
 def delete_stack_file(stackname):
+    # TODO: does this need the @core.requires_active_stack decorator?
     try:
         core.describe_stack(stackname) # triggers exception if NOT exists
         LOG.warning('stack %r still exists, refusing to delete stack files. delete active stack first.', stackname)
         return
-    except BotoServerError as ex:
-        if not ex.message.endswith('does not exist'):
+    except botocore.exceptions.ClientError as ex:
+        if not ex.response['Error']['Message'].endswith('does not exist'):
             LOG.exception("unhandled exception attempting to confirm if stack %r exists", stackname)
             raise
     ext_list = [
@@ -624,7 +641,8 @@ def remove_minion_key(stackname):
 def master_minion_keys(master_stackname, group_by_stackname=True):
     "returns a list of paths to minion keys on given master stack, optionally grouped by stackname"
     # all paths
-    master_stack_key_paths = core.listfiles_remote(master_stackname, "/etc/salt/pki/master/minions/", use_sudo=True)
+    with stack_conn(master_stackname):
+        master_stack_key_paths = core.listfiles_remote("/etc/salt/pki/master/minions/", use_sudo=True)
     if not group_by_stackname:
         return master_stack_key_paths
     # group by stackname. stackname is created by stripping node information off the end.
@@ -654,21 +672,26 @@ def delete_stack(stackname):
     try:
         context = context_handler.load_context(stackname)
         terraform.destroy(stackname, context)
-        connect_aws_with_stack(stackname, 'cfn').delete_stack(stackname)
+        core.describe_stack(stackname).delete()
 
         def is_deleting(stackname):
             try:
                 return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
-            except BotoServerError as err:
-                if err.message.endswith('does not exist'):
+            except botocore.exceptions.ClientError as err:
+                if err.response['Error']['Message'].endswith('does not exist'):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         utils.call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for AWS to finish deleting stack ...')
-        # remove_minion_key(stackname) # don't do this. prevents regular users deleting stacks
+        # don't do this. requires master server access and would prevent regular users deleting stacks
+        # remove_minion_key(stackname)
         keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)
         delete_stack_file(stackname) # deletes the local cloudformation template
         delete_dns(stackname)
-
         LOG.info("stack %r deleted", stackname)
-    except BotoServerError as err:
-        LOG.exception("[%s: %s] %s (request-id: %s)", err.status, err.reason, err.message, err.request_id)
+
+    except botocore.exceptions.ClientError as ex:
+        msg = "[%s: %s] %s (request-id: %s)"
+        meta = ex.response['ResponseMetadata']
+        err = ex.response['Error']
+        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})

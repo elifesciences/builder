@@ -14,8 +14,8 @@ from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR 
 from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 from boto import sns
-from boto.exception import BotoServerError
 import boto3
+import botocore
 from contextlib import contextmanager
 from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
@@ -105,7 +105,7 @@ def _all_sns_subscriptions(region):
 def all_sns_subscriptions(region, stackname=None):
     """returns all subscriptions to all sns topics.
     optionally filtered by subscription endpoints matching given stack"""
-    subs_list = _all_sns_subscriptions(region)
+    subs_list = _all_sns_subscriptions(region) # boto2
     if stackname:
         # a subscription looks like:
         # {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
@@ -124,8 +124,10 @@ def all_sns_subscriptions(region, stackname=None):
 #
 #
 
+# TODO: remove
 def connect_aws(service, region):
     "connects to given service using the region in the "
+    LOG.warn("boto2 and `connect_aws` are deprecated. please use `boto_resource`, `boto_client` and `boto_conn`")
     aliases = {
         'cfn': 'cloudformation'
     }
@@ -133,32 +135,26 @@ def connect_aws(service, region):
     conn = importlib.import_module('boto.%s' % service)
     return conn.connect_to_region(region)
 
-@cached
-def _boto_cfn_conn(region):
-    return boto3.client('cloudformation', region_name=region)
+def boto_resource(service, region):
+    return boto3.resource(service, region_name=region)
 
-@cached
-def boto_ec2_conn(region):
-    return connect_aws('ec2', region)
+def boto_client(service, region):
+    """the boto3 service client is a lower-level construct compared to the boto3 resource client.
+    it excludes some convenient functionality, like automatic pagination.
+    prefer the service resource over the client"""
+    return boto3.client(service, region_name=region)
 
-@cached
-def boto_elb_conn(region):
-    "This uses boto3 because it allows to read tags on ELB and associate them to a stackname"
-    return boto3.client('elb', region)
-
+# TODO: remove
 @cached
 def boto_sns_conn(region):
     return connect_aws('sns', region)
 
+# TODO: remove
 @cached
 def boto_sqs_conn(region):
     return connect_aws('sqs', region)
 
-@cached
-def boto_s3_conn(region):
-    "This uses boto3 because it allows to set NotificationConfiguration for sending messages to SQS"
-    return boto3.client('s3', region)
-
+# TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
 @cached
 def connect_aws_with_pname(pname, service, with_boto3=False):
     "convenience. returns a boto client for a service in same region as given project"
@@ -169,37 +165,77 @@ def connect_aws_with_pname(pname, service, with_boto3=False):
         return boto3.client(service, region)
     return connect_aws(service, region)
 
+# TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
 def connect_aws_with_stack(stackname, service, with_boto3=False):
     "convenience. returns a boto client for a service in same region as given project instance"
     pname = project_name_from_stackname(stackname)
     return connect_aws_with_pname(pname, service, with_boto3)
 
+def boto_conn(pname_or_stackname, service, client=False):
+    fn = project_data_for_stackname if '--' in pname_or_stackname else project.project_data
+    pdata = fn(pname_or_stackname)
+    # prefer resource if possible
+    fn = boto_client if client else boto_resource
+    return fn(service, pdata['aws']['region'])
+
+#
+#
+#
+
+# Silviot, https://github.com/boto/boto3/issues/264
+# not a bugfix, just a convenience wrapper
+def tags2dict(tags):
+    """Convert a tag list to a dictionary.
+
+    Example:
+        >>> t2d([{'Key': 'Name', 'Value': 'foobar'}])
+        {'Name': 'foobar'}
+    """
+    if tags is None:
+        return {}
+    return dict((el['Key'], el['Value']) for el in tags)
+
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-    conn = connect_aws_with_stack(stackname, 'ec2')
-    filters = _all_nodes_filter(stackname, node_ids=node_ids)
-    all_ec2_instances = conn.get_only_instances(filters=filters)
-    LOG.debug("all_ec2_instances returned instances %s", [(e.id, e.state) for e in all_ec2_instances])
+    conn = boto_conn(stackname, 'ec2')
+    filters = [
+        {'Name': 'tag:aws:cloudformation:stack-name', 'Values': [stackname]}
+    ]
+    # hypothesis is that this is causing filters to skip running instances, non-deterministically.
+    # We'll try to filter the list in-memory instead (below)
+    # if state:
+    #    filters.append({'Name': 'instance-state-name', 'Values': [state]})
+
+    # an instance-id looks like: i-011d46bf3978e5618
+    # NOTE: only lifecycle._ec2_nodes_states uses `node_ids` and nothing is passing it node ids
+    if node_ids:
+        filters.append({'Name': 'instance-id', 'Values': node_ids})
+
+    # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.ServiceResource.instances
+    ec2_instances = list(conn.instances.filter(Filters=filters))
+
+    # hack, see problems with query above. this problem hasn't been replicated (yet) on boto3
     if state:
-        ec2_instances = [i for i in all_ec2_instances if i.state == state]
-    else:
-        ec2_instances = all_ec2_instances
+        ec2_instances = [i for i in ec2_instances if i.state['Name'] == state]
+
+    LOG.debug("find_ec2_instances returned: %s", [(e.id, e.state) for e in ec2_instances])
 
     # multiple instances are sorted by node asc
-    ec2_instances = sorted(ec2_instances, key=lambda ec2inst: ec2inst.tags.get('Node', 0))
+    ec2_instances = sorted(ec2_instances, key=lambda ec2inst: tags2dict(ec2inst.tags).get('Node', 0))
 
-    LOG.debug("find_ec2_instances with filters %s returned instances %s", filters, [e.id for e in ec2_instances])
+    LOG.debug("find_ec2_instances with filters %s returned: %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
 def find_rds_instances(stackname, state='available'):
     "This uses boto3 because it allows to start/stop instances"
-    conn = connect_aws_with_stack(stackname, 'rds', with_boto3=True)
+    conn = boto_conn(stackname, 'rds', client=True)
     all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
     return all_rds_instances
 
+# NOTE: preserved for the commentary, but this is for boto2
 def _all_nodes_filter(stackname, node_ids):
     query = {
         # tag-key+tag-value is misleading here:
@@ -221,14 +257,6 @@ def _all_nodes_filter(stackname, node_ids):
         query['instance-id'] = node_ids
     return query
 
-def find_ec2_volume(stackname):
-    ec2_data = find_ec2_instances(stackname)[0]
-    iid = ec2_data.id
-    # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVolumes.html
-    kwargs = {'filters': {'attachment.instance-id': iid}}
-    return connect_aws_with_stack(stackname, 'ec2').get_all_volumes(**kwargs)
-
-# should live in `keypair`, but I can't have `core` depend on `keypair` and viceversa
 def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     """returns the path to the private key on the local filesystem.
     helpfully dies in different ways if you ask it to"""
@@ -241,16 +269,13 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     return expected_key
 
 def _ec2_connection_params(stackname, username, **kwargs):
-    params = {
-        'user': username,
-    }
+    "returns a dictionary of settings to be used with Fabric's api.settings context manager"
+    params = {'user': username}
     pem = stack_pem(stackname)
-    # doesn't hurt, handles cases where we want to establish a connection to run a task
+    # handles cases where we want to establish a connection to run a task
     # when machine has failed to provision correctly.
     if os.path.exists(pem) and username == config.BOOTSTRAP_USER:
-        params.update({
-            'key_filename': pem
-        })
+        params['key_filename'] = pem
     params.update(kwargs)
     return params
 
@@ -264,7 +289,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     node and ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
     didx = int(node) - 1 if node else 0 # decrement to a zero-based value
     data = data[didx] # data is ordered by node
-    public_ip = data['ip_address']
+    public_ip = data['PublicIpAddress']
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
     with settings(**params):
@@ -281,30 +306,34 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         workfn, work_kwargs = workfn
 
     data = stack_data(stackname)
-    public_ips = {ec2['id']: ec2['ip_address'] for ec2 in data}
-    nodes = {ec2['id']: int(ec2['tags']['Node']) if 'Node' in ec2['tags'] else 1 for ec2 in data}
+    public_ips = {ec2['InstanceId']: ec2['PublicIpAddress'] for ec2 in data}
+    nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == node}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
     # custom for builder, these are available as fabric.api.env.public_ips inside workfn
-    params.update({'stackname': stackname})
-    params.update({'public_ips': public_ips})
-    params.update({'nodes': nodes})
+    params.update({
+        'stackname': stackname,
+        'public_ips': public_ips,
+        'nodes': nodes
+    })
 
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
+    # TODO: candidate for a @backoff decorator
     def single_node_work():
         for attempt in range(0, 6):
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
-                if str(err.message).startswith('Timed out trying to connect'):
-                    LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err.message, attempt)
+                if str(err).startswith('Timed out trying to connect'):
+                    LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
                     continue
                 else:
                     raise err
@@ -449,58 +478,63 @@ def stack_json(stackname, parse=False):
 
 # DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
+# TODO: wrap this is a @backoff
+# TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
 def describe_stack(stackname):
     "returns the full details of a stack given it's name or ID"
+    cfn = boto_conn(stackname, 'cloudformation')
     try:
-        return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
+        return first(list(cfn.stacks.filter(StackName=stackname)))
     except http_client.IncompleteRead as e:
         LOG.warning("Retrying once DescribeStacks API call: %s", e)
-        return first(connect_aws_with_stack(stackname, 'cfn').describe_stacks(stackname))
+        return first(list(cfn.stacks.filter(StackName=stackname)))
+
+# temporary, merge handling into describe_stack somehow
+def get_stack(stackname):
+    try:
+        return describe_stack(stackname)
+    except botocore.exceptions.ClientError as ex:
+        if ex.response['Error']['Message'].endswith('does not exist'):
+            return None
+        raise
 
 class NoRunningInstances(Exception):
     pass
 
+# TODO: misleading name, this returns a list of raw boto3 EC2.Instance data
 def stack_data(stackname, ensure_single_instance=False):
-    """like `describe_stack`, but returns a list of dictionaries"""
     try:
         ec2_instances = find_ec2_instances(stackname)
-
         if len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
-
-        def ec2data(ec2):
-            return ec2.__dict__
-        return lmap(ec2data, ec2_instances)
-
+        return [ec2.meta.data for ec2 in ec2_instances]
     except Exception:
-        LOG.exception('caught an exception attempting to discover more information about this instance. The instance may not exist yet ...')
+        LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
         raise
 
+# DO NOT CACHE
+def stack_is(stackname, acceptable_states, terminal_states=None):
+    "returns True if the given stack is in one of acceptable_states"
+    terminal_states = terminal_states or []
+    try:
+        description = describe_stack(stackname)
+        if description.stack_status in terminal_states:
+            LOG.error("stack_status is '%s', cannot move from that\nDescription: %s", description.stack_status, description.meta.data)
+            raise RuntimeError("stack status is '%s'" % description.stack_status)
+        result = description.stack_status in acceptable_states
+        if not result:
+            LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, description.meta.data)
+        return result
+    except botocore.exceptions.ClientError as err:
+        if err.response['Error']['Message'].endswith('does not exist'):
+            return False
+        LOG.warning("unhandled exception testing state of stack %r", stackname)
+        raise
 
 # DO NOT CACHE
 def stack_is_active(stackname):
     "returns True if the given stack is in a completed state"
     return stack_is(stackname, ACTIVE_CFN_STATUS)
-
-def stack_is(stackname, acceptable_states, terminal_states=None):
-    "returns True if the given stack is in one of acceptable_states"
-    if terminal_states is None:
-        terminal_states = []
-    try:
-        description = describe_stack(stackname)
-        if description.stack_status in terminal_states:
-            LOG.error("stack_status is '%s', cannot move from that\nDescription: %s", description.stack_status, vars(description))
-            raise RuntimeError("stack status is '%s'" % description.stack_status)
-        result = description.stack_status in acceptable_states
-        if not result:
-            LOG.info("stack_status is '%s'\nDescription: %s", description.stack_status, vars(description))
-        return result
-    except BotoServerError as err:
-        if err.message.endswith('does not exist'):
-            return False
-        LOG.warning("unhandled exception testing state of stack %r", stackname)
-        raise
-
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."
@@ -510,15 +544,12 @@ def stack_triple(aws_stack):
 # lists of aws stacks
 #
 
-@cached
+#@cached # disable until finished debugging
 def _aws_stacks(region, status=None, formatter=stack_triple):
-    "returns *all* stacks, even stacks deleted in the last 90 days"
-    if not status:
-        status = []
-    # NOTE: avoid `.describe_stack` as the results are truncated beyond a certain amount
-    # use `.describe_stack` on specific stacks only
-    paginator = _boto_cfn_conn(region).get_paginator('list_stacks') # boto3
-    paginator = paginator.paginate(StackStatusFilter=status)
+    "returns all stacks, even stacks deleted in the last 90 days, optionally filtered by status"
+    # NOTE: uses client rather than resource. resource cannot filter by stack status
+    paginator = boto_client('cloudformation', region).get_paginator('list_stacks')
+    paginator = paginator.paginate(StackStatusFilter=status or [])
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
     if formatter:
         return lmap(formatter, results)
@@ -528,17 +559,22 @@ def active_aws_stacks(region, *args, **kwargs):
     "returns all stacks that are healthy"
     return _aws_stacks(region, ACTIVE_CFN_STATUS, *args, **kwargs)
 
-def steady_aws_stacks(region):
+def steady_aws_stacks(region, *args, **kwargs):
     "returns all stacks that are not in a transitionary state"
-    return _aws_stacks(region, STEADY_CFN_STATUS)
+    return _aws_stacks(region, STEADY_CFN_STATUS, *args, **kwargs)
 
 def active_aws_project_stacks(pname):
     "returns all active stacks for a given project name"
     pdata = project.project_data(pname)
     region = pdata['aws']['region']
-    fn = lambda t: project_name_from_stackname(first(t)) == pname
+
+    def fn(triple):
+        stackname = first(triple)
+        if stackname_parseable(stackname):
+            return project_name_from_stackname(stackname) == pname
     return lfilter(fn, active_aws_stacks(region))
 
+# TODO: consider removing `only_parseable` parameter.
 def stack_names(stack_list, only_parseable=True):
     results = sorted(map(first, stack_list))
     if only_parseable:
@@ -681,14 +717,13 @@ def project_data_for_stackname(stackname):
         project_data = project.set_project_alt(project_data, 'aws', instance_id)
     return project_data
 
-def listfiles_remote(stackname, path=None, use_sudo=False):
+def listfiles_remote(path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     ensure(path, "path to remote directory required")
-    with stack_conn(stackname):
-        with hide('output'):
-            runfn = sudo if use_sudo else run
-            path = "%s/*" % path.rstrip("/")
-            stdout = runfn("for i in %s; do echo $i; done" % path)
-            if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
-                return []
-            return stdout.splitlines()
+    with hide('output'):
+        runfn = sudo if use_sudo else run
+        path = "%s/*" % path.rstrip("/")
+        stdout = runfn("for i in %s; do echo $i; done" % path)
+        if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
+            return []
+        return stdout.splitlines()

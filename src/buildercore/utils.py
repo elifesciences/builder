@@ -9,6 +9,7 @@ from os.path import join
 from more_itertools import unique_everseen
 import logging
 from fabric.operations import get, put
+import tempfile, shutil
 
 LOG = logging.getLogger(__name__)
 
@@ -320,12 +321,24 @@ def lu(context, *paths, **kwargs):
     return v
 
 def hasallkeys(ddict, key_list):
-    return all(map(ddict.has_key, key_list))
+    "predicate, returns true if all keys in given key_list are present in dictionary ddict"
+    return all([key in ddict for key in key_list])
 
 def missingkeys(ddict, key_list):
     "returns all keys in key_list that are not in given ddict"
     return [key for key in key_list if key not in ddict]
 
+def renkey(ddict, oldkey, newkey):
+    "mutator. renames a key in-place in given ddict from oldkey to newkey"
+    if oldkey in ddict:
+        ddict[newkey] = ddict[oldkey]
+        del ddict[oldkey]
+    return ddict
+
+def renkeys(ddict, pair_list):
+    "mutator"
+    for oldkey, newkey in pair_list:
+        renkey(ddict, oldkey, newkey)
 
 def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
     "wrapper around fabric.operations.get"
@@ -355,3 +368,8 @@ def fab_put_data(data, remote_path, use_sudo=False):
     bytestream = BytesIO(data)
     label = "%s bytes" % bytestream.getbuffer().nbytes if gtpy2() else "? bytes"
     return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)
+
+def tempdir():
+    # usage: tempdir, killer = tempdir(); killer()
+    name = tempfile.mkdtemp()
+    return (name, lambda: shutil.rmtree(name))
