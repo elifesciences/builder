@@ -132,7 +132,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             data
         )
 
-    def test_write_template(self):
+    def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'
         terraform.write_template('dummy1--test', contents)
         self.assertEqual(terraform.read_template('dummy1--test'), contents)
