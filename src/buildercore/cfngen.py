@@ -300,10 +300,6 @@ def write_cloudformation_template(stackname, contents):
     open(output_fname, 'w').write(contents)
     return output_fname
 
-# TODO: move to terraform.py
-def write_terraform_template(stackname, contents):
-    terraform.write_template(stackname, contents)
-
 # TODO: prefer this single dispatch function for handling creation of template files
 def write_template(stackname, contents):
     "writes any provider templates and returns a list of paths to templates"
@@ -382,7 +378,7 @@ def generate_stack(pname, **more_context):
 
     context_handler.write_context(stackname, context)
     cloudformation_template_file = write_cloudformation_template(stackname, cloudformation_template)
-    terraform_template_file = write_terraform_template(stackname, terraform_template)
+    terraform_template_file = terraform.write_template(stackname, terraform_template)
     return context, cloudformation_template_file, terraform_template_file
 
 #
@@ -524,7 +520,7 @@ def merge_delta(stackname, delta):
     template = read_template(stackname)
     apply_delta(template, delta)
     write_cloudformation_template(stackname, json.dumps(template))
-    write_terraform_template(stackname, delta.terraform)
+    terraform.write_template(stackname, delta.terraform)
     return template
 
 def apply_delta(template, delta):
