@@ -67,25 +67,18 @@ def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
     if json.loads(contents):
-        output_dir = join(TERRAFORM_DIR, stackname)
-        mkdir_p(output_dir)
-        output_fname = join(output_dir, "generated.tf")
-        with open(output_fname, 'w') as fp:
+        with _open(stackname, 'generated', 'w') as fp:
             fp.write(contents)
-            return output_fname
+            return _file_path(stackname, generated)
 
 def read_template(stackname):
-    output_dir = join(TERRAFORM_DIR, stackname)
-    mkdir_p(output_dir)
-    output_fname = join(output_dir, "generated.tf")
-    with open(output_fname, 'r') as fp:
+    with _open(stackname, 'generated', 'r') as fp:
         return fp.read()
-
 
 def init(stackname):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
-    with open('%s/backend.tf' % working_dir, 'w') as fp:
+    with _open(stackname, backend, 'w') as fp:
         fp.write(json.dumps({
             'terraform': {
                 'backend': {
@@ -97,7 +90,7 @@ def init(stackname):
                 },
             },
         }))
-    with open('%s/providers.tf' % working_dir, 'w') as fp:
+    with _open(stackname, 'providers', 'w') as fp:
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
@@ -120,3 +113,11 @@ def destroy(stackname, context):
     terraform = init(stackname)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
     # TODO: also destroy files
+
+def _file_path(stackname, name):
+    return join(TERRAFORM_DIR, stackname, name)
+
+def _open(stackname, name, mode):
+    output_dir = join(TERRAFORM_DIR, stackname)
+    mkdir_p(output_dir)
+    return open(_file_path(stackname, name), mode)
