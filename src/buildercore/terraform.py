@@ -1,6 +1,6 @@
 import json
 import os
-from os.path import join
+from os.path import exists, join
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
@@ -69,7 +69,7 @@ def write_template(stackname, contents):
     if json.loads(contents):
         with _open(stackname, 'generated', 'w') as fp:
             fp.write(contents)
-            return _file_path(stackname, generated)
+            return _file_path(stackname, 'generated')
 
 def read_template(stackname):
     with _open(stackname, 'generated', 'r') as fp:
@@ -115,9 +115,13 @@ def destroy(stackname, context):
     # TODO: also destroy files
 
 def _file_path(stackname, name):
-    return join(TERRAFORM_DIR, stackname, name)
+    return join(TERRAFORM_DIR, stackname, '%s.tf.json' % name)
 
 def _open(stackname, name, mode):
     output_dir = join(TERRAFORM_DIR, stackname)
     mkdir_p(output_dir)
+    # remove deprecated file
+    deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
+    if exists(deprecated_path):
+        os.remove(deprecated_path)
     return open(_file_path(stackname, name), mode)
