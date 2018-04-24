@@ -234,7 +234,7 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
 
 def find_rds_instances(stackname, state='available'):
     "This uses boto3 because it allows to start/stop instances"
-    conn = boto_conn(stackname, 'rds', client=True)
+    conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
     all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
     return all_rds_instances
 
