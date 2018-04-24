@@ -1,6 +1,7 @@
 import os
+import shutil
 import yaml
-from os.path import join
+from os.path import exists, join
 from . import base
 from buildercore import cfngen, terraform
 
@@ -8,6 +9,9 @@ class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
         self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         os.environ['LOGNAME'] = 'my_user'
+        test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--test')
+        if exists(test_directory):
+            shutil.rmtree(test_directory)
 
     def tearDown(self):
         del os.environ['LOGNAME']
