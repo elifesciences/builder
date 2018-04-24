@@ -10,7 +10,7 @@ from pprint import pformat
 from functools import partial
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, keypair, bvars, core, context_handler, project, terraform
+from . import utils, config, keypair, bvars, core, context_handler, project, terraform, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
@@ -236,7 +236,7 @@ def sub_sqs(stackname, context_sqs, region):
     ensure(isinstance(context_sqs, dict), "Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
 
     sqs = core.boto_resource('sqs', region)
-    sns = core.boto_client('sns', region)
+    sns_client = core.boto_client('sns', region)
 
     for queue_name, subscriptions in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
@@ -249,18 +249,21 @@ def sub_sqs(stackname, context_sqs, region):
             # idempotent, works as lookup
             # risky, may subscribe to a typo-filled topic name like 'aarticles'
             # there is no boto method to lookup a topic
-            topic_lookup = sns.create_topic(Name=topic_name) # idempotent
+            topic_lookup = sns_client.create_topic(Name=topic_name) # idempotent
             topic_arn = topic_lookup['TopicArn']
+
             # deals with both subscription and IAM policy
             # http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
+            # https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
             #response = sns.subscribe_sqs_queue(topic_arn, queue)
-            # TODO|WARN: possibly doesn't do all of the above in boto3
-            # http://boto3.readthedocs.io/en/latest/reference/services/sns.html
-            response = sns.subscribe(TopicArn=topic_arn, Protocol='sqs', Endpoint=queue.attributes['QueueArn'])
+            # WARN: doesn't do all of the above in boto3
+            #response = sns.subscribe(TopicArn=topic_arn, Protocol='sqs', Endpoint=queue.attributes['QueueArn'])
+            response = snsmod.subscribe_sqs_queue(sns_client, topic_arn, queue)
+
             ensure('SubscriptionArn' in response, "failed to find ARN of new subscription")
             subscription_arn = response['SubscriptionArn']
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
-            sns.set_subscription_attributes(SubscriptionArn=subscription_arn, AttributeName='RawMessageDelivery', AttributeValue='true')
+            sns_client.set_subscription_attributes(SubscriptionArn=subscription_arn, AttributeName='RawMessageDelivery', AttributeValue='true')
 
 def update_sqs_stack(stackname, context, **kwargs):
     region = context['project']['aws']['region']
