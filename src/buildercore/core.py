@@ -138,10 +138,13 @@ def connect_aws(service, region):
 def boto_resource(service, region):
     return boto3.resource(service, region_name=region)
 
-def boto_client(service, region):
+def boto_client(service, region=None):
     """the boto3 service client is a lower-level construct compared to the boto3 resource client.
     it excludes some convenient functionality, like automatic pagination.
     prefer the service resource over the client"""
+    exceptions = ['route53']
+    if service not in exceptions:
+        ensure(region, "'region' is a required parameter for all services except: %s" % (', '.join(exceptions),))
     return boto3.client(service, region_name=region)
 
 # TODO: remove
