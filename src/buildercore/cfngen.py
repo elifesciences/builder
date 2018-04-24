@@ -308,6 +308,7 @@ def write_template(stackname, contents):
     # return [cfn, tfm]
     pass
 
+# TODO: move implementation to cloudformation.py
 # TODO: perhaps add terraform support?
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
