@@ -1528,17 +1528,19 @@ iiif:
                     path: /
             cloudfront:
                 subdomains-without-dns:
+                    - iiif
                     - "{instance}--cdn-iiif"
                 subdomains:
                     - "{instance}--placeholder-iiif"
-                    - iiif
+                      #- iiif
                 headers:
                     - Host
             fastly:
                 subdomains:
                     - "{instance}--cdn-iiif"
-                subdomains-without-dns:
                     - iiif
+                #subdomains-without-dns:
+                #    - iiif
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
