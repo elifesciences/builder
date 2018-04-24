@@ -6,12 +6,12 @@ from buildercore import core
 from fabric.api import sudo, task
 from decorators import echo_output
 from buildercore.core import stack_conn
-import aws
 from buildercore.decorators import osissue
+import utils
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"
-    with stack_conn(core.find_master(aws.find_region())):
+    with stack_conn(core.find_master(utils.find_region())):
         sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
 
 @task

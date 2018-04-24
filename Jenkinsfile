@@ -9,11 +9,12 @@ elifePipeline {
             sh 'rm -rf .tox'
         }
 
+        stage 'Static checking', {
+            elifeLocalTests()
+        }
+
         def pythons = ['py27', 'py35']
         def actions = [:]
-        actions['Static checking'] = {
-            sh './static_checking.sh'
-        }
         for (int i = 0; i < pythons.size(); i++) {
             def python = pythons.get(i)
             actions["Test ${python}"] = {

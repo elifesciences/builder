@@ -3,8 +3,8 @@
 See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
-import aws, buildvars, utils
-from fabric.api import sudo, local
+import buildvars, utils
+from fabric.api import sudo, local, task
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
 from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
@@ -13,10 +13,10 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-@debugtask
+@task
 def update(master_stackname=None):
     "same as `cfn.update` but also removes any orphaned minion keys"
-    master_stackname = master_stackname or core.find_master(aws.find_region())
+    master_stackname = master_stackname or core.find_master(utils.find_region())
     bootstrap.update_stack(master_stackname, service_list=[
         'ec2' # master-server should be a self-contained EC2 instance
     ])
@@ -82,7 +82,7 @@ def server_access():
 @echo_output
 def aws_update_many_projects(pname_list):
     minions = ' or '.join([pname + "-*" for pname in pname_list])
-    region = aws.find_region()
+    region = utils.find_region()
     with core.stack_conn(core.find_master(region)):
         sudo("salt -C '%s' state.highstate --retcode-passthrough" % minions)
 
@@ -168,7 +168,7 @@ def update_salt(stackname):
 @debugtask
 def update_salt_master(region=None):
     "update the version of Salt installed on the master-server."
-    region = region or aws.find_region()
+    region = region or utils.find_region()
     current_master_stackname = core.find_master(region)
     return remaster(current_master_stackname, current_master_stackname)
 
@@ -200,7 +200,7 @@ def remaster_all(new_master_stackname):
     pname_list = sorted(ec2stacks.keys()) # lets do this alphabetically
 
     # only update ec2 instances in the same region as the new master
-    region = aws.find_region(new_master_stackname)
+    region = utils.find_region(new_master_stackname)
     active_stacks = core.active_stack_names(region)
     stack_idx = mkidx(lambda v: core.parse_stackname(v)[0], active_stacks)
 

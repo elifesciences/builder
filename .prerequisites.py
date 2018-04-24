@@ -63,6 +63,11 @@ both_checks = [
      {'all': 'do `aws configure` after installing builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
      None), # do not check version
+
+    ('terraform',
+        {'all': 'download from https://www.terraform.io/downloads.html'},
+     lambda x: sh('terraform --version'),
+     None), # do not check version
 ]
 
 mac_checks = [
