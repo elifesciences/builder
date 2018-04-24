@@ -13,7 +13,6 @@ from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
-from boto import sns
 import boto3
 import botocore
 from contextlib import contextmanager
@@ -75,37 +74,14 @@ STEADY_CFN_STATUS = [
 # sns
 #
 
-def _set_raw_subscription_attribute(sns_connection, subscription_arn):
-    """
-    Works around boto's lack of a SetSubscriptionAttributes call.
-
-    boto doesn't (yet) expose SetSubscriptionAttributes, so here's a
-    monkeypatch specifically for turning on the RawMessageDelivery attribute.
-    """
-    params = {
-        'AttributeName': 'RawMessageDelivery',
-        'AttributeValue': 'true',
-        'SubscriptionArn': subscription_arn
-    }
-    return sns_connection._make_request('SetSubscriptionAttributes', params)
-
-
-sns.connection.SNSConnection.set_raw_subscription_attribute = _set_raw_subscription_attribute
-
 def _all_sns_subscriptions(region):
-    conn = boto_sns_conn(region) # boto2
-    token, subs_list = None, []
-    while True:
-        response = conn.get_all_subscriptions(next_token=token)
-        token = response['ListSubscriptionsResponse']['ListSubscriptionsResult']['NextToken']
-        subs_list.extend(response['ListSubscriptionsResponse']['ListSubscriptionsResult']['Subscriptions'])
-        if not token:
-            return subs_list
+    paginator = boto_client('sns', region).get_paginator('list_subscriptions')
+    return utils.shallow_flatten([page['Subscriptions'] for page in paginator.paginate()])
 
 def all_sns_subscriptions(region, stackname=None):
     """returns all subscriptions to all sns topics.
     optionally filtered by subscription endpoints matching given stack"""
-    subs_list = _all_sns_subscriptions(region) # boto2
+    subs_list = _all_sns_subscriptions(region)
     if stackname:
         # a subscription looks like:
         # {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
@@ -143,16 +119,6 @@ def boto_client(service, region):
     it excludes some convenient functionality, like automatic pagination.
     prefer the service resource over the client"""
     return boto3.client(service, region_name=region)
-
-# TODO: remove
-@cached
-def boto_sns_conn(region):
-    return connect_aws('sns', region)
-
-# TODO: remove
-@cached
-def boto_sqs_conn(region):
-    return connect_aws('sqs', region)
 
 # TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
 @cached
@@ -480,21 +446,17 @@ def stack_json(stackname, parse=False):
 # this function is polled to get the state of the stack when creating/updating/deleting.
 # TODO: wrap this is a @backoff
 # TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
-def describe_stack(stackname):
+def describe_stack(stackname, allow_missing=False):
     "returns the full details of a stack given it's name or ID"
     cfn = boto_conn(stackname, 'cloudformation')
     try:
-        return first(list(cfn.stacks.filter(StackName=stackname)))
-    except http_client.IncompleteRead as e:
-        LOG.warning("Retrying once DescribeStacks API call: %s", e)
-        return first(list(cfn.stacks.filter(StackName=stackname)))
-
-# temporary, merge handling into describe_stack somehow
-def get_stack(stackname):
-    try:
-        return describe_stack(stackname)
+        try:
+            return first(list(cfn.stacks.filter(StackName=stackname)))
+        except http_client.IncompleteRead as e:
+            LOG.warning("Retrying once DescribeStacks API call: %s", e)
+            return first(list(cfn.stacks.filter(StackName=stackname)))
     except botocore.exceptions.ClientError as ex:
-        if ex.response['Error']['Message'].endswith('does not exist'):
+        if allow_missing and ex.response['Error']['Message'].endswith('does not exist'):
             return None
         raise
 
@@ -544,7 +506,7 @@ def stack_triple(aws_stack):
 # lists of aws stacks
 #
 
-#@cached # disable until finished debugging
+@cached # disable until finished debugging
 def _aws_stacks(region, status=None, formatter=stack_triple):
     "returns all stacks, even stacks deleted in the last 90 days, optionally filtered by status"
     # NOTE: uses client rather than resource. resource cannot filter by stack status
