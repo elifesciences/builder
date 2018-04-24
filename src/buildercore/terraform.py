@@ -40,6 +40,15 @@ def render(context):
                         'ssl_cert_hostname': context['full_hostname'],
                         'ssl_check_cert': True,
                     },
+                    'request_setting': {
+                        'name': 'default',
+                        'force_ssl': True,
+                        # shouldn't need to replicate the defaults
+                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
+                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
+                        'timer_support': True,
+                        'xff': 'leave',
+                    },
                     'gzip': {
                         'name': 'default',
                         # shouldn't need to replicate the defaults

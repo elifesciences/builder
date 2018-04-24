@@ -37,6 +37,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
                             },
+                            'request_setting': {
+                                'name': 'default',
+                                'force_ssl': True,
+                                'timer_support': True,
+                                'xff': 'leave',
+                            },
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -92,6 +98,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True
+                            },
+                            'request_setting': {
+                                'name': 'default',
+                                'force_ssl': True,
+                                'timer_support': True,
+                                'xff': 'leave',
                             },
                             'gzip': {
                                 'name': 'default',
