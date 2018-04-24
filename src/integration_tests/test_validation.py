@@ -22,6 +22,10 @@ class TestValidation(base.BaseCase):
         self.switch_out_test_settings()
 
         for pname in project.aws_projects().keys():
+            # TODO: subTest doesn't work very well here because there's no way to filter a single pname when re-running after a failure
+            # a solution like
+            # https://github.com/elifesciences/elife-spectrum/blob/master/spectrum/test_article.py#L15-L19
+            # could help, but require to run tests with pytest only
             with self.subTest(pname):
                 cfngen.validate_project(pname)
 

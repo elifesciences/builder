@@ -6,13 +6,23 @@ from buildercore.utils import ensure
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
 
+PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
+
+FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
+                     'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
+                     'application/x-font-opentype', 'application/x-font-truetype',
+                     'application/x-font-ttf', 'application/xml', 'font/eot', 'font/opentype',
+                     'font/otf', 'image/svg+xml', 'image/vnd.microsoft.icon', 'text/plain',
+                     'text/xml']
+FASTLY_GZIP_EXTENSIONS = ['css', 'js', 'html', 'eot', 'ico', 'otf', 'ttf', 'json']
 
 def render(context):
     if not context['fastly']:
         return '{}'
 
+    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {
@@ -20,7 +30,7 @@ def render(context):
                 RESOURCE_NAME_FASTLY: {
                     'name': context['stackname'],
                     'domain': [
-                        {'name': subdomain} for subdomain in context['fastly']['subdomains']
+                        {'name': subdomain} for subdomain in all_allowed_subdomains
                     ],
                     'backend': {
                         'address': context['full_hostname'],
@@ -29,6 +39,13 @@ def render(context):
                         'use_ssl': True,
                         'ssl_cert_hostname': context['full_hostname'],
                         'ssl_check_cert': True,
+                    },
+                    'gzip': {
+                        'name': 'default',
+                        # shouldn't need to replicate the defaults
+                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
+                        'content_types': sorted(FASTLY_GZIP_TYPES),
+                        'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
                     'force_destroy': True
                 }
@@ -52,12 +69,21 @@ def init(stackname):
                 },
             },
         }))
+    with open('%s/providers.tf' % working_dir, 'w') as fp:
+        fp.write(json.dumps({
+            'provider': {
+                'fastly': {
+                    # exact version constraint
+                    'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                },
+            },
+        }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
 @only_if('fastly')
 def update(stackname, context):
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources", ConfigurationError)
+    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname)
     terraform.apply(input=False, capture_output=False, raise_on_error=True)
 
