@@ -286,4 +286,4 @@ def route53conn():
     """returns a boto2 route53 connection.
     route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided"""
     import boto # will only ever be imported once
-    return boto.connect_route53()
+    return boto.connect_route53() # no region necessary
