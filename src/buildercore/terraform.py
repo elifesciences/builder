@@ -1,10 +1,10 @@
 import json
 import os
-from os.path import join
+from os.path import exists, join
 from python_terraform import Terraform
-from buildercore.utils import ensure
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
+from .utils import ensure, mkdir_p
 
 PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
@@ -63,10 +63,22 @@ def render(context):
     }
     return json.dumps(tf_file)
 
+def write_template(stackname, contents):
+    "optionally, store a terraform configuration file for the stack"
+    # if the template isn't empty ...?
+    if json.loads(contents):
+        with _open(stackname, 'generated', 'w') as fp:
+            fp.write(contents)
+            return _file_path(stackname, 'generated')
+
+def read_template(stackname):
+    with _open(stackname, 'generated', 'r') as fp:
+        return fp.read()
+
 def init(stackname):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
-    with open('%s/backend.tf' % working_dir, 'w') as fp:
+    with _open(stackname, 'backend', 'w') as fp:
         fp.write(json.dumps({
             'terraform': {
                 'backend': {
@@ -78,7 +90,7 @@ def init(stackname):
                 },
             },
         }))
-    with open('%s/providers.tf' % working_dir, 'w') as fp:
+    with _open(stackname, 'providers', 'w') as fp:
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
@@ -101,3 +113,15 @@ def destroy(stackname, context):
     terraform = init(stackname)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
     # TODO: also destroy files
+
+def _file_path(stackname, name):
+    return join(TERRAFORM_DIR, stackname, '%s.tf.json' % name)
+
+def _open(stackname, name, mode):
+    output_dir = join(TERRAFORM_DIR, stackname)
+    mkdir_p(output_dir)
+    # remove deprecated file
+    deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
+    if exists(deprecated_path):
+        os.remove(deprecated_path)
+    return open(_file_path(stackname, name), mode)
