@@ -97,6 +97,7 @@ defaults:
             subdomains-without-dns: []
             dns:
                 cname: something.fastly.net
+            gcslogging: false
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -324,6 +325,19 @@ project-with-fastly-complex:
                 - "{instance}--cdn2-of-www"
             subdomains-without-dns:
                 - "future"
+
+project-with-fastly-gcs:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        fastly:
+            subdomains:
+                - "{instance}--cdn-of-www"
+            gcslogging:
+                bucket: my-bucket
+                path: my-project/
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
