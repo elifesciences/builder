@@ -78,7 +78,7 @@ def read_template(stackname):
 def init(stackname):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
-    with _open(stackname, backend, 'w') as fp:
+    with _open(stackname, 'backend', 'w') as fp:
         fp.write(json.dumps({
             'terraform': {
                 'backend': {
