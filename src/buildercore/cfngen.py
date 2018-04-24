@@ -21,7 +21,7 @@ import netaddr
 from slugify import slugify
 from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
-from .config import STACK_DIR, TERRAFORM_DIR
+from .config import STACK_DIR
 
 import logging
 
