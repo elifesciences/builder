@@ -20,7 +20,7 @@ from collections import OrderedDict, namedtuple
 import netaddr
 from slugify import slugify
 from . import utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, mkdir_p
+from .utils import ensure, lmap
 from .config import STACK_DIR, TERRAFORM_DIR
 
 import logging
@@ -302,14 +302,7 @@ def write_cloudformation_template(stackname, contents):
 
 # TODO: move to terraform.py
 def write_terraform_template(stackname, contents):
-    "optionally, store a terraform configuration file for the stack"
-    # if the template isn't empty ...?
-    if json.loads(contents):
-        output_dir = os.path.join(TERRAFORM_DIR, stackname)
-        mkdir_p(output_dir)
-        output_fname = os.path.join(output_dir, "generated.tf")
-        open(output_fname, 'w').write(contents)
-        return output_fname
+    terraform.write_template(stackname, contents)
 
 # TODO: prefer this single dispatch function for handling creation of template files
 def write_template(stackname, contents):

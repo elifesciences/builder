@@ -2,9 +2,9 @@ import json
 import os
 from os.path import join
 from python_terraform import Terraform
-from buildercore.utils import ensure
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
+from .utils import ensure, mkdir_p
 
 PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
@@ -62,6 +62,25 @@ def render(context):
         },
     }
     return json.dumps(tf_file)
+
+def write_template(stackname, contents):
+    "optionally, store a terraform configuration file for the stack"
+    # if the template isn't empty ...?
+    if json.loads(contents):
+        output_dir = join(TERRAFORM_DIR, stackname)
+        mkdir_p(output_dir)
+        output_fname = join(output_dir, "generated.tf")
+        with open(output_fname, 'w') as fp:
+            fp.write(contents)
+            return output_fname
+
+def read_template(stackname):
+    output_dir = join(TERRAFORM_DIR, stackname)
+    mkdir_p(output_dir)
+    output_fname = join(output_dir, "generated.tf")
+    with open(output_fname, 'r') as fp:
+        return fp.read()
+
 
 def init(stackname):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/

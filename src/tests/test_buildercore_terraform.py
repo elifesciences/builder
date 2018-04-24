@@ -128,6 +128,11 @@ class TestBuildercoreTerraform(base.BaseCase):
             data
         )
 
+    def test_write_template(self):
+        contents = '{"key":"value"}'
+        terraform.write_template('dummy1--test', contents)
+        self.assertEqual(terraform.read_template('dummy1--test'), contents)
+
     def _parse_template(self, terraform_template):
         """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
         https://stackoverflow.com/a/16373377/91590"""
