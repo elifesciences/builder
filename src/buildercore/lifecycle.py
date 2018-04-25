@@ -114,7 +114,8 @@ def _last_ec2_start_time(stackname):
     nodes = find_ec2_instances(stackname, allow_empty=True)
 
     def _parse_datetime(value):
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert value.tzname() == 'UTC', 'datetime object returned by the EC2 API is not UTC, needs timezone conversion'
+        return value.replace(tzinfo=None)
     return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
