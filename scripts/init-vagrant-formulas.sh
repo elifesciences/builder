@@ -1,6 +1,7 @@
 #!/bin/bash
 # VAGRANT ONLY
 # copied into the virtual machine and executed after bootstrap.
+# run as root
 # DO NOT run on your host machine.
 # see scripts/init-formulas.sh for non-vagrant masterless instances
 
@@ -9,6 +10,9 @@ set -u # no unbound variables
 set -xv  # output the scripts and interpolated steps
 
 minion_id=$1
+
+# ELPP-3601: Vagrant machines run masterless and don't need salt-minion running
+systemctl stop salt-minion 2> /dev/null || service salt-minion stop
 
 # link up the project formula mounted at /project
 # NOTE: these links will be overwritten if this a master-server instance
