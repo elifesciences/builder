@@ -6,15 +6,17 @@ LOG = logging.getLogger(__name__)
 
 @debugtask
 @requires_aws_stack
-@echo_output
 def rds_snapshots(stackname):
-    from boto import rds
-    conn = rds.RDSConnection()
-    instance = conn.get_all_dbinstances(instance_id=stackname)[0]
-    # all snapshots order by creation time
-    objdata = conn.get_all_dbsnapshots(instance_id=instance.id)
-    data = sorted(map(lambda ss: ss.__dict__, objdata), key=lambda i: i['snapshot_create_time'])
-    return data
+    "prints all snapshots for given stack, order by creation time"
+    inst = core.find_rds_instances(stackname)[0]
+    conn = core.boto_conn(stackname, 'rds', client=True)
+    snapshots = conn.describe_db_snapshots(**{
+        'DBInstanceIdentifier': inst['DBInstanceIdentifier'],
+    })['DBSnapshots']
+    data = [(ss['DBSnapshotIdentifier'], ss['SnapshotType'], ss['SnapshotCreateTime']) for ss in snapshots]
+    data = sorted(data, key=lambda triple: triple[2])
+    for row in data:
+        print(row)
 
 @debugtask
 @echo_output
