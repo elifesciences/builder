@@ -7,6 +7,7 @@ import logging
 import re
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
+import boto # route53 boto2 > route53 boto3
 from . import config, core
 from .core import boto_conn, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
@@ -224,7 +225,7 @@ def delete_dns(stackname):
         LOG.info("No internal full hostname to delete")
 
 def _update_dns_a_record(zone_name, name, value):
-    zone = route53conn().get_zone(zone_name)
+    zone = _r53_connection().get_zone(zone_name)
     if zone.get_a(name).resource_records == [value]:
         LOG.info("No need to update DNS record %s (already %s)", name, value)
     else:
@@ -232,7 +233,7 @@ def _update_dns_a_record(zone_name, name, value):
         zone.update_a(name, value)
 
 def _delete_dns_a_record(zone_name, name):
-    zone = route53conn().get_zone(zone_name)
+    zone = _r53_connection().get_zone(zone_name)
     if zone.get_a(name):
         LOG.info("Deleting DNS record %s", name)
         zone.delete_a(name)
@@ -282,8 +283,7 @@ def _ec2_connection(stackname):
 def _rds_connection(stackname):
     return boto_conn(stackname, 'rds')
 
-def route53conn():
+def _r53_connection():
     """returns a boto2 route53 connection.
     route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided"""
-    import boto # will only ever be imported once
     return boto.connect_route53() # no region necessary
