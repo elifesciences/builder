@@ -221,9 +221,10 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
 
             try:
                 queue.set_attributes(Attributes={'Policy': new_policy_dump})
-            # except boto.exception.SQSError: # boto2
             except botocore.exceptions.ClientError as ex:
-                LOG.exception("Policy: %s", new_policy_dump, extra={'response': ex.response})
+                msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
+                LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
+                raise
 
     return unsub_map, permission_map
 
