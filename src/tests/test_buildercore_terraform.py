@@ -1,6 +1,7 @@
 import os
+import shutil
 import yaml
-from os.path import join
+from os.path import exists, join
 from . import base
 from buildercore import cfngen, terraform
 
@@ -8,6 +9,9 @@ class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
         self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         os.environ['LOGNAME'] = 'my_user'
+        test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--test')
+        if exists(test_directory):
+            shutil.rmtree(test_directory)
 
     def tearDown(self):
         del os.environ['LOGNAME']
@@ -36,6 +40,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
+                            },
+                            'request_setting': {
+                                'name': 'default',
+                                'force_ssl': True,
+                                'timer_support': True,
+                                'xff': 'leave',
                             },
                             'gzip': {
                                 'name': 'default',
@@ -93,6 +103,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True
                             },
+                            'request_setting': {
+                                'name': 'default',
+                                'force_ssl': True,
+                                'timer_support': True,
+                                'xff': 'leave',
+                            },
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -115,6 +131,11 @@ class TestBuildercoreTerraform(base.BaseCase):
             },
             data
         )
+
+    def test_generated_template_file_storage(self):
+        contents = '{"key":"value"}'
+        terraform.write_template('dummy1--test', contents)
+        self.assertEqual(terraform.read_template('dummy1--test'), contents)
 
     def _parse_template(self, terraform_template):
         """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs

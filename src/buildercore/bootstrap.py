@@ -19,6 +19,7 @@ from .config import BOOTSTRAP_USER
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
+import backoff
 import botocore
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
@@ -42,6 +43,7 @@ def put_script(script_filename, remote_script):
     temporary_script = _put_temporary_script(script_filename)
     sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
 
+@backoff.on_exception(backoff.expo, fabric_exceptions.NetworkError, max_time=60)
 def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
     WARN: assumes you are connected to a stack"""

@@ -361,13 +361,6 @@ api-gateway:
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
-            cloudfront:
-                subdomains: []
-                subdomains-without-dns: 
-                    - "{instance}--cdn-gateway"
-                    - api
-                headers:
-                    - Accept
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1483,11 +1476,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            cloudfront:
-                subdomains-without-dns: 
-                    - "{instance}--cdn-iiif"
-                headers:
-                    - Host
             fastly:
                 subdomains:
                     - "{instance}--cdn-iiif"
@@ -1504,11 +1492,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            cloudfront:
-                subdomains-without-dns: 
-                    - "{instance}--cdn-iiif"
-                headers:
-                    - Host
             fastly:
                 subdomains:
                     - "{instance}--cdn-iiif"
@@ -1526,18 +1509,9 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            cloudfront:
-                subdomains-without-dns:
-                    - "{instance}--cdn-iiif"
-                subdomains:
-                    - "{instance}--placeholder-iiif"
-                    - iiif
-                headers:
-                    - Host
             fastly:
                 subdomains:
                     - "{instance}--cdn-iiif"
-                subdomains-without-dns:
                     - iiif
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated

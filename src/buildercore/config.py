@@ -127,6 +127,7 @@ AWS_EXCLUDING = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache', 'fastly']
 SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
 SETTINGS_FILE = os.environ.get('SETTINGS_FILE', SETTINGS_FILE)
 
+USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 #
 # testing
 #
