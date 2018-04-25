@@ -3,11 +3,6 @@ that is built upon by the more specialised parts of builder.
 
 suggestions for a better name than 'core' welcome."""
 
-try:
-    import http.client as http_client
-except ImportError:
-    import httplib as http_client
-
 import os, glob, json, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
@@ -444,17 +439,12 @@ def stack_json(stackname, parse=False):
 
 # DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
-# TODO: wrap this is a @backoff
 # TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
 def describe_stack(stackname, allow_missing=False):
     "returns the full details of a stack given it's name or ID"
     cfn = boto_conn(stackname, 'cloudformation')
     try:
-        try:
-            return first(list(cfn.stacks.filter(StackName=stackname)))
-        except http_client.IncompleteRead as e:
-            LOG.warning("Retrying once DescribeStacks API call: %s", e)
-            return first(list(cfn.stacks.filter(StackName=stackname)))
+        return first(list(cfn.stacks.filter(StackName=stackname)))
     except botocore.exceptions.ClientError as ex:
         if allow_missing and ex.response['Error']['Message'].endswith('does not exist'):
             return None
