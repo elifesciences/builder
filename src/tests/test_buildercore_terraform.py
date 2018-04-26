@@ -147,6 +147,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'name': 'default',
                 'bucket_name': 'my-bucket',
                 'path': 'my-project/',
+                'period': 1800,
             }
         )
 

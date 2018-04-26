@@ -338,6 +338,7 @@ project-with-fastly-gcs:
             gcslogging:
                 bucket: my-bucket
                 path: my-project/
+                period: 1800
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
