@@ -1,5 +1,5 @@
 elifePipeline {
-    # temporary
+    // temporary
     elifeNotifyAtomist 'STARTED', 'STARTED'
 
     stage 'Checkout', {
@@ -38,6 +38,6 @@ elifePipeline {
         }
     }
 
-    # temporary
+    // temporary
     elifeNotifyAtomist 'SUCCESS'
 }
