@@ -193,6 +193,9 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
             bootstrap.create_stack(stackname)
 
         LOG.info('updating stack %s', stackname)
+        # TODO: highstate.sh (think it's run inside here) doesn't detect:
+        # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
+        # TODO: should not run terraform (triggered by update fastly, probably triggered by update all)
         bootstrap.update_stack(stackname, **kwargs)
         setdefault('.active-stack', stackname)
 
