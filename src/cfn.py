@@ -125,7 +125,6 @@ def update_infrastructure(stackname):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 
-
 # TODO: deprecated, this task now lives in `master.py`
 @debugtask
 def update_master():

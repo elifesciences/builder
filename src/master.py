@@ -126,7 +126,7 @@ def remaster(stackname, new_master_stackname):
     if context['ec2'].get('master_ip') == master_ip:
         LOG.info("already remastered: %s", stackname)
         try:
-            utils.get_input('any key to skip, ctrl-c to carry on')
+            utils.confirm("Skip?")
             return
         except KeyboardInterrupt:
             LOG.info("not skipping")
