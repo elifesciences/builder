@@ -1,15 +1,16 @@
 import json
+from datetime import datetime
 from mock import patch, MagicMock
+from pytz import utc
 from . import base
 from buildercore.core import parse_stackname
 from buildercore import cfngen, context_handler, lifecycle
 
 
 class TestBuildercoreLifecycle(base.BaseCase):
-    @classmethod
-    def setUpClass(cls):
-        cls._generate_context('dummy1--test')
-        cls._generate_context('project-with-rds-only--test')
+    def setUp(self):
+        self._generate_context('dummy1--test')
+        self._generate_context('project-with-rds-only--test')
 
     @patch('buildercore.lifecycle._some_node_is_not_ready')
     @patch('buildercore.lifecycle._ec2_connection')
@@ -84,16 +85,15 @@ class TestBuildercoreLifecycle(base.BaseCase):
     @patch('buildercore.lifecycle.find_ec2_instances')
     def test_stops_instances_when_running_for_too_many_minutes(self, find_ec2_instances, _stop):
 
-        find_ec2_instances.return_value = [self._ec2_instance('running', launch_time='2000-01-01T00:00:00.000Z')]
+        find_ec2_instances.return_value = [self._ec2_instance('running', launch_time=datetime(2000, 1, 1, tzinfo=utc))]
         lifecycle.stop_if_running_for('dummy1--test', 30)
 
-    @staticmethod
-    def _generate_context(stackname):
+    def _generate_context(self, stackname):
         (pname, instance_id) = parse_stackname(stackname)
         context = cfngen.build_context(pname, stackname=stackname)
         context_handler.write_context_locally(stackname, json.dumps(context))
 
-    def _ec2_instance(self, state='running', id='i-456', launch_time='2017-01-01T00:00:00.000Z'):
+    def _ec2_instance(self, state='running', id='i-456', launch_time=datetime(2017, 1, 1, tzinfo=utc)):
         instance = MagicMock()
         instance.id = id
         state_codes = {'running': 16}

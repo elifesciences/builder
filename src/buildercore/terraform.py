@@ -1,6 +1,7 @@
 import json
 import os
 from os.path import exists, join
+import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
@@ -122,14 +123,15 @@ def update(stackname, context):
 def destroy(stackname, context):
     terraform = init(stackname)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
-    # TODO: also destroy files
+    terraform_directory = join(TERRAFORM_DIR, stackname)
+    shutil.rmtree(terraform_directory)
 
 def _file_path(stackname, name):
     return join(TERRAFORM_DIR, stackname, '%s.tf.json' % name)
 
 def _open(stackname, name, mode):
-    output_dir = join(TERRAFORM_DIR, stackname)
-    mkdir_p(output_dir)
+    terraform_directory = join(TERRAFORM_DIR, stackname)
+    mkdir_p(terraform_directory)
     # remove deprecated file
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
     if exists(deprecated_path):

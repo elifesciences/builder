@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-
+from distutils.version import StrictVersion
 from shlex import split
 import os, sys
+
+MINIMUM_VERSION_TERRAFORM = StrictVersion('0.11.7')
 
 def sh(cmd):
     return os.system(cmd) == 0
@@ -27,6 +29,13 @@ def osx():
     return sh('[ "$(uname)" = "Darwin" ]')
 
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
+
+def terraform_version_checker(_cmd):
+    installed_version = StrictVersion(shs('terraform --version').replace('Terraform v', ''))
+    if not installed_version >= MINIMUM_VERSION_TERRAFORM:
+        raise RuntimeError("Installed terraform version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_TERRAFORM))
+
+    return str(installed_version)
 
 both_checks = [
     ('git',
@@ -62,12 +71,14 @@ both_checks = [
     ('aws-credentials',
      {'all': 'do `aws configure` after installing builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
-     None), # do not check version
+     None),
 
-    ('terraform',
+    (
+        'terraform',
         {'all': 'download from https://www.terraform.io/downloads.html'},
-     lambda x: sh('terraform --version'),
-     None), # do not check version
+        lambda x: shs('which terraform'),
+        terraform_version_checker
+    ),
 ]
 
 mac_checks = [
@@ -101,7 +112,10 @@ def run_checks(check_list, exclusions=[]):
             found = 'found'
             if version_checker:
                 found = version_checker(cmd)
-            sys.stdout.write(found + '\n')
+            if isinstance(found, bool):
+                sys.stdout.write('ok\n')
+            else:
+                sys.stdout.write(found + '\n')
         else:
             sys.stdout.write('NOT found. Try:\n')
             for opsys, suggestion in install_suggestions.items():

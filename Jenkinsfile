@@ -1,6 +1,9 @@
 elifePipeline {
+
     stage 'Checkout', {
         checkout scm
+        // temporary
+        elifeNotifyAtomist 'STARTED', 'STARTED'
     }
 
     lock('builder') {
@@ -34,4 +37,7 @@ elifePipeline {
             actions["Test py35"]() 
         }
     }
+
+    // temporary
+    elifeNotifyAtomist 'SUCCESS'
 }

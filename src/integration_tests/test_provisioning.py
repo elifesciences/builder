@@ -63,3 +63,5 @@ class TestProvisioning(base.BaseCase):
 
             cfn.download_file(stackname, "/bin/pwd", "subfolder/pwd", use_bootstrap_user="true")
             self.assertTrue(os.path.isfile("./subfolder/pwd"))
+
+            lifecycle.stop_if_running_for(stackname, minimum_minutes=60 * 24 * 365) # should exercise the code but do nothing, as this test's instance can't have been running for a year

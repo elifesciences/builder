@@ -138,10 +138,13 @@ def connect_aws(service, region):
 def boto_resource(service, region):
     return boto3.resource(service, region_name=region)
 
-def boto_client(service, region):
+def boto_client(service, region=None):
     """the boto3 service client is a lower-level construct compared to the boto3 resource client.
     it excludes some convenient functionality, like automatic pagination.
     prefer the service resource over the client"""
+    exceptions = ['route53']
+    if service not in exceptions:
+        ensure(region, "'region' is a required parameter for all services except: %s" % (', '.join(exceptions),))
     return boto3.client(service, region_name=region)
 
 # TODO: remove
@@ -231,7 +234,7 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
 
 def find_rds_instances(stackname, state='available'):
     "This uses boto3 because it allows to start/stop instances"
-    conn = boto_conn(stackname, 'rds', client=True)
+    conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
     all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
     return all_rds_instances
 

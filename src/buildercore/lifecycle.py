@@ -7,8 +7,9 @@ import logging
 import re
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
+import boto # route53 boto2 > route53 boto3
 from . import config, core
-from .core import boto_conn, connect_aws_with_stack, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
+from .core import boto_conn, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure
 from .context_handler import load_context, download_from_s3
 
@@ -114,7 +115,8 @@ def _last_ec2_start_time(stackname):
     nodes = find_ec2_instances(stackname, allow_empty=True)
 
     def _parse_datetime(value):
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ")
+        assert value.tzname() == 'UTC', 'datetime object returned by the EC2 API is not UTC, needs timezone conversion'
+        return value.replace(tzinfo=None)
     return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
 def _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped):
@@ -199,7 +201,7 @@ def update_dns(stackname):
     LOG.info("External full hostname: %s", context['full_hostname'])
     if context['full_hostname']:
         for node in nodes:
-            _update_dns_a_record(stackname, context['domain'], context['full_hostname'], node.public_ip_address)
+            _update_dns_a_record(context['domain'], context['full_hostname'], node.public_ip_address)
 
     # We don't strictly need to do this, as the private ip address
     # inside a VPC should stay the same. For consistency we update all DNS
@@ -207,34 +209,32 @@ def update_dns(stackname):
     LOG.info("Internal full hostname: %s", context['int_full_hostname'])
     if context['int_full_hostname']:
         for node in nodes:
-            _update_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'], node.private_ip_address)
+            _update_dns_a_record(context['int_domain'], context['int_full_hostname'], node.private_ip_address)
 
 def delete_dns(stackname):
     context = load_context(stackname)
     if context['full_hostname']:
         LOG.info("Deleting external full hostname: %s", context['full_hostname'])
-        _delete_dns_a_record(stackname, context['domain'], context['full_hostname'])
+        _delete_dns_a_record(context['domain'], context['full_hostname'])
     else:
         LOG.info("No external full hostname to delete")
 
     if context['int_full_hostname']:
         LOG.info("Deleting internal full hostname: %s", context['int_full_hostname'])
-        _delete_dns_a_record(stackname, context['int_domain'], context['int_full_hostname'])
+        _delete_dns_a_record(context['int_domain'], context['int_full_hostname'])
     else:
         LOG.info("No internal full hostname to delete")
 
-def _update_dns_a_record(stackname, zone_name, name, value):
-    route53 = connect_aws_with_stack(stackname, 'route53')
-    zone = route53.get_zone(zone_name)
+def _update_dns_a_record(zone_name, name, value):
+    zone = _r53_connection().get_zone(zone_name)
     if zone.get_a(name).resource_records == [value]:
         LOG.info("No need to update DNS record %s (already %s)", name, value)
     else:
         LOG.info("Updating DNS record %s to %s", name, value)
         zone.update_a(name, value)
 
-def _delete_dns_a_record(stackname, zone_name, name):
-    route53 = connect_aws_with_stack(stackname, 'route53')
-    zone = route53.get_zone(zone_name)
+def _delete_dns_a_record(zone_name, name):
+    zone = _r53_connection().get_zone(zone_name)
     if zone.get_a(name):
         LOG.info("Deleting DNS record %s", name)
         zone.delete_a(name)
@@ -283,3 +283,8 @@ def _ec2_connection(stackname):
 
 def _rds_connection(stackname):
     return boto_conn(stackname, 'rds')
+
+def _r53_connection():
+    """returns a boto2 route53 connection.
+    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided"""
+    return boto.connect_route53() # no region necessary
