@@ -369,7 +369,7 @@ api-gateway:
                 gcslogging:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
-                    period: 120
+                    period: 3600
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
