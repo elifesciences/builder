@@ -1,4 +1,7 @@
 elifePipeline {
+    # temporary
+    elifeNotifyAtomist 'STARTED', 'STARTED'
+
     stage 'Checkout', {
         checkout scm
     }
@@ -34,4 +37,7 @@ elifePipeline {
             actions["Test py35"]() 
         }
     }
+
+    # temporary
+    elifeNotifyAtomist 'SUCCESS'
 }
