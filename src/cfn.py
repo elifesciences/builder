@@ -96,12 +96,18 @@ def update_infrastructure(stackname):
 
     context_handler.write_context(stackname, context)
 
+    # TODO: move to cloudformation module?
+    # bootstrap.update_stack(stackname, service_list=['cloudformation'])?
     if delta.non_empty:
         new_template = cfngen.merge_delta(stackname, delta)
         bootstrap.update_template(stackname, new_template)
     else:
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
+
+    # Fastly via Terraform
+    if context.get('fastly', {}):
+        bootstrap.update_stack(stackname, service_list=['terraform'])
 
     # TODO: move inside bootstrap.update_stack
     # EC2
@@ -118,9 +124,6 @@ def update_infrastructure(stackname):
     if context.get('s3', {}):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
-    # Fastly via Terraform
-    if context.get('fastly', {}):
-        bootstrap.update_stack(stackname, service_list=['terraform'])
 
 
 # TODO: deprecated, this task now lives in `master.py`
