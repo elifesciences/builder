@@ -1,9 +1,9 @@
 elifePipeline {
-    // temporary
-    elifeNotifyAtomist 'STARTED', 'STARTED'
 
     stage 'Checkout', {
         checkout scm
+        // temporary
+        elifeNotifyAtomist 'STARTED', 'STARTED'
     }
 
     lock('builder') {
