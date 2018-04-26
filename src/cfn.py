@@ -21,8 +21,7 @@ LOG = logging.getLogger(__name__)
 def strtobool(x):
     return x if isinstance(x, bool) else bool(_strtobool(x))
 
-# these aliases are deprecated
-@task(alias='aws_delete_stack')
+@task
 @requires_steady_stack
 def destroy(stackname):
     "tell aws to delete a stack."
@@ -49,8 +48,7 @@ def ensure_destroyed(stackname):
             return
         raise
 
-# these aliases are deprecated
-@task(alias='aws_update_stack')
+@task()
 @requires_aws_stack
 @timeit
 def update(stackname, autostart="0", concurrency='serial'):
@@ -124,16 +122,6 @@ def update_infrastructure(stackname):
     if context.get('s3', {}):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
-
-# TODO: deprecated, this task now lives in `master.py`
-@debugtask
-def update_master():
-    master_stackname = core.find_master(utils.find_region())
-    bootstrap.update_stack(master_stackname, service_list=[
-        'ec2' # master-server should be a self-contained EC2 instance
-    ])
-    bootstrap.remove_all_orphaned_keys(master_stackname)
-
 @requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     """creates a new CloudFormation file for the given project."""
@@ -165,8 +153,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
-# these aliases are deprecated
-@task(alias='aws_launch_instance')
+@task
 @requires_project
 def launch(pname, instance_id=None, alt_config=None, **kwargs):
     try:
