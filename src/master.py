@@ -7,7 +7,7 @@ import buildvars, utils
 from fabric.api import sudo, local, task
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
-from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
+from decorators import debugtask, echo_output, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
 
