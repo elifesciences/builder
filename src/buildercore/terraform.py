@@ -73,6 +73,7 @@ def render(context):
             'bucket_name': gcslogging['bucket'],
             # TODO: validate it starts with /
             'path': gcslogging['path'],
+            'period': gcslogging.get('period', 3600),
         }
     return json.dumps(tf_file)
 
