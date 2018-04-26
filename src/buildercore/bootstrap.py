@@ -10,7 +10,7 @@ from pprint import pformat
 from functools import partial
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, keypair, bvars, core, context_handler, project, terraform
+from . import utils, config, keypair, bvars, core, context_handler, project, terraform, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
@@ -20,7 +20,6 @@ from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
 from fabric.contrib import files
 import backoff
-import boto # boto2
 import botocore
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
@@ -177,19 +176,27 @@ def setup_ec2(stackname, context):
 
 def remove_topics_from_sqs_policy(policy, topic_arns):
     """Removes statements from an SQS policy.
-
     These statements are created by boto's subscribe_sqs_queue()"""
 
     def for_unsubbed_topic(statement):
+        # `statement` looks like:
+        # {u'Statement': [{u'Action': u'SQS:SendMessage',
+        #   u'Condition': {u'StringLike': {u'aws:SourceArn': u'arn:aws:sns:us-east-1:512686554592:bus-profiles--end2end'}},
+        #   u'Effect': u'Allow',
+        #   u'Principal': {u'AWS': u'*'},
+        #   u'Resource': u'arn:aws:sqs:us-east-1:512686554592:annotations--end2end',
+        #   u'Sid': u'5a1770151e27027c1f43d7f3c968fc10'}],
+        # u'Version': u'2008-10-17'}
         return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
     policy['Statement'] = list([s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)])
     if policy['Statement']:
         return policy
+    # TODO: unreachable code, policy['Statement'] will always be something
     return None
 
 def unsub_sqs(stackname, new_context, region, dry_run=False):
-    sublist = core.all_sns_subscriptions(region, stackname) # boto2
+    sublist = core.all_sns_subscriptions(region, stackname)
 
     # compare project subscriptions to those actively subscribed to (sublist)
     unsub_map = {}
@@ -199,27 +206,27 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
         permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
 
     if not dry_run:
-        sns = core.boto_sns_conn(region) # boto2
+        sns = core.boto_client('sns', region)
         for sub in utils.shallow_flatten(unsub_map.values()):
             LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
-            sns.unsubscribe(sub['SubscriptionArn'])
-        sqs = core.boto_sqs_conn(region) # boto2
+            sns.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
 
+        sqs = core.boto_resource('sqs', region)
         for queue_name, topic_arns in permission_map.items():
             # not an atomic update, but there's no other way to do it
-            queue = sqs.get_queue(queue_name)
-            attributes = queue.get_attributes('Policy')
-            policy = json.loads(attributes.get('Policy', '{}'))
+            queue = sqs.Queue(queue_name)
+            policy = json.loads(queue.attributes.get('Policy', '{}'))
             LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
             new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
-            if new_policy:
-                new_policy_dump = json.dumps(new_policy)
-                try:
-                    queue.set_attribute('Policy', new_policy_dump)
-                except boto.exception.SQSError: # boto2
-                    LOG.exception("Policy: %s", new_policy_dump)
-            else:
-                queue.set_attribute('Policy', '')
+            new_policy = new_policy or ''
+            new_policy_dump = json.dumps(new_policy)
+
+            try:
+                queue.set_attributes(Attributes={'Policy': new_policy_dump})
+            except botocore.exceptions.ClientError as ex:
+                msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
+                LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
+                raise
 
     return unsub_map, permission_map
 
@@ -231,34 +238,38 @@ def sub_sqs(stackname, context_sqs, region):
     """
     ensure(isinstance(context_sqs, dict), "Not a dictionary of queues pointing to their subscriptions: %s" % context_sqs)
 
-    sqs = core.boto_sqs_conn(region) # boto2
-    sns = core.boto_sns_conn(region) # boto2
+    sqs = core.boto_resource('sqs', region)
+    sns_client = core.boto_client('sns', region)
 
     for queue_name, subscriptions in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
-        queue = sqs.lookup(queue_name)
         ensure(isinstance(subscriptions, list), "Not a list of topics: %s" % subscriptions)
 
+        queue = sqs.Queue(queue_name)
         for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
 
             # idempotent, works as lookup
             # risky, may subscribe to a typo-filled topic name like 'aarticles'
             # there is no boto method to lookup a topic
-            topic_lookup = sns.create_topic(topic_name)
-            topic_arn = topic_lookup['CreateTopicResponse']['CreateTopicResult']['TopicArn']
+            topic_lookup = sns_client.create_topic(Name=topic_name) # idempotent
+            topic_arn = topic_lookup['TopicArn']
+
             # deals with both subscription and IAM policy
-            response = sns.subscribe_sqs_queue(topic_arn, queue)
-            assert 'SubscribeResponse' in response
-            assert 'SubscribeResult' in response['SubscribeResponse']
-            assert 'SubscriptionArn' in response['SubscribeResponse']['SubscribeResult']
-            subscription_arn = response['SubscribeResponse']['SubscribeResult']['SubscriptionArn']
-            # this method is not part of boto. see `buildercore.core._set_raw_subscription_attribute`
+            # http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
+            # https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
+            #response = sns.subscribe_sqs_queue(topic_arn, queue)
+            # WARN: doesn't do all of the above in boto3
+            #response = sns.subscribe(TopicArn=topic_arn, Protocol='sqs', Endpoint=queue.attributes['QueueArn'])
+            response = snsmod.subscribe_sqs_queue(sns_client, topic_arn, queue)
+
+            ensure('SubscriptionArn' in response, "failed to find ARN of new subscription")
+            subscription_arn = response['SubscriptionArn']
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
-            sns.set_raw_subscription_attribute(subscription_arn)
+            sns_client.set_subscription_attributes(SubscriptionArn=subscription_arn, AttributeName='RawMessageDelivery', AttributeValue='true')
 
 def update_sqs_stack(stackname, context, **kwargs):
-    region = context['project']['aws']['region'] # is this value suspect?
+    region = context['project']['aws']['region']
     unsub_sqs(stackname, context['sqs'], region)
     sub_sqs(stackname, context['sqs'], region)
 
@@ -316,35 +327,36 @@ def _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region):
     # instead, you will get an error when trying to set the
     # NotificationConfiguration on the bucket later.
     # This also has to be idempotent... basically we are reiventing CloudFormation in Python because they don't support creating a bucket, a queue and their connection in a single template (you have to create a template without the linkage and then edit it and update it.)
-    sqs = core.boto_sqs_conn(region) # boto2
-    queue = sqs.lookup(queue_name)
-    attributes = sqs.get_queue_attributes(queue, 'Policy')
-    if 'Policy' in attributes:
-        policy = json.loads(attributes['Policy'])
+    queue = core.boto_resource('sqs', region).Queue(queue_name)
+    policy = queue.attributes.get('Policy')
+    if policy:
+        policy = json.loads(policy)
     else:
         policy = {
             "Version": "2012-10-17",
             "Id": queue.arn + "/SQSDefaultPolicy",
             "Statement": []
         }
+
+    queue_arn = queue.attributes['QueueArn']
     statement_to_upsert = {
-        "Sid": queue.arn + "/SendMessageFromBucket/%s" % bucket_name,
+        "Sid": queue_arn + "/SendMessageFromBucket/%s" % bucket_name,
         "Effect": "Allow",
         "Principal": '*',
         "Action": "SQS:SendMessage",
-        "Resource": queue.arn,
+        "Resource": queue_arn,
         "Condition": {
             "ArnLike": {
                 "aws:SourceArn": "arn:aws:s3:*:*:%s" % bucket_name,
             }
-        },
+        }
     }
     if statement_to_upsert not in policy['Statement']:
         policy['Statement'].append(statement_to_upsert)
     policy_json = json.dumps(policy)
     LOG.info('Setting Policy for queue %s to allow SendMessage: %s', queue_name, policy_json, extra={'stackname': stackname})
-    sqs.set_queue_attribute(queue, 'Policy', policy_json)
-    return queue.arn
+    queue.set_attributes(Attributes={'Policy': policy_json})
+    return queue_arn
 
 def _sqs_notification_configuration(queue_arn, notification_specification):
     filter_rules = []
@@ -459,11 +471,10 @@ def write_environment_info(stackname, overwrite=False):
 @core.requires_active_stack
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
-    then only those services will be updated
-
-    Has too many responsibilities:
-        - ec2: deploys
-        - s3, sqs, ...: infrastructure updates"""
+    then only those services will be updated"""
+    # Has too many responsibilities:
+    #    - ec2: deploys
+    #    - s3, sqs, ...: infrastructure updates
     service_update_fns = OrderedDict([
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
