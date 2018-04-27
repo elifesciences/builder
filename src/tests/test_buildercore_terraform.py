@@ -146,6 +146,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(service['gcslogging'].get('path'), 'my-project/')
         self.assertEqual(service['gcslogging'].get('period'), 1800)
         self.assertEqual(service['gcslogging'].get('message_type'), 'blank')
+        self.assertEqual(service['gcslogging'].get('format_version'), '2')
 
         log_format = service['gcslogging'].get('format')
         # the non-rendered log_format is not even valid JSON
