@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
 from fabric.state import output
+from slugify import slugify
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -181,7 +182,8 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
 
     # hack, see problems with query above. this problem hasn't been replicated (yet) on boto3
     if state:
-        ec2_instances = [i for i in ec2_instances if i.state['Name'] == state]
+        state = [state] if '|' not in state else state.split('|')
+        ec2_instances = [i for i in ec2_instances if i.state['Name'] in state]
 
     LOG.debug("find_ec2_instances returned: %s", [(e.id, e.state) for e in ec2_instances])
 
@@ -192,12 +194,6 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
     if not allow_empty and not ec2_instances:
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
-
-def find_rds_instances(stackname, state='available'):
-    "This uses boto3 because it allows to start/stop instances"
-    conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
-    all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
-    return all_rds_instances
 
 # NOTE: preserved for the commentary, but this is for boto2
 def _all_nodes_filter(stackname, node_ids):
@@ -220,6 +216,28 @@ def _all_nodes_filter(stackname, node_ids):
     if node_ids:
         query['instance-id'] = node_ids
     return query
+
+#
+#
+#
+
+def rds_dbname(stackname, context=None):
+    # TODO: investigate possibility of ambiguous RDS naming here
+    context = context or {}
+    return context.get('rds_dbname') or slugify(stackname, separator="") # *must* use 'or' here
+
+def rds_iid(stackname):
+    return slugify(stackname)
+
+def find_rds_instances(stackname, state='available'):
+    "This uses boto3 because it allows to start/stop instances"
+    conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
+    rid = rds_iid(stackname)
+    return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+
+#
+#
+#
 
 def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     """returns the path to the private key on the local filesystem.
@@ -378,7 +396,7 @@ def mk_stackname(project_name, instance_id):
     return "%s--%s" % (project_name, instance_id)
 
 def parse_stackname(stackname, all_bits=False, idx=False):
-    "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
+    "returns a pair of (project, instance-id) by default, optionally returns the cluster (node) id if all_bits=True"
     if not stackname or not isstr(stackname):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % stackname)
     # https://docs.python.org/2/library/stdtypes.html#str.split
