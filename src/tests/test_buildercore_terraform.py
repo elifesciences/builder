@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import yaml
@@ -141,15 +142,15 @@ class TestBuildercoreTerraform(base.BaseCase):
         data = self._parse_template(terraform_template)
         service = data['resource']['fastly_service_v1']['fastly-cdn']
         self.assertIn('gcslogging', service)
-        self.assertEqual(
-            service['gcslogging'],
-            {
-                'name': 'default',
-                'bucket_name': 'my-bucket',
-                'path': 'my-project/',
-                'period': 1800,
-            }
-        )
+        self.assertEqual(service['gcslogging'].get('name'), 'default')
+        self.assertEqual(service['gcslogging'].get('bucket_name'), 'my-bucket')
+        self.assertEqual(service['gcslogging'].get('path'), 'my-project/')
+        self.assertEqual(service['gcslogging'].get('period'), 1800)
+
+        log_format = service['gcslogging'].get('format')
+        # the non-rendered log_format is not even valid JSON
+        self.assertIsNotNone(log_format)
+        self.assertRegex(log_format, "\{.*\}")
 
     def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'

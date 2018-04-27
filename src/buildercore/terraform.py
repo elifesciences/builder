@@ -18,6 +18,22 @@ FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'appli
                      'font/otf', 'image/svg+xml', 'image/vnd.microsoft.icon', 'text/plain',
                      'text/xml']
 FASTLY_GZIP_EXTENSIONS = ['css', 'js', 'html', 'eot', 'ico', 'otf', 'ttf', 'json']
+FASTLY_LOG_FORMAT = """{
+  "timestamp":"%{begin:%Y-%m-%dT%H:%M:%S}t",
+  "time_elapsed":%{time.elapsed.usec}V,
+  "is_tls":%{if(req.is_ssl, "true", "false")}V,
+  "client_ip":"%{req.http.Fastly-Client-IP}V",
+  "geo_city":"%{client.geo.city}V",
+  "geo_country_code":"%{client.geo.country_code}V",
+  "request":"%{req.request}V",
+  "host":"%{req.http.Fastly-Orig-Host}V",
+  "url":"%{cstr_escape(req.url)}V",
+  "request_referer":"%{cstr_escape(req.http.Referer)}V",
+  "request_user_agent":"%{cstr_escape(req.http.User-Agent)}V",
+  "request_accept_language":"%{cstr_escape(req.http.Accept-Language)}V",
+  "request_accept_charset":"%{cstr_escape(req.http.Accept-Charset)}V",
+  "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\2\\3") }V"
+}"""
 
 def render(context):
     if not context['fastly']:
@@ -74,6 +90,7 @@ def render(context):
             # TODO: validate it starts with /
             'path': gcslogging['path'],
             'period': gcslogging.get('period', 3600),
+            'format': FASTLY_LOG_FORMAT,
         }
     return json.dumps(tf_file)
 
