@@ -21,8 +21,7 @@ LOG = logging.getLogger(__name__)
 def strtobool(x):
     return x if isinstance(x, bool) else bool(_strtobool(x))
 
-# these aliases are deprecated
-@task(alias='aws_delete_stack')
+@task
 @requires_steady_stack
 def destroy(stackname):
     "tell aws to delete a stack."
@@ -49,8 +48,7 @@ def ensure_destroyed(stackname):
             return
         raise
 
-# these aliases are deprecated
-@task(alias='aws_update_stack')
+@task()
 @requires_aws_stack
 @timeit
 def update(stackname, autostart="0", concurrency='serial'):
@@ -61,8 +59,12 @@ def update(stackname, autostart="0", concurrency='serial'):
         return
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
-# DEPRECATED: remove alias
-@task(alias='update_template')
+@task
+def update_template(stackname):
+    print('This task has been renamed to update_infrastructure.')
+    exit(1)
+
+@task
 @timeit
 def update_infrastructure(stackname):
     """Limited update of the Cloudformation template and/or Terraform template.
@@ -92,12 +94,18 @@ def update_infrastructure(stackname):
 
     context_handler.write_context(stackname, context)
 
+    # TODO: move to cloudformation module?
+    # bootstrap.update_stack(stackname, service_list=['cloudformation'])?
     if delta.non_empty:
         new_template = cfngen.merge_delta(stackname, delta)
         bootstrap.update_template(stackname, new_template)
     else:
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
+
+    # Fastly via Terraform
+    if context.get('fastly', {}):
+        bootstrap.update_stack(stackname, service_list=['terraform'])
 
     # TODO: move inside bootstrap.update_stack
     # EC2
@@ -113,20 +121,6 @@ def update_infrastructure(stackname):
     # S3
     if context.get('s3', {}):
         bootstrap.update_stack(stackname, service_list=['s3'])
-
-    # Fastly via Terraform
-    if context.get('fastly', {}):
-        bootstrap.update_stack(stackname, service_list=['terraform'])
-
-
-# TODO: deprecated, this task now lives in `master.py`
-@debugtask
-def update_master():
-    master_stackname = core.find_master(utils.find_region())
-    bootstrap.update_stack(master_stackname, service_list=[
-        'ec2' # master-server should be a self-contained EC2 instance
-    ])
-    bootstrap.remove_all_orphaned_keys(master_stackname)
 
 @requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
@@ -159,8 +153,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
-# these aliases are deprecated
-@task(alias='aws_launch_instance')
+@task
 @requires_project
 def launch(pname, instance_id=None, alt_config=None, **kwargs):
     try:
@@ -189,6 +182,9 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
             bootstrap.create_stack(stackname)
 
         LOG.info('updating stack %s', stackname)
+        # TODO: highstate.sh (think it's run inside here) doesn't detect:
+        # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
+        # TODO: should not run terraform (triggered by update fastly, probably triggered by update all)
         bootstrap.update_stack(stackname, **kwargs)
         setdefault('.active-stack', stackname)
 

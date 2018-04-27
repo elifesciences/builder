@@ -7,7 +7,7 @@ import buildvars, utils
 from fabric.api import sudo, local, task
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
-from decorators import debugtask, echo_output, requires_project, requires_aws_stack, requires_feature
+from decorators import debugtask, echo_output, requires_aws_stack, requires_feature
 from kids.cache import cache as cached
 import logging
 
@@ -78,21 +78,6 @@ def server_access():
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
     return result.return_code == 0
 
-# TODO: deletion candidate
-@echo_output
-def aws_update_many_projects(pname_list):
-    minions = ' or '.join([pname + "-*" for pname in pname_list])
-    region = utils.find_region()
-    with core.stack_conn(core.find_master(region)):
-        sudo("salt -C '%s' state.highstate --retcode-passthrough" % minions)
-
-# TODO: deletion candidate
-@debugtask
-@requires_project
-def aws_update_projects(pname):
-    "calls state.highstate on ALL projects matching <projectname>-*"
-    return aws_update_many_projects([pname])
-
 @cached
 def _cached_master_ip(master_stackname):
     "provides a small time saving when remastering many minions"
@@ -126,7 +111,7 @@ def remaster(stackname, new_master_stackname):
     if context['ec2'].get('master_ip') == master_ip:
         LOG.info("already remastered: %s", stackname)
         try:
-            utils.get_input('any key to skip, ctrl-c to carry on')
+            utils.confirm("Skip?")
             return
         except KeyboardInterrupt:
             LOG.info("not skipping")

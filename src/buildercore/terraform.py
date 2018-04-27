@@ -62,6 +62,19 @@ def render(context):
             }
         },
     }
+    if context['fastly']['gcslogging']:
+        gcslogging = context['fastly']['gcslogging']
+        # TODO: require FASTLY_GCS_EMAIL env variable
+        # TODO: require FASTLY_GCS_SECRET env variable
+        # how to define an env variable with new lines:
+        # https://stackoverflow.com/a/36439943/91590
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging'] = {
+            'name': 'default',
+            'bucket_name': gcslogging['bucket'],
+            # TODO: validate it starts with /
+            'path': gcslogging['path'],
+            'period': gcslogging.get('period', 3600),
+        }
     return json.dumps(tf_file)
 
 def write_template(stackname, contents):

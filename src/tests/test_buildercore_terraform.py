@@ -132,6 +132,25 @@ class TestBuildercoreTerraform(base.BaseCase):
             data
         )
 
+    def test_fastly_template_gcs_logging(self):
+        extra = {
+            'stackname': 'project-with-fastly-gcs--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-gcs', **extra)
+        terraform_template = terraform.render(context)
+        data = self._parse_template(terraform_template)
+        service = data['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertIn('gcslogging', service)
+        self.assertEqual(
+            service['gcslogging'],
+            {
+                'name': 'default',
+                'bucket_name': 'my-bucket',
+                'path': 'my-project/',
+                'period': 1800,
+            }
+        )
+
     def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'
         terraform.write_template('dummy1--test', contents)
