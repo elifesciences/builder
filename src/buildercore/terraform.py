@@ -34,9 +34,15 @@ FASTLY_LOG_FORMAT = """{
   "request_accept_charset":"%{cstr_escape(req.http.Accept-Charset)}V",
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
+
 # Fastly proprietary evolutions of the standard Apache log format
 # https://docs.fastly.com/guides/streaming-logs/custom-log-formats#advantages-of-using-the-version-2-custom-log-format
-FASTLY_LOG_FORMAT_VERSION = '2'
+# It's in the API:
+# https://docs.fastly.com/api/logging#logging_gcs
+# Not supported yet by Terraform however:
+# https://www.terraform.io/docs/providers/fastly/r/service_v1.html#name-12
+# FASTLY_LOG_FORMAT_VERSION = 2
+
 # what to prefix lines with, syslog heritage
 # see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
@@ -97,7 +103,8 @@ def render(context):
             'path': gcslogging['path'],
             'period': gcslogging.get('period', 3600),
             'format': FASTLY_LOG_FORMAT,
-            'format_version': FASTLY_LOG_FORMAT_VERSION,
+            # not supported yet
+            #'format_version': FASTLY_LOG_FORMAT_VERSION,
             'message_type': FASTLY_LOG_LINE_PREFIX,
         }
     return json.dumps(tf_file)
