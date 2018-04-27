@@ -203,6 +203,7 @@ def highstate(stackname):
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         bootstrap.run_script('highstate.sh')
 
+# TODO: deletion candidate
 @debugtask
 @requires_aws_stack
 def pillar(stackname):
@@ -210,6 +211,7 @@ def pillar(stackname):
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         sudo('salt-call pillar.items')
 
+# TODO: deletion candidate
 @debugtask
 @echo_output
 def aws_stack_list():
