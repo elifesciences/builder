@@ -34,6 +34,9 @@ FASTLY_LOG_FORMAT = """{
   "request_accept_charset":"%{cstr_escape(req.http.Accept-Charset)}V",
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
+# what to prefix lines with, syslog heritage
+# see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
+FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
 def render(context):
     if not context['fastly']:
@@ -91,6 +94,7 @@ def render(context):
             'path': gcslogging['path'],
             'period': gcslogging.get('period', 3600),
             'format': FASTLY_LOG_FORMAT,
+            'message_type': FASTLY_LOG_LINE_PREFIX,
         }
     return json.dumps(tf_file)
 
