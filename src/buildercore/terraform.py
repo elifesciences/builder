@@ -18,6 +18,39 @@ FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'appli
                      'font/otf', 'image/svg+xml', 'image/vnd.microsoft.icon', 'text/plain',
                      'text/xml']
 FASTLY_GZIP_EXTENSIONS = ['css', 'js', 'html', 'eot', 'ico', 'otf', 'ttf', 'json']
+FASTLY_LOG_FORMAT = """{
+  "timestamp":"%{begin:%Y-%m-%dT%H:%M:%S}t",
+  "time_elapsed":%{time.elapsed.usec}V,
+  "object_hits": %{obj.hits}V,
+  "object_lastuse": "%{obj.lastuse}V",
+  "is_tls":%{if(req.is_ssl, "true", "false")}V,
+  "client_ip":"%{req.http.Fastly-Client-IP}V",
+  "geo_city":"%{client.geo.city}V",
+  "geo_country_code":"%{client.geo.country_code}V",
+  "pop_datacenter": "%{server.datacenter}V",
+  "pop_region": "%{server.region}V",
+  "shield": "%{req.http.x-shield}V",
+  "request":"%{req.request}V",
+  "host":"%{req.http.Fastly-Orig-Host}V",
+  "url":"%{cstr_escape(req.url)}V",
+  "request_referer":"%{cstr_escape(req.http.Referer)}V",
+  "request_user_agent":"%{cstr_escape(req.http.User-Agent)}V",
+  "request_accept_language":"%{cstr_escape(req.http.Accept-Language)}V",
+  "request_accept_charset":"%{cstr_escape(req.http.Accept-Charset)}V",
+  "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
+}"""
+
+# Fastly proprietary evolutions of the standard Apache log format
+# https://docs.fastly.com/guides/streaming-logs/custom-log-formats#advantages-of-using-the-version-2-custom-log-format
+# It's in the API:
+# https://docs.fastly.com/api/logging#logging_gcs
+# Not supported yet by Terraform however:
+# https://www.terraform.io/docs/providers/fastly/r/service_v1.html#name-12
+# FASTLY_LOG_FORMAT_VERSION = 2
+
+# what to prefix lines with, syslog heritage
+# see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
+FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
 def render(context):
     if not context['fastly']:
@@ -74,6 +107,10 @@ def render(context):
             # TODO: validate it starts with /
             'path': gcslogging['path'],
             'period': gcslogging.get('period', 3600),
+            'format': FASTLY_LOG_FORMAT,
+            # not supported yet
+            #'format_version': FASTLY_LOG_FORMAT_VERSION,
+            'message_type': FASTLY_LOG_LINE_PREFIX,
         }
     return json.dumps(tf_file)
 

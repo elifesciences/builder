@@ -1,4 +1,6 @@
+import json
 import os
+import re
 import shutil
 import yaml
 from os.path import exists, join
@@ -141,15 +143,27 @@ class TestBuildercoreTerraform(base.BaseCase):
         data = self._parse_template(terraform_template)
         service = data['resource']['fastly_service_v1']['fastly-cdn']
         self.assertIn('gcslogging', service)
-        self.assertEqual(
-            service['gcslogging'],
-            {
-                'name': 'default',
-                'bucket_name': 'my-bucket',
-                'path': 'my-project/',
-                'period': 1800,
-            }
-        )
+        self.assertEqual(service['gcslogging'].get('name'), 'default')
+        self.assertEqual(service['gcslogging'].get('bucket_name'), 'my-bucket')
+        self.assertEqual(service['gcslogging'].get('path'), 'my-project/')
+        self.assertEqual(service['gcslogging'].get('period'), 1800)
+        self.assertEqual(service['gcslogging'].get('message_type'), 'blank')
+
+        log_format = service['gcslogging'].get('format')
+        # the non-rendered log_format is not even valid JSON
+        self.assertIsNotNone(log_format)
+        self.assertRegex(log_format, "\{.*\}")
+
+    def test_sanity_of_rendered_log_format(self):
+        def _render_log_format_with_dummy_data():
+            return re.sub(
+                r"%\{.+\}(V|t)",
+                '42',
+                terraform.FASTLY_LOG_FORMAT,
+            )
+        log_sample = json.loads(_render_log_format_with_dummy_data())
+        self.assertEqual(log_sample.get('object_hits'), 42)
+        self.assertEqual(log_sample.get('geo_city'), '42')
 
     def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'
