@@ -161,6 +161,17 @@ class SimpleCases(base.BaseCase):
                 # https://bugs.python.org/issue17866
                 self.assertCountEqual(expected_subs, actual_subs)
 
+class Errors(base.BaseCase):
+    @patch('buildercore.core.stack_data')
+    def test_no_public_ips_available(self, stack_data):
+        stack_data.return_value = [
+            {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Tags': []},
+        ]
+        self.assertRaises(
+            core.NoPublicIps,
+            core.stack_all_ec2_nodes, 'dummy1--test', lambda: True
+        )
+
 class TestCoreNewProjectData(base.BaseCase):
     def setUp(self):
         self.dummy1_config = join(self.fixtures_dir, 'dummy1-project.json')
