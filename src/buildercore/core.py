@@ -270,7 +270,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         workfn, work_kwargs = workfn
 
     data = stack_data(stackname)
-    public_ips = {ec2['InstanceId']: ec2['PublicIpAddress'] for ec2 in data}
+    public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == node}
