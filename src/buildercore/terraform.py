@@ -27,6 +27,7 @@ FASTLY_LOG_FORMAT = """{
   "geo_country_code":"%{client.geo.country_code}V",
   "pop_datacenter": "%{server.datacenter}V",
   "pop_region": "%{server.region}V",
+  "shield": "%{req.http.x-shield}V"
   "request":"%{req.request}V",
   "host":"%{req.http.Fastly-Orig-Host}V",
   "url":"%{cstr_escape(req.url)}V",
