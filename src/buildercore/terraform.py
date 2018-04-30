@@ -21,6 +21,8 @@ FASTLY_GZIP_EXTENSIONS = ['css', 'js', 'html', 'eot', 'ico', 'otf', 'ttf', 'json
 FASTLY_LOG_FORMAT = """{
   "timestamp":"%{begin:%Y-%m-%dT%H:%M:%S}t",
   "time_elapsed":%{time.elapsed.usec}V,
+  "object_hits": %{obj.hits}V,
+  "object_lastuse": "%{obj.lastuse}V",
   "is_tls":%{if(req.is_ssl, "true", "false")}V,
   "client_ip":"%{req.http.Fastly-Client-IP}V",
   "geo_city":"%{client.geo.city}V",
