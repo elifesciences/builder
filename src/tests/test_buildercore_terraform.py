@@ -157,14 +157,13 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_data():
             return re.sub(
-                r"%\{.+\}(V|t)", 
+                r"%\{.+\}(V|t)",
                 '42',
                 terraform.FASTLY_LOG_FORMAT,
             )
         log_sample = json.loads(_render_log_format_with_dummy_data())
         self.assertEqual(log_sample.get('object_hits'), 42)
         self.assertEqual(log_sample.get('geo_city'), '42')
-
 
     def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'
