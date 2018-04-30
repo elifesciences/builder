@@ -33,13 +33,22 @@ def start_rds_nodes(stackname):
     return lmap(_start, rds_to_be_started.keys())
 
 def restart(stackname):
-    "for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat. rds is started if stopped but otherwise not affected"
-    start_rds_nodes(core.find_rds_nodes(stackname))
+    """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
+    rds is started if stopped (if *exists*) but otherwise not affected"""
+    start_rds_nodes(stackname)
     for node in ec2_nodes(stackname):
         node.stop()
         node.wait_until_stopped()
         node.start()
         node.wait_until_running()
+        node_id = int(core.tags2dict(node.tags)['Node'])
+        call_while(
+            lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
+            interval=2,
+            update_msg="waiting for nodes to be networked",
+            done_msg="all nodes have public ips"
+        )
+    update_dns(stackname)
 
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
@@ -90,9 +99,9 @@ def start(stackname):
 
     update_dns(stackname)
 
-def _some_node_is_not_ready(stackname):
+def _some_node_is_not_ready(stackname, **kwargs):
     try:
-        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER, **kwargs)
     except NoPublicIps as e:
         LOG.info("No public ips available yet: %s", e)
         return True
@@ -194,6 +203,7 @@ def _ensure_valid_ec2_states(states, valid_states):
     )
 
 def _wait_daemons():
+    "Assumes it is connected to an ec2 host via fabric"
     node_id = current_ec2_node_id()
     path = '/var/lib/cloud/instance/boot-finished'
 
@@ -278,6 +288,7 @@ def _ec2_nodes_states(stackname, node_ids=None):
         node_index = {}
         for node in ec2_data:
             name = core.tags2dict(node.tags)['Name']
+            # TODO: shift this logic to core.parse_stackname
             # start legacy name: pattern-library--prod -> pattern-library--prod--1
             if not re.match(".*--[0-9]+", name):
                 name = name + "--1"

@@ -227,13 +227,38 @@ def rds_dbname(stackname, context=None):
     return context.get('rds_dbname') or slugify(stackname, separator="") # *must* use 'or' here
 
 def rds_iid(stackname):
-    return slugify(stackname)
+    max_rds_iid = 63 # https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options
+    # the rds iid needs to be deterministic, or, we need to find an attached rds db without knowing it's name
+    slug = slugify(stackname)
+    ensure(len(slug) <= max_rds_iid, "a database instance identifier must be less than 64 characters")
+    return slug
 
 def find_rds_instances(stackname, state='available'):
     "This uses boto3 because it allows to start/stop instances"
-    conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
-    rid = rds_iid(stackname)
-    return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+    try:
+        conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
+        rid = rds_iid(stackname)
+        if rid:
+            # TODO: return the first (and only) result of DBInstances
+            return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+    except AssertionError:
+        # invalid dbid. RDS doesn't exist because stack couldn't have been created with this ID
+        return []
+
+    except botocore.exceptions.ClientError as err:
+        LOG.info(err.response)
+        msg = err.response['Error']['Message']
+        invalid_dbid = "Invalid database identifier"
+        if msg.startswith(invalid_dbid):
+            # what we asked for isn't a valid db id, we probably made a mistake
+            # we definitely couldn't have created a db with that id
+            return []
+
+        db_notfound = "DBInstanceNotFound"
+        if msg.startswith(db_notfound):
+            return []
+
+        raise err
 
 #
 #
@@ -291,7 +316,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     public_ips = {ec2['InstanceId']: ec2['PublicIpAddress'] for ec2 in data}
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
-        nodes = {k: v for k, v in nodes.items() if v == node}
+        nodes = {k: v for k, v in nodes.items() if v == int(node)}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
 
     params = _ec2_connection_params(stackname, username)
