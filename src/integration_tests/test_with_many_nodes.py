@@ -64,7 +64,7 @@ class One(base.BaseCase):
             self.region = self.context['project']['aws']['region']
             bootstrap.create_stack(self.stackname)
 
-            lifecycle.start(self.stackname)
+            #lifecycle.start(self.stackname) # see self.setUp
 
     @classmethod
     def tearDownClass(self): # cls, not self
@@ -81,14 +81,21 @@ class One(base.BaseCase):
             # important, as anything in body will silently fail
             LOG.exception('uncaught error tearing down test class')
 
+    def setUp(self):
+        lifecycle.start(self.stackname)
+
     def test_restart_all_started(self):
-        # lifecycle.start(self.stackname) # default state
+        "multiple nodes can be restarted from a running state"
         lifecycle.restart(self.stackname)
 
     def test_restart_all_stopped(self):
+        "multiple nodes can be restarted from a stopped state"
         lifecycle.stop(self.stackname)
         lifecycle.restart(self.stackname)
 
     def test_restart_one_stopped(self):
-        lifecycle.stop(self.stackname, node=1) # this would be nice.
+        "multiple nodes can be restarted from a mixed state"
+        node1 = core.find_ec2_instances(self.stackname)[0]
+        node1.stop()
+        node1.wait_until_stopped()
         lifecycle.restart(self.stackname)
