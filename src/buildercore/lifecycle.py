@@ -32,15 +32,34 @@ def start_rds_nodes(stackname):
         return _rds_connection(stackname).start_db_instance(DBInstanceIdentifier=nid)
     return lmap(_start, rds_to_be_started.keys())
 
+def node_states(node_list):
+    history = []
+    for node in node_list:
+        node_id = int(core.tags2dict(node.tags)['Node'])
+        history.append((node_id, node.state['Name']))
+    return history
+
 def restart(stackname):
     """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
     rds is started if stopped (if *exists*) but otherwise not affected"""
     start_rds_nodes(stackname)
-    for node in ec2_nodes(stackname):
+    node_list = ec2_nodes(stackname)
+    history = []
+    for node in node_list:
+        history.append(node_states(node_list))
+
         node.stop()
+        history.append(node_states(node_list))
+
         node.wait_until_stopped()
+        history.append(node_states(node_list))
+
         node.start()
+        history.append(node_states(node_list))
+
         node.wait_until_running()
+        history.append(node_states(node_list))
+
         node_id = int(core.tags2dict(node.tags)['Node'])
         call_while(
             lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
@@ -49,6 +68,7 @@ def restart(stackname):
             done_msg="all nodes have public ips"
         )
     update_dns(stackname)
+    return history
 
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"

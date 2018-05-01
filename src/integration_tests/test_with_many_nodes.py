@@ -98,4 +98,36 @@ class One(base.BaseCase):
         node1 = core.find_ec2_instances(self.stackname)[0]
         node1.stop()
         node1.wait_until_stopped()
-        lifecycle.restart(self.stackname)
+        history = lifecycle.restart(self.stackname)
+
+        # print(history)
+        # I suspect the node objects are not being updated
+        actual = [
+            [(1, 'stopped'), (2, 'running')],
+            [(1, 'stopped'), (2, 'running')],
+            [(1, 'stopped'), (2, 'running')],
+            [(1, 'pending'), (2, 'running')],
+            [(1, 'pending'), (2, 'running')],
+
+            [(1, 'pending'), (2, 'running')],
+            [(1, 'pending'), (2, 'stopping')],
+            [(1, 'pending'), (2, 'stopping')],
+            [(1, 'pending'), (2, 'pending')],
+            [(1, 'pending'), (2, 'pending')]
+        ]
+        print(actual)
+
+        # two nodes rebooting in serial, node 1 first
+        expected_history = [
+            # node1, stopped -> running
+            [(1, 'stopped'), (2, 'running')],
+            [(1, 'pending'), (2, 'running')],
+            [(1, 'running'), (2, 'running')],
+
+            # node2, running -> stopped -> running
+            [(1, 'running'), (2, 'pending')],
+            [(1, 'running'), (2, 'stopped')],
+            [(1, 'running'), (2, 'pending')],
+            [(1, 'running'), (2, 'running')]
+        ]
+        self.assertEqual(expected_history, history)
