@@ -64,7 +64,7 @@ class One(base.BaseCase):
             self.region = self.context['project']['aws']['region']
             bootstrap.create_stack(self.stackname)
 
-            #lifecycle.start(self.stackname) # see self.setUp
+            # lifecycle.start(self.stackname) # see self.setUp
 
     @classmethod
     def tearDownClass(self): # cls, not self
