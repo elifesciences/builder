@@ -1720,6 +1720,7 @@ elife-xpub:
             # external hdd
             size: 20 # GB
             device: /dev/sdh
+            type: gp2
     aws-alt: {}
     vagrant:
         ram: 2048
