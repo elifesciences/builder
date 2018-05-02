@@ -100,34 +100,22 @@ class One(base.BaseCase):
         node1.wait_until_stopped()
         history = lifecycle.restart(self.stackname)
 
-        # print(history)
-        # I suspect the node objects are not being updated
-        actual = [
-            [(1, 'stopped'), (2, 'running')],
-            [(1, 'stopped'), (2, 'running')],
-            [(1, 'stopped'), (2, 'running')],
-            [(1, 'pending'), (2, 'running')],
-            [(1, 'pending'), (2, 'running')],
-
-            [(1, 'pending'), (2, 'running')],
-            [(1, 'pending'), (2, 'stopping')],
-            [(1, 'pending'), (2, 'stopping')],
-            [(1, 'pending'), (2, 'pending')],
-            [(1, 'pending'), (2, 'pending')]
-        ]
-        print(actual)
-
         # two nodes rebooting in serial, node 1 first
         expected_history = [
             # node1, stopped -> running
-            [(1, 'stopped'), (2, 'running')],
-            [(1, 'pending'), (2, 'running')],
-            [(1, 'running'), (2, 'running')],
+            [(1, 'stopped'), (2, 'running')], # stop!
+            [(1, 'stopped'), (2, 'running')], # (already stopped)
+            [(1, 'stopped'), (2, 'running')], # ok, now start node 1
+    
+            [(1, 'pending'), (2, 'running')], # starting ...
+            [(1, 'running'), (2, 'running')], # started
+
+            [(1, 'running'), (2, 'running')], # now stop node 2
 
             # node2, running -> stopped -> running
-            [(1, 'running'), (2, 'pending')],
-            [(1, 'running'), (2, 'stopped')],
-            [(1, 'running'), (2, 'pending')],
-            [(1, 'running'), (2, 'running')]
+            [(1, 'running'), (2, 'stopping')], # stopping ...
+            [(1, 'running'), (2, 'stopped')],  # start please
+            [(1, 'running'), (2, 'pending')],  # starting ...
+            [(1, 'running'), (2, 'running')]   # started
         ]
         self.assertEqual(expected_history, history)

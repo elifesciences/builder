@@ -17,7 +17,8 @@ LOG = logging.getLogger(__name__)
 
 def _node_id(node):
     name = core.tags2dict(node.tags)['Name']
-    return core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
+    nid = core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
+    return int(nid)
 
 def ec2_nodes(stackname):
     "returns all non-terminated nodes associated with stackname, ordered by node-id"
@@ -35,8 +36,8 @@ def start_rds_nodes(stackname):
 def node_states(node_list):
     history = []
     for node in node_list:
-        node_id = int(core.tags2dict(node.tags)['Node'])
-        history.append((node_id, node.state['Name']))
+        node.reload() # .load and .reload are the same
+        history.append((_node_id(node), node.state['Name']))
     return history
 
 def restart(stackname):
@@ -44,7 +45,7 @@ def restart(stackname):
     rds is started if stopped (if *exists*) but otherwise not affected"""
     start_rds_nodes(stackname)
     node_list = ec2_nodes(stackname)
-    history = []
+    history = [] # TODO: an ordered set would be best here
     for node in node_list:
         history.append(node_states(node_list))
 
@@ -60,7 +61,7 @@ def restart(stackname):
         node.wait_until_running()
         history.append(node_states(node_list))
 
-        node_id = int(core.tags2dict(node.tags)['Node'])
+        node_id = _node_id(node)
         call_while(
             lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
             interval=2,
