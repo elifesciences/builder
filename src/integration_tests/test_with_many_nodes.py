@@ -106,7 +106,7 @@ class One(base.BaseCase):
             [(1, 'stopped'), (2, 'running')], # stop!
             [(1, 'stopped'), (2, 'running')], # (already stopped)
             [(1, 'stopped'), (2, 'running')], # ok, now start node 1
-    
+
             [(1, 'pending'), (2, 'running')], # starting ...
             [(1, 'running'), (2, 'running')], # started
 
