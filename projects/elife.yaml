@@ -134,6 +134,7 @@ defaults:
             dns:
                 cname: u2.shared.global.fastly.net
             gcslogging: false
+            vcl: []
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
