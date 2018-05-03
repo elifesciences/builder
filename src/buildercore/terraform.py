@@ -1,6 +1,6 @@
 import json
 import os
-from os.path import exists, join
+from os.path import basename, exists, join
 import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
@@ -51,6 +51,20 @@ FASTLY_LOG_FORMAT = """{
 # what to prefix lines with, syslog heritage
 # see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
+
+FASTLY_CUSTOM_VCL = {'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
+  # always set vary to make sure uncompressed versions dont always win
+  if (!beresp.http.Vary ~ "Accept-Encoding") {
+    if (beresp.http.Vary) {
+      set beresp.http.Vary = beresp.http.Vary ", Accept-Encoding";
+    } else {
+      set beresp.http.Vary = "Accept-Encoding";
+    }
+  }
+  if (req.http.Accept-Encoding == "gzip") {
+    set beresp.gzip = true;
+  }
+}"""}
 
 def render(context):
     if not context['fastly']:
@@ -112,24 +126,40 @@ def render(context):
             #'format_version': FASTLY_LOG_FORMAT_VERSION,
             'message_type': FASTLY_LOG_LINE_PREFIX,
         }
+
+    if context['fastly']['vcl']:
+        vcl = context['fastly']['vcl']
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
+            {
+                'name': template,
+                'content': _generate_vcl_file(context['stackname'], template),
+            } for template in vcl 
+        ]
+
     return json.dumps(tf_file)
+
+def _generate_vcl_file(stackname, template):
+    content = FASTLY_CUSTOM_VCL[template]
+    with _open(stackname, template, extension='vcl', mode='w') as fp:
+        fp.write(content)
+        return fp.name
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
     if json.loads(contents):
-        with _open(stackname, 'generated', 'w') as fp:
+        with _open(stackname, 'generated', mode='w') as fp:
             fp.write(contents)
-            return _file_path(stackname, 'generated')
+            return fp.name
 
 def read_template(stackname):
-    with _open(stackname, 'generated', 'r') as fp:
+    with _open(stackname, 'generated', mode='r') as fp:
         return fp.read()
 
 def init(stackname):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
-    with _open(stackname, 'backend', 'w') as fp:
+    with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
             'terraform': {
                 'backend': {
@@ -141,7 +171,7 @@ def init(stackname):
                 },
             },
         }))
-    with _open(stackname, 'providers', 'w') as fp:
+    with _open(stackname, 'providers', mode='w') as fp:
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
@@ -166,14 +196,14 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
-def _file_path(stackname, name):
-    return join(TERRAFORM_DIR, stackname, '%s.tf.json' % name)
+def _file_path(stackname, name, extension='tf.json'):
+    return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
 
-def _open(stackname, name, mode):
+def _open(stackname, name, extension='tf.json', mode='r'):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
     # remove deprecated file
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
     if exists(deprecated_path):
         os.remove(deprecated_path)
-    return open(_file_path(stackname, name), mode)
+    return open(_file_path(stackname, name, extension), mode)

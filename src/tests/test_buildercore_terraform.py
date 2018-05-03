@@ -126,7 +126,13 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
                                                'ttf'],
                             },
-                            'force_destroy': True
+                            'force_destroy': True,
+                            'vcl': [
+                                {
+                                    'name': 'gzip-by-regex',
+                                    'content': '.cfn/terraform/project-with-fastly-complex--prod/gzip-by-regex.vcl',
+                                },
+                            ]
                         }
                     }
                 },
@@ -167,7 +173,8 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'
-        terraform.write_template('dummy1--test', contents)
+        filename = terraform.write_template('dummy1--test', contents)
+        self.assertEqual(filename, '.cfn/terraform/dummy1--test/generated.tf.json')
         self.assertEqual(terraform.read_template('dummy1--test'), contents)
 
     def _parse_template(self, terraform_template):
