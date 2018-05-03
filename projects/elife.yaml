@@ -370,6 +370,12 @@ api-gateway:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
                     period: 1800
+        vcltest:
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-gateway"
+                vcl:
+                    - "gzip-by-regex"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
