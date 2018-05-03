@@ -1,6 +1,6 @@
 import json
 import os
-from os.path import basename, exists, join
+from os.path import exists, join
 import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
@@ -142,7 +142,7 @@ def render(context):
             {
                 'name': template,
                 'content': _generate_vcl_file(context['stackname'], template),
-            } for template in vcl 
+            } for template in vcl
         ]
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,
