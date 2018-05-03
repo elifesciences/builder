@@ -52,19 +52,26 @@ FASTLY_LOG_FORMAT = """{
 # see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
-FASTLY_CUSTOM_VCL = {'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
-  # always set vary to make sure uncompressed versions dont always win
-  if (!beresp.http.Vary ~ "Accept-Encoding") {
-    if (beresp.http.Vary) {
-      set beresp.http.Vary = beresp.http.Vary ", Accept-Encoding";
-    } else {
-      set beresp.http.Vary = "Accept-Encoding";
-    }
-  }
-  if (req.http.Accept-Encoding == "gzip") {
-    set beresp.gzip = true;
-  }
-}"""}
+# at the moment VCL snippets are unsupported, this can be worked
+# around by using a full VCL
+# https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
+FASTLY_MAIN_VCL_KEY = 'main'
+FASTLY_CUSTOM_VCL = {
+    FASTLY_MAIN_VCL_KEY: """to be defined""",
+    'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
+      # always set vary to make sure uncompressed versions dont always win
+      if (!beresp.http.Vary ~ "Accept-Encoding") {
+        if (beresp.http.Vary) {
+          set beresp.http.Vary = beresp.http.Vary ", Accept-Encoding";
+        } else {
+          set beresp.http.Vary = "Accept-Encoding";
+        }
+      }
+      if (req.http.Accept-Encoding == "gzip") {
+        set beresp.gzip = true;
+      }
+    }"""
+}
 
 def render(context):
     if not context['fastly']:
@@ -135,6 +142,11 @@ def render(context):
                 'content': _generate_vcl_file(context['stackname'], template),
             } for template in vcl 
         ]
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
+            'name': FASTLY_MAIN_VCL_KEY,
+            'content': _generate_vcl_file(context['stackname'], FASTLY_MAIN_VCL_KEY),
+            'main': True,
+        })
 
     return json.dumps(tf_file)
 

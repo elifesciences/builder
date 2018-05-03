@@ -132,6 +132,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'gzip-by-regex',
                                     'content': '.cfn/terraform/project-with-fastly-complex--prod/gzip-by-regex.vcl',
                                 },
+                                {
+                                    'name': 'main',
+                                    'content': '.cfn/terraform/project-with-fastly-complex--prod/main.vcl',
+                                    'main': True,
+                                },
                             ]
                         }
                     }
