@@ -57,6 +57,8 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 FASTLY_CUSTOM_VCL = {
+    # take from https://manage.fastly.com/configure/services/4Wswrt0KnqbtpcohzrIDDx/versions/7/vcl for example
+    # not pasting it here at the moment as needs customization of values related to customer, hostnames, etc. plus maintenance
     FASTLY_MAIN_VCL_KEY: """to be defined""",
     'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
       # always set vary to make sure uncompressed versions dont always win
