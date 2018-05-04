@@ -1,5 +1,4 @@
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
-import json
 from pprint import pformat
 import backoff
 from fabric.api import task, local, run, sudo, put, get, abort, settings
