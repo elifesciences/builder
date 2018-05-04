@@ -118,6 +118,15 @@ def render(context):
             }
         },
     }
+
+    if context['fastly']['healthcheck']:
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['healthcheck'] = {
+            'name': 'default',
+            'host': context['full_hostname'],
+            'path': context['fastly']['healthcheck']['path'],
+        }
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']['healthcheck'] = 'default'
+
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
         # TODO: require FASTLY_GCS_EMAIL env variable

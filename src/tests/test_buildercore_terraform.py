@@ -103,7 +103,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'port': 443,
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
-                                'ssl_check_cert': True
+                                'ssl_check_cert': True,
+                                'healthcheck': 'default',
                             },
                             'request_setting': {
                                 'name': 'default',
@@ -126,7 +127,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
                                                'ttf'],
                             },
-                            'force_destroy': True,
+                            'healthcheck': {
+                                'host': 'prod--www.example.org',
+                                'name': 'default',
+                                'path': '/ping-fastly',
+                            },
                             'vcl': [
                                 {
                                     'name': 'gzip-by-regex',
@@ -137,7 +142,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '.cfn/terraform/project-with-fastly-complex--prod/main.vcl',
                                     'main': True,
                                 },
-                            ]
+                            ],
+                            'force_destroy': True,
                         }
                     }
                 },

@@ -98,6 +98,7 @@ defaults:
             dns:
                 cname: something.fastly.net
             gcslogging: false
+            healthcheck: false
             vcl: []
         subdomains: []
         elasticache:
@@ -326,6 +327,8 @@ project-with-fastly-complex:
                 - "{instance}--cdn2-of-www"
             subdomains-without-dns:
                 - "future"
+            healthcheck:
+                path: /ping-fastly
             vcl:
                 - "gzip-by-regex"
 
