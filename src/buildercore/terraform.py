@@ -102,6 +102,8 @@ def render(context):
             'name': 'default',
             'host': context['full_hostname'],
             'path': context['fastly']['healthcheck']['path'],
+            'check_interval': context['fastly']['healthcheck']['check-interval'],
+            'timeout': context['fastly']['healthcheck']['timeout'],
         }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']['healthcheck'] = 'default'
 

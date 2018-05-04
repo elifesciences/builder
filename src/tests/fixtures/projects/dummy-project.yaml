@@ -328,6 +328,8 @@ project-with-fastly-complex:
                 - "future"
             healthcheck:
                 path: /ping-fastly
+                check-interval: 30000
+                timeout: 10000
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3

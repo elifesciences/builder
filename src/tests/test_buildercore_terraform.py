@@ -131,6 +131,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'host': 'prod--www.example.org',
                                 'name': 'default',
                                 'path': '/ping-fastly',
+                                'check_interval': 30000,
+                                'timeout': 10000,
                             },
                             'force_destroy': True
                         }
