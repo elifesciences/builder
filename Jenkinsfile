@@ -1,7 +1,9 @@
 elifePipeline {
 
+    def commit
     stage 'Checkout', {
         checkout scm
+        commit = elifeGitRevision()
         // temporary
         elifeNotifyAtomist 'STARTED', 'STARTED'
     }
@@ -25,11 +27,13 @@ elifePipeline {
         for (int i = 0; i < pythons.size(); i++) {
             def python = pythons.get(i)
             actions["Test ${python}"] = {
-                try {
-                    sh "tox -e ${python}"
-                } finally {
-                    step([$class: "JUnitResultArchiver", testResults: "build/pytest-${python}.xml"])
-                }
+                withCommitStatus({
+                    try {
+                        sh "tox -e ${python}"
+                    } finally {
+                        step([$class: "JUnitResultArchiver", testResults: "build/pytest-${python}.xml"])
+                    }
+                }, python, commit)
             }
         }
         // currently unstable due to CloudFormation rate limiting
