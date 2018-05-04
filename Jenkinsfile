@@ -12,6 +12,10 @@ elifePipeline {
             sh 'rm -rf .tox'
         }
 
+        stage 'Scrub', {
+            sh './.ci-scrub.sh'
+        }
+
         stage 'Static checking', {
             elifeLocalTests()
         }
