@@ -418,7 +418,7 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
 
-class TerraformDelta(namedtuple('TerraformDelta', ['old_contents', 'new_contents', 'diff'])):
+class TerraformDelta(namedtuple('TerraformDelta', ['old_contents', 'new_contents'])):
     def __str__(self):
         return self.new_contents
 
@@ -428,8 +428,10 @@ def template_delta(context):
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
+    old_terraform_template_file = '{}'
     new_terraform_template_file = '{}'
     if context['fastly']:
+        old_terraform_template_file = terraform.read_template(context['stackname'])
         new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):
@@ -519,7 +521,7 @@ def template_delta(context):
             'Resources': delta_minus_resources,
             'Outputs': delta_minus_outputs,
         },
-        TerraformDelta(None, new_terraform_template_file, None)
+        TerraformDelta(old_terraform_template_file, new_terraform_template_file)
     )
 
 def merge_delta(stackname, delta):
