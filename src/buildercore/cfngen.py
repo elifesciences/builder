@@ -418,6 +418,10 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
 
+class TerraformDelta(namedtuple('TerraformDelta', ['old_contents', 'new_contents', 'diff'])):
+    def __str__(self):
+        return self.new_contents
+
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
@@ -515,7 +519,7 @@ def template_delta(context):
             'Resources': delta_minus_resources,
             'Outputs': delta_minus_outputs,
         },
-        new_terraform_template_file
+        TerraformDelta(None, new_terraform_template_file, None)
     )
 
 def merge_delta(stackname, delta):
@@ -523,7 +527,7 @@ def merge_delta(stackname, delta):
     template = read_template(stackname)
     apply_delta(template, delta)
     write_cloudformation_template(stackname, json.dumps(template))
-    terraform.write_template(stackname, delta.terraform)
+    terraform.write_template(stackname, str(delta.terraform))
     return template
 
 def apply_delta(template, delta):
