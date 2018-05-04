@@ -8,16 +8,22 @@ elifePipeline {
         elifeNotifyAtomist 'STARTED', 'STARTED'
     }
 
+    stage 'Update', {
+        sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent'
+        sh 'rm -rf .tox'
+    }
+
+    stage 'Scrub', {
+        withCommitStatus({
+            sh './.ci-scrub.sh'
+        }, 'scrub', commit)
+    }
+
+    stage 'Static checking', {
+        elifeLocalTests()
+    }
+
     lock('builder') {
-        stage 'Update', {
-            sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent'
-            sh 'rm -rf .tox'
-        }
-
-        stage 'Static checking', {
-            elifeLocalTests()
-        }
-
         def pythons = ['py27', 'py35']
         def actions = [:]
         for (int i = 0; i < pythons.size(); i++) {
