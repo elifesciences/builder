@@ -134,6 +134,7 @@ defaults:
             dns:
                 cname: u2.shared.global.fastly.net
             gcslogging: false
+            healthcheck: false
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -370,6 +371,8 @@ api-gateway:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
                     period: 1800
+                healthcheck:
+                    path: /ping-fastly
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:

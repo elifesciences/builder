@@ -103,7 +103,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'port': 443,
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
-                                'ssl_check_cert': True
+                                'ssl_check_cert': True,
+                                'healthcheck': 'default',
                             },
                             'request_setting': {
                                 'name': 'default',
@@ -125,6 +126,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                                                   'text/plain', 'text/xml'],
                                 'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
                                                'ttf'],
+                            },
+                            'healthcheck': {
+                                'host': 'prod--www.example.org',
+                                'name': 'default',
+                                'path': '/ping-fastly',
                             },
                             'force_destroy': True
                         }

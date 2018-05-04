@@ -98,6 +98,7 @@ defaults:
             dns:
                 cname: something.fastly.net
             gcslogging: false
+            healthcheck: false
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -325,6 +326,8 @@ project-with-fastly-complex:
                 - "{instance}--cdn2-of-www"
             subdomains-without-dns:
                 - "future"
+            healthcheck:
+                path: /ping-fastly
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3
