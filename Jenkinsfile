@@ -14,7 +14,9 @@ elifePipeline {
     }
 
     stage 'Scrub', {
-        sh './.ci-scrub.sh'
+        withCommitStatus({
+            sh './.ci-scrub.sh'
+        }, 'scrub', commit)
     }
 
     stage 'Static checking', {
