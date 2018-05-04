@@ -37,6 +37,7 @@ FASTLY_LOG_FORMAT = """{
   "request_user_agent":"%{cstr_escape(req.http.User-Agent)}V",
   "request_accept_language":"%{cstr_escape(req.http.Accept-Language)}V",
   "request_accept_charset":"%{cstr_escape(req.http.Accept-Charset)}V",
+  "response_status": "%>s",
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
 
