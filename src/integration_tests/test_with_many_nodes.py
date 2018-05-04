@@ -86,12 +86,41 @@ class One(base.BaseCase):
 
     def test_restart_all_started(self):
         "multiple nodes can be restarted from a running state"
-        lifecycle.restart(self.stackname)
+        history = lifecycle.restart(self.stackname)
+
+        # two nodes rebooting in serial, node 1 first, both running
+        expected_history = [
+            [(1, 'running'), (2, 'running')],
+            [(1, 'stopping'), (2, 'running')],
+            [(1, 'stopped'), (2, 'running')],
+            [(1, 'pending'), (2, 'running')],
+            [(1, 'running'), (2, 'running')],
+
+            # node2, stopped -> running
+            [(1, 'running'), (2, 'stopping')],
+            [(1, 'running'), (2, 'stopped')],
+            [(1, 'running'), (2, 'pending')],
+            [(1, 'running'), (2, 'running')],
+        ]
+        self.assertEqual(expected_history, history)
 
     def test_restart_all_stopped(self):
         "multiple nodes can be restarted from a stopped state"
         lifecycle.stop(self.stackname)
-        lifecycle.restart(self.stackname)
+        history = lifecycle.restart(self.stackname)
+
+        # two nodes rebooting in serial, node 1 first, both stopped
+        expected_history = [
+            # node1, stopped -> running
+            [(1, 'stopped'), (2, 'stopped')],
+            [(1, 'pending'), (2, 'stopped')],
+            [(1, 'running'), (2, 'stopped')],
+
+            # node2, stopped -> running
+            [(1, 'running'), (2, 'pending')],
+            [(1, 'running'), (2, 'running')],
+        ]
+        self.assertEqual(expected_history, history)
 
     def test_restart_one_stopped(self):
         "multiple nodes can be restarted from a mixed state"
@@ -100,22 +129,17 @@ class One(base.BaseCase):
         node1.wait_until_stopped()
         history = lifecycle.restart(self.stackname)
 
-        # two nodes rebooting in serial, node 1 first
+        # two nodes rebooting in serial, node 1 first, node1 stopped
         expected_history = [
             # node1, stopped -> running
-            [(1, 'stopped'), (2, 'running')], # stop!
-            [(1, 'stopped'), (2, 'running')], # (already stopped)
-            [(1, 'stopped'), (2, 'running')], # ok, now start node 1
-
-            [(1, 'pending'), (2, 'running')], # starting ...
-            [(1, 'running'), (2, 'running')], # started
-
-            [(1, 'running'), (2, 'running')], # now stop node 2
+            [(1, 'stopped'), (2, 'running')],
+            [(1, 'pending'), (2, 'running')],
+            [(1, 'running'), (2, 'running')],
 
             # node2, running -> stopped -> running
-            [(1, 'running'), (2, 'stopping')], # stopping ...
-            [(1, 'running'), (2, 'stopped')],  # start please
-            [(1, 'running'), (2, 'pending')],  # starting ...
-            [(1, 'running'), (2, 'running')]   # started
+            [(1, 'running'), (2, 'stopping')],
+            [(1, 'running'), (2, 'stopped')],
+            [(1, 'running'), (2, 'pending')],
+            [(1, 'running'), (2, 'running')]
         ]
         self.assertEqual(expected_history, history)

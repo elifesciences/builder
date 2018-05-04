@@ -40,26 +40,33 @@ def node_states(node_list):
         history.append((_node_id(node), node.state['Name']))
     return history
 
+# ensure no two adjacent records are equal
+def push(lst, rec):
+    if not lst or lst[-1] != rec:
+        lst.append(rec)
+
 def restart(stackname):
     """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
     rds is started if stopped (if *exists*) but otherwise not affected"""
     start_rds_nodes(stackname)
     node_list = ec2_nodes(stackname)
-    history = [] # TODO: an ordered set would be best here
+
+    history = []
+
     for node in node_list:
-        history.append(node_states(node_list))
+        push(history, node_states(node_list))
 
         node.stop()
-        history.append(node_states(node_list))
+        push(history, node_states(node_list))
 
         node.wait_until_stopped()
-        history.append(node_states(node_list))
+        push(history, node_states(node_list))
 
         node.start()
-        history.append(node_states(node_list))
+        push(history, node_states(node_list))
 
         node.wait_until_running()
-        history.append(node_states(node_list))
+        push(history, node_states(node_list))
 
         node_id = _node_id(node)
         call_while(
