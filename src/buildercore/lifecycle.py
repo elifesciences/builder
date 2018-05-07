@@ -20,11 +20,6 @@ def _node_id(node):
     nid = core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
     return int(nid)
 
-def ec2_nodes(stackname):
-    "returns all non-terminated nodes associated with stackname, ordered by node-id"
-    nodes = find_ec2_instances(stackname, state='pending|running|shutting-down|stopping|stopped')
-    return sorted(nodes, key=_node_id)
-
 def start_rds_nodes(stackname):
     rds_to_be_started = _rds_nodes_states(stackname)
     LOG.info("RDS nodes to be started: %s", rds_to_be_started)
@@ -49,7 +44,8 @@ def restart(stackname):
     """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
     rds is started if stopped (if *exists*) but otherwise not affected"""
     start_rds_nodes(stackname)
-    node_list = ec2_nodes(stackname)
+
+    node_list = find_ec2_instances(stackname, state='pending|running|stopping|stopped')
 
     history = []
 
