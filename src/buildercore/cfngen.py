@@ -17,6 +17,7 @@ We want to add an external volume to an EC2 instance to increase available space
 import os, json, copy
 import re
 from collections import OrderedDict, namedtuple
+import deepdiff
 import netaddr
 from slugify import slugify
 from . import utils, cloudformation, terraform, core, project, context_handler
@@ -404,6 +405,7 @@ EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 # We can do a diff with the current one which would already be an improvement, but ultimately the source of truth
 # is changing it and running a terraform plan to see proposed changes. We should however roll it back if the user
 # doesn't confirm.
+"represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed"
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
     @property
     def non_empty(self):
@@ -419,14 +421,24 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
 
+"represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed"
+class TerraformDelta(namedtuple('TerraformDelta', ['old_contents', 'new_contents'])):
+    def __str__(self):
+        return self.new_contents
+
+    def diff(self):
+        return deepdiff.DeepDiff(json.loads(self.old_contents), json.loads(self.new_contents))
+
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
-    new_terraform_template_file = '{}'
+    old_terraform_template_file = terraform.EMPTY_TEMPLATE
+    new_terraform_template_file = terraform.EMPTY_TEMPLATE
     if context['fastly']:
+        old_terraform_template_file = terraform.read_template(context['stackname'])
         new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):
@@ -516,7 +528,7 @@ def template_delta(context):
             'Resources': delta_minus_resources,
             'Outputs': delta_minus_outputs,
         },
-        new_terraform_template_file
+        TerraformDelta(old_terraform_template_file, new_terraform_template_file)
     )
 
 def merge_delta(stackname, delta):
@@ -524,7 +536,7 @@ def merge_delta(stackname, delta):
     template = read_template(stackname)
     apply_delta(template, delta)
     write_cloudformation_template(stackname, json.dumps(template))
-    terraform.write_template(stackname, delta.terraform)
+    terraform.write_template(stackname, str(delta.terraform))
     return template
 
 def apply_delta(template, delta):
