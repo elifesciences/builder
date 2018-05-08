@@ -931,7 +931,13 @@ containers:
         ext:
             size: 100 # GB
             type: gp2
-    aws-alt: {}
+    aws-alt:
+        ckeditor-inline:
+            ports:
+                - 22
+                - 80
+            ext:
+                size: 10
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
