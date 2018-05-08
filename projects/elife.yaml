@@ -253,7 +253,7 @@ master-server:
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
             - 8080 # chemist, Github webhooks for formulas
-            - 9200 # Vault, secrets management
+            - 8200 # Vault, secrets management
     aws-alt:
         '2018-04-09-2':
             subdomains:
