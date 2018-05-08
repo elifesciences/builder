@@ -4,6 +4,7 @@ import re
 import shutil
 import yaml
 from os.path import exists, join
+from mock import patch, MagicMock
 from . import base
 from buildercore import cfngen, terraform
 
@@ -17,6 +18,17 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def tearDown(self):
         del os.environ['LOGNAME']
+
+    @patch('buildercore.terraform.Terraform')
+    def test_init_providers(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        extra = {
+            'stackname': 'project-with-fastly-minimal--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-minimal', **extra)
+        terraform.init('project-with-fastly-minimal--prod', context)
+        terraform_binary.init.assert_called_once()
 
     def test_fastly_template_minimal(self):
         extra = {
