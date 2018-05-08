@@ -148,6 +148,8 @@ defaults:
             configuration:
                 maxmemory-policy: volatile-lru
             clusters: 1
+        vault:
+            address: https://master-server.elifesciences.org:8200
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

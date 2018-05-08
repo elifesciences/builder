@@ -150,7 +150,7 @@ def read_template(stackname):
     with _open(stackname, 'generated', 'r') as fp:
         return fp.read()
 
-def init(stackname):
+def init(stackname, context):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
     with _open(stackname, 'backend', 'w') as fp:
@@ -172,6 +172,9 @@ def init(stackname):
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
                 },
+                'vault': {
+                    'address': context['vault']['address'],
+                },
             },
         }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
@@ -180,12 +183,12 @@ def init(stackname):
 @only_if('fastly')
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
-    terraform = init(stackname)
+    terraform = init(stackname, context)
     terraform.apply(input=False, capture_output=False, raise_on_error=True)
 
 @only_if('fastly')
 def destroy(stackname, context):
-    terraform = init(stackname)
+    terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
