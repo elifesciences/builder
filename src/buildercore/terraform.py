@@ -7,6 +7,7 @@ from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, Configuration
 from .context_handler import only_if
 from .utils import ensure, mkdir_p
 
+EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -54,7 +55,7 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
 def render(context):
     if not context['fastly']:
-        return '{}'
+        return EMPTY_TEMPLATE
 
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {

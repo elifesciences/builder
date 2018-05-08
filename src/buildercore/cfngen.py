@@ -404,7 +404,7 @@ EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 # We can do a diff with the current one which would already be an improvement, but ultimately the source of truth
 # is changing it and running a terraform plan to see proposed changes. We should however roll it back if the user
 # doesn't confirm.
-"represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed" 
+"represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed"
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
     @property
     def non_empty(self):
@@ -434,8 +434,8 @@ def template_delta(context):
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
-    old_terraform_template_file = '{}'
-    new_terraform_template_file = '{}'
+    old_terraform_template_file = terraform.EMPTY_TEMPLATE
+    new_terraform_template_file = terraform.EMPTY_TEMPLATE
     if context['fastly']:
         old_terraform_template_file = terraform.read_template(context['stackname'])
         new_terraform_template_file = terraform.render(context)
