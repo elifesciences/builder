@@ -17,7 +17,12 @@ for formula in *; do
         cd "$formula"
         git reset --hard
         git clean -d --force
-        git pull --rebase
+        current_branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$current_branch" != 'HEAD' ]; then
+            git pull --rebase
+        else
+            echo "Repository on a detached HEAD, not pulling any branch"
+        fi
     )
 done
 
