@@ -374,7 +374,7 @@ api-gateway:
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 30000
-                    timeout: 10000
+                    timeout: 2000
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
