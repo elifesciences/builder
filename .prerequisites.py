@@ -79,6 +79,13 @@ both_checks = [
         lambda x: shs('which terraform'),
         terraform_version_checker
     ),
+
+    (
+        'vault',
+        {'all': 'download from https://www.vaultproject.io/downloads.html'},
+        lambda x: shs('vault --version'),
+        None
+    ),
 ]
 
 mac_checks = [
