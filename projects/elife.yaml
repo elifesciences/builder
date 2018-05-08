@@ -370,9 +370,11 @@ api-gateway:
                 gcslogging:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
-                    period: 900
+                    period: 600
                 healthcheck:
                     path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
