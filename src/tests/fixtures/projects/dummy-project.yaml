@@ -113,6 +113,8 @@ defaults:
             configuration:
                 maxmemory-policy: volatile-ttl
             clusters: 1
+        vault:
+            address: https://vault.example.org:8200
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

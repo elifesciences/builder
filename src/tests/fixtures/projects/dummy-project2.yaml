@@ -62,6 +62,8 @@ defaults:
         sqs: []
         s3: []
         cloudfront: null
+        vault:
+            address: https://vault.example.org:8200
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami

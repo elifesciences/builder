@@ -11,6 +11,8 @@ EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
+RESOURCE_TYPE_VAULT = 'vault_generic_secret'
+RESOURCE_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -124,6 +126,15 @@ def render(context):
             # not supported yet
             #'format_version': FASTLY_LOG_FORMAT_VERSION,
             'message_type': FASTLY_LOG_LINE_PREFIX,
+            'email': "${data.%s.%s.data[\"email\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
+        }
+        tf_file['data'] = {
+            RESOURCE_TYPE_VAULT: {
+                RESOURCE_NAME_VAULT_GCS_LOGGING: {
+                    'path': 'secret/builder/apikey/fastly-gcs-logging',
+                }
+            }
         }
     return json.dumps(tf_file)
 
@@ -139,7 +150,7 @@ def read_template(stackname):
     with _open(stackname, 'generated', 'r') as fp:
         return fp.read()
 
-def init(stackname):
+def init(stackname, context):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
     with _open(stackname, 'backend', 'w') as fp:
@@ -161,6 +172,9 @@ def init(stackname):
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
                 },
+                'vault': {
+                    'address': context['vault']['address'],
+                },
             },
         }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
@@ -169,12 +183,12 @@ def init(stackname):
 @only_if('fastly')
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
-    terraform = init(stackname)
+    terraform = init(stackname, context)
     terraform.apply(input=False, capture_output=False, raise_on_error=True)
 
 @only_if('fastly')
 def destroy(stackname, context):
-    terraform = init(stackname)
+    terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)

@@ -156,6 +156,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     build_context_fastly(context, parameterize=_parameterize)
     build_context_subdomains(context)
     build_context_elasticache(context)
+    build_context_vault(context)
 
     return context
 
@@ -284,6 +285,9 @@ def build_context_subdomains(context):
 def build_context_elasticache(context):
     if 'elasticache' in context['project']['aws']:
         context['elasticache'] = context['project']['aws']['elasticache']
+
+def build_context_vault(context):
+    context['vault'] = context['project']['aws']['vault']
 
 def choose_alt_config(stackname):
     """returns the name of the alt-config you think the user would want, based on given stackname"""
