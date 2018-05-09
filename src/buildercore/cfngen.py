@@ -405,7 +405,9 @@ EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 # We can do a diff with the current one which would already be an improvement, but ultimately the source of truth
 # is changing it and running a terraform plan to see proposed changes. We should however roll it back if the user
 # doesn't confirm.
-"represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed"
+"""represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed
+
+Extends the namedtuple-generated class to add custom methods."""
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
     @property
     def non_empty(self):
@@ -421,7 +423,9 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
 
-"represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed"
+"""represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed.
+
+Extends the namedtuple-generated class to add custom methods."""
 class TerraformDelta(namedtuple('TerraformDelta', ['old_contents', 'new_contents'])):
     def __str__(self):
         return self.new_contents
