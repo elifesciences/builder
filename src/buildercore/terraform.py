@@ -1,6 +1,6 @@
 import json
 import os
-from os.path import exists, join
+from os.path import exists, join, basename
 import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
@@ -257,7 +257,7 @@ def _generate_vcl_file(stackname, template):
     content = FASTLY_CUSTOM_VCL[template]
     with _open(stackname, template, extension='vcl', mode='w') as fp:
         fp.write(content)
-        return fp.name
+        return '${file("%s")}' % basename(fp.name)
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
