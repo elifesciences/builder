@@ -20,22 +20,20 @@ def logout():
     local(cmd)
 
 @task
-def lookup(token):
+def token_lookup(token):
     cmd = "VAULT_ADDR=%s VAULT_TOKEN=%s vault token lookup" % (vault_addr(), token)
     local(cmd)
 
 @task
-def create_token():
-    fname = utils.get_input('first name: ')
-    lname = utils.get_input('last name: ')
-    if not (fname and lname):
-        print("a firstname and a surname are required")
+def token_create():
+    token = utils.get_input('token: ')
+    if not token or not token.strip():
+        print("a token name is required")
         sys.exit(1)
-    name = "".join(x.title() for x in [fname, lname])
-    cmd = "VAULT_ADDR=%s vault token create -policy=builder-user -display-name=%s" % (vault_addr(), name)
+    cmd = "VAULT_ADDR=%s vault token create -policy=builder-user -display-name=%s" % (vault_addr(), token)
     local(cmd)
 
 @task
-def revoke_token(token):
+def token_revoke(token):
     cmd = "VAULT_ADDR=%s vault token revoke %s" % (vault_addr(), token)
     local(cmd)
