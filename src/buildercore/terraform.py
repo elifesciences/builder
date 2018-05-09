@@ -61,9 +61,86 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 FASTLY_CUSTOM_VCL = {
-    # take from https://manage.fastly.com/configure/services/4Wswrt0KnqbtpcohzrIDDx/versions/7/vcl for example
-    # not pasting it here at the moment as needs customization of values related to customer, hostnames, etc. plus maintenance
-    FASTLY_MAIN_VCL_KEY: """to be defined""",
+    # taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
+    # expands #FASTLY macros into generated VCL
+    FASTLY_MAIN_VCL_KEY: """sub vcl_recv {
+    #FASTLY recv
+
+      if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
+	return(pass);
+      }
+
+      return(lookup);
+    }
+
+    sub vcl_fetch {
+    #FASTLY fetch
+
+      if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+	restart;
+      }
+
+      if (req.restarts > 0) {
+	set beresp.http.Fastly-Restarts = req.restarts;
+      }
+
+      if (beresp.http.Set-Cookie) {
+	set req.http.Fastly-Cachetype = "SETCOOKIE";
+	return(pass);
+      }
+
+      if (beresp.http.Cache-Control ~ "private") {
+	set req.http.Fastly-Cachetype = "PRIVATE";
+	return(pass);
+      }
+
+      if (beresp.status == 500 || beresp.status == 503) {
+	set req.http.Fastly-Cachetype = "ERROR";
+	set beresp.ttl = 1s;
+	set beresp.grace = 5s;
+	return(deliver);
+      }
+
+      if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~ "(s-maxage|max-age)") {
+	# keep the ttl here
+      } else {
+	# apply the default ttl
+	set beresp.ttl = 3600s;
+      }
+
+      return(deliver);
+    }
+
+    sub vcl_hit {
+    #FASTLY hit
+
+      if (!obj.cacheable) {
+	return(pass);
+      }
+      return(deliver);
+    }
+
+    sub vcl_miss {
+    #FASTLY miss
+      return(fetch);
+    }
+
+    sub vcl_deliver {
+    #FASTLY deliver
+      return(deliver);
+    }
+
+    sub vcl_error {
+    #FASTLY error
+    }
+
+    sub vcl_pass {
+    #FASTLY pass
+    }
+
+    sub vcl_log {
+    #FASTLY log
+    }""",
     'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
       # always set vary to make sure uncompressed versions dont always win
       if (!beresp.http.Vary ~ "Accept-Encoding") {
