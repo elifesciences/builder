@@ -66,6 +66,16 @@ def find_project(project_location_triple):
         return {}  # OrderedDict({})
     return fnmap[protocol](path, hostname)
 
+def raw_project_map(project_locations_list=None):
+    "returns an unprocessed list of maps of project data"
+    if not project_locations_list:
+        project_locations_list = config.app()['project-locations']
+
+    struct = {files.project_file_name(path): files.all_projects(path) for _, _, path in project_locations_list}
+    if len(struct) == 1:
+        return struct.values()[0]
+    return struct
+
 def org_project_map(project_locations_list=None):
     """returns a merged map of {org => project data} after inspecting each location
     in given list duplicate projects in the same organisation will be merged."""
