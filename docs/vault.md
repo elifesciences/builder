@@ -22,14 +22,14 @@ Terraform, wrapped by builder, will read the ~/.vault-token file during its oper
 
 After logging in with a root token, run:
 
-`./bldr vault.create_token`
+`./bldr vault.token_create`
 
 This token will be associated with the `builder-user` policy which gives it read-only access to secrets needed by builder.
 
 To lookup information about a token:
 
-`./bldr vault.lookup_token:<token>`
+`./bldr vault.token_lookup:<token>`
 
 To revoke a token:
 
-`./bldr vault.revoke_token:<token>`
+`./bldr vault.token_revoke:<token>`
