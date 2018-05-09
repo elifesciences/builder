@@ -282,7 +282,7 @@ def _ec2_connection(stackname):
     return boto_conn(stackname, 'ec2')
 
 def _rds_connection(stackname):
-    return boto_conn(stackname, 'rds')
+    return boto_conn(stackname, 'rds', client=True)
 
 def _r53_connection():
     """returns a boto2 route53 connection.

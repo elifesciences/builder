@@ -9,7 +9,7 @@ elifePipeline {
     }
 
     stage 'Update', {
-        sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent'
+        sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault'
         sh 'rm -rf .tox'
     }
 

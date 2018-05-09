@@ -149,6 +149,8 @@ defaults:
             configuration:
                 maxmemory-policy: volatile-lru
             clusters: 1
+        vault:
+            address: https://master-server.elifesciences.org:8200
     aws-alt:
         fresh:
             description: uses a plain Ubuntu basebox instead of an ami
@@ -239,9 +241,10 @@ heavybox:
         ram: 2048
 
 master-server:
+    subdomain: master-server
     # formula-repo for the 'master-server' project should contain the
     # confidential pillar data, master config and state top file.
-    # see: https://github.com/elifesciences/builder-private-example
+    # see: https://github.com/elifesciences/builder-private
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
         ec2: {}
@@ -253,7 +256,11 @@ master-server:
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
             - 8080 # chemist, Github webhooks for formulas
-    aws-alt: {}
+            - 8200 # Vault, secrets management
+    aws-alt:
+        '2018-04-09-2':
+            subdomains:
+                - master-server
     vagrant: {}
 
 lax:
@@ -371,9 +378,11 @@ api-gateway:
                 gcslogging:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
-                    period: 1800
+                    period: 600
                 healthcheck:
                     path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
         vcltest:
             fastly:
                 subdomains:
@@ -938,7 +947,13 @@ containers:
         ext:
             size: 100 # GB
             type: gp2
-    aws-alt: {}
+    aws-alt:
+        ckeditor-inline:
+            ports:
+                - 22
+                - 80
+            ext:
+                size: 10
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024

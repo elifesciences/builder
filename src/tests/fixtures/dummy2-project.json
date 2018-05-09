@@ -22,6 +22,9 @@
         }, 
         "type": "t2.small", 
         "region": "us-east-1", 
+        "vault": {
+            "address": "https://vault.example.org:8200"
+        },
         "vpc-id": "vpc-78a2071d", 
         "subnet-id": "subnet-1d4eb46a", 
         "subnet-cidr": "10.0.2.0/24", 
@@ -69,6 +72,9 @@
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 
+            "vault": {
+                "address": "https://vault.example.org:8200"
+            },
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
@@ -116,6 +122,9 @@
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 
+            "vault": {
+                "address": "https://vault.example.org:8200"
+            },
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 

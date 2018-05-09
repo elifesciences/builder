@@ -7,9 +7,12 @@ from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, Configuration
 from .context_handler import only_if
 from .utils import ensure, mkdir_p
 
+EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
+RESOURCE_TYPE_VAULT = 'vault_generic_secret'
+RESOURCE_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -37,6 +40,7 @@ FASTLY_LOG_FORMAT = """{
   "request_user_agent":"%{cstr_escape(req.http.User-Agent)}V",
   "request_accept_language":"%{cstr_escape(req.http.Accept-Language)}V",
   "request_accept_charset":"%{cstr_escape(req.http.Accept-Charset)}V",
+  "response_status": "%>s",
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
 
@@ -77,7 +81,7 @@ FASTLY_CUSTOM_VCL = {
 
 def render(context):
     if not context['fastly']:
-        return '{}'
+        return EMPTY_TEMPLATE
 
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
@@ -124,6 +128,8 @@ def render(context):
             'name': 'default',
             'host': context['full_hostname'],
             'path': context['fastly']['healthcheck']['path'],
+            'check_interval': context['fastly']['healthcheck']['check-interval'],
+            'timeout': context['fastly']['healthcheck']['timeout'],
         }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']['healthcheck'] = 'default'
 
@@ -143,6 +149,15 @@ def render(context):
             # not supported yet
             #'format_version': FASTLY_LOG_FORMAT_VERSION,
             'message_type': FASTLY_LOG_LINE_PREFIX,
+            'email': "${data.%s.%s.data[\"email\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
+        }
+        tf_file['data'] = {
+            RESOURCE_TYPE_VAULT: {
+                RESOURCE_NAME_VAULT_GCS_LOGGING: {
+                    'path': 'secret/builder/apikey/fastly-gcs-logging',
+                }
+            }
         }
 
     if context['fastly']['vcl']:
@@ -179,7 +194,7 @@ def read_template(stackname):
     with _open(stackname, 'generated', mode='r') as fp:
         return fp.read()
 
-def init(stackname):
+def init(stackname, context):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
     with _open(stackname, 'backend', mode='w') as fp:
@@ -201,6 +216,9 @@ def init(stackname):
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
                 },
+                'vault': {
+                    'address': context['vault']['address'],
+                },
             },
         }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
@@ -209,12 +227,12 @@ def init(stackname):
 @only_if('fastly')
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
-    terraform = init(stackname)
+    terraform = init(stackname, context)
     terraform.apply(input=False, capture_output=False, raise_on_error=True)
 
 @only_if('fastly')
 def destroy(stackname, context):
-    terraform = init(stackname)
+    terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)

@@ -4,6 +4,7 @@ import re
 import shutil
 import yaml
 from os.path import exists, join
+from mock import patch, MagicMock
 from . import base
 from buildercore import cfngen, terraform
 
@@ -18,13 +19,24 @@ class TestBuildercoreTerraform(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
+    @patch('buildercore.terraform.Terraform')
+    def test_init_providers(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        extra = {
+            'stackname': 'project-with-fastly-minimal--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-minimal', **extra)
+        terraform.init('project-with-fastly-minimal--prod', context)
+        terraform_binary.init.assert_called_once()
+
     def test_fastly_template_minimal(self):
         extra = {
             'stackname': 'project-with-fastly-minimal--prod',
         }
         context = cfngen.build_context('project-with-fastly-minimal', **extra)
         terraform_template = terraform.render(context)
-        data = self._parse_template(terraform_template)
+        template = self._parse_template(terraform_template)
         self.assertEqual(
             {
                 'resource': {
@@ -69,7 +81,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     }
                 },
             },
-            data
+            template
         )
 
     def test_fastly_template_complex(self):
@@ -78,7 +90,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         }
         context = cfngen.build_context('project-with-fastly-complex', **extra)
         terraform_template = terraform.render(context)
-        data = self._parse_template(terraform_template)
+        template = self._parse_template(terraform_template)
         self.assertEqual(
             {
                 'resource': {
@@ -131,6 +143,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'host': 'prod--www.example.org',
                                 'name': 'default',
                                 'path': '/ping-fastly',
+                                'check_interval': 30000,
+                                'timeout': 10000,
                             },
                             'vcl': [
                                 {
@@ -148,7 +162,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     }
                 },
             },
-            data
+            template
         )
 
     def test_fastly_template_gcs_logging(self):
@@ -157,28 +171,33 @@ class TestBuildercoreTerraform(base.BaseCase):
         }
         context = cfngen.build_context('project-with-fastly-gcs', **extra)
         terraform_template = terraform.render(context)
-        data = self._parse_template(terraform_template)
-        service = data['resource']['fastly_service_v1']['fastly-cdn']
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
         self.assertIn('gcslogging', service)
         self.assertEqual(service['gcslogging'].get('name'), 'default')
         self.assertEqual(service['gcslogging'].get('bucket_name'), 'my-bucket')
         self.assertEqual(service['gcslogging'].get('path'), 'my-project/')
         self.assertEqual(service['gcslogging'].get('period'), 1800)
         self.assertEqual(service['gcslogging'].get('message_type'), 'blank')
+        self.assertEqual(service['gcslogging'].get('email'), '${data.vault_generic_secret.fastly-gcs-logging.data["email"]}')
+        self.assertEqual(service['gcslogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcs-logging.data["secret_key"]}')
 
         log_format = service['gcslogging'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
         self.assertRegex(log_format, "\{.*\}")
 
+        data = template['data']['vault_generic_secret']['fastly-gcs-logging']
+        self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
+
     def test_sanity_of_rendered_log_format(self):
-        def _render_log_format_with_dummy_data():
+        def _render_log_format_with_dummy_template():
             return re.sub(
                 r"%\{.+\}(V|t)",
                 '42',
                 terraform.FASTLY_LOG_FORMAT,
             )
-        log_sample = json.loads(_render_log_format_with_dummy_data())
+        log_sample = json.loads(_render_log_format_with_dummy_template())
         self.assertEqual(log_sample.get('object_hits'), 42)
         self.assertEqual(log_sample.get('geo_city'), '42')
 

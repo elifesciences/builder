@@ -4,6 +4,7 @@ boto==2.46.1
 botocore==1.5.95
 boto3==1.4.4
 coverage==4.3.4
+deepdiff==3.3.0
 Fabric==1.13.2
 green==2.7.0
 kids.cache==0.0.4

@@ -109,8 +109,10 @@ AWS:
 Troubleshooting:
 
 * [ssh-agent](docs/ssh-agent.md)
+* [vault](docs/vault.md)
 
 Development
+
 * [adding projects](docs/adding-projects.md)
 * [technology](docs/tech.md)
 * [salt](docs/salt.md)
