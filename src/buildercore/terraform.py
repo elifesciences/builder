@@ -67,7 +67,7 @@ FASTLY_CUSTOM_VCL = {
     #FASTLY recv
 
       if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
-	return(pass);
+        return(pass);
       }
 
       return(lookup);
@@ -77,35 +77,35 @@ FASTLY_CUSTOM_VCL = {
     #FASTLY fetch
 
       if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
-	restart;
+        restart;
       }
 
       if (req.restarts > 0) {
-	set beresp.http.Fastly-Restarts = req.restarts;
+        set beresp.http.Fastly-Restarts = req.restarts;
       }
 
       if (beresp.http.Set-Cookie) {
-	set req.http.Fastly-Cachetype = "SETCOOKIE";
-	return(pass);
+        set req.http.Fastly-Cachetype = "SETCOOKIE";
+        return(pass);
       }
 
       if (beresp.http.Cache-Control ~ "private") {
-	set req.http.Fastly-Cachetype = "PRIVATE";
-	return(pass);
+        set req.http.Fastly-Cachetype = "PRIVATE";
+        return(pass);
       }
 
       if (beresp.status == 500 || beresp.status == 503) {
-	set req.http.Fastly-Cachetype = "ERROR";
-	set beresp.ttl = 1s;
-	set beresp.grace = 5s;
-	return(deliver);
+        set req.http.Fastly-Cachetype = "ERROR";
+        set beresp.ttl = 1s;
+        set beresp.grace = 5s;
+        return(deliver);
       }
 
       if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~ "(s-maxage|max-age)") {
-	# keep the ttl here
+        # keep the ttl here
       } else {
-	# apply the default ttl
-	set beresp.ttl = 3600s;
+        # apply the default ttl
+        set beresp.ttl = 3600s;
       }
 
       return(deliver);
@@ -115,7 +115,7 @@ FASTLY_CUSTOM_VCL = {
     #FASTLY hit
 
       if (!obj.cacheable) {
-	return(pass);
+        return(pass);
       }
       return(deliver);
     }
