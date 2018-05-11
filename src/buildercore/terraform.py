@@ -191,6 +191,7 @@ Due to Terraform limitations we are unable to pass these directly to the Fastly 
 Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
 class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'content', 'type'])):
     def insert_include(self, main_vcl):
+        # TODO: pass more lines in, and add a comment on where this is coming from
         return main_vcl.insert(self.type, 'include "%s"' % self.name)
 
 class FastlyCustomVCLGenerationError(Exception):
