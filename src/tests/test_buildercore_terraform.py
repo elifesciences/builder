@@ -244,3 +244,18 @@ class TestFastlyCustomVCLSnippet(base.BaseCase):
             expected_main_vcl
         )
 
+    def test_fails_if_no_section_can_be_found(self):
+        snippet = terraform.FastlyCustomVCLSnippet(
+            name='do-some-magic',
+            content='...',
+            type='hit'
+        )
+        original_main_vcl = """
+        sub vcl_fetch {
+          ...
+        }
+        """
+        self.assertRaises(
+            terraform.FastlyCustomVCLGenerationError,
+            lambda: snippet.insert_include(original_main_vcl),
+        )

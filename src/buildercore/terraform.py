@@ -152,20 +152,24 @@ Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
 class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'content', 'type'])):
     def insert_include(self, main_vcl):
         lines = main_vcl.splitlines()
+        lookup = r"(?P<indentation> +)sub vcl_%s {" % self.type
         section_start = None
         for i, line in enumerate(lines):
-            m = re.match(r"(?P<indentation> +)sub", line)
+            m = re.match(lookup, line)
             if m:
                 section_start = i
                 break
         if section_start is None:
-            raise RuntimeError()
+            raise FastlyCustomVCLGenerationError()
         lines.insert(section_start + 1, '')
         lines.insert(
             section_start + 1, 
             '%s  include "%s"' % (m.group(1), self.name)
         )
         return "\n".join(lines)
+
+class FastlyCustomVCLGenerationError(Exception):
+    pass
 
 FASTLY_CUSTOM_VCL = {
     'gzip-by-regex': FastlyCustomVCLSnippet(
