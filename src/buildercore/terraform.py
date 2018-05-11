@@ -160,7 +160,7 @@ class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'cont
                 section_start = i
                 break
         if section_start is None:
-            raise FastlyCustomVCLGenerationError()
+            raise FastlyCustomVCLGenerationError("Cannot match %s into main VCL template:\n\n%s" % (lookup, main_vcl))
         lines.insert(section_start + 1, '')
         lines.insert(
             section_start + 1, 
