@@ -9,25 +9,25 @@ class TestFastlyCustomVCL(base.BaseCase):
             type='fetch'
         )
         original_main_vcl = fastly.FastlyVCL.from_string("""
-        sub vcl_fetch {
-          #FASTLY fetch
+sub vcl_fetch {
+  #FASTLY fetch
 
-          if (...) {
-            do_something_else()
-          }
-        }
-        """)
+  if (...) {
+    do_something_else()
+  }
+}
+""")
         expected_main_vcl = fastly.FastlyVCL.from_string("""
-        sub vcl_fetch {
-          include "do-some-magic"
+sub vcl_fetch {
+  include "do-some-magic"
 
-          #FASTLY fetch
+  #FASTLY fetch
 
-          if (...) {
-            do_something_else()
-          }
-        }
-        """)
+  if (...) {
+    do_something_else()
+  }
+}
+""")
         self.assertEqual(
             snippet.insert_include(original_main_vcl),
             expected_main_vcl

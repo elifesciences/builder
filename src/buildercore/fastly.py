@@ -20,6 +20,9 @@ class FastlyVCL:
     def __str__(self):
         return "\n".join(self._lines)
 
+    def __repr__(self):
+        return "FastlyVCL(%s)" % repr(self._lines)
+
     def insert(self, section, statement):
         section_start = self._find_section_start(section)
         lines = list(self._lines)
