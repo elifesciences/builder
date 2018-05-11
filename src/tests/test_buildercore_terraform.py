@@ -219,4 +219,28 @@ class TestFastlyCustomVCLSnippet(base.BaseCase):
             content='...',
             type='fetch'
         )
+        original_main_vcl = """
+        sub vcl_fetch {
+          #FASTLY fetch
+
+          if (...) {
+            do_something_else()
+          }
+        }
+        """
+        expected_main_vcl = """
+        sub vcl_fetch {
+          include "do-some-magic"
+
+          #FASTLY fetch
+
+          if (...) {
+            do_something_else()
+          }
+        }
+        """
+        self.assertEqual(
+            snippet.insert_include(original_main_vcl),
+            expected_main_vcl
+        )
 

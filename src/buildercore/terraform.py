@@ -2,6 +2,7 @@ from collections import namedtuple
 import json
 import os
 from os.path import exists, join, basename
+import re
 import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
@@ -148,10 +149,24 @@ FASTLY_MAIN_VCL_TEMPLATE = """
 Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
 
 Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
-FastlyCustomVCLSnippet = namedtuple(
-    'FastlyCustomVCLSnippet',
-    ['name', 'content', 'type']
-)
+class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'content', 'type'])):
+    def insert_include(self, main_vcl):
+        lines = main_vcl.splitlines()
+        section_start = None
+        for i, line in enumerate(lines):
+            m = re.match(r"(?P<indentation> +)sub", line)
+            if m:
+                section_start = i
+                break
+        if section_start is None:
+            raise RuntimeError()
+        lines.insert(section_start + 1, '')
+        lines.insert(
+            section_start + 1, 
+            '%s  include "%s"' % (m.group(1), self.name)
+        )
+        return "\n".join(lines)
+
 FASTLY_CUSTOM_VCL = {
     'gzip-by-regex': FastlyCustomVCLSnippet(
         name='gzip-by-regex',
