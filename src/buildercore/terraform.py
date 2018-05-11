@@ -103,7 +103,8 @@ class FastlyVCL:
 
 # taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
 # expands #FASTLY macros into generated VCL
-FASTLY_MAIN_VCL_TEMPLATE = """
+# TODO: extract into file
+FASTLY_MAIN_VCL_TEMPLATE = FastlyVCL.from_string("""
     sub vcl_recv {
       #FASTLY recv
 
@@ -181,7 +182,7 @@ FASTLY_MAIN_VCL_TEMPLATE = """
 
     sub vcl_log {
       #FASTLY log
-    }"""
+    }""")
 
 """VCL snippets that can be used to augment the default VCL
 
@@ -302,15 +303,19 @@ def render(context):
         vcl = context['fastly']['vcl']
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
-                'name': template,
-                'content': _generate_vcl_file(context['stackname'], FASTLY_CUSTOM_VCL[template].content, template),
-            } for template in vcl
+                'name': name,
+                'content': _generate_vcl_file(context['stackname'], FASTLY_CUSTOM_VCL[name].content, name),
+            } for name in vcl
         ]
+        linked_main_vcl = FASTLY_MAIN_VCL_TEMPLATE
+        for name in vcl:
+            snippet = FASTLY_CUSTOM_VCL[name]
+            linked_main_vcl = snippet.insert_include(linked_main_vcl)
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,
             'content': _generate_vcl_file(
                 context['stackname'],
-                FASTLY_MAIN_VCL_TEMPLATE, 
+                linked_main_vcl, 
                 FASTLY_MAIN_VCL_KEY
             ),
             'main': True,
@@ -318,9 +323,14 @@ def render(context):
 
     return json.dumps(tf_file)
 
+"""
+creates a VCL on the filesystem, for Terraform to dynamically load it on apply
+
+content can be a string or any object that can be casted to a string
+"""
 def _generate_vcl_file(stackname, content, key):
     with _open(stackname, key, extension='vcl', mode='w') as fp:
-        fp.write(content)
+        fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 
 def _add_vcl_inclusion(vcl, names_to_sections):
