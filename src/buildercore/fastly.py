@@ -47,7 +47,7 @@ class FastlyVCL:
 Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
 
 Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
-class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'content', 'type'])):
+class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'])):
     def insert_include(self, main_vcl):
         # TODO: pass more lines in, and add a comment on where this is coming from
         return main_vcl.insert(self.type, 'include "%s"' % self.name)
@@ -138,8 +138,8 @@ MAIN_VCL_TEMPLATE = FastlyVCL.from_string("""
       #FASTLY log
     }""")
 
-CUSTOM_VCL_SNIPPETS = {
-    'gzip-by-regex': FastlyCustomVCLSnippet(
+VCL_SNIPPETS = {
+    'gzip-by-regex': FastlyVCLSnippet(
         name='gzip-by-regex',
         content="""
         if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {

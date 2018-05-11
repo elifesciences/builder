@@ -153,12 +153,12 @@ def render(context):
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
                 'name': name,
-                'content': _generate_vcl_file(context['stackname'], fastly.CUSTOM_VCL_SNIPPETS[name].content, name),
+                'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[name].content, name),
             } for name in vcl
         ]
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         for name in vcl:
-            snippet = fastly.CUSTOM_VCL_SNIPPETS[name]
+            snippet = fastly.VCL_SNIPPETS[name]
             linked_main_vcl = snippet.insert_include(linked_main_vcl)
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,

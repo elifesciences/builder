@@ -3,7 +3,7 @@ from . import base
 
 class TestFastlyCustomVCL(base.BaseCase):
     def test_includes_a_reference_to_itself_in_template(self):
-        snippet = fastly.FastlyCustomVCLSnippet(
+        snippet = fastly.FastlyVCLSnippet(
             name='do-some-magic',
             content='...',
             type='fetch'
@@ -34,7 +34,7 @@ class TestFastlyCustomVCL(base.BaseCase):
         )
 
     def test_fails_if_no_section_can_be_found(self):
-        snippet = fastly.FastlyCustomVCLSnippet(
+        snippet = fastly.FastlyVCLSnippet(
             name='do-some-magic',
             content='...',
             type='hit'
