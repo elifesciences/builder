@@ -1,3 +1,4 @@
+from collections import namedtuple
 import json
 import os
 from os.path import exists, join, basename
@@ -141,20 +142,26 @@ FASTLY_MAIN_VCL_TEMPLATE = """
     sub vcl_log {
       #FASTLY log
     }"""
+FastlyCustomVclSegment = namedtuple('FastlyCustomVclSegment', ['content', 'section'])
 FASTLY_CUSTOM_VCL = {
-    'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
-      # always set vary to make sure uncompressed versions dont always win
-      if (!beresp.http.Vary ~ "Accept-Encoding") {
-        if (beresp.http.Vary) {
-          set beresp.http.Vary = beresp.http.Vary ", Accept-Encoding";
-        } else {
-          set beresp.http.Vary = "Accept-Encoding";
+    'gzip-by-regex': FastlyCustomVclSegment(
+        content="""
+        if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
+          # always set vary to make sure uncompressed versions dont always win
+          if (!beresp.http.Vary ~ "Accept-Encoding") {
+            if (beresp.http.Vary) {
+              set beresp.http.Vary = beresp.http.Vary ", Accept-Encoding";
+            } else {
+              set beresp.http.Vary = "Accept-Encoding";
+            }
+          }
+          if (req.http.Accept-Encoding == "gzip") {
+            set beresp.gzip = true;
+          }
         }
-      }
-      if (req.http.Accept-Encoding == "gzip") {
-        set beresp.gzip = true;
-      }
-    }"""
+        """,
+        section='fetch'
+    ),
 }
 
 def render(context):
@@ -243,12 +250,16 @@ def render(context):
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
                 'name': template,
-                'content': _generate_vcl_file(context['stackname'], FASTLY_CUSTOM_VCL[template], template),
+                'content': _generate_vcl_file(context['stackname'], FASTLY_CUSTOM_VCL[template].content, template),
             } for template in vcl
         ]
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,
-            'content': _generate_vcl_file(context['stackname'], FASTLY_MAIN_VCL_TEMPLATE, FASTLY_MAIN_VCL_KEY),
+            'content': _generate_vcl_file(
+                context['stackname'],
+                FASTLY_MAIN_VCL_TEMPLATE, 
+                FASTLY_MAIN_VCL_KEY
+            ),
             'main': True,
         })
 
@@ -256,9 +267,11 @@ def render(context):
 
 def _generate_vcl_file(stackname, content, key):
     with _open(stackname, key, extension='vcl', mode='w') as fp:
-        print content
         fp.write(content)
         return '${file("%s")}' % basename(fp.name)
+
+def _add_vcl_inclusion(vcl, names_to_sections):
+    pass
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
