@@ -1,7 +1,6 @@
 import json
 import os
 from os.path import exists, join, basename
-import re
 import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
@@ -62,9 +61,6 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # around by using a full VCL
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
-
-
-
 
 
 def render(context):

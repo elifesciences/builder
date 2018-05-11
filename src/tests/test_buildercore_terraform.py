@@ -211,4 +211,3 @@ class TestBuildercoreTerraform(base.BaseCase):
         """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
         https://stackoverflow.com/a/16373377/91590"""
         return yaml.safe_load(terraform_template)
-
