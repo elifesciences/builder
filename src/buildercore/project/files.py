@@ -39,13 +39,12 @@ def write_project_file(new_project_data, project_file):
 #
 
 @cached
-def all_projects(project_file):  # , project_file=config.PROJECT_FILE):
+def all_projects(project_file):
     allp = utils.ordered_load(open(project_file))
     if allp is None:
         return ({}, [])
     assert "defaults" in allp, ("Project file %s is missing a `default` section" % project_file)
-    defaults = allp["defaults"]
-    del allp["defaults"]
+    defaults = allp.pop("defaults")
     return defaults, allp
 
 #
