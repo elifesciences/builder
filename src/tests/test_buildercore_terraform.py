@@ -149,11 +149,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'vcl': [
                                 {
                                     'name': 'gzip-by-regex',
-                                    'content': '.cfn/terraform/project-with-fastly-complex--prod/gzip-by-regex.vcl',
+                                    'content': '${file("gzip-by-regex.vcl")}',
                                 },
                                 {
                                     'name': 'main',
-                                    'content': '.cfn/terraform/project-with-fastly-complex--prod/main.vcl',
+                                    'content': '${file("main.vcl")}',
                                     'main': True,
                                 },
                             ],
