@@ -63,8 +63,9 @@ FASTLY_MAIN_VCL_KEY = 'main'
 FASTLY_CUSTOM_VCL = {
     # taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
     # expands #FASTLY macros into generated VCL
-    FASTLY_MAIN_VCL_KEY: """sub vcl_recv {
-    #FASTLY recv
+    FASTLY_MAIN_VCL_KEY: """
+    sub vcl_recv {
+      #FASTLY recv
 
       if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
         return(pass);
@@ -74,7 +75,7 @@ FASTLY_CUSTOM_VCL = {
     }
 
     sub vcl_fetch {
-    #FASTLY fetch
+      #FASTLY fetch
 
       if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
         restart;
@@ -112,7 +113,7 @@ FASTLY_CUSTOM_VCL = {
     }
 
     sub vcl_hit {
-    #FASTLY hit
+      #FASTLY hit
 
       if (!obj.cacheable) {
         return(pass);
@@ -121,25 +122,25 @@ FASTLY_CUSTOM_VCL = {
     }
 
     sub vcl_miss {
-    #FASTLY miss
+      #FASTLY miss
       return(fetch);
     }
 
     sub vcl_deliver {
-    #FASTLY deliver
+      #FASTLY deliver
       return(deliver);
     }
 
     sub vcl_error {
-    #FASTLY error
+      #FASTLY error
     }
 
     sub vcl_pass {
-    #FASTLY pass
+      #FASTLY pass
     }
 
     sub vcl_log {
-    #FASTLY log
+      #FASTLY log
     }""",
     'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
       # always set vary to make sure uncompressed versions dont always win
