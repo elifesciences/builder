@@ -211,3 +211,12 @@ class TestBuildercoreTerraform(base.BaseCase):
         """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
         https://stackoverflow.com/a/16373377/91590"""
         return yaml.safe_load(terraform_template)
+
+class TestFastlyCustomVCLSnippet(base.BaseCase):
+    def test_includes_a_reference_to_itself_in_template(self):
+        snippet = terraform.FastlyCustomVCLSnippet(
+            name='do-some-magic',
+            content='...',
+            type='fetch'
+        )
+

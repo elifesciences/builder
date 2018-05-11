@@ -142,9 +142,19 @@ FASTLY_MAIN_VCL_TEMPLATE = """
     sub vcl_log {
       #FASTLY log
     }"""
-FastlyCustomVclSegment = namedtuple('FastlyCustomVclSegment', ['content', 'section'])
+
+"""VCL snippets that can be used to augment the default VCL
+
+Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
+
+Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
+FastlyCustomVCLSnippet = namedtuple(
+    'FastlyCustomVCLSnippet',
+    ['name', 'content', 'type']
+)
 FASTLY_CUSTOM_VCL = {
-    'gzip-by-regex': FastlyCustomVclSegment(
+    'gzip-by-regex': FastlyCustomVCLSnippet(
+        name='gzip-by-regex',
         content="""
         if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
           # always set vary to make sure uncompressed versions dont always win
@@ -160,7 +170,7 @@ FASTLY_CUSTOM_VCL = {
           }
         }
         """,
-        section='fetch'
+        type='fetch'
     ),
 }
 
