@@ -23,14 +23,11 @@ class FastlyVCL:
     def __repr__(self):
         return "FastlyVCL(%s)" % repr(self._lines)
 
-    def insert(self, section, statement):
+    def insert(self, section, statements):
         section_start = self._find_section_start(section)
         lines = list(self._lines)
         lines.insert(section_start + 1, '')
-        lines.insert(
-            section_start + 1,
-            '  %s' % statement
-        )
+        lines[section_start+1:section_start+1] = ['  %s' % s for s in statements]
         return FastlyVCL(lines)
 
     def _find_section_start(self, section):
@@ -53,8 +50,7 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
     Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
 
     def insert_include(self, main_vcl):
-        # TODO: pass more lines in, and add a comment on where this is coming from
-        return main_vcl.insert(self.type, 'include "%s"' % self.name)
+        return main_vcl.insert(self.type, ['include "%s"' % self.name])
 
 class FastlyCustomVCLGenerationError(Exception):
     pass
