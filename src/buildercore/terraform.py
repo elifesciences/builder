@@ -60,10 +60,9 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # around by using a full VCL
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
-FASTLY_CUSTOM_VCL = {
-    # taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
-    # expands #FASTLY macros into generated VCL
-    FASTLY_MAIN_VCL_KEY: """
+# taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
+# expands #FASTLY macros into generated VCL
+FASTLY_MAIN_VCL_TEMPLATE = """
     sub vcl_recv {
       #FASTLY recv
 
@@ -141,7 +140,8 @@ FASTLY_CUSTOM_VCL = {
 
     sub vcl_log {
       #FASTLY log
-    }""",
+    }"""
+FASTLY_CUSTOM_VCL = {
     'gzip-by-regex': """if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
       # always set vary to make sure uncompressed versions dont always win
       if (!beresp.http.Vary ~ "Accept-Encoding") {
@@ -243,20 +243,20 @@ def render(context):
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
                 'name': template,
-                'content': _generate_vcl_file(context['stackname'], template),
+                'content': _generate_vcl_file(context['stackname'], FASTLY_CUSTOM_VCL[template], template),
             } for template in vcl
         ]
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,
-            'content': _generate_vcl_file(context['stackname'], FASTLY_MAIN_VCL_KEY),
+            'content': _generate_vcl_file(context['stackname'], FASTLY_MAIN_VCL_TEMPLATE, FASTLY_MAIN_VCL_KEY),
             'main': True,
         })
 
     return json.dumps(tf_file)
 
-def _generate_vcl_file(stackname, template):
-    content = FASTLY_CUSTOM_VCL[template]
-    with _open(stackname, template, extension='vcl', mode='w') as fp:
+def _generate_vcl_file(stackname, content, key):
+    with _open(stackname, key, extension='vcl', mode='w') as fp:
+        print content
         fp.write(content)
         return '${file("%s")}' % basename(fp.name)
 
