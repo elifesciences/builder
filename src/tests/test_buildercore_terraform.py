@@ -219,7 +219,7 @@ class TestFastlyCustomVCL(base.BaseCase):
             content='...',
             type='fetch'
         )
-        original_main_vcl = terraform.FastlyVCL("""
+        original_main_vcl = terraform.FastlyVCL.from_string("""
         sub vcl_fetch {
           #FASTLY fetch
 
@@ -228,7 +228,7 @@ class TestFastlyCustomVCL(base.BaseCase):
           }
         }
         """)
-        expected_main_vcl = terraform.FastlyVCL("""
+        expected_main_vcl = terraform.FastlyVCL.from_string("""
         sub vcl_fetch {
           include "do-some-magic"
 
@@ -250,7 +250,7 @@ class TestFastlyCustomVCL(base.BaseCase):
             content='...',
             type='hit'
         )
-        original_main_vcl = terraform.FastlyVCL("""
+        original_main_vcl = terraform.FastlyVCL.from_string("""
         sub vcl_fetch {
           ...
         }

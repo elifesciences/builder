@@ -65,14 +65,36 @@ FASTLY_MAIN_VCL_KEY = 'main'
 
 # TODO: extract classes and constant instances into buildercore.terraform.fastly module
 class FastlyVCL:
-    def __init__(self, content):
-        self._content = content
+    @classmethod
+    def from_string(cls, content):
+        return cls(content.splitlines())
+
+    def __init__(self, lines):
+        self._lines = lines
 
     def __eq__(self, another):
-        return self._content == another._content
+        return self._lines == another._lines
 
     def __str__(self):
-        return self._content
+        return "\n".join(self._lines)
+    
+    def insert(self, section, statement):
+        lines = list(self._lines)
+        lookup = r"(?P<indentation> +)sub vcl_%s {" % section
+        section_start = None
+        for i, line in enumerate(lines):
+            m = re.match(lookup, line)
+            if m:
+                section_start = i
+                break
+        if section_start is None:
+            raise FastlyCustomVCLGenerationError("Cannot match %s into main VCL template:\n\n%s" % (lookup, str(self)))
+        lines.insert(section_start + 1, '')
+        lines.insert(
+            section_start + 1, 
+            '%s  %s' % (m.group(1), statement)
+        )
+        return FastlyVCL(lines)
 
 # taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
 # expands #FASTLY macros into generated VCL
@@ -163,22 +185,7 @@ Due to Terraform limitations we are unable to pass these directly to the Fastly 
 Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
 class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'content', 'type'])):
     def insert_include(self, main_vcl):
-        lines = str(main_vcl).splitlines()
-        lookup = r"(?P<indentation> +)sub vcl_%s {" % self.type
-        section_start = None
-        for i, line in enumerate(lines):
-            m = re.match(lookup, line)
-            if m:
-                section_start = i
-                break
-        if section_start is None:
-            raise FastlyCustomVCLGenerationError("Cannot match %s into main VCL template:\n\n%s" % (lookup, main_vcl))
-        lines.insert(section_start + 1, '')
-        lines.insert(
-            section_start + 1, 
-            '%s  include "%s"' % (m.group(1), self.name)
-        )
-        return FastlyVCL("\n".join(lines))
+        return main_vcl.insert(self.type, 'include "%s"' % self.name)
 
 class FastlyCustomVCLGenerationError(Exception):
     pass
