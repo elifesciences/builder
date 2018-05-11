@@ -4,7 +4,7 @@ set -e
 echo "[-] .lint.sh"
 
 echo "scrubbing"
-./.ci-scrub.sh
+. .scrub.sh 2> /dev/null
 
 echo "pyflakes"
 .ci/pyflakes
