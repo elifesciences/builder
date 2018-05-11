@@ -324,12 +324,12 @@ def render(context):
 
     return json.dumps(tf_file)
 
-"""
-creates a VCL on the filesystem, for Terraform to dynamically load it on apply
-
-content can be a string or any object that can be casted to a string
-"""
 def _generate_vcl_file(stackname, content, key):
+    """
+    creates a VCL on the filesystem, for Terraform to dynamically load it on apply
+
+    content can be a string or any object that can be casted to a string
+    """
     with _open(stackname, key, extension='vcl', mode='w') as fp:
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
