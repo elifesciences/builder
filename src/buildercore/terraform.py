@@ -62,6 +62,18 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # around by using a full VCL
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
+
+# TODO: extract classes and constant instances into buildercore.terraform.fastly module
+class FastlyVCL:
+    def __init__(self, content):
+        self._content = content
+
+    def __eq__(self, another):
+        return self._content == another._content
+
+    def __str__(self):
+        return self._content
+
 # taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
 # expands #FASTLY macros into generated VCL
 FASTLY_MAIN_VCL_TEMPLATE = """
@@ -151,7 +163,7 @@ Due to Terraform limitations we are unable to pass these directly to the Fastly 
 Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
 class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'content', 'type'])):
     def insert_include(self, main_vcl):
-        lines = main_vcl.splitlines()
+        lines = str(main_vcl).splitlines()
         lookup = r"(?P<indentation> +)sub vcl_%s {" % self.type
         section_start = None
         for i, line in enumerate(lines):
@@ -166,7 +178,7 @@ class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'cont
             section_start + 1, 
             '%s  include "%s"' % (m.group(1), self.name)
         )
-        return "\n".join(lines)
+        return FastlyVCL("\n".join(lines))
 
 class FastlyCustomVCLGenerationError(Exception):
     pass

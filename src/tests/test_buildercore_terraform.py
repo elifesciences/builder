@@ -212,14 +212,14 @@ class TestBuildercoreTerraform(base.BaseCase):
         https://stackoverflow.com/a/16373377/91590"""
         return yaml.safe_load(terraform_template)
 
-class TestFastlyCustomVCLSnippet(base.BaseCase):
+class TestFastlyCustomVCL(base.BaseCase):
     def test_includes_a_reference_to_itself_in_template(self):
         snippet = terraform.FastlyCustomVCLSnippet(
             name='do-some-magic',
             content='...',
             type='fetch'
         )
-        original_main_vcl = """
+        original_main_vcl = terraform.FastlyVCL("""
         sub vcl_fetch {
           #FASTLY fetch
 
@@ -227,8 +227,8 @@ class TestFastlyCustomVCLSnippet(base.BaseCase):
             do_something_else()
           }
         }
-        """
-        expected_main_vcl = """
+        """)
+        expected_main_vcl = terraform.FastlyVCL("""
         sub vcl_fetch {
           include "do-some-magic"
 
@@ -238,7 +238,7 @@ class TestFastlyCustomVCLSnippet(base.BaseCase):
             do_something_else()
           }
         }
-        """
+        """)
         self.assertEqual(
             snippet.insert_include(original_main_vcl),
             expected_main_vcl
@@ -250,11 +250,11 @@ class TestFastlyCustomVCLSnippet(base.BaseCase):
             content='...',
             type='hit'
         )
-        original_main_vcl = """
+        original_main_vcl = terraform.FastlyVCL("""
         sub vcl_fetch {
           ...
         }
-        """
+        """)
         self.assertRaises(
             terraform.FastlyCustomVCLGenerationError,
             lambda: snippet.insert_include(original_main_vcl),
