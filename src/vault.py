@@ -9,6 +9,9 @@ def vault_addr():
     defaults, _ = project.raw_project_map()
     return defaults['aws']['vault']['address']
 
+def vault_policy():
+    return 'builder-user'
+
 @task
 def login():
     cmd = "VAULT_ADDR=%s vault login" % vault_addr()
@@ -30,7 +33,7 @@ def token_create():
     if not token or not token.strip():
         print("a token display name is required")
         sys.exit(1)
-    cmd = "VAULT_ADDR=%s vault token create -policy=builder-user -display-name=%s" % (vault_addr(), token)
+    cmd = "VAULT_ADDR=%s vault token create -policy=%s -display-name=%s" % (vault_addr(), vault_policy(), token)
     local(cmd)
 
 @task
