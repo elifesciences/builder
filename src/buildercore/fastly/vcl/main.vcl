@@ -75,4 +75,4 @@ sub vcl_pass {
 
 sub vcl_log {
   #FASTLY log
-}""")
+}
