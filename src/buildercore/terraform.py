@@ -77,18 +77,18 @@ class FastlyVCL:
 
     def __str__(self):
         return "\n".join(self._lines)
-    
+
     def insert(self, section, statement):
         # TODO: if we remove indentation altogether from all lines, this will become a single return value
         section_start, indentation = self._find_section_start(section)
         lines = list(self._lines)
         lines.insert(section_start + 1, '')
         lines.insert(
-            section_start + 1, 
+            section_start + 1,
             '%s  %s' % (indentation, statement)
         )
         return FastlyVCL(lines)
-    
+
     def _find_section_start(self, section):
         lookup = r"(?P<indentation> +)sub vcl_%s {" % section
         section_start = None
@@ -315,7 +315,7 @@ def render(context):
             'name': FASTLY_MAIN_VCL_KEY,
             'content': _generate_vcl_file(
                 context['stackname'],
-                linked_main_vcl, 
+                linked_main_vcl,
                 FASTLY_MAIN_VCL_KEY
             ),
             'main': True,
