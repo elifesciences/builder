@@ -27,7 +27,7 @@ class FastlyVCL:
         section_start = self._find_section_start(section)
         lines = list(self._lines)
         lines.insert(section_start + 1, '')
-        lines[section_start+1:section_start+1] = ['  %s' % s for s in statements]
+        lines[section_start + 1:section_start + 1] = ['  %s' % s for s in statements]
         return FastlyVCL(lines)
 
     def _find_section_start(self, section):
@@ -51,7 +51,7 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
 
     def insert_include(self, main_vcl):
         return main_vcl.insert(
-            self.type, 
+            self.type,
             [
                 '// BEGIN builder %s' % self.name,
                 'include "%s"' % self.name,
