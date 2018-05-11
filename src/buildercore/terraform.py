@@ -1,4 +1,3 @@
-from collections import namedtuple
 import json
 import os
 from os.path import exists, join, basename
@@ -8,6 +7,7 @@ from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
 from .utils import ensure, mkdir_p
+from . import fastly
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
@@ -63,48 +63,11 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 
-# TODO: extract classes and constant instances into buildercore.terraform.fastly module
-class FastlyVCL:
-    @classmethod
-    def from_string(cls, content):
-        return cls(content.splitlines())
-
-    def __init__(self, lines):
-        self._lines = lines
-
-    def __eq__(self, another):
-        return self._lines == another._lines
-
-    def __str__(self):
-        return "\n".join(self._lines)
-
-    def insert(self, section, statement):
-        # TODO: if we remove indentation altogether from all lines, this will become a single return value
-        section_start, indentation = self._find_section_start(section)
-        lines = list(self._lines)
-        lines.insert(section_start + 1, '')
-        lines.insert(
-            section_start + 1,
-            '%s  %s' % (indentation, statement)
-        )
-        return FastlyVCL(lines)
-
-    def _find_section_start(self, section):
-        lookup = r"(?P<indentation> +)sub vcl_%s {" % section
-        section_start = None
-        for i, line in enumerate(self._lines):
-            m = re.match(lookup, line)
-            if m:
-                section_start = i
-                break
-        if section_start is None:
-            raise FastlyCustomVCLGenerationError("Cannot match %s into main VCL template:\n\n%s" % (lookup, str(self)))
-        return section_start, m.group(1)
 
 # taken from https://docs.fastly.com/guides/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl#fastlys-vcl-boilerplate
 # expands #FASTLY macros into generated VCL
 # TODO: extract into file
-FASTLY_MAIN_VCL_TEMPLATE = FastlyVCL.from_string("""
+FASTLY_MAIN_VCL_TEMPLATE = fastly.FastlyVCL.from_string("""
     sub vcl_recv {
       #FASTLY recv
 
@@ -184,21 +147,9 @@ FASTLY_MAIN_VCL_TEMPLATE = FastlyVCL.from_string("""
       #FASTLY log
     }""")
 
-"""VCL snippets that can be used to augment the default VCL
-
-Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
-
-Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
-class FastlyCustomVCLSnippet(namedtuple('FastlyCustomVCLSnippet', ['name', 'content', 'type'])):
-    def insert_include(self, main_vcl):
-        # TODO: pass more lines in, and add a comment on where this is coming from
-        return main_vcl.insert(self.type, 'include "%s"' % self.name)
-
-class FastlyCustomVCLGenerationError(Exception):
-    pass
 
 FASTLY_CUSTOM_VCL = {
-    'gzip-by-regex': FastlyCustomVCLSnippet(
+    'gzip-by-regex': fastly.FastlyCustomVCLSnippet(
         name='gzip-by-regex',
         content="""
         if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
