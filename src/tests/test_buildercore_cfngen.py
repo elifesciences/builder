@@ -110,7 +110,7 @@ class TestUpdates(base.BaseCase):
     def test_template_delta_doesnt_unnecessarily_update_rds(self):
         "we don't want to update RDS instances more than necessary, since it takes time and may cause reboots or replacements"
         context = self._base_context('dummy2')
-        updated_context = self._base_context('dummy2', in_memory=True, existing_context=context)
+        updated_context = self._base_context('dummy2', in_memory=False, existing_context=context)
         (delta_plus, delta_edit, delta_minus, new_terraform_template_file) = cfngen.template_delta(updated_context)
         self.assertEqual(list(delta_plus['Resources'].keys()), [])
         self.assertEqual(list(delta_minus['Resources'].keys()), [])
