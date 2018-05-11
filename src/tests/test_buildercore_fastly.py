@@ -19,7 +19,9 @@ sub vcl_fetch {
 """)
         expected_main_vcl = fastly.FastlyVCL.from_string("""
 sub vcl_fetch {
+  // BEGIN builder do-some-magic
   include "do-some-magic"
+  // END builder do-some-magic
 
   #FASTLY fetch
 

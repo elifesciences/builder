@@ -50,7 +50,14 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
     Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
 
     def insert_include(self, main_vcl):
-        return main_vcl.insert(self.type, ['include "%s"' % self.name])
+        return main_vcl.insert(
+            self.type, 
+            [
+                '// BEGIN builder %s' % self.name,
+                'include "%s"' % self.name,
+                '// END builder %s' % self.name,
+            ]
+        )
 
 class FastlyCustomVCLGenerationError(Exception):
     pass
