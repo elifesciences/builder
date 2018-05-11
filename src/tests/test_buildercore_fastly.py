@@ -2,7 +2,7 @@ from buildercore.terraform import fastly
 from . import base
 
 class TestFastlyCustomVCL(base.BaseCase):
-    def test_includes_a_reference_to_itself_in_template(self):
+    def test_includes_in_template_snippets_that_will_be_expanded_in_place(self):
         snippet = fastly.FastlyVCLSnippet(
             name='do-some-magic',
             content='...',
@@ -35,7 +35,7 @@ sub vcl_fetch {
             expected_main_vcl
         )
 
-    def test_fails_if_no_section_can_be_found(self):
+    def test_stops_generation_if_an_inclusion_section_cannot_be_found(self):
         snippet = fastly.FastlyVCLSnippet(
             name='do-some-magic',
             content='...',
