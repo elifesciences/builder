@@ -26,9 +26,9 @@ def token_lookup(token):
 
 @task
 def token_create():
-    token = utils.get_input('token: ')
+    token = utils.get_input('token display name: ')
     if not token or not token.strip():
-        print("a token name is required")
+        print("a token display name is required")
         sys.exit(1)
     cmd = "VAULT_ADDR=%s vault token create -policy=builder-user -display-name=%s" % (vault_addr(), token)
     local(cmd)
