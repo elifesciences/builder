@@ -23,12 +23,12 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_init_providers(self, Terraform):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
-        extra = {
-            'stackname': 'project-with-fastly-minimal--prod',
-        }
-        context = cfngen.build_context('project-with-fastly-minimal', **extra)
-        terraform.init('project-with-fastly-minimal--prod', context)
+        stackname = 'project-with-fastly-minimal--prod'
+        context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
+        terraform.init(stackname, context)
         terraform_binary.init.assert_called_once()
+        for _, configuration in self._load_terraform_file(stackname, 'providers').get('provider').items():
+            self.assertIn('version', configuration)
 
     def test_fastly_template_minimal(self):
         extra = {
@@ -211,3 +211,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
         https://stackoverflow.com/a/16373377/91590"""
         return yaml.safe_load(terraform_template)
+
+    def _load_terraform_file(self, stackname, filename):
+        with open(join(terraform.TERRAFORM_DIR, stackname, '%s.tf.json' % filename), 'r') as fp:
+            return self._parse_template(fp.read())

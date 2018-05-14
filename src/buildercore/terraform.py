@@ -10,6 +10,7 @@ from . import fastly
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
+PROVIDER_VAULT_VERSION = '1.1'
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
 RESOURCE_TYPE_VAULT = 'vault_generic_secret'
@@ -217,6 +218,8 @@ def init(stackname, context):
                 },
                 'vault': {
                     'address': context['vault']['address'],
+                    # exact version constraint
+                    'version': "= %s" % PROVIDER_VAULT_VERSION,
                 },
             },
         }))
