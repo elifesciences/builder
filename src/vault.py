@@ -34,6 +34,18 @@ def token_lookup(token):
     local(cmd)
 
 @task
+def token_list_accessors():
+    _warning_root_token()
+    cmd = "VAULT_ADDR=%s vault list auth/token/accessors" % (vault_addr())
+    local(cmd)
+
+@task
+def token_lookup_accessor(accessor):
+    _warning_root_token()
+    cmd = "VAULT_ADDR=%s vault token lookup -accessor %s" % (vault_addr(), accessor)
+    local(cmd)
+
+@task
 def token_create():
     _warning_root_token()
     token = utils.get_input('token display name: ')
