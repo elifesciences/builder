@@ -13,6 +13,12 @@ path "auth/token/revoke-self" {
     capabilities = ["update"]
 }
 
+# Allow a token to create child tokens
+path "auth/token/create" {
+    capabilities = ["create", "update"]
+}
+
+
 # Allow a token to look up its own capabilities on a path
 path "sys/capabilities-self" {
     capabilities = ["update"]
