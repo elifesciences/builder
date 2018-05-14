@@ -23,13 +23,19 @@ def logout():
     local(cmd)
 
 @task
+def policies_update():
+    _warning_root_token()
+    cmd = "VAULT_ADDR=%s vault policy write %s .vault/%s.hcl" % (vault_addr(), vault_policy(), vault_policy())
+    local(cmd)
+
+@task
 def token_lookup(token):
     cmd = "VAULT_ADDR=%s VAULT_TOKEN=%s vault token lookup" % (vault_addr(), token)
     local(cmd)
 
 @task
 def token_create():
-    print("Warning: you should be authenticated with a root token to effectively create a new token here")
+    _warning_root_token()
     token = utils.get_input('token display name: ')
     if not token or not token.strip():
         print("a token display name is required")
@@ -41,3 +47,6 @@ def token_create():
 def token_revoke(token):
     cmd = "VAULT_ADDR=%s vault token revoke %s" % (vault_addr(), token)
     local(cmd)
+
+def _warning_root_token():
+    print("Warning: you should probably be authenticated with a root token for this operation")
