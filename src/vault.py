@@ -29,6 +29,7 @@ def token_lookup(token):
 
 @task
 def token_create():
+    print("Warning: you should be authenticated with a root token to effectively create a new token here")
     token = utils.get_input('token display name: ')
     if not token or not token.strip():
         print("a token display name is required")
