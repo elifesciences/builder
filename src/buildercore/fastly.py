@@ -26,12 +26,12 @@ class FastlyVCL:
     def insert(self, section, statements):
         section_start = self._find_section_start(section)
         lines = list(self._lines)
-        lines.insert(section_start + 1, '')
         lines[section_start + 1:section_start + 1] = ['  %s' % s for s in statements]
+        lines.insert(section_start + 1, '')
         return FastlyVCL(lines)
 
     def _find_section_start(self, section):
-        lookup = r"^( *)sub vcl_%s {" % section
+        lookup = r"^( *)#FASTLY %s" % section
         section_start = None
         for i, line in enumerate(self._lines):
             m = re.match(lookup, line)
@@ -72,9 +72,9 @@ def _read_vcl_file(name):
 MAIN_VCL_TEMPLATE = FastlyVCL.from_string(_read_vcl_file('main.vcl'))
 
 VCL_SNIPPETS = {
-    'gzip-by-regex': FastlyVCLSnippet(
-        name='gzip-by-regex',
-        content=_read_vcl_file('gzip-by-regex.vcl'),
+    'gzip-by-content-type-suffix': FastlyVCLSnippet(
+        name='gzip-by-content-type-suffix',
+        content=_read_vcl_file('gzip-by-content-type-suffix.vcl'),
         type='fetch'
     ),
 }

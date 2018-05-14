@@ -388,7 +388,7 @@ api-gateway:
                 subdomains:
                     - "{instance}--cdn-gateway"
                 vcl:
-                    - "gzip-by-regex"
+                    - "gzip-by-content-type-suffix"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:

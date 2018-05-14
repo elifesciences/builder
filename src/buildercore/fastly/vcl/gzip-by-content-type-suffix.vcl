@@ -1,4 +1,4 @@
-if ((beresp.status == 200 || beresp.status == 404) && (beresp.http.content-type ~ "(\+json)\s*($|;)" || req.url ~ "\.(css|js|html|eot|ico|otf|ttf|json|svg)($|\?)" ) ) {
+if (!beresp.gzip && (beresp.status == 200 || beresp.status == 404) && beresp.http.content-type ~ "\+(json|json-seq|xml)\s*($|;)") {
   # always set vary to make sure uncompressed versions dont always win
   if (!beresp.http.Vary ~ "Accept-Encoding") {
     if (beresp.http.Vary) {

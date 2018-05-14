@@ -148,8 +148,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                             },
                             'vcl': [
                                 {
-                                    'name': 'gzip-by-regex',
-                                    'content': '${file("gzip-by-regex.vcl")}',
+                                    'name': 'gzip-by-content-type-suffix',
+                                    'content': '${file("gzip-by-content-type-suffix.vcl")}',
                                 },
                                 {
                                     'name': 'main',

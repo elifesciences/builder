@@ -334,7 +334,7 @@ project-with-fastly-complex:
                 check-interval: 30000
                 timeout: 10000
             vcl:
-                - "gzip-by-regex"
+                - "gzip-by-content-type-suffix"
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3
