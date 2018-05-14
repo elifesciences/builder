@@ -118,6 +118,27 @@ def render(context):
         }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']['healthcheck'] = 'default'
 
+    if context['fastly']['errors']:
+        errors = context['fastly']['errors']
+        response_objects = []
+        cache_conditions = []
+        for code, path in errors['codes'].items():
+            cache_condition = {
+                'name': 'condition-%s' % code,
+                'statement': 'beresp.status == %d' % code,
+                'type': 'CACHE',
+            }
+            cache_conditions.append(cache_condition)
+            response_objects.append({
+                'name': 'error-%s' % code,
+                'status': int(code),
+                # TODO: replace
+                'content': 'Error HTML for %s' % code,
+                'cache_condition': cache_condition['name'],
+            })
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = cache_conditions
+
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
         # TODO: require FASTLY_GCS_EMAIL env variable

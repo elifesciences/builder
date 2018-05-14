@@ -379,6 +379,11 @@ api-gateway:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
                     period: 600
+                errors:
+                    url: https://prod-elife-error-pages.s3-website-us-east-1.amazonaws.com/
+                    codes:
+                        503: "5xx.html"
+                        404: "404.html"
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 30000

@@ -146,6 +146,21 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'check_interval': 30000,
                                 'timeout': 10000,
                             },
+                            'condition': [
+                                {
+                                    'name': 'condition-503',
+                                    'statement': 'beresp.status == 503',
+                                    'type': 'CACHE',
+                                },
+                            ],
+                            'response_object': [
+                                {
+                                    'name': 'error-503',
+                                    'status': 503,
+                                    'content': 'Error HTML for 503',
+                                    'cache_condition': 'condition-503',
+                                },
+                            ],
                             'vcl': [
                                 {
                                     'name': 'gzip-by-content-type-suffix',

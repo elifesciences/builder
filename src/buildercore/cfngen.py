@@ -264,6 +264,7 @@ def build_context_fastly(context, parameterize):
             'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
             'dns': context['project']['aws']['fastly']['dns'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
+            'errors': context['project']['aws']['fastly']['errors'],
             # TODO: add templating of bucket name
             'gcslogging': context['project']['aws']['fastly']['gcslogging'],
             'vcl': context['project']['aws']['fastly']['vcl'],
