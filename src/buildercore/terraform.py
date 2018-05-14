@@ -1,11 +1,12 @@
 import json
 import os
-from os.path import exists, join
+from os.path import exists, join, basename
 import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
 from .utils import ensure, mkdir_p
+from . import fastly
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
@@ -56,6 +57,12 @@ FASTLY_LOG_FORMAT = """{
 # what to prefix lines with, syslog heritage
 # see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
+
+# at the moment VCL snippets are unsupported, this can be worked
+# around by using a full VCL
+# https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
+FASTLY_MAIN_VCL_KEY = 'main'
+
 
 def render(context):
     if not context['fastly']:
@@ -137,24 +144,60 @@ def render(context):
                 }
             }
         }
+
+    if context['fastly']['vcl']:
+        vcl = context['fastly']['vcl']
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
+            {
+                'name': name,
+                'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[name].content, name),
+            } for name in vcl
+        ]
+        linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
+        for name in vcl:
+            snippet = fastly.VCL_SNIPPETS[name]
+            linked_main_vcl = snippet.insert_include(linked_main_vcl)
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
+            'name': FASTLY_MAIN_VCL_KEY,
+            'content': _generate_vcl_file(
+                context['stackname'],
+                linked_main_vcl,
+                FASTLY_MAIN_VCL_KEY
+            ),
+            'main': True,
+        })
+
     return json.dumps(tf_file)
+
+def _generate_vcl_file(stackname, content, key):
+    """
+    creates a VCL on the filesystem, for Terraform to dynamically load it on apply
+
+    content can be a string or any object that can be casted to a string
+    """
+    with _open(stackname, key, extension='vcl', mode='w') as fp:
+        fp.write(str(content))
+        return '${file("%s")}' % basename(fp.name)
+
+def _add_vcl_inclusion(vcl, names_to_sections):
+    pass
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
     if json.loads(contents):
-        with _open(stackname, 'generated', 'w') as fp:
+        with _open(stackname, 'generated', mode='w') as fp:
             fp.write(contents)
-            return _file_path(stackname, 'generated')
+            return fp.name
 
 def read_template(stackname):
-    with _open(stackname, 'generated', 'r') as fp:
+    with _open(stackname, 'generated', mode='r') as fp:
         return fp.read()
 
 def init(stackname, context):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
-    with _open(stackname, 'backend', 'w') as fp:
+    with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
             'terraform': {
                 'backend': {
@@ -166,7 +209,7 @@ def init(stackname, context):
                 },
             },
         }))
-    with _open(stackname, 'providers', 'w') as fp:
+    with _open(stackname, 'providers', mode='w') as fp:
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
@@ -196,14 +239,14 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
-def _file_path(stackname, name):
-    return join(TERRAFORM_DIR, stackname, '%s.tf.json' % name)
+def _file_path(stackname, name, extension='tf.json'):
+    return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
 
-def _open(stackname, name, mode):
+def _open(stackname, name, extension='tf.json', mode='r'):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
     # remove deprecated file
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
     if exists(deprecated_path):
         os.remove(deprecated_path)
-    return open(_file_path(stackname, name), mode)
+    return open(_file_path(stackname, name, extension), mode)

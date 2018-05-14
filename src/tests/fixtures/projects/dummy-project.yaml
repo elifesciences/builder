@@ -99,6 +99,7 @@ defaults:
                 cname: something.fastly.net
             gcslogging: false
             healthcheck: false
+            vcl: []
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -332,6 +333,8 @@ project-with-fastly-complex:
                 path: /ping-fastly
                 check-interval: 30000
                 timeout: 10000
+            vcl:
+                - "gzip-by-content-type-suffix"
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3

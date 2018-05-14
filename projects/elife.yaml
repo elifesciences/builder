@@ -135,6 +135,7 @@ defaults:
                 cname: u2.shared.global.fastly.net
             gcslogging: false
             healthcheck: false
+            vcl: []
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -382,6 +383,12 @@ api-gateway:
                     path: /ping-fastly
                     check-interval: 30000
                     timeout: 2000
+        vcltest:
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-gateway"
+                vcl:
+                    - "gzip-by-content-type-suffix"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:

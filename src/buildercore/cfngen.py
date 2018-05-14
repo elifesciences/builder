@@ -266,6 +266,7 @@ def build_context_fastly(context, parameterize):
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
             # TODO: add templating of bucket name
             'gcslogging': context['project']['aws']['fastly']['gcslogging'],
+            'vcl': context['project']['aws']['fastly']['vcl'],
         }
     else:
         context['fastly'] = False
