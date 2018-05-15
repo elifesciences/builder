@@ -205,6 +205,11 @@ class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
         return self.plan_output
 
 def generate_delta(context, new_template):
+    # simplification: unless Fastly is involved, the TerraformDelta will be empty
+    # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
+    if not context['fastly']:
+        return None
+
     write_template(context['stackname'], new_template)
     terraform = init(context['stackname'], context)
     terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
