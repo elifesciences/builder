@@ -11,10 +11,13 @@ from . import fastly
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
 PROVIDER_VAULT_VERSION = '1.1'
+
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
-RESOURCE_TYPE_VAULT = 'vault_generic_secret'
-RESOURCE_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
+
+DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
+DATA_TYPE_HTTP = 'http'
+DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -123,7 +126,7 @@ def render(context):
         errors = context['fastly']['errors']
         response_objects = []
         cache_conditions = []
-        data['http'] = {}
+        data[DATA_TYPE_HTTP] = {}
         for code, path in errors['codes'].items():
             cache_condition = {
                 'name': 'condition-%s' % code,
@@ -139,7 +142,7 @@ def render(context):
                 'content_type': 'text/html; charset=iso-8859-1',
                 'cache_condition': cache_condition['name'],
             })
-            data['http']['error-page-%d' % code] = {
+            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
                 'url': '%s%s' % (errors['url'], path),
             }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
@@ -161,11 +164,11 @@ def render(context):
             # not supported yet
             #'format_version': FASTLY_LOG_FORMAT_VERSION,
             'message_type': FASTLY_LOG_LINE_PREFIX,
-            'email': "${data.%s.%s.data[\"email\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
-            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
+            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         }
-        data[RESOURCE_TYPE_VAULT] = {
-            RESOURCE_NAME_VAULT_GCS_LOGGING: {
+        data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
+            DATA_NAME_VAULT_GCS_LOGGING: {
                 'path': 'secret/builder/apikey/fastly-gcs-logging',
             }
         }
