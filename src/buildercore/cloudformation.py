@@ -1,3 +1,4 @@
+from collections import namedtuple
 import logging
 import backoff
 import botocore
@@ -20,3 +21,18 @@ def validate_template(pname, rendered_template):
     "remote cloudformation template checks."
     conn = core.boto_conn(pname, 'cloudformation', client=True)
     return conn.validate_template(TemplateBody=rendered_template)
+
+class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
+    """represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed
+
+    Extends the namedtuple-generated class to add custom methods."""
+    @property
+    def non_empty(self):
+        return any([
+            self.plus['Resources'],
+            self.plus['Outputs'],
+            self.edit['Resources'],
+            self.edit['Outputs'],
+            self.minus['Resources'],
+            self.minus['Outputs'],
+        ])

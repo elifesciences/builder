@@ -403,14 +403,16 @@ EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 # * what to add
 # * what to modify
 # * what to remove
-# What we see here is the new Terraform generated.tf file, containing all resources (just Fastly so far).
-# We can do a diff with the current one which would already be an improvement, but ultimately the source of truth
-# is changing it and running a terraform plan to see proposed changes. We should however roll it back if the user
-# doesn't confirm.
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
-    """represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed
+    @classmethod
+    def from_cloudformation_and_terraform(cls, cloud_formation_delta, terraform_delta):
+        return cls(
+            cloud_formation_delta.plus,
+            cloud_formation_delta.edit,
+            cloud_formation_delta.minus,
+            terraform_delta
+        )
 
-    Extends the namedtuple-generated class to add custom methods."""
     @property
     def non_empty(self):
         return any([
@@ -509,19 +511,21 @@ def template_delta(context):
     delta_minus_resources = {r: v for r, v in old_template['Resources'].items() if r not in template['Resources'] and _title_is_removable(r)}
     delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).items() if o not in template.get('Outputs', {})}
 
-    return Delta(
-        {
-            'Resources': delta_plus_resources,
-            'Outputs': delta_plus_outputs,
-        },
-        {
-            'Resources': delta_edit_resources,
-            'Outputs': delta_edit_outputs,
-        },
-        {
-            'Resources': delta_minus_resources,
-            'Outputs': delta_minus_outputs,
-        },
+    return Delta.from_cloudformation_and_terraform(
+        cloudformation.CloudFormationDelta(
+            {
+                'Resources': delta_plus_resources,
+                'Outputs': delta_plus_outputs,
+            },
+            {
+                'Resources': delta_edit_resources,
+                'Outputs': delta_edit_outputs,
+            },
+            {
+                'Resources': delta_minus_resources,
+                'Outputs': delta_minus_outputs,
+            }
+        ),
         terraform.generate_delta(context, new_terraform_template_file)
     )
 
