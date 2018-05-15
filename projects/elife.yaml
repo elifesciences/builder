@@ -380,7 +380,7 @@ api-gateway:
                     path: api-gateway--test/
                     period: 600
                 errors:
-                    url: https://prod-elife-error-pages.s3-website-us-east-1.amazonaws.com/
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
                         503: "5xx.html"
                         404: "404.html"
