@@ -106,6 +106,7 @@ def render(context):
                 }
             }
         },
+        'data': {},
     }
 
     if context['fastly']['healthcheck']:
@@ -122,6 +123,7 @@ def render(context):
         errors = context['fastly']['errors']
         response_objects = []
         cache_conditions = []
+        tf_file['data']['http'] = {}
         for code, path in errors['codes'].items():
             cache_condition = {
                 'name': 'condition-%s' % code,
@@ -133,9 +135,12 @@ def render(context):
                 'name': 'error-%s' % code,
                 'status': int(code),
                 # TODO: replace
-                'content': 'Error HTML for %s' % code,
+                'content': '${data.http.error-page-%s.body}' % code,
                 'cache_condition': cache_condition['name'],
             })
+            tf_file['data']['http']['error-page-%d' % code] = {
+                'url': '%s%s' % (errors['url'], path),
+            }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = cache_conditions
 
@@ -158,11 +163,9 @@ def render(context):
             'email': "${data.%s.%s.data[\"email\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
         }
-        tf_file['data'] = {
-            RESOURCE_TYPE_VAULT: {
-                RESOURCE_NAME_VAULT_GCS_LOGGING: {
-                    'path': 'secret/builder/apikey/fastly-gcs-logging',
-                }
+        tf_file['data'][RESOURCE_TYPE_VAULT] = {
+            RESOURCE_NAME_VAULT_GCS_LOGGING: {
+                'path': 'secret/builder/apikey/fastly-gcs-logging',
             }
         }
 
