@@ -408,11 +408,6 @@ def template_delta(context):
     template = json.loads(cloudformation.render_template(context))
     new_terraform_template_file = terraform.EMPTY_TEMPLATE
     if context['fastly']:
-        # TODO: disabled as not all people may have the old file locally
-        # (or its latest version)
-        # to perform a diff, we should actually be syncing the file with S3...
-        # at this point, we may as well run `terraform plan` instead
-        #old_terraform_template_file = terraform.read_template(context['stackname'])
         new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):
