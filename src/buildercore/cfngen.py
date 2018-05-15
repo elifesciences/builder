@@ -406,7 +406,6 @@ def template_delta(context):
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
-    old_terraform_template_file = terraform.EMPTY_TEMPLATE
     new_terraform_template_file = terraform.EMPTY_TEMPLATE
     if context['fastly']:
         # TODO: disabled as not all people may have the old file locally

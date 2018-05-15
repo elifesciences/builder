@@ -1,5 +1,4 @@
 from collections import namedtuple
-import deepdiff
 import json
 import os
 from os.path import exists, join, basename
