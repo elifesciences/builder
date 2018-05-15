@@ -136,6 +136,7 @@ def render(context):
                 'status': int(code),
                 # TODO: replace
                 'content': '${data.http.error-page-%s.body}' % code,
+                'content_type': 'text/html; charset=iso-8859-1',
                 'cache_condition': cache_condition['name'],
             })
             tf_file['data']['http']['error-page-%d' % code] = {
