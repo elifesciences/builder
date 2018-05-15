@@ -99,6 +99,7 @@ defaults:
                 cname: something.fastly.net
             gcslogging: false
             healthcheck: false
+            errors: false
             vcl: []
         subdomains: []
         elasticache:
