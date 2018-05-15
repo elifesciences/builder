@@ -17,7 +17,6 @@ We want to add an external volume to an EC2 instance to increase available space
 import os, json, copy
 import re
 from collections import OrderedDict, namedtuple
-import deepdiff
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
@@ -426,16 +425,6 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
 
-"""represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed.
-
-Extends the namedtuple-generated class to add custom methods."""
-class TerraformDelta(namedtuple('TerraformDelta', ['old_contents', 'new_contents'])):
-    def __str__(self):
-        return self.new_contents
-
-    def diff(self):
-        return deepdiff.DeepDiff(json.loads(self.old_contents), json.loads(self.new_contents))
-
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
@@ -539,7 +528,7 @@ def template_delta(context):
             'Resources': delta_minus_resources,
             'Outputs': delta_minus_outputs,
         },
-        TerraformDelta(old_terraform_template_file, new_terraform_template_file)
+        terraform.generate_delta(context, new_terraform_template_file)
     )
 
 def merge_delta(stackname, delta):
