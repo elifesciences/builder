@@ -39,6 +39,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         template = self._parse_template(terraform_template)
         self.assertEqual(
             {
+                'data': {},
                 'resource': {
                     'fastly_service_v1': {
                         # must be unique but only in a certain context like this, use some constants
@@ -165,6 +166,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'error-503',
                                     'status': 503,
                                     'content': '${data.http.error-page-503.body}',
+                                    'content_type': 'text/html; charset=iso-8859-1',
                                     'cache_condition': 'condition-503',
                                 },
                             ],
