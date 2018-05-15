@@ -39,7 +39,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         template = self._parse_template(terraform_template)
         self.assertEqual(
             {
-                'data': {},
                 'resource': {
                     'fastly_service_v1': {
                         # must be unique but only in a certain context like this, use some constants
