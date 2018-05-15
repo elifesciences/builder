@@ -383,8 +383,9 @@ api-gateway:
                 errors:
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
-                        503: "5xx.html"
                         404: "404.html"
+                        # temporarily disabled because of non-ASCII characters
+                        #503: "5xx.html"
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 30000
