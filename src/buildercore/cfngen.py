@@ -504,8 +504,10 @@ def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
     apply_delta(template, delta)
+    # TODO: possibly pre-write the cloudformation template
+    # the source of truth can always be redownloaded from the CloudFormation API
     write_cloudformation_template(stackname, json.dumps(template))
-    terraform.write_template(stackname, str(delta.terraform))
+    # nothing to do on Terraform as the plan file is already there
     return template
 
 def apply_delta(template, delta):
