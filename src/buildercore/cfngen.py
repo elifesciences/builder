@@ -19,7 +19,6 @@ import re
 from collections import OrderedDict, namedtuple
 import deepdiff
 import netaddr
-from slugify import slugify
 from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
 from .config import STACK_DIR
@@ -196,9 +195,8 @@ def build_context_rds(context, existing_context):
         'rds_username': 'root',
         'rds_password': rds_password,
         # alpha-numeric only
-        # TODO: investigate possibility of ambiguous RDS naming here
-        'rds_dbname': context.get('rds_dbname') or slugify(stackname, separator=""), # *must* use 'or' here
-        'rds_instance_id': slugify(stackname), # *completely* different to database name
+        'rds_dbname': core.rds_dbname(stackname, context), # name of default application db
+        'rds_instance_id': core.rds_iid(stackname), # name of rds instance
         'rds_params': context['project']['aws']['rds'].get('params', []),
 
         'rds': {

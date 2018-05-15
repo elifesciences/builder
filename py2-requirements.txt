@@ -14,6 +14,9 @@ netaddr==0.7.19
 pyflakes==1.5.0
 pylint==1.8.2
 pytest==3.5.0
+pytest-cov==2.5.1
+pytest-forked==0.2
+pytest-xdist==1.22.2
 python-dateutil==2.6.0
 python-slugify==1.2.1
 python-terraform==0.10.0
