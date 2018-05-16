@@ -5,7 +5,7 @@ import shutil
 from python_terraform import Terraform
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
-from .utils import ensure, mkdir_p
+from .utils import ensure, mkdir_p, http_responses
 from . import fastly
 
 EMPTY_TEMPLATE = '{}'
@@ -66,10 +66,8 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 
-FASTLY_ERRORS_RESPONSE = {
-    404: 'Not Found',
-    503: 'Service Unavailable',
-}
+# e.g. 404: 'Not Found'
+FASTLY_RESPONSE_REASON_PHRASES = http_responses()
 
 def render(context):
     if not context['fastly']:
@@ -141,7 +139,7 @@ def render(context):
             response_objects.append({
                 'name': 'error-%s' % code,
                 'status': int(code),
-                'response': FASTLY_ERRORS_RESPONSE[int(code)],
+                'response': FASTLY_RESPONSE_REASON_PHRASES[int(code)],
                 'content': '${data.http.error-page-%s.body}' % code,
                 'content_type': 'text/html; charset=us-ascii',
                 'cache_condition': cache_condition['name'],

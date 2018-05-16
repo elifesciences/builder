@@ -373,3 +373,13 @@ def tempdir():
     # usage: tempdir, killer = tempdir(); killer()
     name = tempfile.mkdtemp()
     return (name, lambda: shutil.rmtree(name))
+
+def http_responses():
+    try:
+        # Python 2
+        import httplib
+        return httplib.responses
+    except ImportError:
+        # Python 3
+        import http.client
+        return http.client.responses
