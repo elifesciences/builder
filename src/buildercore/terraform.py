@@ -66,6 +66,10 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 
+FASTLY_ERRORS_RESPONSE = {
+    404: 'Not Found',
+    503: 'Service Unavailable',
+}
 
 def render(context):
     if not context['fastly']:
@@ -137,9 +141,9 @@ def render(context):
             response_objects.append({
                 'name': 'error-%s' % code,
                 'status': int(code),
-                # TODO: replace
+                'response': FASTLY_ERRORS_RESPONSE[int(code)],
                 'content': '${data.http.error-page-%s.body}' % code,
-                'content_type': 'text/html; charset=iso-8859-1',
+                'content_type': 'text/html; charset=us-ascii',
                 'cache_condition': cache_condition['name'],
             })
             data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
