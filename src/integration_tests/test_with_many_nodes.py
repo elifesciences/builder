@@ -140,5 +140,5 @@ class One(base.BaseCase):
         transient_states = ['pending', 'stopping']
 
         def _no_transient_states(snapshot):
-            return len([state for (node, state) in snapshot if state in transient_states]) > 0
+            return len([state for (node, state) in snapshot if state in transient_states]) == 0
         return [snapshot for snapshot in history if _no_transient_states(snapshot)]
