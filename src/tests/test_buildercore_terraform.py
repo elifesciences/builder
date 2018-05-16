@@ -166,7 +166,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'status': 503,
                                     'response': 'Service Unavailable',
                                     'content': '${data.http.error-page-503.body}',
-                                    'content_type': 'text/html; charset=iso-8859-1',
+                                    'content_type': 'text/html; charset=us-ascii',
                                     'cache_condition': 'condition-503',
                                 },
                             ],
