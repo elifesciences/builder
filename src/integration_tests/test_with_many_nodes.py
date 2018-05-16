@@ -139,6 +139,6 @@ class One(base.BaseCase):
         """We may or may not observe transient states while polling: if the transition is faster than our client, the state won't be in the history. For the test to be stable, transient states have to be stripped"""
         transient_states = ['pending', 'stopping']
 
-        def _no_transient_states(snapshot):
-            return len([state for (node, state) in snapshot if state in transient_states]) == 0
-        return [snapshot for snapshot in history if _no_transient_states(snapshot)]
+        def _transient_states(snapshot):
+            return len([state for (node, state) in snapshot if state in transient_states]) > 0
+        return [snapshot for snapshot in history if not _transient_states(snapshot)]
