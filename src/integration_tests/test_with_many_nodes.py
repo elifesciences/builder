@@ -91,18 +91,14 @@ class One(base.BaseCase):
         # two nodes rebooting in serial, node 1 first, both running
         expected_history = [
             [(1, 'running'), (2, 'running')],
-            [(1, 'stopping'), (2, 'running')],
             [(1, 'stopped'), (2, 'running')],
-            [(1, 'pending'), (2, 'running')],
             [(1, 'running'), (2, 'running')],
 
             # node2, stopped -> running
-            [(1, 'running'), (2, 'stopping')],
             [(1, 'running'), (2, 'stopped')],
-            [(1, 'running'), (2, 'pending')],
             [(1, 'running'), (2, 'running')],
         ]
-        self.assertEqual(expected_history, history)
+        self.assertEqual(expected_history, self._remove_transient_states(history))
 
     def test_restart_all_stopped(self):
         "multiple nodes can be restarted from a stopped state"
@@ -113,14 +109,12 @@ class One(base.BaseCase):
         expected_history = [
             # node1, stopped -> running
             [(1, 'stopped'), (2, 'stopped')],
-            [(1, 'pending'), (2, 'stopped')],
             [(1, 'running'), (2, 'stopped')],
 
             # node2, stopped -> running
-            [(1, 'running'), (2, 'pending')],
             [(1, 'running'), (2, 'running')],
         ]
-        self.assertEqual(expected_history, history)
+        self.assertEqual(expected_history, self._remove_transient_states(history))
 
     def test_restart_one_stopped(self):
         "multiple nodes can be restarted from a mixed state"
@@ -133,13 +127,18 @@ class One(base.BaseCase):
         expected_history = [
             # node1, stopped -> running
             [(1, 'stopped'), (2, 'running')],
-            [(1, 'pending'), (2, 'running')],
             [(1, 'running'), (2, 'running')],
 
             # node2, running -> stopped -> running
-            [(1, 'running'), (2, 'stopping')],
             [(1, 'running'), (2, 'stopped')],
-            [(1, 'running'), (2, 'pending')],
             [(1, 'running'), (2, 'running')]
         ]
-        self.assertEqual(expected_history, history)
+        self.assertEqual(expected_history, self._remove_transient_states(history))
+
+    def _remove_transient_states(self, history):
+        """We may or may not observe transient states while polling: if the transition is faster than our client, the state won't be in the history. For the test to be stable, transient states have to be stripped"""
+        transient_states = ['pending', 'stopping']
+
+        def _transient_states(snapshot):
+            return len([state for (node, state) in snapshot if state in transient_states]) > 0
+        return [snapshot for snapshot in history if not _transient_states(snapshot)]

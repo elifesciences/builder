@@ -1,8 +1,10 @@
+from collections import namedtuple
 import json
 import os
 from os.path import exists, join, basename
+import re
 import shutil
-from python_terraform import Terraform
+from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
 from .utils import ensure, mkdir_p
@@ -194,6 +196,34 @@ def read_template(stackname):
     with _open(stackname, 'generated', mode='r') as fp:
         return fp.read()
 
+class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
+    """represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed.
+
+    Extends the namedtuple-generated class to add custom methods."""
+
+    def __str__(self):
+        return self.plan_output
+
+def generate_delta(context, new_template):
+    # simplification: unless Fastly is involved, the TerraformDelta will be empty
+    # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
+    if not context['fastly']:
+        return None
+
+    write_template(context['stackname'], new_template)
+    terraform = init(context['stackname'], context)
+    terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
+    return_code, stdout, stderr = terraform.plan('out.plan', input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
+    ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)
+    ensure(stderr == '', "Stderr of `terraform plan out.plan` should be empty:\n%s" % stderr)
+    return TerraformDelta(_clean_stdout(stdout))
+
+def _clean_stdout(stdout):
+    stdout = re.sub(re.compile(r"The plan command .* as an argument.", re.MULTILINE | re.DOTALL), "", stdout)
+    stdout = re.sub(re.compile(r"Note: .* is subsequently run.", re.MULTILINE | re.DOTALL), "", stdout)
+    stdout = re.sub(re.compile(r"\n+", re.MULTILINE), "\n", stdout)
+    return stdout
+
 def init(stackname, context):
     working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
     terraform = Terraform(working_dir=working_dir)
@@ -230,7 +260,7 @@ def init(stackname, context):
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname, context)
-    terraform.apply(input=False, capture_output=False, raise_on_error=True)
+    terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
 @only_if('fastly')
 def destroy(stackname, context):
