@@ -59,14 +59,14 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'domain': [{
                                 'name': 'prod--cdn-of-www.example.org'
                             }],
-                            'backend': {
+                            'backend': [{
                                 'address': 'prod--www.example.org',
                                 'name': 'project-with-fastly-minimal--prod',
                                 'port': 443,
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
-                            },
+                            }],
                             'request_setting': {
                                 'name': 'default',
                                 'force_ssl': True,
@@ -128,15 +128,27 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'future.example.org'
                                 },
                             ],
-                            'backend': {
-                                'address': 'prod--www.example.org',
-                                'name': 'project-with-fastly-complex--prod',
-                                'port': 443,
-                                'use_ssl': True,
-                                'ssl_cert_hostname': 'prod--www.example.org',
-                                'ssl_check_cert': True,
-                                'healthcheck': 'default',
-                            },
+                            'backend': [
+                                {
+                                    'address': 'defaultdummy3.example.org',
+                                    'name': 'default',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'defaultdummy3.example.org',
+                                    'ssl_check_cert': True,
+                                    'healthcheck': 'default',
+                                },
+                                {
+                                    'address': 'prod--defaultdummy3.example.org',
+                                    'name': 'articles',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'prod--defaultdummy3.example.org',
+                                    'ssl_check_cert': True,
+                                    'request_condition': 'backend-articles-condition',
+                                    'healthcheck': 'default',
+                                }
+                            ],
                             'request_setting': {
                                 'name': 'default',
                                 'force_ssl': True,

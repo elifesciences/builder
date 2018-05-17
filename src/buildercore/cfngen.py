@@ -253,12 +253,19 @@ def build_context_cloudfront(context, parameterize):
         context['cloudfront'] = False
 
 def build_context_fastly(context, parameterize):
-    def build_subdomain(x):
+    def _build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
+    def _parameterize_hostname(b):
+        b['hostname'] = parameterize(b['hostname'])
+        return b
+
     if 'fastly' in context['project']['aws']:
+        backends = context['project']['aws']['fastly'].get('backends', {})
+        print backends
         context['fastly'] = {
-            'subdomains': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
-            'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
+            'backends': {n: _parameterize_hostname(b) for n, b in backends.items()},
+            'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
+            'subdomains-without-dns': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
             'dns': context['project']['aws']['fastly']['dns'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
             'errors': context['project']['aws']['fastly']['errors'],

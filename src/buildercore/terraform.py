@@ -72,6 +72,37 @@ def render(context):
     if not context['fastly']:
         return EMPTY_TEMPLATE
 
+    backends = []
+    conditions = []
+    if context['fastly']['backends']:
+        for name, backend in context['fastly']['backends'].items():
+            backend_resource = {
+                'address': backend['hostname'],
+                'name': name,
+                'port': 443,
+                'use_ssl': True,
+                'ssl_cert_hostname': backend['hostname'],
+                'ssl_check_cert': True,
+            }
+            if backend.get('condition'): 
+                condition_name = 'backend-%s-condition' % name
+                conditions.append({
+                    'name': condition_name,
+                    'statement': backend.get('condition'),
+                    'type': 'REQUEST',
+                })
+                backend_resource['request_condition'] = condition_name
+            backends.append(backend_resource)
+    else:
+        backends.append({
+            'address': context['full_hostname'],
+            'name': context['stackname'],
+            'port': 443,
+            'use_ssl': True,
+            'ssl_cert_hostname': context['full_hostname'],
+            'ssl_check_cert': True,
+        })
+
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
@@ -82,14 +113,7 @@ def render(context):
                     'domain': [
                         {'name': subdomain} for subdomain in all_allowed_subdomains
                     ],
-                    'backend': {
-                        'address': context['full_hostname'],
-                        'name': context['stackname'],
-                        'port': 443,
-                        'use_ssl': True,
-                        'ssl_cert_hostname': context['full_hostname'],
-                        'ssl_check_cert': True,
-                    },
+                    'backend': backends,
                     'request_setting': {
                         'name': 'default',
                         'force_ssl': True,
@@ -121,7 +145,8 @@ def render(context):
             'check_interval': context['fastly']['healthcheck']['check-interval'],
             'timeout': context['fastly']['healthcheck']['timeout'],
         }
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']['healthcheck'] = 'default'
+        for b in tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
+            b['healthcheck'] = 'default'
 
     if context['fastly']['errors']:
         errors = context['fastly']['errors']

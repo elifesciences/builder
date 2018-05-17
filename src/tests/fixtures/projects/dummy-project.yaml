@@ -325,6 +325,12 @@ project-with-fastly-complex:
         ports:
             - 80
         fastly:
+            backends:
+                default:
+                    hostname: defaultdummy3.example.org
+                articles:
+                    hostname: "{instance}--defaultdummy3.example.org"
+                    condition: req.url ~ "^/articles" 
             subdomains:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
