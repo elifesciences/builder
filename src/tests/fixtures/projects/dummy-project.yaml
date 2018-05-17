@@ -99,6 +99,7 @@ defaults:
                 cname: something.fastly.net
             gcslogging: false
             healthcheck: false
+            errors: false
             vcl: []
         subdomains: []
         elasticache:
@@ -333,6 +334,10 @@ project-with-fastly-complex:
                 path: /ping-fastly
                 check-interval: 30000
                 timeout: 10000
+            errors:
+                url: https://example.com
+                codes:
+                    503: "/"
             vcl:
                 - "gzip-by-content-type-suffix"
 

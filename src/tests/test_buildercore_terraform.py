@@ -105,6 +105,13 @@ class TestBuildercoreTerraform(base.BaseCase):
         template = self._parse_template(terraform_template)
         self.assertEqual(
             {
+                'data': {
+                    'http': {
+                        'error-page-503': {
+                            'url': 'https://example.com/'
+                        },
+                    },
+                },
                 'resource': {
                     'fastly_service_v1': {
                         # must be unique but only in a certain context like this, use some constants
@@ -158,6 +165,23 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'check_interval': 30000,
                                 'timeout': 10000,
                             },
+                            'condition': [
+                                {
+                                    'name': 'condition-503',
+                                    'statement': 'beresp.status == 503',
+                                    'type': 'CACHE',
+                                },
+                            ],
+                            'response_object': [
+                                {
+                                    'name': 'error-503',
+                                    'status': 503,
+                                    'response': 'Service Unavailable',
+                                    'content': '${data.http.error-page-503.body}',
+                                    'content_type': 'text/html; charset=us-ascii',
+                                    'cache_condition': 'condition-503',
+                                },
+                            ],
                             'vcl': [
                                 {
                                     'name': 'gzip-by-content-type-suffix',

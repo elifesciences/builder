@@ -135,6 +135,7 @@ defaults:
                 cname: u2.shared.global.fastly.net
             gcslogging: false
             healthcheck: false
+            errors: false
             vcl: []
         subdomains: []
         elasticache:
@@ -379,6 +380,12 @@ api-gateway:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
                     period: 600
+                errors:
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        404: "404.html"
+                        # temporarily disabled because of non-ASCII characters
+                        #503: "5xx.html"
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 30000

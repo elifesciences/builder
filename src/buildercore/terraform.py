@@ -7,16 +7,19 @@ import shutil
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
 from .context_handler import only_if
-from .utils import ensure, mkdir_p
+from .utils import ensure, mkdir_p, http_responses
 from . import fastly
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
 PROVIDER_VAULT_VERSION = '1.1'
+
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
-RESOURCE_TYPE_VAULT = 'vault_generic_secret'
-RESOURCE_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
+
+DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
+DATA_TYPE_HTTP = 'http'
+DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -65,7 +68,6 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 
-
 def render(context):
     if not context['fastly']:
         return EMPTY_TEMPLATE
@@ -109,6 +111,7 @@ def render(context):
             }
         },
     }
+    data = {}
 
     if context['fastly']['healthcheck']:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['healthcheck'] = {
@@ -119,6 +122,32 @@ def render(context):
             'timeout': context['fastly']['healthcheck']['timeout'],
         }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']['healthcheck'] = 'default'
+
+    if context['fastly']['errors']:
+        errors = context['fastly']['errors']
+        response_objects = []
+        cache_conditions = []
+        data[DATA_TYPE_HTTP] = {}
+        for code, path in errors['codes'].items():
+            cache_condition = {
+                'name': 'condition-%s' % code,
+                'statement': 'beresp.status == %d' % code,
+                'type': 'CACHE',
+            }
+            cache_conditions.append(cache_condition)
+            response_objects.append({
+                'name': 'error-%s' % code,
+                'status': int(code),
+                'response': http_responses()[int(code)],
+                'content': '${data.http.error-page-%s.body}' % code,
+                'content_type': 'text/html; charset=us-ascii',
+                'cache_condition': cache_condition['name'],
+            })
+            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
+                'url': '%s%s' % (errors['url'], path),
+            }
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = cache_conditions
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -136,14 +165,12 @@ def render(context):
             # not supported yet
             #'format_version': FASTLY_LOG_FORMAT_VERSION,
             'message_type': FASTLY_LOG_LINE_PREFIX,
-            'email': "${data.%s.%s.data[\"email\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
-            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (RESOURCE_TYPE_VAULT, RESOURCE_NAME_VAULT_GCS_LOGGING),
+            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         }
-        tf_file['data'] = {
-            RESOURCE_TYPE_VAULT: {
-                RESOURCE_NAME_VAULT_GCS_LOGGING: {
-                    'path': 'secret/builder/apikey/fastly-gcs-logging',
-                }
+        data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
+            DATA_NAME_VAULT_GCS_LOGGING: {
+                'path': 'secret/builder/apikey/fastly-gcs-logging',
             }
         }
 
@@ -168,6 +195,9 @@ def render(context):
             ),
             'main': True,
         })
+
+    if data:
+        tf_file['data'] = data
 
     return json.dumps(tf_file)
 
