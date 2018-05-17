@@ -151,7 +151,6 @@ def render(context):
     if context['fastly']['errors']:
         errors = context['fastly']['errors']
         response_objects = []
-        cache_conditions = []
         data[DATA_TYPE_HTTP] = {}
         for code, path in errors['codes'].items():
             cache_condition = {
@@ -159,7 +158,7 @@ def render(context):
                 'statement': 'beresp.status == %d' % code,
                 'type': 'CACHE',
             }
-            cache_conditions.append(cache_condition)
+            conditions.append(cache_condition)
             response_objects.append({
                 'name': 'error-%s' % code,
                 'status': int(code),
@@ -172,7 +171,6 @@ def render(context):
                 'url': '%s%s' % (errors['url'], path),
             }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = cache_conditions
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -220,6 +218,9 @@ def render(context):
             ),
             'main': True,
         })
+
+    if conditions:
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = conditions
 
     if data:
         tf_file['data'] = data

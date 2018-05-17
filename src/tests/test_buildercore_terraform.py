@@ -179,6 +179,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                             },
                             'condition': [
                                 {
+                                    'name': 'backend-articles-condition',
+                                    'statement': 'req.url ~ "^/articles"',
+                                    'type': 'REQUEST',
+                                },
+                                {
                                     'name': 'condition-503',
                                     'statement': 'beresp.status == 503',
                                     'type': 'CACHE',
