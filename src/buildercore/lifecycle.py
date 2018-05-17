@@ -10,10 +10,69 @@ import fabric.exceptions as fabric_exceptions
 import boto # route53 boto2 > route53 boto3
 from . import config, core
 from .core import boto_conn, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
-from .utils import call_while, ensure
+from .utils import call_while, ensure, lmap
 from .context_handler import load_context, download_from_s3
 
 LOG = logging.getLogger(__name__)
+
+def _node_id(node):
+    name = core.tags2dict(node.tags)['Name']
+    nid = core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
+    return int(nid)
+
+def start_rds_nodes(stackname):
+    rds_to_be_started = _rds_nodes_states(stackname)
+    LOG.info("RDS nodes to be started: %s", rds_to_be_started)
+
+    def _start(nid):
+        return _rds_connection(stackname).start_db_instance(DBInstanceIdentifier=nid)
+    return lmap(_start, rds_to_be_started.keys())
+
+def node_states(node_list):
+    history = []
+    for node in node_list:
+        node.reload() # .load and .reload are the same
+        history.append((_node_id(node), node.state['Name']))
+    return history
+
+# ensure no two adjacent records are equal
+def push(lst, rec):
+    if not lst or lst[-1] != rec:
+        lst.append(rec)
+
+def restart(stackname):
+    """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
+    rds is started if stopped (if *exists*) but otherwise not affected"""
+    start_rds_nodes(stackname)
+
+    node_list = find_ec2_instances(stackname, state='pending|running|stopping|stopped')
+
+    history = []
+
+    for node in node_list:
+        push(history, node_states(node_list))
+
+        node.stop()
+        push(history, node_states(node_list))
+
+        node.wait_until_stopped()
+        push(history, node_states(node_list))
+
+        node.start()
+        push(history, node_states(node_list))
+
+        node.wait_until_running()
+        push(history, node_states(node_list))
+
+        node_id = _node_id(node)
+        call_while(
+            lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
+            interval=2,
+            update_msg="waiting for nodes to be networked",
+            done_msg="all nodes have public ips"
+        )
+    update_dns(stackname)
+    return history
 
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
@@ -64,9 +123,9 @@ def start(stackname):
 
     update_dns(stackname)
 
-def _some_node_is_not_ready(stackname):
+def _some_node_is_not_ready(stackname, **kwargs):
     try:
-        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER)
+        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER, **kwargs)
     except NoPublicIps as e:
         LOG.info("No public ips available yet: %s", e)
         return True
@@ -80,8 +139,7 @@ def _some_node_is_not_ready(stackname):
 
 def stop(stackname, services=None):
     "Puts all EC2 nodes of stackname into the 'stopped' state. Idempotent"
-    if not services:
-        services = ['ec2', 'rds']
+    services = services or ['ec2', 'rds']
     context = load_context(stackname)
 
     ec2_states = _ec2_nodes_states(stackname)
@@ -169,6 +227,7 @@ def _ensure_valid_ec2_states(states, valid_states):
     )
 
 def _wait_daemons():
+    "Assumes it is connected to an ec2 host via fabric"
     node_id = current_ec2_node_id()
     path = '/var/lib/cloud/instance/boot-finished'
 
@@ -253,6 +312,7 @@ def _ec2_nodes_states(stackname, node_ids=None):
         node_index = {}
         for node in ec2_data:
             name = core.tags2dict(node.tags)['Name']
+            # TODO: shift this logic to core.parse_stackname
             # start legacy name: pattern-library--prod -> pattern-library--prod--1
             if not re.match(".*--[0-9]+", name):
                 name = name + "--1"
@@ -265,7 +325,7 @@ def _ec2_nodes_states(stackname, node_ids=None):
     def _unify_node_information(nodes, name):
         excluding_terminated = [node for node in nodes if node.state['Name'] != 'terminated']
         ensure(len(excluding_terminated) <= 1, "Multiple nodes in %s have the same name (%s), but a non-terminated state" % (excluding_terminated, name))
-        if len(excluding_terminated):
+        if len(excluding_terminated): # > 1
             return excluding_terminated[0]
         return None
 

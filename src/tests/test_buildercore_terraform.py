@@ -30,6 +30,18 @@ class TestBuildercoreTerraform(base.BaseCase):
         for _, configuration in self._load_terraform_file(stackname, 'providers').get('provider').items():
             self.assertIn('version', configuration)
 
+    @patch('buildercore.terraform.Terraform')
+    def test_delta(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        terraform_binary.plan.return_value = (0, 'Plan output: ...', '')
+        stackname = 'project-with-fastly-minimal--prod'
+        context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
+        terraform.init(stackname, context)
+        new_identical_template = terraform.render(context)
+        delta = terraform.generate_delta(context, new_identical_template)
+        self.assertEqual(delta, terraform.TerraformDelta('Plan output: ...'))
+
     def test_fastly_template_minimal(self):
         extra = {
             'stackname': 'project-with-fastly-minimal--prod',

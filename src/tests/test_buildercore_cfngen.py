@@ -1,5 +1,5 @@
 from . import base
-from buildercore import cfngen, project, context_handler, cloudformation
+from buildercore import core, cfngen, project, context_handler, cloudformation
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -40,6 +40,7 @@ class TestUpdates(base.BaseCase):
     def test_template_delta_includes_cloudfront(self):
         "we can add CDNs (that takes an hour or more) without downtime"
         context = self._base_context()
+        stackname, environment_name = core.parse_stackname(context['stackname'])
         context['full_hostname'] = "test--dummy1.example.org"
         context['cloudfront'] = {
             "subdomains": [
@@ -109,7 +110,7 @@ class TestUpdates(base.BaseCase):
     def test_template_delta_doesnt_unnecessarily_update_rds(self):
         "we don't want to update RDS instances more than necessary, since it takes time and may cause reboots or replacements"
         context = self._base_context('dummy2')
-        updated_context = self._base_context('dummy2', in_memory=True, existing_context=context)
+        updated_context = self._base_context('dummy2', in_memory=False, existing_context=context)
         (delta_plus, delta_edit, delta_minus, new_terraform_template_file) = cfngen.template_delta(updated_context)
         self.assertEqual(list(delta_plus['Resources'].keys()), [])
         self.assertEqual(list(delta_minus['Resources'].keys()), [])
@@ -186,7 +187,8 @@ class TestUpdates(base.BaseCase):
         self.assertEqual(template, {'Resources': {'A': 1}, 'Outputs': {'B': 2}})
 
     def _base_context(self, project_name='dummy1', in_memory=False, existing_context=None):
-        stackname = '%s--test' % project_name
+        environment_name = base.generate_environment_name()
+        stackname = '%s--%s' % (project_name, environment_name)
         context = cfngen.build_context(project_name, stackname=stackname, existing_context=existing_context if existing_context is not None else {})
         if not in_memory:
             context_handler.write_context(stackname, context)

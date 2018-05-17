@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
 from fabric.state import output
+from slugify import slugify
 import importlib
 import logging
 from kids.cache import cache as cached
@@ -181,7 +182,8 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
 
     # hack, see problems with query above. this problem hasn't been replicated (yet) on boto3
     if state:
-        ec2_instances = [i for i in ec2_instances if i.state['Name'] == state]
+        state = [state] if '|' not in state else state.split('|')
+        ec2_instances = [i for i in ec2_instances if i.state['Name'] in state]
 
     LOG.debug("find_ec2_instances returned: %s", [(e.id, e.state) for e in ec2_instances])
 
@@ -192,12 +194,6 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
     if not allow_empty and not ec2_instances:
         raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
-
-def find_rds_instances(stackname, state='available'):
-    "This uses boto3 because it allows to start/stop instances"
-    conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
-    all_rds_instances = conn.describe_db_instances(DBInstanceIdentifier=stackname.replace('--', '-'))['DBInstances']
-    return all_rds_instances
 
 # NOTE: preserved for the commentary, but this is for boto2
 def _all_nodes_filter(stackname, node_ids):
@@ -220,6 +216,53 @@ def _all_nodes_filter(stackname, node_ids):
     if node_ids:
         query['instance-id'] = node_ids
     return query
+
+#
+#
+#
+
+def rds_dbname(stackname, context=None):
+    # TODO: investigate possibility of ambiguous RDS naming here
+    context = context or {}
+    return context.get('rds_dbname') or slugify(stackname, separator="") # *must* use 'or' here
+
+def rds_iid(stackname):
+    max_rds_iid = 63 # https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options
+    # the rds iid needs to be deterministic, or, we need to find an attached rds db without knowing it's name
+    slug = slugify(stackname)
+    ensure(len(slug) <= max_rds_iid, "a database instance identifier must be less than 64 characters")
+    return slug
+
+def find_rds_instances(stackname, state='available'):
+    "This uses boto3 because it allows to start/stop instances"
+    try:
+        conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
+        rid = rds_iid(stackname)
+        if rid:
+            # TODO: return the first (and only) result of DBInstances
+            return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+    except AssertionError:
+        # invalid dbid. RDS doesn't exist because stack couldn't have been created with this ID
+        return []
+
+    except botocore.exceptions.ClientError as err:
+        LOG.info(err.response)
+        msg = err.response['Error']['Message']
+        invalid_dbid = "Invalid database identifier"
+        if msg.startswith(invalid_dbid):
+            # what we asked for isn't a valid db id, we probably made a mistake
+            # we definitely couldn't have created a db with that id
+            return []
+
+        db_notfound = "DBInstanceNotFound"
+        if msg.startswith(db_notfound):
+            return []
+
+        raise err
+
+#
+#
+#
 
 def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     """returns the path to the private key on the local filesystem.
@@ -273,7 +316,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
-        nodes = {k: v for k, v in nodes.items() if v == node}
+        nodes = {k: v for k, v in nodes.items() if v == int(node)}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
 
     params = _ec2_connection_params(stackname, username)
@@ -378,7 +421,7 @@ def mk_stackname(project_name, instance_id):
     return "%s--%s" % (project_name, instance_id)
 
 def parse_stackname(stackname, all_bits=False, idx=False):
-    "returns a pair of (project, instance-id) by default, optionally returns the cluster id if all_bits=True"
+    "returns a pair of (project, instance-id) by default, optionally returns the cluster (node) id if all_bits=True"
     if not stackname or not isstr(stackname):
         raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % stackname)
     # https://docs.python.org/2/library/stdtypes.html#str.split

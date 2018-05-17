@@ -10,7 +10,9 @@ if [ -z "$envname" ]; then
 fi
 
 export PYTHONPATH="src"
-coverage run -m pytest \
+pytest \
+    --cov=src \
+    -n 2 \
     -s \
     --junitxml=build/pytest-$envname.xml \
     src/tests src/integration_tests

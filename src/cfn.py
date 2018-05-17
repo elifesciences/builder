@@ -88,8 +88,8 @@ def update_infrastructure(stackname):
     LOG.info("Create: %s", pformat(delta.plus))
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
-    LOG.info("Terraform delta: %s", pformat(delta.terraform.diff()))
-    utils.confirm('Confirming changes to the stack template? This will rewrite the context and the CloudFormation template. Notice the delta *only shows changes to the template*, not to the context.')
+    LOG.info("Terraform delta: %s", delta.terraform)
+    utils.confirm('Confirming changes to CloudFormation and Terraform templates?')
 
     context_handler.write_context(stackname, context)
 
@@ -198,6 +198,7 @@ def highstate(stackname):
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         bootstrap.run_script('highstate.sh')
 
+# TODO: deletion candidate
 @debugtask
 @requires_aws_stack
 def pillar(stackname):
@@ -205,6 +206,7 @@ def pillar(stackname):
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         sudo('salt-call pillar.items')
 
+# TODO: deletion candidate
 @debugtask
 @echo_output
 def aws_stack_list():

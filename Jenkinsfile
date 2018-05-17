@@ -4,8 +4,6 @@ elifePipeline {
     stage 'Checkout', {
         checkout scm
         commit = elifeGitRevision()
-        // temporary
-        elifeNotifyAtomist 'STARTED', 'STARTED'
     }
 
     stage 'Update', {
@@ -47,7 +45,4 @@ elifePipeline {
             actions["Test py35"]() 
         }
     }
-
-    // temporary
-    elifeNotifyAtomist 'SUCCESS'
 }
