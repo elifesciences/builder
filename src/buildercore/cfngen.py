@@ -255,6 +255,7 @@ def build_context_cloudfront(context, parameterize):
 def build_context_fastly(context, parameterize):
     def _build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
+
     def _parameterize_hostname(b):
         b['hostname'] = parameterize(b['hostname'])
         return b

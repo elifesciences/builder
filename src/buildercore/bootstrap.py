@@ -474,6 +474,8 @@ def write_environment_info(stackname, overwrite=False):
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
+    # TODO: partition away at least ec2
+    # TODO: partition away also terraform
     # Has too many responsibilities:
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates

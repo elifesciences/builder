@@ -84,7 +84,7 @@ def render(context):
                 'ssl_cert_hostname': backend['hostname'],
                 'ssl_check_cert': True,
             }
-            if backend.get('condition'): 
+            if backend.get('condition'):
                 condition_name = 'backend-%s-condition' % name
                 conditions.append({
                     'name': condition_name,
