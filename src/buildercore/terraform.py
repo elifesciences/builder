@@ -82,6 +82,7 @@ def render(context):
                 'port': 443,
                 'use_ssl': True,
                 'ssl_cert_hostname': backend['hostname'],
+                'ssl_sni_hostname': backend['hostname'],
                 'ssl_check_cert': True,
             }
             if backend.get('condition'):
@@ -100,6 +101,7 @@ def render(context):
             'port': 443,
             'use_ssl': True,
             'ssl_cert_hostname': context['full_hostname'],
+            'ssl_sni_hostname': context['full_hostname'],
             'ssl_check_cert': True,
         })
 
