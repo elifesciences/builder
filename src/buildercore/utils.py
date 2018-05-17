@@ -8,6 +8,7 @@ from collections import OrderedDict, Iterable
 from os.path import join
 from more_itertools import unique_everseen
 import logging
+from kids.cache import cache as cached
 from fabric.operations import get, put
 import tempfile, shutil
 
@@ -374,7 +375,11 @@ def tempdir():
     name = tempfile.mkdtemp()
     return (name, lambda: shutil.rmtree(name))
 
+@cached
 def http_responses():
+    """a map of integers to response reason phrases
+
+    e.g. 404: 'Not Found'"""
     try:
         # Python 2
         import httplib
