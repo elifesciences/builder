@@ -732,19 +732,29 @@ generic-cdn:
     intdomain: null
     aws:
         ec2: false
-        cloudfront:
+        #cloudfront:
+        #    subdomains:
+        #        - "{instance}-cdn"
+        #    origins:
+        #        # first is default
+        #        default:
+        #            hostname: elife-cdn.s3.amazonaws.com
+        #        articles:
+        #            hostname: "{instance}-elife-published.s3.amazonaws.com"
+        #            pattern: articles/*
+        #    default-ttl: 86400 # seconds
+        #    headers:
+        #        - Origin
+        fastly:
             subdomains:
-                - "{instance}-cdn"
-            origins:
+                - "{instance}-fastly"
+            backends:
                 # first is default
                 default:
                     hostname: elife-cdn.s3.amazonaws.com
                 articles:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
-                    pattern: articles/*
-            default-ttl: 86400 # seconds
-            headers:
-                - Origin
+                    condition: req.url ~ "^/articles" 
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org
