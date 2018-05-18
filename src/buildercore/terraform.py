@@ -74,9 +74,24 @@ def render(context):
 
     backends = []
     conditions = []
+    request_settings = []
 
-    def _request_setting(setting):
-        d = {
+    def _backend(hostname, name, request_condition=None):
+        backend_resource = {
+            'address': hostname,
+            'name': name,
+            'port': 443,
+            'use_ssl': True,
+            'ssl_cert_hostname': hostname,
+            'ssl_sni_hostname': hostname,
+            'ssl_check_cert': True,
+        }
+        if request_condition:
+            backend_resource['request_condition'] = request_condition
+        return backend_resource
+
+    def _request_setting(override):
+        request_setting_resource = {
             'name': 'default',
             'force_ssl': True,
             # shouldn't need to replicate the defaults
@@ -85,21 +100,11 @@ def render(context):
             'timer_support': True,
             'xff': 'leave',
         }
-        d.update(setting)
-        return d
-    request_settings = []
+        request_setting_resource.update(override)
+        return request_setting_resource
 
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
-            backend_resource = {
-                'address': backend['hostname'],
-                'name': name,
-                'port': 443,
-                'use_ssl': True,
-                'ssl_cert_hostname': backend['hostname'],
-                'ssl_sni_hostname': backend['hostname'],
-                'ssl_check_cert': True,
-            }
             if backend.get('condition'):
                 condition_name = 'backend-%s-condition' % name
                 conditions.append({
@@ -107,30 +112,30 @@ def render(context):
                     'statement': backend.get('condition'),
                     'type': 'REQUEST',
                 })
-                backend_resource['request_condition'] = condition_name
                 request_settings.append(_request_setting({
                     'name': 'backend-%s-request-settings' % name,
                     'default_host': backend['hostname'],
                     'request_condition': condition_name,
                 }))
+                backend_condition_name = condition_name
             else:
                 request_settings.append(_request_setting({
                     'default_host': backend['hostname']
                 }))
-            backends.append(backend_resource)
+                backend_condition_name = None
+            backends.append(_backend(
+                backend['hostname'],
+                name=name,
+                request_condition=backend_condition_name
+            ))
     else:
-        backends.append({
-            'address': context['full_hostname'],
-            'name': context['stackname'],
-            'port': 443,
-            'use_ssl': True,
-            'ssl_cert_hostname': context['full_hostname'],
-            'ssl_sni_hostname': context['full_hostname'],
-            'ssl_check_cert': True,
-        })
         request_settings.append(_request_setting({
             'default_host': context['full_hostname']
         }))
+        backends.append(_backend(
+            context['full_hostname'], 
+            name=context['stackname']
+        ))
 
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
