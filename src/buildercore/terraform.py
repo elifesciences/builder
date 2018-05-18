@@ -74,6 +74,20 @@ def render(context):
 
     backends = []
     conditions = []
+    def _request_setting(setting):
+        d = {
+            'name': 'default',
+            'force_ssl': True,
+            # shouldn't need to replicate the defaults
+            # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
+            # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
+            'timer_support': True,
+            'xff': 'leave',
+        }
+        d.update(setting)
+        return d
+    request_settings = []
+
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
             backend_resource = {
@@ -93,6 +107,16 @@ def render(context):
                     'type': 'REQUEST',
                 })
                 backend_resource['request_condition'] = condition_name
+                # TODO: replace with request_setting.[default_host,request_condition]
+                request_settings.append(_request_setting({
+                    'name': 'backend-%s-request-settings' % name,
+                    'default_host': backend['hostname'],
+                    'request_condition': condition_name,
+                }))
+            else:
+                request_settings.append(_request_setting({
+                    'default_host': backend['hostname']
+                }))
             backends.append(backend_resource)
     else:
         backends.append({
@@ -104,6 +128,9 @@ def render(context):
             'ssl_sni_hostname': context['full_hostname'],
             'ssl_check_cert': True,
         })
+        request_settings.append(_request_setting({
+            'default_host': context['full_hostname']
+        }))
 
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
@@ -116,15 +143,6 @@ def render(context):
                         {'name': subdomain} for subdomain in all_allowed_subdomains
                     ],
                     'backend': backends,
-                    'request_setting': {
-                        'name': 'default',
-                        'force_ssl': True,
-                        # shouldn't need to replicate the defaults
-                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
-                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
-                        'timer_support': True,
-                        'xff': 'leave',
-                    },
                     'gzip': {
                         'name': 'default',
                         # shouldn't need to replicate the defaults
@@ -223,6 +241,8 @@ def render(context):
 
     if conditions:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = conditions
+
+    tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
 
     if data:
         tf_file['data'] = data

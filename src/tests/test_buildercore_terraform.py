@@ -68,12 +68,13 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_sni_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
                             }],
-                            'request_setting': {
+                            'request_setting': [{
                                 'name': 'default',
+                                'default_host': 'prod--www.example.org',
                                 'force_ssl': True,
                                 'timer_support': True,
                                 'xff': 'leave',
-                            },
+                            }],
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -152,12 +153,24 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'healthcheck': 'default',
                                 }
                             ],
-                            'request_setting': {
-                                'name': 'default',
-                                'force_ssl': True,
-                                'timer_support': True,
-                                'xff': 'leave',
-                            },
+                            'request_setting': [
+                                {
+                                    'name': 'default',
+                                    # TODO: replace dummy hostnames with something more realistic
+                                    'default_host': 'defaultdummy3.example.org',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                },
+                                {
+                                    'name': 'backend-articles-request-settings',
+                                    'default_host': 'prod--defaultdummy3.example.org',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                    'request_condition': 'backend-articles-condition',
+                                },
+                            ],
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
