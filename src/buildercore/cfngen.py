@@ -262,7 +262,6 @@ def build_context_fastly(context, parameterize):
 
     if 'fastly' in context['project']['aws']:
         backends = context['project']['aws']['fastly'].get('backends', {})
-        print backends
         context['fastly'] = {
             'backends': {n: _parameterize_hostname(b) for n, b in backends.items()},
             'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],

@@ -327,9 +327,9 @@ project-with-fastly-complex:
         fastly:
             backends:
                 default:
-                    hostname: defaultdummy3.example.org
+                    hostname: default.example.org
                 articles:
-                    hostname: "{instance}--defaultdummy3.example.org"
+                    hostname: "{instance}-special.example.org"
                     condition: req.url ~ "^/articles" 
             subdomains:
                 - "{instance}--cdn1-of-www"

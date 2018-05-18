@@ -132,22 +132,22 @@ class TestBuildercoreTerraform(base.BaseCase):
                             ],
                             'backend': [
                                 {
-                                    'address': 'defaultdummy3.example.org',
+                                    'address': 'default.example.org',
                                     'name': 'default',
                                     'port': 443,
                                     'use_ssl': True,
-                                    'ssl_cert_hostname': 'defaultdummy3.example.org',
-                                    'ssl_sni_hostname': 'defaultdummy3.example.org',
+                                    'ssl_cert_hostname': 'default.example.org',
+                                    'ssl_sni_hostname': 'default.example.org',
                                     'ssl_check_cert': True,
                                     'healthcheck': 'default',
                                 },
                                 {
-                                    'address': 'prod--defaultdummy3.example.org',
+                                    'address': 'prod-special.example.org',
                                     'name': 'articles',
                                     'port': 443,
                                     'use_ssl': True,
-                                    'ssl_cert_hostname': 'prod--defaultdummy3.example.org',
-                                    'ssl_sni_hostname': 'prod--defaultdummy3.example.org',
+                                    'ssl_cert_hostname': 'prod-special.example.org',
+                                    'ssl_sni_hostname': 'prod-special.example.org',
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles-condition',
                                     'healthcheck': 'default',
@@ -156,15 +156,14 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'request_setting': [
                                 {
                                     'name': 'default',
-                                    # TODO: replace dummy hostnames with something more realistic
-                                    'default_host': 'defaultdummy3.example.org',
+                                    'default_host': 'default.example.org',
                                     'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
                                 },
                                 {
                                     'name': 'backend-articles-request-settings',
-                                    'default_host': 'prod--defaultdummy3.example.org',
+                                    'default_host': 'prod-special.example.org',
                                     'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
