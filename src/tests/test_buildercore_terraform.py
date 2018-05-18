@@ -65,6 +65,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'port': 443,
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
+                                'ssl_sni_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
                             }],
                             'request_setting': {
@@ -135,6 +136,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'port': 443,
                                     'use_ssl': True,
                                     'ssl_cert_hostname': 'defaultdummy3.example.org',
+                                    'ssl_sni_hostname': 'defaultdummy3.example.org',
                                     'ssl_check_cert': True,
                                     'healthcheck': 'default',
                                 },
@@ -144,6 +146,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'port': 443,
                                     'use_ssl': True,
                                     'ssl_cert_hostname': 'prod--defaultdummy3.example.org',
+                                    'ssl_sni_hostname': 'prod--defaultdummy3.example.org',
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles-condition',
                                     'healthcheck': 'default',
