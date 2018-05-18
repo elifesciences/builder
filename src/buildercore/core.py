@@ -15,7 +15,6 @@ from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
 from fabric.exceptions import NetworkError
 from fabric.state import output
 from slugify import slugify
-import importlib
 import logging
 from kids.cache import cache as cached
 
@@ -96,17 +95,6 @@ def all_sns_subscriptions(region, stackname=None):
 #
 #
 
-# TODO: remove
-def connect_aws(service, region):
-    "connects to given service using the region in the "
-    LOG.warn("boto2 and `connect_aws` are deprecated. please use `boto_resource`, `boto_client` and `boto_conn`")
-    aliases = {
-        'cfn': 'cloudformation'
-    }
-    service = service if service not in aliases else aliases[service]
-    conn = importlib.import_module('boto.%s' % service)
-    return conn.connect_to_region(region)
-
 def boto_resource(service, region):
     return boto3.resource(service, region_name=region)
 
@@ -118,23 +106,6 @@ def boto_client(service, region=None):
     if service not in exceptions:
         ensure(region, "'region' is a required parameter for all services except: %s" % (', '.join(exceptions),))
     return boto3.client(service, region_name=region)
-
-# TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
-@cached
-def connect_aws_with_pname(pname, service, with_boto3=False):
-    "convenience. returns a boto client for a service in same region as given project"
-    pdata = project.project_data(pname)
-    region = pdata['aws']['region']
-    LOG.debug('connecting to a %s instance in region %s', pname, region)
-    if with_boto3:
-        return boto3.client(service, region)
-    return connect_aws(service, region)
-
-# TODO: remove. mixes boto2 with 3 and clients with (preferred) resources
-def connect_aws_with_stack(stackname, service, with_boto3=False):
-    "convenience. returns a boto client for a service in same region as given project instance"
-    pname = project_name_from_stackname(stackname)
-    return connect_aws_with_pname(pname, service, with_boto3)
 
 def boto_conn(pname_or_stackname, service, client=False):
     fn = project_data_for_stackname if '--' in pname_or_stackname else project.project_data
@@ -485,7 +456,6 @@ def stack_json(stackname, parse=False):
 
 # DO NOT CACHE.
 # this function is polled to get the state of the stack when creating/updating/deleting.
-# TODO: catch botocore.exceptions.ClientError, check for 'does not exist', raise a more specific error
 def describe_stack(stackname, allow_missing=False):
     "returns the full details of a stack given it's name or ID"
     cfn = boto_conn(stackname, 'cloudformation')
