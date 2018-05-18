@@ -74,6 +74,7 @@ def render(context):
 
     backends = []
     conditions = []
+
     def _request_setting(setting):
         d = {
             'name': 'default',
@@ -107,7 +108,6 @@ def render(context):
                     'type': 'REQUEST',
                 })
                 backend_resource['request_condition'] = condition_name
-                # TODO: replace with request_setting.[default_host,request_condition]
                 request_settings.append(_request_setting({
                     'name': 'backend-%s-request-settings' % name,
                     'default_host': backend['hostname'],
@@ -194,10 +194,6 @@ def render(context):
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
-        # TODO: require FASTLY_GCS_EMAIL env variable
-        # TODO: require FASTLY_GCS_SECRET env variable
-        # how to define an env variable with new lines:
-        # https://stackoverflow.com/a/36439943/91590
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging'] = {
             'name': 'default',
             'bucket_name': gcslogging['bucket'],
