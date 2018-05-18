@@ -76,33 +76,6 @@ def render(context):
     conditions = []
     request_settings = []
 
-    def _backend(hostname, name, request_condition=None):
-        backend_resource = {
-            'address': hostname,
-            'name': name,
-            'port': 443,
-            'use_ssl': True,
-            'ssl_cert_hostname': hostname,
-            'ssl_sni_hostname': hostname,
-            'ssl_check_cert': True,
-        }
-        if request_condition:
-            backend_resource['request_condition'] = request_condition
-        return backend_resource
-
-    def _request_setting(override):
-        request_setting_resource = {
-            'name': 'default',
-            'force_ssl': True,
-            # shouldn't need to replicate the defaults
-            # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
-            # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
-            'timer_support': True,
-            'xff': 'leave',
-        }
-        request_setting_resource.update(override)
-        return request_setting_resource
-
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
             if backend.get('condition'):
@@ -112,27 +85,27 @@ def render(context):
                     'statement': backend.get('condition'),
                     'type': 'REQUEST',
                 })
-                request_settings.append(_request_setting({
+                request_settings.append(_fastly_request_setting({
                     'name': 'backend-%s-request-settings' % name,
                     'default_host': backend['hostname'],
                     'request_condition': condition_name,
                 }))
                 backend_condition_name = condition_name
             else:
-                request_settings.append(_request_setting({
+                request_settings.append(_fastly_request_setting({
                     'default_host': backend['hostname']
                 }))
                 backend_condition_name = None
-            backends.append(_backend(
+            backends.append(_fastly_backend(
                 backend['hostname'],
                 name=name,
                 request_condition=backend_condition_name
             ))
     else:
-        request_settings.append(_request_setting({
+        request_settings.append(_fastly_request_setting({
             'default_host': context['full_hostname']
         }))
-        backends.append(_backend(
+        backends.append(_fastly_backend(
             context['full_hostname'], 
             name=context['stackname']
         ))
@@ -249,6 +222,34 @@ def render(context):
         tf_file['data'] = data
 
     return json.dumps(tf_file)
+
+def _fastly_backend(hostname, name, request_condition=None):
+    backend_resource = {
+        'address': hostname,
+        'name': name,
+        'port': 443,
+        'use_ssl': True,
+        'ssl_cert_hostname': hostname,
+        'ssl_sni_hostname': hostname,
+        'ssl_check_cert': True,
+    }
+    if request_condition:
+        backend_resource['request_condition'] = request_condition
+    return backend_resource
+
+def _fastly_request_setting(override):
+    request_setting_resource = {
+        'name': 'default',
+        'force_ssl': True,
+        # shouldn't need to replicate the defaults
+        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
+        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
+        'timer_support': True,
+        'xff': 'leave',
+    }
+    request_setting_resource.update(override)
+    return request_setting_resource
+
 
 def _generate_vcl_file(stackname, content, key):
     """
