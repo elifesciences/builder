@@ -103,9 +103,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
-        # TODO: extract 2 calls into terraform.bootstrap(context)?
-        terraform.plan(context)
-        terraform.update(stackname, context)
+        terraform.bootstrap(stackname, context)
         setup_ec2(stackname, context)
         return True
 

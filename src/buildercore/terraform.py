@@ -294,6 +294,11 @@ def generate_delta(context, new_template):
     write_template(context['stackname'], new_template)
     return plan(context)
 
+@only_if('fastly')
+def bootstrap(stackname, context):
+    plan(context)
+    update(stackname, context)
+
 def plan(context):
     terraform = init(context['stackname'], context)
     terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
