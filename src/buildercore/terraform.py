@@ -75,6 +75,7 @@ def render(context):
     backends = []
     conditions = []
     request_settings = []
+    data = {}
 
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
@@ -106,7 +107,7 @@ def render(context):
             'default_host': context['full_hostname']
         }))
         backends.append(_fastly_backend(
-            context['full_hostname'], 
+            context['full_hostname'],
             name=context['stackname']
         ))
 
@@ -133,7 +134,6 @@ def render(context):
             }
         },
     }
-    data = {}
 
     if context['fastly']['healthcheck']:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['healthcheck'] = {
