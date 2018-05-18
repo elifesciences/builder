@@ -267,6 +267,7 @@ def build_context_fastly(context, parameterize):
             'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
             'subdomains-without-dns': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
             'dns': context['project']['aws']['fastly']['dns'],
+            'default-ttl': context['project']['aws']['fastly']['default-ttl'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
             'errors': context['project']['aws']['fastly']['errors'],
             # TODO: add templating of bucket name

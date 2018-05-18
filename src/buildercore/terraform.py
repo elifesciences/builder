@@ -122,6 +122,7 @@ def render(context):
                         {'name': subdomain} for subdomain in all_allowed_subdomains
                     ],
                     'backend': backends,
+                    'default_ttl': context['fastly']['default-ttl'],
                     'gzip': {
                         'name': 'default',
                         # shouldn't need to replicate the defaults

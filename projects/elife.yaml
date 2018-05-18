@@ -131,6 +131,7 @@ defaults:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
             subdomains-without-dns: []
+            default-ttl: 3600 # Fastly default, in seconds
             dns:
                 cname: u2.shared.global.fastly.net
             gcslogging: false
@@ -755,6 +756,7 @@ generic-cdn:
                 articles:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     condition: req.url ~ "^/articles" 
+            default-ttl: 86400 # seconds
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org

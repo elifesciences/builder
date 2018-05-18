@@ -68,6 +68,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_sni_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
                             }],
+                            'default_ttl': 3600,
                             'request_setting': [{
                                 'name': 'default',
                                 'default_host': 'prod--www.example.org',
@@ -170,6 +171,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'request_condition': 'backend-articles-condition',
                                 },
                             ],
+                            'default_ttl': 86400,
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',

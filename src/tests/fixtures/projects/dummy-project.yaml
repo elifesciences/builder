@@ -97,6 +97,7 @@ defaults:
             subdomains-without-dns: []
             dns:
                 cname: something.fastly.net
+            default-ttl: 3600 # seconds
             gcslogging: false
             healthcheck: false
             errors: false
@@ -336,6 +337,7 @@ project-with-fastly-complex:
                 - "{instance}--cdn2-of-www"
             subdomains-without-dns:
                 - "future"
+            default-ttl: 86400
             healthcheck:
                 path: /ping-fastly
                 check-interval: 30000
