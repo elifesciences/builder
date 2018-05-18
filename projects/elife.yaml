@@ -733,19 +733,19 @@ generic-cdn:
     intdomain: null
     aws:
         ec2: false
-        #cloudfront:
-        #    subdomains:
-        #        - "{instance}-cdn"
-        #    origins:
-        #        # first is default
-        #        default:
-        #            hostname: elife-cdn.s3.amazonaws.com
-        #        articles:
-        #            hostname: "{instance}-elife-published.s3.amazonaws.com"
-        #            pattern: articles/*
-        #    default-ttl: 86400 # seconds
-        #    headers:
-        #        - Origin
+        cloudfront:
+            subdomains:
+                - "{instance}-cdn"
+            origins:
+                # first is default
+                default:
+                    hostname: elife-cdn.s3.amazonaws.com
+                articles:
+                    hostname: "{instance}-elife-published.s3.amazonaws.com"
+                    pattern: articles/*
+            default-ttl: 86400 # seconds
+            headers:
+                - Origin
         fastly:
             subdomains:
                 - "{instance}-fastly"
