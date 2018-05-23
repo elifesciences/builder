@@ -363,15 +363,33 @@ api-gateway:
             fastly:
                 subdomains:
                     - "{instance}--cdn-gateway"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
+                vcl:
+                    - "gzip-by-content-type-suffix"
         continuumtest:
             fastly:
                 subdomains:
                     - "{instance}--cdn-gateway"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
+                vcl:
+                    - "gzip-by-content-type-suffix"
         prod:
             fastly:
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
+                vcl:
+                    - "gzip-by-content-type-suffix"
         test:
             fastly:
                 subdomains:
@@ -390,12 +408,6 @@ api-gateway:
                     path: /ping-fastly
                     check-interval: 30000
                     timeout: 2000
-        vcltest:
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-gateway"
-                vcl:
-                    - "gzip-by-content-type-suffix"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1520,6 +1532,10 @@ iiif:
             fastly:
                 subdomains:
                     - "{instance}--cdn-iiif"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
         # manual tests
         continuumtest:
             ports:
@@ -1536,6 +1552,10 @@ iiif:
             fastly:
                 subdomains:
                     - "{instance}--cdn-iiif"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
         prod:
             ports:
                 - 22
@@ -1554,6 +1574,10 @@ iiif:
                 subdomains:
                     - "{instance}--cdn-iiif"
                     - iiif
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
