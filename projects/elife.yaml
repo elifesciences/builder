@@ -757,6 +757,10 @@ generic-cdn:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     condition: req.url ~ "^/articles" 
             default-ttl: 86400 # seconds
+    aws-alt:
+        # CloudFront distribution is pre-existing and is managed outside of builder
+        prod:
+            cloudfront: false
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org

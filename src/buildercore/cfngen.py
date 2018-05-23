@@ -220,7 +220,7 @@ def build_context_elb(context):
 def build_context_cloudfront(context, parameterize):
     def build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
-    if 'cloudfront' in context['project']['aws']:
+    if 'cloudfront' in context['project']['aws'] and context['project']['aws']['cloudfront']:
         errors = None
         if context['project']['aws']['cloudfront']['errors']:
             errors = {
