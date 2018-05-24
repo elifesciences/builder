@@ -38,6 +38,7 @@ class BaseCase(TestCase):
     def __init__(self, *args, **kwargs):
         super(BaseCase, self).__init__(*args, **kwargs)
         switch_in_test_settings()
+        self.fixtures_dir = fixtures_dir
 
     # TODO: python2 warning
     def assertCountEqual(self, *args):
