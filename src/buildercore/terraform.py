@@ -214,7 +214,7 @@ def render(context):
             ),
             'main': True,
         })
-        
+
     if context['fastly']['surrogate-keys']:
         for name, surrogate in context['fastly']['surrogate-keys'].items():
             surrogate['url']
@@ -226,7 +226,6 @@ def render(context):
                 'type': 'cache',
                 'action': 'set',
             })
-
 
     if conditions:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = conditions
