@@ -22,11 +22,11 @@ this_dir = os.path.realpath(os.path.dirname(__file__))
 fixtures_dir = join(this_dir, 'fixtures')
 
 def switch_in_test_settings(new_settings='dummy-settings.yaml'):
-    config.SETTINGS_FILE = join(self.fixtures_dir, new_settings)
+    config.SETTINGS_FILE = join(fixtures_dir, new_settings)
     project.project_map.cache_clear()
     config.app.cache_clear()
 
-def switch_out_test_settings(self):
+def switch_out_test_settings():
     # clear any caches and reload the config module
     project.project_map.cache_clear()
     imp.reload(config)

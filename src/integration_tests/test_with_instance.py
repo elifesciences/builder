@@ -20,6 +20,7 @@ class One(base.BaseCase):
     @classmethod
     def setUpClass(self): # cls, not self
         super(One, self).setUpClass()
+        base.switch_in_test_settings()
 
         # to re-use an existing stack, ensure self.reuse_existing_stack is True
         # this will read the instance name from a temporary file (if it exists) and
