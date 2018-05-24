@@ -758,6 +758,19 @@ generic-cdn:
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
     aws-alt:
+        # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
+        fresh:
+            ec2: false
+        1604:
+            ec2: false
+        1404:
+            ec2: false
+        standalone1604:
+            ec2: false
+        standalone1404:
+            ec2: false
+        standalone:
+            ec2: false
         # CloudFront distribution is pre-existing and is managed outside of builder
         prod:
             cloudfront: false
