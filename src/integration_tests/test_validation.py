@@ -23,8 +23,11 @@ class TestValidationElife():
     def tearDown(self):
         base.switch_in_test_settings()
 
-    @pytest.mark.parametrize("pname", project.aws_projects().keys())
-    def test_validation_elife_projects(self, pname):
+    @pytest.mark.parametrize("project_name", project.aws_projects().keys())
+    def test_validation_elife_projects(self, project_name, filter_project_name):
         "elife projects (and their alternative configurations) that come with the builder pass validation"
+        if filter_project_name:
+            if project_name != filter_project_name:
+                pytest.skip("Filtered out through filter_project_name")
 
-        cfngen.validate_project(pname)
+        cfngen.validate_project(project_name)
