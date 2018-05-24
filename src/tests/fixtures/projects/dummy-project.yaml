@@ -102,6 +102,7 @@ defaults:
             healthcheck: false
             errors: false
             vcl: []
+            surrogate-keys: {}
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -348,6 +349,10 @@ project-with-fastly-complex:
                     503: "/"
             vcl:
                 - "gzip-by-content-type-suffix"
+            surrogate-keys:
+                article-id:
+                    url: "^/articles/(\\d+)/(.+)$"
+                    value: "articles/\\1"
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3

@@ -273,6 +273,7 @@ def build_context_fastly(context, parameterize):
             # TODO: add templating of bucket name
             'gcslogging': context['project']['aws']['fastly']['gcslogging'],
             'vcl': context['project']['aws']['fastly']['vcl'],
+            'surrogate-keys': context['project']['aws']['fastly']['surrogate-keys'],
         }
     else:
         context['fastly'] = False

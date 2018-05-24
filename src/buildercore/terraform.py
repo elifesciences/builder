@@ -75,6 +75,7 @@ def render(context):
     backends = []
     conditions = []
     request_settings = []
+    headers = []
     data = {}
 
     if context['fastly']['backends']:
@@ -213,9 +214,25 @@ def render(context):
             ),
             'main': True,
         })
+        
+    if context['fastly']['surrogate-keys']:
+        for name, surrogate in context['fastly']['surrogate-keys'].items():
+            surrogate['url']
+            surrogate['value']
+            headers.append({
+                'name': 'surrogate-keys %s' % name,
+                'destination': "http.surrogate-key",
+                'source': 'regsub(req.url, "%s", "%s")' % (surrogate['url'], surrogate['value']),
+                'type': 'cache',
+                'action': 'set',
+            })
+
 
     if conditions:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = conditions
+
+    if headers:
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['header'] = headers
 
     tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
 

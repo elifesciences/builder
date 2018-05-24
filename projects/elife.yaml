@@ -138,6 +138,7 @@ defaults:
             healthcheck: false
             errors: false
             vcl: []
+            surrogate-keys: {}
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -757,6 +758,10 @@ generic-cdn:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
+            surrogate-keys:
+                article-id:
+                    url: "^/articles/([0-9]+)/(.+)$"
+                    value: "articles/\\1"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:

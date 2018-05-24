@@ -227,6 +227,15 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'main': True,
                                 },
                             ],
+                            'header': [
+                                {
+                                    'name': 'surrogate-keys article-id',
+                                    'type': 'cache',
+                                    'action': 'set',
+                                    'source': 'regsub(req.url, "^/articles/(\\d+)/(.+)$", "articles/\\1")',
+                                    'destination': 'http.surrogate-key',
+                                },
+                            ],
                             'force_destroy': True,
                         }
                     }
