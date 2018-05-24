@@ -755,7 +755,7 @@ generic-cdn:
                     hostname: elife-cdn.s3.amazonaws.com
                 articles:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
-                    condition: req.url ~ "^/articles" 
+                    condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
     aws-alt:
         # CloudFront distribution is pre-existing and is managed outside of builder
