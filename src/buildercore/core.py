@@ -218,15 +218,13 @@ def find_rds_instances(stackname, state='available'):
 
     except botocore.exceptions.ClientError as err:
         LOG.info(err.response)
-        msg = err.response['Error']['Message']
         invalid_dbid = "Invalid database identifier"
-        if msg.startswith(invalid_dbid):
+        if err.response['Error']['Message'].startswith(invalid_dbid):
             # what we asked for isn't a valid db id, we probably made a mistake
             # we definitely couldn't have created a db with that id
             return []
 
-        db_notfound = "DBInstanceNotFound"
-        if msg.startswith(db_notfound):
+        if err.response['Error']['Code'] == 'DBInstanceNotFound':
             return []
 
         raise err
