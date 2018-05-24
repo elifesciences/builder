@@ -15,12 +15,14 @@ class TestValidationFixtures(base.BaseCase):
             cfngen.validate_project(pname)
 
 class TestValidationElife():
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         # HERE BE DRAGONS
         # resets the testing config.SETTINGS_FILE we set in the base.BaseCase class
         base.switch_out_test_settings()
 
-    def tearDown(self):
+    @classmethod
+    def teardown_class(cls):
         base.switch_in_test_settings()
 
     @pytest.mark.parametrize("project_name", project.aws_projects().keys())
