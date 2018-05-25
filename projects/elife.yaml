@@ -735,7 +735,7 @@ generic-cdn:
     aws:
         ec2: false
         cloudfront:
-            subdomains:
+            subdomains-without-dns:
                 - "{instance}-cdn"
             origins:
                 # first is default
@@ -749,7 +749,7 @@ generic-cdn:
                 - Origin
         fastly:
             subdomains:
-                - "{instance}-fastly"
+                - "{instance}-cdn"
             backends:
                 # first is default
                 default:
@@ -779,6 +779,9 @@ generic-cdn:
         # CloudFront distribution is pre-existing and is managed outside of builder
         prod:
             cloudfront: false
+            fastly:
+                subdomains:
+                    - "cdn"
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org
