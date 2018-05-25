@@ -1,3 +1,4 @@
+import pytest
 from tests import base
 from buildercore import cfngen, project
 import logging
@@ -7,27 +8,28 @@ logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
 # Depends on talking to AWS.
 
-class TestValidation(base.BaseCase):
-
+class TestValidationFixtures(base.BaseCase):
     def test_validation(self):
         "dummy projects and their alternative configurations pass validation"
         for pname in project.aws_projects().keys():
             cfngen.validate_project(pname)
 
-    def test_validation_elife_projects(self):
-        "elife projects (and their alternative configurations) that come with the builder pass validation"
-
+class TestValidationElife():
+    @classmethod
+    def setup_class(cls):
         # HERE BE DRAGONS
         # resets the testing config.SETTINGS_FILE we set in the base.BaseCase class
-        self.switch_out_test_settings()
+        base.switch_out_test_settings()
 
-        for pname in project.aws_projects().keys():
-            # TODO: subTest doesn't work very well here because there's no way to filter a single pname when re-running after a failure
-            # a solution like
-            # https://github.com/elifesciences/elife-spectrum/blob/master/spectrum/test_article.py#L15-L19
-            # could help, but require to run tests with pytest only
-            with self.subTest(pname):
-                cfngen.validate_project(pname)
+    @classmethod
+    def teardown_class(cls):
+        base.switch_in_test_settings()
 
-        # todo: does this need to live in a try: ... finally: ... ?
-        self.switch_in_test_settings()
+    @pytest.mark.parametrize("project_name", project.aws_projects().keys())
+    def test_validation_elife_projects(self, project_name, filter_project_name):
+        "elife projects (and their alternative configurations) that come with the builder pass validation"
+        if filter_project_name:
+            if project_name != filter_project_name:
+                pytest.skip("Filtered out through filter_project_name")
+
+        cfngen.validate_project(project_name)

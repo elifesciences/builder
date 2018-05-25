@@ -18,14 +18,27 @@ def generate_environment_name():
     now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     return "-".join([who, now, str(randint(1, 1000000))]) # ll: luke-20180420022437-51631
 
+this_dir = os.path.realpath(os.path.dirname(__file__))
+fixtures_dir = join(this_dir, 'fixtures')
+
+def switch_in_test_settings(new_settings='dummy-settings.yaml'):
+    config.SETTINGS_FILE = join(fixtures_dir, new_settings)
+    project.project_map.cache_clear()
+    config.app.cache_clear()
+
+def switch_out_test_settings():
+    # clear any caches and reload the config module
+    project.project_map.cache_clear()
+    imp.reload(config)
+
+
 class BaseCase(TestCase):
     maxDiff = None
-    this_dir = os.path.realpath(os.path.dirname(__file__))
-    fixtures_dir = join(this_dir, 'fixtures')
 
     def __init__(self, *args, **kwargs):
         super(BaseCase, self).__init__(*args, **kwargs)
-        self.switch_in_test_settings()
+        switch_in_test_settings()
+        self.fixtures_dir = fixtures_dir
 
     # TODO: python2 warning
     def assertCountEqual(self, *args):
@@ -34,17 +47,6 @@ class BaseCase(TestCase):
             self.assertItemsEqual(*args)
         else:
             parent.assertCountEqual(*args)
-
-    def switch_in_test_settings(self, new_settings='dummy-settings.yaml'):
-        self.original_settings_file = config.SETTINGS_FILE
-        config.SETTINGS_FILE = join(self.fixtures_dir, new_settings)
-        project.project_map.cache_clear()
-        config.app.cache_clear()
-
-    def switch_out_test_settings(self):
-        # clear any caches and reload the config module
-        project.project_map.cache_clear()
-        imp.reload(config)
 
     # pyline: disable=invalid-name
 

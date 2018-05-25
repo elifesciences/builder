@@ -46,3 +46,11 @@ or:
 or:
 
     PYTHONPATH=src green tests.test_buildercore_trop.TestBuildercoreTrop.test_method_name
+
+## Filter single integration tests
+
+Some integration tests run through all the defined projects for regression testing. To filter only a single project, for example to reproduce a failure, you can run:
+
+```
+pytest src/integration_tests/test_validation.py::TestValidationElife --filter-project-name=generic-cdn
+```
