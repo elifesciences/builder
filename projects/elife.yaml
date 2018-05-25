@@ -782,6 +782,10 @@ generic-cdn:
             fastly:
                 subdomains:
                     - "cdn"
+                gcslogging:
+                    bucket: prod-elife-fastly
+                    path: generic-cdn--prod/
+                    period: 600
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org
