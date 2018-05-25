@@ -776,7 +776,12 @@ generic-cdn:
             ec2: false
         standalone:
             ec2: false
-        # CloudFront distribution is pre-existing and is managed outside of builder
+        end2end:
+            fastly:
+                gcslogging:
+                    bucket: end2end-elife-fastly
+                    path: generic-cdn--end2end/
+                    period: 600
         continuumtest:
             fastly:
                 gcslogging:
@@ -784,6 +789,7 @@ generic-cdn:
                     path: generic-cdn--continuumtest/
                     period: 600
         prod:
+            # CloudFront distribution is pre-existing and is managed outside of builder
             cloudfront: false
             fastly:
                 subdomains:
