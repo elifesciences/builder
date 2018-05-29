@@ -548,7 +548,10 @@ project-on-gcp:
     # I know, this should be gcp, but actually should be renamed
     # to "cloud" or "remote" or similar
     aws:
+        ec2: false
         gcs:
             "widgets-{instance}":
                 project: elife-something
                 # space for options
+                #
+    aws-alt: {}

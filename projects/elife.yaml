@@ -1899,3 +1899,13 @@ exeter-adapter:
                     subscriptions:
                         - elife-bot-event-property--prod
 
+fastly-logs:
+    description: Fastly CDN access logs
+    domain: false
+    intdomain: false
+    aws:
+        ec2: false
+        gcs:
+            "{instance}-fastly-logs":
+                project: elife-fastly
+    aws-alt: {}
