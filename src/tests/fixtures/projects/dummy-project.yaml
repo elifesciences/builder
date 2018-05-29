@@ -550,4 +550,5 @@ project-on-gcp:
     aws:
         gcs:
             "widgets-{instance}":
+                project: elife-something
                 # space for options

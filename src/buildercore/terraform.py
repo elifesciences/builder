@@ -298,7 +298,8 @@ def render_gcp(context):
                     'name': bucket_name,
                     'location': 'us-east4',
                     'storage_class': 'REGIONAL',
-                } for bucket_name, _options in context['gcs'].items()
+                    'project': options['project'],
+                } for bucket_name, options in context['gcs'].items()
             },
         },
     }
@@ -377,8 +378,8 @@ def init(stackname, context):
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
                 },
                 'google': {
+                    'version': "= %s" % '1.13.0',
                     'region': 'us-east4',
-                    # TODO: add 'version' exact constraint
                 },
                 'vault': {
                     'address': context['vault']['address'],

@@ -281,6 +281,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             'name': 'widgets-prod',
             'location': 'us-east4',
             'storage_class': 'REGIONAL',
+            'project': 'elife-something',
         })
 
     def test_sanity_of_rendered_log_format(self):

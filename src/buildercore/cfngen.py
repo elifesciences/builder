@@ -282,10 +282,10 @@ def build_context_fastly(context, parameterize):
 def build_context_gcp(context, parameterize):
     if 'gcs' in context['project']['aws']:
         context['gcs'] = OrderedDict()
-        for bucket_template_name, _options in context['project']['aws']['gcs'].items():
+        for bucket_template_name, options in context['project']['aws']['gcs'].items():
             bucket_name = parameterize(bucket_template_name)
             context['gcs'][bucket_name] = { 
-                # future options
+                'project': options['project'],
             }
     else:
         context['gcs'] = False
