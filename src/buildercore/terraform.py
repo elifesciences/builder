@@ -69,8 +69,16 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
-    if not context['fastly']:
+    generated_template = render_fastly(context)
+
+    if not generated_template:
         return EMPTY_TEMPLATE
+
+    return json.dumps(generated_template)
+
+def render_fastly(context):
+    if not context['fastly']:
+        return {}
 
     backends = []
     conditions = []
@@ -238,7 +246,7 @@ def render(context):
     if data:
         tf_file['data'] = data
 
-    return json.dumps(tf_file)
+    return tf_file
 
 def _fastly_backend(hostname, name, request_condition=None):
     backend_resource = {
