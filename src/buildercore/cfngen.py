@@ -152,6 +152,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     build_context_cloudfront(context, parameterize=_parameterize)
     build_context_fastly(context, parameterize=_parameterize)
+    build_context_gcp(context, parameterize=_parameterize)
     build_context_subdomains(context)
     build_context_elasticache(context)
     build_context_vault(context)
@@ -277,6 +278,18 @@ def build_context_fastly(context, parameterize):
         }
     else:
         context['fastly'] = False
+
+def build_context_gcp(context, parameterize):
+    if 'gcs' in context['project']['aws']:
+        context['gcs'] = OrderedDict()
+        for bucket_template_name, _options in context['project']['aws']['gcs'].items():
+            bucket_name = parameterize(bucket_template_name)
+            context['gcs'][bucket_name] = { 
+                # future options
+            }
+    else:
+        context['gcs'] = False
+
 
 def complete_domain(host, default_main):
     is_main = host == ''

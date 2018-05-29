@@ -540,3 +540,14 @@ project-with-fully-overridden-elasticaches:
                 2: 
                     configuration:
                         maxmemory-policy: volatile-ttl
+
+project-on-gcp:
+    description: project with resources only on Google Cloud Platform
+    domain: False
+    intdomain: False
+    # I know, this should be gcp, but actually should be renamed
+    # to "cloud" or "remote" or similar
+    aws:
+        gcs:
+            "widgets-{instance}":
+                # space for options

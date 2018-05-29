@@ -70,6 +70,7 @@ FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
     generated_template = render_fastly(context)
+    generated_template.update(render_gcp(context))
 
     if not generated_template:
         return EMPTY_TEMPLATE
@@ -286,8 +287,21 @@ def _generate_vcl_file(stackname, content, key):
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 
-def _add_vcl_inclusion(vcl, names_to_sections):
-    pass
+def render_gcp(context):
+    if not context['gcs']:
+        return {}
+
+    return {
+        'resource': {
+            'google_storage_bucket': {
+                bucket_name : {
+                    'name': bucket_name,
+                    'location': 'us-east4',
+                    'storage_class': 'REGIONAL',
+                } for bucket_name, _options in context['gcs'].items()
+            },
+        },
+    }
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
