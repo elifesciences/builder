@@ -103,7 +103,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
         # setup various resources after creation, where necessary
-        terraform.update(stackname, context)
+        terraform.bootstrap(stackname, context)
         setup_ec2(stackname, context)
         return True
 
@@ -472,6 +472,8 @@ def write_environment_info(stackname, overwrite=False):
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
+    # TODO: partition away at least ec2
+    # TODO: partition away also terraform
     # Has too many responsibilities:
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates

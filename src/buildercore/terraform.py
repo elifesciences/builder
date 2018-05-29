@@ -72,6 +72,46 @@ def render(context):
     if not context['fastly']:
         return EMPTY_TEMPLATE
 
+    backends = []
+    conditions = []
+    request_settings = []
+    headers = []
+    data = {}
+
+    if context['fastly']['backends']:
+        for name, backend in context['fastly']['backends'].items():
+            if backend.get('condition'):
+                condition_name = 'backend-%s-condition' % name
+                conditions.append({
+                    'name': condition_name,
+                    'statement': backend.get('condition'),
+                    'type': 'REQUEST',
+                })
+                request_settings.append(_fastly_request_setting({
+                    'name': 'backend-%s-request-settings' % name,
+                    'default_host': backend['hostname'],
+                    'request_condition': condition_name,
+                }))
+                backend_condition_name = condition_name
+            else:
+                request_settings.append(_fastly_request_setting({
+                    'default_host': backend['hostname']
+                }))
+                backend_condition_name = None
+            backends.append(_fastly_backend(
+                backend['hostname'],
+                name=name,
+                request_condition=backend_condition_name
+            ))
+    else:
+        request_settings.append(_fastly_request_setting({
+            'default_host': context['full_hostname']
+        }))
+        backends.append(_fastly_backend(
+            context['full_hostname'],
+            name=context['stackname']
+        ))
+
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
@@ -82,23 +122,8 @@ def render(context):
                     'domain': [
                         {'name': subdomain} for subdomain in all_allowed_subdomains
                     ],
-                    'backend': {
-                        'address': context['full_hostname'],
-                        'name': context['stackname'],
-                        'port': 443,
-                        'use_ssl': True,
-                        'ssl_cert_hostname': context['full_hostname'],
-                        'ssl_check_cert': True,
-                    },
-                    'request_setting': {
-                        'name': 'default',
-                        'force_ssl': True,
-                        # shouldn't need to replicate the defaults
-                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
-                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
-                        'timer_support': True,
-                        'xff': 'leave',
-                    },
+                    'backend': backends,
+                    'default_ttl': context['fastly']['default-ttl'],
                     'gzip': {
                         'name': 'default',
                         # shouldn't need to replicate the defaults
@@ -111,7 +136,6 @@ def render(context):
             }
         },
     }
-    data = {}
 
     if context['fastly']['healthcheck']:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['healthcheck'] = {
@@ -121,12 +145,12 @@ def render(context):
             'check_interval': context['fastly']['healthcheck']['check-interval'],
             'timeout': context['fastly']['healthcheck']['timeout'],
         }
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']['healthcheck'] = 'default'
+        for b in tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
+            b['healthcheck'] = 'default'
 
     if context['fastly']['errors']:
         errors = context['fastly']['errors']
         response_objects = []
-        cache_conditions = []
         data[DATA_TYPE_HTTP] = {}
         for code, path in errors['codes'].items():
             cache_condition = {
@@ -134,7 +158,7 @@ def render(context):
                 'statement': 'beresp.status == %d' % code,
                 'type': 'CACHE',
             }
-            cache_conditions.append(cache_condition)
+            conditions.append(cache_condition)
             response_objects.append({
                 'name': 'error-%s' % code,
                 'status': int(code),
@@ -147,14 +171,9 @@ def render(context):
                 'url': '%s%s' % (errors['url'], path),
             }
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = cache_conditions
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
-        # TODO: require FASTLY_GCS_EMAIL env variable
-        # TODO: require FASTLY_GCS_SECRET env variable
-        # how to define an env variable with new lines:
-        # https://stackoverflow.com/a/36439943/91590
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging'] = {
             'name': 'default',
             'bucket_name': gcslogging['bucket'],
@@ -196,10 +215,58 @@ def render(context):
             'main': True,
         })
 
+    if context['fastly']['surrogate-keys']:
+        for name, surrogate in context['fastly']['surrogate-keys'].items():
+            surrogate['url']
+            surrogate['value']
+            headers.append({
+                'name': 'surrogate-keys %s' % name,
+                'destination': "http.surrogate-key",
+                'source': 'regsub(req.url, "%s", "%s")' % (surrogate['url'], surrogate['value']),
+                'type': 'cache',
+                'action': 'set',
+            })
+
+    if conditions:
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = conditions
+
+    if headers:
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['header'] = headers
+
+    tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
+
     if data:
         tf_file['data'] = data
 
     return json.dumps(tf_file)
+
+def _fastly_backend(hostname, name, request_condition=None):
+    backend_resource = {
+        'address': hostname,
+        'name': name,
+        'port': 443,
+        'use_ssl': True,
+        'ssl_cert_hostname': hostname,
+        'ssl_sni_hostname': hostname,
+        'ssl_check_cert': True,
+    }
+    if request_condition:
+        backend_resource['request_condition'] = request_condition
+    return backend_resource
+
+def _fastly_request_setting(override):
+    request_setting_resource = {
+        'name': 'default',
+        'force_ssl': True,
+        # shouldn't need to replicate the defaults
+        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
+        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
+        'timer_support': True,
+        'xff': 'leave',
+    }
+    request_setting_resource.update(override)
+    return request_setting_resource
+
 
 def _generate_vcl_file(stackname, content, key):
     """
@@ -241,6 +308,14 @@ def generate_delta(context, new_template):
         return None
 
     write_template(context['stackname'], new_template)
+    return plan(context)
+
+@only_if('fastly')
+def bootstrap(stackname, context):
+    plan(context)
+    update(stackname, context)
+
+def plan(context):
     terraform = init(context['stackname'], context)
     terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
     return_code, stdout, stderr = terraform.plan('out.plan', input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)

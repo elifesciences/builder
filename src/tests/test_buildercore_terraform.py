@@ -59,20 +59,23 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'domain': [{
                                 'name': 'prod--cdn-of-www.example.org'
                             }],
-                            'backend': {
+                            'backend': [{
                                 'address': 'prod--www.example.org',
                                 'name': 'project-with-fastly-minimal--prod',
                                 'port': 443,
                                 'use_ssl': True,
                                 'ssl_cert_hostname': 'prod--www.example.org',
+                                'ssl_sni_hostname': 'prod--www.example.org',
                                 'ssl_check_cert': True,
-                            },
-                            'request_setting': {
+                            }],
+                            'default_ttl': 3600,
+                            'request_setting': [{
                                 'name': 'default',
+                                'default_host': 'prod--www.example.org',
                                 'force_ssl': True,
                                 'timer_support': True,
                                 'xff': 'leave',
-                            },
+                            }],
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -128,21 +131,47 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'future.example.org'
                                 },
                             ],
-                            'backend': {
-                                'address': 'prod--www.example.org',
-                                'name': 'project-with-fastly-complex--prod',
-                                'port': 443,
-                                'use_ssl': True,
-                                'ssl_cert_hostname': 'prod--www.example.org',
-                                'ssl_check_cert': True,
-                                'healthcheck': 'default',
-                            },
-                            'request_setting': {
-                                'name': 'default',
-                                'force_ssl': True,
-                                'timer_support': True,
-                                'xff': 'leave',
-                            },
+                            'backend': [
+                                {
+                                    'address': 'default.example.org',
+                                    'name': 'default',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'default.example.org',
+                                    'ssl_sni_hostname': 'default.example.org',
+                                    'ssl_check_cert': True,
+                                    'healthcheck': 'default',
+                                },
+                                {
+                                    'address': 'prod-special.example.org',
+                                    'name': 'articles',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'prod-special.example.org',
+                                    'ssl_sni_hostname': 'prod-special.example.org',
+                                    'ssl_check_cert': True,
+                                    'request_condition': 'backend-articles-condition',
+                                    'healthcheck': 'default',
+                                }
+                            ],
+                            'request_setting': [
+                                {
+                                    'name': 'default',
+                                    'default_host': 'default.example.org',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                },
+                                {
+                                    'name': 'backend-articles-request-settings',
+                                    'default_host': 'prod-special.example.org',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                    'request_condition': 'backend-articles-condition',
+                                },
+                            ],
+                            'default_ttl': 86400,
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -166,6 +195,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'timeout': 10000,
                             },
                             'condition': [
+                                {
+                                    'name': 'backend-articles-condition',
+                                    'statement': 'req.url ~ "^/articles"',
+                                    'type': 'REQUEST',
+                                },
                                 {
                                     'name': 'condition-503',
                                     'statement': 'beresp.status == 503',
@@ -191,6 +225,15 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'main',
                                     'content': '${file("main.vcl")}',
                                     'main': True,
+                                },
+                            ],
+                            'header': [
+                                {
+                                    'name': 'surrogate-keys article-id',
+                                    'type': 'cache',
+                                    'action': 'set',
+                                    'source': 'regsub(req.url, "^/articles/(\\d+)/(.+)$", "articles/\\1")',
+                                    'destination': 'http.surrogate-key',
                                 },
                             ],
                             'force_destroy': True,

@@ -131,12 +131,14 @@ defaults:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
             subdomains-without-dns: []
+            default-ttl: 3600 # Fastly default, in seconds
             dns:
                 cname: u2.shared.global.fastly.net
             gcslogging: false
             healthcheck: false
             errors: false
             vcl: []
+            surrogate-keys: {}
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -745,7 +747,7 @@ generic-cdn:
     aws:
         ec2: false
         cloudfront:
-            subdomains:
+            subdomains-without-dns:
                 - "{instance}-cdn"
             origins:
                 # first is default
@@ -757,6 +759,57 @@ generic-cdn:
             default-ttl: 86400 # seconds
             headers:
                 - Origin
+        fastly:
+            subdomains:
+                - "{instance}-cdn"
+            backends:
+                # first is default
+                default:
+                    hostname: elife-cdn.s3.amazonaws.com
+                articles:
+                    hostname: "{instance}-elife-published.s3.amazonaws.com"
+                    condition: req.url ~ "^/articles/"
+            default-ttl: 86400 # seconds
+            surrogate-keys:
+                article-id:
+                    url: "^/articles/([0-9]+)/(.+)$"
+                    value: "articles/\\1"
+    aws-alt:
+        # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
+        fresh:
+            ec2: false
+        1604:
+            ec2: false
+        1404:
+            ec2: false
+        standalone1604:
+            ec2: false
+        standalone1404:
+            ec2: false
+        standalone:
+            ec2: false
+        end2end:
+            fastly:
+                gcslogging:
+                    bucket: end2end-elife-fastly
+                    path: generic-cdn--end2end/
+                    period: 600
+        continuumtest:
+            fastly:
+                gcslogging:
+                    bucket: continuumtest-elife-fastly
+                    path: generic-cdn--continuumtest/
+                    period: 600
+        prod:
+            # CloudFront distribution is pre-existing and is managed outside of builder
+            cloudfront: false
+            fastly:
+                subdomains:
+                    - "cdn"
+                gcslogging:
+                    bucket: prod-elife-fastly
+                    path: generic-cdn--prod/
+                    period: 600
 
 journal-cms:
     subdomain: journal-cms # journal-cms.elifesciences.org

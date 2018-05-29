@@ -220,7 +220,7 @@ def build_context_elb(context):
 def build_context_cloudfront(context, parameterize):
     def build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
-    if 'cloudfront' in context['project']['aws']:
+    if 'cloudfront' in context['project']['aws'] and context['project']['aws']['cloudfront']:
         errors = None
         if context['project']['aws']['cloudfront']['errors']:
             errors = {
@@ -253,18 +253,27 @@ def build_context_cloudfront(context, parameterize):
         context['cloudfront'] = False
 
 def build_context_fastly(context, parameterize):
-    def build_subdomain(x):
+    def _build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
+
+    def _parameterize_hostname(b):
+        b['hostname'] = parameterize(b['hostname'])
+        return b
+
     if 'fastly' in context['project']['aws']:
+        backends = context['project']['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
-            'subdomains': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
-            'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
+            'backends': OrderedDict([(n, _parameterize_hostname(b)) for n, b in backends.items()]),
+            'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
+            'subdomains-without-dns': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
             'dns': context['project']['aws']['fastly']['dns'],
+            'default-ttl': context['project']['aws']['fastly']['default-ttl'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
             'errors': context['project']['aws']['fastly']['errors'],
             # TODO: add templating of bucket name
             'gcslogging': context['project']['aws']['fastly']['gcslogging'],
             'vcl': context['project']['aws']['fastly']['vcl'],
+            'surrogate-keys': context['project']['aws']['fastly']['surrogate-keys'],
         }
     else:
         context['fastly'] = False

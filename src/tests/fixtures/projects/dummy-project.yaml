@@ -97,10 +97,12 @@ defaults:
             subdomains-without-dns: []
             dns:
                 cname: something.fastly.net
+            default-ttl: 3600 # seconds
             gcslogging: false
             healthcheck: false
             errors: false
             vcl: []
+            surrogate-keys: {}
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -325,11 +327,18 @@ project-with-fastly-complex:
         ports:
             - 80
         fastly:
+            backends:
+                default:
+                    hostname: default.example.org
+                articles:
+                    hostname: "{instance}-special.example.org"
+                    condition: req.url ~ "^/articles" 
             subdomains:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
             subdomains-without-dns:
                 - "future"
+            default-ttl: 86400
             healthcheck:
                 path: /ping-fastly
                 check-interval: 30000
@@ -340,6 +349,10 @@ project-with-fastly-complex:
                     503: "/"
             vcl:
                 - "gzip-by-content-type-suffix"
+            surrogate-keys:
+                article-id:
+                    url: "^/articles/(\\d+)/(.+)$"
+                    value: "articles/\\1"
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3
