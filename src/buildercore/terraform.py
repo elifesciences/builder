@@ -367,11 +367,18 @@ def init(stackname, context):
             },
         }))
     with _open(stackname, 'providers', mode='w') as fp:
+        # TODO: possibly remove unused providers
+        # Terraform already prunes them when running, but would
+        # simplify the .cfn/terraform/$stackname/ files
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                },
+                'google': {
+                    'region': 'us-east4',
+                    # TODO: add 'version' exact constraint
                 },
                 'vault': {
                     'address': context['vault']['address'],
