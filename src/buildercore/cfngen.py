@@ -260,7 +260,7 @@ def build_context_fastly(context, parameterize):
         b['hostname'] = parameterize(b['hostname'])
         return b
 
-    if 'fastly' in context['project']['aws']:
+    if 'fastly' in context['project']['aws'] and context['project']['aws']['fastly']:
         backends = context['project']['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
             'backends': OrderedDict([(n, _parameterize_hostname(b)) for n, b in backends.items()]),

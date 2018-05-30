@@ -1539,6 +1539,13 @@ iiif:
             - 22
             - 80
             - 443
+        fastly:
+            subdomains:
+                - "{instance}--cdn-iiif"
+            healthcheck:
+                path: /ping-fastly
+                check-interval: 30000
+                timeout: 2000
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -1547,6 +1554,7 @@ iiif:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+            fastly: false
         # for testing new versions
         ci:
             ports:
@@ -1570,6 +1578,7 @@ iiif:
                     - https
                 healthcheck:
                     path: /
+            fastly: false
         end2end:
             ports:
                 - 22
@@ -1585,13 +1594,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-iiif"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
         # manual tests
         continuumtest:
             ports:
@@ -1605,13 +1607,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-iiif"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
         prod:
             ports:
                 - 22
@@ -1630,10 +1625,6 @@ iiif:
                 subdomains:
                     - "{instance}--cdn-iiif"
                     - iiif
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
