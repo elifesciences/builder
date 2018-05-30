@@ -771,9 +771,12 @@ generic-cdn:
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
             surrogate-keys:
-                article-id:
+                article-id-legacy:
                     url: "^/articles/([0-9]+)/(.+)$"
                     value: "articles/\\1"
+                article-id:
+                    url: "^/articles/([0-9]+)/(.+)$"
+                    value: "article/\\1"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
