@@ -771,9 +771,23 @@ generic-cdn:
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
             surrogate-keys:
-                article-id:
-                    url: "^/articles/([0-9]+)/(.+)$"
-                    value: "articles/\\1 article/\\1"
+                article-assets:
+                    url: "^/articles/([0-9]+)/elife-([0-9]+)-([a-z0-9]+)-v([0-9]+)\\.(.+)$"
+                    value: "articles/\\1 article/\\1 article/\\1/version/\\4"
+                    samples:
+                        article-asset:
+                            path: /articles/10627/elife-10627-fig1-v1.tif
+                            expected: "articles/10627 article/10627 article/10627/version/1"
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-download.jpg
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
+
+                article-pdf-xml:
+                    url: "^/articles/([0-9]+)/elife-([0-9]+)-v([0-9]+)\\.(.+)$"
+                    value: "articles/\\1 article/\\1 article/\\1/version/\\3"
+                    samples:
+                        article-pdf:
+                            path: /articles/10627/elife-10627-v1.pdf
+                            expected: "articles/10627 article/10627 article/10627/version/1"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
