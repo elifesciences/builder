@@ -352,7 +352,11 @@ project-with-fastly-complex:
             surrogate-keys:
                 article-id:
                     url: "^/articles/(\\d+)/(.+)$"
-                    value: "articles/\\1"
+                    value: "article/\\1"
+                    samples:
+                        article-pdf:
+                            url: /articles/10627/elife-10627-v1.pdf
+                            value: article/10627
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3

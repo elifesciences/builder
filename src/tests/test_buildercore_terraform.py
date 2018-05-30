@@ -232,7 +232,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'surrogate-keys article-id',
                                     'type': 'cache',
                                     'action': 'set',
-                                    'source': 'regsub(req.url, "^/articles/(\\d+)/(.+)$", "articles/\\1")',
+                                    'source': 'regsub(req.url, "^/articles/(\\d+)/(.+)$", "article/\\1")',
                                     'destination': 'http.surrogate-key',
                                 },
                             ],
