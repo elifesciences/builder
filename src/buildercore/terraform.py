@@ -217,8 +217,12 @@ def render(context):
 
     if context['fastly']['surrogate-keys']:
         for name, surrogate in context['fastly']['surrogate-keys'].items():
-            surrogate['url']
-            surrogate['value']
+            for sample_name, sample in surrogate.get('samples', {}).items():
+                # check sample['url'] parsed leads to sample['value']
+                match = re.match(surrogate['url'], sample['path'])
+                ensure(match is not None, "Regex %s does not match sample %s" % (surrogate['url'], sample))
+                sample_actual = match.expand(surrogate['value'])
+                ensure(sample_actual == sample['expected'], "Incorrect generated surrogate key `%s` for sample %s" % (sample_actual, sample))
             headers.append({
                 'name': 'surrogate-keys %s' % name,
                 'destination': "http.surrogate-key",
