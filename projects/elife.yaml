@@ -746,19 +746,6 @@ generic-cdn:
     intdomain: null
     aws:
         ec2: false
-        cloudfront:
-            subdomains-without-dns:
-                - "{instance}-cdn"
-            origins:
-                # first is default
-                default:
-                    hostname: elife-cdn.s3.amazonaws.com
-                articles:
-                    hostname: "{instance}-elife-published.s3.amazonaws.com"
-                    pattern: articles/*
-            default-ttl: 86400 # seconds
-            headers:
-                - Origin
         fastly:
             subdomains:
                 - "{instance}-cdn"
@@ -822,8 +809,6 @@ generic-cdn:
                     path: generic-cdn--continuumtest/
                     period: 600
         prod:
-            # CloudFront distribution is pre-existing and is managed outside of builder
-            cloudfront: false
             fastly:
                 subdomains:
                     - "cdn"
