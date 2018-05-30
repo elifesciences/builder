@@ -1558,9 +1558,21 @@ iiif:
                 check-interval: 30000
                 timeout: 2000
             surrogate-keys:
-                article-id-version:
+                article-id-versioned:
                     url: "^/lax:([0-9]+)/elife-([0-9]+)-([a-z0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "article/\\1 article/\\1/version/\\4"
+                    value: "article/\\1 article/\\1v\\4"
+                    samples:
+                        figure:
+                            path: /lax:10627/elife-10627-fig1-v1.tif/full/1500,/0/default.jpg
+                            expected: "article/10627 article/10627v1"
+
+                article-id-unversioned:
+                    url: "^/lax:([0-9]+)/elife-([0-9]+)-video([0-9]+)\\.(.+)$"
+                    value: "article/\\1 article/\\1/videos"
+                    samples:
+                        video-still:
+                            path: /lax:34773/elife-34773-video2.jpg/full/639,/0/default.jpg
+                            expected: "article/34773 article/34773/videos"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
