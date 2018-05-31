@@ -205,6 +205,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'statement': 'beresp.status == 503',
                                     'type': 'CACHE',
                                 },
+                                {
+                                    'name': 'condition-surrogate-article-id',
+                                    'statement': 'req.url ~ "^/articles/(\\d+)/(.+)$"',
+                                    'type': 'CACHE',
+                                },
                             ],
                             'response_object': [
                                 {
@@ -234,6 +239,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'action': 'set',
                                     'source': 'regsub(req.url, "^/articles/(\\d+)/(.+)$", "article/\\1")',
                                     'destination': 'http.surrogate-key',
+                                    'ignore_if_set': True,
+                                    'cache_condition': 'condition-surrogate-article-id',
                                 },
                             ],
                             'force_destroy': True,

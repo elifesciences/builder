@@ -223,12 +223,21 @@ def render(context):
                 ensure(match is not None, "Regex %s does not match sample %s" % (surrogate['url'], sample))
                 sample_actual = match.expand(surrogate['value'])
                 ensure(sample_actual == sample['expected'], "Incorrect generated surrogate key `%s` for sample %s" % (sample_actual, sample))
+
+            cache_condition = {
+                'name': 'condition-surrogate-%s' % name,
+                'statement': 'req.url ~ "%s"' % surrogate['url'],
+                'type': 'CACHE',
+            }
+            conditions.append(cache_condition)
             headers.append({
                 'name': 'surrogate-keys %s' % name,
                 'destination': "http.surrogate-key",
                 'source': 'regsub(req.url, "%s", "%s")' % (surrogate['url'], surrogate['value']),
                 'type': 'cache',
                 'action': 'set',
+                'ignore_if_set': True,
+                'cache_condition': cache_condition['name'],
             })
 
     if conditions:
