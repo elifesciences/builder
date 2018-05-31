@@ -1,4 +1,5 @@
 from collections import namedtuple
+from contextlib import contextmanager
 import logging
 import json
 import os
@@ -43,6 +44,33 @@ class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
 
 EMPTY_TEMPLATE = {'Resources': {}}
 
+def _noop():
+    pass
+
+@contextmanager
+def stack_creation(stackname, on_start=_noop, on_error=_noop):
+    try:
+        on_start()
+        yield
+
+    except StackTakingALongTimeToComplete as err:
+        LOG.info("Stack taking a long time to complete: %s", err)
+        raise
+
+    except botocore.exceptions.ClientError as err:
+        if err.response['Error']['Code'] == 'AlreadyExistsException':
+            LOG.debug(err)
+            return
+        LOG.exception("unhandled boto ClientError attempting to create stack", extra={'stackname': stackname, 'response': err.response})
+        on_error()
+        raise
+
+    except BaseException:
+        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
+        on_error()
+        raise
+
+
 def bootstrap(stackname, context):
     pdata = core.project_data_for_stackname(stackname)
     parameters = []
@@ -57,36 +85,15 @@ def bootstrap(stackname, context):
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         return
 
-    if core.stack_is_active(stackname):
-        LOG.info("stack exists") # avoid on_start handler
-        return True
+    # if core.stack_is_active(stackname):
+    #    LOG.info("stack exists") # avoid on_start handler
+    #    return True
 
-    try:
-        on_start()
+    with stack_creation(stackname, on_start=on_start, on_error=on_error):
         conn = core.boto_conn(stackname, 'cloudformation')
         # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
         conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
         _wait_until_in_progress(stackname)
-
-    except StackTakingALongTimeToComplete as err:
-        LOG.info("Stack taking a long time to complete: %s", err)
-        raise
-
-    except botocore.exceptions.ClientError as err:
-        if err.response['Error']['Code'] == 'AlreadyExistsException':
-            LOG.debug(err)
-            return False
-        LOG.exception("unhandled boto ClientError attempting to create stack", extra={'stackname': stackname, 'parameters': parameters, 'response': err.response})
-        on_error()
-        raise
-
-    except BaseException:
-        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
-        on_error()
-        raise
-
-def _noop():
-    pass
 
 class StackTakingALongTimeToComplete(RuntimeError):
     pass

@@ -84,12 +84,6 @@ class One(base.BaseCase):
         "the same stack cannot be created multiple times"
         bootstrap.create_stack(self.stackname)
 
-    # def test_bootstrap_create_stack_already_exists(self):
-    #    "if we force the same stack to be created multiple times, the error is successfully caught and logged"
-    #    with mock.patch('buildercore.cloudformation.core.stack_is_active', side_effect=[False]):
-    #        with mock.patch('buildercore.cloudformation.keypair.create_keypair'):
-    #            bootstrap.create_stack(self.stackname)
-
     def test_bootstrap_wait_until_in_progress(self):
         cloudformation._wait_until_in_progress(self.stackname)
         bootstrap.setup_ec2(self.stackname, self.context)
