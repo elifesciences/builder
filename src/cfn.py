@@ -21,9 +21,10 @@ def strtobool(x):
     return x if isinstance(x, bool) else bool(_strtobool(x))
 
 @task
-@requires_steady_stack
+# TODO: move to a lower level if possible
+#@requires_steady_stack
 def destroy(stackname):
-    "tell aws to delete a stack."
+    "Delete a stack of resources."
     print('this is a BIG DEAL. you cannot recover from this.')
     print('type the name of the stack to continue or anything else to quit')
     uin = utils.get_input('> ')

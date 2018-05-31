@@ -657,20 +657,13 @@ def remove_all_orphaned_keys(master_stackname):
             fname = os.path.basename(path) # prevent accidental deletion of anything not a key
             sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
+# TODO: rename to destroy?
 def delete_stack(stackname):
     try:
         context = context_handler.load_context(stackname)
         terraform.destroy(stackname, context)
-        core.describe_stack(stackname).delete()
+        cloudformation.destroy(stackname, context)
 
-        def is_deleting(stackname):
-            try:
-                return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
-            except botocore.exceptions.ClientError as err:
-                if err.response['Error']['Message'].endswith('does not exist'):
-                    return False
-                raise # not sure what happened, but we're not handling it here. die.
-        utils.call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for AWS to finish deleting stack ...')
         # don't do this. requires master server access and would prevent regular users deleting stacks
         # remove_minion_key(stackname)
         keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)

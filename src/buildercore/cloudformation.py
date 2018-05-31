@@ -61,7 +61,7 @@ def _wait_until_in_progress(stackname):
     call_while(
         partial(is_updating, stackname),
         timeout=7200,
-        update_msg='Waiting for AWS to finish creating stack ...',
+        update_msg='Waiting for CloudFormation to finish creating stack ...',
         exception_class=StackTakingALongTimeToComplete
     )
 
@@ -70,3 +70,19 @@ def _wait_until_in_progress(stackname):
     events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
     ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
+
+def destroy(stackname, context):
+    stack_body = core.stack_json(stackname)
+    if json.loads(stack_body) == EMPTY_STACK:
+        return
+
+    core.describe_stack(stackname).delete()
+
+    def is_deleting(stackname):
+        try:
+            return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
+        except botocore.exceptions.ClientError as err:
+            if err.response['Error']['Message'].endswith('does not exist'):
+                return False
+            raise # not sure what happened, but we're not handling it here. die.
+    call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for CloudFormation to finish deleting stack ...')
