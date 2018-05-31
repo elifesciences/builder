@@ -79,6 +79,11 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'ext': False,
         'cloudfront': False,
         'elasticache': False,
+        # future use: decide at context generation time how many infrastructure tools are we going to use for this stackname
+        #'infrastructure': {
+        #    'cloudformation': False,
+        #    'terraform': False,
+        #}
     }
 
     context = copy.deepcopy(defaults)
