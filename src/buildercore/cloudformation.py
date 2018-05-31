@@ -1,5 +1,6 @@
 from collections import namedtuple
 import logging
+import json
 import backoff
 import botocore
 from . import core, trop
@@ -37,8 +38,13 @@ class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
             self.minus['Outputs'],
         ])
 
+EMPTY_STACK = {'Resources': {}}
+
 def bootstrap(stackname, context, parameters):
     stack_body = core.stack_json(stackname)
+    if json.loads(stack_body) == EMPTY_STACK:
+        return
+
     conn = core.boto_conn(stackname, 'cloudformation')
     # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
     conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
