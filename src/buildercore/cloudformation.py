@@ -18,10 +18,13 @@ def render_template(context):
     ensure('aws' in context['project'], msg, ValueError)
     return trop.render(context)
 
+def _give_up_backoff(e):
+    return e.response['Error']['Code'] != 'Throttling'
+
 def _log_backoff(event):
     LOG.warn("Backing off in validating project %s", event['args'][0])
 
-@backoff.on_exception(backoff.expo, botocore.exceptions.ClientError, on_backoff=_log_backoff, max_time=30)
+@backoff.on_exception(backoff.expo, botocore.exceptions.ClientError, on_backoff=_log_backoff, giveup=_give_up_backoff, max_time=30)
 def validate_template(pname, rendered_template):
     "remote cloudformation template checks."
     if json.loads(rendered_template) == EMPTY_TEMPLATE:
