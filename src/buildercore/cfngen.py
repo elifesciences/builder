@@ -382,6 +382,7 @@ def validate_project(pname, **extra):
     template = quick_render(pname)
     pdata = project.project_data(pname)
     altconfig = None
+
     cloudformation.validate_template(pname, template)
     more_validation(template)
     # validate all alternative configurations

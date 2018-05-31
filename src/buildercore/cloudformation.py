@@ -24,6 +24,10 @@ def _log_backoff(event):
 @backoff.on_exception(backoff.expo, botocore.exceptions.ClientError, on_backoff=_log_backoff, max_time=30)
 def validate_template(pname, rendered_template):
     "remote cloudformation template checks."
+    if json.loads(rendered_template) == EMPTY_TEMPLATE:
+        # empty templates are technically invalid, but they don't interact with CloudFormation at all
+        return
+
     conn = core.boto_conn(pname, 'cloudformation', client=True)
     return conn.validate_template(TemplateBody=rendered_template)
 
