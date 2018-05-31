@@ -351,8 +351,13 @@ project-with-fastly-complex:
                 - "gzip-by-content-type-suffix"
             surrogate-keys:
                 article-id:
+                    # TODO: rename to path
                     url: "^/articles/(\\d+)/(.+)$"
-                    value: "articles/\\1"
+                    value: "article/\\1"
+                    samples:
+                        article-pdf:
+                            path: /articles/10627/elife-10627-v1.pdf
+                            expected: article/10627
 
 project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3

@@ -746,19 +746,6 @@ generic-cdn:
     intdomain: null
     aws:
         ec2: false
-        cloudfront:
-            subdomains-without-dns:
-                - "{instance}-cdn"
-            origins:
-                # first is default
-                default:
-                    hostname: elife-cdn.s3.amazonaws.com
-                articles:
-                    hostname: "{instance}-elife-published.s3.amazonaws.com"
-                    pattern: articles/*
-            default-ttl: 86400 # seconds
-            headers:
-                - Origin
         fastly:
             subdomains:
                 - "{instance}-cdn"
@@ -771,9 +758,30 @@ generic-cdn:
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
             surrogate-keys:
-                article-id:
-                    url: "^/articles/([0-9]+)/(.+)$"
-                    value: "articles/\\1"
+                article-assets:
+                    url: "^/articles/([0-9]+)/elife-([0-9]+)-([a-z0-9]+)-v([0-9]+)\\.(.+)$"
+                    value: "articles/\\1 article/\\1 article/\\1v\\4"
+                    samples:
+                        article-asset:
+                            path: /articles/10627/elife-10627-fig1-v1.tif
+                            expected: "articles/10627 article/10627 article/10627v1"
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-download.jpg
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
+
+                article-pdf-xml:
+                    url: "^/articles/([0-9]+)/elife-([0-9]+)-v([0-9]+)\\.(.+)$"
+                    value: "articles/\\1 article/\\1 article/\\1v\\3"
+                    samples:
+                        article-pdf:
+                            path: /articles/10627/elife-10627-v1.pdf
+                            expected: "articles/10627 article/10627 article/10627v1"
+                article-unversioned:
+                    url: "^/articles/([0-9]+)/elife-([0-9]+)-video([0-9]+)\\.(.+)$"
+                    value: "articles/\\1 article/\\1/videos"
+                    samples:
+                        article-video-or-still:
+                            path: /articles/34773/elife-34773-video2.mp4
+                            expected: "articles/34773 article/34773/videos"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
@@ -801,8 +809,6 @@ generic-cdn:
                     path: generic-cdn--continuumtest/
                     period: 600
         prod:
-            # CloudFront distribution is pre-existing and is managed outside of builder
-            cloudfront: false
             fastly:
                 subdomains:
                     - "cdn"
@@ -1536,6 +1542,29 @@ iiif:
             - 22
             - 80
             - 443
+        fastly:
+            subdomains:
+                - "{instance}--cdn-iiif"
+            healthcheck:
+                path: /ping-fastly
+                check-interval: 30000
+                timeout: 2000
+            surrogate-keys:
+                article-id-versioned:
+                    url: "^/lax:([0-9]+)/elife-([0-9]+)-([a-z0-9]+)-v([0-9]+)\\.(.+)$"
+                    value: "article/\\1 article/\\1v\\4"
+                    samples:
+                        figure:
+                            path: /lax:10627/elife-10627-fig1-v1.tif/full/1500,/0/default.jpg
+                            expected: "article/10627 article/10627v1"
+
+                article-id-unversioned:
+                    url: "^/lax:([0-9]+)/elife-([0-9]+)-video([0-9]+)\\.(.+)$"
+                    value: "article/\\1 article/\\1/videos"
+                    samples:
+                        video-still:
+                            path: /lax:34773/elife-34773-video2.jpg/full/639,/0/default.jpg
+                            expected: "article/34773 article/34773/videos"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -1544,6 +1573,7 @@ iiif:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+            fastly: false
         # for testing new versions
         ci:
             ports:
@@ -1567,6 +1597,7 @@ iiif:
                     - https
                 healthcheck:
                     path: /
+            fastly: false
         end2end:
             ports:
                 - 22
@@ -1582,13 +1613,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-iiif"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
         # manual tests
         continuumtest:
             ports:
@@ -1602,13 +1626,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-iiif"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
         prod:
             ports:
                 - 22
@@ -1627,10 +1644,6 @@ iiif:
                 subdomains:
                     - "{instance}--cdn-iiif"
                     - iiif
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
