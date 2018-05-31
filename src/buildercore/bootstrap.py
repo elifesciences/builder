@@ -6,11 +6,9 @@ without the extension."""
 
 import os, json, re
 from os.path import join
-from pprint import pformat
-from functools import partial
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, keypair, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
+from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data

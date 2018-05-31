@@ -6,7 +6,7 @@ import fabric.exceptions
 import fabric.state
 from fabric.contrib import files
 import utils, buildvars
-from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
+from decorators import requires_project, requires_aws_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict

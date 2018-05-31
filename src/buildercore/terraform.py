@@ -307,7 +307,7 @@ def render_gcp(context):
     return {
         'resource': {
             'google_storage_bucket': {
-                bucket_name : {
+                bucket_name: {
                     'name': bucket_name,
                     'location': 'us-east4',
                     'storage_class': 'REGIONAL',

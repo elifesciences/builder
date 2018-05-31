@@ -1,9 +1,12 @@
 from collections import namedtuple
 import logging
 import json
+import os
+from pprint import pformat
+from functools import partial
 import backoff
 import botocore
-from . import core, keypair, trop
+from . import config, core, keypair, trop
 from .utils import call_while, ensure
 
 LOG = logging.getLogger(__name__)
@@ -133,9 +136,6 @@ def destroy(stackname, context):
         LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
 
 def _delete_stack_file(stackname):
-    ext_list = [
-        ".json",
-    ]
-    path = join(config.STACK_DIR, stackname + ".json")
+    path = os.path.join(config.STACK_DIR, stackname + ".json")
     if os.path.exists(path):
         os.unlink(path)

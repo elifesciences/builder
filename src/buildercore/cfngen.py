@@ -48,7 +48,6 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     if project_data.get('aws-alt'):
         del project_data['aws-alt']
 
-
     defaults = {
         'project_name': pname,
         'project': project_data,
@@ -292,7 +291,7 @@ def build_context_gcp(context, parameterize):
         context['gcs'] = OrderedDict()
         for bucket_template_name, options in context['project']['aws']['gcs'].items():
             bucket_name = parameterize(bucket_template_name)
-            context['gcs'][bucket_name] = { 
+            context['gcs'][bucket_name] = {
                 'project': options['project'],
             }
     else:
