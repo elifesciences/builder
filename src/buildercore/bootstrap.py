@@ -10,7 +10,7 @@ from pprint import pformat
 from functools import partial
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, keypair, bvars, core, context_handler, project, terraform, sns as snsmod
+from . import utils, config, keypair, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
@@ -94,14 +94,11 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
     parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
-    stack_body = core.stack_json(stackname)
     try:
-        on_start()
-        conn = core.boto_conn(stackname, 'cloudformation')
-        # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
-        conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
-        _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
+        on_start()
+        cloudformation.bootstrap(stackname, context, parameters)
+        _wait_until_in_progress(stackname)
         # setup various resources after creation, where necessary
         terraform.bootstrap(stackname, context)
         setup_ec2(stackname, context)

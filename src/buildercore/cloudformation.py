@@ -36,3 +36,9 @@ class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
             self.minus['Resources'],
             self.minus['Outputs'],
         ])
+
+def bootstrap(stackname, context, parameters):
+    stack_body = core.stack_json(stackname)
+    conn = core.boto_conn(stackname, 'cloudformation')
+    # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
+    conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)

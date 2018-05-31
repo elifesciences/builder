@@ -45,6 +45,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     project_data = project.project_data(pname)
     if alt_config and project_data.get('aws-alt', {}).get(alt_config):
         project_data = project.set_project_alt(project_data, 'aws', alt_config)
+        # TODO: remove context['project']['aws-alt'] here (from project_data)
 
     defaults = {
         'project_name': pname,
