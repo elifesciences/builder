@@ -98,13 +98,12 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         context = context_handler.load_context(stackname)
         on_start()
         cloudformation.bootstrap(stackname, context, parameters)
-        _wait_until_in_progress(stackname)
-        # setup various resources after creation, where necessary
         terraform.bootstrap(stackname, context)
+        # setup various resources after creation, where necessary
         setup_ec2(stackname, context)
         return True
 
-    except StackTakingALongTimeToComplete as err:
+    except cloudformation.StackTakingALongTimeToComplete as err:
         LOG.info("Stack taking a long time to complete: %s", err)
         raise
 
@@ -124,31 +123,6 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
         on_error()
         raise
-
-class StackTakingALongTimeToComplete(RuntimeError):
-    pass
-
-def _wait_until_in_progress(stackname):
-    def is_updating(stackname):
-        stack_status = core.describe_stack(stackname).stack_status
-        LOG.info("Stack status: %s", stack_status)
-        return stack_status in ['CREATE_IN_PROGRESS']
-    utils.call_while(
-        partial(is_updating, stackname),
-        timeout=7200,
-        update_msg='Waiting for AWS to finish creating stack ...',
-        exception_class=StackTakingALongTimeToComplete
-    )
-
-    final_stack = core.describe_stack(stackname)
-    # NOTE: stack.events.all|filter|limit can take 5+ seconds to complete regardless of events returned
-    events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
-    ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
-           "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
-
-#
-#
-#
 
 @updates('ec2')
 def setup_ec2(stackname, context):

@@ -3,7 +3,7 @@ import logging
 import backoff
 import botocore
 from . import core, trop
-from .utils import ensure
+from .utils import call_while, ensure
 
 LOG = logging.getLogger(__name__)
 
@@ -42,3 +42,25 @@ def bootstrap(stackname, context, parameters):
     conn = core.boto_conn(stackname, 'cloudformation')
     # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
     conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
+    _wait_until_in_progress(stackname)
+
+class StackTakingALongTimeToComplete(RuntimeError):
+    pass
+
+def _wait_until_in_progress(stackname):
+    def is_updating(stackname):
+        stack_status = core.describe_stack(stackname).stack_status
+        LOG.info("Stack status: %s", stack_status)
+        return stack_status in ['CREATE_IN_PROGRESS']
+    call_while(
+        partial(is_updating, stackname),
+        timeout=7200,
+        update_msg='Waiting for AWS to finish creating stack ...',
+        exception_class=StackTakingALongTimeToComplete
+    )
+
+    final_stack = core.describe_stack(stackname)
+    # NOTE: stack.events.all|filter|limit can take 5+ seconds to complete regardless of events returned
+    events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
+    ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
+           "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
