@@ -239,12 +239,15 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns_client.set_subscription_attributes(SubscriptionArn=subscription_arn, AttributeName='RawMessageDelivery', AttributeValue='true')
 
+@updates('sqs')
+@core.requires_active_stack
 def update_sqs_stack(stackname, context, **kwargs):
     region = context['project']['aws']['region']
     unsub_sqs(stackname, context['sqs'], region)
     sub_sqs(stackname, context['sqs'], region)
 
 @updates('s3')
+@core.requires_active_stack
 def update_s3_stack(stackname, context, **kwargs):
     """
     Connects S3 buckets (existing or created by Cloud Formation) to SQS queues
@@ -439,7 +442,6 @@ def write_environment_info(stackname, overwrite=False):
 #
 #
 
-@core.requires_active_stack
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
@@ -507,6 +509,7 @@ def upload_master_configuration(master_stack, master_configuration_data):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
 @updates('ec2')
+@core.requires_active_stack
 def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, **kwargs):
     """installs/updates the ec2 instance attached to the specified stackname.
 
