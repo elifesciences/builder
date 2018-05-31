@@ -108,13 +108,22 @@ def destroy(stackname, context):
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         return
 
-    core.describe_stack(stackname).delete()
+    try:
+        core.describe_stack(stackname).delete()
 
-    def is_deleting(stackname):
-        try:
-            return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
-        except botocore.exceptions.ClientError as err:
-            if err.response['Error']['Message'].endswith('does not exist'):
-                return False
-            raise # not sure what happened, but we're not handling it here. die.
-    call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for CloudFormation to finish deleting stack ...')
+        def is_deleting(stackname):
+            try:
+                return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
+            except botocore.exceptions.ClientError as err:
+                if err.response['Error']['Message'].endswith('does not exist'):
+                    return False
+                raise # not sure what happened, but we're not handling it here. die.
+        call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for CloudFormation to finish deleting stack ...')
+        keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)
+
+    except botocore.exceptions.ClientError as ex:
+        msg = "[%s: %s] %s (request-id: %s)"
+        meta = ex.response['ResponseMetadata']
+        err = ex.response['Error']
+        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})

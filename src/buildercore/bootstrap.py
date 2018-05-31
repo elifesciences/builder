@@ -632,15 +632,6 @@ def delete_stack(stackname):
 
         # don't do this. requires master server access and would prevent regular users deleting stacks
         # remove_minion_key(stackname)
-        keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)
         delete_stack_file(stackname) # deletes the local cloudformation template
         delete_dns(stackname)
         LOG.info("stack %r deleted", stackname)
-
-    # TODO: move to cloudformation.py
-    except botocore.exceptions.ClientError as ex:
-        msg = "[%s: %s] %s (request-id: %s)"
-        meta = ex.response['ResponseMetadata']
-        err = ex.response['Error']
-        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
-        LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
