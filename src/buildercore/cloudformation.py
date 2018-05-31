@@ -119,6 +119,7 @@ def destroy(stackname, context):
                     return False
                 raise # not sure what happened, but we're not handling it here. die.
         call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for CloudFormation to finish deleting stack ...')
+        _delete_stack_file(stackname)
         keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)
 
     except botocore.exceptions.ClientError as ex:
@@ -127,3 +128,11 @@ def destroy(stackname, context):
         err = ex.response['Error']
         # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
         LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
+
+def _delete_stack_file(stackname):
+    ext_list = [
+        ".json",
+    ]
+    path = join(config.STACK_DIR, stackname + ".json")
+    if os.path.exists(path):
+        os.unlink(path)

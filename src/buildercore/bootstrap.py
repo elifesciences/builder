@@ -559,31 +559,6 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
 
     stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
-@core.requires_stack_file
-def delete_stack_file(stackname):
-    # TODO: does this need the @core.requires_active_stack decorator?
-    try:
-        core.describe_stack(stackname) # triggers exception if NOT exists
-        LOG.warning('stack %r still exists, refusing to delete stack files. delete active stack first.', stackname)
-        return
-    except botocore.exceptions.ClientError as ex:
-        if not ex.response['Error']['Message'].endswith('does not exist'):
-            LOG.exception("unhandled exception attempting to confirm if stack %r exists", stackname)
-            raise
-    ext_list = [
-        ".pem",
-        ".pub",
-        ".json",
-        ".yaml", # yaml files are now deprecated
-    ]
-    paths = [join(config.STACK_DIR, stackname + ext) for ext in ext_list]
-    paths = filter(os.path.exists, paths)
-
-    def _unlink(path):
-        os.unlink(path)
-        return not os.path.exists(path)
-    return dict(zip(paths, map(_unlink, paths)))
-
 def remove_minion_key(stackname):
     "removes all keys for all nodes of the given stackname from the master server"
     pdata = project_data_for_stackname(stackname)
@@ -624,13 +599,11 @@ def remove_all_orphaned_keys(master_stackname):
             sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
 def destroy(stackname):
-    try:
-        context = context_handler.load_context(stackname)
-        terraform.destroy(stackname, context)
-        cloudformation.destroy(stackname, context)
+    context = context_handler.load_context(stackname)
+    terraform.destroy(stackname, context)
+    cloudformation.destroy(stackname, context)
 
-        # don't do this. requires master server access and would prevent regular users deleting stacks
-        # remove_minion_key(stackname)
-        delete_stack_file(stackname) # deletes the local cloudformation template
-        delete_dns(stackname)
-        LOG.info("stack %r deleted", stackname)
+    # don't do this. requires master server access and would prevent regular users deleting stacks
+    # remove_minion_key(stackname)
+    delete_dns(stackname)
+    LOG.info("stack %r deleted", stackname)

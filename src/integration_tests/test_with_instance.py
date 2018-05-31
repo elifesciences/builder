@@ -125,9 +125,6 @@ class One(base.BaseCase):
             bootstrap.write_environment_info(self.stackname, overwrite=False)
             bootstrap.write_environment_info(self.stackname, overwrite=True)
 
-    def test_delete_stack_file_while_still_active(self):
-        self.assertEqual(None, bootstrap.delete_stack_file(self.stackname))
-
     def test_core_describe_stack(self):
         core.describe_stack(self.stackname)
 
