@@ -86,8 +86,8 @@ class One(base.BaseCase):
 
     def test_bootstrap_create_stack_already_exists(self):
         "if we force the same stack to be created multiple times, the error is successfully caught and logged"
-        with mock.patch('buildercore.bootstrap.core.stack_is_active', side_effect=[False]):
-            self.assertFalse(bootstrap._create_generic_stack(self.stackname))
+        with mock.patch('buildercore.cloudformation.core.stack_is_active', side_effect=[False]):
+            bootstrap.create_stack(self.stackname)
 
     def test_bootstrap_wait_until_in_progress(self):
         bootstrap._wait_until_in_progress(self.stackname)

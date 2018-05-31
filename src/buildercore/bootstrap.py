@@ -73,58 +73,22 @@ def prep_ec2_instance():
 def _noop():
     pass
 
-# TODO: move to cloudformation.py
 def create_stack(stackname):
-    pdata = project_data_for_stackname(stackname)
-    parameters = []
-    on_start = _noop
-    on_error = _noop
-    if pdata['aws']['ec2']:
-        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
-        on_start = lambda: keypair.create_keypair(stackname)
-        on_error = lambda: keypair.delete_keypair(stackname)
-
-    return _create_generic_stack(stackname, parameters, on_start, on_error)
-
-def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
-    if core.stack_is_active(stackname):
-        LOG.info("stack exists") # avoid on_start handler
-        return True
-
-    parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
     try:
         context = context_handler.load_context(stackname)
-        on_start()
-        cloudformation.bootstrap(stackname, context, parameters)
+        cloudformation.bootstrap(stackname, context)
         terraform.bootstrap(stackname, context)
         # setup various resources after creation, where necessary
         setup_ec2(stackname, context)
         return True
 
-    # TODO: move some except blocks to cloudformation.py
-    except cloudformation.StackTakingALongTimeToComplete as err:
-        LOG.info("Stack taking a long time to complete: %s", err)
-        raise
-
-    except botocore.exceptions.ClientError as err:
-        if err.response['Error']['Code'] == 'AlreadyExistsException':
-            LOG.debug(err)
-            return False
-        LOG.exception("unhandled boto ClientError attempting to create stack", extra={'stackname': stackname, 'parameters': parameters, 'response': err.response})
-        on_error()
-        raise
-
     except KeyboardInterrupt:
         LOG.debug("caught keyboard interrupt, cancelling...")
         return False
 
-    except BaseException:
-        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
-        on_error()
-        raise
 
 @updates('ec2')
 def setup_ec2(stackname, context):
