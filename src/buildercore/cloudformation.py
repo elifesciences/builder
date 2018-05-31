@@ -38,11 +38,11 @@ class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
             self.minus['Outputs'],
         ])
 
-EMPTY_STACK = {'Resources': {}}
+EMPTY_TEMPLATE = {'Resources': {}}
 
 def bootstrap(stackname, context, parameters):
     stack_body = core.stack_json(stackname)
-    if json.loads(stack_body) == EMPTY_STACK:
+    if json.loads(stack_body) == EMPTY_TEMPLATE:
         return
 
     conn = core.boto_conn(stackname, 'cloudformation')
@@ -73,7 +73,7 @@ def _wait_until_in_progress(stackname):
 
 def destroy(stackname, context):
     stack_body = core.stack_json(stackname)
-    if json.loads(stack_body) == EMPTY_STACK:
+    if json.loads(stack_body) == EMPTY_TEMPLATE:
         return
 
     core.describe_stack(stackname).delete()

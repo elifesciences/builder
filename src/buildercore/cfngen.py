@@ -14,15 +14,15 @@ Case 3: Stack updates
 We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
+import logging
 import os, json, copy
 import re
 from collections import OrderedDict, namedtuple
+import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
 from .config import STACK_DIR
-
-import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -587,7 +587,13 @@ def apply_delta(template, delta):
 def _current_cloudformation_template(stackname):
     "retrieves a template from the CloudFormation API, using it as the source of truth"
     cfn = core.boto_conn(stackname, 'cloudformation', client=True)
-    return cfn.get_template(StackName=stackname)['TemplateBody']
+    try:
+        return cfn.get_template(StackName=stackname)['TemplateBody']
+    except botocore.exceptions.ClientError as e:
+        if e.response.get('Error', {}).get('Code') == 'ValidationError':
+            # CloudFormation template is not used for this stackname
+            return cloudformation.EMPTY_TEMPLATE
+        raise
 
 def download_cloudformation_template(stackname):
     write_cloudformation_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
