@@ -1919,7 +1919,6 @@ fastly-logs:
     aws:
         ec2: false
         gcs:
-            #"{instance}-elife-fastly":
-            "{instance}-fastly-logs":
+            "{instance}-elife-fastly":
                 project: elife-fastly
     aws-alt: {}
