@@ -34,12 +34,12 @@ def destroy(stackname):
         print('got:')
         print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
-    return bootstrap.delete_stack(stackname)
+    return bootstrap.destroy(stackname)
 
 @task
 def ensure_destroyed(stackname):
     try:
-        return bootstrap.delete_stack(stackname)
+        return bootstrap.destroy(stackname)
     except context_handler.MissingContextFile as e:
         LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:

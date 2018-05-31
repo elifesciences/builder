@@ -623,8 +623,7 @@ def remove_all_orphaned_keys(master_stackname):
             fname = os.path.basename(path) # prevent accidental deletion of anything not a key
             sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
-# TODO: rename to destroy?
-def delete_stack(stackname):
+def destroy(stackname):
     try:
         context = context_handler.load_context(stackname)
         terraform.destroy(stackname, context)
