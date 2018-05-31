@@ -346,7 +346,7 @@ def generate_delta(context, new_template):
     write_template(context['stackname'], new_template)
     return plan(context)
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def bootstrap(stackname, context):
     plan(context)
     update(stackname, context)
@@ -404,13 +404,13 @@ def init(stackname, context):
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
