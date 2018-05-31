@@ -82,6 +82,9 @@ def bootstrap(stackname, context):
         on_error()
         raise
 
+def _noop():
+    pass
+
 class StackTakingALongTimeToComplete(RuntimeError):
     pass
 

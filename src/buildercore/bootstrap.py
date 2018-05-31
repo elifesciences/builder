@@ -70,9 +70,6 @@ def prep_ec2_instance():
 # provision stack
 #
 
-def _noop():
-    pass
-
 def create_stack(stackname):
     "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
 
