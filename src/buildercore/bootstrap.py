@@ -73,6 +73,7 @@ def prep_ec2_instance():
 def _noop():
     pass
 
+# TODO: move to cloudformation.py
 def create_stack(stackname):
     pdata = project_data_for_stackname(stackname)
     parameters = []
@@ -103,6 +104,7 @@ def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_
         setup_ec2(stackname, context)
         return True
 
+    # TODO: move some except blocks to cloudformation.py
     except cloudformation.StackTakingALongTimeToComplete as err:
         LOG.info("Stack taking a long time to complete: %s", err)
         raise
@@ -671,6 +673,7 @@ def delete_stack(stackname):
         delete_dns(stackname)
         LOG.info("stack %r deleted", stackname)
 
+    # TODO: move to cloudformation.py
     except botocore.exceptions.ClientError as ex:
         msg = "[%s: %s] %s (request-id: %s)"
         meta = ex.response['ResponseMetadata']

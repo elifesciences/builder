@@ -552,6 +552,7 @@ project-on-gcp:
     intdomain: False
     # I know, this should be gcp, but actually should be renamed
     # to "cloud" or "remote" or similar
+    # TODO: use separate key with 'gcp'?
     aws:
         ec2: false
         gcs:
