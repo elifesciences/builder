@@ -166,26 +166,6 @@ class TestUpdates(base.BaseCase):
         self.assertEqual(list(delta_minus['Resources'].keys()), ['CnameDNS1'])
         self.assertEqual(list(delta_minus['Outputs'].keys()), [])
 
-    def test_apply_delta_may_add_edit_and_remove_resources(self):
-        template = {
-            'Resources': {
-                'A': 1,
-                'B': 2,
-                'C': 3,
-            }
-        }
-        cloudformation.apply_delta(template, cloudformation.CloudFormationDelta({'Resources': {'D': 4}}, {'Resources': {'C': 30}}, {'Resources': {'B': 2}}))
-        self.assertEqual(template, {'Resources': {'A': 1, 'C': 30, 'D': 4}})
-
-    def test_apply_delta_may_add_components_which_werent_there(self):
-        template = {
-            'Resources': {
-                'A': 1,
-            }
-        }
-        cloudformation.apply_delta(template, cloudformation.CloudFormationDelta({'Outputs': {'B': 2}}, {}, {}))
-        self.assertEqual(template, {'Resources': {'A': 1}, 'Outputs': {'B': 2}})
-
     def _base_context(self, project_name='dummy1', in_memory=False, existing_context=None):
         environment_name = base.generate_environment_name()
         stackname = '%s--%s' % (project_name, environment_name)
