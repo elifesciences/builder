@@ -162,6 +162,28 @@ def write_template(stackname, contents):
 def update_template(stackname, delta):
     pass
 
+def _update_template(stackname, template):
+    parameters = []
+    pdata = project_data_for_stackname(stackname)
+    if pdata['aws']['ec2']:
+        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
+    try:
+        conn = core.describe_stack(stackname)
+        conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
+    except botocore.exceptions.ClientError as ex:
+        # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
+        if ex.response['Error']['Message'] == 'No updates are to be performed.':
+            LOG.info(str(ex), extra={'response': ex.response})
+            return
+        raise
+
+    def stack_is_updating():
+        return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
+
+    waiting = "waiting for template of %s to be updated" % stackname
+    done = "template of %s is in state UPDATE_COMPLETE" % stackname
+    call_while(stack_is_updating, interval=2, timeout=7200, update_msg=waiting, done_msg=done)
+
 def destroy(stackname, context):
     stack_body = core.stack_json(stackname)
     if json.loads(stack_body) == EMPTY_TEMPLATE:

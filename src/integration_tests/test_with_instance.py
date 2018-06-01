@@ -88,9 +88,10 @@ class One(base.BaseCase):
         cloudformation._wait_until_in_progress(self.stackname)
         bootstrap.setup_ec2(self.stackname, self.context)
 
-    def test_bootstrap_update_template_no_updates(self):
-        "a template with no changes can be updated with no problems"
-        bootstrap.update_template(self.stackname, json.load(open(self.cfn_template, 'r')))
+    # TODO: transform this into a cloudformation module test
+    #def test_bootstrap_update_template_no_updates(self):
+    #    "a template with no changes can be updated with no problems"
+    #    bootstrap.update_template(self.stackname, json.load(open(self.cfn_template, 'r')))
 
     def test_bootstrap_run_script(self):
         with core.stack_conn(self.stackname, username=BOOTSTRAP_USER):

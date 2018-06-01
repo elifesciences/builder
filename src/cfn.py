@@ -62,11 +62,6 @@ def update(stackname, autostart="0", concurrency='serial'):
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
 @task
-def update_template(stackname):
-    print('This task has been renamed to update_infrastructure.')
-    exit(1)
-
-@task
 @timeit
 def update_infrastructure(stackname):
     """Limited update of the Cloudformation template and/or Terraform template.
@@ -100,7 +95,7 @@ def update_infrastructure(stackname):
     # bootstrap.update_stack(stackname, service_list=['cloudformation'])?
     if delta.cloudformation_non_empty:
         new_template = cloudformation.merge_delta(stackname, delta)
-        bootstrap.update_template(stackname, new_template)
+        cloudformation._update_template(stackname, new_template)
     else:
         # attempting to apply an empty change set would result in an error
         LOG.info("Nothing to update on CloudFormation")
