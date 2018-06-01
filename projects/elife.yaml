@@ -758,20 +758,13 @@ generic-cdn:
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
             surrogate-keys:
-                article-assets:
-                    url: "^/articles/([0-9]+)/elife-([0-9]+)-([a-z0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1 article/\\1v\\4"
+                article-versioned-assets:
+                    url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-v([0-9]+)\\.(.+)$"
+                    value: "articles/\\1 article/\\1 article/\\1v\\3"
                     samples:
                         article-asset:
                             path: /articles/10627/elife-10627-fig1-v1.tif
                             expected: "articles/10627 article/10627 article/10627v1"
-                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-download.jpg
-                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
-
-                article-pdf-xml:
-                    url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1 article/\\1v\\3"
-                    samples:
                         article-pdf:
                             path: /articles/10627/elife-10627-v1.pdf
                             expected: "articles/10627 article/10627 article/10627v1"
@@ -784,6 +777,8 @@ generic-cdn:
                         appendix-figure-supplement:
                             path: /articles/18215/elife-18215-app2-fig1-figsupp2-v2.tif
                             expected: "articles/18215 article/18215 article/18215v2"
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-download.jpg
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
                 article-unversioned:
                     url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "articles/\\1 article/\\1/videos"
