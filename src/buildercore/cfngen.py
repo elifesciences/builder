@@ -445,7 +445,7 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
         )
 
     @property
-    def non_empty(self):
+    def cloudformation_non_empty(self):
         return any([
             self.plus['Resources'],
             self.plus['Outputs'],
@@ -453,7 +453,6 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
             self.edit['Outputs'],
             self.minus['Resources'],
             self.minus['Outputs'],
-            self.terraform
         ])
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
