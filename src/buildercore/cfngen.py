@@ -325,14 +325,6 @@ def choose_alt_config(stackname):
         # instance_id exactly matches an alternative config. use that.
         return instance_id
 
-# TODO: prefer this single dispatch function for handling creation of template files
-def write_template(stackname, contents):
-    "writes any provider templates and returns a list of paths to templates"
-    # cfn = cloudformation.write_template(stackname, contents)
-    # tfm = terraform.write_template(stackname, contents)
-    # return [cfn, tfm]
-    pass
-
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"
     try:
