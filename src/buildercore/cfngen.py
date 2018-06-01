@@ -423,13 +423,14 @@ EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 # * what to add
 # * what to modify
 # * what to remove
-class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
+class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'terraform'])):
     @classmethod
     def from_cloudformation_and_terraform(cls, cloud_formation_delta, terraform_delta):
         return cls(
             cloud_formation_delta.plus,
             cloud_formation_delta.edit,
             cloud_formation_delta.minus,
+            cloud_formation_delta,
             terraform_delta
         )
 
@@ -444,7 +445,7 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
             self.minus['Outputs'],
         ])
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
-Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
+Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None, None)
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
@@ -551,7 +552,7 @@ def template_delta(context):
 def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = cloudformation.read_template(stackname)
-    cloudformation.apply_delta(template, delta)
+    cloudformation.apply_delta(template, delta.cloudformation)
     # TODO: possibly pre-write the cloudformation template
     # the source of truth can always be redownloaded from the CloudFormation API
     write_cloudformation_template(stackname, json.dumps(template))
