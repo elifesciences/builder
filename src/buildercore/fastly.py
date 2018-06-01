@@ -77,4 +77,9 @@ VCL_SNIPPETS = {
         content=_read_vcl_file('gzip-by-content-type-suffix.vcl'),
         type='fetch'
     ),
+    'office-webdav-200': FastlyVCLSnippet(
+        name='office-webdav-200',
+        content=_read_vcl_file('office-webdav-200.vcl'),
+        type='recv'
+    ),
 }
