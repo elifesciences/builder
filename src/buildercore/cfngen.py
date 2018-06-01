@@ -434,9 +434,6 @@ def template_delta(context):
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
     old_template = cloudformation.read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
-    new_terraform_template_file = terraform.EMPTY_TEMPLATE
-    if context['fastly']:
-        new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -527,7 +524,7 @@ def template_delta(context):
                 'Outputs': delta_minus_outputs,
             }
         ),
-        terraform.generate_delta(context, new_terraform_template_file)
+        terraform.generate_delta(context)
     )
 
 def _current_cloudformation_template(stackname):

@@ -340,14 +340,16 @@ class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
     def __str__(self):
         return self.plan_output
 
-def generate_delta(context, new_template):
+def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
-    if not context['fastly']:
+    # TODO: what if the new context doesn't have fastly, but it was there before?
+    if not new_context['fastly'] and not new_context['gcs']:
         return None
 
-    write_template(context['stackname'], new_template)
-    return plan(context)
+    new_template = render(new_context)
+    write_template(new_context['stackname'], new_template)
+    return plan(new_context)
 
 @only_if('fastly', 'gcs')
 def bootstrap(stackname, context):
@@ -356,6 +358,7 @@ def bootstrap(stackname, context):
 
 def plan(context):
     terraform = init(context['stackname'], context)
+    # TODO: explain double plan! Looks like a bug but it is to generate an output
     terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
     return_code, stdout, stderr = terraform.plan('out.plan', input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
     ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)

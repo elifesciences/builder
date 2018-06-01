@@ -38,8 +38,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         stackname = 'project-with-fastly-minimal--prod'
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
-        new_identical_template = terraform.render(context)
-        delta = terraform.generate_delta(context, new_identical_template)
+        delta = terraform.generate_delta(context)
         self.assertEqual(delta, terraform.TerraformDelta('Plan output: ...'))
 
     def test_fastly_template_minimal(self):
