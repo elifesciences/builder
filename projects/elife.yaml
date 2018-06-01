@@ -354,6 +354,16 @@ api-gateway:
             - 443
             # - 8000: # don't expose this to public. Kong uses this to proxy requests
             # - 8001: # don't ever expose to public. Kong uses this for API admin
+        fastly:
+            subdomains:
+                - "{instance}--cdn-gateway"
+            healthcheck:
+                path: /ping-fastly
+                check-interval: 30000
+                timeout: 2000
+            vcl:
+                - "original-host"
+                - "gzip-by-content-type-suffix"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -362,44 +372,16 @@ api-gateway:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
-        end2end:
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-gateway"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
-                vcl:
-                    - "original-host"
-                    - "gzip-by-content-type-suffix"
-        continuumtest:
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-gateway"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
-                vcl:
-                    - "original-host"
-                    - "gzip-by-content-type-suffix"
+            fastly: false
+        end2end: {}
+        continuumtest: {}
         prod:
             fastly:
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
-                vcl:
-                    - "original-host"
-                    - "gzip-by-content-type-suffix"
         test:
             fastly:
-                subdomains:
-                    - "{instance}--cdn-gateway"
                 gcslogging:
                     bucket: end2end-elife-fastly
                     path: api-gateway--test/
@@ -410,10 +392,6 @@ api-gateway:
                         404: "404.html"
                         # temporarily disabled because of non-ASCII characters
                         #503: "5xx.html"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 30000
-                    timeout: 2000
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
