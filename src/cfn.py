@@ -92,10 +92,7 @@ def update_infrastructure(stackname):
     context_handler.write_context(stackname, context)
 
     cloudformation.update_template(stackname, delta.cloudformation)
-
-    # Fastly via Terraform
-    if context.get('fastly', {}):
-        bootstrap.update_stack(stackname, service_list=['terraform'])
+    terraform.update_template(stackname)
 
     # TODO: move inside bootstrap.update_stack
     # EC2

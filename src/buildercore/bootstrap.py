@@ -380,7 +380,6 @@ def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
     # TODO: partition away at least ec2
-    # TODO: partition away also terraform
     # Has too many responsibilities:
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
@@ -388,7 +387,6 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
         ('sqs', update_sqs_stack),
-        ('terraform', terraform.update)
     ])
     service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)

@@ -6,7 +6,7 @@ import re
 import shutil
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
-from .context_handler import only_if
+from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, http_responses
 from . import fastly
 
@@ -406,6 +406,10 @@ def init(stackname, context):
         }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
+
+def update_template(stackname):
+    context = load_context(stackname)
+    update(stackname, context)
 
 @only_if('fastly', 'gcs')
 def update(stackname, context):

@@ -143,7 +143,7 @@ def apply_delta(template, delta):
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
         for title in delta.minus[component]:
             del template[component][title]
-_
+
 def _merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
