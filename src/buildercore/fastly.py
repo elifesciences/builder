@@ -72,6 +72,11 @@ def _read_vcl_file(name):
 MAIN_VCL_TEMPLATE = FastlyVCL.from_string(_read_vcl_file('main.vcl'))
 
 VCL_SNIPPETS = {
+    'original-host': FastlyVCLSnippet(
+        name='original-host',
+        content=_read_vcl_file('original-host.vcl'),
+        type='recv'
+    ),
     'gzip-by-content-type-suffix': FastlyVCLSnippet(
         name='gzip-by-content-type-suffix',
         content=_read_vcl_file('gzip-by-content-type-suffix.vcl'),
