@@ -89,7 +89,7 @@ class One(base.BaseCase):
         bootstrap.setup_ec2(self.stackname, self.context)
 
     # TODO: transform this into a cloudformation module test
-    #def test_bootstrap_update_template_no_updates(self):
+    # def test_bootstrap_update_template_no_updates(self):
     #    "a template with no changes can be updated with no problems"
     #    bootstrap.update_template(self.stackname, json.load(open(self.cfn_template, 'r')))
 

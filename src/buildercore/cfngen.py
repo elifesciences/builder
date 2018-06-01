@@ -22,7 +22,6 @@ import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
-from .config import STACK_DIR
 
 LOG = logging.getLogger(__name__)
 

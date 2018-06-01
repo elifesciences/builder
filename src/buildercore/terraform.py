@@ -358,12 +358,18 @@ def bootstrap(stackname, context):
 
 def plan(context):
     terraform = init(context['stackname'], context)
-    # TODO: explain double plan! Looks like a bug but it is to generate an output
-    terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
-    return_code, stdout, stderr = terraform.plan('out.plan', input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
-    ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)
-    ensure(stderr == '', "Stderr of `terraform plan out.plan` should be empty:\n%s" % stderr)
-    return TerraformDelta(_clean_stdout(stdout))
+
+    def _generate_plan():
+        terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
+        return 'out.plan'
+
+    def _explain_plan(plan_filename):
+        return_code, stdout, stderr = terraform.plan(plan_filename, input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
+        ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)
+        ensure(stderr == '', "Stderr of `terraform plan out.plan` should be empty:\n%s" % stderr)
+        return _clean_stdout(stdout)
+
+    return TerraformDelta(_explain_plan(_generate_plan()))
 
 def _clean_stdout(stdout):
     stdout = re.sub(re.compile(r"The plan command .* as an argument.", re.MULTILINE | re.DOTALL), "", stdout)

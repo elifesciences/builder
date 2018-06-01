@@ -169,7 +169,7 @@ def update_template(stackname, delta):
 
 def _update_template(stackname, template):
     parameters = []
-    pdata = project_data_for_stackname(stackname)
+    pdata = core.project_data_for_stackname(stackname)
     if pdata['aws']['ec2']:
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
     try:

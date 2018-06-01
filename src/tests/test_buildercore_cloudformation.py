@@ -37,4 +37,3 @@ class ApplyDelta(base.BaseCase):
         }
         cloudformation.apply_delta(template, cloudformation.CloudFormationDelta({'Outputs': {'B': 2}}, {}, {}))
         self.assertEqual(template, {'Resources': {'A': 1}, 'Outputs': {'B': 2}})
-
