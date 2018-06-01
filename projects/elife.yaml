@@ -137,7 +137,8 @@ defaults:
             gcslogging: false
             healthcheck: false
             errors: false
-            vcl: []
+            vcl:
+                - "original-host"
             surrogate-keys: {}
         subdomains: []
         elasticache:
@@ -370,6 +371,7 @@ api-gateway:
                     check-interval: 30000
                     timeout: 2000
                 vcl:
+                    - "original-host"
                     - "gzip-by-content-type-suffix"
         continuumtest:
             fastly:
@@ -380,6 +382,7 @@ api-gateway:
                     check-interval: 30000
                     timeout: 2000
                 vcl:
+                    - "original-host"
                     - "gzip-by-content-type-suffix"
         prod:
             fastly:
@@ -391,6 +394,7 @@ api-gateway:
                     check-interval: 30000
                     timeout: 2000
                 vcl:
+                    - "original-host"
                     - "gzip-by-content-type-suffix"
         test:
             fastly:
