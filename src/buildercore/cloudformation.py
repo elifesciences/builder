@@ -92,9 +92,9 @@ def bootstrap(stackname, context):
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         return
 
-    # if core.stack_is_active(stackname):
-    #    LOG.info("stack exists") # avoid on_start handler
-    #    return True
+    if core.stack_is_active(stackname):
+        LOG.info("stack exists") # avoid on_start handler
+        return True
 
     with stack_creation(stackname, on_start=on_start, on_error=on_error):
         conn = core.boto_conn(stackname, 'cloudformation')
