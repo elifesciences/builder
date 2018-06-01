@@ -781,6 +781,9 @@ generic-cdn:
                         article-figure-supplement:
                             path: /articles/00666/elife-00666-fig2-figsupp1-v1.tif
                             expected: "articles/00666 article/00666 article/00666v1"
+                        appendix-figure-supplement:
+                            path: /articles/18215/elife-18215-app2-fig1-figsupp2-v2.tif
+                            expected: "articles/18215 article/18215 article/18215v2"
                 article-unversioned:
                     url: "^/articles/([0-9]+)/elife-([0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "articles/\\1 article/\\1/videos"
