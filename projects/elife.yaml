@@ -785,7 +785,7 @@ generic-cdn:
                             path: /articles/18215/elife-18215-app2-fig1-figsupp2-v2.tif
                             expected: "articles/18215 article/18215 article/18215v2"
                 article-unversioned:
-                    url: "^/articles/([0-9]+)/elife-([0-9]+)-(video|media)([0-9]+)\\.(.+)$"
+                    url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "articles/\\1 article/\\1/videos"
                     samples:
                         article-video:
@@ -794,6 +794,9 @@ generic-cdn:
                         article-still:
                             path: /articles/07398/elife-07398-media1.jpg
                             expected: "articles/07398 article/07398/videos"
+                        article-figure-video:
+                            path: /articles/26866/elife-26866-fig3-video1.mp4
+                            expected: "articles/26866 article/26866/videos"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
@@ -1573,7 +1576,7 @@ iiif:
                             path: /lax:00666/elife-00666-fig2-figsupp1-v1.tif
                             expected: "article/00666 article/00666v1"
                 article-id-unversioned:
-                    url: "^/lax:([0-9]+)/elife-([0-9]+)-(video|media)([0-9]+)\\.(.+)$"
+                    url: "^/lax:([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "article/\\1 article/\\1/videos"
                     samples:
                         video-still:
@@ -1582,6 +1585,9 @@ iiif:
                         another-video-still:
                             path: /lax:07398/elife-07398-media1.jpg
                             expected: "article/07398 article/07398/videos"
+                        article-figure-video-still:
+                            path: /lax:26866/elife-26866-fig3-video1.jpg
+                            expected: "article/26866 article/26866/videos"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
