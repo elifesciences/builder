@@ -123,6 +123,14 @@ def _wait_until_in_progress(stackname):
     ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
+def read_template(stackname):
+    "returns the contents of a cloudformation template as a python data structure"
+    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    return json.load(open(output_fname, 'r'))
+
+def update_template(stackname, delta):
+    pass
+
 def destroy(stackname, context):
     stack_body = core.stack_json(stackname)
     if json.loads(stack_body) == EMPTY_TEMPLATE:

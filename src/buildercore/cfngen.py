@@ -344,17 +344,6 @@ def write_template(stackname, contents):
     # return [cfn, tfm]
     pass
 
-# TODO: move implementation to cloudformation.py
-# TODO: perhaps add terraform support?
-def read_template(stackname):
-    "returns the contents of a cloudformation template as a python data structure"
-    output_fname = os.path.join(STACK_DIR, stackname + ".json")
-    return json.load(open(output_fname, 'r'))
-
-#
-#
-#
-
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"
     try:
@@ -461,7 +450,7 @@ def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
-    old_template = read_template(context['stackname'])
+    old_template = cloudformation.read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
     new_terraform_template_file = terraform.EMPTY_TEMPLATE
     if context['fastly']:
@@ -561,7 +550,7 @@ def template_delta(context):
 
 def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
-    template = read_template(stackname)
+    template = cloudformation.read_template(stackname)
     apply_delta(template, delta)
     # TODO: possibly pre-write the cloudformation template
     # the source of truth can always be redownloaded from the CloudFormation API
