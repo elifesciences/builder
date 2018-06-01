@@ -160,7 +160,12 @@ def write_template(stackname, contents):
     return output_fname
 
 def update_template(stackname, delta):
-    pass
+    if delta.cloudformation_non_empty:
+        new_template = merge_delta(stackname, delta)
+        _update_template(stackname, new_template)
+    else:
+        # attempting to apply an empty change set would result in an error
+        LOG.info("Nothing to update on CloudFormation")
 
 def _update_template(stackname, template):
     parameters = []

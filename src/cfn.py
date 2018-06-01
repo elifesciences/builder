@@ -91,14 +91,7 @@ def update_infrastructure(stackname):
 
     context_handler.write_context(stackname, context)
 
-    # TODO: move to cloudformation module?
-    # bootstrap.update_stack(stackname, service_list=['cloudformation'])?
-    if delta.cloudformation_non_empty:
-        new_template = cloudformation.merge_delta(stackname, delta)
-        cloudformation._update_template(stackname, new_template)
-    else:
-        # attempting to apply an empty change set would result in an error
-        LOG.info("Nothing to update on CloudFormation")
+    cloudformation.update_template(stackname, delta)
 
     # Fastly via Terraform
     if context.get('fastly', {}):
