@@ -144,6 +144,12 @@ def apply_delta(template, delta):
         for title in delta.minus[component]:
             del template[component][title]
 
+def write_template(stackname, contents):
+    "writes a json version of the python cloudformation template to the stacks directory"
+    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    open(output_fname, 'w').write(contents)
+    return output_fname
+
 def update_template(stackname, delta):
     pass
 

@@ -325,17 +325,6 @@ def choose_alt_config(stackname):
         # instance_id exactly matches an alternative config. use that.
         return instance_id
 
-#
-#
-#
-
-# TODO: move to cloudformation.py
-def write_cloudformation_template(stackname, contents):
-    "writes a json version of the python cloudformation template to the stacks directory"
-    output_fname = os.path.join(STACK_DIR, stackname + ".json")
-    open(output_fname, 'w').write(contents)
-    return output_fname
-
 # TODO: prefer this single dispatch function for handling creation of template files
 def write_template(stackname, contents):
     "writes any provider templates and returns a list of paths to templates"
@@ -404,7 +393,7 @@ def generate_stack(pname, **more_context):
     stackname = context['stackname']
 
     context_handler.write_context(stackname, context)
-    cloudformation_template_file = write_cloudformation_template(stackname, cloudformation_template)
+    cloudformation_template_file = cloudformation.write_template(stackname, cloudformation_template)
     terraform_template_file = terraform.write_template(stackname, terraform_template)
     return context, cloudformation_template_file, terraform_template_file
 
@@ -555,7 +544,7 @@ def merge_delta(stackname, delta):
     cloudformation.apply_delta(template, delta.cloudformation)
     # TODO: possibly pre-write the cloudformation template
     # the source of truth can always be redownloaded from the CloudFormation API
-    write_cloudformation_template(stackname, json.dumps(template))
+    cloudformation.write_template(stackname, json.dumps(template))
     # nothing to do on Terraform as the plan file is already there
     return template
 
@@ -571,7 +560,7 @@ def _current_cloudformation_template(stackname):
         raise
 
 def download_cloudformation_template(stackname):
-    write_cloudformation_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
+    cloudformation.write_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
 
 def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)

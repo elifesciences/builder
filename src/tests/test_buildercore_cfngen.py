@@ -173,5 +173,5 @@ class TestUpdates(base.BaseCase):
         if not in_memory:
             context_handler.write_context(stackname, context)
             template = cloudformation.render_template(context)
-            cfngen.write_cloudformation_template(stackname, template)
+            cloudformation.write_template(stackname, template)
         return context
