@@ -1570,6 +1570,9 @@ iiif:
                         article-figure-supplement:
                             path: /lax:00666/elife-00666-fig2-figsupp1-v1.tif
                             expected: "article/00666 article/00666v1"
+                        appendix-figure-supplement:
+                            path: /lax:18215/elife-18215-app2-fig1-figsupp2-v2.tif
+                            expected: "article/18215 article/18215v2"
                 article-id-unversioned:
                     url: "^/lax:([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "article/\\1 article/\\1/videos"
