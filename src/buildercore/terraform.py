@@ -72,8 +72,17 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
-    if not context['fastly']:
+    generated_template = render_fastly(context)
+    generated_template.update(render_gcp(context))
+
+    if not generated_template:
         return EMPTY_TEMPLATE
+
+    return json.dumps(generated_template)
+
+def render_fastly(context):
+    if not context['fastly']:
+        return {}
 
     backends = []
     conditions = []
@@ -254,7 +263,7 @@ def render(context):
     if data:
         tf_file['data'] = data
 
-    return json.dumps(tf_file)
+    return tf_file
 
 def _fastly_backend(hostname, name, request_condition=None):
     backend_resource = {
@@ -294,8 +303,22 @@ def _generate_vcl_file(stackname, content, key):
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 
-def _add_vcl_inclusion(vcl, names_to_sections):
-    pass
+def render_gcp(context):
+    if not context['gcs']:
+        return {}
+
+    return {
+        'resource': {
+            'google_storage_bucket': {
+                bucket_name: {
+                    'name': bucket_name,
+                    'location': 'us-east4',
+                    'storage_class': 'REGIONAL',
+                    'project': options['project'],
+                } for bucket_name, options in context['gcs'].items()
+            },
+        },
+    }
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
@@ -326,7 +349,7 @@ def generate_delta(context, new_template):
     write_template(context['stackname'], new_template)
     return plan(context)
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def bootstrap(stackname, context):
     plan(context)
     update(stackname, context)
@@ -361,11 +384,18 @@ def init(stackname, context):
             },
         }))
     with _open(stackname, 'providers', mode='w') as fp:
+        # TODO: possibly remove unused providers
+        # Terraform already prunes them when running, but would
+        # simplify the .cfn/terraform/$stackname/ files
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                },
+                'google': {
+                    'version': "= %s" % '1.13.0',
+                    'region': 'us-east4',
                 },
                 'vault': {
                     'address': context['vault']['address'],
@@ -377,13 +407,13 @@ def init(stackname, context):
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)

@@ -6,7 +6,7 @@ import fabric.exceptions
 import fabric.state
 from fabric.contrib import files
 import utils, buildvars
-from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
+from decorators import requires_project, requires_aws_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
@@ -21,9 +21,10 @@ def strtobool(x):
     return x if isinstance(x, bool) else bool(_strtobool(x))
 
 @task
-@requires_steady_stack
+# TODO: move to a lower level if possible
+#@requires_steady_stack
 def destroy(stackname):
-    "tell aws to delete a stack."
+    "Delete a stack of resources."
     print('this is a BIG DEAL. you cannot recover from this.')
     print('type the name of the stack to continue or anything else to quit')
     uin = utils.get_input('> ')
@@ -33,12 +34,12 @@ def destroy(stackname):
         print('got:')
         print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
-    return bootstrap.delete_stack(stackname)
+    return bootstrap.destroy(stackname)
 
 @task
 def ensure_destroyed(stackname):
     try:
-        return bootstrap.delete_stack(stackname)
+        return bootstrap.destroy(stackname)
     except context_handler.MissingContextFile as e:
         LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:

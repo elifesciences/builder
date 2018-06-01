@@ -14,15 +14,15 @@ Case 3: Stack updates
 We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
+import logging
 import os, json, copy
 import re
 from collections import OrderedDict, namedtuple
+import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
 from .config import STACK_DIR
-
-import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -45,6 +45,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     project_data = project.project_data(pname)
     if alt_config and project_data.get('aws-alt', {}).get(alt_config):
         project_data = project.set_project_alt(project_data, 'aws', alt_config)
+    if project_data.get('aws-alt'):
+        del project_data['aws-alt']
 
     defaults = {
         'project_name': pname,
@@ -78,6 +80,11 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'ext': False,
         'cloudfront': False,
         'elasticache': False,
+        # future use: decide at context generation time how many infrastructure tools are we going to use for this stackname
+        #'infrastructure': {
+        #    'cloudformation': False,
+        #    'terraform': False,
+        #}
     }
 
     context = copy.deepcopy(defaults)
@@ -152,6 +159,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     build_context_cloudfront(context, parameterize=_parameterize)
     build_context_fastly(context, parameterize=_parameterize)
+    build_context_gcp(context, parameterize=_parameterize)
     build_context_subdomains(context)
     build_context_elasticache(context)
     build_context_vault(context)
@@ -278,6 +286,18 @@ def build_context_fastly(context, parameterize):
     else:
         context['fastly'] = False
 
+def build_context_gcp(context, parameterize):
+    if 'gcs' in context['project']['aws']:
+        context['gcs'] = OrderedDict()
+        for bucket_template_name, options in context['project']['aws']['gcs'].items():
+            bucket_name = parameterize(bucket_template_name)
+            context['gcs'][bucket_name] = {
+                'project': options['project'],
+            }
+    else:
+        context['gcs'] = False
+
+
 def complete_domain(host, default_main):
     is_main = host == ''
     is_complete = host.count(".") > 0
@@ -362,6 +382,7 @@ def validate_project(pname, **extra):
     template = quick_render(pname)
     pdata = project.project_data(pname)
     altconfig = None
+
     cloudformation.validate_template(pname, template)
     more_validation(template)
     # validate all alternative configurations
@@ -568,7 +589,13 @@ def apply_delta(template, delta):
 def _current_cloudformation_template(stackname):
     "retrieves a template from the CloudFormation API, using it as the source of truth"
     cfn = core.boto_conn(stackname, 'cloudformation', client=True)
-    return cfn.get_template(StackName=stackname)['TemplateBody']
+    try:
+        return cfn.get_template(StackName=stackname)['TemplateBody']
+    except botocore.exceptions.ClientError as e:
+        if e.response.get('Error', {}).get('Code') == 'ValidationError':
+            # CloudFormation template is not used for this stackname
+            return cloudformation.EMPTY_TEMPLATE
+        raise
 
 def download_cloudformation_template(stackname):
     write_cloudformation_template(stackname, json.dumps(_current_cloudformation_template(stackname)))

@@ -6,11 +6,9 @@ without the extension."""
 
 import os, json, re
 from os.path import join
-from pprint import pformat
-from functools import partial
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, keypair, bvars, core, context_handler, project, terraform, sns as snsmod
+from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
@@ -70,88 +68,22 @@ def prep_ec2_instance():
 # provision stack
 #
 
-def _noop():
-    pass
-
 def create_stack(stackname):
-    pdata = project_data_for_stackname(stackname)
-    parameters = []
-    on_start = _noop
-    on_error = _noop
-    if pdata['aws']['ec2']:
-        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
-        on_start = lambda: keypair.create_keypair(stackname)
-        on_error = lambda: keypair.delete_keypair(stackname)
-
-    return _create_generic_stack(stackname, parameters, on_start, on_error)
-
-def _create_generic_stack(stackname, parameters=None, on_start=_noop, on_error=_noop):
     "transforms templates stored on the filesystem into real resources (AWS via CloudFormation, Terraform)"
-    if core.stack_is_active(stackname):
-        LOG.info("stack exists") # avoid on_start handler
-        return True
-
-    parameters = parameters or []
 
     LOG.info('creating stack %r', stackname)
-    stack_body = core.stack_json(stackname)
     try:
-        on_start()
-        conn = core.boto_conn(stackname, 'cloudformation')
-        # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
-        conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
-        _wait_until_in_progress(stackname)
         context = context_handler.load_context(stackname)
-        # setup various resources after creation, where necessary
+        cloudformation.bootstrap(stackname, context)
         terraform.bootstrap(stackname, context)
+        # setup various resources after creation, where necessary
         setup_ec2(stackname, context)
         return True
-
-    except StackTakingALongTimeToComplete as err:
-        LOG.info("Stack taking a long time to complete: %s", err)
-        raise
-
-    except botocore.exceptions.ClientError as err:
-        if err.response['Error']['Code'] == 'AlreadyExistsException':
-            LOG.debug(err)
-            return False
-        LOG.exception("unhandled boto ClientError attempting to create stack", extra={'stackname': stackname, 'parameters': parameters, 'response': err.response})
-        on_error()
-        raise
 
     except KeyboardInterrupt:
         LOG.debug("caught keyboard interrupt, cancelling...")
         return False
 
-    except BaseException:
-        LOG.exception("unhandled exception attempting to create stack", extra={'stackname': stackname})
-        on_error()
-        raise
-
-class StackTakingALongTimeToComplete(RuntimeError):
-    pass
-
-def _wait_until_in_progress(stackname):
-    def is_updating(stackname):
-        stack_status = core.describe_stack(stackname).stack_status
-        LOG.info("Stack status: %s", stack_status)
-        return stack_status in ['CREATE_IN_PROGRESS']
-    utils.call_while(
-        partial(is_updating, stackname),
-        timeout=7200,
-        update_msg='Waiting for AWS to finish creating stack ...',
-        exception_class=StackTakingALongTimeToComplete
-    )
-
-    final_stack = core.describe_stack(stackname)
-    # NOTE: stack.events.all|filter|limit can take 5+ seconds to complete regardless of events returned
-    events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
-    ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
-           "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
-
-#
-#
-#
 
 @updates('ec2')
 def setup_ec2(stackname, context):
@@ -268,12 +200,15 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns_client.set_subscription_attributes(SubscriptionArn=subscription_arn, AttributeName='RawMessageDelivery', AttributeValue='true')
 
+@updates('sqs')
+@core.requires_active_stack
 def update_sqs_stack(stackname, context, **kwargs):
     region = context['project']['aws']['region']
     unsub_sqs(stackname, context['sqs'], region)
     sub_sqs(stackname, context['sqs'], region)
 
 @updates('s3')
+@core.requires_active_stack
 def update_s3_stack(stackname, context, **kwargs):
     """
     Connects S3 buckets (existing or created by Cloud Formation) to SQS queues
@@ -468,7 +403,6 @@ def write_environment_info(stackname, overwrite=False):
 #
 #
 
-@core.requires_active_stack
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
@@ -536,6 +470,7 @@ def upload_master_configuration(master_stack, master_configuration_data):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
 @updates('ec2')
+@core.requires_active_stack
 def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, **kwargs):
     """installs/updates the ec2 instance attached to the specified stackname.
 
@@ -619,31 +554,6 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
 
     stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
-@core.requires_stack_file
-def delete_stack_file(stackname):
-    # TODO: does this need the @core.requires_active_stack decorator?
-    try:
-        core.describe_stack(stackname) # triggers exception if NOT exists
-        LOG.warning('stack %r still exists, refusing to delete stack files. delete active stack first.', stackname)
-        return
-    except botocore.exceptions.ClientError as ex:
-        if not ex.response['Error']['Message'].endswith('does not exist'):
-            LOG.exception("unhandled exception attempting to confirm if stack %r exists", stackname)
-            raise
-    ext_list = [
-        ".pem",
-        ".pub",
-        ".json",
-        ".yaml", # yaml files are now deprecated
-    ]
-    paths = [join(config.STACK_DIR, stackname + ext) for ext in ext_list]
-    paths = filter(os.path.exists, paths)
-
-    def _unlink(path):
-        os.unlink(path)
-        return not os.path.exists(path)
-    return dict(zip(paths, map(_unlink, paths)))
-
 def remove_minion_key(stackname):
     "removes all keys for all nodes of the given stackname from the master server"
     pdata = project_data_for_stackname(stackname)
@@ -683,30 +593,12 @@ def remove_all_orphaned_keys(master_stackname):
             fname = os.path.basename(path) # prevent accidental deletion of anything not a key
             sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
-def delete_stack(stackname):
-    try:
-        context = context_handler.load_context(stackname)
-        terraform.destroy(stackname, context)
-        core.describe_stack(stackname).delete()
+def destroy(stackname):
+    context = context_handler.load_context(stackname)
+    terraform.destroy(stackname, context)
+    cloudformation.destroy(stackname, context)
 
-        def is_deleting(stackname):
-            try:
-                return core.describe_stack(stackname).stack_status in ['DELETE_IN_PROGRESS']
-            except botocore.exceptions.ClientError as err:
-                if err.response['Error']['Message'].endswith('does not exist'):
-                    return False
-                raise # not sure what happened, but we're not handling it here. die.
-        utils.call_while(partial(is_deleting, stackname), timeout=3600, update_msg='Waiting for AWS to finish deleting stack ...')
-        # don't do this. requires master server access and would prevent regular users deleting stacks
-        # remove_minion_key(stackname)
-        keypair.delete_keypair(stackname) # deletes the keypair wherever it can find it (locally, remotely)
-        delete_stack_file(stackname) # deletes the local cloudformation template
-        delete_dns(stackname)
-        LOG.info("stack %r deleted", stackname)
-
-    except botocore.exceptions.ClientError as ex:
-        msg = "[%s: %s] %s (request-id: %s)"
-        meta = ex.response['ResponseMetadata']
-        err = ex.response['Error']
-        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
-        LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
+    # don't do this. requires master server access and would prevent regular users deleting stacks
+    # remove_minion_key(stackname)
+    delete_dns(stackname)
+    LOG.info("stack %r deleted", stackname)

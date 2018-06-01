@@ -276,6 +276,21 @@ class TestBuildercoreTerraform(base.BaseCase):
         data = template['data']['vault_generic_secret']['fastly-gcs-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
 
+    def test_gcp_template(self):
+        extra = {
+            'stackname': 'project-on-gcp--prod',
+        }
+        context = cfngen.build_context('project-on-gcp', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['google_storage_bucket']['widgets-prod']
+        self.assertEqual(service, {
+            'name': 'widgets-prod',
+            'location': 'us-east4',
+            'storage_class': 'REGIONAL',
+            'project': 'elife-something',
+        })
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(
