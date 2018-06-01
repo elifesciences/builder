@@ -758,30 +758,40 @@ generic-cdn:
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
             surrogate-keys:
-                article-assets:
-                    url: "^/articles/([0-9]+)/elife-([0-9]+)-([a-z0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1 article/\\1v\\4"
+                article-versioned-assets:
+                    url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-v([0-9]+)\\.(.+)$"
+                    value: "articles/\\1 article/\\1 article/\\1v\\3"
                     samples:
                         article-asset:
                             path: /articles/10627/elife-10627-fig1-v1.tif
                             expected: "articles/10627 article/10627 article/10627v1"
-                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-download.jpg
-                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
-
-                article-pdf-xml:
-                    url: "^/articles/([0-9]+)/elife-([0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1 article/\\1v\\3"
-                    samples:
                         article-pdf:
                             path: /articles/10627/elife-10627-v1.pdf
                             expected: "articles/10627 article/10627 article/10627v1"
+                        article-figures-pdf:
+                            path: /articles/00666/elife-00666-figures-v1.pdf
+                            expected: "articles/00666 article/00666 article/00666v1"
+                        article-figure-supplement:
+                            path: /articles/00666/elife-00666-fig2-figsupp1-v1.tif
+                            expected: "articles/00666 article/00666 article/00666v1"
+                        appendix-figure-supplement:
+                            path: /articles/18215/elife-18215-app2-fig1-figsupp2-v2.tif
+                            expected: "articles/18215 article/18215 article/18215v2"
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-download.jpg
+                        # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
                 article-unversioned:
-                    url: "^/articles/([0-9]+)/elife-([0-9]+)-video([0-9]+)\\.(.+)$"
+                    url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "articles/\\1 article/\\1/videos"
                     samples:
-                        article-video-or-still:
+                        article-video:
                             path: /articles/34773/elife-34773-video2.mp4
                             expected: "articles/34773 article/34773/videos"
+                        article-still:
+                            path: /articles/07398/elife-07398-media1.jpg
+                            expected: "articles/07398 article/07398/videos"
+                        article-figure-video:
+                            path: /articles/26866/elife-26866-fig3-video1.mp4
+                            expected: "articles/26866 article/26866/videos"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
@@ -1551,20 +1561,31 @@ iiif:
                 timeout: 2000
             surrogate-keys:
                 article-id-versioned:
-                    url: "^/lax:([0-9]+)/elife-([0-9]+)-([a-z0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "article/\\1 article/\\1v\\4"
+                    url: "^/lax:([0-9]+)/elife-([a-z0-9-]+)-v([0-9]+)\\.(.+)$"
+                    value: "article/\\1 article/\\1v\\3"
                     samples:
                         figure:
                             path: /lax:10627/elife-10627-fig1-v1.tif/full/1500,/0/default.jpg
                             expected: "article/10627 article/10627v1"
-
+                        article-figure-supplement:
+                            path: /lax:00666/elife-00666-fig2-figsupp1-v1.tif
+                            expected: "article/00666 article/00666v1"
+                        appendix-figure-supplement:
+                            path: /lax:18215/elife-18215-app2-fig1-figsupp2-v2.tif
+                            expected: "article/18215 article/18215v2"
                 article-id-unversioned:
-                    url: "^/lax:([0-9]+)/elife-([0-9]+)-video([0-9]+)\\.(.+)$"
+                    url: "^/lax:([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "article/\\1 article/\\1/videos"
                     samples:
                         video-still:
                             path: /lax:34773/elife-34773-video2.jpg/full/639,/0/default.jpg
                             expected: "article/34773 article/34773/videos"
+                        another-video-still:
+                            path: /lax:07398/elife-07398-media1.jpg
+                            expected: "article/07398 article/07398/videos"
+                        article-figure-video-still:
+                            path: /lax:26866/elife-26866-fig3-video1.jpg
+                            expected: "article/26866 article/26866/videos"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
