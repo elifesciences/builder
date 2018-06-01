@@ -538,16 +538,6 @@ def template_delta(context):
         terraform.generate_delta(context, new_terraform_template_file)
     )
 
-def merge_delta(stackname, delta):
-    """Merges the new resources in delta in the local copy of the Cloudformation  template"""
-    template = cloudformation.read_template(stackname)
-    cloudformation.apply_delta(template, delta.cloudformation)
-    # TODO: possibly pre-write the cloudformation template
-    # the source of truth can always be redownloaded from the CloudFormation API
-    cloudformation.write_template(stackname, json.dumps(template))
-    # nothing to do on Terraform as the plan file is already there
-    return template
-
 def _current_cloudformation_template(stackname):
     "retrieves a template from the CloudFormation API, using it as the source of truth"
     cfn = core.boto_conn(stackname, 'cloudformation', client=True)

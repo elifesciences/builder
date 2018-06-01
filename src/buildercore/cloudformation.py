@@ -143,6 +143,15 @@ def apply_delta(template, delta):
         ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
         for title in delta.minus[component]:
             del template[component][title]
+_
+def merge_delta(stackname, delta):
+    """Merges the new resources in delta in the local copy of the Cloudformation  template"""
+    template = read_template(stackname)
+    apply_delta(template, delta.cloudformation)
+    # TODO: possibly pre-write the cloudformation template
+    # the source of truth can always be redownloaded from the CloudFormation API
+    write_template(stackname, json.dumps(template))
+    return template
 
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"

@@ -99,7 +99,7 @@ def update_infrastructure(stackname):
     # TODO: move to cloudformation module?
     # bootstrap.update_stack(stackname, service_list=['cloudformation'])?
     if delta.cloudformation_non_empty:
-        new_template = cfngen.merge_delta(stackname, delta)
+        new_template = cloudformation.merge_delta(stackname, delta)
         bootstrap.update_template(stackname, new_template)
     else:
         # attempting to apply an empty change set would result in an error
