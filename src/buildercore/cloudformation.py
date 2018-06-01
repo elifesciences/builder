@@ -144,10 +144,10 @@ def apply_delta(template, delta):
         for title in delta.minus[component]:
             del template[component][title]
 _
-def merge_delta(stackname, delta):
+def _merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = read_template(stackname)
-    apply_delta(template, delta.cloudformation)
+    apply_delta(template, delta)
     # TODO: possibly pre-write the cloudformation template
     # the source of truth can always be redownloaded from the CloudFormation API
     write_template(stackname, json.dumps(template))
@@ -160,8 +160,8 @@ def write_template(stackname, contents):
     return output_fname
 
 def update_template(stackname, delta):
-    if delta.cloudformation_non_empty:
-        new_template = merge_delta(stackname, delta)
+    if delta.non_empty:
+        new_template = _merge_delta(stackname, delta.cloudformation)
         _update_template(stackname, new_template)
     else:
         # attempting to apply an empty change set would result in an error

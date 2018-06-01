@@ -91,7 +91,7 @@ def update_infrastructure(stackname):
 
     context_handler.write_context(stackname, context)
 
-    cloudformation.update_template(stackname, delta)
+    cloudformation.update_template(stackname, delta.cloudformation)
 
     # Fastly via Terraform
     if context.get('fastly', {}):
