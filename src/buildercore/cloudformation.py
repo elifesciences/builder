@@ -128,6 +128,22 @@ def read_template(stackname):
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
     return json.load(open(output_fname, 'r'))
 
+def apply_delta(template, delta):
+    for component in delta.plus:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        data = template.get(component, {})
+        data.update(delta.plus[component])
+        template[component] = data
+    for component in delta.edit:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        data = template.get(component, {})
+        data.update(delta.edit[component])
+        template[component] = data
+    for component in delta.minus:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        for title in delta.minus[component]:
+            del template[component][title]
+
 def update_template(stackname, delta):
     pass
 

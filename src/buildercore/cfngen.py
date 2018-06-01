@@ -551,28 +551,12 @@ def template_delta(context):
 def merge_delta(stackname, delta):
     """Merges the new resources in delta in the local copy of the Cloudformation  template"""
     template = cloudformation.read_template(stackname)
-    apply_delta(template, delta)
+    cloudformation.apply_delta(template, delta)
     # TODO: possibly pre-write the cloudformation template
     # the source of truth can always be redownloaded from the CloudFormation API
     write_cloudformation_template(stackname, json.dumps(template))
     # nothing to do on Terraform as the plan file is already there
     return template
-
-def apply_delta(template, delta):
-    for component in delta.plus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
-        data = template.get(component, {})
-        data.update(delta.plus[component])
-        template[component] = data
-    for component in delta.edit:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
-        data = template.get(component, {})
-        data.update(delta.edit[component])
-        template[component] = data
-    for component in delta.minus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
-        for title in delta.minus[component]:
-            del template[component][title]
 
 def _current_cloudformation_template(stackname):
     "retrieves a template from the CloudFormation API, using it as the source of truth"
