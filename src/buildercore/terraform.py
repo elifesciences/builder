@@ -431,7 +431,6 @@ def update_template(stackname):
 
 @only_if('fastly', 'gcs')
 def update(stackname, context):
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
