@@ -5,7 +5,7 @@ from os.path import exists, join, basename
 import re
 import shutil
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
+from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, http_responses
 from . import fastly
