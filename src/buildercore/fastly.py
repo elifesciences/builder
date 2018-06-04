@@ -89,4 +89,10 @@ VCL_SNIPPETS = {
         type='fetch',
         hook='after'
     ),
+    'office-webdav-200': FastlyVCLSnippet(
+        name='office-webdav-200',
+        content=_read_vcl_file('office-webdav-200.vcl'),
+        type='recv',
+        hook='after'
+    ),
 }
