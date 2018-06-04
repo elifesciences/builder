@@ -11,7 +11,7 @@ from datetime import datetime
 from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_pem, stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, call_while, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
+from .utils import first, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, show
@@ -336,33 +336,6 @@ def master_data(region):
 def master(region, key):
     return master_data(region)[key]
 
-#
-# bootstrap stack
-#
-
-# TODO: consider moving to cloudformation.py
-def update_template(stackname, template):
-    parameters = []
-    pdata = project_data_for_stackname(stackname)
-    if pdata['aws']['ec2']:
-        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
-    try:
-        conn = core.describe_stack(stackname)
-        conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
-    except botocore.exceptions.ClientError as ex:
-        # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
-        if ex.response['Error']['Message'] == 'No updates are to be performed.':
-            LOG.info(str(ex), extra={'response': ex.response})
-            return
-        raise
-
-    def stack_is_updating():
-        return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
-
-    waiting = "waiting for template of %s to be updated" % stackname
-    done = "template of %s is in state UPDATE_COMPLETE" % stackname
-    call_while(stack_is_updating, interval=2, timeout=7200, update_msg=waiting, done_msg=done)
-
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
@@ -407,7 +380,6 @@ def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)
     then only those services will be updated"""
     # TODO: partition away at least ec2
-    # TODO: partition away also terraform
     # Has too many responsibilities:
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
@@ -415,7 +387,6 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('ec2', update_ec2_stack),
         ('s3', update_s3_stack),
         ('sqs', update_sqs_stack),
-        ('terraform', terraform.update)
     ])
     service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
