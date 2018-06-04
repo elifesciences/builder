@@ -6,8 +6,10 @@ import fabric.exceptions
 import fabric.state
 from fabric.contrib import files
 import utils, buildvars
-from decorators import requires_project, requires_aws_stack, requires_steady_stack, echo_output, setdefault, debugtask, timeit
+from decorators import requires_project, requires_aws_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
+# potentially remove to go through buildercore.bootstrap?
+from buildercore import cloudformation, terraform
 from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
 from buildercore.decorators import PredicateException
@@ -21,9 +23,10 @@ def strtobool(x):
     return x if isinstance(x, bool) else bool(_strtobool(x))
 
 @task
-@requires_steady_stack
+# TODO: move to a lower level if possible
+#@requires_steady_stack
 def destroy(stackname):
-    "tell aws to delete a stack."
+    "Delete a stack of resources."
     print('this is a BIG DEAL. you cannot recover from this.')
     print('type the name of the stack to continue or anything else to quit')
     uin = utils.get_input('> ')
@@ -33,12 +36,12 @@ def destroy(stackname):
         print('got:')
         print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
-    return bootstrap.delete_stack(stackname)
+    return bootstrap.destroy(stackname)
 
 @task
 def ensure_destroyed(stackname):
     try:
-        return bootstrap.delete_stack(stackname)
+        return bootstrap.destroy(stackname)
     except context_handler.MissingContextFile as e:
         LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:
@@ -57,11 +60,6 @@ def update(stackname, autostart="0", concurrency='serial'):
     if not instances:
         return
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
-
-@task
-def update_template(stackname):
-    print('This task has been renamed to update_infrastructure.')
-    exit(1)
 
 @task
 @timeit
@@ -93,18 +91,8 @@ def update_infrastructure(stackname):
 
     context_handler.write_context(stackname, context)
 
-    # TODO: move to cloudformation module?
-    # bootstrap.update_stack(stackname, service_list=['cloudformation'])?
-    if delta.non_empty:
-        new_template = cfngen.merge_delta(stackname, delta)
-        bootstrap.update_template(stackname, new_template)
-    else:
-        # attempting to apply an empty change set would result in an error
-        LOG.info("Nothing to update on CloudFormation")
-
-    # Fastly via Terraform
-    if context.get('fastly', {}):
-        bootstrap.update_stack(stackname, service_list=['terraform'])
+    cloudformation.update_template(stackname, delta.cloudformation)
+    terraform.update_template(stackname)
 
     # TODO: move inside bootstrap.update_stack
     # EC2

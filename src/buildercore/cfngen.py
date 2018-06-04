@@ -14,15 +14,14 @@ Case 3: Stack updates
 We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
+import logging
 import os, json, copy
 import re
 from collections import OrderedDict, namedtuple
+import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
-from .config import STACK_DIR
-
-import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -45,6 +44,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     project_data = project.project_data(pname)
     if alt_config and project_data.get('aws-alt', {}).get(alt_config):
         project_data = project.set_project_alt(project_data, 'aws', alt_config)
+    if project_data.get('aws-alt'):
+        del project_data['aws-alt']
 
     defaults = {
         'project_name': pname,
@@ -78,6 +79,11 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'ext': False,
         'cloudfront': False,
         'elasticache': False,
+        # future use: decide at context generation time how many infrastructure tools are we going to use for this stackname
+        #'infrastructure': {
+        #    'cloudformation': False,
+        #    'terraform': False,
+        #}
     }
 
     context = copy.deepcopy(defaults)
@@ -152,6 +158,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     build_context_cloudfront(context, parameterize=_parameterize)
     build_context_fastly(context, parameterize=_parameterize)
+    build_context_gcp(context, parameterize=_parameterize)
     build_context_subdomains(context)
     build_context_elasticache(context)
     build_context_vault(context)
@@ -260,6 +267,13 @@ def build_context_fastly(context, parameterize):
         b['hostname'] = parameterize(b['hostname'])
         return b
 
+    def _parameterize_gcslogging(gcslogging):
+        if gcslogging:
+            gcslogging['bucket'] = parameterize(gcslogging['bucket'])
+            gcslogging['path'] = parameterize(gcslogging['path'])
+
+        return gcslogging
+
     if context['project']['aws'].get('fastly'):
         backends = context['project']['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
@@ -270,13 +284,24 @@ def build_context_fastly(context, parameterize):
             'default-ttl': context['project']['aws']['fastly']['default-ttl'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
             'errors': context['project']['aws']['fastly']['errors'],
-            # TODO: add templating of bucket name
-            'gcslogging': context['project']['aws']['fastly']['gcslogging'],
+            'gcslogging': _parameterize_gcslogging(context['project']['aws']['fastly']['gcslogging']),
             'vcl': context['project']['aws']['fastly']['vcl'],
             'surrogate-keys': context['project']['aws']['fastly']['surrogate-keys'],
         }
     else:
         context['fastly'] = False
+
+def build_context_gcp(context, parameterize):
+    if 'gcs' in context['project']['aws']:
+        context['gcs'] = OrderedDict()
+        for bucket_template_name, options in context['project']['aws']['gcs'].items():
+            bucket_name = parameterize(bucket_template_name)
+            context['gcs'][bucket_name] = {
+                'project': options['project'],
+            }
+    else:
+        context['gcs'] = False
+
 
 def complete_domain(host, default_main):
     is_main = host == ''
@@ -305,36 +330,6 @@ def choose_alt_config(stackname):
         # instance_id exactly matches an alternative config. use that.
         return instance_id
 
-#
-#
-#
-
-# TODO: move to cloudformation.py
-def write_cloudformation_template(stackname, contents):
-    "writes a json version of the python cloudformation template to the stacks directory"
-    output_fname = os.path.join(STACK_DIR, stackname + ".json")
-    open(output_fname, 'w').write(contents)
-    return output_fname
-
-# TODO: prefer this single dispatch function for handling creation of template files
-def write_template(stackname, contents):
-    "writes any provider templates and returns a list of paths to templates"
-    # cfn = cloudformation.write_template(stackname, contents)
-    # tfm = terraform.write_template(stackname, contents)
-    # return [cfn, tfm]
-    pass
-
-# TODO: move implementation to cloudformation.py
-# TODO: perhaps add terraform support?
-def read_template(stackname):
-    "returns the contents of a cloudformation template as a python data structure"
-    output_fname = os.path.join(STACK_DIR, stackname + ".json")
-    return json.load(open(output_fname, 'r'))
-
-#
-#
-#
-
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"
     try:
@@ -362,6 +357,7 @@ def validate_project(pname, **extra):
     template = quick_render(pname)
     pdata = project.project_data(pname)
     altconfig = None
+
     cloudformation.validate_template(pname, template)
     more_validation(template)
     # validate all alternative configurations
@@ -394,7 +390,7 @@ def generate_stack(pname, **more_context):
     stackname = context['stackname']
 
     context_handler.write_context(stackname, context)
-    cloudformation_template_file = write_cloudformation_template(stackname, cloudformation_template)
+    cloudformation_template_file = cloudformation.write_template(stackname, cloudformation_template)
     terraform_template_file = terraform.write_template(stackname, terraform_template)
     return context, cloudformation_template_file, terraform_template_file
 
@@ -413,18 +409,20 @@ EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 # * what to add
 # * what to modify
 # * what to remove
-class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
+# TODO: remove (plus, edit, minus) delegating to self.cloudformation instead
+class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'terraform'])):
     @classmethod
     def from_cloudformation_and_terraform(cls, cloud_formation_delta, terraform_delta):
         return cls(
             cloud_formation_delta.plus,
             cloud_formation_delta.edit,
             cloud_formation_delta.minus,
+            cloud_formation_delta,
             terraform_delta
         )
 
     @property
-    def non_empty(self):
+    def cloudformation_non_empty(self):
         return any([
             self.plus['Resources'],
             self.plus['Outputs'],
@@ -432,20 +430,16 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'terraform'])):
             self.edit['Outputs'],
             self.minus['Resources'],
             self.minus['Outputs'],
-            self.terraform
         ])
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
-Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None)
+Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None, None)
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
 
     Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
-    old_template = read_template(context['stackname'])
+    old_template = cloudformation.read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
-    new_terraform_template_file = terraform.EMPTY_TEMPLATE
-    if context['fastly']:
-        new_terraform_template_file = terraform.render(context)
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -536,42 +530,22 @@ def template_delta(context):
                 'Outputs': delta_minus_outputs,
             }
         ),
-        terraform.generate_delta(context, new_terraform_template_file)
+        terraform.generate_delta(context)
     )
-
-def merge_delta(stackname, delta):
-    """Merges the new resources in delta in the local copy of the Cloudformation  template"""
-    template = read_template(stackname)
-    apply_delta(template, delta)
-    # TODO: possibly pre-write the cloudformation template
-    # the source of truth can always be redownloaded from the CloudFormation API
-    write_cloudformation_template(stackname, json.dumps(template))
-    # nothing to do on Terraform as the plan file is already there
-    return template
-
-def apply_delta(template, delta):
-    for component in delta.plus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
-        data = template.get(component, {})
-        data.update(delta.plus[component])
-        template[component] = data
-    for component in delta.edit:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
-        data = template.get(component, {})
-        data.update(delta.edit[component])
-        template[component] = data
-    for component in delta.minus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
-        for title in delta.minus[component]:
-            del template[component][title]
 
 def _current_cloudformation_template(stackname):
     "retrieves a template from the CloudFormation API, using it as the source of truth"
     cfn = core.boto_conn(stackname, 'cloudformation', client=True)
-    return cfn.get_template(StackName=stackname)['TemplateBody']
+    try:
+        return cfn.get_template(StackName=stackname)['TemplateBody']
+    except botocore.exceptions.ClientError as e:
+        if e.response.get('Error', {}).get('Code') == 'ValidationError':
+            # CloudFormation template is not used for this stackname
+            return cloudformation.EMPTY_TEMPLATE
+        raise
 
 def download_cloudformation_template(stackname):
-    write_cloudformation_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
+    cloudformation.write_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
 
 def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)

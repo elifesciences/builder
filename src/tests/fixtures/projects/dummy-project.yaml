@@ -545,3 +545,19 @@ project-with-fully-overridden-elasticaches:
                 2: 
                     configuration:
                         maxmemory-policy: volatile-ttl
+
+project-on-gcp:
+    description: project with resources only on Google Cloud Platform
+    domain: False
+    intdomain: False
+    # I know, this should be gcp, but actually should be renamed
+    # to "cloud" or "remote" or similar
+    # TODO: use separate key with 'gcp'?
+    aws:
+        ec2: false
+        gcs:
+            "widgets-{instance}":
+                project: elife-something
+                # space for options
+                #
+    aws-alt: {}

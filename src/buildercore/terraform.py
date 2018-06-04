@@ -6,7 +6,7 @@ import re
 import shutil
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
-from .context_handler import only_if
+from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, http_responses
 from . import fastly
 
@@ -42,7 +42,7 @@ FASTLY_LOG_FORMAT = """{
   "pop_region": "%{server.region}V",
   "shield": "%{req.http.x-shield}V",
   "request":"%{req.request}V",
-  "original_host":"%{req.http.Fastly-Orig-Host}V",
+  "original_host":"%{req.http.Elife-Orig-Host}V",
   "host":"%{req.http.Host}V",
   "url":"%{cstr_escape(req.url)}V",
   "request_referer":"%{cstr_escape(req.http.Referer)}V",
@@ -72,8 +72,17 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
-    if not context['fastly']:
+    generated_template = render_fastly(context)
+    generated_template.update(render_gcp(context))
+
+    if not generated_template:
         return EMPTY_TEMPLATE
+
+    return json.dumps(generated_template)
+
+def render_fastly(context):
+    if not context['fastly']:
+        return {}
 
     backends = []
     conditions = []
@@ -254,7 +263,7 @@ def render(context):
     if data:
         tf_file['data'] = data
 
-    return json.dumps(tf_file)
+    return tf_file
 
 def _fastly_backend(hostname, name, request_condition=None):
     backend_resource = {
@@ -294,8 +303,22 @@ def _generate_vcl_file(stackname, content, key):
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 
-def _add_vcl_inclusion(vcl, names_to_sections):
-    pass
+def render_gcp(context):
+    if not context['gcs']:
+        return {}
+
+    return {
+        'resource': {
+            'google_storage_bucket': {
+                bucket_name: {
+                    'name': bucket_name,
+                    'location': 'us-east4',
+                    'storage_class': 'REGIONAL',
+                    'project': options['project'],
+                } for bucket_name, options in context['gcs'].items()
+            },
+        },
+    }
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
@@ -317,27 +340,36 @@ class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
     def __str__(self):
         return self.plan_output
 
-def generate_delta(context, new_template):
+def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
-    if not context['fastly']:
+    # TODO: what if the new context doesn't have fastly, but it was there before?
+    if not new_context['fastly'] and not new_context['gcs']:
         return None
 
-    write_template(context['stackname'], new_template)
-    return plan(context)
+    new_template = render(new_context)
+    write_template(new_context['stackname'], new_template)
+    return plan(new_context)
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def bootstrap(stackname, context):
     plan(context)
     update(stackname, context)
 
 def plan(context):
     terraform = init(context['stackname'], context)
-    terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
-    return_code, stdout, stderr = terraform.plan('out.plan', input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
-    ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)
-    ensure(stderr == '', "Stderr of `terraform plan out.plan` should be empty:\n%s" % stderr)
-    return TerraformDelta(_clean_stdout(stdout))
+
+    def _generate_plan():
+        terraform.plan(input=False, no_color=IsFlagged, capture_output=False, raise_on_error=True, detailed_exitcode=IsNotFlagged, out='out.plan')
+        return 'out.plan'
+
+    def _explain_plan(plan_filename):
+        return_code, stdout, stderr = terraform.plan(plan_filename, input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
+        ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)
+        ensure(stderr == '', "Stderr of `terraform plan out.plan` should be empty:\n%s" % stderr)
+        return _clean_stdout(stdout)
+
+    return TerraformDelta(_explain_plan(_generate_plan()))
 
 def _clean_stdout(stdout):
     stdout = re.sub(re.compile(r"The plan command .* as an argument.", re.MULTILINE | re.DOTALL), "", stdout)
@@ -361,11 +393,18 @@ def init(stackname, context):
             },
         }))
     with _open(stackname, 'providers', mode='w') as fp:
+        # TODO: possibly remove unused providers
+        # Terraform already prunes them when running, but would
+        # simplify the .cfn/terraform/$stackname/ files
         fp.write(json.dumps({
             'provider': {
                 'fastly': {
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                },
+                'google': {
+                    'version': "= %s" % '1.13.0',
+                    'region': 'us-east4',
                 },
                 'vault': {
                     'address': context['vault']['address'],
@@ -377,13 +416,17 @@ def init(stackname, context):
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
-@only_if('fastly')
+def update_template(stackname):
+    context = load_context(stackname)
+    update(stackname, context)
+
+@only_if('fastly', 'gcs')
 def update(stackname, context):
     ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
-@only_if('fastly')
+@only_if('fastly', 'gcs')
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)

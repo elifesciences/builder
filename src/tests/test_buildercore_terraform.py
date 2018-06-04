@@ -38,8 +38,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         stackname = 'project-with-fastly-minimal--prod'
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
-        new_identical_template = terraform.render(context)
-        delta = terraform.generate_delta(context, new_identical_template)
+        delta = terraform.generate_delta(context)
         self.assertEqual(delta, terraform.TerraformDelta('Plan output: ...'))
 
     def test_fastly_template_minimal(self):
@@ -275,6 +274,21 @@ class TestBuildercoreTerraform(base.BaseCase):
 
         data = template['data']['vault_generic_secret']['fastly-gcs-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
+
+    def test_gcp_template(self):
+        extra = {
+            'stackname': 'project-on-gcp--prod',
+        }
+        context = cfngen.build_context('project-on-gcp', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['google_storage_bucket']['widgets-prod']
+        self.assertEqual(service, {
+            'name': 'widgets-prod',
+            'location': 'us-east4',
+            'storage_class': 'REGIONAL',
+            'project': 'elife-something',
+        })
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
