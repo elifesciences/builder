@@ -48,6 +48,8 @@ class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
             self.minus['Resources'],
             self.minus['Outputs'],
         ])
+_empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
+CloudFormationDelta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary)
 
 EMPTY_TEMPLATE = {'Resources': {}}
 
@@ -122,6 +124,72 @@ def _wait_until_in_progress(stackname):
     events = [(e.resource_status, e.resource_status_reason) for e in final_stack.events.all()]
     ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
+
+def read_template(stackname):
+    "returns the contents of a cloudformation template as a python data structure"
+    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    return json.load(open(output_fname, 'r'))
+
+def apply_delta(template, delta):
+    for component in delta.plus:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        data = template.get(component, {})
+        data.update(delta.plus[component])
+        template[component] = data
+    for component in delta.edit:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        data = template.get(component, {})
+        data.update(delta.edit[component])
+        template[component] = data
+    for component in delta.minus:
+        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        for title in delta.minus[component]:
+            del template[component][title]
+
+def _merge_delta(stackname, delta):
+    """Merges the new resources in delta in the local copy of the Cloudformation  template"""
+    template = read_template(stackname)
+    apply_delta(template, delta)
+    # TODO: possibly pre-write the cloudformation template
+    # the source of truth can always be redownloaded from the CloudFormation API
+    write_template(stackname, json.dumps(template))
+    return template
+
+def write_template(stackname, contents):
+    "writes a json version of the python cloudformation template to the stacks directory"
+    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    open(output_fname, 'w').write(contents)
+    return output_fname
+
+def update_template(stackname, delta):
+    if delta.non_empty:
+        new_template = _merge_delta(stackname, delta)
+        _update_template(stackname, new_template)
+    else:
+        # attempting to apply an empty change set would result in an error
+        LOG.info("Nothing to update on CloudFormation")
+
+def _update_template(stackname, template):
+    parameters = []
+    pdata = core.project_data_for_stackname(stackname)
+    if pdata['aws']['ec2']:
+        parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
+    try:
+        conn = core.describe_stack(stackname)
+        conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
+    except botocore.exceptions.ClientError as ex:
+        # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
+        if ex.response['Error']['Message'] == 'No updates are to be performed.':
+            LOG.info(str(ex), extra={'response': ex.response})
+            return
+        raise
+
+    def stack_is_updating():
+        return not core.stack_is(stackname, ['UPDATE_COMPLETE'], terminal_states=['UPDATE_ROLLBACK_COMPLETE'])
+
+    waiting = "waiting for template of %s to be updated" % stackname
+    done = "template of %s is in state UPDATE_COMPLETE" % stackname
+    call_while(stack_is_updating, interval=2, timeout=7200, update_msg=waiting, done_msg=done)
 
 def destroy(stackname, context):
     stack_body = core.stack_json(stackname)

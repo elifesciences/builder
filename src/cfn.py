@@ -8,6 +8,8 @@ from fabric.contrib import files
 import utils, buildvars
 from decorators import requires_project, requires_aws_stack, echo_output, setdefault, debugtask, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
+# potentially remove to go through buildercore.bootstrap?
+from buildercore import cloudformation, terraform
 from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
 from buildercore.decorators import PredicateException
@@ -60,11 +62,6 @@ def update(stackname, autostart="0", concurrency='serial'):
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
 @task
-def update_template(stackname):
-    print('This task has been renamed to update_infrastructure.')
-    exit(1)
-
-@task
 @timeit
 def update_infrastructure(stackname):
     """Limited update of the Cloudformation template and/or Terraform template.
@@ -94,18 +91,8 @@ def update_infrastructure(stackname):
 
     context_handler.write_context(stackname, context)
 
-    # TODO: move to cloudformation module?
-    # bootstrap.update_stack(stackname, service_list=['cloudformation'])?
-    if delta.non_empty:
-        new_template = cfngen.merge_delta(stackname, delta)
-        bootstrap.update_template(stackname, new_template)
-    else:
-        # attempting to apply an empty change set would result in an error
-        LOG.info("Nothing to update on CloudFormation")
-
-    # Fastly via Terraform
-    if context.get('fastly', {}):
-        bootstrap.update_stack(stackname, service_list=['terraform'])
+    cloudformation.update_template(stackname, delta.cloudformation)
+    terraform.update_template(stackname)
 
     # TODO: move inside bootstrap.update_stack
     # EC2
