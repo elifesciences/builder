@@ -22,6 +22,12 @@ DATA_TYPE_HTTP = 'http'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 
+# keys to lookup in Vault
+# cannot modify these without putting new values inside Vault:
+#     VAULT_ADDR=https://...:8200 vault put secret/builder/apikey/fastly-gcs-logging email=... secret_key=@~/file.json
+VAULT_PATH_FASTLY = 'secret/builder/apikey/fastly'
+VAULT_PATH_FASTLY_GCS_LOGGING = 'secret/builder/apikey/fastly-gcs-logging'
+
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
                      'application/x-font-opentype', 'application/x-font-truetype',
@@ -202,7 +208,7 @@ def render_fastly(context):
         }
         data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
             DATA_NAME_VAULT_GCS_LOGGING: {
-                'path': 'secret/builder/apikey/fastly-gcs-logging',
+                'path': VAULT_PATH_FASTLY_GCS_LOGGING,
             }
         }
 
@@ -417,7 +423,7 @@ def init(stackname, context):
             'data': {
                 DATA_TYPE_VAULT_GENERIC_SECRET: {
                     DATA_NAME_VAULT_FASTLY_API_KEY: {
-                        'path': 'secret/builder/apikey/fastly',
+                        'path': VAULT_PATH_FASTLY,
                     }
                 }
             },
