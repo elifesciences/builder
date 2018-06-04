@@ -1537,6 +1537,10 @@ iiif:
         fastly:
             subdomains:
                 - "{instance}--cdn-iiif"
+            gcslogging:
+                bucket: "{instance}-elife-fastly"
+                path: "iiif--{instance}/"
+                period: 600
             healthcheck:
                 path: /ping-fastly
                 check-interval: 30000
