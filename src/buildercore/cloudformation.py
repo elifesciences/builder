@@ -48,6 +48,8 @@ class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
             self.minus['Resources'],
             self.minus['Outputs'],
         ])
+_empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
+CloudFormationDelta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary)
 
 EMPTY_TEMPLATE = {'Resources': {}}
 
@@ -161,7 +163,7 @@ def write_template(stackname, contents):
 
 def update_template(stackname, delta):
     if delta.non_empty:
-        new_template = _merge_delta(stackname, delta.cloudformation)
+        new_template = _merge_delta(stackname, delta)
         _update_template(stackname, new_template)
     else:
         # attempting to apply an empty change set would result in an error

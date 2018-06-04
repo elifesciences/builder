@@ -403,6 +403,7 @@ EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 # * what to add
 # * what to modify
 # * what to remove
+# TODO: remove (plus, edit, minus) delegating to self.cloudformation instead
 class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'terraform'])):
     @classmethod
     def from_cloudformation_and_terraform(cls, cloud_formation_delta, terraform_delta):

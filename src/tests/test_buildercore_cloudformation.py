@@ -17,6 +17,10 @@ class StackCreationContextManager(base.BaseCase):
                 'CreateStack'
             )
 
+class StackUpdate(base.BaseCase):
+    def test_no_updates(self):
+        cloudformation.update_template('dummy1--test', cloudformation.CloudFormationDelta())
+
 class ApplyDelta(base.BaseCase):
     def test_apply_delta_may_add_edit_and_remove_resources(self):
         template = {
