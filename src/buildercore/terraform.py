@@ -20,6 +20,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
+DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -401,6 +402,7 @@ def init(stackname, context):
                 'fastly': {
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                    'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
                 },
                 'google': {
                     'version': "= %s" % '1.13.0',
@@ -411,6 +413,13 @@ def init(stackname, context):
                     # exact version constraint
                     'version': "= %s" % PROVIDER_VAULT_VERSION,
                 },
+            },
+            'data': {
+                DATA_TYPE_VAULT_GENERIC_SECRET: {
+                    DATA_NAME_VAULT_FASTLY_API_KEY: {
+                        'path': 'secret/builder/apikey/fastly',
+                    }
+                }
             },
         }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
