@@ -739,6 +739,9 @@ generic-cdn:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
+            vcl:
+                - "original-host"
+                - "office-webdav-200"
             surrogate-keys:
                 article-versioned-assets:
                     url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-v([0-9]+)\\.(.+)$"
