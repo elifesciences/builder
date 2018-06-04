@@ -740,6 +740,7 @@ generic-cdn:
                     condition: req.url ~ "^/articles/"
             default-ttl: 86400 # seconds
             vcl:
+                - "original-host"
                 - "office-webdav-200"
             surrogate-keys:
                 article-versioned-assets:
