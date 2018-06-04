@@ -23,11 +23,15 @@ class FastlyVCL:
     def __repr__(self):
         return "FastlyVCL(%s)" % repr(self._lines)
 
-    def insert(self, section, statements):
+    def insert(self, section, hook, statements):
         section_start = self._find_section_start(section)
         lines = list(self._lines)
-        lines[section_start + 1:section_start + 1] = ['  %s' % s for s in statements]
-        lines.insert(section_start + 1, '')
+        if hook == 'after':
+            lines[section_start + 1:section_start + 1] = ['  %s' % s for s in statements]
+            lines.insert(section_start + 1, '')
+        if hook == 'before':
+            lines.insert(section_start, '')
+            lines[section_start:section_start] = ['  %s' % s for s in statements]
         return FastlyVCL(lines)
 
     def _find_section_start(self, section):
@@ -42,7 +46,7 @@ class FastlyVCL:
             raise FastlyCustomVCLGenerationError("Cannot match %s into main VCL template:\n\n%s" % (lookup, str(self)))
         return section_start
 
-class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'])):
+class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type', 'hook'])):
     """VCL snippets that can be used to augment the default VCL
 
     Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
@@ -52,6 +56,7 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
     def insert_include(self, main_vcl):
         return main_vcl.insert(
             self.type,
+            self.hook,
             [
                 '// BEGIN builder %s' % self.name,
                 'include "%s"' % self.name,
@@ -75,11 +80,13 @@ VCL_SNIPPETS = {
     'original-host': FastlyVCLSnippet(
         name='original-host',
         content=_read_vcl_file('original-host.vcl'),
-        type='recv'
+        type='recv',
+        hook='before'
     ),
     'gzip-by-content-type-suffix': FastlyVCLSnippet(
         name='gzip-by-content-type-suffix',
         content=_read_vcl_file('gzip-by-content-type-suffix.vcl'),
-        type='fetch'
+        type='fetch',
+        hook='after'
     ),
 }
