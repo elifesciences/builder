@@ -267,6 +267,13 @@ def build_context_fastly(context, parameterize):
         b['hostname'] = parameterize(b['hostname'])
         return b
 
+    def _parameterize_gcslogging(gcslogging):
+        if gcslogging:
+            gcslogging['bucket'] = parameterize(gcslogging['bucket'])
+            gcslogging['path'] = parameterize(gcslogging['path'])
+
+        return gcslogging
+
     if context['project']['aws'].get('fastly'):
         backends = context['project']['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
@@ -277,8 +284,7 @@ def build_context_fastly(context, parameterize):
             'default-ttl': context['project']['aws']['fastly']['default-ttl'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
             'errors': context['project']['aws']['fastly']['errors'],
-            # TODO: add templating of bucket name
-            'gcslogging': context['project']['aws']['fastly']['gcslogging'],
+            'gcslogging': _parameterize_gcslogging(context['project']['aws']['fastly']['gcslogging']),
             'vcl': context['project']['aws']['fastly']['vcl'],
             'surrogate-keys': context['project']['aws']['fastly']['surrogate-keys'],
         }
