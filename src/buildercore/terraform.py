@@ -42,7 +42,7 @@ FASTLY_LOG_FORMAT = """{
   "pop_region": "%{server.region}V",
   "shield": "%{req.http.x-shield}V",
   "request":"%{req.request}V",
-  "original_host":"%{req.http.Fastly-Orig-Host}V",
+  "original_host":"%{req.http.Elife-Orig-Host}V",
   "host":"%{req.http.Host}V",
   "url":"%{cstr_escape(req.url)}V",
   "request_referer":"%{cstr_escape(req.http.Referer)}V",
