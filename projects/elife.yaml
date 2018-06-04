@@ -364,6 +364,10 @@ api-gateway:
             vcl:
                 - "original-host"
                 - "gzip-by-content-type-suffix"
+            gcslogging:
+                bucket: "{instance}-elife-fastly"
+                path: "api-gateway--{instance}/"
+                period: 600
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -382,10 +386,6 @@ api-gateway:
                     - api
         test:
             fastly:
-                gcslogging:
-                    bucket: end2end-elife-fastly
-                    path: api-gateway--test/
-                    period: 600
                 errors:
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
