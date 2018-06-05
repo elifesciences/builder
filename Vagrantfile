@@ -25,8 +25,8 @@ def runcmd(cmd)
 end
 
 def project_cmd(argstr)
-    cmd = "/bin/bash -c \"source venv/bin/activate && ./.project.py #{argstr}\""
-    #prn(cmd)
+    cmd = "/bin/bash -c \"./python-docker .project.py #{argstr}\""
+    prn(cmd)
     return YAML.load(IO.popen(cmd).read)
 end
 
