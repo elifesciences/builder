@@ -738,6 +738,9 @@ generic-cdn:
                 articles:
                     hostname: "{instance}-elife-published.s3.amazonaws.com"
                     condition: req.url ~ "^/articles/"
+                digest:
+                    hostname: "{instance}-elife-published.s3.amazonaws.com"
+                    condition: req.url ~ "^/digest/"
             default-ttl: 86400 # seconds
             vcl:
                 - "original-host"
