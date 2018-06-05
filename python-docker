@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+docker build -t elifesciences/builder . >/dev/null
+docker run \
+  -it \
+  -v $(pwd):/srv/builder \
+  -w /srv/builder \
+  elifesciences/builder \
+  /venv/bin/python $* 
