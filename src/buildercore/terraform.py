@@ -5,7 +5,7 @@ from os.path import exists, join, basename
 import re
 import shutil
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, ConfigurationError
+from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, http_responses
 from . import fastly
@@ -20,6 +20,13 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
+DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
+
+# keys to lookup in Vault
+# cannot modify these without putting new values inside Vault:
+#     VAULT_ADDR=https://...:8200 vault put secret/builder/apikey/fastly-gcs-logging email=... secret_key=@~/file.json
+VAULT_PATH_FASTLY = 'secret/builder/apikey/fastly'
+VAULT_PATH_FASTLY_GCS_LOGGING = 'secret/builder/apikey/fastly-gcs-logging'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -201,7 +208,7 @@ def render_fastly(context):
         }
         data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
             DATA_NAME_VAULT_GCS_LOGGING: {
-                'path': 'secret/builder/apikey/fastly-gcs-logging',
+                'path': VAULT_PATH_FASTLY_GCS_LOGGING,
             }
         }
 
@@ -401,6 +408,7 @@ def init(stackname, context):
                 'fastly': {
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                    'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
                 },
                 'google': {
                     'version': "= %s" % '1.13.0',
@@ -412,6 +420,13 @@ def init(stackname, context):
                     'version': "= %s" % PROVIDER_VAULT_VERSION,
                 },
             },
+            'data': {
+                DATA_TYPE_VAULT_GENERIC_SECRET: {
+                    DATA_NAME_VAULT_FASTLY_API_KEY: {
+                        'path': VAULT_PATH_FASTLY,
+                    }
+                }
+            },
         }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
@@ -422,7 +437,6 @@ def update_template(stackname):
 
 @only_if('fastly', 'gcs')
 def update(stackname, context):
-    ensure('FASTLY_API_KEY' in os.environ, "a FASTLY_API_KEY environment variable is required to provision Fastly resources. See https://manage.fastly.com/account/personal/tokens", ConfigurationError)
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 

@@ -31,6 +31,25 @@ class TestBuildercoreTerraform(base.BaseCase):
             self.assertIn('version', configuration)
 
     @patch('buildercore.terraform.Terraform')
+    def test_fastly_provider_reads_api_key_from_vault(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        stackname = 'project-with-fastly-minimal--prod'
+        context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
+        terraform.init(stackname, context)
+        providers_file = self._load_terraform_file(stackname, 'providers')
+        self.assertEqual(
+            providers_file.get('provider').get('fastly').get('api_key'),
+            '${data.vault_generic_secret.fastly.data["api_key"]}'
+        )
+        self.assertEqual(
+            providers_file.get('data').get('vault_generic_secret').get('fastly'),
+            {
+                'path': 'secret/builder/apikey/fastly',
+            }
+        )
+
+    @patch('buildercore.terraform.Terraform')
     def test_delta(self, Terraform):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
