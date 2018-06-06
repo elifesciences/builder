@@ -25,7 +25,13 @@ def runcmd(cmd)
 end
 
 def project_cmd(argstr)
-    cmd = "/bin/bash -c \"./python-docker .project.py #{argstr}\""
+    flag = ".use-docker.flag"
+    if File.exists?(flag)
+      executable = "python-docker"
+    else
+      executable = "venv/bin/python"
+    end
+    cmd = "/bin/bash -c \"./#{executable} .project.py #{argstr}\""
     prn(cmd)
     return YAML.load(IO.popen(cmd).read)
 end
