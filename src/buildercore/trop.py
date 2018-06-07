@@ -402,16 +402,16 @@ def external_dns_fastly(context):
                 ResourceRecords=ip_addresses,
             )
             raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
-        else:
-            cname = context['fastly']['dns']['cname']
-            return route53.RecordSetType(
-                R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
-                HostedZoneName=hostedzone,
-                Name=hostname,
-                Type="CNAME",
-                TTL="60",
-                ResourceRecords=[cname],
-            )
+
+        cname = context['fastly']['dns']['cname']
+        return route53.RecordSetType(
+            R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
+            HostedZoneName=hostedzone,
+            Name=hostname,
+            Type="CNAME",
+            TTL="60",
+            ResourceRecords=[cname],
+        )
     return [entry(hostname, i) for i, hostname in enumerate(context['fastly']['subdomains'])]
 
 #
