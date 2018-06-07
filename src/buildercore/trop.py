@@ -51,9 +51,6 @@ ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
 
-FASTLY_GLOBAL = 'nonssl.global.fastly.net.'
-FASTLY_SSL = 'u2.shared.global.fastly.net'
-
 def _read_script(script_filename):
     path = join(config.SCRIPTS_PATH, script_filename)
     with open(path, 'r') as fp:
@@ -391,7 +388,7 @@ def external_dns_fastly(context):
     ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built: %s" % context)
 
     # may be used to point to TLS servers
-    cname = context['fastly']['dns'].get('cname', FASTLY_GLOBAL)
+    cname = context['fastly']['dns']['cname']
 
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):
