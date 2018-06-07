@@ -146,6 +146,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'prod--cdn2-of-www.example.org'
                                 },
                                 {
+                                    'name': 'example.org'
+                                },
+                                {
                                     'name': 'future.example.org'
                                 },
                             ],

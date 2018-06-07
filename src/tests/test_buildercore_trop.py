@@ -822,6 +822,49 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
         )
 
+    def test_fastly_template_contains_only_dns(self):
+        extra = {
+            'stackname': 'project-with-fastly-complex--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-complex', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        self.assertTrue('FastlyDNS1' in list(data['Resources'].keys()))
+        self.assertEqual(
+            {
+                'HostedZoneName': 'example.org.',
+                'Name': 'prod--cdn1-of-www.example.org',
+                'ResourceRecords': ['something.fastly.net'],
+                'TTL': '60',
+                'Type': 'CNAME',
+            },
+            data['Resources']['FastlyDNS1']['Properties']
+        )
+
+        self.assertTrue('FastlyDNS2' in list(data['Resources'].keys()))
+        self.assertEqual(
+            {
+                'HostedZoneName': 'example.org.',
+                'Name': 'prod--cdn2-of-www.example.org',
+                'ResourceRecords': ['something.fastly.net'],
+                'TTL': '60',
+                'Type': 'CNAME',
+            },
+            data['Resources']['FastlyDNS2']['Properties']
+        )
+
+        self.assertTrue('FastlyDNS3' in list(data['Resources'].keys()))
+        self.assertEqual(
+            {
+                'HostedZoneName': 'example.org.',
+                'Name': 'example.org',
+                'ResourceRecords': ['127.0.0.1', '127.0.0.2'],
+                'TTL': '60',
+                'Type': 'A',
+            },
+            data['Resources']['FastlyDNS3']['Properties']
+        )
+
     def test_elasticache_redis_template(self):
         extra = {
             'stackname': 'project-with-elasticache-redis--prod',
