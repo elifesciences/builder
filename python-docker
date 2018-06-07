@@ -1,10 +1,21 @@
 #!/bin/bash
 set -e
 
-docker build -t elifesciences/builder . >/dev/null
+if [ -e .use-python-3.flag ]; then
+    image=py3
+else
+    image=py2
+fi
+
+docker build \
+    -f "Dockerfile.${image}" \
+    -t "elifesciences/builder:${image}" \
+    . \
+    1>&2
+
 docker run \
   -it \
   -v $(pwd):/srv/builder \
   -w /srv/builder \
-  elifesciences/builder \
+  "elifesciences/builder:${image}" \
   /venv/bin/python $* 
