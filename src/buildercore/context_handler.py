@@ -46,10 +46,19 @@ def write_context_to_s3(stackname):
     key = s3_context_key(stackname)
     s3.write(key, open(path, 'rb'), overwrite=True)
 
+def delete_context(stackname):
+    delete_context_locally(stackname)
+    delete_context_from_s3(stackname)
+
 @if_enabled('write-context-to-s3', silent=True)
 def delete_context_from_s3(stackname):
     key = s3_context_key(stackname)
     return s3.delete(key)
+
+def delete_context_locally(stackname):
+    path = local_context_file(stackname)
+    if os.path.exists(path):
+        os.unlink(path)
 
 @if_enabled('write-context-to-s3', silent=True)
 def download_from_s3(stackname, refresh=False):

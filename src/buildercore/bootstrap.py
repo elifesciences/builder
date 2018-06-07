@@ -565,6 +565,9 @@ def remove_all_orphaned_keys(master_stackname):
             sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
 def destroy(stackname):
+    # TODO: if context does not exist anymore on S3,
+    # we could exit idempotently
+
     context = context_handler.load_context(stackname)
     terraform.destroy(stackname, context)
     cloudformation.destroy(stackname, context)
@@ -572,4 +575,6 @@ def destroy(stackname):
     # don't do this. requires master server access and would prevent regular users deleting stacks
     # remove_minion_key(stackname)
     delete_dns(stackname)
+
+    context_handler.delete_context(stackname)
     LOG.info("stack %r deleted", stackname)
