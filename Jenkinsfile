@@ -17,7 +17,7 @@ elifePipeline {
         }, 'scrub', commit)
     }
 
-    stage 'Static checking', {
+    stage '.ci/ checks', {
         elifeLocalTests()
     }
 

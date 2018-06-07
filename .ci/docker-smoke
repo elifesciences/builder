@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+echo "Python 2 container smoke test"
+rm -f .use-python-3.flag
+./python-docker .project.py
+
+echo "Python 3 container smoke test"
+touch .use-python-3.flag
+./python-docker .project.py
