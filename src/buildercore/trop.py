@@ -389,7 +389,6 @@ def external_dns_fastly(context):
 
     # may be used to point to TLS servers
 
-
     def entry(hostname, i):
         hostedzone = context['domain'] + "."
         if _is_domain_2nd_level(hostname):
