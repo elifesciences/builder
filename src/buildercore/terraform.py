@@ -96,6 +96,7 @@ def render_fastly(context):
     request_settings = []
     headers = []
     data = {}
+    vcl_templated_snippets = {}
 
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
@@ -167,9 +168,7 @@ def render_fastly(context):
         for b in tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
             b['healthcheck'] = 'default'
 
-    vcl_templated_snippets = {}
     if context['fastly']['errors']:
-
         error_vcl_template = _generate_vcl_file(
             context['stackname'],
             fastly.VCL_TEMPLATES['error-page'].content,
@@ -215,14 +214,14 @@ def render_fastly(context):
             }
         }
 
-    if context['fastly']['vcl']:
+    if context['fastly']['vcl'] or vcl_templated_snippets:
         # snippets
-        vcl_snippets = context['fastly']['vcl']
+        vcl_constant_snippets = context['fastly']['vcl']
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
                 'name': snippet_name,
                 'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[snippet_name].content, snippet_name),
-            } for snippet_name in vcl_snippets
+            } for snippet_name in vcl_constant_snippets
         ]
 
         # templates
@@ -236,7 +235,7 @@ def render_fastly(context):
         # main
 
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
-        for name in vcl_snippets:
+        for name in vcl_constant_snippets:
             snippet = fastly.VCL_SNIPPETS[name]
             linked_main_vcl = snippet.insert_include(linked_main_vcl)
         for name in vcl_templated_snippets:
