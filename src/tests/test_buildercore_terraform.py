@@ -158,6 +158,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'name': 'example.org'
                                 },
                                 {
+                                    'name': 'anotherdomain.org'
+                                },
+                                {
                                     'name': 'future.example.org'
                                 },
                             ],

@@ -340,6 +340,7 @@ project-with-fastly-complex:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
                 - ""
+                - "anotherdomain.org"
             subdomains-without-dns:
                 - "future"
             default-ttl: 86400
