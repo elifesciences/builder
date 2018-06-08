@@ -136,7 +136,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'error-page-vcl-503': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'code': '503',
+                                'code': 503,
                                 'synthetic_response': '${data.http.error-page-503.body}',
                             },
                         },

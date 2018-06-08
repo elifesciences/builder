@@ -19,6 +19,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
+DATE_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 
@@ -184,11 +185,11 @@ def render_fastly(context):
                 'url': '%s%s' % (errors['url'], path),
             }
             name = 'error-page-vcl-%d' % code
-            data['template_file'] = {
+            data[DATE_TYPE_TEMPLATE] = {
                 name: {
                     'template': error_vcl_template_file,
                     'vars': {
-                        'code': '%d' % code,
+                        'code': code,
                         'synthetic_response': '${data.http.error-page-%s.body}' % code,
                     }
                 },
