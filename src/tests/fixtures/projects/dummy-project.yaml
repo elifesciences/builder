@@ -97,6 +97,9 @@ defaults:
             subdomains-without-dns: []
             dns:
                 cname: something.fastly.net
+                a:
+                    - 127.0.0.1
+                    - 127.0.0.2
             default-ttl: 3600 # seconds
             gcslogging: false
             healthcheck: false
@@ -336,6 +339,7 @@ project-with-fastly-complex:
             subdomains:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
+                - ""
             subdomains-without-dns:
                 - "future"
             default-ttl: 86400

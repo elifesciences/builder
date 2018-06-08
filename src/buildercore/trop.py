@@ -51,9 +51,6 @@ ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
 
-FASTLY_GLOBAL = 'nonssl.global.fastly.net.'
-FASTLY_SSL = 'u2.shared.global.fastly.net'
-
 def _read_script(script_filename):
     path = join(config.SCRIPTS_PATH, script_filename)
     with open(path, 'r') as fp:
@@ -391,12 +388,22 @@ def external_dns_fastly(context):
     ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built: %s" % context)
 
     # may be used to point to TLS servers
-    cname = context['fastly']['dns'].get('cname', FASTLY_GLOBAL)
 
     def entry(hostname, i):
-        if _is_domain_2nd_level(hostname):
-            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
         hostedzone = context['domain'] + "."
+        if _is_domain_2nd_level(hostname):
+            ip_addresses = context['fastly']['dns']['a']
+            return route53.RecordSetType(
+                R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
+                HostedZoneName=hostedzone,
+                Name=hostname,
+                Type="A",
+                TTL="60",
+                ResourceRecords=ip_addresses,
+            )
+            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
+
+        cname = context['fastly']['dns']['cname']
         return route53.RecordSetType(
             R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
             HostedZoneName=hostedzone,

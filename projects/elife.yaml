@@ -134,6 +134,11 @@ defaults:
             default-ttl: 3600 # Fastly default, in seconds
             dns:
                 cname: u2.shared.global.fastly.net
+                a:
+                    - 151.101.2.217
+                    - 151.101.66.217
+                    - 151.101.130.217
+                    - 151.101.194.217
             gcslogging: false
             healthcheck: false
             errors: false
@@ -503,6 +508,25 @@ journal:
                             - Referer
                         cookies:
                             - journal
+            fastly:
+                subdomains:
+                    - "{instance}--fastly-journal"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
+                #errors:
+                #    # always prod for simplicity
+                #    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                #    codes:
+                #        503: "5xx.html"
+                vcl:
+                    - "original-host"
+                    - "strip-non-journal-cookies"
+                gcslogging:
+                    bucket: "{instance}-elife-fastly"
+                    path: "journal--{instance}/"
+                    period: 600
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:

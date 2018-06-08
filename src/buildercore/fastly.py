@@ -95,4 +95,10 @@ VCL_SNIPPETS = {
         type='recv',
         hook='after'
     ),
+    'strip-non-journal-cookies': FastlyVCLSnippet(
+        name='strip-non-journal-cookies',
+        content=_read_vcl_file('strip-non-journal-cookies.vcl'),
+        type='recv',
+        hook='after'
+    ),
 }
