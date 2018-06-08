@@ -242,6 +242,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '${file("gzip-by-content-type-suffix.vcl")}',
                                 },
                                 {
+                                    'name': 'error-page-vcl-503',
+                                    'content': '${data.template_file.error-page-vcl-503.rendered}',
+                                },
+                                {
                                     'name': 'main',
                                     'content': '${file("main.vcl")}',
                                     'main': True,

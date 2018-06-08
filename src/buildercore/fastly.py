@@ -64,6 +64,11 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
             ]
         )
 
+class FastlyVCLTemplate(FastlyVCLSnippet):
+    def as_snippet(self, name):
+        # TODO: self.content should not be there
+        return FastlyVCLSnippet(name, self.content, self.type, self.hook)
+
 class FastlyCustomVCLGenerationError(Exception):
     pass
 
@@ -104,7 +109,7 @@ VCL_SNIPPETS = {
 }
 
 VCL_TEMPLATES = {
-    'error-page': FastlyVCLSnippet(
+    'error-page': FastlyVCLTemplate(
         name='error-page',
         content=_read_vcl_file('error-page.vcl.tpl'),
         type='error',
