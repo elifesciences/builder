@@ -172,24 +172,18 @@ def render_fastly(context):
         response_objects = []
         data[DATA_TYPE_HTTP] = {}
         for code, path in errors['codes'].items():
-            cache_condition = {
-                'name': 'condition-%s' % code,
-                'statement': 'beresp.status == %d' % code,
-                'type': 'CACHE',
-            }
-            conditions.append(cache_condition)
-            response_objects.append({
-                'name': 'error-%s' % code,
-                'status': int(code),
-                'response': http_responses()[int(code)],
-                'content': '${data.http.error-page-%s.body}' % code,
-                'content_type': 'text/html; charset=us-ascii',
-                'cache_condition': cache_condition['name'],
-            })
             data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
                 'url': '%s%s' % (errors['url'], path),
             }
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
+            data['template_file'] = {
+                'error-page-vcl-%d' % code: {
+                    'template': '${file("error-page.vcl.tpl")}',
+                    'vars': {
+                        'code': '%d' % code,
+                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                    }
+                },
+            }
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
