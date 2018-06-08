@@ -150,13 +150,17 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
             policy = json.loads(queue.attributes.get('Policy', '{}'))
             LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
             new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
-            new_policy = new_policy or ''
-            new_policy_dump = json.dumps(new_policy)
+            if new_policy:
+                new_policy_dump = json.dumps(new_policy)
+            else:
+                new_policy_dump = ''
 
             try:
+                LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
                 queue.set_attributes(Attributes={'Policy': new_policy_dump})
             except botocore.exceptions.ClientError as ex:
                 msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
+                # TODO: `extra` are not logged so they are lost
                 LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
                 raise
 
@@ -177,7 +181,7 @@ def sub_sqs(stackname, context_sqs, region):
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
         ensure(isinstance(subscriptions, list), "Not a list of topics: %s" % subscriptions)
 
-        queue = sqs.get_queue_by_name(queue_name)
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
         for topic_name in subscriptions:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
 
