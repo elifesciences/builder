@@ -170,31 +170,7 @@ def render_fastly(context):
         for b in tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
             b['healthcheck'] = 'default'
 
-    if context['fastly']['errors']:
-        error_vcl_template = fastly.VCL_TEMPLATES['error-page']
-        error_vcl_template_file = _generate_vcl_file(
-            context['stackname'],
-            error_vcl_template.content,
-            error_vcl_template.name,
-            extension='vcl.tpl'
-        )
-        errors = context['fastly']['errors']
-        data[DATA_TYPE_HTTP] = {}
-        for code, path in errors['codes'].items():
-            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
-                'url': '%s%s' % (errors['url'], path),
-            }
-            name = 'error-page-vcl-%d' % code
-            data[DATE_TYPE_TEMPLATE] = {
-                name: {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'code': code,
-                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                    }
-                },
-            }
-            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+    _render_fastly_errors(context, data, vcl_templated_snippets)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -287,6 +263,33 @@ def render_fastly(context):
         tf_file['data'] = data
 
     return tf_file
+
+def _render_fastly_errors(context, data, vcl_templated_snippets):
+    if context['fastly']['errors']:
+        error_vcl_template = fastly.VCL_TEMPLATES['error-page']
+        error_vcl_template_file = _generate_vcl_file(
+            context['stackname'],
+            error_vcl_template.content,
+            error_vcl_template.name,
+            extension='vcl.tpl'
+        )
+        errors = context['fastly']['errors']
+        data[DATA_TYPE_HTTP] = {}
+        for code, path in errors['codes'].items():
+            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
+                'url': '%s%s' % (errors['url'], path),
+            }
+            name = 'error-page-vcl-%d' % code
+            data[DATE_TYPE_TEMPLATE] = {
+                name: {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'code': code,
+                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                    }
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
 
 def _fastly_backend(hostname, name, request_condition=None):
     backend_resource = {
