@@ -1715,6 +1715,7 @@ redirects:
                     - e-lifejournal.org
                     - e-lifejournal.com
                     - e-lifejournal.net
+                subdomains-without-dns:
                     - elifejournal.org
                 headers:
                     - Host
