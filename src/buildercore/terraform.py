@@ -7,7 +7,7 @@ import shutil
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, http_responses
+from .utils import ensure, mkdir_p
 from . import fastly
 
 EMPTY_TEMPLATE = '{}'
@@ -173,11 +173,10 @@ def render_fastly(context):
         error_vcl_template = _generate_vcl_file(
             context['stackname'],
             fastly.VCL_TEMPLATES['error-page'].content,
-            fastly.VCL_TEMPLATES['error-page'].name, 
+            fastly.VCL_TEMPLATES['error-page'].name,
             extension='vcl.tpl'
         )
         errors = context['fastly']['errors']
-        response_objects = []
         data[DATA_TYPE_HTTP] = {}
         for code, path in errors['codes'].items():
             data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
@@ -221,19 +220,18 @@ def render_fastly(context):
         vcl_snippets = context['fastly']['vcl']
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
-                'name': name,
-                'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[name].content, name),
-            } for name in vcl_snippets
+                'name': snippet_name,
+                'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[snippet_name].content, snippet_name),
+            } for snippet_name in vcl_snippets
         ]
 
         # templates
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].extend([
             {
-                'name': name,
+                'name': snippet_name,
                 'content': '${data.template_file.%s.rendered}' % name,
-            } for name in vcl_templated_snippets
+            } for snippet_name in vcl_templated_snippets
         ])
-
 
         # main
 
@@ -243,7 +241,6 @@ def render_fastly(context):
             linked_main_vcl = snippet.insert_include(linked_main_vcl)
         for name in vcl_templated_snippets:
             linked_main_vcl = vcl_templated_snippets[name].insert_include(linked_main_vcl)
-
 
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,
