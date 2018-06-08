@@ -193,7 +193,7 @@ def render_fastly(context):
                     }
                 },
             }
-            vcl_templated_snippets[name] = error_vcl_template.as_snippet(name)
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -229,7 +229,7 @@ def render_fastly(context):
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].extend([
             {
                 'name': snippet_name,
-                'content': '${data.template_file.%s.rendered}' % name,
+                'content': '${data.template_file.%s.rendered}' % snippet_name,
             } for snippet_name in vcl_templated_snippets
         ])
 
@@ -237,7 +237,7 @@ def render_fastly(context):
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         for name in vcl_constant_snippets:
             snippet = fastly.VCL_SNIPPETS[name]
-            linked_main_vcl = snippet.insert_include(linked_main_vcl)
+            linked_main_vcl = snippet.as_inclusion().insert_include(linked_main_vcl)
         for name in vcl_templated_snippets:
             linked_main_vcl = vcl_templated_snippets[name].insert_include(linked_main_vcl)
 

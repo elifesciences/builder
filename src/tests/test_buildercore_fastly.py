@@ -3,9 +3,8 @@ from . import base
 
 class TestFastlyCustomVCL(base.BaseCase):
     def test_inserts_snippets_through_include_statements(self):
-        snippet = fastly.FastlyVCLSnippet(
+        snippet = fastly.FastlyVCLInclusion(
             name='do-some-magic',
-            content='...',
             type='fetch',
             hook='after'
         )
@@ -37,9 +36,8 @@ sub vcl_fetch {
         )
 
     def test_snippets_can_be_included_even_before_fastly_macros(self):
-        snippet = fastly.FastlyVCLSnippet(
+        snippet = fastly.FastlyVCLInclusion(
             name='do-some-magic',
-            content='...',
             type='fetch',
             hook='before'
         )
@@ -72,9 +70,8 @@ sub vcl_fetch {
         )
 
     def test_stops_generation_if_an_inclusion_section_cannot_be_found(self):
-        snippet = fastly.FastlyVCLSnippet(
+        snippet = fastly.FastlyVCLInclusion(
             name='do-some-magic',
-            content='...',
             type='hit',
             hook='after'
         )
