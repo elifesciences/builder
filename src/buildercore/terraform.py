@@ -212,7 +212,7 @@ def render_fastly(context):
 
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
-        inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + vcl_templated_snippets.values()
+        inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + list(vcl_templated_snippets.values())
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
