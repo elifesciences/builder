@@ -102,3 +102,12 @@ VCL_SNIPPETS = {
         hook='after'
     ),
 }
+
+VCL_TEMPLATES = {
+    'error-page': FastlyVCLSnippet(
+        name='error-page',
+        content=_read_vcl_file('error-page.vcl.tpl'),
+        type='error',
+        hook='after'
+    ),
+}

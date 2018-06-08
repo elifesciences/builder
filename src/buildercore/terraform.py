@@ -168,6 +168,13 @@ def render_fastly(context):
             b['healthcheck'] = 'default'
 
     if context['fastly']['errors']:
+
+        error_vcl_template = _generate_vcl_file(
+            context['stackname'],
+            fastly.VCL_TEMPLATES['error-page'].content,
+            fastly.VCL_TEMPLATES['error-page'].name, 
+            extension='vcl.tpl'
+        )
         errors = context['fastly']['errors']
         response_objects = []
         data[DATA_TYPE_HTTP] = {}
@@ -177,7 +184,7 @@ def render_fastly(context):
             }
             data['template_file'] = {
                 'error-page-vcl-%d' % code: {
-                    'template': '${file("error-page.vcl.tpl")}',
+                    'template': error_vcl_template,
                     'vars': {
                         'code': '%d' % code,
                         'synthetic_response': '${data.http.error-page-%s.body}' % code,
@@ -294,13 +301,13 @@ def _fastly_request_setting(override):
     return request_setting_resource
 
 
-def _generate_vcl_file(stackname, content, key):
+def _generate_vcl_file(stackname, content, key, extension='vcl'):
     """
     creates a VCL on the filesystem, for Terraform to dynamically load it on apply
 
     content can be a string or any object that can be casted to a string
     """
-    with _open(stackname, key, extension='vcl', mode='w') as fp:
+    with _open(stackname, key, extension=extension, mode='w') as fp:
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 
