@@ -96,6 +96,7 @@ def render_fastly(context):
     request_settings = []
     headers = []
     data = {}
+    vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = {}
 
     if context['fastly']['backends']:
@@ -214,9 +215,8 @@ def render_fastly(context):
             }
         }
 
-    if context['fastly']['vcl'] or vcl_templated_snippets:
-        # snippets
-        vcl_constant_snippets = context['fastly']['vcl']
+    if vcl_constant_snippets or vcl_templated_snippets:
+        # constant snippets
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
                 'name': snippet_name,
@@ -224,7 +224,7 @@ def render_fastly(context):
             } for snippet_name in vcl_constant_snippets
         ]
 
-        # templates
+        # templated snippets
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].extend([
             {
                 'name': snippet_name,
@@ -233,7 +233,6 @@ def render_fastly(context):
         ])
 
         # main
-
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         for name in vcl_constant_snippets:
             snippet = fastly.VCL_SNIPPETS[name]

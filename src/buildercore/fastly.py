@@ -64,6 +64,7 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
             ]
         )
 
+# TODO: may not need extension?
 class FastlyVCLTemplate(FastlyVCLSnippet):
     def as_snippet(self, name):
         # TODO: self.content should not be there
