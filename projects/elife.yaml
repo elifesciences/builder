@@ -515,11 +515,11 @@ journal:
                     path: /ping-fastly
                     check-interval: 30000
                     timeout: 2000
-                #errors:
-                #    # always prod for simplicity
-                #    url: https://prod-elife-error-pages.s3.amazonaws.com/
-                #    codes:
-                #        503: "5xx.html"
+                errors:
+                    # always prod for simplicity
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        503: "5xx.html"
                 vcl:
                     - "original-host"
                     - "strip-non-journal-cookies"
