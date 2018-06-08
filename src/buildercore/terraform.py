@@ -235,11 +235,9 @@ def render_fastly(context):
 
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
-        for name in vcl_constant_snippets:
-            snippet = fastly.VCL_SNIPPETS[name]
-            linked_main_vcl = snippet.as_inclusion().insert_include(linked_main_vcl)
-        for name in vcl_templated_snippets:
-            linked_main_vcl = vcl_templated_snippets[name].insert_include(linked_main_vcl)
+        inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + vcl_templated_snippets.values()
+        for i in inclusions:
+            linked_main_vcl = i.insert_include(linked_main_vcl)
 
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,

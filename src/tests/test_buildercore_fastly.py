@@ -63,7 +63,6 @@ sub vcl_fetch {
   }
 }
 """)
-        print(snippet.insert_include(original_main_vcl))
         self.assertEqual(
             snippet.insert_include(original_main_vcl),
             expected_main_vcl
