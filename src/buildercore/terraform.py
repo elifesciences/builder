@@ -170,10 +170,11 @@ def render_fastly(context):
             b['healthcheck'] = 'default'
 
     if context['fastly']['errors']:
-        error_vcl_template = _generate_vcl_file(
+        error_vcl_template = fastly.VCL_TEMPLATES['error-page']
+        error_vcl_template_file = _generate_vcl_file(
             context['stackname'],
-            fastly.VCL_TEMPLATES['error-page'].content,
-            fastly.VCL_TEMPLATES['error-page'].name,
+            error_vcl_template.content,
+            error_vcl_template.name,
             extension='vcl.tpl'
         )
         errors = context['fastly']['errors']
@@ -185,14 +186,14 @@ def render_fastly(context):
             name = 'error-page-vcl-%d' % code
             data['template_file'] = {
                 name: {
-                    'template': error_vcl_template,
+                    'template': error_vcl_template_file,
                     'vars': {
                         'code': '%d' % code,
                         'synthetic_response': '${data.http.error-page-%s.body}' % code,
                     }
                 },
             }
-            vcl_templated_snippets[name] = fastly.VCL_TEMPLATES['error-page'].as_snippet(name)
+            vcl_templated_snippets[name] = error_vcl_template.as_snippet(name)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
