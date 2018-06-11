@@ -519,7 +519,7 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
-                        503: "5xx.html"
+                        503: "503.html"
                 vcl:
                     - "original-host"
                     - "strip-non-journal-cookies"
@@ -590,7 +590,7 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
-                        503: "5xx.html"
+                        503: "503.html"
                 vcl:
                     - "original-host"
                     - "strip-non-journal-cookies"
