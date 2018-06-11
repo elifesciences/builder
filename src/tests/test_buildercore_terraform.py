@@ -132,6 +132,15 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'url': 'https://example.com/'
                         },
                     },
+                    'template_file': {
+                        'error-page-vcl-503': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'code': 503,
+                                'synthetic_response': '${data.http.error-page-503.body}',
+                            },
+                        },
+                    },
                 },
                 'resource': {
                     'fastly_service_v1': {
@@ -147,6 +156,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'name': 'example.org'
+                                },
+                                {
+                                    'name': 'anotherdomain.org'
                                 },
                                 {
                                     'name': 'future.example.org'
@@ -222,30 +234,19 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'type': 'REQUEST',
                                 },
                                 {
-                                    'name': 'condition-503',
-                                    'statement': 'beresp.status == 503',
-                                    'type': 'CACHE',
-                                },
-                                {
                                     'name': 'condition-surrogate-article-id',
                                     'statement': 'req.url ~ "^/articles/(\\d+)/(.+)$"',
                                     'type': 'CACHE',
-                                },
-                            ],
-                            'response_object': [
-                                {
-                                    'name': 'error-503',
-                                    'status': 503,
-                                    'response': 'Service Unavailable',
-                                    'content': '${data.http.error-page-503.body}',
-                                    'content_type': 'text/html; charset=us-ascii',
-                                    'cache_condition': 'condition-503',
                                 },
                             ],
                             'vcl': [
                                 {
                                     'name': 'gzip-by-content-type-suffix',
                                     'content': '${file("gzip-by-content-type-suffix.vcl")}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-503',
+                                    'content': '${data.template_file.error-page-vcl-503.rendered}',
                                 },
                                 {
                                     'name': 'main',

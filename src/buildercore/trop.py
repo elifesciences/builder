@@ -390,8 +390,8 @@ def external_dns_fastly(context):
     # may be used to point to TLS servers
 
     def entry(hostname, i):
-        hostedzone = context['domain'] + "."
         if _is_domain_2nd_level(hostname):
+            hostedzone = hostname + "."
             ip_addresses = context['fastly']['dns']['a']
             return route53.RecordSetType(
                 R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
@@ -403,6 +403,7 @@ def external_dns_fastly(context):
             )
             raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
 
+        hostedzone = context['domain'] + "."
         cname = context['fastly']['dns']['cname']
         return route53.RecordSetType(
             R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately

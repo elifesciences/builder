@@ -46,13 +46,7 @@ class FastlyVCL:
             raise FastlyCustomVCLGenerationError("Cannot match %s into main VCL template:\n\n%s" % (lookup, str(self)))
         return section_start
 
-class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type', 'hook'])):
-    """VCL snippets that can be used to augment the default VCL
-
-    Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
-
-    Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
-
+class FastlyVCLInclusion(namedtuple('FastlyVCLInclusion', ['name', 'type', 'hook'])):
     def insert_include(self, main_vcl):
         return main_vcl.insert(
             self.type,
@@ -63,6 +57,21 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
                 '// END builder %s' % self.name,
             ]
         )
+
+
+class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type', 'hook'])):
+    """VCL snippets that can be used to augment the default VCL
+
+    Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
+
+    Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
+
+    def as_inclusion(self):
+        return FastlyVCLInclusion(self.name, self.type, self.hook)
+
+class FastlyVCLTemplate(namedtuple('FastlyVCLTemplate', ['name', 'content', 'type', 'hook'])):
+    def as_inclusion(self, name):
+        return FastlyVCLInclusion(name, self.type, self.hook)
 
 class FastlyCustomVCLGenerationError(Exception):
     pass
@@ -99,6 +108,15 @@ VCL_SNIPPETS = {
         name='strip-non-journal-cookies',
         content=_read_vcl_file('strip-non-journal-cookies.vcl'),
         type='recv',
+        hook='after'
+    ),
+}
+
+VCL_TEMPLATES = {
+    'error-page': FastlyVCLTemplate(
+        name='error-page',
+        content=_read_vcl_file('error-page.vcl.tpl'),
+        type='error',
         hook='after'
     ),
 }

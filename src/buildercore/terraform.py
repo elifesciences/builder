@@ -7,7 +7,7 @@ import shutil
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, http_responses
+from .utils import ensure, mkdir_p
 from . import fastly
 
 EMPTY_TEMPLATE = '{}'
@@ -19,6 +19,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
+DATE_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 
@@ -96,6 +97,8 @@ def render_fastly(context):
     request_settings = []
     headers = []
     data = {}
+    vcl_constant_snippets = context['fastly']['vcl']
+    vcl_templated_snippets = {}
 
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
@@ -167,29 +170,7 @@ def render_fastly(context):
         for b in tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
             b['healthcheck'] = 'default'
 
-    if context['fastly']['errors']:
-        errors = context['fastly']['errors']
-        response_objects = []
-        data[DATA_TYPE_HTTP] = {}
-        for code, path in errors['codes'].items():
-            cache_condition = {
-                'name': 'condition-%s' % code,
-                'statement': 'beresp.status == %d' % code,
-                'type': 'CACHE',
-            }
-            conditions.append(cache_condition)
-            response_objects.append({
-                'name': 'error-%s' % code,
-                'status': int(code),
-                'response': http_responses()[int(code)],
-                'content': '${data.http.error-page-%s.body}' % code,
-                'content_type': 'text/html; charset=us-ascii',
-                'cache_condition': cache_condition['name'],
-            })
-            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
-                'url': '%s%s' % (errors['url'], path),
-            }
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['response_object'] = response_objects
+    _render_fastly_errors(context, data, vcl_templated_snippets)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -212,18 +193,29 @@ def render_fastly(context):
             }
         }
 
-    if context['fastly']['vcl']:
-        vcl = context['fastly']['vcl']
+    if vcl_constant_snippets or vcl_templated_snippets:
+        # constant snippets
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
             {
-                'name': name,
-                'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[name].content, name),
-            } for name in vcl
+                'name': snippet_name,
+                'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[snippet_name].content, snippet_name),
+            } for snippet_name in vcl_constant_snippets
         ]
+
+        # templated snippets
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].extend([
+            {
+                'name': snippet_name,
+                'content': '${data.template_file.%s.rendered}' % snippet_name,
+            } for snippet_name in vcl_templated_snippets
+        ])
+
+        # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
-        for name in vcl:
-            snippet = fastly.VCL_SNIPPETS[name]
-            linked_main_vcl = snippet.insert_include(linked_main_vcl)
+        inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + list(vcl_templated_snippets.values())
+        for i in inclusions:
+            linked_main_vcl = i.insert_include(linked_main_vcl)
+
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
             'name': FASTLY_MAIN_VCL_KEY,
             'content': _generate_vcl_file(
@@ -272,6 +264,33 @@ def render_fastly(context):
 
     return tf_file
 
+def _render_fastly_errors(context, data, vcl_templated_snippets):
+    if context['fastly']['errors']:
+        error_vcl_template = fastly.VCL_TEMPLATES['error-page']
+        error_vcl_template_file = _generate_vcl_file(
+            context['stackname'],
+            error_vcl_template.content,
+            error_vcl_template.name,
+            extension='vcl.tpl'
+        )
+        errors = context['fastly']['errors']
+        data[DATA_TYPE_HTTP] = {}
+        for code, path in errors['codes'].items():
+            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
+                'url': '%s%s' % (errors['url'], path),
+            }
+            name = 'error-page-vcl-%d' % code
+            data[DATE_TYPE_TEMPLATE] = {
+                name: {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'code': code,
+                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                    }
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+
 def _fastly_backend(hostname, name, request_condition=None):
     backend_resource = {
         'address': hostname,
@@ -300,13 +319,13 @@ def _fastly_request_setting(override):
     return request_setting_resource
 
 
-def _generate_vcl_file(stackname, content, key):
+def _generate_vcl_file(stackname, content, key, extension='vcl'):
     """
     creates a VCL on the filesystem, for Terraform to dynamically load it on apply
 
     content can be a string or any object that can be casted to a string
     """
-    with _open(stackname, key, extension='vcl', mode='w') as fp:
+    with _open(stackname, key, extension=extension, mode='w') as fp:
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 

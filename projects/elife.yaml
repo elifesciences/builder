@@ -515,11 +515,11 @@ journal:
                     path: /ping-fastly
                     check-interval: 30000
                     timeout: 2000
-                #errors:
-                #    # always prod for simplicity
-                #    url: https://prod-elife-error-pages.s3.amazonaws.com/
-                #    codes:
-                #        503: "5xx.html"
+                errors:
+                    # always prod for simplicity
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        503: "503.html"
                 vcl:
                     - "original-host"
                     - "strip-non-journal-cookies"
@@ -578,6 +578,26 @@ journal:
                             - journal
                 logging:
                     bucket: elife-cloudfront-logs
+            fastly:
+                subdomains:
+                    - "{instance}--fastly-journal"
+                    - "elifejournal.org"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 30000
+                    timeout: 2000
+                errors:
+                    # always prod for simplicity
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        503: "503.html"
+                vcl:
+                    - "original-host"
+                    - "strip-non-journal-cookies"
+                gcslogging:
+                    bucket: "{instance}-elife-fastly"
+                    path: "journal--{instance}/"
+                    period: 600
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096

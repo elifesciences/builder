@@ -865,6 +865,18 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['FastlyDNS3']['Properties']
         )
 
+        self.assertTrue('FastlyDNS4' in list(data['Resources'].keys()))
+        self.assertEqual(
+            {
+                'HostedZoneName': 'anotherdomain.org.',
+                'Name': 'anotherdomain.org',
+                'ResourceRecords': ['127.0.0.1', '127.0.0.2'],
+                'TTL': '60',
+                'Type': 'A',
+            },
+            data['Resources']['FastlyDNS4']['Properties']
+        )
+
     def test_elasticache_redis_template(self):
         extra = {
             'stackname': 'project-with-elasticache-redis--prod',
