@@ -501,6 +501,13 @@ journal:
                 engine: redis
                 type: cache.t2.micro
                 clusters: 2
+            elb:
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
+                protocol:
+                    - https
+                    - http
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
