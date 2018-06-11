@@ -1,1 +1,1 @@
-set req.http.Elife-Orig-Host = req.http.host;
+set req.http.X-Forwarded-Host = req.http.host;
