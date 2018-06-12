@@ -366,7 +366,7 @@ api-gateway:
                 - "{instance}--cdn-gateway"
             healthcheck:
                 path: /ping-fastly
-                check-interval: 30000
+                check-interval: 10000
                 timeout: 2000
             vcl:
                 - "original-host"
