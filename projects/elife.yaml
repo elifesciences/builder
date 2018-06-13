@@ -484,7 +484,7 @@ journal:
                     - "{instance}--fastly-journal"
                 healthcheck:
                     path: /ping-fastly
-                    check-interval: 30000
+                    check-interval: 10000
                     timeout: 2000
                 errors:
                     # always prod for simplicity
@@ -541,7 +541,7 @@ journal:
                     - "{instance}--fastly-journal"
                 healthcheck:
                     path: /ping-fastly
-                    check-interval: 30000
+                    check-interval: 10000
                     timeout: 2000
                 errors:
                     # always prod for simplicity
@@ -612,7 +612,7 @@ journal:
                     - "elifejournal.org"
                 healthcheck:
                     path: /ping-fastly
-                    check-interval: 30000
+                    check-interval: 10000
                     timeout: 2000
                 errors:
                     # always prod for simplicity
@@ -1618,7 +1618,7 @@ iiif:
                 period: 600
             healthcheck:
                 path: /ping-fastly
-                check-interval: 30000
+                check-interval: 10000
                 timeout: 2000
             surrogate-keys:
                 article-id-versioned:
