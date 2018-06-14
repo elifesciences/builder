@@ -1093,12 +1093,8 @@ containers:
             size: 100 # GB
             type: gp2
     aws-alt:
-        ckeditor-inline:
-            ports:
-                - 22
-                - 80
-            ext:
-                size: 10
+        jenkins-plugin-ami:
+            ext: false
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
