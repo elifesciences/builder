@@ -1126,6 +1126,18 @@ elife-alfred:
         ports:
             1433: 80
 
+elife-alfred-nodes:
+    domain: false
+    intdomain: false
+    aws:
+        ec2:
+            cluster-size: 0 # will be created automatically
+            security-group:
+                # preferred to aws.ports for this use case?
+                ports:
+                    - 22
+            
+
 api-dummy:
     subdomain: api-dummy
     repo: https://github.com/elifesciences/api-dummy
