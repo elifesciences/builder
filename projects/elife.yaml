@@ -94,6 +94,7 @@ defaults:
             protocol: http
             additional_listeners: {}
             idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/wildcard.elifesciences.org
             healthcheck:
                 protocol: http
@@ -120,6 +121,7 @@ defaults:
             subdomains-without-dns: []
             domains: []
             origins: {}
+            # maintained through `aws iam upload-server-certificate`
             certificate_id: ASCAIRXYIRFBOR5QSDP5M
             cookies: []
             compress: true
@@ -134,6 +136,11 @@ defaults:
             default-ttl: 3600 # Fastly default, in seconds
             dns:
                 cname: u2.shared.global.fastly.net
+                a:
+                    - 151.101.2.217
+                    - 151.101.66.217
+                    - 151.101.130.217
+                    - 151.101.194.217
             gcslogging: false
             healthcheck: false
             errors: false
@@ -359,7 +366,7 @@ api-gateway:
                 - "{instance}--cdn-gateway"
             healthcheck:
                 path: /ping-fastly
-                check-interval: 30000
+                check-interval: 10000
                 timeout: 2000
             vcl:
                 - "original-host"
@@ -472,11 +479,37 @@ journal:
                             - Referer
                         cookies:
                             - journal
+            fastly:
+                subdomains:
+                    - "{instance}--fastly-journal"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 10000
+                    timeout: 2000
+                errors:
+                    # always prod for simplicity
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        503: "503.html"
+                vcl:
+                    - "original-host"
+                    - "strip-non-journal-cookies"
+                gcslogging:
+                    bucket: "{instance}-elife-fastly"
+                    path: "journal--{instance}/"
+                    period: 600
         continuumtest:
             elasticache:
                 engine: redis
                 type: cache.t2.micro
                 clusters: 2
+            elb:
+                stickiness:
+                    type: cookie
+                    cookie-name: journal
+                protocol:
+                    - https
+                    - http
             cloudfront:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -503,6 +536,25 @@ journal:
                             - Referer
                         cookies:
                             - journal
+            fastly:
+                subdomains:
+                    - "{instance}--fastly-journal"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 10000
+                    timeout: 2000
+                errors:
+                    # always prod for simplicity
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        503: "503.html"
+                vcl:
+                    - "original-host"
+                    - "strip-non-journal-cookies"
+                gcslogging:
+                    bucket: "{instance}-elife-fastly"
+                    path: "journal--{instance}/"
+                    period: 600
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -554,6 +606,26 @@ journal:
                             - journal
                 logging:
                     bucket: elife-cloudfront-logs
+            fastly:
+                subdomains:
+                    - "{instance}--fastly-journal"
+                    - "elifejournal.org"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 10000
+                    timeout: 2000
+                errors:
+                    # always prod for simplicity
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        503: "503.html"
+                vcl:
+                    - "original-host"
+                    - "strip-non-journal-cookies"
+                gcslogging:
+                    bucket: "{instance}-elife-fastly"
+                    path: "journal--{instance}/"
+                    period: 600
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
@@ -1546,7 +1618,7 @@ iiif:
                 period: 600
             healthcheck:
                 path: /ping-fastly
-                check-interval: 30000
+                check-interval: 10000
                 timeout: 2000
             surrogate-keys:
                 article-id-versioned:
@@ -1691,6 +1763,7 @@ redirects:
                     - e-lifejournal.org
                     - e-lifejournal.com
                     - e-lifejournal.net
+                subdomains-without-dns:
                     - elifejournal.org
                 headers:
                     - Host

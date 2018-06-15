@@ -31,6 +31,25 @@ class TestBuildercoreTerraform(base.BaseCase):
             self.assertIn('version', configuration)
 
     @patch('buildercore.terraform.Terraform')
+    def test_fastly_provider_reads_api_key_from_vault(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        stackname = 'project-with-fastly-minimal--prod'
+        context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
+        terraform.init(stackname, context)
+        providers_file = self._load_terraform_file(stackname, 'providers')
+        self.assertEqual(
+            providers_file.get('provider').get('fastly').get('api_key'),
+            '${data.vault_generic_secret.fastly.data["api_key"]}'
+        )
+        self.assertEqual(
+            providers_file.get('data').get('vault_generic_secret').get('fastly'),
+            {
+                'path': 'secret/builder/apikey/fastly',
+            }
+        )
+
+    @patch('buildercore.terraform.Terraform')
     def test_delta(self, Terraform):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
@@ -113,6 +132,15 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'url': 'https://example.com/'
                         },
                     },
+                    'template_file': {
+                        'error-page-vcl-503': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'code': 503,
+                                'synthetic_response': '${data.http.error-page-503.body}',
+                            },
+                        },
+                    },
                 },
                 'resource': {
                     'fastly_service_v1': {
@@ -125,6 +153,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'name': 'prod--cdn2-of-www.example.org'
+                                },
+                                {
+                                    'name': 'example.org'
+                                },
+                                {
+                                    'name': 'anotherdomain.org'
                                 },
                                 {
                                     'name': 'future.example.org'
@@ -200,30 +234,19 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'type': 'REQUEST',
                                 },
                                 {
-                                    'name': 'condition-503',
-                                    'statement': 'beresp.status == 503',
-                                    'type': 'CACHE',
-                                },
-                                {
                                     'name': 'condition-surrogate-article-id',
                                     'statement': 'req.url ~ "^/articles/(\\d+)/(.+)$"',
                                     'type': 'CACHE',
-                                },
-                            ],
-                            'response_object': [
-                                {
-                                    'name': 'error-503',
-                                    'status': 503,
-                                    'response': 'Service Unavailable',
-                                    'content': '${data.http.error-page-503.body}',
-                                    'content_type': 'text/html; charset=us-ascii',
-                                    'cache_condition': 'condition-503',
                                 },
                             ],
                             'vcl': [
                                 {
                                     'name': 'gzip-by-content-type-suffix',
                                     'content': '${file("gzip-by-content-type-suffix.vcl")}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-503',
+                                    'content': '${data.template_file.error-page-vcl-503.rendered}',
                                 },
                                 {
                                     'name': 'main',
