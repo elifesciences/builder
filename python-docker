@@ -17,4 +17,4 @@ docker run \
   -v $(pwd):/srv/builder \
   -w /srv/builder \
   "elifesciences/builder:${image}" \
-  /venv/bin/python $* 
+  /venv/bin/python -B $*
