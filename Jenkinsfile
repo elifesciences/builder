@@ -39,10 +39,28 @@ elifePipeline {
         // currently unstable due to CloudFormation rate limiting
         //parallel actions
         stage "Test py27", {
-            actions["Test py27"]() 
+            def py2Actions = [
+                'host': { actions["Test py27"]() },
+                'docker': {
+                    elifeOnNode({
+                        checkout scm
+                        sh './docker-smoke.sh 2'
+                    }, 'containers--medium')
+                }
+            ]
+            parallel py2Actions
         }
         stage "Test py35", {
-            actions["Test py35"]() 
+            def py3Actions = [
+                'host': { actions["Test py35"]() },
+                'docker': {
+                    elifeOnNode({
+                        checkout scm
+                        sh './docker-smoke.sh 3'
+                    }, 'containers--medium')
+                }
+            ]
+            parallel py3Actions
         }
     }
 }
