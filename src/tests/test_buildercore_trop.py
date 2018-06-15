@@ -306,6 +306,35 @@ class TestBuildercoreTrop(base.BaseCase):
             ]
         )
 
+    def test_clustered_template_empty(self):
+        extra = {
+            'stackname': 'project-with-cluster-empty--prod',
+        }
+        context = cfngen.build_context('project-with-cluster-empty', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        #resources = data['Resources']
+        #self.assertNotIn('EC2Instance1', list(resources.keys()))
+        #self.assertIn('EC2Instance2', list(resources.keys()))
+        #self.assertIn('EC2Instance3', list(resources.keys()))
+        #self.assertNotIn('ExtraStorage1', list(resources.keys()))
+        #self.assertIn('ExtraStorage2', list(resources.keys()))
+        #self.assertIn('ExtraStorage3', list(resources.keys()))
+
+        #self.assertIn('ElasticLoadBalancer', list(resources.keys()))
+        #elb = resources['ElasticLoadBalancer']['Properties']
+        #self.assertEqual(
+        #    elb['Instances'],
+        #    [
+        #        {
+        #            'Ref': 'EC2Instance2',
+        #        },
+        #        {
+        #            'Ref': 'EC2Instance3',
+        #        }
+        #    ]
+        #)
+
     def test_clustered_template_with_node_overrides(self):
         extra = {
             'stackname': 'project-with-cluster-overrides--prod',

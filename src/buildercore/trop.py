@@ -91,13 +91,20 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    ensure('ports' in context['project']['aws'],
-           "Missing `ports` configuration in `aws` for '%s'" % context['stackname'])
+    ports = context['project']['aws'].get('ports', {})
+    security_group_ports = context['ec2']['security-group'].get('ports', {})
+    if isinstance(security_group_ports, list):
+        security_group_ports = {p:True for p in security_group_ports}
+    ports.update(security_group_ports)
+
+    #ports.update(context['ec2']['security-group'].get('ports', {}))
+    ensure(len(ports) > 0,
+           "Empty `ports` configuration in `aws` for '%s'" % context['stackname'])
 
     return security_group(
         SECURITY_GROUP_TITLE,
         context['project']['aws']['vpc-id'],
-        context['project']['aws']['ports']
+        ports
     ) # list of strings or dicts
 
 def rds_security(context):

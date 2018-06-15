@@ -428,6 +428,17 @@ project-with-cluster-overrides:
         elb: 
             protocol: http
 
+project-with-cluster-empty:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    intdomain: false
+    aws:
+        ec2:
+            cluster-size: 0
+            security-group:
+                ports:
+                    - 22
+
 project-with-stickiness:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
