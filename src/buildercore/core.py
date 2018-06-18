@@ -298,6 +298,10 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         'nodes': nodes
     })
 
+    if not public_ips:
+        LOG.info("No EC2 nodes to execute on")
+        return
+
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
@@ -470,7 +474,7 @@ class NoRunningInstances(Exception):
 # TODO: misleading name, this returns a list of raw boto3 EC2.Instance data
 def stack_data(stackname, ensure_single_instance=False):
     try:
-        ec2_instances = find_ec2_instances(stackname)
+        ec2_instances = find_ec2_instances(stackname, allow_empty=True)
         if len(ec2_instances) > 1 and ensure_single_instance:
             raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
         return [ec2.meta.data for ec2 in ec2_instances]

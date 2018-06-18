@@ -87,11 +87,6 @@ def create_stack(stackname):
 
 @updates('ec2')
 def setup_ec2(stackname, context):
-    # TODO: I don't think this check is needed, can we create a elife-alfred-nodes stack without it? If so, remove
-    if context['ec2']['cluster-size'] == 0:
-        LOG.info('No EC2 instances configured to be provisioned')
-        return
-
     def _setup_ec2_node():
         def is_resourcing():
             try:
@@ -474,11 +469,6 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
     # and refresh their context then remove this check
     if ec2 is True:
         ec2 = default_ec2
-
-    # TODO: can we fall back to an empty for loop rather than checking this? Test by creating elife-alfred-nodes stacks
-    if context['ec2']['cluster-size'] == 0:
-        LOG.info('No EC2 instances configured to be updated')
-        return
 
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
