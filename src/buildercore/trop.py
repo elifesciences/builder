@@ -57,34 +57,6 @@ def _read_script(script_filename):
     with open(path, 'r') as fp:
         return fp.read()
 
-def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
-    if not end_port:
-        end_port = port
-    return ec2.SecurityGroupRule(**{
-        'FromPort': port,
-        'ToPort': end_port,
-        'IpProtocol': protocol,
-        'CidrIp': cidr
-    })
-
-# TODO: extract a class into another module to deal with all the cases
-def complex_ingress(port, struct):
-    if struct == True:
-        return ingress(port)
-    if isinstance(struct, int):
-        struct = {
-            'guest': struct,
-        }
-    default_end_port = port
-    default_cidr_ip = '0.0.0.0/0'
-    default_protocol = 'tcp'
-    return ingress(port, **{
-        # TODO: rename 'guest' in project file to something less wrong
-        'end_port': struct.get('guest', default_end_port),
-        'protocol': struct.get('protocol', default_protocol),
-        'cidr': struct.get('cidr-ip', default_cidr_ip),
-    })
-
 class Ingress():
     @classmethod
     def build(cls, ports):
@@ -133,7 +105,6 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        #'SecurityGroupIngress': [complex_ingress(port, definition) for port, definition in ingress_structs.items()],
         'SecurityGroupIngress': ingress_structs.to_troposphere(),
     })
 
