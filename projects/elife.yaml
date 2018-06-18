@@ -914,6 +914,10 @@ journal-cms:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+        ckeditor:
+            description: testing environment. backed by RDS
+            ext:
+                size: 10 # GB
         ci:
             ext:
                 size: 5 # GB
