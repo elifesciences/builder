@@ -88,7 +88,20 @@ def complex_ingress(port, struct):
 class Ingress():
     @classmethod
     def build(cls, ports):
-        return Ingress(ports)
+        def _convert_to_dictionary(ports):
+            if isinstance(ports, list):
+                ports_map = OrderedDict()
+                for p in ports:
+                    if isinstance(p, int):
+                        ports_map[p] = {}
+                    elif isinstance(p, OrderedDict):
+                        ensure(len(p) == 1, "Port can only be defined as a single dictionary")
+                        ports_map[p.keys()[0]] = list(p.values())[0]
+                    else:
+                        raise ValueError("Invalid port definition: %s" % p)
+                return ports_map
+            return ports
+        return Ingress(_convert_to_dictionary(ports))
 
     def __init__(self, ports):
         self._ports = ports
@@ -96,10 +109,10 @@ class Ingress():
     def to_troposphere(self):
         return [ec2.SecurityGroupRule(**{
             'FromPort': port,
-            'ToPort': port,
-            'IpProtocol': 'tcp',
-            'CidrIp': '0.0.0.0/0'
-        }) for port in self._ports]
+            'ToPort': configuration.get('guest', port),
+            'IpProtocol': configuration.get('protocol', 'tcp'),
+            'CidrIp': configuration.get('cidr-ip', '0.0.0.0/0'),
+        }) for port, configuration in self._ports.items()]
 
 
 def security_group(group_id, vpc_id, ingress_structs, description=""):

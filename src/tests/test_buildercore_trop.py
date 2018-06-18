@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json  # , yaml
 import os
 from os.path import join
@@ -1158,6 +1159,36 @@ class TestIngress(base.BaseCase):
                     'FromPort': 80,
                     'CidrIp': '0.0.0.0/0',
                     'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
+    def test_accepts_ports_defining_custom_rules(self):
+        simple_ingress = trop.Ingress.build(OrderedDict([
+            (80, OrderedDict([
+                ('guest', 8080),
+                ('cidr-ip', '10.0.0.0/0'),
+            ])),
+            (10000, OrderedDict([
+                ('guest', 10000),
+                ('protocol', 'udp'),
+                ('cidr-ip', '0.0.0.0/0'),
+            ]))
+        ]))
+        self.assertEqual(
+            self._dump_to_list_of_rules(simple_ingress),
+            [
+                {
+                    'ToPort': 8080,
+                    'FromPort': 80,
+                    'CidrIp': '10.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 10000,
+                    'FromPort': 10000,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'udp',
                 },
             ]
         )
