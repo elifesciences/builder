@@ -67,6 +67,7 @@ def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
         'CidrIp': cidr
     })
 
+# TODO: extract a class into another module to deal with all the cases
 def complex_ingress(port, struct):
     if struct == True:
         return ingress(port)
@@ -220,6 +221,7 @@ echo %s > /etc/build-vars.json.b64
 %s""" % (buildvars_serialization, clean_server)),
     }
 
+    # TODO: extract in private method?
     if context['ec2'].get('root'):
         project_ec2['BlockDeviceMappings'] = [{
             'DeviceName': '/dev/sda1',
