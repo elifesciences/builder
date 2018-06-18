@@ -1,14 +1,16 @@
+import pytest
 from . import base
 from buildercore import core, cfngen, project, context_handler, cloudformation
 
 import logging
 LOG = logging.getLogger(__name__)
 
-class TestBuildercoreCfngen(base.BaseCase):
-    def test_rendering(self):
-        for pname in project.aws_projects().keys():
-            LOG.info('rendering %s', pname)
-            cfngen.quick_render(pname)
+class TestBuildercoreCfngen():
+    # note: this requires pytest, but provides great introspection
+    # on which project_name is failing
+    @pytest.mark.parametrize("project_name", project.aws_projects().keys())
+    def test_quick_rendering(self, project_name):
+        cfngen.quick_render(project_name)
 
 class TestBuildContext(base.BaseCase):
     def test_existing_alt_config(self):

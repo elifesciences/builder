@@ -70,6 +70,10 @@ def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
 def complex_ingress(port, struct):
     if struct == True:
         return ingress(port)
+    if isinstance(struct, int):
+        struct = {
+            'guest': struct,
+        }
     default_end_port = port
     default_cidr_ip = '0.0.0.0/0'
     default_protocol = 'tcp'
