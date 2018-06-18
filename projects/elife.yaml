@@ -1089,6 +1089,7 @@ elife-libraries:
         ram: 1024
 
 containers:
+    description: run any Docker-based workload
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
@@ -1099,6 +1100,9 @@ containers:
             size: 100 # GB
             type: gp2
     aws-alt:
+        # AMIs created from here used in
+        # https://alfred.elifesciences.org/configure
+        # `Cloud` section
         jenkins-plugin-ami:
             ext: false
             ec2:
@@ -1138,12 +1142,12 @@ elife-alfred:
 # used in https://alfred.elifesciences.org/configure
 # `Cloud` section
 elife-alfred-nodes:
+    description: supports dynamic creation of EC2 instances from Jenkins
     domain: false
     intdomain: false
     aws:
         ec2:
-            cluster-size: 0 # will be created automatically
-                            # by the Jenkins EC2 plugin
+            cluster-size: 0
             security-group:
                 ports:
                     - 22
