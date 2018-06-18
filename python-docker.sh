@@ -25,7 +25,7 @@ fi
 #fi
 
 docker run \
-  -v $(pwd):/srv/builder \
+  -v "$(pwd)":/srv/builder \
   -w /srv/builder \
   "elifesciences/builder:${image}" \
-  /venv/bin/python -B $*
+  /venv/bin/python -B "$@"
