@@ -92,6 +92,10 @@ class Ingress():
 
         return Ingress(_convert_to_dictionary(ports))
 
+    @classmethod
+    def only(cls, port):
+        return Ingress.build([port])
+
     def __init__(self, ports):
         self._ports = ports
 
@@ -109,13 +113,11 @@ class Ingress():
         }) for port, configuration in self._ports.items()]
 
 
-def security_group(group_id, vpc_id, ingress_structs, description=""):
-    if not isinstance(ingress_structs, Ingress):
-        ingress_structs = Ingress.build(ingress_structs)
+def security_group(group_id, vpc_id, ingress, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': ingress_structs.to_troposphere(),
+        'SecurityGroupIngress': ingress.to_troposphere(),
     })
 
 def ec2_security(context):
@@ -137,7 +139,7 @@ def rds_security(context):
         'postgres': 5432,
         'mysql': 3306
     }
-    ingress_ports = {engine_ports[context['project']['aws']['rds']['engine'].lower()]: True}
+    ingress_ports = Ingress.only(engine_ports[context['project']['aws']['rds']['engine'].lower()])
     return security_group("VPCSecurityGroup",
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
@@ -625,7 +627,7 @@ def render_elb(context, template, ec2_instances):
     protocols = _elb_protocols(context)
 
     listeners = []
-    elb_ports = {}
+    elb_ports = []
     for protocol in protocols:
         if protocol == 'http':
             listeners.append(elb.Listener(
@@ -635,7 +637,7 @@ def render_elb(context, template, ec2_instances):
                 PolicyNames=listeners_policy_names,
                 Protocol='HTTP',
             ))
-            elb_ports[80] = True
+            elb_ports.append(80)
         elif protocol == 'https':
             listeners.append(elb.Listener(
                 InstanceProtocol='HTTP',
@@ -645,7 +647,7 @@ def render_elb(context, template, ec2_instances):
                 Protocol='HTTPS',
                 SSLCertificateId=context['elb']['certificate']
             ))
-            elb_ports[443] = True
+            elb_ports.append(443)
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
@@ -658,7 +660,7 @@ def render_elb(context, template, ec2_instances):
             Protocol=listener['protocol'].upper(),
             SSLCertificateId=context['elb']['certificate']
         ))
-        elb_ports[listener['port']] = True
+        elb_ports.append(listener['port'])
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
@@ -691,7 +693,7 @@ def render_elb(context, template, ec2_instances):
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
         context['project']['aws']['vpc-id'],
-        elb_ports
+        Ingress.build(elb_ports)
     )) # list of strings or dicts
 
     if any([context['full_hostname'], context['int_full_hostname']]):
@@ -846,7 +848,7 @@ def elasticache_security_group(context):
     engine_ports = {
         'redis': 6379,
     }
-    ingress_ports = {engine_ports[context['elasticache']['engine']]: True}
+    ingress_ports = Ingress.only(engine_ports[context['elasticache']['engine']])
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
