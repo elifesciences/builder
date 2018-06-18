@@ -313,27 +313,22 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('project-with-cluster-empty', **extra)
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
-        #resources = data['Resources']
-        #self.assertNotIn('EC2Instance1', list(resources.keys()))
-        #self.assertIn('EC2Instance2', list(resources.keys()))
-        #self.assertIn('EC2Instance3', list(resources.keys()))
-        #self.assertNotIn('ExtraStorage1', list(resources.keys()))
-        #self.assertIn('ExtraStorage2', list(resources.keys()))
-        #self.assertIn('ExtraStorage3', list(resources.keys()))
-
-        #self.assertIn('ElasticLoadBalancer', list(resources.keys()))
-        #elb = resources['ElasticLoadBalancer']['Properties']
-        #self.assertEqual(
-        #    elb['Instances'],
-        #    [
-        #        {
-        #            'Ref': 'EC2Instance2',
-        #        },
-        #        {
-        #            'Ref': 'EC2Instance3',
-        #        }
-        #    ]
-        #)
+        resources = data['Resources']
+        self.assertEqual(resources.keys(), ['StackSecurityGroup'])
+        security_group = resources['StackSecurityGroup']['Properties']
+        self.assertEqual(
+            security_group,
+            {
+                'GroupDescription': 'security group',
+                'SecurityGroupIngress': [{
+                    'CidrIp': '0.0.0.0/0',
+                    'FromPort': 22,
+                    'ToPort': 22,
+                    'IpProtocol': 'tcp',
+                }],
+                'VpcId': 'vpc-78a2071d',
+            }
+        )
 
     def test_clustered_template_with_node_overrides(self):
         extra = {

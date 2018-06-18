@@ -17,7 +17,7 @@ from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
-from .utils import first, ensure, subdict, lmap, isstr
+from .utils import ensure, subdict, lmap, isstr
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
 def ec2_security(context):
     def _convert_to_dictionary(ports):
         if isinstance(ports, list):
-            ports_map = {} 
+            ports_map = {}
             for p in ports:
                 if isinstance(p, int):
                     ports_map[p] = True
