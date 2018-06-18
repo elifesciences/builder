@@ -8,7 +8,7 @@ LOG = logging.getLogger(__name__)
 class TestBuildercoreCfngen():
     # note: this requires pytest, but provides great introspection
     # on which project_name is failing
-    @pytest.mark.parametrize("project_name", project.aws_projects().keys())
+    @pytest.mark.parametrize("project_name", base.test_projects())
     def test_quick_rendering(self, project_name):
         cfngen.quick_render(project_name)
 
