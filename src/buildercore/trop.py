@@ -105,9 +105,6 @@ def ec2_security(context):
     security_group_ports = _convert_to_dictionary(context['ec2']['security-group'].get('ports', {}))
     ports.update(security_group_ports)
 
-    ensure(len(ports) > 0,
-           "Empty `ports` configuration in `aws` for '%s'" % context['stackname'])
-
     return security_group(
         SECURITY_GROUP_TITLE,
         context['project']['aws']['vpc-id'],

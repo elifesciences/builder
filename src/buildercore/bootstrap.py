@@ -87,6 +87,10 @@ def create_stack(stackname):
 
 @updates('ec2')
 def setup_ec2(stackname, context):
+    if context['ec2']['cluster-size'] == 0:
+        LOG.info('No EC2 instances configured to be provisioned')
+        return
+
     def _setup_ec2_node():
         def is_resourcing():
             try:
@@ -446,7 +450,7 @@ def upload_master_configuration(master_stack, master_configuration_data):
 
 @updates('ec2')
 @core.requires_active_stack
-def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, **kwargs):
+def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None, **kwargs):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
@@ -454,7 +458,7 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
-    pdata = ctx['project']
+    pdata = context['project']
     # backward compatibility: old instances may not have 'ec2' key
     # consider it true if missing, as newer stacks e.g. bus--prod
     # would have it explicitly set to False
@@ -469,6 +473,10 @@ def update_ec2_stack(stackname, ctx, concurrency=None, formula_revisions=None, *
     # and refresh their context then remove this check
     if ec2 is True:
         ec2 = default_ec2
+
+    if context['ec2']['cluster-size'] == 0:
+        LOG.info('No EC2 instances configured to be updated')
+        return
 
     region = pdata['aws']['region']
     is_master = core.is_master_server_stack(stackname)
