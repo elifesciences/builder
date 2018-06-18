@@ -1,6 +1,6 @@
 import pytest
 from . import base
-from buildercore import core, cfngen, project, context_handler, cloudformation
+from buildercore import core, cfngen, context_handler, cloudformation
 
 import logging
 LOG = logging.getLogger(__name__)
