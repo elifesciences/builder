@@ -94,13 +94,22 @@ class Ingress():
                 for p in ports:
                     if isinstance(p, int):
                         ports_map[p] = {}
-                    elif isinstance(p, OrderedDict):
-                        ensure(len(p) == 1, "Port can only be defined as a single dictionary")
-                        ports_map[p.keys()[0]] = list(p.values())[0]
                     else:
                         raise ValueError("Invalid port definition: %s" % p)
-                return ports_map
-            return ports
+            elif isinstance(ports, OrderedDict):
+                ports_map = OrderedDict()
+                for p, configuration in ports.items():
+                    if isinstance(configuration, int):
+                        ports_map[p] = {'guest':configuration}
+                    elif isinstance(configuration, OrderedDict):
+                        ports_map[p] = configuration
+                    else:
+                        raise ValueError("Invalid port definition: %s => %s" % (p, configuration))
+            else:
+                raise ValueError("Invalid ports definition: %s" % ports)
+
+            return ports_map
+
         return Ingress(_convert_to_dictionary(ports))
 
     def __init__(self, ports):

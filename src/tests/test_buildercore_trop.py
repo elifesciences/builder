@@ -1163,6 +1163,22 @@ class TestIngress(base.BaseCase):
             ]
         )
 
+    def test_accepts_remapped_ports(self):
+        simple_ingress = trop.Ingress.build(OrderedDict([
+            (80, 8080),
+        ]))
+        self.assertEqual(
+            self._dump_to_list_of_rules(simple_ingress),
+            [
+                {
+                    'ToPort': 8080,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
     def test_accepts_ports_defining_custom_rules(self):
         simple_ingress = trop.Ingress.build(OrderedDict([
             (80, OrderedDict([
