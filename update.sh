@@ -8,10 +8,7 @@ python .prerequisites.py "$@"
 find src/ -name '*.pyc' -delete
 
 # generate a settings file if one doesn't exist
-if [ ! -e settings.yml ]; then
-    echo "* settings.yml not found, creating"
-    grep -Ev '\w*##' example.settings.yml > settings.yml
-fi
+. .settings.sh
 
 # activate the venv, recreating if neccessary
 . .activate-venv.sh
