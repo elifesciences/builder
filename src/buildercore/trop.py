@@ -9,6 +9,7 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing
 it to the correct file etc."""
 
+from collections import OrderedDict
 import copy
 from os.path import join
 from . import config, utils, bvars
@@ -66,13 +67,9 @@ def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
         'CidrIp': cidr
     })
 
-def complex_ingress(struct):
-    # it's just not that simple
-    if not isinstance(struct, dict):
-        port = struct
+def complex_ingress(port, struct):
+    if struct == True:
         return ingress(port)
-    assert len(struct.items()) == 1, "port mapping struct must contain a single key: %r" % struct
-    port, struct = first(struct.items())
     default_end_port = port
     default_cidr_ip = '0.0.0.0/0'
     default_protocol = 'tcp'
@@ -87,17 +84,27 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': lmap(complex_ingress, ingress_structs)
+        'SecurityGroupIngress': [complex_ingress(port, definition) for port, definition in ingress_structs.items()],
     })
 
 def ec2_security(context):
-    ports = context['project']['aws'].get('ports', {})
-    security_group_ports = context['ec2']['security-group'].get('ports', {})
-    if isinstance(security_group_ports, list):
-        security_group_ports = {p:True for p in security_group_ports}
+    def _convert_to_dictionary(ports):
+        if isinstance(ports, list):
+            ports_map = {} 
+            for p in ports:
+                if isinstance(p, int):
+                    ports_map[p] = True
+                elif isinstance(p, OrderedDict):
+                    ensure(len(p) == 1, "Port can only be defined as a single dictionary")
+                    ports_map[p.keys()[0]] = p.values()[0]
+                else:
+                    raise ValueError("Invalid port definition: %s" % p)
+            return ports_map
+        return ports
+    ports = _convert_to_dictionary(context['project']['aws'].get('ports', {}))
+    security_group_ports = _convert_to_dictionary(context['ec2']['security-group'].get('ports', {}))
     ports.update(security_group_ports)
 
-    #ports.update(context['ec2']['security-group'].get('ports', {}))
     ensure(len(ports) > 0,
            "Empty `ports` configuration in `aws` for '%s'" % context['stackname'])
 
@@ -105,7 +112,7 @@ def ec2_security(context):
         SECURITY_GROUP_TITLE,
         context['project']['aws']['vpc-id'],
         ports
-    ) # list of strings or dicts
+    )
 
 def rds_security(context):
     """returns a security group for the rds instance.
@@ -115,7 +122,7 @@ def rds_security(context):
         'postgres': 5432,
         'mysql': 3306
     }
-    ingress_ports = [engine_ports[context['project']['aws']['rds']['engine'].lower()]]
+    ingress_ports = {engine_ports[context['project']['aws']['rds']['engine'].lower()]: True}
     return security_group("VPCSecurityGroup",
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
@@ -461,11 +468,12 @@ def render_ec2(context, template):
 def render_ec2_dns(context, template):
     # single ec2 node may get an external hostname
     if context['full_hostname'] and not context['elb']:
-        ensure(context['ec2']['cluster-size'] == 1,
-               "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry")
+        ensure(context['ec2']['cluster-size'] <= 1,
+               "If there is no load balancer, multiple EC2 instances cannot be assigned a single DNS entry")
 
-        template.add_resource(external_dns_ec2_single(context))
-        [template.add_resource(cname) for cname in cnames(context)]
+        if context['ec2']['cluster-size'] == 1:
+            template.add_resource(external_dns_ec2_single(context))
+            [template.add_resource(cname) for cname in cnames(context)]
 
     # single ec2 node may get an internal hostname
     if context['int_full_hostname'] and not context['elb']:
@@ -592,7 +600,7 @@ def render_elb(context, template, ec2_instances):
     protocols = _elb_protocols(context)
 
     listeners = []
-    elb_ports = []
+    elb_ports = {}
     for protocol in protocols:
         if protocol == 'http':
             listeners.append(elb.Listener(
@@ -602,7 +610,7 @@ def render_elb(context, template, ec2_instances):
                 PolicyNames=listeners_policy_names,
                 Protocol='HTTP',
             ))
-            elb_ports.append(80)
+            elb_ports[80] = True
         elif protocol == 'https':
             listeners.append(elb.Listener(
                 InstanceProtocol='HTTP',
@@ -612,7 +620,7 @@ def render_elb(context, template, ec2_instances):
                 Protocol='HTTPS',
                 SSLCertificateId=context['elb']['certificate']
             ))
-            elb_ports.append(443)
+            elb_ports[443] = True
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
@@ -625,7 +633,7 @@ def render_elb(context, template, ec2_instances):
             Protocol=listener['protocol'].upper(),
             SSLCertificateId=context['elb']['certificate']
         ))
-        elb_ports.append(listener['port'])
+        elb_ports[listener['port']] = True
 
     template.add_resource(elb.LoadBalancer(
         ELB_TITLE,
@@ -813,7 +821,7 @@ def elasticache_security_group(context):
     engine_ports = {
         'redis': 6379,
     }
-    ingress_ports = [engine_ports[context['elasticache']['engine']]]
+    ingress_ports = {engine_ports[context['elasticache']['engine']]: True}
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
