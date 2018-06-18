@@ -153,6 +153,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'DeviceName': '/dev/sda1',
                     'Ebs': {
                         'VolumeSize': 20,
+                        'VolumeType': 'standard',
                     },
                 },
             ]
