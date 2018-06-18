@@ -47,6 +47,8 @@ defaults:
             masterless: false
             # optional: pin a master server for all new instances of a project
             master_ip: 10.0.2.198
+            # optional: specify `ports` to be opened
+            security-group: {}
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
