@@ -96,11 +96,14 @@ class Ingress():
                         ports_map[p] = {}
                     else:
                         raise ValueError("Invalid port definition: %s" % p)
-            elif isinstance(ports, OrderedDict):
+            elif isinstance(ports, dict):
                 ports_map = OrderedDict()
                 for p, configuration in ports.items():
-                    if isinstance(configuration, int):
-                        ports_map[p] = {'guest':configuration}
+                    if isinstance(configuration, bool):
+                        # temporary
+                        ports_map[p] = {}
+                    elif isinstance(configuration, int):
+                        ports_map[p] = {'guest': configuration}
                     elif isinstance(configuration, OrderedDict):
                         ports_map[p] = configuration
                     else:
@@ -125,10 +128,13 @@ class Ingress():
 
 
 def security_group(group_id, vpc_id, ingress_structs, description=""):
+    if not isinstance(ingress_structs, Ingress):
+        ingress_structs = Ingress.build(ingress_structs)
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': [complex_ingress(port, definition) for port, definition in ingress_structs.items()],
+        #'SecurityGroupIngress': [complex_ingress(port, definition) for port, definition in ingress_structs.items()],
+        'SecurityGroupIngress': ingress_structs.to_troposphere(),
     })
 
 def ec2_security(context):
