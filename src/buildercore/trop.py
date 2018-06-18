@@ -101,7 +101,7 @@ def ec2_security(context):
                     ports_map[p] = True
                 elif isinstance(p, OrderedDict):
                     ensure(len(p) == 1, "Port can only be defined as a single dictionary")
-                    ports_map[p.keys()[0]] = p.values()[0]
+                    ports_map[p.keys()[0]] = list(p.values())[0]
                 else:
                     raise ValueError("Invalid port definition: %s" % p)
             return ports_map
