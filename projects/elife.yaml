@@ -1104,11 +1104,6 @@ containers:
             ec2:
                 root:
                     size: 20 # GB
-        jenkins-plugin-test:
-            ext: false
-            ec2:
-                root:
-                    size: 20 # GB
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
