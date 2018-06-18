@@ -1164,11 +1164,11 @@ class TestIngress(base.BaseCase):
         )
 
     def test_accepts_remapped_ports(self):
-        simple_ingress = trop.Ingress.build(OrderedDict([
+        remapped_ingress = trop.Ingress.build(OrderedDict([
             (80, 8080),
         ]))
         self.assertEqual(
-            self._dump_to_list_of_rules(simple_ingress),
+            self._dump_to_list_of_rules(remapped_ingress),
             [
                 {
                     'ToPort': 8080,
@@ -1180,7 +1180,7 @@ class TestIngress(base.BaseCase):
         )
 
     def test_accepts_ports_defining_custom_rules(self):
-        simple_ingress = trop.Ingress.build(OrderedDict([
+        custom_ingress = trop.Ingress.build(OrderedDict([
             (80, OrderedDict([
                 ('guest', 8080),
                 ('cidr-ip', '10.0.0.0/0'),
@@ -1192,7 +1192,7 @@ class TestIngress(base.BaseCase):
             ]))
         ]))
         self.assertEqual(
-            self._dump_to_list_of_rules(simple_ingress),
+            self._dump_to_list_of_rules(custom_ingress),
             [
                 {
                     'ToPort': 8080,
@@ -1209,7 +1209,58 @@ class TestIngress(base.BaseCase):
             ]
         )
 
+    def test_can_mix_and_match_definitions(self):
+        custom_ingress = trop.Ingress.build([
+            22,
+            OrderedDict([(80, OrderedDict([
+                ('guest', 8080),
+            ]))]),
+        ])
+        self.assertEqual(
+            self._dump_to_list_of_rules(custom_ingress),
+            [
+                {
+                    'ToPort': 22,
+                    'FromPort': 22,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 8080,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
+    def test_can_merge_multiple_sources(self):
+        merged_ingress = trop.Ingress.build([22, 80]).merge(
+            trop.Ingress.build([80, 443])
+        )
+        self.assertEqual(
+            self._dump_to_list_of_rules(merged_ingress),
+            [
+                {
+                    'ToPort': 22,
+                    'FromPort': 22,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 80,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 443,
+                    'FromPort': 443,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
     def _dump_to_list_of_rules(self, ingress):
         return [r.to_dict() for r in ingress.to_troposphere()]
-
-

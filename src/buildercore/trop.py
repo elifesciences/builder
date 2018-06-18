@@ -66,8 +66,13 @@ class Ingress():
                 for p in ports:
                     if isinstance(p, int):
                         ports_map[p] = {}
+                    elif isinstance(p, dict):
+                        ensure(len(p) == 1, "Single port definition cannot contain more than one value")
+                        from_port = p.keys()[0]
+                        configuration = list(p.values())[0]
+                        ports_map[from_port] = configuration
                     else:
-                        raise ValueError("Invalid port definition: %s" % p)
+                        raise ValueError("Invalid port definition: %s" % (p,))
             elif isinstance(ports, dict):
                 ports_map = OrderedDict()
                 for p, configuration in ports.items():
@@ -90,6 +95,11 @@ class Ingress():
     def __init__(self, ports):
         self._ports = ports
 
+    def merge(self, another):
+        ports = OrderedDict(self._ports)
+        ports.update(another._ports)
+        return Ingress(ports)
+
     def to_troposphere(self):
         return [ec2.SecurityGroupRule(**{
             'FromPort': port,
@@ -109,27 +119,14 @@ def security_group(group_id, vpc_id, ingress_structs, description=""):
     })
 
 def ec2_security(context):
-    def _convert_to_dictionary(ports):
-        if isinstance(ports, list):
-            ports_map = {}
-            for p in ports:
-                if isinstance(p, int):
-                    ports_map[p] = True
-                elif isinstance(p, OrderedDict):
-                    ensure(len(p) == 1, "Port can only be defined as a single dictionary")
-                    ports_map[p.keys()[0]] = list(p.values())[0]
-                else:
-                    raise ValueError("Invalid port definition: %s" % p)
-            return ports_map
-        return ports
-    ports = _convert_to_dictionary(context['project']['aws'].get('ports', {}))
-    security_group_ports = _convert_to_dictionary(context['ec2']['security-group'].get('ports', {}))
-    ports.update(security_group_ports)
+    ports = Ingress.build(context['project']['aws'].get('ports', {}))
+    security_group_ports = Ingress.build(context['ec2']['security-group'].get('ports', {}))
+    ingress = ports.merge(security_group_ports)
 
     return security_group(
         SECURITY_GROUP_TITLE,
         context['project']['aws']['vpc-id'],
-        ports
+        ingress
     )
 
 def rds_security(context):
