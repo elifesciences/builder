@@ -445,9 +445,6 @@ journal:
                     2:
                         type: cache.t2.micro
             elb:
-                stickiness:
-                    type: cookie
-                    cookie-name: journal
                 protocol:
                     - https
                     - http
@@ -504,9 +501,6 @@ journal:
                 type: cache.t2.micro
                 clusters: 2
             elb:
-                stickiness:
-                    type: cookie
-                    cookie-name: journal
                 protocol:
                     - https
                     - http
@@ -567,9 +561,6 @@ journal:
                     2:
                         type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
             elb:
-                stickiness:
-                    type: cookie
-                    cookie-name: journal
                 protocol:
                     - https
                     - http
