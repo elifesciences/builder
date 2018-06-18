@@ -378,6 +378,13 @@ project-with-fastly-gcs:
                 bucket: my-bucket
                 path: my-project/
                 period: 1800
+                    
+project-with-ec2-custom-root:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2:
+            root:
+                size: 20 # GB
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

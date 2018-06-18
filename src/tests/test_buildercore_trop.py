@@ -137,6 +137,27 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['MountPoint1']['Properties']
         )
 
+    def test_root_volume_size_template(self):
+        extra = {
+            'stackname': 'project-with-ec2-custom-root--prod',
+        }
+        context = cfngen.build_context('project-with-ec2-custom-root', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        ec2 = data['Resources']['EC2Instance1']['Properties']
+        self.assertIn('BlockDeviceMappings', ec2)
+        self.assertEqual(
+            ec2['BlockDeviceMappings'],
+            [
+                {
+                    'DeviceName': '/dev/sda1',
+                    'Ebs': {
+                        'VolumeSize': 20,
+                    },
+                },
+            ]
+        )
+
     def test_clustered_template(self):
         extra = {
             'stackname': 'project-with-cluster--prod',

@@ -218,6 +218,15 @@ echo %s > /etc/build-vars.json.b64
 
 %s""" % (buildvars_serialization, clean_server)),
     }
+
+    if context['ec2'].get('root'):
+        project_ec2['BlockDeviceMappings'] = [{
+            'DeviceName': '/dev/sda1',
+            'Ebs': {
+                'VolumeSize': context['ec2']['root']['size'],
+                'VolumeType': context['ec2']['root'].get('type', 'standard'),
+            }
+        }]
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
 def rdsdbparams(context, template):
