@@ -85,6 +85,23 @@ def complex_ingress(port, struct):
         'cidr': struct.get('cidr-ip', default_cidr_ip),
     })
 
+class Ingress():
+    @classmethod
+    def build(cls, ports):
+        return Ingress(ports)
+
+    def __init__(self, ports):
+        self._ports = ports
+
+    def to_troposphere(self):
+        return [ec2.SecurityGroupRule(**{
+            'FromPort': port,
+            'ToPort': port,
+            'IpProtocol': 'tcp',
+            'CidrIp': '0.0.0.0/0'
+        }) for port in self._ports]
+
+
 def security_group(group_id, vpc_id, ingress_structs, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',

@@ -1140,3 +1140,29 @@ class TestBuildercoreTrop(base.BaseCase):
         data = self._parse_json(trop.render(context))
         self.assertEqual(context['rds']['deletion-policy'], "Delete")
         self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Delete')
+
+class TestIngress(base.BaseCase):
+    def test_accepts_a_list_of_ports(self):
+        simple_ingress = trop.Ingress.build([22, 80])
+        self.assertEqual(
+            self._dump_to_list_of_rules(simple_ingress),
+            [
+                {
+                    'ToPort': 22,
+                    'FromPort': 22,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 80,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
+    def _dump_to_list_of_rules(self, ingress):
+        return [r.to_dict() for r in ingress.to_troposphere()]
+
+
