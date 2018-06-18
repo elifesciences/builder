@@ -35,6 +35,10 @@ def test_projects():
     switch_in_test_settings()
     return project.aws_projects().keys()
 
+def elife_projects():
+    switch_out_test_settings()
+    return project.aws_projects().keys()
+
 class BaseCase(TestCase):
     maxDiff = None
 
