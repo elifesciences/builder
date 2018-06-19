@@ -1,0 +1,9 @@
+builder-private/
+cloned-projects/
+.cfn/
+.git
+logs/
+*.log
+.tox/
+venv/
+public/
