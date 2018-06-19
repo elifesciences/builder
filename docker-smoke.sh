@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-mkdir -p logs
+mkdir -p .cfn/stacks .cfn/keypairs .cfn/contexts .cfn/terraform logs
 touch logs/app.log
 if [ "$1" -eq 2 ]; then
     echo "Python 2 container smoke test"

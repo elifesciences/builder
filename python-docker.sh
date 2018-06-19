@@ -24,6 +24,9 @@ fi
         1>&2
 #fi
 
+mkdir -p .cfn/stacks .cfn/keypairs .cfn/contexts .cfn/terraform logs
+touch logs/app.log
+
 docker run \
   -v "$(pwd)":/srv/builder \
   -w /srv/builder \
