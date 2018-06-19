@@ -52,6 +52,12 @@ The `Vagrantfile` can build any project, you just need to tell it which one:
 
     $ PROJECT=journal vagrant up
 
+To execute the Python part of the Vagrantfile with Docker, create this flag:
+
+```
+touch .use-docker.flag
+```
+
 Note: if you with to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
 
 Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin

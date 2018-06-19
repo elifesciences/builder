@@ -25,8 +25,14 @@ def runcmd(cmd)
 end
 
 def project_cmd(argstr)
-    cmd = "/bin/bash -c \"source venv/bin/activate && ./.project.py #{argstr}\""
-    #prn(cmd)
+    flag = ".use-docker.flag"
+    if File.exists?(flag)
+      executable = "python-docker.sh"
+    else
+      executable = "venv/bin/python"
+    end
+    cmd = "/bin/bash -c \"./#{executable} .project.py #{argstr}\""
+    prn(cmd)
     return YAML.load(IO.popen(cmd).read)
 end
 
