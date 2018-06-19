@@ -68,7 +68,7 @@ class Ingress():
                         ports_map[p] = {}
                     elif isinstance(p, dict):
                         ensure(len(p) == 1, "Single port definition cannot contain more than one value")
-                        from_port = p.keys()[0]
+                        from_port = list(p.keys())[0]
                         configuration = list(p.values())[0]
                         ports_map[from_port] = configuration
                     else:
