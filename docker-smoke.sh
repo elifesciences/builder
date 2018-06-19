@@ -7,6 +7,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
+touch logs/app.log
 if [ "$1" -eq 2 ]; then
     echo "Python 2 container smoke test"
     rm -f .use-python-3.flag
