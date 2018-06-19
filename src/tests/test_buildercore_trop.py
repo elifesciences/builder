@@ -337,7 +337,7 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         data = self._parse_json(cfn_template)
         resources = data['Resources']
-        self.assertEqual(resources.keys(), ['StackSecurityGroup'])
+        self.assertEqual(list(resources.keys()), ['StackSecurityGroup'])
         security_group = resources['StackSecurityGroup']['Properties']
         self.assertEqual(
             security_group,
