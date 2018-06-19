@@ -240,6 +240,8 @@ heavybox:
     aws:
         ports:
             - 22
+        ext:
+            size: 10 # GB
     aws-alt:
         standalone:
             # for now a copy of standalone1404
