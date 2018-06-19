@@ -1112,6 +1112,10 @@ elife-alfred:
             "{instance}-elife-alfred":
                 deletion-policy: retain
     aws-alt:
+        standalone:
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: delete
         prod:
             subdomains:
                 - alfred
