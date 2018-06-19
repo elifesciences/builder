@@ -42,10 +42,12 @@ elifePipeline {
             def py2Actions = [
                 'host': { actions["Test py27"]() },
                 'docker': {
-                    elifeOnNode({
-                        checkout scm
-                        sh './docker-smoke.sh 2'
-                    }, 'containers--medium')
+                    withCommitStatus({
+                        elifeOnNode({
+                            checkout scm
+                            sh './docker-smoke.sh 2'
+                        }, 'containers--medium')
+                    }, 'docker-py27', commit)
                 }
             ]
             parallel py2Actions
@@ -54,10 +56,12 @@ elifePipeline {
             def py3Actions = [
                 'host': { actions["Test py35"]() },
                 'docker': {
-                    elifeOnNode({
-                        checkout scm
-                        sh './docker-smoke.sh 3'
-                    }, 'containers--medium')
+                    withCommitStatus({
+                        elifeOnNode({
+                            checkout scm
+                            sh './docker-smoke.sh 3'
+                        }, 'containers--medium')
+                    }, 'docker-py27', commit)
                 }
             ]
             parallel py3Actions
