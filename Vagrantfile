@@ -27,7 +27,7 @@ end
 def project_cmd(argstr)
     flag = ".use-docker.flag"
     if File.exists?(flag)
-      executable = "python-docker"
+      executable = "python-docker.sh"
     else
       executable = "venv/bin/python"
     end
