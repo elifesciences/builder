@@ -94,8 +94,8 @@ def uin(param, default=0xDEADBEEF):
 
 
 def confirm(message):
-    print(message)
-    print('press Enter to confirm (ctrl-c to quit)')
+    errcho(message)
+    errcho('press Enter to confirm (ctrl-c to quit)')
     get_input('')
 
 def walk_nested_struct(val, fn):
