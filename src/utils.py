@@ -1,4 +1,5 @@
 import os, sys
+from buildercore import config
 from buildercore.utils import second, last, gtpy2
 from fabric.api import local
 from buildercore import core
@@ -94,6 +95,10 @@ def uin(param, default=0xDEADBEEF):
 
 
 def confirm(message):
+    if config.BUILDER_NON_INTERACTIVE:
+        errcho('Non-interactive mode, confirming automatically')
+        return
+
     errcho(message)
     errcho('press Enter to confirm (ctrl-c to quit)')
     get_input('')
