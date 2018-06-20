@@ -23,5 +23,8 @@ def create_ami(stackname, name=None):
     # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.Instance.create_image
     ami = ec2.create_image(**kwargs)
     # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.Image
-    ami.wait_until_exists()
+    ami.wait_until_exists(Filters=[{
+        'Name': 'state',
+        'Values': ['available'],
+    }])
     return str(ami.id) # this should be used to update the stack templates
