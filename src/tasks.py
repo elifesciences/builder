@@ -19,7 +19,6 @@ def create_ami(stackname, name=None):
     confirm(msg)
 
     amiid = bakery.create_ami(stackname, name)
-    errcho('AWS has created AMI with id:')
     print(amiid)
     errcho('update project file with new ami %s. these changes must be merged and committed manually' % amiid)
 
