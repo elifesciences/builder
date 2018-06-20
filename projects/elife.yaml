@@ -1749,7 +1749,8 @@ redirects:
                 masterless: true
         prod:
             cloudfront:
-                certificate_id: ASCAI7S7LHYV6LTSUGBNM
+                # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
+                certificate_id: ASCAIM46DMZL26YCYELLY
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
