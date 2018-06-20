@@ -10,13 +10,13 @@ def ami_name(stackname):
     return "%s.%s" % (core.project_name_from_stackname(stackname), utils.ymd())
 
 @core.requires_active_stack
-def create_ami(stackname):
+def create_ami(stackname, name=None):
     "creates an AMI from the running stack"
     with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
         bootstrap.prep_ec2_instance()
     ec2 = core.find_ec2_instances(stackname)[0]
     kwargs = {
-        'Name': ami_name(stackname),
+        'Name': ami_name(stackname) if name is None else name,
         'NoReboot': True,
         #'DryRun': True
     }
