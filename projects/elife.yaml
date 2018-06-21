@@ -604,7 +604,6 @@ journal:
                 subdomains:
                     - "{instance}--fastly-journal"
                     - "elifejournal.org"
-                subdomains-without-dns:
                     - ""
                 healthcheck:
                     path: /ping-fastly
