@@ -603,7 +603,7 @@ journal:
             fastly:
                 subdomains:
                     - "{instance}--fastly-journal"
-                    - "elifejournal.org"
+                    - "placeholder-prod-journal" # only here to avoid rewriting the following values
                     - ""
                 healthcheck:
                     path: /ping-fastly
