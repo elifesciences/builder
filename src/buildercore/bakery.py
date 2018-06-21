@@ -13,7 +13,7 @@ def ami_name(stackname):
 def create_ami(stackname, name=None):
     "creates an AMI from the running stack"
     with core.stack_conn(stackname, username=config.BOOTSTRAP_USER):
-        bootstrap.prep_ec2_instance()
+        bootstrap.clean_stack_for_ami()
     ec2 = core.find_ec2_instances(stackname)[0]
     kwargs = {
         'Name': ami_name(stackname) if name is None else name,
