@@ -668,6 +668,7 @@ elife-bot:
                 public: true
                 cors: true
             "{instance}-elife-bot-sessions":
+            "{instance}-elife-bot-digests-input":
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
@@ -686,6 +687,8 @@ elife-bot:
                     deletion-policy: delete
                 "{instance}-elife-bot-sessions":
                     deletion-policy: delete
+                "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
                 # commented out because buckets already exist outside of CloudFormation:
                 #"{instance}-elife-bot":
                 #    deletion-policy: delete
@@ -699,6 +702,9 @@ elife-bot:
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
                         end2end-incoming-queue: {}
+                "{instance}-elife-bot-digests-input":
+                    sqs-notifications:
+                        end2end-incoming-queue: {}
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
@@ -709,6 +715,9 @@ elife-bot:
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
                         ct-incoming-queue: {}
+                "{instance}-elife-bot-digests-input":
+                    sqs-notifications:
+                        ct-incoming-queue: {}
                 "{instance}-elife-bot":
                     deletion-policy: delete
         prod:
@@ -716,6 +725,9 @@ elife-bot:
             #type: c5.2xlarge
             s3:
                 "{instance}-elife-silent-corrections":
+                    sqs-notifications:
+                        incoming-queue: {}
+                "{instance}-elife-bot-digests-input":
                     sqs-notifications:
                         incoming-queue: {}
     vagrant:
