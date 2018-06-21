@@ -572,6 +572,7 @@ journal:
                     - www
                     - elife
                     - prod
+                subdomains-without-dns:
                     - ""
                 headers:
                     - X-Requested-With
@@ -602,7 +603,8 @@ journal:
             fastly:
                 subdomains:
                     - "{instance}--fastly-journal"
-                    - "elifejournal.org"
+                    - "placeholder-prod-journal" # only here to avoid rewriting the following values
+                    - ""
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
@@ -1759,7 +1761,6 @@ redirects:
                     - e-lifejournal.org
                     - e-lifejournal.com
                     - e-lifejournal.net
-                subdomains-without-dns:
                     - elifejournal.org
                 headers:
                     - Host
