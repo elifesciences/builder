@@ -57,73 +57,64 @@ def _read_script(script_filename):
     with open(path, 'r') as fp:
         return fp.read()
 
-class Ingress():
-    @classmethod
-    def build(cls, ports):
-        def _convert_to_dictionary(ports):
-            if isinstance(ports, list):
-                ports_map = OrderedDict()
-                for p in ports:
-                    if isinstance(p, int):
-                        ports_map[p] = {}
-                    elif isinstance(p, dict):
-                        ensure(len(p) == 1, "Single port definition cannot contain more than one value")
-                        from_port = list(p.keys())[0]
-                        configuration = list(p.values())[0]
-                        ports_map[from_port] = configuration
-                    else:
-                        raise ValueError("Invalid port definition: %s" % (p,))
-            elif isinstance(ports, dict):
-                ports_map = OrderedDict()
-                for p, configuration in ports.items():
-                    if isinstance(configuration, bool):
-                        # temporary
-                        ports_map[p] = {}
-                    elif isinstance(configuration, int):
-                        ports_map[p] = {'guest': configuration}
-                    elif isinstance(configuration, OrderedDict):
-                        ports_map[p] = configuration
-                    else:
-                        raise ValueError("Invalid port definition: %s => %s" % (p, configuration))
+def _convert_ports_to_dictionary(ports):
+    if isinstance(ports, list):
+        ports_map = OrderedDict()
+        for p in ports:
+            if isinstance(p, int):
+                ports_map[p] = {}
+            elif isinstance(p, dict):
+                ensure(len(p) == 1, "Single port definition cannot contain more than one value")
+                from_port = list(p.keys())[0]
+                configuration = list(p.values())[0]
+                ports_map[from_port] = configuration
             else:
-                raise ValueError("Invalid ports definition: %s" % ports)
+                raise ValueError("Invalid port definition: %s" % (p,))
+    elif isinstance(ports, dict):
+        ports_map = OrderedDict()
+        for p, configuration in ports.items():
+            if isinstance(configuration, bool):
+                # temporary
+                ports_map[p] = {}
+            elif isinstance(configuration, int):
+                ports_map[p] = {'guest': configuration}
+            elif isinstance(configuration, OrderedDict):
+                ports_map[p] = configuration
+            else:
+                raise ValueError("Invalid port definition: %s => %s" % (p, configuration))
+    else:
+        raise ValueError("Invalid ports definition: %s" % ports)
 
-            return ports_map
+    return ports_map
 
-        return Ingress(_convert_to_dictionary(ports))
+def merge_ports(ports, another):
+    ports = OrderedDict(ports)
+    ports.update(another)
+    return ports
 
-    @classmethod
-    def only(cls, port):
-        return Ingress.build([port])
-
-    def __init__(self, ports):
-        self._ports = ports
-
-    def merge(self, another):
-        ports = OrderedDict(self._ports)
-        ports.update(another._ports)
-        return Ingress(ports)
-
-    def to_troposphere(self):
-        return [ec2.SecurityGroupRule(**{
+def convert_ports_dict_to_troposphere(ports):
+    def _port_to_dict(port, configuration):
+        return ec2.SecurityGroupRule(**{
             'FromPort': port,
             'ToPort': configuration.get('guest', port),
             'IpProtocol': configuration.get('protocol', 'tcp'),
             'CidrIp': configuration.get('cidr-ip', '0.0.0.0/0'),
-        }) for port, configuration in self._ports.items()]
+        })
+    return [_port_to_dict(port, configuration) for port, configuration in ports.items()]
 
-
-def security_group(group_id, vpc_id, ingress, description=""):
+def security_group(group_id, vpc_id, ingress_data, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': ingress.to_troposphere(),
+        'SecurityGroupIngress': convert_ports_dict_to_troposphere(ingress_data),
     })
 
 def ec2_security(context):
-    ports = Ingress.build(context['project']['aws'].get('ports', {}))
-    security_group_ports = Ingress.build(context['ec2']['security-group'].get('ports', {}))
-    ingress = ports.merge(security_group_ports)
+    ec2_port_data = context['project']['aws'].get('ports', {})
+    ec2_ports = _convert_ports_to_dictionary(ec2_port_data)
+    security_group_data = context['ec2']['security-group'].get('ports', {})
+    security_group_ports = _convert_ports_to_dictionary(security_group_data)
+    ingress = merge_ports(ec2_ports, security_group_ports)
 
     return security_group(
         SECURITY_GROUP_TITLE,
@@ -139,7 +130,8 @@ def rds_security(context):
         'postgres': 5432,
         'mysql': 3306
     }
-    ingress_ports = Ingress.only(engine_ports[context['project']['aws']['rds']['engine'].lower()])
+    ingress_data = [engine_ports[context['project']['aws']['rds']['engine'].lower()]]
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
     return security_group("VPCSecurityGroup",
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
@@ -693,7 +685,7 @@ def render_elb(context, template, ec2_instances):
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
         context['project']['aws']['vpc-id'],
-        Ingress.build(elb_ports)
+        _convert_ports_to_dictionary(elb_ports)
     )) # list of strings or dicts
 
     if any([context['full_hostname'], context['int_full_hostname']]):
@@ -848,7 +840,8 @@ def elasticache_security_group(context):
     engine_ports = {
         'redis': 6379,
     }
-    ingress_ports = Ingress.only(engine_ports[context['elasticache']['engine']])
+    ingress_data = [engine_ports[context['elasticache']['engine']]]
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
