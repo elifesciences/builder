@@ -1,4 +1,4 @@
-from buildercore.terraform import fastly
+from buildercore import fastly
 from . import base
 
 class TestFastlyCustomVCL(base.BaseCase):

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json  # , yaml
 import os
 from os.path import join
@@ -135,6 +136,28 @@ class TestBuildercoreTrop(base.BaseCase):
                 'VolumeId': {'Ref': 'ExtraStorage1'},
             },
             data['Resources']['MountPoint1']['Properties']
+        )
+
+    def test_root_volume_size_template(self):
+        extra = {
+            'stackname': 'project-with-ec2-custom-root--prod',
+        }
+        context = cfngen.build_context('project-with-ec2-custom-root', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        ec2 = data['Resources']['EC2Instance1']['Properties']
+        self.assertIn('BlockDeviceMappings', ec2)
+        self.assertEqual(
+            ec2['BlockDeviceMappings'],
+            [
+                {
+                    'DeviceName': '/dev/sda1',
+                    'Ebs': {
+                        'VolumeSize': 20,
+                        'VolumeType': 'standard',
+                    },
+                },
+            ]
         )
 
     def test_clustered_template(self):
@@ -304,6 +327,30 @@ class TestBuildercoreTrop(base.BaseCase):
                     'Ref': 'EC2Instance3',
                 }
             ]
+        )
+
+    def test_clustered_template_empty(self):
+        extra = {
+            'stackname': 'project-with-cluster-empty--prod',
+        }
+        context = cfngen.build_context('project-with-cluster-empty', **extra)
+        cfn_template = trop.render(context)
+        data = self._parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertEqual(list(resources.keys()), ['StackSecurityGroup'])
+        security_group = resources['StackSecurityGroup']['Properties']
+        self.assertEqual(
+            security_group,
+            {
+                'GroupDescription': 'security group',
+                'SecurityGroupIngress': [{
+                    'CidrIp': '0.0.0.0/0',
+                    'FromPort': 22,
+                    'ToPort': 22,
+                    'IpProtocol': 'tcp',
+                }],
+                'VpcId': 'vpc-78a2071d',
+            }
         )
 
     def test_clustered_template_with_node_overrides(self):
@@ -1094,3 +1141,126 @@ class TestBuildercoreTrop(base.BaseCase):
         data = self._parse_json(trop.render(context))
         self.assertEqual(context['rds']['deletion-policy'], "Delete")
         self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Delete')
+
+class TestIngress(base.BaseCase):
+    def test_accepts_a_list_of_ports(self):
+        simple_ingress = trop._convert_ports_to_dictionary([22, 80])
+        self.assertEqual(
+            self._dump_to_list_of_rules(simple_ingress),
+            [
+                {
+                    'ToPort': 22,
+                    'FromPort': 22,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 80,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
+    def test_accepts_remapped_ports(self):
+        remapped_ingress = trop._convert_ports_to_dictionary(OrderedDict([
+            (80, 8080),
+        ]))
+        self.assertEqual(
+            self._dump_to_list_of_rules(remapped_ingress),
+            [
+                {
+                    'ToPort': 8080,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
+    def test_accepts_ports_defining_custom_rules(self):
+        custom_ingress = trop._convert_ports_to_dictionary(OrderedDict([
+            (80, OrderedDict([
+                ('guest', 8080),
+                ('cidr-ip', '10.0.0.0/0'),
+            ])),
+            (10000, OrderedDict([
+                ('guest', 10000),
+                ('protocol', 'udp'),
+                ('cidr-ip', '0.0.0.0/0'),
+            ]))
+        ]))
+        self.assertEqual(
+            self._dump_to_list_of_rules(custom_ingress),
+            [
+                {
+                    'ToPort': 8080,
+                    'FromPort': 80,
+                    'CidrIp': '10.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 10000,
+                    'FromPort': 10000,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'udp',
+                },
+            ]
+        )
+
+    def test_can_mix_and_match_definitions(self):
+        custom_ingress = trop._convert_ports_to_dictionary([
+            22,
+            OrderedDict([(80, OrderedDict([
+                ('guest', 8080),
+            ]))]),
+        ])
+        self.assertEqual(
+            self._dump_to_list_of_rules(custom_ingress),
+            [
+                {
+                    'ToPort': 22,
+                    'FromPort': 22,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 8080,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
+    def test_can_merge_multiple_sources(self):
+        ports_a = trop._convert_ports_to_dictionary([22, 80])
+        ports_b = trop._convert_ports_to_dictionary([80, 443])
+        merged_ingress = trop.merge_ports(ports_a, ports_b)
+        self.assertEqual(
+            self._dump_to_list_of_rules(merged_ingress),
+            [
+                {
+                    'ToPort': 22,
+                    'FromPort': 22,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 80,
+                    'FromPort': 80,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+                {
+                    'ToPort': 443,
+                    'FromPort': 443,
+                    'CidrIp': '0.0.0.0/0',
+                    'IpProtocol': 'tcp',
+                },
+            ]
+        )
+
+    def _dump_to_list_of_rules(self, ingress):
+        return [r.to_dict() for r in trop.convert_ports_dict_to_troposphere(ingress)]
