@@ -1144,7 +1144,7 @@ class TestBuildercoreTrop(base.BaseCase):
 
 class TestIngress(base.BaseCase):
     def test_accepts_a_list_of_ports(self):
-        simple_ingress = trop.Ingress.build([22, 80])
+        simple_ingress = trop._convert_ports_to_dictionary([22, 80])
         self.assertEqual(
             self._dump_to_list_of_rules(simple_ingress),
             [
@@ -1164,7 +1164,7 @@ class TestIngress(base.BaseCase):
         )
 
     def test_accepts_remapped_ports(self):
-        remapped_ingress = trop.Ingress.build(OrderedDict([
+        remapped_ingress = trop._convert_ports_to_dictionary(OrderedDict([
             (80, 8080),
         ]))
         self.assertEqual(
@@ -1180,7 +1180,7 @@ class TestIngress(base.BaseCase):
         )
 
     def test_accepts_ports_defining_custom_rules(self):
-        custom_ingress = trop.Ingress.build(OrderedDict([
+        custom_ingress = trop._convert_ports_to_dictionary(OrderedDict([
             (80, OrderedDict([
                 ('guest', 8080),
                 ('cidr-ip', '10.0.0.0/0'),
@@ -1210,7 +1210,7 @@ class TestIngress(base.BaseCase):
         )
 
     def test_can_mix_and_match_definitions(self):
-        custom_ingress = trop.Ingress.build([
+        custom_ingress = trop._convert_ports_to_dictionary([
             22,
             OrderedDict([(80, OrderedDict([
                 ('guest', 8080),
@@ -1235,9 +1235,9 @@ class TestIngress(base.BaseCase):
         )
 
     def test_can_merge_multiple_sources(self):
-        merged_ingress = trop.Ingress.build([22, 80]).merge(
-            trop.Ingress.build([80, 443])
-        )
+        ports_a = trop._convert_ports_to_dictionary([22, 80])
+        ports_b = trop._convert_ports_to_dictionary([80, 443])
+        merged_ingress = trop.merge_ports(ports_a, ports_b)
         self.assertEqual(
             self._dump_to_list_of_rules(merged_ingress),
             [
@@ -1263,4 +1263,4 @@ class TestIngress(base.BaseCase):
         )
 
     def _dump_to_list_of_rules(self, ingress):
-        return [r.to_dict() for r in ingress.to_troposphere()]
+        return [r.to_dict() for r in trop.convert_ports_dict_to_troposphere(ingress)]
