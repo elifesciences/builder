@@ -1,8 +1,11 @@
+import logging
 import os, sys
 from buildercore import config
 from buildercore.utils import second, last, gtpy2
 from fabric.api import local
 from buildercore import core
+
+LOG = logging.getLogger(__name__)
 
 # totally is assigned :(
 # pylint: disable=global-variable-not-assigned
@@ -96,7 +99,7 @@ def uin(param, default=0xDEADBEEF):
 
 def confirm(message):
     if config.BUILDER_NON_INTERACTIVE:
-        errcho('Non-interactive mode, confirming automatically')
+        LOG.info('Non-interactive mode, confirming automatically')
         return
 
     errcho(message)
