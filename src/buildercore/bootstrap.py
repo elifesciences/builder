@@ -478,13 +478,6 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         master_builder_key = download_master_builder_key(stackname)
 
     def _update_ec2_node():
-        # upload private key if not present remotely
-        if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
-            # if it also doesn't exist on the filesystem, die horribly.
-            # regular updates shouldn't have to deal with this.
-            pem = stack_pem(stackname, die_if_doesnt_exist=True)
-            fab_put(pem, "/root/.ssh/id_rsa", use_sudo=True)
-
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)
 
