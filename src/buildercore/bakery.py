@@ -16,7 +16,7 @@ def create_ami(stackname, name=None):
         bootstrap.clean_stack_for_ami()
     ec2 = core.find_ec2_instances(stackname)[0]
     kwargs = {
-        'Name': ami_name(stackname) if name is None else name,
+        'Name': name or ami_name(stackname),
         'NoReboot': True,
         #'DryRun': True
     }
