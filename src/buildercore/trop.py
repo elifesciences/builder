@@ -9,6 +9,7 @@ data called a `context`.
 `cfngen.py` is in charge of constructing this data struct and writing
 it to the correct file etc."""
 
+from collections import OrderedDict
 import copy
 from os.path import join
 from . import config, utils, bvars
@@ -16,7 +17,7 @@ from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
-from .utils import first, ensure, subdict, lmap, isstr
+from .utils import ensure, subdict, lmap, isstr
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -56,49 +57,70 @@ def _read_script(script_filename):
     with open(path, 'r') as fp:
         return fp.read()
 
-def ingress(port, end_port=None, protocol='tcp', cidr='0.0.0.0/0'):
-    if not end_port:
-        end_port = port
-    return ec2.SecurityGroupRule(**{
-        'FromPort': port,
-        'ToPort': end_port,
-        'IpProtocol': protocol,
-        'CidrIp': cidr
-    })
+def _convert_ports_to_dictionary(ports):
+    if isinstance(ports, list):
+        ports_map = OrderedDict()
+        for p in ports:
+            if isinstance(p, int):
+                ports_map[p] = {}
+            elif isinstance(p, dict):
+                ensure(len(p) == 1, "Single port definition cannot contain more than one value")
+                from_port = list(p.keys())[0]
+                configuration = list(p.values())[0]
+                ports_map[from_port] = configuration
+            else:
+                raise ValueError("Invalid port definition: %s" % (p,))
+    elif isinstance(ports, dict):
+        ports_map = OrderedDict()
+        for p, configuration in ports.items():
+            if isinstance(configuration, bool):
+                # temporary
+                ports_map[p] = {}
+            elif isinstance(configuration, int):
+                ports_map[p] = {'guest': configuration}
+            elif isinstance(configuration, OrderedDict):
+                ports_map[p] = configuration
+            else:
+                raise ValueError("Invalid port definition: %s => %s" % (p, configuration))
+    else:
+        raise ValueError("Invalid ports definition: %s" % ports)
 
-def complex_ingress(struct):
-    # it's just not that simple
-    if not isinstance(struct, dict):
-        port = struct
-        return ingress(port)
-    assert len(struct.items()) == 1, "port mapping struct must contain a single key: %r" % struct
-    port, struct = first(struct.items())
-    default_end_port = port
-    default_cidr_ip = '0.0.0.0/0'
-    default_protocol = 'tcp'
-    return ingress(port, **{
-        # TODO: rename 'guest' in project file to something less wrong
-        'end_port': struct.get('guest', default_end_port),
-        'protocol': struct.get('protocol', default_protocol),
-        'cidr': struct.get('cidr-ip', default_cidr_ip),
-    })
+    return ports_map
 
-def security_group(group_id, vpc_id, ingress_structs, description=""):
+def merge_ports(ports, another):
+    ports = OrderedDict(ports)
+    ports.update(another)
+    return ports
+
+def convert_ports_dict_to_troposphere(ports):
+    def _port_to_dict(port, configuration):
+        return ec2.SecurityGroupRule(**{
+            'FromPort': port,
+            'ToPort': configuration.get('guest', port),
+            'IpProtocol': configuration.get('protocol', 'tcp'),
+            'CidrIp': configuration.get('cidr-ip', '0.0.0.0/0'),
+        })
+    return [_port_to_dict(port, configuration) for port, configuration in ports.items()]
+
+def security_group(group_id, vpc_id, ingress_data, description=""):
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': lmap(complex_ingress, ingress_structs)
+        'SecurityGroupIngress': convert_ports_dict_to_troposphere(ingress_data),
     })
 
 def ec2_security(context):
-    ensure('ports' in context['project']['aws'],
-           "Missing `ports` configuration in `aws` for '%s'" % context['stackname'])
+    ec2_port_data = context['project']['aws'].get('ports', {})
+    ec2_ports = _convert_ports_to_dictionary(ec2_port_data)
+    security_group_data = context['ec2']['security-group'].get('ports', {})
+    security_group_ports = _convert_ports_to_dictionary(security_group_data)
+    ingress = merge_ports(ec2_ports, security_group_ports)
 
     return security_group(
         SECURITY_GROUP_TITLE,
         context['project']['aws']['vpc-id'],
-        context['project']['aws']['ports']
-    ) # list of strings or dicts
+        ingress
+    )
 
 def rds_security(context):
     """returns a security group for the rds instance.
@@ -108,7 +130,8 @@ def rds_security(context):
         'postgres': 5432,
         'mysql': 3306
     }
-    ingress_ports = [engine_ports[context['project']['aws']['rds']['engine'].lower()]]
+    ingress_data = [engine_ports[context['project']['aws']['rds']['engine'].lower()]]
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
     return security_group("VPCSecurityGroup",
                           context['project']['aws']['vpc-id'],
                           ingress_ports,
@@ -204,6 +227,16 @@ echo %s > /etc/build-vars.json.b64
 
 %s""" % (buildvars_serialization, clean_server)),
     }
+
+    # TODO: extract in private method?
+    if context['ec2'].get('root'):
+        project_ec2['BlockDeviceMappings'] = [{
+            'DeviceName': '/dev/sda1',
+            'Ebs': {
+                'VolumeSize': context['ec2']['root']['size'],
+                'VolumeType': context['ec2']['root'].get('type', 'standard'),
+            }
+        }]
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
 def rdsdbparams(context, template):
@@ -454,11 +487,12 @@ def render_ec2(context, template):
 def render_ec2_dns(context, template):
     # single ec2 node may get an external hostname
     if context['full_hostname'] and not context['elb']:
-        ensure(context['ec2']['cluster-size'] == 1,
-               "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry")
+        ensure(context['ec2']['cluster-size'] <= 1,
+               "If there is no load balancer, multiple EC2 instances cannot be assigned a single DNS entry")
 
-        template.add_resource(external_dns_ec2_single(context))
-        [template.add_resource(cname) for cname in cnames(context)]
+        if context['ec2']['cluster-size'] == 1:
+            template.add_resource(external_dns_ec2_single(context))
+            [template.add_resource(cname) for cname in cnames(context)]
 
     # single ec2 node may get an internal hostname
     if context['int_full_hostname'] and not context['elb']:
@@ -651,7 +685,7 @@ def render_elb(context, template, ec2_instances):
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
         context['project']['aws']['vpc-id'],
-        elb_ports
+        _convert_ports_to_dictionary(elb_ports)
     )) # list of strings or dicts
 
     if any([context['full_hostname'], context['int_full_hostname']]):
@@ -806,7 +840,8 @@ def elasticache_security_group(context):
     engine_ports = {
         'redis': 6379,
     }
-    ingress_ports = [engine_ports[context['elasticache']['engine']]]
+    ingress_data = [engine_ports[context['elasticache']['engine']]]
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
                           context['project']['aws']['vpc-id'],
                           ingress_ports,

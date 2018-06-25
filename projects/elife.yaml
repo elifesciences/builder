@@ -47,6 +47,8 @@ defaults:
             masterless: false
             # optional: pin a master server for all new instances of a project
             master_ip: 10.0.2.198
+            # optional: specify `ports` to be opened
+            security-group: {}
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
@@ -572,6 +574,7 @@ journal:
                     - www
                     - elife
                     - prod
+                subdomains-without-dns:
                     - ""
                 headers:
                     - X-Requested-With
@@ -602,7 +605,8 @@ journal:
             fastly:
                 subdomains:
                     - "{instance}--fastly-journal"
-                    - "elifejournal.org"
+                    - "placeholder-prod-journal" # only here to avoid rewriting the following values
+                    - ""
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
@@ -1080,6 +1084,7 @@ elife-libraries:
         ram: 1024
 
 containers:
+    description: run any Docker-based workload
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
@@ -1089,7 +1094,15 @@ containers:
         ext:
             size: 100 # GB
             type: gp2
-    aws-alt: {}
+    aws-alt:
+        # AMIs created from here used in
+        # https://alfred.elifesciences.org/configure
+        # `Cloud` section
+        jenkins-plugin-ami:
+            ext: false
+            ec2:
+                root:
+                    size: 20 # GB
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
@@ -1124,6 +1137,20 @@ elife-alfred:
         ram: 4096
         ports:
             1433: 80
+
+# used in https://alfred.elifesciences.org/configure
+# `Cloud` section
+elife-alfred-nodes:
+    description: supports dynamic creation of EC2 instances from Jenkins
+    domain: false
+    intdomain: false
+    aws:
+        ec2:
+            cluster-size: 0
+            security-group:
+                ports:
+                    - 22
+            
 
 api-dummy:
     subdomain: api-dummy
@@ -1749,7 +1776,8 @@ redirects:
                 masterless: true
         prod:
             cloudfront:
-                certificate_id: ASCAI7S7LHYV6LTSUGBNM
+                # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
+                certificate_id: ASCAIM46DMZL26YCYELLY
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
@@ -1758,7 +1786,6 @@ redirects:
                     - e-lifejournal.org
                     - e-lifejournal.com
                     - e-lifejournal.net
-                subdomains-without-dns:
                     - elifejournal.org
                 headers:
                     - Host

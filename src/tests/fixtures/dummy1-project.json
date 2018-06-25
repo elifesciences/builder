@@ -17,6 +17,7 @@
             "dns-internal": false, 
             "suppressed": [], 
             "overrides": {}, 
+            "security-group": {},
             "ami": "ami-9eaa1cf6",
             "master_ip": "10.0.2.42"
         }, 

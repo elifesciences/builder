@@ -31,6 +31,7 @@ defaults:
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-9eaa1cf6  # Ubuntu 14.04
             master_ip: 10.0.2.42
+            security-group: {}
         type: t2.small
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
@@ -377,6 +378,13 @@ project-with-fastly-gcs:
                 bucket: my-bucket
                 path: my-project/
                 period: 1800
+                    
+project-with-ec2-custom-root:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2:
+            root:
+                size: 20 # GB
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
@@ -427,6 +435,17 @@ project-with-cluster-overrides:
             size: 10
         elb: 
             protocol: http
+
+project-with-cluster-empty:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-cluster
+    intdomain: false
+    aws:
+        ec2:
+            cluster-size: 0
+            security-group:
+                ports:
+                    - 22
 
 project-with-stickiness:
     repo: ssh://git@github.com/elifesciences/dummy3
