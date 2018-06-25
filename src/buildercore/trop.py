@@ -210,7 +210,7 @@ def ec2instance(context, node):
     else:
         subnet_id = lu('project.aws.redundant-subnet-id')
 
-    clean_server = _read_script('.clean-server.sh.fragment') # this file duplicates scripts/prep-stack.sh
+    clean_server = _read_script('.clean-server.sh.fragment')
     project_ec2 = {
         "ImageId": lu('project.aws.ec2.ami'),
         "InstanceType": context['ec2']['type'], # t2.small, m1.medium, etc

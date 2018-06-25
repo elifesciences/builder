@@ -59,9 +59,8 @@ def run_script(script_filename, *script_params, **environment_variables):
     LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
     return retval
 
-def prep_ec2_instance():
-    """called after stack creation and before AMI creation"""
-    return run_script("prep-stack.sh")
+def clean_stack_for_ami():
+    return run_script("clean-stack-for-ami.sh")
 
 
 #

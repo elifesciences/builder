@@ -106,6 +106,7 @@ logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 # like ec2 instance keypairs
 BUILDER_BUCKET = 'elife-builder'
 BUILDER_REGION = 'us-east-1'
+BUILDER_NON_INTERACTIVE = 'BUILDER_NON_INTERACTIVE' in os.environ and os.environ['BUILDER_NON_INTERACTIVE']
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 

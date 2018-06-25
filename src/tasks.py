@@ -5,7 +5,7 @@ better off in their own module. This module really is for stuff
 that has no home."""
 from buildercore import core, bootstrap
 from fabric.api import local, task
-from fabric.contrib.console import confirm
+from utils import confirm, errcho
 from decorators import requires_aws_stack, debugtask
 from buildercore import bakery
 from buildercore.core import stack_conn
@@ -13,15 +13,14 @@ from buildercore.context_handler import load_context
 
 @task
 @requires_aws_stack
-def create_ami(stackname):
+def create_ami(stackname, name=None):
     pname = core.project_name_from_stackname(stackname)
-    msg = "this will create a new AMI for the project %r. Continue?" % pname
-    if not confirm(msg, default=False):
-        print('doing nothing')
-        return
-    amiid = bakery.create_ami(stackname)
-    print('AWS has created AMI with id', amiid)
-    print('update project file with new ami %s. these changes must be merged and committed manually' % amiid)
+    msg = "this will create a new AMI for the project %r" % pname
+    confirm(msg)
+
+    amiid = bakery.create_ami(stackname, name)
+    print(amiid)
+    errcho('update project file with new ami %s. these changes must be merged and committed manually' % amiid)
 
 #
 #
