@@ -1948,7 +1948,10 @@ elife-xpub:
             size: 20 # GB
             device: /dev/sdh
             type: gp2
-    aws-alt: {}
+    aws-alt:
+        prod:
+            subdomains:
+                - xpub
     vagrant:
         ram: 2048
         ports:
