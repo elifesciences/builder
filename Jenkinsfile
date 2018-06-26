@@ -43,10 +43,10 @@ elifePipeline {
                 'host': { actions["Test py27"]() },
                 'docker': {
                     withCommitStatus({
-                        elifeOnNode({
+                        node('containers-jenkins-plugin') {
                             checkout scm
                             sh './docker-smoke.sh 2'
-                        }, 'containers--medium')
+                        }
                     }, 'docker-py27', commit)
                 }
             ]
@@ -57,10 +57,10 @@ elifePipeline {
                 'host': { actions["Test py35"]() },
                 'docker': {
                     withCommitStatus({
-                        elifeOnNode({
+                        node('containers-jenkins-plugin') {
                             checkout scm
                             sh './docker-smoke.sh 3'
-                        }, 'containers--medium')
+                        }
                     }, 'docker-py27', commit)
                 }
             ]
