@@ -499,7 +499,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
                 'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', '')
             }
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-formulas.sh', formula_list, pdata['private-repo'], **envvars)
+            run_script('init-masterless-formulas.sh', formula_list, pdata['private-repo'], **envvars)
 
             # second pass to optionally update formulas to specific revisions
             for repo, formula, revision in formula_revisions or []:
