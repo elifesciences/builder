@@ -1114,7 +1114,7 @@ containers:
             ext: false
             ec2:
                 root:
-                    size: 20 # GB
+                    size: 100 # GB
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
