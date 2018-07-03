@@ -10,7 +10,7 @@ from collections import OrderedDict
 from datetime import datetime
 from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
 from .context_handler import only_if as updates
-from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
+from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn, stack_pem
 from .utils import first, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
@@ -478,6 +478,13 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         master_builder_key = download_master_builder_key(stackname)
 
     def _update_ec2_node():
+        # upload private key if not present remotely
+        if not files.exists("/root/.ssh/id_rsa", use_sudo=True):
+            # if it also doesn't exist on the filesystem, die horribly.
+            # regular updates shouldn't have to deal with this.
+            pem = stack_pem(stackname, die_if_doesnt_exist=True)
+            fab_put(pem, "/root/.ssh/id_rsa", use_sudo=True)
+
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)
 
