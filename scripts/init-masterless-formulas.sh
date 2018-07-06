@@ -15,26 +15,7 @@ pillar_repo=$2 # what secrets do I know?
 # REQUIRES CREDENTIALS!
 if [ ! -d /opt/builder-private ]; then
     cd /opt
-    git clone "$pillar_repo" builder-private || {
-        set +xv
-        echo "
-----------
-
-could not clone your 'builder-private' repository:
-    $pillar_repo
-
-this means you're stuck using the dummy pillar data in builder-base-formula until
-the 'builder-private' repo can be cloned and configured.
-
-when ready, complete this process by using the 'masterless.update' command:
-
-    ./bldr masterless.update:<stackname>
-
-----------"
-
-        exit 0
-    }
-    
+    git clone "$pillar_repo" builder-private
 else
     cd /opt/builder-private
     git clean -d --force # remove any unknown files
