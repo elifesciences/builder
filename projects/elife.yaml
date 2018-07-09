@@ -826,7 +826,7 @@ generic-cdn:
             surrogate-keys:
                 article-versioned-assets:
                     url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1 article/\\1v\\3"
+                    value: "article/\\1 article/\\1v\\3"
                     samples:
                         article-asset:
                             path: /articles/10627/elife-10627-fig1-v1.tif
@@ -847,7 +847,7 @@ generic-cdn:
                         # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
                 article-unversioned:
                     url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1/videos"
+                    value: "article/\\1 article/\\1/videos"
                     samples:
                         article-video:
                             path: /articles/34773/elife-34773-video2.mp4
