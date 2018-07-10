@@ -826,38 +826,38 @@ generic-cdn:
             surrogate-keys:
                 article-versioned-assets:
                     url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-v([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1 article/\\1v\\3"
+                    value: "article/\\1 article/\\1v\\3"
                     samples:
                         article-asset:
                             path: /articles/10627/elife-10627-fig1-v1.tif
-                            expected: "articles/10627 article/10627 article/10627v1"
+                            expected: "article/10627 article/10627v1"
                         article-pdf:
                             path: /articles/10627/elife-10627-v1.pdf
-                            expected: "articles/10627 article/10627 article/10627v1"
+                            expected: "article/10627 article/10627v1"
                         article-figures-pdf:
                             path: /articles/00666/elife-00666-figures-v1.pdf
-                            expected: "articles/00666 article/00666 article/00666v1"
+                            expected: "article/00666 article/00666v1"
                         article-figure-supplement:
                             path: /articles/00666/elife-00666-fig2-figsupp1-v1.tif
-                            expected: "articles/00666 article/00666 article/00666v1"
+                            expected: "article/00666 article/00666v1"
                         appendix-figure-supplement:
                             path: /articles/18215/elife-18215-app2-fig1-figsupp2-v2.tif
-                            expected: "articles/18215 article/18215 article/18215v2"
+                            expected: "article/18215 article/18215v2"
                         # legacy, not supported: /articles/10627/elife-10627-fig1-v1-download.jpg
                         # legacy, not supported: /articles/10627/elife-10627-fig1-v1-972w.jpg
                 article-unversioned:
                     url: "^/articles/([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
-                    value: "articles/\\1 article/\\1/videos"
+                    value: "article/\\1 article/\\1/videos"
                     samples:
                         article-video:
                             path: /articles/34773/elife-34773-video2.mp4
-                            expected: "articles/34773 article/34773/videos"
+                            expected: "article/34773 article/34773/videos"
                         article-still:
                             path: /articles/07398/elife-07398-media1.jpg
-                            expected: "articles/07398 article/07398/videos"
+                            expected: "article/07398 article/07398/videos"
                         article-figure-video:
                             path: /articles/26866/elife-26866-fig3-video1.mp4
-                            expected: "articles/26866 article/26866/videos"
+                            expected: "article/26866 article/26866/videos"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
