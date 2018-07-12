@@ -494,6 +494,7 @@ journal:
                         503: "503.html"
                 vcl:
                     - "original-host"
+                    - "ping-status"
                     - "strip-non-journal-cookies"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
@@ -548,6 +549,7 @@ journal:
                         503: "503.html"
                 vcl:
                     - "original-host"
+                    - "ping-status"
                     - "strip-non-journal-cookies"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
@@ -618,6 +620,7 @@ journal:
                         503: "503.html"
                 vcl:
                     - "original-host"
+                    - "ping-status"
                     - "strip-non-journal-cookies"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
