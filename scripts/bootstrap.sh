@@ -65,6 +65,11 @@ else
         add-apt-repository -y ppa:ross-kallisti/python-urllib3
         upgrade_python=true
     fi
+
+    # if flag present, upgrade python
+    if [ -f /root/upgrade-python.flag ]; then
+        upgrade_python=true
+    fi
 fi
 
 if ! dpkg -l git; then
@@ -79,6 +84,12 @@ if $upgrade_python; then
     apt-get install python2.7 python2.7-dev -y
     # virtual envs have to be recreated
     find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
+
+    # install/upgrade pip+setuptools
+    apt-get install python-pip python-setuptools --no-install-recommends -y
+    python2.7 -m pip install pip setuptools --upgrade
+
+    rm -f /root/upgrade-python.flag
 fi
 
 if $install_git; then
