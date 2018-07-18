@@ -496,6 +496,8 @@ journal:
                     - "original-host"
                     - "ping-status"
                     - "strip-non-journal-cookies"
+                    - "journal-google-scholar"
+                    - "journal-google-scholar-vary"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
@@ -624,6 +626,8 @@ journal:
                     - "original-host"
                     - "ping-status"
                     - "strip-non-journal-cookies"
+                    - "journal-google-scholar"
+                    - "journal-google-scholar-vary"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
