@@ -532,9 +532,6 @@ journal:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
-                origins:
-                    CloudFrontCDNOrigin:
-                        hostname: prod--journal.elifesciences.org
             fastly:
                 subdomains:
                     - "{instance}--cdn-journal"
