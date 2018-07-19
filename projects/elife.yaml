@@ -537,7 +537,7 @@ journal:
                         hostname: prod--journal.elifesciences.org
             fastly:
                 subdomains:
-                    - "{instance}--fastly-journal"
+                    - "{instance}--cdn-journal"
                     - "placeholder-prod-journal" # only here to avoid rewriting the following values
                     - ""
                 healthcheck:
