@@ -526,7 +526,9 @@ journal:
                     - www
                     - elife
                     - prod
-                errors: 
+                headers:
+                    - Host
+                errors:
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
