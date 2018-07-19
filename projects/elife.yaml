@@ -522,6 +522,7 @@ journal:
                     - http
             cloudfront:
                 subdomains:
+                    - "placeholder2-prod-journal" # only here to avoid rewriting the following values
                     - www
                     - elife
                     - prod
