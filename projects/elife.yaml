@@ -452,37 +452,9 @@ journal:
                 protocol:
                     - https
                     - http
-            cloudfront:
-                subdomains:
-                    - "{instance}--cdn-journal"
-                headers:
-                    - X-Requested-With
-                    - Host
-                cookies:
-                    - journal
-                errors: 
-                    # TODO: this is not being deployed to, it's empty
-                    domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
-                    pattern: "???.html"
-                    codes:
-                        # ELB with no active instances
-                        503: "/5xx.html"
-                    protocol: http
-                origins:
-                    CloudFrontCDNOrigin:
-                        hostname: end2end--journal.elifesciences.org
-                    LogInOrigin:
-                        hostname: end2end--journal.elifesciences.org
-                        pattern: /log-in
-                        headers:
-                            - X-Requested-With
-                            - Host
-                            - Referer
-                        cookies:
-                            - journal
             fastly:
                 subdomains:
-                    - "{instance}--fastly-journal"
+                    - "{instance}--cdn-journal"
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
@@ -511,35 +483,9 @@ journal:
                 protocol:
                     - https
                     - http
-            cloudfront:
-                subdomains:
-                    - "{instance}--cdn-journal"
-                headers:
-                    - X-Requested-With
-                    - Host
-                cookies:
-                    - journal
-                errors: 
-                    domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
-                    pattern: "???.html"
-                    codes:
-                        503: "/5xx.html"
-                    protocol: http
-                origins:
-                    CloudFrontCDNOrigin:
-                        hostname: continuumtest--journal.elifesciences.org
-                    LogInOrigin:
-                        hostname: continuumtest--journal.elifesciences.org
-                        pattern: /log-in
-                        headers:
-                            - X-Requested-With
-                            - Host
-                            - Referer
-                        cookies:
-                            - journal
             fastly:
                 subdomains:
-                    - "{instance}--fastly-journal"
+                    - "{instance}--cdn-journal"
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
@@ -576,17 +522,9 @@ journal:
                     - http
             cloudfront:
                 subdomains:
-                    - "{instance}--cdn-journal"
                     - www
                     - elife
                     - prod
-                subdomains-without-dns:
-                    - ""
-                headers:
-                    - X-Requested-With
-                    - Host
-                cookies:
-                    - journal
                 errors: 
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
@@ -597,17 +535,6 @@ journal:
                 origins:
                     CloudFrontCDNOrigin:
                         hostname: prod--journal.elifesciences.org
-                    LogInOrigin:
-                        hostname: prod--journal.elifesciences.org
-                        pattern: /log-in
-                        headers:
-                            - X-Requested-With
-                            - Host
-                            - Referer
-                        cookies:
-                            - journal
-                logging:
-                    bucket: elife-cloudfront-logs
             fastly:
                 subdomains:
                     - "{instance}--fastly-journal"
