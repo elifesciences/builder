@@ -1298,6 +1298,7 @@ bus:
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
             - bus-profiles--{instance}
+            - bus-digests--{instance}
 
 search:
     domain: false
