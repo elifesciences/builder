@@ -1884,7 +1884,7 @@ digests:
             #    engine: postgres
             #    storage: 5 # GB
             #    backup-retention: 2 # days
-        prod:
+        prod: {}
             #rds:
             #    engine: postgres
             #    storage: 5 # GB
