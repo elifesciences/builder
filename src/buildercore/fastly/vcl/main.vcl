@@ -29,6 +29,7 @@ sub vcl_fetch {
     }
 
     if (!beresp.http.Content-Length || beresp.http.Content-Length == "0") {
+      # Elastic Load Balancer returns empty error responses
       error beresp.status;
     }
   }
