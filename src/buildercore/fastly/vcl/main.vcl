@@ -22,7 +22,9 @@ sub vcl_fetch {
       restart;
     }
 
-    error 503;
+    if (!beresp.http.Content-Length || beresp.http.Content-Length == "0") {
+      error beresp.status;
+    }
   }
 
   if (req.restarts > 0) {
@@ -37,6 +39,13 @@ sub vcl_fetch {
   if (beresp.http.Cache-Control ~ "private") {
     set req.http.Fastly-Cachetype = "PRIVATE";
     return(pass);
+  }
+
+  if (beresp.status == 500 || beresp.status == 503) {
+    set req.http.Fastly-Cachetype = "ERROR";
+    set beresp.ttl = 1s;
+    set beresp.grace = 5s;
+    return(deliver);
   }
 
   if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~ "(s-maxage|max-age)") {
