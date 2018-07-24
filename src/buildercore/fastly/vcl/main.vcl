@@ -11,8 +11,18 @@ sub vcl_recv {
 sub vcl_fetch {
   #FASTLY fetch
 
-  if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
-    restart;
+  if (beresp.status >= 500 && beresp.status < 600) {
+    if (stale.exists) {
+      return(deliver_stale);
+    }
+
+    if (req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+      unset req.http.Cookie;
+
+      restart;
+    }
+
+    error 503;
   }
 
   if (req.restarts > 0) {
@@ -27,13 +37,6 @@ sub vcl_fetch {
   if (beresp.http.Cache-Control ~ "private") {
     set req.http.Fastly-Cachetype = "PRIVATE";
     return(pass);
-  }
-
-  if (beresp.status == 500 || beresp.status == 503) {
-    set req.http.Fastly-Cachetype = "ERROR";
-    set beresp.ttl = 1s;
-    set beresp.grace = 5s;
-    return(deliver);
   }
 
   if (beresp.http.Expires || beresp.http.Surrogate-Control ~ "max-age" || beresp.http.Cache-Control ~ "(s-maxage|max-age)") {
@@ -61,6 +64,12 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
+  if (resp.status >= 500 && resp.status < 600 && stale.exists) {
+    unset req.http.Cookie;
+
+    restart;
+  }
+
   #FASTLY deliver
   return(deliver);
 }
