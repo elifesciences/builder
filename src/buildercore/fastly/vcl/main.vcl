@@ -1,4 +1,8 @@
 sub vcl_recv {
+  if (req.restarts < 1) {
+    unset req.http.X-eLife-Restart;
+  }
+
   #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
@@ -17,6 +21,7 @@ sub vcl_fetch {
     }
 
     if (req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+      set req.http.X-eLife-Restart = "fetch," beresp.status;
       unset req.http.Cookie;
 
       restart;
@@ -74,9 +79,13 @@ sub vcl_miss {
 
 sub vcl_deliver {
   if (resp.status >= 500 && resp.status < 600 && stale.exists) {
-    unset req.http.Cookie;
+    set req.http.X-eLife-Restart = "deliver," resp.status;
 
     restart;
+  }
+
+  if (req.http.Fastly-Debug && req.http.X-eLife-Restart) {
+    set resp.http.X-eLife-Restart = req.http.X-eLife-Restart;
   }
 
   #FASTLY deliver
