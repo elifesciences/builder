@@ -1231,6 +1231,7 @@ bus:
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
             - bus-profiles--{instance}
+            - bus-digests--{instance}
 
 search:
     domain: false
@@ -1799,6 +1800,37 @@ annotations:
         ram: 1024
         ports:
             1248: 80
+
+digests:
+    subdomain: digests
+    domain: false
+    repo: https://github.com/elifesciences/digests
+    formula-repo: https://github.com/elifesciences/digests-formula
+    aws:
+        ports:
+            - 22
+            - 80:
+                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+    aws-alt:
+        end2end: {}
+            #rds:
+            #    engine: postgres
+            #    storage: 5 # GB
+            #    backup-retention: 2 # days
+        continuumtest: {}
+            #rds:
+            #    engine: postgres
+            #    storage: 5 # GB
+            #    backup-retention: 2 # days
+        prod: {}
+            #rds:
+            #    engine: postgres
+            #    storage: 5 # GB
+            #    multi-az: true
+    vagrant:
+        ram: 1024
+        ports:
+            1290: 80
 
 evanthia-simpler-component:
     subdomain: evanthia-simpler-component
