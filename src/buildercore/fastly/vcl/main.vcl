@@ -1,5 +1,6 @@
 sub vcl_recv {
   if (req.restarts < 1) {
+    # Sanitise header
     unset req.http.X-eLife-Restart;
   }
 
@@ -22,7 +23,7 @@ sub vcl_fetch {
 
     if (req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
       set req.http.X-eLife-Restart = "fetch," beresp.status;
-      unset req.http.Cookie;
+      unset req.http.Cookie; # Temporarily log out the user
 
       restart;
     }
