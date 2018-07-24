@@ -75,6 +75,10 @@ sub vcl_deliver {
 }
 
 sub vcl_error {
+  if (obj.status >= 500 && obj.status < 600 && stale.exists) {
+    return(deliver_stale);
+  }
+
   #FASTLY error
 }
 
