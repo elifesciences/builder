@@ -143,38 +143,33 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 @task
 @requires_project
 def launch(pname, instance_id=None, alt_config=None, concurrency=None, formula_revisions=None):
-    try:
-        stackname = generate_stack_from_input(pname, instance_id, alt_config)
-        pdata = core.project_data_for_stackname(stackname)
+    stackname = generate_stack_from_input(pname, instance_id, alt_config)
+    pdata = core.project_data_for_stackname(stackname)
 
-        print('attempting to create stack:')
-        print('  stackname:\t' + stackname)
-        print('  region:\t' + pdata['aws']['region'])
-        print('  concurrency:\t%s' % concurrency)
-        print('  formula_revisions:\t%s' % pformat(formula_revisions))
-        print()
+    print('attempting to create stack:')
+    print('  stackname:\t' + stackname)
+    print('  region:\t' + pdata['aws']['region'])
+    print('  concurrency:\t%s' % concurrency)
+    print('  formula_revisions:\t%s' % pformat(formula_revisions))
+    print()
 
-        if core.is_master_server_stack(stackname):
-            if not checks.can_access_builder_private(pname):
-                print("failed to access your organisation's 'builder-private' repository:")
-                print('  ' + pdata['private-repo'])
-                print("you'll need access to this repository to add a deploy key later")
-                print()
-                return
+    if core.is_master_server_stack(stackname):
+        if not checks.can_access_builder_private(pname):
+            print("failed to access your organisation's 'builder-private' repository:")
+            print('  ' + pdata['private-repo'])
+            print("you'll need access to this repository to add a deploy key later")
+            print()
+            return
 
-        if not core.stack_is_active(stackname):
-            LOG.info('stack %s does not exist, creating', stackname)
-            bootstrap.create_stack(stackname)
+    if not core.stack_is_active(stackname):
+        LOG.info('stack %s does not exist, creating', stackname)
+        bootstrap.create_stack(stackname)
 
-        LOG.info('updating stack %s', stackname)
-        # TODO: highstate.sh (think it's run inside here) doesn't detect:
-        # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
-        bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'], concurrency=concurrency, formula_revisions=formula_revisions)
-        setdefault('.active-stack', stackname)
-
-    except core.NoMasterException as e:
-        LOG.warn(e)
-        print("\n%s\nNo master server found, you'll need to `launch` a master-server first." % e)
+    LOG.info('updating stack %s', stackname)
+    # TODO: highstate.sh (think it's run inside here) doesn't detect:
+    # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
+    bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'], concurrency=concurrency, formula_revisions=formula_revisions)
+    setdefault('.active-stack', stackname)
 
 @debugtask
 @requires_aws_stack
