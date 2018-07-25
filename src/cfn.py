@@ -142,7 +142,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
 @task
 @requires_project
-def launch(pname, instance_id=None, alt_config=None, **kwargs):
+def launch(pname, instance_id=None, alt_config=None, concurrency=None, formula_revisions=None):
     try:
         stackname = generate_stack_from_input(pname, instance_id, alt_config)
         pdata = core.project_data_for_stackname(stackname)
@@ -150,10 +150,8 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
         print('attempting to create stack:')
         print('  stackname:\t' + stackname)
         print('  region:\t' + pdata['aws']['region'])
-
-        for key, val in kwargs.items():
-            print('  %s:\t%s' % (key, pformat(val)))
-
+        print('  concurrency:\t%s' % concurrency)
+        print('  formula_revisions:\t%s' % pformat(formula_revisions))
         print()
 
         if core.is_master_server_stack(stackname):
@@ -171,7 +169,7 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
         LOG.info('updating stack %s', stackname)
         # TODO: highstate.sh (think it's run inside here) doesn't detect:
         # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
-        bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'], **kwargs)
+        bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'], concurrency=concurrency, formula_revisions=formula_revisions)
         setdefault('.active-stack', stackname)
 
     except core.NoMasterException as e:

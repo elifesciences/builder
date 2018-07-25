@@ -396,7 +396,7 @@ def update_stack(stackname, service_list=None, **kwargs):
     context = context_handler.load_context(stackname)
     for servicename, delegation in subdict(service_update_fns, service_list).items():
         fn, additional_arguments_names = delegation
-        actual_arguments = {key:value for key, value in kwargs.items() if key in additional_arguments_names}
+        actual_arguments = {key: value for key, value in kwargs.items() if key in additional_arguments_names}
         fn(stackname, context, **actual_arguments)
 
 def upload_master_builder_key(key):
