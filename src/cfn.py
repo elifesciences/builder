@@ -171,7 +171,7 @@ def launch(pname, instance_id=None, alt_config=None, **kwargs):
         LOG.info('updating stack %s', stackname)
         # TODO: highstate.sh (think it's run inside here) doesn't detect:
         # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
-        bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
+        bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'], **kwargs)
         setdefault('.active-stack', stackname)
 
     except core.NoMasterException as e:
