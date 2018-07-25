@@ -387,15 +387,17 @@ def update_stack(stackname, service_list=None, **kwargs):
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
     service_update_fns = OrderedDict([
-        ('ec2', update_ec2_stack),
-        ('s3', update_s3_stack),
-        ('sqs', update_sqs_stack),
+        ('ec2', (update_ec2_stack, ['concurrency', 'formula_revisions'])),
+        ('s3', (update_s3_stack, [])),
+        ('sqs', (update_sqs_stack, [])),
     ])
     service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
     context = context_handler.load_context(stackname)
-    for servicename, fn in subdict(service_update_fns, service_list).items():
-        fn(stackname, context, **kwargs)
+    for servicename, delegation in subdict(service_update_fns, service_list).items():
+        fn, additional_arguments_names = delegation
+        actual_arguments = {key:value for key, value in kwargs.items() if key in additional_arguments_names}
+        fn(stackname, context, **actual_arguments)
 
 def upload_master_builder_key(key):
     old_public_key = "/root/.ssh/id_rsa.pub"
