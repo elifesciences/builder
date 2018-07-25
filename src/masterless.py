@@ -1,13 +1,14 @@
 import os
 from os.path import join
 from collections import OrderedDict
+from pprint import pformat
 from fabric.api import task, lcd, settings
 from fabric.operations import local
 from decorators import requires_project
-from buildercore import bootstrap, core, context_handler, project, config
+from buildercore import bootstrap, checks, core, context_handler, project, config
 from buildercore.utils import ensure
-import cfn
 import logging
+import cfn
 from functools import wraps
 
 LOG = logging.getLogger(__name__)
@@ -88,7 +89,24 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
     ensure(pdata['aws-alt'][alt_config]['ec2']['masterless'], "alternative configuration %r has masterless=False" % alt_config)
     repolist = parse_validate_repolist(pdata, *repolist)
 
-    cfn.launch(pname, instance_id, alt_config, formula_revisions=repolist)
+    formula_revisions = repolist
+    stackname = cfn.generate_stack_from_input(pname, instance_id, alt_config)
+    pdata = core.project_data_for_stackname(stackname)
+
+    print('attempting to create masterless stack:')
+    print('  stackname:\t' + stackname)
+    print('  region:\t' + pdata['aws']['region'])
+    print('  formula_revisions:\t%s' % pformat(formula_revisions))
+    print()
+
+    if core.is_master_server_stack(stackname):
+        checks.ensure_can_access_builder_private(pname)
+    checks.ensure_stack_does_not_exist(stackname)
+
+    bootstrap.create_stack(stackname)
+
+    LOG.info('updating stack %s', stackname)
+    bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'], formula_revisions=formula_revisions)
 
 #
 #
