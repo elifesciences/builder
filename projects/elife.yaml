@@ -1593,8 +1593,8 @@ iiif:
                 timeout: 2000
             surrogate-keys:
                 article-id-versioned:
-                    url: "^/lax:([0-9]+)/elife-([a-z0-9-]+)-v([0-9]+)\\.(.+)$"
-                    value: "article/\\1 article/\\1v\\3"
+                    url: "^/lax[:/]([0-9]+)(/|%2F)elife-([a-z0-9-]+)-v([0-9]+)\\.(.+)$"
+                    value: "article/\\1 article/\\1v\\4"
                     samples:
                         figure:
                             path: /lax:10627/elife-10627-fig1-v1.tif/full/1500,/0/default.jpg
@@ -1605,8 +1605,11 @@ iiif:
                         appendix-figure-supplement:
                             path: /lax:18215/elife-18215-app2-fig1-figsupp2-v2.tif
                             expected: "article/18215 article/18215v2"
+                        encoded-urls:
+                            path: /lax/18215%2Felife-18215-app2-fig1-figsupp2-v2.tif
+                            expected: "article/18215 article/18215v2"
                 article-id-unversioned:
-                    url: "^/lax:([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
+                    url: "^/lax[:/]([0-9]+)(/|%2F)elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
                     value: "article/\\1 article/\\1/videos"
                     samples:
                         video-still:
@@ -1617,6 +1620,9 @@ iiif:
                             expected: "article/07398 article/07398/videos"
                         article-figure-video-still:
                             path: /lax:26866/elife-26866-fig3-video1.jpg
+                            expected: "article/26866 article/26866/videos"
+                        encoded-urls:
+                            path: /lax/26866%2Felife-26866-fig3-video1.jpg
                             expected: "article/26866 article/26866/videos"
     aws-alt:
         standalone:
