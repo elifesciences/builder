@@ -111,8 +111,6 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     if 'ext' in context['project']['aws']:
         context['ext'] = context['project']['aws']['ext']
 
-    context['region'] = context['project']['aws']['region']
-
     # ec2
     # TODO: this is a problem. using the default 'True' preserves the behaviour of
     # when 'ec2: True' meant, 'use defaults with nothing changed'
@@ -265,9 +263,23 @@ def build_context_fastly(context, parameterize):
     def _build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
 
-    def _parameterize_hostname(b):
-        b['hostname'] = parameterize(b['hostname'])
-        return b
+    def _build_shield(shield):
+        if shield is False:
+            return {}
+
+        if shield is True:
+            pop = {
+                'us-east-1': 'iad-va-us',
+            }.get(context['project']['aws']['region']) or 'us-east-1'
+
+            return {'pop': pop}
+
+        return shield
+
+    def _build_backend(backend):
+        backend['hostname'] = parameterize(backend['hostname'])
+        backend['shield'] = _build_shield(backend.get('shield', context['project']['aws']['fastly'].get('shield', False)))
+        return backend
 
     def _parameterize_gcslogging(gcslogging):
         if gcslogging:
@@ -279,10 +291,10 @@ def build_context_fastly(context, parameterize):
     if context['project']['aws'].get('fastly'):
         backends = context['project']['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
-            'backends': OrderedDict([(n, _parameterize_hostname(b)) for n, b in backends.items()]),
+            'backends': OrderedDict([(n, _build_backend(b)) for n, b in backends.items()]),
             'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
             'subdomains-without-dns': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
-            'shielding': context['project']['aws']['fastly'].get('shielding', False),
+            'shield': _build_shield(context['project']['aws']['fastly'].get('shield', False)),
             'dns': context['project']['aws']['fastly']['dns'],
             'default-ttl': context['project']['aws']['fastly']['default-ttl'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],

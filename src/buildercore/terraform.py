@@ -92,11 +92,6 @@ def render_fastly(context):
     if not context['fastly']:
         return {}
 
-    def _guess_shield(region):
-        return {
-            'us-east-1': 'iad-va-us',
-        }.get(region)
-
     backends = []
     conditions = []
     request_settings = []
@@ -131,13 +126,13 @@ def render_fastly(context):
                 backend['hostname'],
                 name=name,
                 request_condition=backend_condition_name,
-                shield=backend.get('shield')
+                shield=backend['shield'].get('pop')
             ))
     else:
         request_settings.append(_fastly_request_setting({
             'default_host': context['full_hostname']
         }))
-        shield = _guess_shield(context['region']) if context['fastly']['shielding'] else None
+        shield = context['fastly']['shield'].get('pop')
         backends.append(_fastly_backend(
             context['full_hostname'],
             name=context['stackname'],

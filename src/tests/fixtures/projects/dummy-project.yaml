@@ -102,7 +102,7 @@ defaults:
                     - 127.0.0.1
                     - 127.0.0.2
             default-ttl: 3600 # seconds
-            shielding: false
+            shield: false
             gcslogging: false
             healthcheck: false
             errors: false
@@ -332,13 +332,23 @@ project-with-fastly-complex:
         ports:
             - 80
         fastly:
+            shield: true
             backends:
                 default:
                     hostname: default.example.org
+                    shield: false
                 articles:
                     hostname: "{instance}-special.example.org"
                     condition: req.url ~ "^/articles"
-                    shield: iad-va-us
+                    shield:
+                        pop: amsterdam-nl
+                articles2:
+                    hostname: "{instance}-special2.example.org"
+                    condition: req.url ~ "^/articles2"
+                    shield: true
+                articles3:
+                    hostname: "{instance}-special3.example.org"
+                    condition: req.url ~ "^/articles3"
             subdomains:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
@@ -381,12 +391,20 @@ project-with-fastly-gcs:
                 path: my-project/
                 period: 1800
 
-project-with-fastly-shielding:
+project-with-fastly-shield:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
         fastly:
-            shielding: true
+            shield: true
+
+project-with-fastly-shield-pop:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        fastly:
+            shield:
+                pop: london-uk
 
 project-with-ec2-custom-root:
     repo: ssh://git@github.com/elifesciences/dummy3
