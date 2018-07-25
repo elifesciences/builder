@@ -283,6 +283,8 @@ class TestBuildercoreTerraform(base.BaseCase):
         template = self._parse_template(terraform_template)
         service = template['resource']['fastly_service_v1']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'iad-va-us')
+        self.assertIn('domain', service)
+        self.assertEqual(service['domain'][0].get('name'), service['backend'][0]['address'])
 
     def test_fastly_template_gcs_logging(self):
         extra = {

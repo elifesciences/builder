@@ -105,6 +105,8 @@ def render_fastly(context):
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = {}
 
+    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
+
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
             if backend.get('condition'):
@@ -135,13 +137,15 @@ def render_fastly(context):
         request_settings.append(_fastly_request_setting({
             'default_host': context['full_hostname']
         }))
+        shield = _guess_shield(context['region']) if context['fastly']['shielding'] else None
         backends.append(_fastly_backend(
             context['full_hostname'],
             name=context['stackname'],
-            shield=_guess_shield(context['region']) if context['fastly']['shielding'] else None
+            shield=shield
         ))
+        if shield:
+            all_allowed_subdomains.append(context['full_hostname'])
 
-    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {

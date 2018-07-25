@@ -386,10 +386,6 @@ project-with-fastly-shielding:
     subdomain: www
     aws:
         fastly:
-            subdomains:
-                - "{instance}--cdn-of-www"
-            subdomains-without-dns:
-                - "{instance}--www"
             shielding: true
 
 project-with-ec2-custom-root:
