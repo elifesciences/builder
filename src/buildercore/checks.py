@@ -2,10 +2,13 @@
 
 these should compliment not replicate any project configuration validation."""
 
-from . import project
+from . import core, project
 from .project import repo
 
 class AccessProblem(RuntimeError):
+    pass
+
+class StackAlreadyExistingProblem(RuntimeError):
     pass
 
 def can_access_builder_private(pname):
@@ -17,6 +20,11 @@ def ensure_can_access_builder_private(pname):
     if not can_access_builder_private(pname):
         pdata = project.project_data(pname)
         raise AccessProblem("failed to access your organisation's 'builder-private' repository: %s . You'll need access to this repository to add a deploy key later" % pdata['private-repo'])
+
+
+def ensure_stack_does_not_exist(stackname):
+    if core.stack_is_active(stackname):
+        raise StackAlreadyExistingProblem("%s is an active stack" % stackname)
 
 def requires_certificate(stackname):
     "True if the given stack has a subdomain but is not using a properly configured certificate"

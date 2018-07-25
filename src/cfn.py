@@ -155,11 +155,9 @@ def launch(pname, instance_id=None, alt_config=None, concurrency=None, formula_r
 
     if core.is_master_server_stack(stackname):
         checks.ensure_can_access_builder_private(pname)
+    checks.ensure_stack_does_not_exist(stackname)
 
-    # TODO: extract check
-    if not core.stack_is_active(stackname):
-        LOG.info('stack %s does not exist, creating', stackname)
-        bootstrap.create_stack(stackname)
+    bootstrap.create_stack(stackname)
 
     LOG.info('updating stack %s', stackname)
     # TODO: highstate.sh (think it's run inside here) doesn't detect:
