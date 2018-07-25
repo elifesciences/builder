@@ -1,4 +1,9 @@
 sub vcl_recv {
+  if (req.restarts < 1) {
+    # Sanitise header
+    unset req.http.X-eLife-Restart;
+  }
+
   # Disable Stale-While-Revalidate if a shield request to avoid double SWR
   if (req.http.Fastly-FF) {
     set req.max_stale_while_revalidate = 0s;
@@ -16,8 +21,22 @@ sub vcl_recv {
 sub vcl_fetch {
   #FASTLY fetch
 
-  if ((beresp.status == 500 || beresp.status == 503) && req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
-    restart;
+  if (beresp.status >= 500 && beresp.status < 600) {
+    if (stale.exists) {
+      return(deliver_stale);
+    }
+
+    if (req.restarts < 1 && (req.request == "GET" || req.request == "HEAD")) {
+      set req.http.X-eLife-Restart = "fetch," beresp.status;
+      unset req.http.Cookie; # Temporarily log out the user
+
+      restart;
+    }
+
+    if (!beresp.http.Content-Length || beresp.http.Content-Length == "0") {
+      # Elastic Load Balancer returns empty error responses
+      error beresp.status;
+    }
   }
 
   if (req.restarts > 0) {
@@ -66,11 +85,25 @@ sub vcl_miss {
 }
 
 sub vcl_deliver {
+  if (resp.status >= 500 && resp.status < 600 && stale.exists) {
+    set req.http.X-eLife-Restart = "deliver," resp.status;
+
+    restart;
+  }
+
+  if (req.http.Fastly-Debug && req.http.X-eLife-Restart) {
+    set resp.http.X-eLife-Restart = req.http.X-eLife-Restart;
+  }
+
   #FASTLY deliver
   return(deliver);
 }
 
 sub vcl_error {
+  if (obj.status >= 500 && obj.status < 600 && stale.exists) {
+    return(deliver_stale);
+  }
+
   #FASTLY error
 }
 

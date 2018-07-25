@@ -104,10 +104,28 @@ VCL_SNIPPETS = {
         type='recv',
         hook='after'
     ),
+    'ping-status': FastlyVCLSnippet(
+        name='ping-status',
+        content=_read_vcl_file('ping-status.vcl'),
+        type='recv',
+        hook='after'
+    ),
     'strip-non-journal-cookies': FastlyVCLSnippet(
         name='strip-non-journal-cookies',
         content=_read_vcl_file('strip-non-journal-cookies.vcl'),
         type='recv',
+        hook='after'
+    ),
+    'journal-google-scholar': FastlyVCLSnippet(
+        name='journal-google-scholar',
+        content=_read_vcl_file('journal-google-scholar.vcl'),
+        type='recv',
+        hook='after'
+    ),
+    'journal-google-scholar-vary': FastlyVCLSnippet(
+        name='journal-google-scholar-vary',
+        content=_read_vcl_file('journal-google-scholar-vary.vcl'),
+        type='deliver',
         hook='after'
     ),
 }

@@ -398,11 +398,13 @@ def update_stack(stackname, service_list=None, **kwargs):
         fn(stackname, context, **kwargs)
 
 def upload_master_builder_key(key):
+    old_public_key = "/root/.ssh/id_rsa.pub"
     private_key = "/root/.ssh/id_rsa"
     LOG.info("upload master builder key to %s", private_key)
     try:
         # NOTE: overwrites any existing master key on machine being updated
         fab_put(local_path=key, remote_path=private_key, use_sudo=True)
+        sudo("rm -f %s && chown root:root %s && chmod 600 %s" % (old_public_key, private_key, private_key))
     finally:
         key.close()
 
@@ -499,7 +501,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
                 'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', '')
             }
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-formulas.sh', formula_list, pdata['private-repo'], **envvars)
+            run_script('init-masterless-formulas.sh', formula_list, pdata['private-repo'], **envvars)
 
             # second pass to optionally update formulas to specific revisions
             for repo, formula, revision in formula_revisions or []:
