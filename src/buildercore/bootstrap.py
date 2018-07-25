@@ -447,7 +447,7 @@ def upload_master_configuration(master_stack, master_configuration_data):
 
 @updates('ec2')
 @core.requires_active_stack
-def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None, **kwargs):
+def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
