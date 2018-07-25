@@ -154,13 +154,9 @@ def launch(pname, instance_id=None, alt_config=None, concurrency=None, formula_r
     print()
 
     if core.is_master_server_stack(stackname):
-        if not checks.can_access_builder_private(pname):
-            print("failed to access your organisation's 'builder-private' repository:")
-            print('  ' + pdata['private-repo'])
-            print("you'll need access to this repository to add a deploy key later")
-            print()
-            return
+        checks.ensure_can_access_builder_private(pname)
 
+    # TODO: extract check
     if not core.stack_is_active(stackname):
         LOG.info('stack %s does not exist, creating', stackname)
         bootstrap.create_stack(stackname)
