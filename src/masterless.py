@@ -6,6 +6,7 @@ from fabric.operations import local
 from decorators import requires_project
 from buildercore import bootstrap, core, context_handler, project, config
 from buildercore.utils import ensure
+import cfn
 import logging
 from functools import wraps
 
@@ -87,7 +88,6 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
     ensure(pdata['aws-alt'][alt_config]['ec2']['masterless'], "alternative configuration %r has masterless=False" % alt_config)
     repolist = parse_validate_repolist(pdata, *repolist)
 
-    import cfn
     cfn.launch(pname, instance_id, alt_config, formula_revisions=repolist)
 
 #
