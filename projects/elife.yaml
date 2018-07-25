@@ -1593,8 +1593,8 @@ iiif:
                 timeout: 2000
             surrogate-keys:
                 article-id-versioned:
-                    url: "^/lax[:/]([0-9]+)(/|%2F)elife-([a-z0-9-]+)-v([0-9]+)\\.(.+)$"
-                    value: "article/\\1 article/\\1v\\4"
+                    url: "^/lax[:/]([0-9]+)(?:/|%2F)elife-(?:[a-z0-9-]+)-v([0-9]+)\\.(?:.+)$"
+                    value: "article/\\1 article/\\1v\\2"
                     samples:
                         figure:
                             path: /lax:10627/elife-10627-fig1-v1.tif/full/1500,/0/default.jpg
@@ -1609,7 +1609,7 @@ iiif:
                             path: /lax/18215%2Felife-18215-app2-fig1-figsupp2-v2.tif
                             expected: "article/18215 article/18215v2"
                 article-id-unversioned:
-                    url: "^/lax[:/]([0-9]+)(/|%2F)elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
+                    url: "^/lax[:/]([0-9]+)(?:/|%2F)elife-(?:[a-z-0-9]+)-(?:video|media)(?:[0-9]+)\\.(?:.+)$"
                     value: "article/\\1 article/\\1/videos"
                     samples:
                         video-still:
