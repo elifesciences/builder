@@ -92,6 +92,11 @@ def render_fastly(context):
     if not context['fastly']:
         return {}
 
+    def _guess_shield(region):
+        return {
+            'us-east-1': 'iad-va-us',
+        }.get(region)
+
     backends = []
     conditions = []
     request_settings = []
@@ -123,7 +128,8 @@ def render_fastly(context):
             backends.append(_fastly_backend(
                 backend['hostname'],
                 name=name,
-                request_condition=backend_condition_name
+                request_condition=backend_condition_name,
+                shield=backend.get('shield')
             ))
     else:
         request_settings.append(_fastly_request_setting({
@@ -131,7 +137,8 @@ def render_fastly(context):
         }))
         backends.append(_fastly_backend(
             context['full_hostname'],
-            name=context['stackname']
+            name=context['stackname'],
+            shield=_guess_shield(context['region']) if context['fastly']['shielding'] else None
         ))
 
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
@@ -291,7 +298,7 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             }
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
 
-def _fastly_backend(hostname, name, request_condition=None):
+def _fastly_backend(hostname, name, request_condition=None, shield=None):
     backend_resource = {
         'address': hostname,
         'name': name,
@@ -303,6 +310,8 @@ def _fastly_backend(hostname, name, request_condition=None):
     }
     if request_condition:
         backend_resource['request_condition'] = request_condition
+    if shield:
+        backend_resource['shield'] = shield
     return backend_resource
 
 def _fastly_request_setting(override):

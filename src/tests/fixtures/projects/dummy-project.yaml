@@ -102,6 +102,7 @@ defaults:
                     - 127.0.0.1
                     - 127.0.0.2
             default-ttl: 3600 # seconds
+            shielding: false
             gcslogging: false
             healthcheck: false
             errors: false
@@ -336,7 +337,8 @@ project-with-fastly-complex:
                     hostname: default.example.org
                 articles:
                     hostname: "{instance}-special.example.org"
-                    condition: req.url ~ "^/articles" 
+                    condition: req.url ~ "^/articles"
+                    shield: iad-va-us
             subdomains:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
@@ -378,7 +380,18 @@ project-with-fastly-gcs:
                 bucket: my-bucket
                 path: my-project/
                 period: 1800
-                    
+
+project-with-fastly-shielding:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        fastly:
+            subdomains:
+                - "{instance}--cdn-of-www"
+            subdomains-without-dns:
+                - "{instance}--www"
+            shielding: true
+
 project-with-ec2-custom-root:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:

@@ -185,6 +185,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles-condition',
                                     'healthcheck': 'default',
+                                    'shield': 'iad-va-us',
                                 }
                             ],
                             'request_setting': [
@@ -272,6 +273,16 @@ class TestBuildercoreTerraform(base.BaseCase):
             },
             template
         )
+
+    def test_fastly_template_shielding(self):
+        extra = {
+            'stackname': 'project-with-fastly-shielding--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-shielding', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertEqual(service['backend'][0].get('shield'), 'iad-va-us')
 
     def test_fastly_template_gcs_logging(self):
         extra = {

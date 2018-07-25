@@ -111,6 +111,8 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     if 'ext' in context['project']['aws']:
         context['ext'] = context['project']['aws']['ext']
 
+    context['region'] = context['project']['aws']['region']
+
     # ec2
     # TODO: this is a problem. using the default 'True' preserves the behaviour of
     # when 'ec2: True' meant, 'use defaults with nothing changed'
@@ -280,6 +282,7 @@ def build_context_fastly(context, parameterize):
             'backends': OrderedDict([(n, _parameterize_hostname(b)) for n, b in backends.items()]),
             'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
             'subdomains-without-dns': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
+            'shielding': context['project']['aws']['fastly'].get('shielding', False),
             'dns': context['project']['aws']['fastly']['dns'],
             'default-ttl': context['project']['aws']['fastly']['default-ttl'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
