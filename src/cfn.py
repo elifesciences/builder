@@ -146,10 +146,9 @@ def launch(pname, instance_id=None, alt_config=None):
     stackname = generate_stack_from_input(pname, instance_id, alt_config)
     pdata = core.project_data_for_stackname(stackname)
 
-    print('attempting to create stack:')
-    print('  stackname:\t' + stackname)
-    print('  region:\t' + pdata['aws']['region'])
-    print()
+    LOG.info('attempting to create stack:')
+    LOG.info('stackname:\t%s', stackname)
+    LOG.info('region:\t%s', pdata['aws']['region'])
 
     if core.is_master_server_stack(stackname):
         checks.ensure_can_access_builder_private(pname)

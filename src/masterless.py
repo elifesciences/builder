@@ -82,22 +82,19 @@ def parse_validate_repolist(pdata, *repolist):
 @requires_project
 @requires_master_server_access
 def launch(pname, instance_id=None, alt_config='standalone', *repolist):
-    pdata = project.project_data(pname)
+    stackname = cfn.generate_stack_from_input(pname, instance_id, alt_config)
+    pdata = core.project_data_for_stackname(stackname)
     # ensure given alt config has masterless=True
     ensure(pdata['aws-alt'], "project has no alternate configurations")
     ensure(alt_config in pdata['aws-alt'], "unknown alt-config %r" % alt_config)
     ensure(pdata['aws-alt'][alt_config]['ec2']['masterless'], "alternative configuration %r has masterless=False" % alt_config)
-    repolist = parse_validate_repolist(pdata, *repolist)
 
-    formula_revisions = repolist
-    stackname = cfn.generate_stack_from_input(pname, instance_id, alt_config)
-    pdata = core.project_data_for_stackname(stackname)
+    formula_revisions = parse_validate_repolist(pdata, *repolist)
 
-    print('attempting to create masterless stack:')
-    print('  stackname:\t' + stackname)
-    print('  region:\t' + pdata['aws']['region'])
-    print('  formula_revisions:\t%s' % pformat(formula_revisions))
-    print()
+    LOG.info('attempting to create masterless stack:')
+    LOG.info('stackname:\t' + stackname)
+    LOG.info('region:\t' + pdata['aws']['region'])
+    LOG.info('formula_revisions:\t%s' % pformat(formula_revisions))
 
     if core.is_master_server_stack(stackname):
         checks.ensure_can_access_builder_private(pname)
