@@ -107,6 +107,6 @@ def set_versions(stackname, *repolist):
 
     def updater():
         for repo, formula, revision in repolist:
-            bootstrap.run_script('update-master-formula.sh', repo, formula, revision)
+            bootstrap.run_script('update-masterless-formula.sh', repo, formula, revision)
 
     core.stack_all_ec2_nodes(stackname, updater, concurrency='serial')

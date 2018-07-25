@@ -507,7 +507,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
 
             # second pass to optionally update formulas to specific revisions
             for repo, formula, revision in formula_revisions or []:
-                run_script('update-master-formula.sh', repo, formula, revision)
+                run_script('update-masterless-formula.sh', repo, formula, revision)
 
         if is_master:
             # it is possible to be a masterless master server
