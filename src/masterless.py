@@ -5,7 +5,7 @@ from pprint import pformat
 from fabric.api import task, lcd, settings
 from fabric.operations import local
 from decorators import requires_project
-from buildercore import bootstrap, checks, core, context_handler, project, config
+from buildercore import bootstrap, checks, core, context_handler, config
 from buildercore.utils import ensure
 import logging
 import cfn
