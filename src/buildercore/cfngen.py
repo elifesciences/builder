@@ -28,17 +28,17 @@ from .utils import ensure, lmap
 LOG = logging.getLogger(__name__)
 
 FASTLY_AWS_REGION_SHIELDS = {
-    'us-east-1': 'iad-va-us', # N. Virginia: Washington
-    'us-east-2': 'iad-va-us', # Ohio: Washington
+    'us-east-1': 'dca-dc-us', # N. Virginia: Ashburn
+    'us-east-2': 'mdw-il-us', # Ohio: Chicago
     'us-west-1': 'sjc-ca-us', # N. California: San Jose
     'us-west-2': 'sea-wa-us', # Oregon: Seattle
     'ap-northeast-1': 'tokyo-jp2', # Tokyo: Tokyo
-    'ap-northeast-2': 'osaka-jp', # Seoul: Osaka
+    'ap-northeast-2': 'tokyo-jp2', # Seoul: Tokyo
     'ap-northeast-3': 'osaka-jp', # Osaka-Local: Osaka
     'ap-south-1': 'singapore-sg', # Mumbai: Singapore (change to Mumbai when available)
     'ap-southeast-1': 'singapore-sg', # Singapore: Singapore
     'ap-southeast-2': 'sydney-au', # Sydney : Sydney
-    'ca-central-1': 'yul-montreal-ca', # Canada (Central): Montreal
+    'ca-central-1': 'yyz-on-ca', # Canada (Central): Toronto
     'cn-north-1': 'hongkong-hk', # Beijing: Hong Kong
     'cn-northwest-1': 'hongkong-hk', # Ningxia: Hong Kong
     'eu-central-1': 'frankfurt-de', # Frankfurt: Frankfurt
