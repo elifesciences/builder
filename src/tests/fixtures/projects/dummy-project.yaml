@@ -406,14 +406,6 @@ project-with-fastly-shield-pop:
             shield:
                 pop: london-uk
 
-project-with-fastly-shield-aws-region:
-    repo: ssh://git@github.com/elifesciences/dummy3
-    subdomain: www
-    aws:
-        region: eu-central-1
-        fastly:
-            shield: true
-
 project-with-ec2-custom-root:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:

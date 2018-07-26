@@ -139,7 +139,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     # when 'ec2: True' meant, 'use defaults with nothing changed'
     # but now I need to store master ip info there.
     #context['ec2'] = context['project']['aws'].get('ec2', True)
-    context['ec2'] = context['project']['aws']['ec2']
+    context['ec2'] = context['project']['aws'].get('ec2')
     if context['ec2'] == True:
         context['ec2'] = {}
         context['project']['aws']['ec2'] = {}
@@ -155,11 +155,11 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     def _parameterize(string):
         return string.format(instance=context['instance_id'])
 
-    for topic_template_name in context['project']['aws']['sns']:
+    for topic_template_name in context['project']['aws'].get('sns', {}):
         topic_name = _parameterize(topic_template_name)
         context['sns'].append(topic_name)
 
-    for queue_template_name in context['project']['aws']['sqs']:
+    for queue_template_name in context['project']['aws'].get('sqs', {}):
         queue_name = _parameterize(queue_template_name)
         queue_configuration = context['project']['aws']['sqs'][queue_template_name]
         subscriptions = lmap(_parameterize, queue_configuration.get('subscriptions', []))
@@ -173,7 +173,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'cors': None,
         'public': False,
     }
-    for bucket_template_name in context['project']['aws']['s3']:
+    for bucket_template_name in context['project']['aws'].get('s3', {}):
         bucket_name = _parameterize(bucket_template_name)
         configuration = context['project']['aws']['s3'][bucket_template_name]
         context['s3'][bucket_name] = default_bucket_configuration.copy()
@@ -356,7 +356,7 @@ def build_context_elasticache(context):
         context['elasticache'] = context['project']['aws']['elasticache']
 
 def build_context_vault(context):
-    context['vault'] = context['project']['aws']['vault']
+    context['vault'] = context['project']['aws'].get('vault', {})
 
 def choose_alt_config(stackname):
     """returns the name of the alt-config you think the user would want, based on given stackname"""

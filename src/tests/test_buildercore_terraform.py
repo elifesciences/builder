@@ -358,6 +358,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(service['domain'][0].get('name'), service['backend'][0]['address'])
 
     def test_fastly_template_shield_aws_region(self):
+        base.switch_in_test_settings('dummy-settings2.yaml')
         extra = {
             'stackname': 'project-with-fastly-shield-aws-region--prod',
         }
