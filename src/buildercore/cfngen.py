@@ -1,3 +1,5 @@
+# coding: utf8
+
 """
 Marshalls a collection of project information together in to a dictionary called the `context`.
 
@@ -24,6 +26,27 @@ from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
 
 LOG = logging.getLogger(__name__)
+
+FASTLY_AWS_REGION_SHIELDS = {
+    'us-east-1': 'iad-va-us', # N. Virginia: Washington
+    'us-east-2': 'iad-va-us', # Ohio: Washington
+    'us-west-1': 'sjc-ca-us', # N. California: San Jose
+    'us-west-2': 'sea-wa-us', # Oregon: Seattle
+    'ap-northeast-1': 'tokyo-jp2', # Tokyo: Tokyo
+    'ap-northeast-2': 'osaka-jp', # Seoul: Osaka
+    'ap-northeast-3': 'osaka-jp', # Osaka-Local: Osaka
+    'ap-south-1': 'singapore-sg', # Mumbai: Singapore (change to Mumbai when available)
+    'ap-southeast-1': 'singapore-sg', # Singapore: Singapore
+    'ap-southeast-2': 'sydney-au', # Sydney : Sydney
+    'ca-central-1': 'yul-montreal-ca', # Canada (Central): Montreal
+    'cn-north-1': 'hongkong-hk', # Beijing: Hong Kong
+    'cn-northwest-1': 'hongkong-hk', # Ningxia: Hong Kong
+    'eu-central-1': 'frankfurt-de', # Frankfurt: Frankfurt
+    'eu-west-1': 'london_city-uk', # Ireland: London City
+    'eu-west-2': 'london_city-uk', # London: London City
+    'eu-west-3': 'cdg-par-fr', # Paris: Paris
+    'sa-east-1': 'gru-br-sa', # São Paulo: São Paulo
+}
 
 # TODO: this function needs some TLC - it's getting fat.
 def build_context(pname, **more_context): # pylint: disable=too-many-locals
@@ -268,9 +291,7 @@ def build_context_fastly(context, parameterize):
             return {}
 
         if shield is True:
-            pop = {
-                'us-east-1': 'iad-va-us',
-            }.get(context['project']['aws']['region']) or 'us-east-1'
+            pop = FASTLY_AWS_REGION_SHIELDS.get(context['project']['aws']['region'], 'us-east-1')
 
             return {'pop': pop}
 
