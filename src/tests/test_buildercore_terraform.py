@@ -163,6 +163,15 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 {
                                     'name': 'future.example.org'
                                 },
+                                {
+                                    'name': 'prod-special.example.org'
+                                },
+                                {
+                                    'name': 'prod-special2.example.org'
+                                },
+                                {
+                                    'name': 'prod-special3.example.org'
+                                },
                             ],
                             'backend': [
                                 {

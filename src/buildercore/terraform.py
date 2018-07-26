@@ -122,12 +122,15 @@ def render_fastly(context):
                     'default_host': backend['hostname']
                 }))
                 backend_condition_name = None
+            shield = backend['shield'].get('pop')
             backends.append(_fastly_backend(
                 backend['hostname'],
                 name=name,
                 request_condition=backend_condition_name,
-                shield=backend['shield'].get('pop')
+                shield=shield
             ))
+            if shield:
+                all_allowed_subdomains.append(backend['hostname'])
     else:
         request_settings.append(_fastly_request_setting({
             'default_host': context['full_hostname']
