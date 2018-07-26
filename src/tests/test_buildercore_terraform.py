@@ -206,7 +206,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles2-condition',
                                     'healthcheck': 'default',
-                                    'shield': 'iad-va-us',
+                                    'shield': 'dca-dc-us',
                                 },
                                 {
                                     'address': 'prod-special3.example.org',
@@ -218,7 +218,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles3-condition',
                                     'healthcheck': 'default',
-                                    'shield': 'iad-va-us',
+                                    'shield': 'dca-dc-us',
                                 },
                             ],
                             'request_setting': [
@@ -341,7 +341,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
         service = template['resource']['fastly_service_v1']['fastly-cdn']
-        self.assertEqual(service['backend'][0].get('shield'), 'iad-va-us')
+        self.assertEqual(service['backend'][0].get('shield'), 'dca-dc-us')
         self.assertIn('domain', service)
         self.assertEqual(service['domain'][0].get('name'), service['backend'][0]['address'])
 
