@@ -155,7 +155,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     def _parameterize(string):
         return string.format(instance=context['instance_id'])
 
-    for topic_template_name in context['project']['aws'].get('sns', {}):
+    for topic_template_name in context['project']['aws'].get('sns', []):
         topic_name = _parameterize(topic_template_name)
         context['sns'].append(topic_name)
 
