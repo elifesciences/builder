@@ -4,6 +4,11 @@ sub vcl_recv {
     unset req.http.X-eLife-Restart;
   }
 
+  # Disable Stale-While-Revalidate if a shield request to avoid double SWR
+  if (req.http.Fastly-FF) {
+    set req.max_stale_while_revalidate = 0s;
+  }
+
   #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {

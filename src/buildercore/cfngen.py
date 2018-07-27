@@ -1,3 +1,5 @@
+# coding: utf8
+
 """
 Marshalls a collection of project information together in to a dictionary called the `context`.
 
@@ -24,6 +26,27 @@ from . import utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap
 
 LOG = logging.getLogger(__name__)
+
+FASTLY_AWS_REGION_SHIELDS = {
+    'us-east-1': 'dca-dc-us', # N. Virginia: Ashburn
+    'us-east-2': 'mdw-il-us', # Ohio: Chicago
+    'us-west-1': 'sjc-ca-us', # N. California: San Jose
+    'us-west-2': 'sea-wa-us', # Oregon: Seattle
+    'ap-northeast-1': 'tokyo-jp2', # Tokyo: Tokyo
+    'ap-northeast-2': 'tokyo-jp2', # Seoul: Tokyo
+    'ap-northeast-3': 'osaka-jp', # Osaka-Local: Osaka
+    'ap-south-1': 'singapore-sg', # Mumbai: Singapore (change to Mumbai when available)
+    'ap-southeast-1': 'singapore-sg', # Singapore: Singapore
+    'ap-southeast-2': 'sydney-au', # Sydney : Sydney
+    'ca-central-1': 'yyz-on-ca', # Canada (Central): Toronto
+    'cn-north-1': 'hongkong-hk', # Beijing: Hong Kong
+    'cn-northwest-1': 'hongkong-hk', # Ningxia: Hong Kong
+    'eu-central-1': 'frankfurt-de', # Frankfurt: Frankfurt
+    'eu-west-1': 'london_city-uk', # Ireland: London City
+    'eu-west-2': 'london_city-uk', # London: London City
+    'eu-west-3': 'cdg-par-fr', # Paris: Paris
+    'sa-east-1': 'gru-br-sa', # São Paulo: São Paulo
+}
 
 # TODO: this function needs some TLC - it's getting fat.
 def build_context(pname, **more_context): # pylint: disable=too-many-locals
@@ -116,7 +139,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     # when 'ec2: True' meant, 'use defaults with nothing changed'
     # but now I need to store master ip info there.
     #context['ec2'] = context['project']['aws'].get('ec2', True)
-    context['ec2'] = context['project']['aws']['ec2']
+    context['ec2'] = context['project']['aws'].get('ec2')
     if context['ec2'] == True:
         context['ec2'] = {}
         context['project']['aws']['ec2'] = {}
@@ -132,11 +155,11 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
     def _parameterize(string):
         return string.format(instance=context['instance_id'])
 
-    for topic_template_name in context['project']['aws']['sns']:
+    for topic_template_name in context['project']['aws'].get('sns', []):
         topic_name = _parameterize(topic_template_name)
         context['sns'].append(topic_name)
 
-    for queue_template_name in context['project']['aws']['sqs']:
+    for queue_template_name in context['project']['aws'].get('sqs', {}):
         queue_name = _parameterize(queue_template_name)
         queue_configuration = context['project']['aws']['sqs'][queue_template_name]
         subscriptions = lmap(_parameterize, queue_configuration.get('subscriptions', []))
@@ -150,7 +173,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'cors': None,
         'public': False,
     }
-    for bucket_template_name in context['project']['aws']['s3']:
+    for bucket_template_name in context['project']['aws'].get('s3', {}):
         bucket_name = _parameterize(bucket_template_name)
         configuration = context['project']['aws']['s3'][bucket_template_name]
         context['s3'][bucket_name] = default_bucket_configuration.copy()
@@ -263,9 +286,21 @@ def build_context_fastly(context, parameterize):
     def _build_subdomain(x):
         return complete_domain(parameterize(x), context['domain'])
 
-    def _parameterize_hostname(b):
-        b['hostname'] = parameterize(b['hostname'])
-        return b
+    def _build_shield(shield):
+        if shield is False:
+            return {}
+
+        if shield is True:
+            pop = FASTLY_AWS_REGION_SHIELDS.get(context['project']['aws']['region'], 'us-east-1')
+
+            return {'pop': pop}
+
+        return shield
+
+    def _build_backend(backend):
+        backend['hostname'] = parameterize(backend['hostname'])
+        backend['shield'] = _build_shield(backend.get('shield', context['project']['aws']['fastly'].get('shield', False)))
+        return backend
 
     def _parameterize_gcslogging(gcslogging):
         if gcslogging:
@@ -277,9 +312,10 @@ def build_context_fastly(context, parameterize):
     if context['project']['aws'].get('fastly'):
         backends = context['project']['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
-            'backends': OrderedDict([(n, _parameterize_hostname(b)) for n, b in backends.items()]),
+            'backends': OrderedDict([(n, _build_backend(b)) for n, b in backends.items()]),
             'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
             'subdomains-without-dns': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
+            'shield': _build_shield(context['project']['aws']['fastly'].get('shield', False)),
             'dns': context['project']['aws']['fastly']['dns'],
             'default-ttl': context['project']['aws']['fastly']['default-ttl'],
             'healthcheck': context['project']['aws']['fastly']['healthcheck'],
@@ -320,7 +356,7 @@ def build_context_elasticache(context):
         context['elasticache'] = context['project']['aws']['elasticache']
 
 def build_context_vault(context):
-    context['vault'] = context['project']['aws']['vault']
+    context['vault'] = context['project']['aws'].get('vault', {})
 
 def choose_alt_config(stackname):
     """returns the name of the alt-config you think the user would want, based on given stackname"""

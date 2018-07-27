@@ -100,6 +100,8 @@ def render_fastly(context):
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = {}
 
+    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
+
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
             if backend.get('condition'):
@@ -120,21 +122,28 @@ def render_fastly(context):
                     'default_host': backend['hostname']
                 }))
                 backend_condition_name = None
+            shield = backend['shield'].get('pop')
             backends.append(_fastly_backend(
                 backend['hostname'],
                 name=name,
-                request_condition=backend_condition_name
+                request_condition=backend_condition_name,
+                shield=shield
             ))
+            if shield:
+                all_allowed_subdomains.append(backend['hostname'])
     else:
         request_settings.append(_fastly_request_setting({
             'default_host': context['full_hostname']
         }))
+        shield = context['fastly']['shield'].get('pop')
         backends.append(_fastly_backend(
             context['full_hostname'],
-            name=context['stackname']
+            name=context['stackname'],
+            shield=shield
         ))
+        if shield:
+            all_allowed_subdomains.append(context['full_hostname'])
 
-    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {
@@ -291,7 +300,7 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             }
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
 
-def _fastly_backend(hostname, name, request_condition=None):
+def _fastly_backend(hostname, name, request_condition=None, shield=None):
     backend_resource = {
         'address': hostname,
         'name': name,
@@ -303,6 +312,8 @@ def _fastly_backend(hostname, name, request_condition=None):
     }
     if request_condition:
         backend_resource['request_condition'] = request_condition
+    if shield:
+        backend_resource['shield'] = shield
     return backend_resource
 
 def _fastly_request_setting(override):
