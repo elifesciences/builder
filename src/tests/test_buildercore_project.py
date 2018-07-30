@@ -9,7 +9,7 @@ ALL_PROJECTS = [
     'dummy1', 'dummy2', 'dummy3',
     'just-some-sns', 'project-with-sqs', 'project-with-s3',
     'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
-    'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-fastly-minimal', 'project-with-fastly-complex', 'project-with-fastly-gcs',
+    'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-fastly-minimal', 'project-with-fastly-complex', 'project-with-fastly-gcs', 'project-with-fastly-shield', 'project-with-fastly-shield-pop',
     'project-with-ec2-custom-root',
     'project-with-cluster', 'project-with-cluster-suppressed', 'project-with-cluster-overrides', 'project-with-cluster-empty',
     'project-with-stickiness', 'project-with-multiple-elb-listeners',

@@ -163,6 +163,15 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 {
                                     'name': 'future.example.org'
                                 },
+                                {
+                                    'name': 'prod-special.example.org'
+                                },
+                                {
+                                    'name': 'prod-special2.example.org'
+                                },
+                                {
+                                    'name': 'prod-special3.example.org'
+                                },
                             ],
                             'backend': [
                                 {
@@ -185,7 +194,32 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles-condition',
                                     'healthcheck': 'default',
-                                }
+                                    'shield': 'amsterdam-nl',
+                                },
+                                {
+                                    'address': 'prod-special2.example.org',
+                                    'name': 'articles2',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'prod-special2.example.org',
+                                    'ssl_sni_hostname': 'prod-special2.example.org',
+                                    'ssl_check_cert': True,
+                                    'request_condition': 'backend-articles2-condition',
+                                    'healthcheck': 'default',
+                                    'shield': 'dca-dc-us',
+                                },
+                                {
+                                    'address': 'prod-special3.example.org',
+                                    'name': 'articles3',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'prod-special3.example.org',
+                                    'ssl_sni_hostname': 'prod-special3.example.org',
+                                    'ssl_check_cert': True,
+                                    'request_condition': 'backend-articles3-condition',
+                                    'healthcheck': 'default',
+                                    'shield': 'dca-dc-us',
+                                },
                             ],
                             'request_setting': [
                                 {
@@ -202,6 +236,22 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'timer_support': True,
                                     'xff': 'leave',
                                     'request_condition': 'backend-articles-condition',
+                                },
+                                {
+                                    'name': 'backend-articles2-request-settings',
+                                    'default_host': 'prod-special2.example.org',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                    'request_condition': 'backend-articles2-condition',
+                                },
+                                {
+                                    'name': 'backend-articles3-request-settings',
+                                    'default_host': 'prod-special3.example.org',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                    'request_condition': 'backend-articles3-condition',
                                 },
                             ],
                             'default_ttl': 86400,
@@ -231,6 +281,16 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 {
                                     'name': 'backend-articles-condition',
                                     'statement': 'req.url ~ "^/articles"',
+                                    'type': 'REQUEST',
+                                },
+                                {
+                                    'name': 'backend-articles2-condition',
+                                    'statement': 'req.url ~ "^/articles2"',
+                                    'type': 'REQUEST',
+                                },
+                                {
+                                    'name': 'backend-articles3-condition',
+                                    'statement': 'req.url ~ "^/articles3"',
                                     'type': 'REQUEST',
                                 },
                                 {
@@ -272,6 +332,41 @@ class TestBuildercoreTerraform(base.BaseCase):
             },
             template
         )
+
+    def test_fastly_template_shield(self):
+        extra = {
+            'stackname': 'project-with-fastly-shield--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-shield', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertEqual(service['backend'][0].get('shield'), 'dca-dc-us')
+        self.assertIn('domain', service)
+        self.assertEqual(service['domain'][0].get('name'), service['backend'][0]['address'])
+
+    def test_fastly_template_shield_pop(self):
+        extra = {
+            'stackname': 'project-with-fastly-shield-pop--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-shield-pop', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertEqual(service['backend'][0].get('shield'), 'london-uk')
+        self.assertIn('domain', service)
+        self.assertEqual(service['domain'][0].get('name'), service['backend'][0]['address'])
+
+    def test_fastly_template_shield_aws_region(self):
+        base.switch_in_test_settings('dummy-settings2.yaml')
+        extra = {
+            'stackname': 'project-with-fastly-shield-aws-region--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-shield-aws-region', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertEqual(service['backend'][0].get('shield'), 'frankfurt-de')
 
     def test_fastly_template_gcs_logging(self):
         extra = {
