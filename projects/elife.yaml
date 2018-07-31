@@ -703,6 +703,7 @@ elife-bot:
                 - 22
                 - 8020 # exposing FTP contents
                 - 8021 # exposing FTP contents, HTTPS
+                - 1080 # exposing mailcatcher API
             description: speeding up end2end tests
             s3:
                 "{instance}-elife-silent-corrections":
