@@ -2018,3 +2018,12 @@ fastly-logs:
             "{instance}-elife-fastly":
                 project: elife-fastly
     aws-alt: {}
+
+data-pipeline:
+    description: Data Pipeline deployment (buckets)
+    aws:
+        s3:
+            "{instance}-elife-data-pipeline":
+                deletion-policy: delete
+            "{instance}-elife-data-pipeline-archive":
+                deletion-policy: retain
