@@ -2018,3 +2018,15 @@ fastly-logs:
             "{instance}-elife-fastly":
                 project: elife-fastly
     aws-alt: {}
+
+data-pipeline:
+    description: Data consolidation project
+    domain: false
+    intdomain: false
+    aws:
+        ec2: false
+        s3:
+            "{instance}-elife-data-pipeline":
+                 deletion-policy: delete
+            "{instance}-elife-data-pipeline-archive":
+                 deletion-policy: retain
