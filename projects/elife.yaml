@@ -1820,11 +1820,11 @@ digests:
             - 80:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
     aws-alt:
-        end2end: {}
-            #rds:
-            #    engine: postgres
-            #    storage: 5 # GB
-            #    backup-retention: 2 # days
+        end2end:
+            rds:
+                engine: postgres
+                storage: 5 # GB
+                backup-retention: 2 # days
         continuumtest: {}
             #rds:
             #    engine: postgres
