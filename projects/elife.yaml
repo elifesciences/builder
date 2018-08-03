@@ -2027,4 +2027,6 @@ data-pipeline:
         ec2: false
         s3:
             "{instance}-elife-data-pipeline":
+                 deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
+                 deletion-policy: retain
