@@ -217,7 +217,10 @@ def build_context_rds(context, existing_context):
 
     # pull password from existing context, if it exists
     generated_password = utils.random_alphanumeric(length=32)
-    rds_password = existing_context.get('rds_password', generated_password)
+    rds_password = existing_context.get('rds_password')
+    if not rds_password:
+        # may be present but None
+        rds_password = generated_password
 
     return {
         'netmask': networkmask,
