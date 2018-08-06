@@ -96,6 +96,7 @@
                 "version": "9.4", 
                 "type": "db.t2.small", 
                 "storage": 15, 
+                "storage-type": "standard",
                 "backup-retention": 28, 
                 "params": [], 
                 "subnets": [
@@ -142,6 +143,7 @@
                 "version": "9.4", 
                 "type": "db.t2.small", 
                 "storage": 5, 
+                "storage-type": "standard",
                 "backup-retention": 28, 
                 "params": [], 
                 "subnets": [
