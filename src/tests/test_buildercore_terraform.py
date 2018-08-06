@@ -87,6 +87,14 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_check_cert': True,
                             }],
                             'default_ttl': 3600,
+                            'request_setting': [
+                                {
+                                    'name': 'force-ssl',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                }
+                            ],
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -207,22 +215,25 @@ class TestBuildercoreTerraform(base.BaseCase):
                             ],
                             'request_setting': [
                                 {
-                                    'name': 'backend-articles-request-settings',
+                                    'name': 'force-ssl',
                                     'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                },
+                                {
+                                    'name': 'backend-articles-request-settings',
                                     'timer_support': True,
                                     'xff': 'leave',
                                     'request_condition': 'backend-articles-condition',
                                 },
                                 {
                                     'name': 'backend-articles2-request-settings',
-                                    'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
                                     'request_condition': 'backend-articles2-condition',
                                 },
                                 {
                                     'name': 'backend-articles3-request-settings',
-                                    'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
                                     'request_condition': 'backend-articles3-condition',

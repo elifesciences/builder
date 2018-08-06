@@ -100,6 +100,11 @@ def render_fastly(context):
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = {}
 
+    request_settings.append(_fastly_request_setting({
+        'name': 'force-ssl',
+        'force_ssl': True,
+    }))
+
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
 
     if context['fastly']['backends']:
@@ -309,7 +314,6 @@ def _fastly_backend(hostname, name, request_condition=None, shield=None):
 def _fastly_request_setting(override):
     request_setting_resource = {
         'name': 'default',
-        'force_ssl': True,
         # shouldn't need to replicate the defaults
         # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
         # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
