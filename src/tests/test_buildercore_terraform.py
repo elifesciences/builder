@@ -87,13 +87,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_check_cert': True,
                             }],
                             'default_ttl': 3600,
-                            'request_setting': [{
-                                'name': 'default',
-                                'default_host': 'prod--www.example.org',
-                                'force_ssl': True,
-                                'timer_support': True,
-                                'xff': 'leave',
-                            }],
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -163,15 +156,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 {
                                     'name': 'future.example.org'
                                 },
-                                {
-                                    'name': 'prod-special.example.org'
-                                },
-                                {
-                                    'name': 'prod-special2.example.org'
-                                },
-                                {
-                                    'name': 'prod-special3.example.org'
-                                },
                             ],
                             'backend': [
                                 {
@@ -223,15 +207,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             ],
                             'request_setting': [
                                 {
-                                    'name': 'default',
-                                    'default_host': 'default.example.org',
-                                    'force_ssl': True,
-                                    'timer_support': True,
-                                    'xff': 'leave',
-                                },
-                                {
                                     'name': 'backend-articles-request-settings',
-                                    'default_host': 'prod-special.example.org',
                                     'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
@@ -239,7 +215,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'name': 'backend-articles2-request-settings',
-                                    'default_host': 'prod-special2.example.org',
                                     'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
@@ -247,7 +222,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'name': 'backend-articles3-request-settings',
-                                    'default_host': 'prod-special3.example.org',
                                     'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
@@ -343,7 +317,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         service = template['resource']['fastly_service_v1']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'dca-dc-us')
         self.assertIn('domain', service)
-        self.assertEqual(service['domain'][0].get('name'), service['backend'][0]['address'])
 
     def test_fastly_template_shield_pop(self):
         extra = {
@@ -355,7 +328,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         service = template['resource']['fastly_service_v1']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'london-uk')
         self.assertIn('domain', service)
-        self.assertEqual(service['domain'][0].get('name'), service['backend'][0]['address'])
 
     def test_fastly_template_shield_aws_region(self):
         base.switch_in_test_settings('dummy-settings2.yaml')
