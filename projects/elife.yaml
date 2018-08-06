@@ -1829,16 +1829,20 @@ digests:
                 storage: 5 # GB
                 storage-type: gp2
                 backup-retention: 2 # days
-        continuumtest: {}
-            #rds:
-            #    engine: postgres
-            #    storage: 5 # GB
-            #    backup-retention: 2 # days
-        prod: {}
-            #rds:
-            #    engine: postgres
-            #    storage: 5 # GB
-            #    multi-az: true
+        continuumtest:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+        prod:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                multi-az: true
     vagrant:
         ram: 1024
         ports:
