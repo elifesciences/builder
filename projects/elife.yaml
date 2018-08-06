@@ -72,6 +72,8 @@ defaults:
             version: '9.4'
             type: db.t2.small
             storage: 5 # GB
+            # Standard for backward compatibility
+            storage-type: Standard # standard|gp2|io1 https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
@@ -1823,7 +1825,9 @@ digests:
         end2end:
             rds:
                 engine: postgres
+                type: db.t2.micro
                 storage: 5 # GB
+                storage-type: gp2
                 backup-retention: 2 # days
         continuumtest: {}
             #rds:
