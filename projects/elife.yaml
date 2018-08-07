@@ -504,10 +504,11 @@ journal:
                     - "strip-non-journal-cookies"
                     - "journal-google-scholar"
                     - "journal-google-scholar-vary"
+                    - "log-outgoing-hosts"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
-                    period: 600
+                    period: 60
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:

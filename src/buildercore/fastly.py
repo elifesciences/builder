@@ -92,6 +92,12 @@ VCL_SNIPPETS = {
         type='recv',
         hook='before'
     ),
+    'log-outgoing-hosts': FastlyVCLSnippet(
+        name='original-host',
+        content=_read_vcl_file('log-outgoing-hosts.vcl'),
+        type='miss',
+        hook='before'
+    ),
     'gzip-by-content-type-suffix': FastlyVCLSnippet(
         name='gzip-by-content-type-suffix',
         content=_read_vcl_file('gzip-by-content-type-suffix.vcl'),
