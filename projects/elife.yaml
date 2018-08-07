@@ -138,7 +138,7 @@ defaults:
             subdomains: []
             subdomains-without-dns: []
             default-ttl: 3600 # Fastly default, in seconds
-            shield: false
+            shield: true
             dns:
                 cname: u2.shared.global.fastly.net
                 a:
