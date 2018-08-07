@@ -51,6 +51,7 @@ FASTLY_LOG_FORMAT = """{
   "shield": "%{req.http.x-shield}V",
   "request":"%{req.request}V",
   "original_host":"%{req.http.X-Forwarded-Host}V",
+  "fastly_set_original_host": "%{req.http.X-Fastly-Set-Original-Host}V",
   "host":"%{req.http.Host}V",
   "url":"%{cstr_escape(req.url)}V",
   "request_referer":"%{cstr_escape(req.http.Referer)}V",
