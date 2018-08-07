@@ -72,6 +72,8 @@ defaults:
             version: '9.4'
             type: db.t2.small
             storage: 5 # GB
+            # Standard for backward compatibility
+            storage-type: Standard # standard|gp2|io1 https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
@@ -1820,21 +1822,27 @@ digests:
             - 80:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
     aws-alt:
-        end2end: {}
-            #rds:
-            #    engine: postgres
-            #    storage: 5 # GB
-            #    backup-retention: 2 # days
-        continuumtest: {}
-            #rds:
-            #    engine: postgres
-            #    storage: 5 # GB
-            #    backup-retention: 2 # days
-        prod: {}
-            #rds:
-            #    engine: postgres
-            #    storage: 5 # GB
-            #    multi-az: true
+        end2end:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+        continuumtest:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+        prod:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                multi-az: true
     vagrant:
         ram: 1024
         ports:

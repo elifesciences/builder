@@ -279,7 +279,7 @@ def render_rds(context, template):
         'DBInstanceIdentifier': lu('rds_instance_id'), # ll: 'lax-2015-12-31' from 'lax--2015-12-31'
         'PubliclyAccessible': False,
         'AllocatedStorage': lu('project.aws.rds.storage'),
-        'StorageType': 'Standard',
+        'StorageType': lu('project.aws.rds.storage-type'),
         'MultiAZ': lu('project.aws.rds.multi-az'),
         'VPCSecurityGroups': [Ref(vpcdbsg)],
         'DBSubnetGroupName': Ref(rsn),
