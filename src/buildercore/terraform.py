@@ -100,6 +100,11 @@ def render_fastly(context):
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = {}
 
+    request_settings.append(_fastly_request_setting({
+        'name': 'force-ssl',
+        'force_ssl': True,
+    }))
+
     all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
 
     if context['fastly']['backends']:
@@ -113,14 +118,10 @@ def render_fastly(context):
                 })
                 request_settings.append(_fastly_request_setting({
                     'name': 'backend-%s-request-settings' % name,
-                    'default_host': backend['hostname'],
                     'request_condition': condition_name,
                 }))
                 backend_condition_name = condition_name
             else:
-                request_settings.append(_fastly_request_setting({
-                    'default_host': backend['hostname']
-                }))
                 backend_condition_name = None
             shield = backend['shield'].get('pop')
             backends.append(_fastly_backend(
@@ -129,20 +130,13 @@ def render_fastly(context):
                 request_condition=backend_condition_name,
                 shield=shield
             ))
-            if shield:
-                all_allowed_subdomains.append(backend['hostname'])
     else:
-        request_settings.append(_fastly_request_setting({
-            'default_host': context['full_hostname']
-        }))
         shield = context['fastly']['shield'].get('pop')
         backends.append(_fastly_backend(
             context['full_hostname'],
             name=context['stackname'],
             shield=shield
         ))
-        if shield:
-            all_allowed_subdomains.append(context['full_hostname'])
 
     tf_file = {
         'resource': {
@@ -266,7 +260,8 @@ def render_fastly(context):
     if headers:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['header'] = headers
 
-    tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
+    if request_settings:
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
 
     if data:
         tf_file['data'] = data
@@ -319,7 +314,6 @@ def _fastly_backend(hostname, name, request_condition=None, shield=None):
 def _fastly_request_setting(override):
     request_setting_resource = {
         'name': 'default',
-        'force_ssl': True,
         # shouldn't need to replicate the defaults
         # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
         # https://github.com/terraform-providers/terraform-provider-fastly/issues/67

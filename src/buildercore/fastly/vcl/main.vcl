@@ -81,6 +81,11 @@ sub vcl_hit {
 
 sub vcl_miss {
   #FASTLY miss
+
+  if (!req.backend.is_shield) {
+    unset bereq.http.host;
+  }
+
   return(fetch);
 }
 
@@ -109,6 +114,10 @@ sub vcl_error {
 
 sub vcl_pass {
   #FASTLY pass
+
+  if (!req.backend.is_shield) {
+    unset bereq.http.host;
+  }
 }
 
 sub vcl_log {
