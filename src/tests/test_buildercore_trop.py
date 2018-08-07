@@ -35,6 +35,10 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
         data = self._parse_json(trop.render(context))
         self.assertTrue(isinstance(data['Resources']['AttachedDB'], dict))
+        self.assertTrue(isinstance(data['Resources']['AttachedDB']['Properties'], dict))
+        properties = data['Resources']['AttachedDB']['Properties']
+        self.assertEqual(properties['AllocatedStorage'], 15)
+        self.assertEqual(properties['StorageType'], 'standard')
         # "Test that sequence first contains the same elements as second, regardless of their order."
         self.assertCountEqual(
             data['Resources']['AttachedDB']['Properties']['Tags'],
