@@ -1923,6 +1923,8 @@ crm:
                 type: db.t2.medium
                 params:
                     log_bin_trust_function_creators: 1
+            ext:
+                size: 10 # GB
 
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
