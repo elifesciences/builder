@@ -63,7 +63,7 @@ def update(stackname, autostart="0", concurrency='serial'):
 
 @task
 @timeit
-def update_infrastructure(stackname):
+def update_infrastructure(stackname, skip=None):
     """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
@@ -75,7 +75,11 @@ def update_infrastructure(stackname):
     but without any software being on it)
 
     Moreover, EC2 instances must be running while this is executed or their
-    resources like PublicIP will be inaccessible"""
+    resources like PublicIP will be inaccessible.
+
+    Allows to skip EC2, SQS, S3 updates by passing `skip=ec2\\,sqs\\,s3`"""
+
+    skip = skip.split(",") if skip else []
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
@@ -96,17 +100,17 @@ def update_infrastructure(stackname):
 
     # TODO: move inside bootstrap.update_stack
     # EC2
-    if _are_there_existing_servers(context):
+    if _are_there_existing_servers(context) and not 'ec2' in skip:
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
         update(stackname)
 
     # SQS
-    if context.get('sqs', {}):
+    if context.get('sqs', {}) and not 'sqs' in skip:
         bootstrap.update_stack(stackname, service_list=['sqs'])
 
     # S3
-    if context.get('s3', {}):
+    if context.get('s3', {}) and not 's3' in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 @requires_project
