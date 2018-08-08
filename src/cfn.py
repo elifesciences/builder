@@ -79,10 +79,7 @@ def update_infrastructure(stackname, skip=None):
 
     Allows to skip EC2, SQS, S3 updates by passing `skip=ec2\\,sqs\\,s3`"""
 
-    if skip:
-        skip = skip.split(",")
-    else:
-        skip = []
+    skip = skip.split(",") if skip else []
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
