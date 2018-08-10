@@ -543,7 +543,6 @@ journal:
                     - "{instance}--cdn-journal"
                     - "placeholder-prod-journal" # only here to avoid rewriting the following values
                     - ""
-                shield: false
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
