@@ -146,28 +146,28 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'error-page-vcl-503': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'comparison': '== 503',
+                                'test': 'obj.status == 503',
                                 'synthetic_response': '${data.http.error-page-503.body}',
                             },
                         },
                         'error-page-vcl-404': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'comparison': '== 404',
+                                'test': 'obj.status == 404',
                                 'synthetic_response': '${data.http.error-page-404.body}',
                             },
                         },
                         'error-page-vcl-4xx': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'comparison': '>= 400 && <= 499',
+                                'test': 'obj.status >= 400 && obj.status <= 499',
                                 'synthetic_response': '${data.http.error-page-4xx.body}',
                             },
                         },
                         'error-page-vcl-5xx': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'comparison': '>= 500 && <= 599',
+                                'test': 'obj.status >= 500 && obj.status <= 599',
                                 'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
                         },

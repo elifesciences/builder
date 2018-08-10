@@ -290,7 +290,7 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             data[DATE_TYPE_TEMPLATE][name] = {
                 'template': error_vcl_template_file,
                 'vars': {
-                    'comparison': '== %s' % code,
+                    'test': 'obj.status == %s' % code,
                     'synthetic_response': '${data.http.error-page-%s.body}' % code,
                 },
             }
@@ -303,7 +303,7 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             data[DATE_TYPE_TEMPLATE][name] = {
                 'template': error_vcl_template_file,
                 'vars': {
-                    'comparison': '>= 400 && <= 499',
+                    'test': 'obj.status >= 400 && obj.status <= 499',
                     'synthetic_response': '${data.http.error-page-4xx.body}',
                 },
             }
@@ -316,7 +316,7 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             data[DATE_TYPE_TEMPLATE][name] = {
                 'template': error_vcl_template_file,
                 'vars': {
-                    'comparison': '>= 500 && <= 599',
+                    'test': 'obj.status >= 500 && obj.status <= 599',
                     'synthetic_response': '${data.http.error-page-5xx.body}',
                 },
             }
