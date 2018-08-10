@@ -129,16 +129,46 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'data': {
                     'http': {
+                        'error-page-404': {
+                            'url': 'https://example.com/404.html'
+                        },
                         'error-page-503': {
-                            'url': 'https://example.com/'
+                            'url': 'https://example.com/503.html'
+                        },
+                        'error-page-4xx': {
+                            'url': 'https://example.com/4xx.html'
+                        },
+                        'error-page-5xx': {
+                            'url': 'https://example.com/5xx.html'
                         },
                     },
                     'template_file': {
                         'error-page-vcl-503': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'code': 503,
+                                'comparison': '== 503',
                                 'synthetic_response': '${data.http.error-page-503.body}',
+                            },
+                        },
+                        'error-page-vcl-404': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'comparison': '== 404',
+                                'synthetic_response': '${data.http.error-page-404.body}',
+                            },
+                        },
+                        'error-page-vcl-4xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'comparison': '>= 400 && <= 499',
+                                'synthetic_response': '${data.http.error-page-4xx.body}',
+                            },
+                        },
+                        'error-page-vcl-5xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'comparison': '>= 500 && <= 599',
+                                'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
                         },
                     },
@@ -290,8 +320,20 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '${file("gzip-by-content-type-suffix.vcl")}',
                                 },
                                 {
+                                    'name': 'error-page-vcl-404',
+                                    'content': '${data.template_file.error-page-vcl-404.rendered}',
+                                },
+                                {
                                     'name': 'error-page-vcl-503',
                                     'content': '${data.template_file.error-page-vcl-503.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-5xx',
+                                    'content': '${data.template_file.error-page-vcl-5xx.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-4xx',
+                                    'content': '${data.template_file.error-page-vcl-4xx.rendered}',
                                 },
                                 {
                                     'name': 'main',

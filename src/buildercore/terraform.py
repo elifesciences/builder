@@ -278,19 +278,46 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             extension='vcl.tpl'
         )
         errors = context['fastly']['errors']
+        codes = errors.get('codes', {})
+        fallbacks = errors.get('fallbacks', {})
         data[DATA_TYPE_HTTP] = {}
-        for code, path in errors['codes'].items():
+        data[DATE_TYPE_TEMPLATE] = {}
+        for code, path in codes.items():
             data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
                 'url': '%s%s' % (errors['url'], path),
             }
             name = 'error-page-vcl-%d' % code
-            data[DATE_TYPE_TEMPLATE] = {
-                name: {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'code': code,
-                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                    }
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'comparison': '== %s' % code,
+                    'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('4xx'):
+            data[DATA_TYPE_HTTP]['error-page-4xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
+            }
+            name = 'error-page-vcl-4xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'comparison': '>= 400 && <= 499',
+                    'synthetic_response': '${data.http.error-page-4xx.body}',
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('5xx'):
+            data[DATA_TYPE_HTTP]['error-page-5xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
+            }
+            name = 'error-page-vcl-5xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'comparison': '>= 500 && <= 599',
+                    'synthetic_response': '${data.http.error-page-5xx.body}',
                 },
             }
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
