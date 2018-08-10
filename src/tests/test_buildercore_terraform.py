@@ -110,7 +110,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
                                                'ttf'],
                             },
-                            'force_destroy': True
+                            'force_destroy': True,
+                            'vcl': {},
                         }
                     }
                 },
@@ -320,20 +321,20 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '${file("gzip-by-content-type-suffix.vcl")}',
                                 },
                                 {
-                                    'name': 'error-page-vcl-404',
-                                    'content': '${data.template_file.error-page-vcl-404.rendered}',
-                                },
-                                {
                                     'name': 'error-page-vcl-503',
                                     'content': '${data.template_file.error-page-vcl-503.rendered}',
                                 },
                                 {
-                                    'name': 'error-page-vcl-5xx',
-                                    'content': '${data.template_file.error-page-vcl-5xx.rendered}',
+                                    'name': 'error-page-vcl-404',
+                                    'content': '${data.template_file.error-page-vcl-404.rendered}',
                                 },
                                 {
                                     'name': 'error-page-vcl-4xx',
                                     'content': '${data.template_file.error-page-vcl-4xx.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-5xx',
+                                    'content': '${data.template_file.error-page-vcl-5xx.rendered}',
                                 },
                                 {
                                     'name': 'main',

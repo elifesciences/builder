@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import json
 import os
 from os.path import exists, join, basename
@@ -98,7 +98,7 @@ def render_fastly(context):
     headers = []
     data = {}
     vcl_constant_snippets = context['fastly']['vcl']
-    vcl_templated_snippets = {}
+    vcl_templated_snippets = OrderedDict()
 
     request_settings.append(_fastly_request_setting({
         'name': 'force-ssl',
@@ -156,7 +156,8 @@ def render_fastly(context):
                         'content_types': sorted(FASTLY_GZIP_TYPES),
                         'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
-                    'force_destroy': True
+                    'force_destroy': True,
+                    'vcl': OrderedDict(),
                 }
             }
         },
@@ -216,6 +217,7 @@ def render_fastly(context):
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + list(vcl_templated_snippets.values())
+        inclusions.reverse()
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
