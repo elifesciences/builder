@@ -31,7 +31,7 @@ def osx():
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
 def terraform_version_checker(_cmd):
-    ver = shs('terraform --version').replace('Terraform v', '').strip()
+    ver = shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip()
     installed_version = StrictVersion(ver)
     if not installed_version >= MINIMUM_VERSION_TERRAFORM:
         raise RuntimeError("Installed terraform version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_TERRAFORM))
