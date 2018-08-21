@@ -211,7 +211,6 @@ CUSTOM_SSH_USERNAME = "elife"
 if ENV.fetch("CUSTOM_SSH_USER", nil)
     CUSTOM_SSH_USER = (true if ENV.fetch("CUSTOM_SSH_USER") =~ /^true$/i) || false
 end
-prn "Using ssh key #{CUSTOM_SSH_KEY}"
 
 # finally! configure the beast
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -220,6 +219,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.ssh.insert_key = false
 
     if CUSTOM_SSH_USER and ["ssh", "ssh-config"].include? VAGRANT_COMMAND
+        prn "Using ssh key #{CUSTOM_SSH_KEY}"
         config.ssh.username = CUSTOM_SSH_USERNAME
         config.ssh.private_key_path = File.expand_path(CUSTOM_SSH_KEY)
     end
