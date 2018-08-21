@@ -211,6 +211,9 @@ defaults:
         ram: 1024
         cpus: 2
         cpucap: 100 # percent (vagrant default)
+        #ports:
+        #    1239: 80
+        #    1240: 8001
 
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
@@ -280,6 +283,14 @@ master-server:
             subdomains:
                 - master-server
     vagrant: {}
+
+nifi-demo:
+    formula-repo: https://github.com/elifesciences/nifi-demo-formula
+    vagrant:
+        cpus: 4
+        ram: 4098
+        ports:
+            1222: 8080
 
 lax:
     description: article-json store
