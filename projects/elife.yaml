@@ -284,15 +284,6 @@ master-server:
                 - master-server
     vagrant: {}
 
-nifi-demo:
-    formula-repo: https://github.com/elifesciences/nifi-demo-formula
-    subdomain: nifidemo
-    vagrant:
-        cpus: 4
-        ram: 4098
-        ports:
-            1222: 80
-
 lax:
     description: article-json store
     subdomain: lax # lax.elifesciences.org
@@ -2052,3 +2043,17 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+
+nifi-demo:
+    formula-repo: https://github.com/elifesciences/nifi-demo-formula
+    subdomain: nifidemo
+    aws:
+        ec2:
+            ami: ami-1d4e7a66
+        ports:
+            - 80
+    vagrant:
+        cpus: 2
+        ram: 2048
+        ports:
+            1222: 80
