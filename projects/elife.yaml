@@ -2051,6 +2051,7 @@ nifi-demo:
         ec2:
             ami: ami-1d4e7a66
         ports:
+            - 22
             - 80
     vagrant:
         cpus: 2
