@@ -286,11 +286,12 @@ master-server:
 
 nifi-demo:
     formula-repo: https://github.com/elifesciences/nifi-demo-formula
+    subdomain: nifidemo
     vagrant:
         cpus: 4
         ram: 4098
         ports:
-            1222: 8080
+            1222: 80
 
 lax:
     description: article-json store
