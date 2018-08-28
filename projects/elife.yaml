@@ -249,6 +249,7 @@ basebox:
         box: bento/ubuntu-18.04 # Ubuntu 18.04
 
 heavybox:
+    salt: '2017.7.7' # overridden for 18.04 support
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
@@ -265,6 +266,7 @@ heavybox:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
     vagrant:
+        box: bento/ubuntu-18.04 # Ubuntu 18.04
         ram: 2048
 
 master-server:
