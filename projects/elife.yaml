@@ -219,6 +219,7 @@ defaults:
         cpucap: 100 # percent (vagrant default)
 
 basebox:
+    salt: '2017.7.7' # overridden for 18.04 support
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
