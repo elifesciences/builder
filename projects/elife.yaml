@@ -266,7 +266,8 @@ heavybox:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
     vagrant:
-        box: bento/ubuntu-18.04 # Ubuntu 18.04
+        # disabled until supported
+        #box: bento/ubuntu-18.04 # Ubuntu 18.04
         ram: 2048
 
 master-server:
