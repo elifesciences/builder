@@ -199,6 +199,12 @@ defaults:
                 ami: ami-14a1d06e # created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
+        standalone1804:
+            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                ami: ami-089646d3d52f14f1f # created from basebox--1804
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
@@ -213,6 +219,7 @@ defaults:
         cpucap: 100 # percent (vagrant default)
 
 basebox:
+    salt: '2017.7.7' # overridden for 18.04 support
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
@@ -230,16 +237,19 @@ basebox:
         1604:
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-
+        1804:
+            ec2:
+                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
                 masterless: true
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        box: bento/ubuntu-18.04 # Ubuntu 18.04
 
 heavybox:
+    salt: '2017.7.7' # overridden for 18.04 support
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
@@ -256,6 +266,8 @@ heavybox:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
     vagrant:
+        # disabled until supported
+        #box: bento/ubuntu-18.04 # Ubuntu 18.04
         ram: 2048
 
 master-server:
