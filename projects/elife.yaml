@@ -246,7 +246,7 @@ basebox:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
                 masterless: true
     vagrant:
-        box: ubuntu/bionic64 # Ubuntu 18.04
+        box: bento/ubuntu-18.04 # Ubuntu 18.04
 
 heavybox:
     description: builds as many of the builder-base-formula states as possible
