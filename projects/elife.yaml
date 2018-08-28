@@ -199,6 +199,12 @@ defaults:
                 ami: ami-14a1d06e # created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
+        standalone1804:
+            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                ami: ami-00000000 # MISSING, to be created from basebox--1804
+                                  # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on ...
+                masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
