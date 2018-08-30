@@ -18,12 +18,14 @@ fileserver_backend:
 file_roots:
     base:
     - /opt/builder-private/salt/
+    - /opt/builder-configuration/salt/
     - /opt/formulas/journal/salt/
     - /opt/formulas/lax/salt/
     - /opt/formulas/builder-base/
 pillar_roots:
     base:
     - /opt/builder-private/pillar
+    - /opt/builder-configuration/pillar
 """
         self.assertEqual(master_configuration_yaml, expected_configuration)
 

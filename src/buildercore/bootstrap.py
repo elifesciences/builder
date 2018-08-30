@@ -436,7 +436,7 @@ def expand_master_configuration(master_configuration_template, formulas=None):
 
     cfg['file_roots']['base'] = \
         ["/opt/builder-private/salt/"] + \
-        ["/opt/builder-configuration/salt"] + \
+        ["/opt/builder-configuration/salt/"] + \
         [formula_path % basename(f) for f in formulas] + \
         ["/opt/formulas/builder-base/"]
     cfg['pillar_roots']['base'] = \
