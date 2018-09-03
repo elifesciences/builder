@@ -17,6 +17,7 @@ defaults:
     # will need permissions to clone it
     # TODO: hunt down ssh:// remotes
     private-repo: git@github.com:elifesciences/builder-private
+    configuration-repo: git@github.com:elifesciences/builder-configuration
     # default branch to use when creating new instances
     default-branch: master
     # in rare cases we have formulas requiring the states of other formulas

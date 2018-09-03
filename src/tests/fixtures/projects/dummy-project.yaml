@@ -15,6 +15,7 @@ defaults:
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
     private-repo: ssh://github.com/exampleorg/builder-private-example
+    configuration-repo: ssh://github.com/exampleorg/builder-configuration-example
     # default branch to use when creating new instances
     default-branch: master
     # 

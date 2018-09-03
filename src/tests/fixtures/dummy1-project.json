@@ -7,6 +7,7 @@
     "repo": "ssh://git@github.com/elifesciences/dummy1", 
     "formula-repo": null, 
     "private-repo": "ssh://github.com/exampleorg/builder-private-example", 
+    "configuration-repo": "ssh://github.com/exampleorg/builder-configuration-example", 
     "default-branch": "master", 
     "formula-dependencies": [
         "https://github.com/example/builder-base-formula"

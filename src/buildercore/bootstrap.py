@@ -436,9 +436,12 @@ def expand_master_configuration(master_configuration_template, formulas=None):
 
     cfg['file_roots']['base'] = \
         ["/opt/builder-private/salt/"] + \
+        ["/opt/builder-configuration/salt/"] + \
         [formula_path % basename(f) for f in formulas] + \
         ["/opt/formulas/builder-base/"]
-    cfg['pillar_roots']['base'] = ["/opt/builder-private/pillar"]
+    cfg['pillar_roots']['base'] = \
+        ["/opt/builder-private/pillar"] + \
+        ["/opt/builder-configuration/pillar"]
     # dealt with at the infrastructural level
     cfg['interface'] = '0.0.0.0'
     return cfg
@@ -512,12 +515,14 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         if is_master:
             # it is possible to be a masterless master server
             builder_private_repo = pdata['private-repo']
+            builder_configuration_repo = pdata['configuration-repo']
             all_formulas = project.known_formulas()
-            run_script('init-master.sh', stackname, builder_private_repo, ' '.join(all_formulas))
+            run_script('init-master.sh', stackname, builder_private_repo, builder_configuration_repo, ' '.join(all_formulas))
             master_configuration_template = download_master_configuration(stackname)
             master_configuration = expand_master_configuration(master_configuration_template, all_formulas)
             upload_master_configuration(stackname, yaml_dumps(master_configuration))
             run_script('update-master.sh', stackname, builder_private_repo)
+            # TODO: I suspect this should be removed because the master-server must be updated through a builder command e.g. so that it adds any new formulas that come from the project/ definitions
             put_script('update-master.sh', '/opt/update-master.sh')
 
         # this will tell the machine to update itself
