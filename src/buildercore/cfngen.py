@@ -20,6 +20,7 @@ import logging
 import os, json, copy
 import re
 from collections import OrderedDict, namedtuple
+from functools import partial
 import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
@@ -48,8 +49,18 @@ FASTLY_AWS_REGION_SHIELDS = {
     'sa-east-1': 'gru-br-sa', # São Paulo: São Paulo
 }
 
-# TODO: this function needs some TLC - it's getting fat.
-def build_context(pname, **more_context): # pylint: disable=too-many-locals
+def parameterize(context):
+    def wrapper(string):
+        return string.format({'instance': context['instance_id']})
+    return wrapper
+
+def shuffle(lst):
+    import random
+    lst = list(lst)
+    random.shuffle(lst)
+    return lst
+
+def build_context(pname, **more_context):
     """wrangles parameters into a dictionary (context) that can be given to
     whatever renders the final template"""
 
@@ -72,7 +83,7 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     defaults = {
         'project_name': pname,
-        'project': project_data,
+        #'project': project_data,
 
         'author': os.environ.get("LOGNAME") or 'unknown',
         'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
@@ -114,57 +125,30 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
 
     # proceed with wrangling
 
-    # TODO: don't like this. if a stackname is required, make it a parameter.
-    # stackname used to be derived inside this func from pname + id + cluster number
-    ensure(context['stackname'], "a stackname wasn't provided.")
-    stackname = context['stackname']
+    # why shuffle? so we don't have a context builder depending
+    # on another context builder mutating the context in a specific way
+    wrangler_list = shuffle([
+        misc_wrangler,
+        partial(build_context_rds, existing_context=existing_context),
+        build_context_ec2,
+        build_context_elb,
+        build_context_cloudfront,
+        build_context_sns_sqs,
+        build_context_s3,
+        build_context_cloudfront,
+        build_context_fastly,
+        build_context_gcp,
+        build_context_subdomains,
+        build_context_elasticache,
+        build_context_vault,
+    ])
 
-    # stackname data
-    bits = core.parse_stackname(stackname, all_bits=True, idx=True)
-    ensure(bits['project_name'] == pname,
-           "the project name %r derived from the given `stackname` %r doesn't match" % (bits['project_name'], pname))
-    context.update(bits)
+    for wrangler in wrangler_list:
+        context = wrangler(project_data, context)
 
-    # hostname data
-    context.update(core.hostname_struct(stackname))
+    return context
 
-    # rds
-    context.update(build_context_rds(context, existing_context))
-
-    if 'ext' in context['project']['aws']:
-        context['ext'] = context['project']['aws']['ext']
-
-    # ec2
-    # TODO: this is a problem. using the default 'True' preserves the behaviour of
-    # when 'ec2: True' meant, 'use defaults with nothing changed'
-    # but now I need to store master ip info there.
-    #context['ec2'] = context['project']['aws'].get('ec2', True)
-    context['ec2'] = context['project']['aws'].get('ec2')
-    if context['ec2'] == True:
-        context['ec2'] = {}
-        context['project']['aws']['ec2'] = {}
-        LOG.warn("stack needs it's context refreshed: %s", stackname)
-        # we can now assume these will always be dicts
-
-    if isinstance(context['ec2'], dict): # the other case is aws.ec2 == False
-        context['ec2']['type'] = context['project']['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
-        context = set_master_address(context)
-
-    build_context_elb(context)
-
-    def _parameterize(string):
-        return string.format(instance=context['instance_id'])
-
-    for topic_template_name in context['project']['aws'].get('sns', []):
-        topic_name = _parameterize(topic_template_name)
-        context['sns'].append(topic_name)
-
-    for queue_template_name in context['project']['aws'].get('sqs', {}):
-        queue_name = _parameterize(queue_template_name)
-        queue_configuration = context['project']['aws']['sqs'][queue_template_name]
-        subscriptions = lmap(_parameterize, queue_configuration.get('subscriptions', []))
-        context['sqs'][queue_name] = subscriptions
-
+def build_context_s3(pdata, context):
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
     default_bucket_configuration = {
         'sqs-notifications': {},
@@ -173,35 +157,77 @@ def build_context(pname, **more_context): # pylint: disable=too-many-locals
         'cors': None,
         'public': False,
     }
-    for bucket_template_name in context['project']['aws'].get('s3', {}):
-        bucket_name = _parameterize(bucket_template_name)
-        configuration = context['project']['aws']['s3'][bucket_template_name]
+    for bucket_template_name in pdata['aws'].get('s3', {}):
+        bucket_name = parameterize(context)(bucket_template_name)
+        configuration = pdata['aws']['s3'][bucket_template_name]
         context['s3'][bucket_name] = default_bucket_configuration.copy()
         context['s3'][bucket_name].update(configuration if configuration else {})
+    return context
 
-    build_context_cloudfront(context, parameterize=_parameterize)
-    build_context_fastly(context, parameterize=_parameterize)
-    build_context_gcp(context, parameterize=_parameterize)
-    build_context_subdomains(context)
-    build_context_elasticache(context)
-    build_context_vault(context)
+def build_context_sns_sqs(pdata, context):
+    _parameterize = parameterize(context)
+
+    for topic_template_name in pdata['aws'].get('sns', []):
+        topic_name = _parameterize(topic_template_name)
+        context['sns'].append(topic_name)
+
+    for queue_template_name in pdata['aws'].get('sqs', {}):
+        queue_name = _parameterize(queue_template_name)
+        queue_configuration = pdata['aws']['sqs'][queue_template_name]
+        subscriptions = lmap(_parameterize, queue_configuration.get('subscriptions', []))
+        context['sqs'][queue_name] = subscriptions
+    return context
+
+def misc_wrangler(project_data, context):
+    stackname = context['stackname']
+    bits = core.parse_stackname(stackname, all_bits=True, idx=True)
+    pname = context['project_name']
+    ensure(bits['project_name'] == pname,
+           "the project name %r derived from the given `stackname` %r doesn't match" % (bits['project_name'], pname))
+    context.update(bits)
+
+    # hostname data
+    context.update(core.hostname_struct(stackname))
+    return context
+
+def set_master_address(pdata, context, master_ip=None):
+    "can update both context and buildvars data"
+    master_ip = master_ip or context['ec2'].get('master_ip')  # or data['project']['aws']['ec2']['master_ip']
+    ensure(master_ip, "a master-ip was neither explicitly given nor found in the data provided")
+    context['ec2']['master_ip'] = master_ip
+    if 'aws' in pdata:
+        # context (rather than buildvars)
+        raise AssertionError("broken logic: assigning to context.project")
+        context['project']['aws']['ec2']['master_ip'] = master_ip
+        if context['ec2'].get('masterless'):
+            # this is a masterless instance, delete key
+            raise AssertionError("broken logic: assumption context.project is being read")
+            del context['project']['aws']['ec2']['master_ip']
+    return context
+
+def build_context_ec2(pdata, context):
+    if 'ext' in pdata['aws']:
+        context['ext'] = pdata['aws']['ext']
+
+    stackname = context['stackname']
+
+    # ec2
+    # TODO: this is a problem. using the default 'True' preserves the behaviour of
+    # when 'ec2: True' meant, 'use defaults with nothing changed'
+    # but now I need to store master ip info there.
+    context['ec2'] = pdata['aws'].get('ec2')
+    if context['ec2'] == True:
+        context['ec2'] = {}
+        LOG.warn("stack needs it's context refreshed: %s", stackname)
+        # we can now assume this will always be a dict
+
+    if isinstance(context['ec2'], dict): # the other case is aws.ec2 == False
+        context['ec2']['type'] = pdata['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
+        context = set_master_address(pdata, context)
 
     return context
 
-def set_master_address(data, master_ip=None):
-    "can update both context and buildvars data"
-    master_ip = master_ip or data['ec2'].get('master_ip')  # or data['project']['aws']['ec2']['master_ip']
-    ensure(master_ip, "a master-ip was neither explicitly given nor found in the data provided")
-    data['ec2']['master_ip'] = master_ip
-    if 'aws' in data['project']:
-        # context (rather than buildvars)
-        data['project']['aws']['ec2']['master_ip'] = master_ip
-        if data['ec2'].get('masterless'):
-            # this is a masterless instance, delete key
-            del data['project']['aws']['ec2']['master_ip']
-    return data
-
-def build_context_rds(context, existing_context):
+def build_context_rds(pdata, context, existing_context):
     if 'rds' not in context['project']['aws']:
         return {}
     stackname = context['stackname']
@@ -236,111 +262,113 @@ def build_context_rds(context, existing_context):
         }
     }
 
-
-def build_context_elb(context):
-    if 'elb' in context['project']['aws']:
-        if isinstance(context['project']['aws']['elb'], dict):
-            context['elb'] = context['project']['aws']['elb']
-        else:
-            context['elb'] = {}
+def build_context_elb(pdata, context):
+    if 'elb' in pdata:
+        context['elb'] = {}
+        if isinstance(pdata['elb'], dict):
+            context['elb'] = pdata['elb']
         context['elb'].update({
             'subnets': [
-                context['project']['aws']['subnet-id'],
-                context['project']['aws']['redundant-subnet-id']
+                pdata['aws']['subnet-id'],
+                pdata['aws']['redundant-subnet-id']
             ],
         })
 
-def build_context_cloudfront(context, parameterize):
+def build_context_cloudfront(pdata, context):
+    _parameterize = parameterize(context)
+
     def build_subdomain(x):
-        return complete_domain(parameterize(x), context['domain'])
-    if 'cloudfront' in context['project']['aws'] and context['project']['aws']['cloudfront']:
+        return complete_domain(_parameterize(x), context['domain'])
+
+    context['cloudfront'] = False
+    if 'cloudfront' in pdata['aws'] and pdata['aws']['cloudfront']:
         errors = None
-        if context['project']['aws']['cloudfront']['errors']:
+        if pdata['aws']['cloudfront']['errors']:
             errors = {
-                'domain': parameterize(context['project']['aws']['cloudfront']['errors']['domain']),
-                'pattern': context['project']['aws']['cloudfront']['errors']['pattern'],
-                'codes': context['project']['aws']['cloudfront']['errors']['codes'],
-                'protocol': context['project']['aws']['cloudfront']['errors']['protocol'],
+                'domain': _parameterize(pdata['aws']['cloudfront']['errors']['domain']),
+                'pattern': pdata['aws']['cloudfront']['errors']['pattern'],
+                'codes': pdata['aws']['cloudfront']['errors']['codes'],
+                'protocol': pdata['aws']['cloudfront']['errors']['protocol'],
             }
         context['cloudfront'] = {
-            'subdomains': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains']],
-            'subdomains-without-dns': [build_subdomain(x) for x in context['project']['aws']['cloudfront']['subdomains-without-dns']],
-            'certificate_id': context['project']['aws']['cloudfront']['certificate_id'],
-            'cookies': context['project']['aws']['cloudfront']['cookies'],
-            'compress': context['project']['aws']['cloudfront']['compress'],
-            'headers': context['project']['aws']['cloudfront']['headers'],
-            'default-ttl': context['project']['aws']['cloudfront']['default-ttl'],
+            'subdomains': [build_subdomain(x) for x in pdata['aws']['cloudfront']['subdomains']],
+            'subdomains-without-dns': [build_subdomain(x) for x in pdata['aws']['cloudfront']['subdomains-without-dns']],
+            'certificate_id': pdata['aws']['cloudfront']['certificate_id'],
+            'cookies': pdata['aws']['cloudfront']['cookies'],
+            'compress': pdata['aws']['cloudfront']['compress'],
+            'headers': pdata['aws']['cloudfront']['headers'],
+            'default-ttl': pdata['aws']['cloudfront']['default-ttl'],
             'errors': errors,
-            'logging': context['project']['aws']['cloudfront'].get('logging', False),
+            'logging': pdata['aws']['cloudfront'].get('logging', False),
             'origins': OrderedDict([
                 (o_id, {
-                    'hostname': parameterize(o['hostname']),
+                    'hostname': _parameterize(o['hostname']),
                     'pattern': o.get('pattern'),
                     'headers': o.get('headers', []),
                     'cookies': o.get('cookies', []),
                 })
-                for o_id, o in context['project']['aws']['cloudfront']['origins'].items()
+                for o_id, o in pdata['aws']['cloudfront']['origins'].items()
             ]),
         }
-    else:
-        context['cloudfront'] = False
 
-def build_context_fastly(context, parameterize):
+    return context
+
+def build_context_fastly(pdata, context):
+    _parameterize = parameterize(context)
+
     def _build_subdomain(x):
-        return complete_domain(parameterize(x), context['domain'])
+        return complete_domain(_parameterize(x), context['domain'])
 
     def _build_shield(shield):
         if shield is False:
             return {}
 
         if shield is True:
-            pop = FASTLY_AWS_REGION_SHIELDS.get(context['project']['aws']['region'], 'us-east-1')
-
+            pop = FASTLY_AWS_REGION_SHIELDS.get(pdata['aws']['region'], 'us-east-1')
             return {'pop': pop}
 
         return shield
 
     def _build_backend(backend):
-        backend['hostname'] = parameterize(backend['hostname'])
-        backend['shield'] = _build_shield(backend.get('shield', context['project']['aws']['fastly'].get('shield', False)))
+        backend['hostname'] = _parameterize(backend['hostname'])
+        backend['shield'] = _build_shield(backend.get('shield', pdata['aws']['fastly'].get('shield', False)))
         return backend
 
     def _parameterize_gcslogging(gcslogging):
         if gcslogging:
-            gcslogging['bucket'] = parameterize(gcslogging['bucket'])
-            gcslogging['path'] = parameterize(gcslogging['path'])
+            gcslogging['bucket'] = _parameterize(gcslogging['bucket'])
+            gcslogging['path'] = _parameterize(gcslogging['path'])
 
         return gcslogging
 
-    if context['project']['aws'].get('fastly'):
-        backends = context['project']['aws']['fastly'].get('backends', OrderedDict({}))
+    context['fastly'] = False
+    if pdata['aws'].get('fastly'):
+        backends = pdata['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
             'backends': OrderedDict([(n, _build_backend(b)) for n, b in backends.items()]),
-            'subdomains': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains']],
-            'subdomains-without-dns': [_build_subdomain(x) for x in context['project']['aws']['fastly']['subdomains-without-dns']],
-            'shield': _build_shield(context['project']['aws']['fastly'].get('shield', False)),
-            'dns': context['project']['aws']['fastly']['dns'],
-            'default-ttl': context['project']['aws']['fastly']['default-ttl'],
-            'healthcheck': context['project']['aws']['fastly']['healthcheck'],
-            'errors': context['project']['aws']['fastly']['errors'],
-            'gcslogging': _parameterize_gcslogging(context['project']['aws']['fastly']['gcslogging']),
-            'vcl': context['project']['aws']['fastly']['vcl'],
-            'surrogate-keys': context['project']['aws']['fastly']['surrogate-keys'],
+            'subdomains': [_build_subdomain(x) for x in pdata['aws']['fastly']['subdomains']],
+            'subdomains-without-dns': [_build_subdomain(x) for x in pdata['aws']['fastly']['subdomains-without-dns']],
+            'shield': _build_shield(pdata['aws']['fastly'].get('shield', False)),
+            'dns': pdata['aws']['fastly']['dns'],
+            'default-ttl': pdata['aws']['fastly']['default-ttl'],
+            'healthcheck': pdata['aws']['fastly']['healthcheck'],
+            'errors': pdata['aws']['fastly']['errors'],
+            'gcslogging': _parameterize_gcslogging(pdata['aws']['fastly']['gcslogging']),
+            'vcl': pdata['aws']['fastly']['vcl'],
+            'surrogate-keys': pdata['aws']['fastly']['surrogate-keys'],
         }
-    else:
-        context['fastly'] = False
+    return context
 
-def build_context_gcp(context, parameterize):
-    if 'gcs' in context['project']['aws']:
+def build_context_gcp(pdata, context):
+    context['gcs'] = False
+    if 'gcs' in pdata['aws']:
         context['gcs'] = OrderedDict()
-        for bucket_template_name, options in context['project']['aws']['gcs'].items():
-            bucket_name = parameterize(bucket_template_name)
+        for bucket_template_name, options in pdata['aws']['gcs'].items():
+            bucket_name = parameterize(context)(bucket_template_name)
             context['gcs'][bucket_name] = {
                 'project': options['project'],
             }
-    else:
-        context['gcs'] = False
-
+    return context
 
 def complete_domain(host, default_main):
     is_main = host == ''
@@ -351,23 +379,18 @@ def complete_domain(host, default_main):
         return host
     return host + '.' + default_main # something + '.' + elifesciences.org
 
-def build_context_subdomains(context):
-    context['subdomains'] = [complete_domain(s, context['project']['domain']) for s in context['project']['aws'].get('subdomains', [])]
+def build_context_subdomains(pdata, context):
+    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', [])]
+    return context
 
-def build_context_elasticache(context):
-    if 'elasticache' in context['project']['aws']:
-        context['elasticache'] = context['project']['aws']['elasticache']
+def build_context_elasticache(pdata, context):
+    if 'elasticache' in pdata['aws']:
+        context['elasticache'] = pdata['aws']['elasticache']
+    return context
 
-def build_context_vault(context):
-    context['vault'] = context['project']['aws'].get('vault', {})
-
-def choose_alt_config(stackname):
-    """returns the name of the alt-config you think the user would want, based on given stackname"""
-    pname, instance_id = core.parse_stackname(stackname)
-    pdata = project.project_data(pname)
-    if instance_id in project.project_alt_config_names(pdata):
-        # instance_id exactly matches an alternative config. use that.
-        return instance_id
+def build_context_vault(pdata, context):
+    context['vault'] = pdata['aws'].get('vault', {})
+    return context
 
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"
