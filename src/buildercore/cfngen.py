@@ -123,15 +123,13 @@ def build_context(pname, **more_context):
     context = deepcopy(defaults)
     context.update(more_context)
 
-
-    
     ensure('stackname' in context, "'stackname' not provided") # this still sucks
 
     # proceed with wrangling
 
     # why shuffle? so we don't have a context builder depending
     # on another context builder mutating the context in a specific way
-    #wrangler_list = shuffle([
+    # wrangler_list = shuffle([
     wrangler_list = [
         partial(build_context_rds, existing_context=existing_context),
         build_context_aws,
@@ -150,7 +148,7 @@ def build_context(pname, **more_context):
 
     # exceptions to the rule ...
     wrangler_list = [project_wrangler] + wrangler_list
-    
+
     for wrangler in wrangler_list:
         # so functions can't modify the context in-place or
         # reference a bit of project_data and then change it
