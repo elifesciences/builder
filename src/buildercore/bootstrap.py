@@ -206,7 +206,7 @@ def sub_sqs(stackname, context_sqs, region):
 @updates('sqs')
 @core.requires_active_stack
 def update_sqs_stack(stackname, context, **kwargs):
-    region = context['project']['aws']['region']
+    region = context['aws']['region']
     unsub_sqs(stackname, context['sqs'], region)
     sub_sqs(stackname, context['sqs'], region)
 
@@ -220,10 +220,7 @@ def update_s3_stack(stackname, context, **kwargs):
     This function adds also a Statement to the Policy of the involved queue so that this bucket can send messages to it.
     """
     context_s3 = context['s3']
-
-    # pdata = project_data_for_stackname(stackname) # suspect.
-    pdata = context['project'] # more likely
-    region = pdata['aws']['region'] # region is now pulled from context['project']['aws']['region'] like sqs. but is this correct?
+    region = context['aws']['region']
 
     ensure(isinstance(context_s3, dict), "Not a dictionary of bucket names pointing to their configurations: %s" % context_s3)
 
@@ -460,23 +457,23 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
     script that can be downloaded from the web and then very conveniently
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
+
+    # no longer a snapshot of the project data at creation time, now it's
+    # mostly just top-level project attributes as we need them.
     pdata = context['project']
+
     # backward compatibility: old instances may not have 'ec2' key
     # consider it true if missing, as newer stacks e.g. bus--prod
     # would have it explicitly set to False
     default_ec2 = {'masterless': False, 'cluster-size': 1}
-    ec2 = pdata['aws'].get('ec2', default_ec2)
-
-    # TODO: check no longer necessary
-    if not ec2:
-        return
+    ec2 = context.get('ec2', default_ec2)
 
     # TODO: check if any active stacks still have ec2: True in their context
     # and refresh their context then remove this check
     if ec2 is True:
         ec2 = default_ec2
 
-    region = pdata['aws']['region']
+    region = context['aws']['region']
     is_master = core.is_master_server_stack(stackname)
     is_masterless = ec2.get('masterless', False)
 

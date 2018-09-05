@@ -97,15 +97,16 @@ def remaster(stackname, new_master_stackname):
     LOG.info('re-mastering %s to %s', stackname, master_ip)
 
     context = context_handler.load_context(stackname)
-    if context.get('ec2') == True:
-        # TODO: duplicates bad ec2 data wrangling in cfngen.build_context
-        # ec2 == True for some reason, which is completely useless
-        LOG.warn("bad context for stack: %s", stackname)
-        context['ec2'] = {}
-        context['project']['aws']['ec2'] = {}
 
-    if context.get('ec2') == False:
-        LOG.info("ec2 == False, skipping %s", stackname)
+    # remove if no longer an issue
+    # if context.get('ec2') == True:
+    #    # TODO: duplicates bad ec2 data wrangling in cfngen.build_context
+    #    # ec2 == True for some reason, which is completely useless
+    #    LOG.warn("bad context for stack: %s", stackname)
+    #    context['ec2'] = {}
+    #    context['project']['aws']['ec2'] = {}
+    if not context.get('ec2'):
+        LOG.info("no ec2 context, skipping %s", stackname)
         return
 
     if context['ec2'].get('master_ip') == master_ip:

@@ -25,7 +25,7 @@ def requires_masterless(fn):
     @wraps(fn)
     def wrapper(stackname=None, *args, **kwargs):
         ctx = context_handler.load_context(stackname)
-        ensure(stackname and ctx['project']['aws']['ec2']['masterless'], "this command requires a masterless instance.")
+        ensure(stackname and ctx['aws']['ec2']['masterless'], "this command requires a masterless instance.")
         return fn(stackname, *args, **kwargs)
     return wrapper
 
@@ -114,8 +114,11 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
 @requires_masterless
 def set_versions(stackname, *repolist):
     "call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"
-    ctx = context_handler.load_context(stackname)
-    repolist = parse_validate_repolist(ctx['project'], *repolist)
+    #ctx = context_handler.load_context(stackname)
+    #repolist = parse_validate_repolist(ctx['project'], *repolist)
+
+    pdata = core.project_data_from_stackname(stackname)
+    repolist = parse_validate_repolist(pdata, *repolist)
 
     if not repolist:
         return 'nothing to do'

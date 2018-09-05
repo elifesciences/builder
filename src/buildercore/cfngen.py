@@ -217,10 +217,22 @@ def project_wrangler(pdata, context):
     # project data
     # preseve some of the project data. all of it is too much
     keepers = [
+        'salt',
         'formula-repo',
-        'formula-dependencies'
+        'formula-dependencies',
     ]
     context['project'] = subdict(pdata, keepers)
+
+    # limited to just master/masterless servers
+    is_masterless = pdata.get('ec2') and pdata['ec2']['masterless']
+    is_master = core.is_master_server_stack(context['stackname'])
+    if is_master or is_masterless:
+        keepers = [
+            'private-repo',
+            'configuration-repo',
+        ]
+        context['project'].update(subdict(pdata, keepers))
+
     return context
 
 def set_master_address(pdata, context, master_ip=None):
