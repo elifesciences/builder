@@ -116,12 +116,12 @@ def remaster(stackname, new_master_stackname):
         except KeyboardInterrupt:
             LOG.info("not skipping")
 
-    LOG.info("setting new master address")
-    context = cfngen.set_master_address(context, master_ip) # mutator
-
     LOG.info("upgrading salt client")
     pdata = core.project_data_for_stackname(stackname)
     context['project']['salt'] = pdata['salt']
+
+    LOG.info("setting new master address")
+    cfngen.set_master_address(pdata, context, master_ip) # mutator
 
     # update context
     LOG.info("updating context")

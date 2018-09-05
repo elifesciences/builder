@@ -17,14 +17,14 @@ We want to add an external volume to an EC2 instance to increase available space
 
 """
 import logging
-import os, json, copy
+import os, json
 import re
 from collections import OrderedDict, namedtuple
 from functools import partial
 import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap
+from .utils import ensure, lmap, deepcopy, subdict
 
 LOG = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ FASTLY_AWS_REGION_SHIELDS = {
 
 def parameterize(context):
     def wrapper(string):
-        return string.format({'instance': context['instance_id']})
+        return string.format(**{'instance': context['instance_id']})
     return wrapper
 
 def shuffle(lst):
@@ -120,16 +120,21 @@ def build_context(pname, **more_context):
         #}
     }
 
-    context = copy.deepcopy(defaults)
+    context = deepcopy(defaults)
     context.update(more_context)
+
+
+    
+    ensure('stackname' in context, "'stackname' not provided") # this still sucks
 
     # proceed with wrangling
 
     # why shuffle? so we don't have a context builder depending
     # on another context builder mutating the context in a specific way
-    wrangler_list = shuffle([
-        misc_wrangler,
+    #wrangler_list = shuffle([
+    wrangler_list = [
         partial(build_context_rds, existing_context=existing_context),
+        build_context_aws,
         build_context_ec2,
         build_context_elb,
         build_context_cloudfront,
@@ -141,11 +146,30 @@ def build_context(pname, **more_context):
         build_context_subdomains,
         build_context_elasticache,
         build_context_vault,
-    ])
+    ]
 
+    # exceptions to the rule ...
+    wrangler_list = [project_wrangler] + wrangler_list
+    
     for wrangler in wrangler_list:
-        context = wrangler(project_data, context)
+        # so functions can't modify the context in-place or
+        # reference a bit of project_data and then change it
+        context = wrangler(deepcopy(project_data), deepcopy(context))
 
+    return context
+
+def build_context_aws(pdata, context):
+    if 'aws' not in pdata:
+        return context
+    keepers = [
+        'region',
+        'vpc-id',
+        'subnet-id',
+        'subnet-cidr',
+        'redundant-subnet-id',
+        'redundant-subnet-cidr',
+    ]
+    context['aws'] = subdict(pdata['aws'], keepers)
     return context
 
 def build_context_s3(pdata, context):
@@ -178,65 +202,77 @@ def build_context_sns_sqs(pdata, context):
         context['sqs'][queue_name] = subscriptions
     return context
 
-def misc_wrangler(project_data, context):
-    stackname = context['stackname']
-    bits = core.parse_stackname(stackname, all_bits=True, idx=True)
+def project_wrangler(pdata, context):
+    bits = core.parse_stackname(context['stackname'], all_bits=True, idx=True)
     pname = context['project_name']
     ensure(bits['project_name'] == pname,
            "the project name %r derived from the given `stackname` %r doesn't match" % (bits['project_name'], pname))
+    # provides 'project_name', 'instance_id', 'cluster_id'
     context.update(bits)
 
     # hostname data
-    context.update(core.hostname_struct(stackname))
+    # provides: 'domain', 'int_domain', 'subdomain',
+    #           'hostname', 'project_hostname', 'int_project_hostname',
+    #           'full_hostname', 'int_full_hostname'
+    context.update(core.hostname_struct(context['stackname']))
+
+    # project data
+    # preseve some of the project data. all of it is too much
+    keepers = [
+        'formula-repo',
+        'formula-dependencies'
+    ]
+    context['project'] = subdict(pdata, keepers)
     return context
 
 def set_master_address(pdata, context, master_ip=None):
     "can update both context and buildvars data"
-    master_ip = master_ip or context['ec2'].get('master_ip')  # or data['project']['aws']['ec2']['master_ip']
+    master_ip = master_ip or context['ec2'].get('master_ip')
     ensure(master_ip, "a master-ip was neither explicitly given nor found in the data provided")
     context['ec2']['master_ip'] = master_ip
     if 'aws' in pdata:
-        # context (rather than buildvars)
-        raise AssertionError("broken logic: assigning to context.project")
-        context['project']['aws']['ec2']['master_ip'] = master_ip
         if context['ec2'].get('masterless'):
             # this is a masterless instance, delete key
-            raise AssertionError("broken logic: assumption context.project is being read")
-            del context['project']['aws']['ec2']['master_ip']
+            del context['ec2']['master_ip']
     return context
 
 def build_context_ec2(pdata, context):
-    if 'ext' in pdata['aws']:
-        context['ext'] = pdata['aws']['ext']
-
-    stackname = context['stackname']
-
+    if 'ec2' not in pdata['aws']:
+        return context
     # ec2
     # TODO: this is a problem. using the default 'True' preserves the behaviour of
     # when 'ec2: True' meant, 'use defaults with nothing changed'
     # but now I need to store master ip info there.
     context['ec2'] = pdata['aws'].get('ec2')
     if context['ec2'] == True:
-        context['ec2'] = {}
-        LOG.warn("stack needs it's context refreshed: %s", stackname)
-        # we can now assume this will always be a dict
+        LOG.warn("stack needs it's context refreshed: %s", context['stackname'])
 
-    if isinstance(context['ec2'], dict): # the other case is aws.ec2 == False
-        context['ec2']['type'] = pdata['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
-        context = set_master_address(pdata, context)
+    elif context['ec2'] == False:
+        return context
+
+    # we can now assume this will always be a dict
+
+    context['ec2'] = pdata['aws']['ec2']
+    context['ec2']['type'] = pdata['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
+    context['ec2']['ports'] = pdata['aws'].get('ports', {}) # TODO: shift aws.ports to aws.ec2.ports in project file
+
+    set_master_address(pdata, context) # mutator
+
+    if 'ext' in pdata['aws']:
+        context['ext'] = pdata['aws']['ext']
 
     return context
 
 def build_context_rds(pdata, context, existing_context):
-    if 'rds' not in context['project']['aws']:
-        return {}
+    if 'rds' not in pdata['aws']:
+        return context
     stackname = context['stackname']
 
     # deletion policy
-    deletion_policy = utils.lookup(context, 'project.aws.rds.deletion-policy', 'Snapshot')
+    deletion_policy = utils.lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
 
     # used to give mysql a range of valid ip addresses to connect from
-    subnet_cidr = netaddr.IPNetwork(context['project']['aws']['subnet-cidr'])
+    subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
     net = subnet_cidr.network
     mask = subnet_cidr.netmask
     networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
@@ -248,31 +284,34 @@ def build_context_rds(pdata, context, existing_context):
         # may be present but None
         rds_password = generated_password
 
-    return {
+    # TODO: shift the below under a 'rds' key
+    context.update({
         'netmask': networkmask,
         'rds_username': 'root',
         'rds_password': rds_password,
         # alpha-numeric only
         'rds_dbname': core.rds_dbname(stackname, context), # name of default application db
         'rds_instance_id': core.rds_iid(stackname), # name of rds instance
-        'rds_params': context['project']['aws']['rds'].get('params', []),
+        'rds_params': pdata['aws']['rds'].get('params', []),
 
-        'rds': {
-            'deletion-policy': deletion_policy
-        }
-    }
+        'rds': pdata['aws']['rds'],
+    })
+    context['rds']['deletion-policy'] = deletion_policy
+
+    return context
 
 def build_context_elb(pdata, context):
-    if 'elb' in pdata:
+    if 'elb' in pdata['aws']:
         context['elb'] = {}
-        if isinstance(pdata['elb'], dict):
-            context['elb'] = pdata['elb']
+        if isinstance(pdata['aws']['elb'], dict):
+            context['elb'] = pdata['aws']['elb']
         context['elb'].update({
             'subnets': [
                 pdata['aws']['subnet-id'],
                 pdata['aws']['redundant-subnet-id']
             ],
         })
+    return context
 
 def build_context_cloudfront(pdata, context):
     _parameterize = parameterize(context)
@@ -392,6 +431,10 @@ def build_context_vault(pdata, context):
     context['vault'] = pdata['aws'].get('vault', {})
     return context
 
+#
+#
+#
+
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"
     try:
@@ -407,10 +450,6 @@ def more_validation(json_template_str):
     except BaseException:
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
-
-#
-#
-#
 
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
