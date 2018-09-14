@@ -6,7 +6,7 @@ from fabric.api import task, lcd, settings
 from fabric.operations import local
 from decorators import requires_project
 from buildercore import bootstrap, checks, core, context_handler, config
-from buildercore.utils import ensure
+from buildercore.utils import ensure, subdict
 import logging
 import cfn
 from functools import wraps
@@ -34,12 +34,12 @@ def requires_masterless(fn):
 #
 #
 
-def parse_validate_repolist(pdata, *repolist):
+def parse_validate_repolist(fdata, *repolist):
     "returns a list of triples"
-    known_formulas = pdata.get('formula-dependencies', [])
+    known_formulas = fdata.get('formula-dependencies', [])
     known_formulas.extend([
-        pdata['formula-repo'],
-        pdata['private-repo']
+        fdata['formula-repo'],
+        fdata['private-repo']
     ])
 
     known_formula_map = OrderedDict(zip(map(os.path.basename, known_formulas), known_formulas))
@@ -113,12 +113,13 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
 @requires_master_server_access
 @requires_masterless
 def set_versions(stackname, *repolist):
-    "call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"
-    #ctx = context_handler.load_context(stackname)
-    #repolist = parse_validate_repolist(ctx['project'], *repolist)
+    """updates the cloned formulas on a masterless stack to a specific revision.
+    call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"""
 
-    pdata = core.project_data_from_stackname(stackname)
-    repolist = parse_validate_repolist(pdata, *repolist)
+    context = context_handler.load_context(stackname)
+    fkeys = ['formula-repo', 'formula-depedencies', 'private-repo', 'configuration-repo']
+    fdata = subdict(context['project'], fkeys)
+    repolist = parse_validate_repolist(fdata, *repolist)
 
     if not repolist:
         return 'nothing to do'
