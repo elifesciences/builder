@@ -1890,6 +1890,7 @@ crm:
             22: 22
             80: 80
             443: 443
+            30639: 30649 # civinky
 
     aws-alt:
         standalone:
@@ -1937,7 +1938,7 @@ crm:
                 params:
                     log_bin_trust_function_creators: 1
             ext:
-                size: 10 # GB
+                size: 50 # GB
 
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
