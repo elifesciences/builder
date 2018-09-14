@@ -97,15 +97,16 @@ def remaster(stackname, new_master_stackname):
     LOG.info('re-mastering %s to %s', stackname, master_ip)
 
     context = context_handler.load_context(stackname)
-    if context.get('ec2') == True:
-        # TODO: duplicates bad ec2 data wrangling in cfngen.build_context
-        # ec2 == True for some reason, which is completely useless
-        LOG.warn("bad context for stack: %s", stackname)
-        context['ec2'] = {}
-        context['project']['aws']['ec2'] = {}
 
-    if context.get('ec2') == False:
-        LOG.info("ec2 == False, skipping %s", stackname)
+    # remove if no longer an issue
+    # if context.get('ec2') == True:
+    #    # TODO: duplicates bad ec2 data wrangling in cfngen.build_context
+    #    # ec2 == True for some reason, which is completely useless
+    #    LOG.warn("bad context for stack: %s", stackname)
+    #    context['ec2'] = {}
+    #    context['project']['aws']['ec2'] = {}
+    if not context.get('ec2'):
+        LOG.info("no ec2 context, skipping %s", stackname)
         return
 
     if context['ec2'].get('master_ip') == master_ip:
@@ -116,12 +117,12 @@ def remaster(stackname, new_master_stackname):
         except KeyboardInterrupt:
             LOG.info("not skipping")
 
-    LOG.info("setting new master address")
-    context = cfngen.set_master_address(context, master_ip) # mutator
-
     LOG.info("upgrading salt client")
     pdata = core.project_data_for_stackname(stackname)
     context['project']['salt'] = pdata['salt']
+
+    LOG.info("setting new master address")
+    cfngen.set_master_address(pdata, context, master_ip) # mutates context
 
     # update context
     LOG.info("updating context")

@@ -20,7 +20,8 @@
             "overrides": {}, 
             "security-group": {},
             "ami": "ami-9eaa1cf6",
-            "master_ip": "10.0.2.42"
+            "master_ip": "10.0.2.42",
+            "masterless": false
         }, 
         "type": "t2.micro", 
         "region": "us-east-1", 

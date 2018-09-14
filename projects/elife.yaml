@@ -91,6 +91,7 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         ext:
             # external hdd
+            type: standard # magnetic, use 'gp2' for ssd
             size: 10 # GB
             device: /dev/sdh
         elb:

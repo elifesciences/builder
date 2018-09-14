@@ -84,7 +84,7 @@ def start(stackname):
 
     # TODO: do the same exclusion for EC2
     ec2_states = _ec2_nodes_states(stackname)
-    if context['project']['aws'].get('rds'):
+    if context.get('rds'):
         rds_states = _rds_nodes_states(stackname)
     else:
         rds_states = {}
@@ -144,7 +144,7 @@ def stop(stackname, services=None):
     context = load_context(stackname)
 
     ec2_states = _ec2_nodes_states(stackname)
-    if context['project']['aws'].get('rds'):
+    if context.get('rds'):
         rds_states = _rds_nodes_states(stackname)
     else:
         rds_states = {}
