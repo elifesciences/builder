@@ -117,7 +117,7 @@ def set_versions(stackname, *repolist):
     call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"""
 
     context = context_handler.load_context(stackname)
-    fkeys = ['formula-repo', 'formula-depedencies', 'private-repo', 'configuration-repo']
+    fkeys = ['formula-repo', 'formula-dependencies', 'private-repo', 'configuration-repo']
     fdata = subdict(context['project'], fkeys)
     repolist = parse_validate_repolist(fdata, *repolist)
 

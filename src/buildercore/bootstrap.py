@@ -477,7 +477,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
     if is_masterless:
         master_builder_key = download_master_builder_key(stackname)
 
-    fkeys = ['formula-repo', 'formula-depedencies', 'private-repo', 'configuration-repo']
+    fkeys = ['formula-repo', 'formula-dependencies', 'private-repo', 'configuration-repo']
     fdata = subdict(context['project'], fkeys)
 
     def _update_ec2_node():
