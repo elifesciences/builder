@@ -25,7 +25,7 @@ def requires_masterless(fn):
     @wraps(fn)
     def wrapper(stackname=None, *args, **kwargs):
         ctx = context_handler.load_context(stackname)
-        ensure(stackname and ctx['aws']['ec2']['masterless'], "this command requires a masterless instance.")
+        ensure(stackname and ctx['ec2']['masterless'], "this command requires a masterless instance.")
         return fn(stackname, *args, **kwargs)
     return wrapper
 
