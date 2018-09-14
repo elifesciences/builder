@@ -356,7 +356,7 @@ def template_info(stackname):
     # replaces the standand list-of-dicts 'outputs' with a simpler dict
     data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
 
-    return utils.subdict(data, keepers.values())
+    return subdict(data, keepers.values())
 
 def write_environment_info(stackname, overwrite=False):
     """Looks for /etc/cfn-info.json and writes one if not found.
@@ -458,10 +458,6 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
     installs it's own dependencies. Once Salt is installed we give it an ID
     (the given `stackname`), the address of the master server """
 
-    # no longer a snapshot of the project data at creation time, now it's
-    # mostly just top-level project attributes as we need them.
-    pdata = context['project']
-
     # backward compatibility: old instances may not have 'ec2' key
     # consider it true if missing, as newer stacks e.g. bus--prod
     # would have it explicitly set to False
@@ -481,11 +477,14 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
     if is_masterless:
         master_builder_key = download_master_builder_key(stackname)
 
+    fkeys = ['formula-repo', 'formula-depedencies', 'private-repo', 'configuration-repo']
+    fdata = subdict(context['project'], fkeys)
+
     def _update_ec2_node():
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)
 
-        salt_version = pdata['salt']
+        salt_version = context['project']['salt']
         install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
 
         build_vars = bvars.read_from_current_host()
@@ -495,7 +494,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
 
         if is_masterless:
             # order is important.
-            formula_list = ' '.join(pdata.get('formula-dependencies', []) + [pdata['formula-repo']])
+            formula_list = ' '.join(fdata.get('formula-dependencies', []) + [fdata['formula-repo']])
             # to init the builder-private formula, the masterless instance needs
             # the master-builder key
             upload_master_builder_key(master_builder_key)
@@ -503,7 +502,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
                 'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', '')
             }
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-masterless-formulas.sh', formula_list, pdata['private-repo'], **envvars)
+            run_script('init-masterless-formulas.sh', formula_list, fdata['private-repo'], **envvars)
 
             # second pass to optionally update formulas to specific revisions
             for repo, formula, revision in formula_revisions or []:
@@ -511,8 +510,8 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
 
         if is_master:
             # it is possible to be a masterless master server
-            builder_private_repo = pdata['private-repo']
-            builder_configuration_repo = pdata['configuration-repo']
+            builder_private_repo = fdata['private-repo']
+            builder_configuration_repo = fdata['configuration-repo']
             all_formulas = project.known_formulas()
             run_script('init-master.sh', stackname, builder_private_repo, builder_configuration_repo, ' '.join(all_formulas))
             master_configuration_template = download_master_configuration(stackname)
@@ -556,7 +555,7 @@ def orphaned_keys(master_stackname):
     active_cfn_stack_names = core.active_stack_names(region)
     grouped_key_files = master_minion_keys(master_stackname)
     missing_stacks = set(grouped_key_files.keys()).difference(active_cfn_stack_names)
-    missing_paths = utils.subdict(grouped_key_files, missing_stacks)
+    missing_paths = subdict(grouped_key_files, missing_stacks)
     return sorted(utils.shallow_flatten(missing_paths.values()))
 
 # TODO: bootstrap.py may not be best place for this
