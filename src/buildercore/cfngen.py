@@ -224,6 +224,7 @@ def project_wrangler(pdata, context):
     context['project'] = subdict(pdata, keepers)
 
     # limited to just master/masterless servers
+    print(pdata)
     is_masterless = pdata['aws'].get('ec2') and pdata['aws']['ec2']['masterless']
     is_master = core.is_master_server_stack(context['stackname'])
     if is_master or is_masterless:
