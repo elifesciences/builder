@@ -122,7 +122,7 @@ def remaster(stackname, new_master_stackname):
     context['project']['salt'] = pdata['salt']
 
     LOG.info("setting new master address")
-    cfngen.set_master_address(pdata, context, master_ip) # mutator
+    cfngen.set_master_address(pdata, context, master_ip) # mutates context
 
     # update context
     LOG.info("updating context")
