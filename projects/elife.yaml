@@ -1956,6 +1956,7 @@ elife-xpub:
             - 22
             - 443
             - 80
+            - 3000 # debugging while skipping nginx
         ext:
             # external hdd
             size: 20 # GB
