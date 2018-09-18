@@ -7,6 +7,7 @@
     "repo": "ssh://git@github.com/elifesciences/dummy3", 
     "formula-repo": null, 
     "private-repo": "ssh://github.com/exampleorg/builder-private-example", 
+    "configuration-repo": "ssh://github.com/exampleorg/builder-configuration-example", 
     "default-branch": "master", 
     "formula-dependencies": [
         "https://github.com/example/builder-base-formula"
@@ -19,7 +20,8 @@
             "overrides": {}, 
             "security-group": {},
             "ami": "ami-111111",
-            "master_ip": "10.0.2.42"
+            "master_ip": "10.0.2.42",
+            "masterless": false
         }, 
         "type": "t2.small", 
         "region": "us-east-1", 
@@ -48,7 +50,8 @@
                 "overrides": {}, 
                 "security-group": {},
                 "ami": "ami-9eaa1cf6",
-                "master_ip": "10.0.2.42"
+                "master_ip": "10.0.2.42",
+                "masterless": false
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 
@@ -77,7 +80,8 @@
                 "overrides": {}, 
                 "security-group": {},
                 "ami": "ami-111111",
-                "master_ip": "10.0.2.42"
+                "master_ip": "10.0.2.42",
+                "masterless": false
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 
@@ -124,7 +128,8 @@
                 "overrides": {}, 
                 "security-group": {},
                 "ami": "ami-111111",
-                "master_ip": "10.0.2.42"
+                "master_ip": "10.0.2.42",
+                "masterless": false
             }, 
             "type": "t2.small", 
             "region": "us-east-1", 

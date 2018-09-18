@@ -15,6 +15,7 @@ defaults:
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
     private-repo: ssh://github.com/exampleorg/builder-private-example
+    configuration-repo: ssh://github.com/exampleorg/builder-configuration-example
     # default branch to use when creating new instances
     default-branch: master
     # 
@@ -32,6 +33,7 @@ defaults:
             ami: ami-9eaa1cf6  # Ubuntu 14.04
             master_ip: 10.0.2.42
             security-group: {}
+            masterless: false
         type: t2.small
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region

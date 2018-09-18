@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 def render_template(context):
     pname = context['project_name']
     msg = 'could not render a CloudFormation template for %r' % pname
-    ensure('aws' in context['project'], msg, ValueError)
+    ensure('aws' in context, msg, ValueError)
     return trop.render(context)
 
 def _give_up_backoff(e):

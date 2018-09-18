@@ -10,6 +10,10 @@ cd /opt/builder-private
 git reset --hard
 git pull --rebase
 
+cd /opt/builder-configuration
+git reset --hard
+git pull --rebase
+
 # ... then clone/pull all formula repos and update master config
 cd /opt/formulas
 for formula in *; do

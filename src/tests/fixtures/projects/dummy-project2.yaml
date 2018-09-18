@@ -27,6 +27,7 @@ defaults:
             ami: ami-9eaa1cf6  # Ubuntu 14.04
             master_ip: 192.168.1.254
             security-group: {}
+            masterless: false
         type: t2.small
         region: us-east-1
         vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
