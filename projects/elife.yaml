@@ -2052,9 +2052,9 @@ nifi-demo:
             ami: ami-1d4e7a66
         ports:
             - 22
-            - 443
+            - 8080
     vagrant:
         cpus: 2
         ram: 2048
         ports:
-            1222: 80
+            1222: 8080
