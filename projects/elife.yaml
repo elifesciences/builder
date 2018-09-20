@@ -1971,6 +1971,7 @@ elife-xpub:
                 - xpub
             s3:
                 "{instance}-elife-xpub":
+                     deletion-policy: retain
     vagrant:
         ram: 2048
         ports:
