@@ -1963,9 +1963,14 @@ elife-xpub:
             device: /dev/sdh
             type: gp2
     aws-alt:
+        demo:
+            s3:
+                "{instance}-elife-xpub":
         prod:
             subdomains:
                 - xpub
+            s3:
+                "{instance}-elife-xpub":
     vagrant:
         ram: 2048
         ports:
