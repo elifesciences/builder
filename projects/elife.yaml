@@ -1975,7 +1975,7 @@ elife-xpub:
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
-                version: '10.5'
+                version: '10.4'
                 type: db.t2.small
                 storage: 5 # GB
                 storage-type: gp2
