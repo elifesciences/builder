@@ -56,6 +56,7 @@ defaults:
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             params: []
+            encryption: false
             subnets:
                 # two are required
                 - subnet-foo
@@ -547,6 +548,13 @@ project-with-rds-only:
         ec2: false
         rds:
             storage: 5
+
+project-with-rds-encryption:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        rds:
+            storage: 5
+            encryption: arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012
 
 project-with-elasticache-redis:
     domain: False
