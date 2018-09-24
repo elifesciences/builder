@@ -1972,6 +1972,15 @@ elife-xpub:
             s3:
                 "{instance}-elife-xpub":
                      deletion-policy: retain
+            rds:
+                multi-az: true
+                engine: postgres # or 'MySQL'
+                version: '10.5'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 28 # days
+                deletion-policy: Snapshot
     vagrant:
         ram: 2048
         ports:
