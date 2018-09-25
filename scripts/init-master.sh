@@ -95,10 +95,6 @@ else
     git reset --hard
     git pull
 fi
-cp /opt/builder-private/etc-salt-master /etc/salt/master.template
-if [ -d /vagrant ]; then
-    cp /etc/salt/master.template /vagrant/etc-salt-master.template
-fi
 
 
 # clone all formulas
