@@ -43,6 +43,7 @@
             "storage-type": "standard",
             "backup-retention": 28, 
             "params": [], 
+            "encryption": false,
             "subnets": [
                 "subnet-foo", 
                 "subnet-bar"
@@ -96,6 +97,7 @@
                 "storage-type": "standard",
                 "backup-retention": 28, 
                 "params": [], 
+                "encryption": false,
                 "subnets": [
                     "subnet-foo", 
                     "subnet-bar"
@@ -149,6 +151,7 @@
                 "storage-type": "standard",
                 "backup-retention": 28, 
                 "params": [], 
+                "encryption": false,
                 "subnets": [
                     "subnet-foo", 
                     "subnet-bar"

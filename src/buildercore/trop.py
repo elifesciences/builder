@@ -286,6 +286,8 @@ def render_rds(context, template):
         "Tags": tags,
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default
+        'StorageEncrypted': True if lu('rds.encryption') else False,
+        'KmsKeyId': lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else '',
     }
 
     if param_group_ref:

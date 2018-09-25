@@ -73,6 +73,17 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         self.assertEqual(cfntemplate['Resources']['RDSDBParameterGroup'], expected)
 
+    def test_rds_encryption(self):
+        extra = {
+            'stackname': 'project-with-rds-encryption--test',
+        }
+        context = cfngen.build_context('project-with-rds-encryption', **extra)
+        cfn_template = json.loads(trop.render(context))
+        self.assertIn('AttachedDB', cfn_template['Resources'])
+        db = cfn_template['Resources']['AttachedDB']['Properties']
+        self.assertTrue(db['StorageEncrypted'])
+        self.assertEquals(db['KmsKeyId'], 'arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012')
+
     def test_sns_template(self):
         extra = {
             'stackname': 'just-some-sns--prod',

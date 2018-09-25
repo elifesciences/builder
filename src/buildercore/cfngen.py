@@ -224,7 +224,6 @@ def project_wrangler(pdata, context):
     context['project'] = subdict(pdata, keepers)
 
     # limited to just master/masterless servers
-    print(pdata)
     is_masterless = pdata['aws'].get('ec2') and pdata['aws']['ec2']['masterless']
     is_master = core.is_master_server_stack(context['stackname'])
     if is_master or is_masterless:
@@ -304,7 +303,6 @@ def build_context_rds(pdata, context, existing_context):
         'rds_dbname': core.rds_dbname(stackname, context), # name of default application db
         'rds_instance_id': core.rds_iid(stackname), # name of rds instance
         'rds_params': pdata['aws']['rds'].get('params', []),
-
         'rds': pdata['aws']['rds'],
     })
     context['rds']['deletion-policy'] = deletion_policy
