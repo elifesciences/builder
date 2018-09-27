@@ -638,10 +638,11 @@ project-with-bigquery:
     gcp:
         bigquery:
             #location: US
+            # TODO: drop `datasets` indirection as there is no property that goes outside of a dataset
             datasets:
                 "my-dataset-{instance}":
                     project: elife-something
                     tables:
                         widgets:
-                            schema: key-value.schema.csv
+                            schema: key-value
     aws-alt: {}

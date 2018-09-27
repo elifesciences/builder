@@ -451,6 +451,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(table, {
             'dataset_id': 'my-dataset-prod',
             'table_id': 'widgets',
+            'schema': '${file("key-value.json")}',
         })
 
     def test_sanity_of_rendered_log_format(self):
