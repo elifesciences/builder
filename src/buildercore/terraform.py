@@ -393,25 +393,27 @@ def render_bigquery(context):
             table_options['dataset_id'] = dataset_name
             tables[table_name] = table_options
 
-    return {
-        'resource': {
-            'google_bigquery_dataset': {
-                dataset_name: {
-                    'dataset_id': dataset_name,
-                    'project': options['project'],
-                } for dataset_name, options in context['bigquery'].items()
-            },
-            'google_bigquery_table': {
-                # generated fully qualified resource name
-                ("%s_%s" % (options['dataset_id'], table_name)): {
-                    'dataset_id': options['dataset_id'],
-                    # TODO 'table_id' : table_id
-                    'table_id': table_name,
-                    'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
-                } for table_name, options in tables.items()
-            }
-        },
+    resources = {'resource': OrderedDict()}
+
+    resources['resource']['google_bigquery_dataset'] = {
+        dataset_name: {
+            'dataset_id': dataset_name,
+            'project': options['project'],
+        } for dataset_name, options in context['bigquery'].items()
     }
+
+    if tables:
+        resources['resource']['google_bigquery_table'] = {
+            # generated fully qualified resource name
+            ("%s_%s" % (options['dataset_id'], table_name)): {
+                'dataset_id': options['dataset_id'],
+                # TODO 'table_id' : table_id
+                'table_id': table_name,
+                'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
+            } for table_name, options in tables.items()
+        }
+    
+    return resources
 
 def _generate_bigquery_schema_file(stackname, schema_name):
     """

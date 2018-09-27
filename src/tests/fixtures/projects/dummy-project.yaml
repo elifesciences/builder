@@ -642,9 +642,12 @@ project-with-bigquery:
             #location: US
             # TODO: drop `datasets` indirection as there is no property that goes outside of a dataset
             datasets:
+                # TODO: change to my_dataset_{instance}
                 "my-dataset-{instance}":
                     project: elife-something
                     tables:
                         widgets:
                             schema: key-value
     aws-alt: {}
+
+# TODO: add project with datasets but no tables

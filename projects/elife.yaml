@@ -207,6 +207,8 @@ defaults:
                 ami: ami-089646d3d52f14f1f # created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
+    gcp:
+        bigquery: false
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
@@ -2066,6 +2068,14 @@ fastly-logs:
         gcs:
             "{instance}-elife-fastly":
                 project: elife-fastly
+    gcp:
+        bigquery:
+            datasets:
+                "sample_dataset_{instance}":
+                    project: elife-fastly
+                    tables: {}
+                    #    widgets:
+                    #        schema: key-value
     aws-alt: {}
 
 data-pipeline:
