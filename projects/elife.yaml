@@ -387,8 +387,8 @@ api-gateway:
                 - "{instance}--cdn-gateway"
             healthcheck:
                 path: /ping-fastly
-                check-interval: 10000
-                timeout: 2000
+                check-interval: 5000
+                timeout: 1000
             vcl:
                 - "original-host"
                 - "gzip-by-content-type-suffix"
@@ -474,8 +474,11 @@ journal:
                     - "{instance}--cdn-journal"
                 healthcheck:
                     path: /ping-fastly
-                    check-interval: 10000
-                    timeout: 2000
+                    check-interval: 5000
+                    timeout: 1000
+                between-bytes-timeout: 5000
+                error-threshold: 2
+                first-byte-timeout: 5000
                 errors:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
@@ -505,8 +508,11 @@ journal:
                     - "{instance}--cdn-journal"
                 healthcheck:
                     path: /ping-fastly
-                    check-interval: 10000
-                    timeout: 2000
+                    check-interval: 5000
+                    timeout: 1000
+                between-bytes-timeout: 5000
+                error-threshold: 2
+                first-byte-timeout: 5000
                 errors:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
@@ -559,8 +565,11 @@ journal:
                     - ""
                 healthcheck:
                     path: /ping-fastly
-                    check-interval: 10000
-                    timeout: 2000
+                    check-interval: 5000
+                    timeout: 1000
+                between-bytes-timeout: 5000
+                error-threshold: 2
+                first-byte-timeout: 5000
                 errors:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
@@ -1607,8 +1616,8 @@ iiif:
                 period: 600
             healthcheck:
                 path: /ping-fastly
-                check-interval: 10000
-                timeout: 2000
+                check-interval: 5000
+                timeout: 1000
             surrogate-keys:
                 article-id-versioned:
                     url: "^/lax[:/]([0-9]+)(?:/|%2F)elife-(?:[a-z0-9-]+)-v([0-9]+)\\.(?:.+)$"

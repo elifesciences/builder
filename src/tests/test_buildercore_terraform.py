@@ -175,6 +175,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_sni_hostname': 'default.example.org',
                                     'ssl_check_cert': True,
                                     'healthcheck': 'default',
+                                    'between_bytes_timeout': 5000,
+                                    'error_threshold': 2,
+                                    'first_byte_timeout': 5000,
                                 },
                                 {
                                     'address': 'prod-special.example.org',
@@ -187,6 +190,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'request_condition': 'backend-articles-condition',
                                     'healthcheck': 'default',
                                     'shield': 'amsterdam-nl',
+                                    'between_bytes_timeout': 5000,
+                                    'error_threshold': 2,
+                                    'first_byte_timeout': 5000,
                                 },
                                 {
                                     'address': 'prod-special2.example.org',
@@ -199,6 +205,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'request_condition': 'backend-articles2-condition',
                                     'healthcheck': 'default',
                                     'shield': 'dca-dc-us',
+                                    'between_bytes_timeout': 5000,
+                                    'error_threshold': 2,
+                                    'first_byte_timeout': 5000,
                                 },
                                 {
                                     'address': 'prod-special3.example.org',
@@ -211,6 +220,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'request_condition': 'backend-articles3-condition',
                                     'healthcheck': 'default',
                                     'shield': 'dca-dc-us',
+                                    'between_bytes_timeout': 5000,
+                                    'error_threshold': 2,
+                                    'first_byte_timeout': 5000,
                                 },
                             ],
                             'request_setting': [

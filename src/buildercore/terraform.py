@@ -123,19 +123,23 @@ def render_fastly(context):
                 backend_condition_name = condition_name
             else:
                 backend_condition_name = None
-            shield = backend['shield'].get('pop')
             backends.append(_fastly_backend(
                 backend['hostname'],
                 name=name,
                 request_condition=backend_condition_name,
-                shield=shield
+                shield=backend['shield'].get('pop'),
+                between_bytes_timeout=context['fastly'].get('between-bytes-timeout'),
+                error_threshold=context['fastly'].get('error-threshold'),
+                first_byte_timeout=context['fastly'].get('first-byte-timeout')
             ))
     else:
-        shield = context['fastly']['shield'].get('pop')
         backends.append(_fastly_backend(
             context['full_hostname'],
             name=context['stackname'],
-            shield=shield
+            shield=context['fastly']['shield'].get('pop'),
+            between_bytes_timeout=context['fastly'].get('between-bytes-timeout'),
+            error_threshold=context['fastly'].get('error-threshold'),
+            first_byte_timeout=context['fastly'].get('first-byte-timeout')
         ))
 
     tf_file = {
@@ -295,7 +299,8 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             }
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
 
-def _fastly_backend(hostname, name, request_condition=None, shield=None):
+def _fastly_backend(hostname, name, request_condition=None, shield=None, between_bytes_timeout=None,
+                    error_threshold=None, first_byte_timeout=None):
     backend_resource = {
         'address': hostname,
         'name': name,
@@ -309,6 +314,12 @@ def _fastly_backend(hostname, name, request_condition=None, shield=None):
         backend_resource['request_condition'] = request_condition
     if shield:
         backend_resource['shield'] = shield
+    if between_bytes_timeout:
+        backend_resource['between_bytes_timeout'] = between_bytes_timeout
+    if error_threshold:
+        backend_resource['error_threshold'] = error_threshold
+    if first_byte_timeout:
+        backend_resource['first_byte_timeout'] = first_byte_timeout
     return backend_resource
 
 def _fastly_request_setting(override):
