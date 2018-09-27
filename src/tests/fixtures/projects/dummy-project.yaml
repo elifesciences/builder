@@ -368,7 +368,11 @@ project-with-fastly-complex:
             errors:
                 url: https://example.com
                 codes:
-                    503: "/"
+                    503: "/503.html"
+                    404: "/404.html"
+                fallbacks:
+                    5xx: "/5xx.html"
+                    4xx: "/4xx.html"
             vcl:
                 - "gzip-by-content-type-suffix"
             surrogate-keys:

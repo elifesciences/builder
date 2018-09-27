@@ -412,14 +412,6 @@ api-gateway:
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
-        test:
-            fastly:
-                errors:
-                    url: https://prod-elife-error-pages.s3.amazonaws.com/
-                    codes:
-                        404: "404.html"
-                        # temporarily disabled because of non-ASCII characters
-                        #503: "5xx.html"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -480,7 +472,12 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -511,7 +508,12 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -565,7 +567,12 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"

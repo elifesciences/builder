@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import json
 import os
 from os.path import exists, join, basename
@@ -98,7 +98,7 @@ def render_fastly(context):
     headers = []
     data = {}
     vcl_constant_snippets = context['fastly']['vcl']
-    vcl_templated_snippets = {}
+    vcl_templated_snippets = OrderedDict()
 
     request_settings.append(_fastly_request_setting({
         'name': 'force-ssl',
@@ -156,7 +156,8 @@ def render_fastly(context):
                         'content_types': sorted(FASTLY_GZIP_TYPES),
                         'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
-                    'force_destroy': True
+                    'force_destroy': True,
+                    'vcl': OrderedDict(),
                 }
             }
         },
@@ -216,6 +217,7 @@ def render_fastly(context):
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + list(vcl_templated_snippets.values())
+        inclusions.reverse()
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
@@ -278,19 +280,46 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             extension='vcl.tpl'
         )
         errors = context['fastly']['errors']
+        codes = errors.get('codes', {})
+        fallbacks = errors.get('fallbacks', {})
         data[DATA_TYPE_HTTP] = {}
-        for code, path in errors['codes'].items():
+        data[DATE_TYPE_TEMPLATE] = {}
+        for code, path in codes.items():
             data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
                 'url': '%s%s' % (errors['url'], path),
             }
             name = 'error-page-vcl-%d' % code
-            data[DATE_TYPE_TEMPLATE] = {
-                name: {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'code': code,
-                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                    }
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status == %s' % code,
+                    'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('4xx'):
+            data[DATA_TYPE_HTTP]['error-page-4xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
+            }
+            name = 'error-page-vcl-4xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status >= 400 && obj.status <= 499',
+                    'synthetic_response': '${data.http.error-page-4xx.body}',
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('5xx'):
+            data[DATA_TYPE_HTTP]['error-page-5xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
+            }
+            name = 'error-page-vcl-5xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status >= 500 && obj.status <= 599',
+                    'synthetic_response': '${data.http.error-page-5xx.body}',
                 },
             }
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
