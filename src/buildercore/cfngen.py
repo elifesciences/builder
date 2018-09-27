@@ -140,7 +140,8 @@ def build_context(pname, **more_context):
         build_context_s3,
         build_context_cloudfront,
         build_context_fastly,
-        build_context_gcp,
+        build_context_gcs,
+        build_context_bigquery,
         build_context_subdomains,
         build_context_elasticache,
         build_context_vault,
@@ -407,7 +408,7 @@ def build_context_fastly(pdata, context):
         }
     return context
 
-def build_context_gcp(pdata, context):
+def build_context_gcs(pdata, context):
     context['gcs'] = False
     if 'gcs' in pdata['aws']:
         context['gcs'] = OrderedDict()
@@ -415,6 +416,18 @@ def build_context_gcp(pdata, context):
             bucket_name = parameterize(context)(bucket_template_name)
             context['gcs'][bucket_name] = {
                 'project': options['project'],
+            }
+    return context
+
+def build_context_bigquery(pdata, context):
+    context['bigquery'] = False
+    if 'bigquery' in pdata['gcp']:
+        context['bigquery'] = OrderedDict()
+        for dataset_template_name, options in pdata['gcp']['bigquery']['datasets'].items():
+            dataset_name = parameterize(context)(dataset_template_name)
+            context['bigquery'][dataset_name] = {
+                'project': options['project'],
+                'tables': options.get('tables', OrderedDict()),
             }
     return context
 

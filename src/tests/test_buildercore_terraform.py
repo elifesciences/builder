@@ -434,6 +434,19 @@ class TestBuildercoreTerraform(base.BaseCase):
             'project': 'elife-something',
         })
 
+    def test_bigquery_template(self):
+        extra = {
+            'stackname': 'project-with-bigquery--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['google_bigquery_dataset']['my-dataset-prod']
+        self.assertEqual(service, {
+            'dataset_id': 'my-dataset-prod',
+            'project': 'elife-something',
+        })
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

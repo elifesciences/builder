@@ -81,7 +81,8 @@ FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
     generated_template = render_fastly(context)
-    generated_template.update(render_gcp(context))
+    generated_template.update(render_gcs(context))
+    generated_template.update(render_bigquery(context))
 
     if not generated_template:
         return EMPTY_TEMPLATE
@@ -363,7 +364,7 @@ def _generate_vcl_file(stackname, content, key, extension='vcl'):
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 
-def render_gcp(context):
+def render_gcs(context):
     if not context['gcs']:
         return {}
 
@@ -376,6 +377,21 @@ def render_gcp(context):
                     'storage_class': 'REGIONAL',
                     'project': options['project'],
                 } for bucket_name, options in context['gcs'].items()
+            },
+        },
+    }
+
+def render_bigquery(context):
+    if not context['bigquery']:
+        return {}
+
+    return {
+        'resource': {
+            'google_bigquery_dataset': {
+                dataset_name: {
+                    'dataset_id': dataset_name,
+                    'project': options['project'],
+                } for dataset_name, options in context['bigquery'].items()
             },
         },
     }

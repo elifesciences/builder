@@ -618,7 +618,7 @@ project-on-gcp:
     intdomain: False
     # I know, this should be gcp, but actually should be renamed
     # to "cloud" or "remote" or similar
-    # TODO: use separate key with 'gcp'?
+    # TODO: move onto separate key with 'gcp'?
     aws:
         ec2: false
         gcs:
@@ -626,4 +626,20 @@ project-on-gcp:
                 project: elife-something
                 # space for options
                 #
+    aws-alt: {}
+
+project-with-bigquery:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            #location: US
+            datasets:
+                "my-dataset-{instance}":
+                    project: elife-something
+                    tables: {}
     aws-alt: {}
