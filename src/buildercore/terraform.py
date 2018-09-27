@@ -391,6 +391,7 @@ def render_bigquery(context):
     for dataset_name, dataset_options in context['bigquery'].items():
         for table_name, table_options in dataset_options['tables'].items():
             table_options['dataset_id'] = dataset_name
+            table_options['project'] = dataset_options['project']
             tables[table_name] = table_options
 
     resources = {'resource': OrderedDict()}
@@ -409,6 +410,7 @@ def render_bigquery(context):
                 'dataset_id': options['dataset_id'],
                 # TODO 'table_id' : table_id
                 'table_id': table_name,
+                'project': options['project'],
                 'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
             } for table_name, options in tables.items()
         }

@@ -2071,11 +2071,11 @@ fastly-logs:
     gcp:
         bigquery:
             datasets:
-                "sample_dataset_{instance}":
+                "{instance}":
                     project: elife-fastly
-                    tables: {}
-                    #    widgets:
-                    #        schema: key-value
+                    tables:
+                        iiif:
+                            schema: fastly-logs-201809
     aws-alt: {}
 
 data-pipeline:

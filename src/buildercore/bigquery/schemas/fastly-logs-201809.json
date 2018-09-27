@@ -1,0 +1,82 @@
+[
+  {
+    "name": "timestamp",
+    "type": "DATETIME"
+  },
+  {
+    "name": "time_elapsed",
+    "type": "INTEGER"
+  },
+  {
+    "name": "object_hits",
+    "type": "INTEGER"
+  },
+  {
+    "name": "object_lastuse",
+    "type": "FLOAT"
+  },
+  {
+    "name": "is_tls",
+    "type": "BOOLEAN"
+  },
+  {
+    "name": "client_ip",
+    "type": "STRING"
+  },
+  {
+    "name": "geo_city",
+    "type": "STRING"
+  },
+  {
+    "name": "geo_country_code",
+    "type": "STRING"
+  },
+  {
+    "name": "pop_datacenter",
+    "type": "STRING"
+  },
+  {
+    "name": "pop_region",
+    "type": "STRING"
+  },
+  {
+    "name": "shield",
+    "type": "STRING"
+  },
+  {
+    "name": "request",
+    "type": "STRING"
+  },
+  {
+    "name": "host",
+    "type": "STRING"
+  },
+  {
+    "name": "url",
+    "type": "STRING"
+  },
+  {
+    "name": "request_referer",
+    "type": "STRING"
+  },
+  {
+    "name": "request_user_agent",
+    "type": "STRING"
+  },
+  {
+    "name": "request_accept_language",
+    "type": "STRING"
+  },
+  {
+    "name": "request_accept_charset",
+    "type": "STRING"
+  },
+  {
+    "name": "response_status",
+    "type": "STRING"
+  },
+  {
+    "name": "cache_status",
+    "type": "STRING"
+  }
+]

@@ -451,6 +451,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(table, {
             'dataset_id': 'my-dataset-prod',
             'table_id': 'widgets',
+            'project': 'elife-something',
             'schema': '${file("key-value.json")}',
         })
 
