@@ -421,7 +421,7 @@ def build_context_gcs(pdata, context):
 
 def build_context_bigquery(pdata, context):
     context['bigquery'] = False
-    if 'bigquery' in pdata['gcp']:
+    if pdata['gcp']['bigquery']:
         context['bigquery'] = OrderedDict()
         for dataset_template_name, options in pdata['gcp']['bigquery']['datasets'].items():
             dataset_name = parameterize(context)(dataset_template_name)

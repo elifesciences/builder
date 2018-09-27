@@ -133,6 +133,8 @@ defaults:
             description: uses a plain Ubuntu basebox instead of an ami
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
+    gcp:
+        bigquery: false
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         box-url: null # not needed for boxes hosted on Atlas 

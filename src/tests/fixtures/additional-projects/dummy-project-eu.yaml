@@ -31,6 +31,8 @@ defaults:
             vcl: []
             surrogate-keys: {}
         subdomains: []
+    gcp:
+        bigquery: false
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
 
