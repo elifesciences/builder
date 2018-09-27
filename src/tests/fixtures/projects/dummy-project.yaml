@@ -641,5 +641,7 @@ project-with-bigquery:
             datasets:
                 "my-dataset-{instance}":
                     project: elife-something
-                    tables: {}
+                    tables:
+                        widgets:
+                            schema: key-value.schema.csv
     aws-alt: {}

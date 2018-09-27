@@ -385,6 +385,12 @@ def render_bigquery(context):
     if not context['bigquery']:
         return {}
 
+    tables = OrderedDict({})
+    for dataset_name, dataset_options in context['bigquery'].items():
+        for table_name, table_options in dataset_options['tables'].items():
+            table_options['dataset_id'] = dataset_name
+            tables[table_name] = table_options
+
     return {
         'resource': {
             'google_bigquery_dataset': {
@@ -393,6 +399,14 @@ def render_bigquery(context):
                     'project': options['project'],
                 } for dataset_name, options in context['bigquery'].items()
             },
+            'google_bigquery_table': {
+                # generated fully qualified resource name
+                ("%s_%s" % (options['dataset_id'], table_name)): {
+                    'dataset_id': options['dataset_id'],
+                    # : table_id
+                    'table_id': table_name,
+                } for table_name, options in tables.items()
+            }
         },
     }
 

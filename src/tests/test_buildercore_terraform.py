@@ -426,8 +426,8 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-on-gcp', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['google_storage_bucket']['widgets-prod']
-        self.assertEqual(service, {
+        bucket = template['resource']['google_storage_bucket']['widgets-prod']
+        self.assertEqual(bucket, {
             'name': 'widgets-prod',
             'location': 'us-east4',
             'storage_class': 'REGIONAL',
@@ -441,10 +441,16 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-bigquery', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['google_bigquery_dataset']['my-dataset-prod']
-        self.assertEqual(service, {
+        dataset = template['resource']['google_bigquery_dataset']['my-dataset-prod']
+        self.assertEqual(dataset, {
             'dataset_id': 'my-dataset-prod',
             'project': 'elife-something',
+        })
+
+        table = template['resource']['google_bigquery_table']['my-dataset-prod_widgets']
+        self.assertEqual(table, {
+            'dataset_id': 'my-dataset-prod',
+            'table_id': 'widgets',
         })
 
     def test_sanity_of_rendered_log_format(self):
