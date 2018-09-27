@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import json
 import os
 from os.path import exists, join, basename
@@ -98,7 +98,14 @@ def render_fastly(context):
     headers = []
     data = {}
     vcl_constant_snippets = context['fastly']['vcl']
-    vcl_templated_snippets = {}
+    vcl_templated_snippets = OrderedDict()
+
+    request_settings.append(_fastly_request_setting({
+        'name': 'force-ssl',
+        'force_ssl': True,
+    }))
+
+    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
 
     if context['fastly']['backends']:
         for name, backend in context['fastly']['backends'].items():
@@ -111,30 +118,26 @@ def render_fastly(context):
                 })
                 request_settings.append(_fastly_request_setting({
                     'name': 'backend-%s-request-settings' % name,
-                    'default_host': backend['hostname'],
                     'request_condition': condition_name,
                 }))
                 backend_condition_name = condition_name
             else:
-                request_settings.append(_fastly_request_setting({
-                    'default_host': backend['hostname']
-                }))
                 backend_condition_name = None
+            shield = backend['shield'].get('pop')
             backends.append(_fastly_backend(
                 backend['hostname'],
                 name=name,
-                request_condition=backend_condition_name
+                request_condition=backend_condition_name,
+                shield=shield
             ))
     else:
-        request_settings.append(_fastly_request_setting({
-            'default_host': context['full_hostname']
-        }))
+        shield = context['fastly']['shield'].get('pop')
         backends.append(_fastly_backend(
             context['full_hostname'],
-            name=context['stackname']
+            name=context['stackname'],
+            shield=shield
         ))
 
-    all_allowed_subdomains = context['fastly']['subdomains'] + context['fastly']['subdomains-without-dns']
     tf_file = {
         'resource': {
             RESOURCE_TYPE_FASTLY: {
@@ -153,7 +156,8 @@ def render_fastly(context):
                         'content_types': sorted(FASTLY_GZIP_TYPES),
                         'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
-                    'force_destroy': True
+                    'force_destroy': True,
+                    'vcl': OrderedDict(),
                 }
             }
         },
@@ -213,6 +217,7 @@ def render_fastly(context):
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + list(vcl_templated_snippets.values())
+        inclusions.reverse()
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
@@ -257,7 +262,8 @@ def render_fastly(context):
     if headers:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['header'] = headers
 
-    tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
+    if request_settings:
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
 
     if data:
         tf_file['data'] = data
@@ -274,24 +280,51 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             extension='vcl.tpl'
         )
         errors = context['fastly']['errors']
+        codes = errors.get('codes', {})
+        fallbacks = errors.get('fallbacks', {})
         data[DATA_TYPE_HTTP] = {}
-        for code, path in errors['codes'].items():
+        data[DATE_TYPE_TEMPLATE] = {}
+        for code, path in codes.items():
             data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
                 'url': '%s%s' % (errors['url'], path),
             }
             name = 'error-page-vcl-%d' % code
-            data[DATE_TYPE_TEMPLATE] = {
-                name: {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'code': code,
-                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                    }
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status == %s' % code,
+                    'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('4xx'):
+            data[DATA_TYPE_HTTP]['error-page-4xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
+            }
+            name = 'error-page-vcl-4xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status >= 400 && obj.status <= 499',
+                    'synthetic_response': '${data.http.error-page-4xx.body}',
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('5xx'):
+            data[DATA_TYPE_HTTP]['error-page-5xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
+            }
+            name = 'error-page-vcl-5xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status >= 500 && obj.status <= 599',
+                    'synthetic_response': '${data.http.error-page-5xx.body}',
                 },
             }
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
 
-def _fastly_backend(hostname, name, request_condition=None):
+def _fastly_backend(hostname, name, request_condition=None, shield=None):
     backend_resource = {
         'address': hostname,
         'name': name,
@@ -303,12 +336,13 @@ def _fastly_backend(hostname, name, request_condition=None):
     }
     if request_condition:
         backend_resource['request_condition'] = request_condition
+    if shield:
+        backend_resource['shield'] = shield
     return backend_resource
 
 def _fastly_request_setting(override):
     request_setting_resource = {
         'name': 'default',
-        'force_ssl': True,
         # shouldn't need to replicate the defaults
         # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
         # https://github.com/terraform-providers/terraform-provider-fastly/issues/67

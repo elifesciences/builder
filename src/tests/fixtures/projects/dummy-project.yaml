@@ -15,6 +15,7 @@ defaults:
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
     private-repo: ssh://github.com/exampleorg/builder-private-example
+    configuration-repo: ssh://github.com/exampleorg/builder-configuration-example
     # default branch to use when creating new instances
     default-branch: master
     # 
@@ -32,6 +33,7 @@ defaults:
             ami: ami-9eaa1cf6  # Ubuntu 14.04
             master_ip: 10.0.2.42
             security-group: {}
+            masterless: false
         type: t2.small
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
@@ -49,10 +51,12 @@ defaults:
             version: '9.4'
             type: db.t2.small
             storage: 5 # GB
+            storage-type: 'standard'
             backup-retention: 28 # days
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             params: []
+            encryption: false
             subnets:
                 # two are required
                 - subnet-foo
@@ -102,6 +106,7 @@ defaults:
                     - 127.0.0.1
                     - 127.0.0.2
             default-ttl: 3600 # seconds
+            shield: false
             gcslogging: false
             healthcheck: false
             errors: false
@@ -331,12 +336,23 @@ project-with-fastly-complex:
         ports:
             - 80
         fastly:
+            shield: true
             backends:
                 default:
                     hostname: default.example.org
+                    shield: false
                 articles:
                     hostname: "{instance}-special.example.org"
-                    condition: req.url ~ "^/articles" 
+                    condition: req.url ~ "^/articles"
+                    shield:
+                        pop: amsterdam-nl
+                articles2:
+                    hostname: "{instance}-special2.example.org"
+                    condition: req.url ~ "^/articles2"
+                    shield: true
+                articles3:
+                    hostname: "{instance}-special3.example.org"
+                    condition: req.url ~ "^/articles3"
             subdomains:
                 - "{instance}--cdn1-of-www"
                 - "{instance}--cdn2-of-www"
@@ -352,7 +368,11 @@ project-with-fastly-complex:
             errors:
                 url: https://example.com
                 codes:
-                    503: "/"
+                    503: "/503.html"
+                    404: "/404.html"
+                fallbacks:
+                    5xx: "/5xx.html"
+                    4xx: "/4xx.html"
             vcl:
                 - "gzip-by-content-type-suffix"
             surrogate-keys:
@@ -378,7 +398,22 @@ project-with-fastly-gcs:
                 bucket: my-bucket
                 path: my-project/
                 period: 1800
-                    
+
+project-with-fastly-shield:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        fastly:
+            shield: true
+
+project-with-fastly-shield-pop:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        fastly:
+            shield:
+                pop: london-uk
+
 project-with-ec2-custom-root:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
@@ -517,6 +552,13 @@ project-with-rds-only:
         ec2: false
         rds:
             storage: 5
+
+project-with-rds-encryption:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        rds:
+            storage: 5
+            encryption: arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012
 
 project-with-elasticache-redis:
     domain: False

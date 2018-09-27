@@ -11,7 +11,8 @@ set -xv  # output the scripts and interpolated steps
 
 stackname=$1 # who am I? ll: master-server--2016-01-01
 pillar_repo=$2 # what secrets do I know?
-formulas=$3 # which formulas will I use?
+configuration_repo=$3 # what configuration do I know?
+formulas=$4 # which formulas will I use?
 formula_root="/opt/formulas"
 
 echo "bootstrapping master-minion $stackname"
@@ -82,6 +83,17 @@ fi
 cp /opt/builder-private/etc-salt-master /etc/salt/master.template
 if [ -d /vagrant ]; then
     cp /etc/salt/master.template /vagrant/etc-salt-master.template
+fi
+
+# clone builder-configuration in /opt/builder-configuration
+if [ ! -d /opt/builder-configuration ]; then
+    cd /opt
+    git clone "$configuration_repo" builder-configuration
+else
+    cd /opt/builder-configuration
+    #git clean -d --force # in vagrant, destroys any rsync'd files
+    git reset --hard
+    git pull
 fi
 
 

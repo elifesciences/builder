@@ -62,7 +62,7 @@ class One(base.BaseCase):
                 cfn.ensure_destroyed(self.stackname)
 
             self.context, self.cfn_template, _ = cfngen.generate_stack(project, stackname=self.stackname)
-            self.region = self.context['project']['aws']['region']
+            self.region = self.context['aws']['region']
             bootstrap.create_stack(self.stackname)
 
             # lifecycle.start(self.stackname) # see self.setUp

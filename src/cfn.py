@@ -63,7 +63,7 @@ def update(stackname, autostart="0", concurrency='serial'):
 
 @task
 @timeit
-def update_infrastructure(stackname):
+def update_infrastructure(stackname, skip=None):
     """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
@@ -75,7 +75,11 @@ def update_infrastructure(stackname):
     but without any software being on it)
 
     Moreover, EC2 instances must be running while this is executed or their
-    resources like PublicIP will be inaccessible"""
+    resources like PublicIP will be inaccessible.
+
+    Allows to skip EC2, SQS, S3 updates by passing `skip=ec2\\,sqs\\,s3`"""
+
+    skip = skip.split(",") if skip else []
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
@@ -96,17 +100,17 @@ def update_infrastructure(stackname):
 
     # TODO: move inside bootstrap.update_stack
     # EC2
-    if _are_there_existing_servers(context):
+    if _are_there_existing_servers(context) and not 'ec2' in skip:
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
         update(stackname)
 
     # SQS
-    if context.get('sqs', {}):
+    if context.get('sqs', {}) and not 'sqs' in skip:
         bootstrap.update_stack(stackname, service_list=['sqs'])
 
     # S3
-    if context.get('s3', {}):
+    if context.get('s3', {}) and not 's3' in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 @requires_project
@@ -142,41 +146,25 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
 @task
 @requires_project
-def launch(pname, instance_id=None, alt_config=None, **kwargs):
-    try:
-        stackname = generate_stack_from_input(pname, instance_id, alt_config)
-        pdata = core.project_data_for_stackname(stackname)
+def launch(pname, instance_id=None, alt_config=None):
+    stackname = generate_stack_from_input(pname, instance_id, alt_config)
+    pdata = core.project_data_for_stackname(stackname)
 
-        print('attempting to create stack:')
-        print('  stackname:\t' + stackname)
-        print('  region:\t' + pdata['aws']['region'])
+    LOG.info('attempting to create stack:')
+    LOG.info('stackname:\t%s', stackname)
+    LOG.info('region:\t%s', pdata['aws']['region'])
 
-        for key, val in kwargs.items():
-            print('  %s:\t%s' % (key, pformat(val)))
+    if core.is_master_server_stack(stackname):
+        checks.ensure_can_access_builder_private(pname)
+    checks.ensure_stack_does_not_exist(stackname)
 
-        print()
+    bootstrap.create_stack(stackname)
 
-        if core.is_master_server_stack(stackname):
-            if not checks.can_access_builder_private(pname):
-                print("failed to access your organisation's 'builder-private' repository:")
-                print('  ' + pdata['private-repo'])
-                print("you'll need access to this repository to add a deploy key later")
-                print()
-                return
-
-        if not core.stack_is_active(stackname):
-            LOG.info('stack %s does not exist, creating', stackname)
-            bootstrap.create_stack(stackname)
-
-        LOG.info('updating stack %s', stackname)
-        # TODO: highstate.sh (think it's run inside here) doesn't detect:
-        # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
-        bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
-        setdefault('.active-stack', stackname)
-
-    except core.NoMasterException as e:
-        LOG.warn(e)
-        print("\n%s\nNo master server found, you'll need to `launch` a master-server first." % e)
+    LOG.info('updating stack %s', stackname)
+    # TODO: highstate.sh (think it's run inside here) doesn't detect:
+    # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
+    bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
+    setdefault('.active-stack', stackname)
 
 @debugtask
 @requires_aws_stack

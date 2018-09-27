@@ -11,7 +11,7 @@ def concurrency_for(stackname, concurrency_name):
 
     if concurrency_name == 'blue-green':
         context = context_handler.load_context(stackname)
-        return bluegreen.BlueGreenConcurrency(context['project']['aws']['region'])
+        return bluegreen.BlueGreenConcurrency(context['aws']['region'])
     if concurrency_name == 'serial' or concurrency_name == 'parallel':
         # maybe return a fabric object in the future
         return concurrency_name

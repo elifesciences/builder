@@ -87,13 +87,14 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'ssl_check_cert': True,
                             }],
                             'default_ttl': 3600,
-                            'request_setting': [{
-                                'name': 'default',
-                                'default_host': 'prod--www.example.org',
-                                'force_ssl': True,
-                                'timer_support': True,
-                                'xff': 'leave',
-                            }],
+                            'request_setting': [
+                                {
+                                    'name': 'force-ssl',
+                                    'force_ssl': True,
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                }
+                            ],
                             'gzip': {
                                 'name': 'default',
                                 'content_types': ['application/javascript', 'application/json',
@@ -109,7 +110,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
                                                'ttf'],
                             },
-                            'force_destroy': True
+                            'force_destroy': True,
+                            'vcl': {},
                         }
                     }
                 },
@@ -128,16 +130,46 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'data': {
                     'http': {
+                        'error-page-404': {
+                            'url': 'https://example.com/404.html'
+                        },
                         'error-page-503': {
-                            'url': 'https://example.com/'
+                            'url': 'https://example.com/503.html'
+                        },
+                        'error-page-4xx': {
+                            'url': 'https://example.com/4xx.html'
+                        },
+                        'error-page-5xx': {
+                            'url': 'https://example.com/5xx.html'
                         },
                     },
                     'template_file': {
                         'error-page-vcl-503': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'code': 503,
+                                'test': 'obj.status == 503',
                                 'synthetic_response': '${data.http.error-page-503.body}',
+                            },
+                        },
+                        'error-page-vcl-404': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status == 404',
+                                'synthetic_response': '${data.http.error-page-404.body}',
+                            },
+                        },
+                        'error-page-vcl-4xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status >= 400 && obj.status <= 499',
+                                'synthetic_response': '${data.http.error-page-4xx.body}',
+                            },
+                        },
+                        'error-page-vcl-5xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status >= 500 && obj.status <= 599',
+                                'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
                         },
                     },
@@ -185,23 +217,57 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles-condition',
                                     'healthcheck': 'default',
-                                }
+                                    'shield': 'amsterdam-nl',
+                                },
+                                {
+                                    'address': 'prod-special2.example.org',
+                                    'name': 'articles2',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'prod-special2.example.org',
+                                    'ssl_sni_hostname': 'prod-special2.example.org',
+                                    'ssl_check_cert': True,
+                                    'request_condition': 'backend-articles2-condition',
+                                    'healthcheck': 'default',
+                                    'shield': 'dca-dc-us',
+                                },
+                                {
+                                    'address': 'prod-special3.example.org',
+                                    'name': 'articles3',
+                                    'port': 443,
+                                    'use_ssl': True,
+                                    'ssl_cert_hostname': 'prod-special3.example.org',
+                                    'ssl_sni_hostname': 'prod-special3.example.org',
+                                    'ssl_check_cert': True,
+                                    'request_condition': 'backend-articles3-condition',
+                                    'healthcheck': 'default',
+                                    'shield': 'dca-dc-us',
+                                },
                             ],
                             'request_setting': [
                                 {
-                                    'name': 'default',
-                                    'default_host': 'default.example.org',
+                                    'name': 'force-ssl',
                                     'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
                                 },
                                 {
                                     'name': 'backend-articles-request-settings',
-                                    'default_host': 'prod-special.example.org',
-                                    'force_ssl': True,
                                     'timer_support': True,
                                     'xff': 'leave',
                                     'request_condition': 'backend-articles-condition',
+                                },
+                                {
+                                    'name': 'backend-articles2-request-settings',
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                    'request_condition': 'backend-articles2-condition',
+                                },
+                                {
+                                    'name': 'backend-articles3-request-settings',
+                                    'timer_support': True,
+                                    'xff': 'leave',
+                                    'request_condition': 'backend-articles3-condition',
                                 },
                             ],
                             'default_ttl': 86400,
@@ -234,6 +300,16 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'type': 'REQUEST',
                                 },
                                 {
+                                    'name': 'backend-articles2-condition',
+                                    'statement': 'req.url ~ "^/articles2"',
+                                    'type': 'REQUEST',
+                                },
+                                {
+                                    'name': 'backend-articles3-condition',
+                                    'statement': 'req.url ~ "^/articles3"',
+                                    'type': 'REQUEST',
+                                },
+                                {
                                     'name': 'condition-surrogate-article-id',
                                     'statement': 'req.url ~ "^/articles/(\\d+)/(.+)$"',
                                     'type': 'CACHE',
@@ -247,6 +323,18 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 {
                                     'name': 'error-page-vcl-503',
                                     'content': '${data.template_file.error-page-vcl-503.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-404',
+                                    'content': '${data.template_file.error-page-vcl-404.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-4xx',
+                                    'content': '${data.template_file.error-page-vcl-4xx.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-5xx',
+                                    'content': '${data.template_file.error-page-vcl-5xx.rendered}',
                                 },
                                 {
                                     'name': 'main',
@@ -272,6 +360,39 @@ class TestBuildercoreTerraform(base.BaseCase):
             },
             template
         )
+
+    def test_fastly_template_shield(self):
+        extra = {
+            'stackname': 'project-with-fastly-shield--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-shield', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertEqual(service['backend'][0].get('shield'), 'dca-dc-us')
+        self.assertIn('domain', service)
+
+    def test_fastly_template_shield_pop(self):
+        extra = {
+            'stackname': 'project-with-fastly-shield-pop--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-shield-pop', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertEqual(service['backend'][0].get('shield'), 'london-uk')
+        self.assertIn('domain', service)
+
+    def test_fastly_template_shield_aws_region(self):
+        base.switch_in_test_settings('dummy-settings2.yaml')
+        extra = {
+            'stackname': 'project-with-fastly-shield-aws-region--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-shield-aws-region', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertEqual(service['backend'][0].get('shield'), 'frankfurt-de')
 
     def test_fastly_template_gcs_logging(self):
         extra = {

@@ -116,6 +116,18 @@ VCL_SNIPPETS = {
         type='recv',
         hook='after'
     ),
+    'journal-google-scholar': FastlyVCLSnippet(
+        name='journal-google-scholar',
+        content=_read_vcl_file('journal-google-scholar.vcl'),
+        type='recv',
+        hook='after'
+    ),
+    'journal-google-scholar-vary': FastlyVCLSnippet(
+        name='journal-google-scholar-vary',
+        content=_read_vcl_file('journal-google-scholar-vary.vcl'),
+        type='deliver',
+        hook='after'
+    ),
 }
 
 VCL_TEMPLATES = {

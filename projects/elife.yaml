@@ -17,6 +17,7 @@ defaults:
     # will need permissions to clone it
     # TODO: hunt down ssh:// remotes
     private-repo: git@github.com:elifesciences/builder-private
+    configuration-repo: git@github.com:elifesciences/builder-configuration
     # default branch to use when creating new instances
     default-branch: master
     # in rare cases we have formulas requiring the states of other formulas
@@ -72,6 +73,8 @@ defaults:
             version: '9.4'
             type: db.t2.small
             storage: 5 # GB
+            # Standard for backward compatibility
+            storage-type: Standard # standard|gp2|io1 https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
@@ -88,6 +91,7 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         ext:
             # external hdd
+            type: standard # magnetic, use 'gp2' for ssd
             size: 10 # GB
             device: /dev/sdh
         elb:
@@ -136,6 +140,7 @@ defaults:
             subdomains: []
             subdomains-without-dns: []
             default-ttl: 3600 # Fastly default, in seconds
+            shield: true
             dns:
                 cname: u2.shared.global.fastly.net
                 a:
@@ -196,6 +201,12 @@ defaults:
                 ami: ami-14a1d06e # created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
+        standalone1804:
+            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                ami: ami-089646d3d52f14f1f # created from basebox--1804
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
@@ -210,6 +221,7 @@ defaults:
         cpucap: 100 # percent (vagrant default)
 
 basebox:
+    salt: '2017.7.7' # overridden for 18.04 support
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
@@ -227,16 +239,19 @@ basebox:
         1604:
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-
+        1804:
+            ec2:
+                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
                 masterless: true
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        box: bento/ubuntu-18.04 # Ubuntu 18.04
 
 heavybox:
+    salt: '2017.7.7' # overridden for 18.04 support
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
@@ -253,6 +268,8 @@ heavybox:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
     vagrant:
+        # disabled until supported
+        #box: bento/ubuntu-18.04 # Ubuntu 18.04
         ram: 2048
 
 master-server:
@@ -395,14 +412,6 @@ api-gateway:
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
-        test:
-            fastly:
-                errors:
-                    url: https://prod-elife-error-pages.s3.amazonaws.com/
-                    codes:
-                        404: "404.html"
-                        # temporarily disabled because of non-ASCII characters
-                        #503: "5xx.html"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -452,37 +461,9 @@ journal:
                 protocol:
                     - https
                     - http
-            cloudfront:
-                subdomains:
-                    - "{instance}--cdn-journal"
-                headers:
-                    - X-Requested-With
-                    - Host
-                cookies:
-                    - journal
-                errors: 
-                    # TODO: this is not being deployed to, it's empty
-                    domain: end2end-elife-error-pages.s3-website-us-east-1.amazonaws.com
-                    pattern: "???.html"
-                    codes:
-                        # ELB with no active instances
-                        503: "/5xx.html"
-                    protocol: http
-                origins:
-                    CloudFrontCDNOrigin:
-                        hostname: end2end--journal.elifesciences.org
-                    LogInOrigin:
-                        hostname: end2end--journal.elifesciences.org
-                        pattern: /log-in
-                        headers:
-                            - X-Requested-With
-                            - Host
-                            - Referer
-                        cookies:
-                            - journal
             fastly:
                 subdomains:
-                    - "{instance}--fastly-journal"
+                    - "{instance}--cdn-journal"
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
@@ -491,11 +472,18 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
                     - "strip-non-journal-cookies"
+                    - "journal-google-scholar"
+                    - "journal-google-scholar-vary"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
@@ -509,35 +497,9 @@ journal:
                 protocol:
                     - https
                     - http
-            cloudfront:
-                subdomains:
-                    - "{instance}--cdn-journal"
-                headers:
-                    - X-Requested-With
-                    - Host
-                cookies:
-                    - journal
-                errors: 
-                    domain: continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
-                    pattern: "???.html"
-                    codes:
-                        503: "/5xx.html"
-                    protocol: http
-                origins:
-                    CloudFrontCDNOrigin:
-                        hostname: continuumtest--journal.elifesciences.org
-                    LogInOrigin:
-                        hostname: continuumtest--journal.elifesciences.org
-                        pattern: /log-in
-                        headers:
-                            - X-Requested-With
-                            - Host
-                            - Referer
-                        cookies:
-                            - journal
             fastly:
                 subdomains:
-                    - "{instance}--fastly-journal"
+                    - "{instance}--cdn-journal"
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
@@ -546,11 +508,18 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
                     - "strip-non-journal-cookies"
+                    - "journal-google-scholar"
+                    - "journal-google-scholar-vary"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
@@ -572,41 +541,22 @@ journal:
                     - http
             cloudfront:
                 subdomains:
-                    - "{instance}--cdn-journal"
+                    - "placeholder2-prod-journal" # only here to avoid rewriting the following values
                     - www
                     - elife
                     - prod
-                subdomains-without-dns:
-                    - ""
                 headers:
-                    - X-Requested-With
                     - Host
-                cookies:
-                    - journal
-                errors: 
+                errors:
                     domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     pattern: "???.html"
                     codes:
                         # ELB with no active instances
                         503: "/5xx.html"
                     protocol: http
-                origins:
-                    CloudFrontCDNOrigin:
-                        hostname: prod--journal.elifesciences.org
-                    LogInOrigin:
-                        hostname: prod--journal.elifesciences.org
-                        pattern: /log-in
-                        headers:
-                            - X-Requested-With
-                            - Host
-                            - Referer
-                        cookies:
-                            - journal
-                logging:
-                    bucket: elife-cloudfront-logs
             fastly:
                 subdomains:
-                    - "{instance}--fastly-journal"
+                    - "{instance}--cdn-journal"
                     - "placeholder-prod-journal" # only here to avoid rewriting the following values
                     - ""
                 healthcheck:
@@ -617,11 +567,18 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
                     - "strip-non-journal-cookies"
+                    - "journal-google-scholar"
+                    - "journal-google-scholar-vary"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
@@ -769,6 +726,7 @@ elife-bot:
                 - 22
                 - 8020 # exposing FTP contents
                 - 8021 # exposing FTP contents, HTTPS
+                - 1080 # exposing mailcatcher API
             description: speeding up end2end tests
             s3:
                 "{instance}-elife-silent-corrections":
@@ -1298,6 +1256,7 @@ bus:
             - bus-press-packages--{instance}
             - bus-metrics--{instance}
             - bus-profiles--{instance}
+            - bus-digests--{instance}
 
 search:
     domain: false
@@ -1659,8 +1618,8 @@ iiif:
                 timeout: 2000
             surrogate-keys:
                 article-id-versioned:
-                    url: "^/lax:([0-9]+)/elife-([a-z0-9-]+)-v([0-9]+)\\.(.+)$"
-                    value: "article/\\1 article/\\1v\\3"
+                    url: "^/lax[:/]([0-9]+)(?:/|%2F)elife-(?:[a-z0-9-]+)-v([0-9]+)\\.(?:.+)$"
+                    value: "article/\\1 article/\\1v\\2"
                     samples:
                         figure:
                             path: /lax:10627/elife-10627-fig1-v1.tif/full/1500,/0/default.jpg
@@ -1671,8 +1630,11 @@ iiif:
                         appendix-figure-supplement:
                             path: /lax:18215/elife-18215-app2-fig1-figsupp2-v2.tif
                             expected: "article/18215 article/18215v2"
+                        encoded-urls:
+                            path: /lax/18215%2Felife-18215-app2-fig1-figsupp2-v2.tif
+                            expected: "article/18215 article/18215v2"
                 article-id-unversioned:
-                    url: "^/lax:([0-9]+)/elife-([a-z-0-9]+)-(video|media)([0-9]+)\\.(.+)$"
+                    url: "^/lax[:/]([0-9]+)(?:/|%2F)elife-(?:[a-z-0-9]+)-(?:video|media)(?:[0-9]+)\\.(?:.+)$"
                     value: "article/\\1 article/\\1/videos"
                     samples:
                         video-still:
@@ -1683,6 +1645,9 @@ iiif:
                             expected: "article/07398 article/07398/videos"
                         article-figure-video-still:
                             path: /lax:26866/elife-26866-fig3-video1.jpg
+                            expected: "article/26866 article/26866/videos"
+                        encoded-urls:
+                            path: /lax/26866%2Felife-26866-fig3-video1.jpg
                             expected: "article/26866 article/26866/videos"
     aws-alt:
         standalone:
@@ -1867,6 +1832,43 @@ annotations:
         ports:
             1248: 80
 
+digests:
+    subdomain: digests
+    domain: false
+    repo: https://github.com/elifesciences/digests
+    formula-repo: https://github.com/elifesciences/digests-formula
+    aws:
+        ports:
+            - 22
+            - 80:
+                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+    aws-alt:
+        end2end:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+        continuumtest:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+        prod:
+            rds:
+                engine: postgres
+                type: db.t2.micro
+                storage: 5 # GB
+                storage-type: gp2
+                multi-az: true
+    vagrant:
+        ram: 1024
+        ports:
+            1290: 80
+
 evanthia-simpler-component:
     subdomain: evanthia-simpler-component
     repo: https://github.com/code56/nodeServerSimplerFig
@@ -1895,6 +1897,7 @@ crm:
             22: 22
             80: 80
             443: 443
+            30639: 30649 # civinky
 
     aws-alt:
         standalone:
@@ -1941,6 +1944,8 @@ crm:
                 type: db.t2.medium
                 params:
                     log_bin_trust_function_creators: 1
+            ext:
+                size: 50 # GB
 
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
@@ -1958,15 +1963,32 @@ elife-xpub:
             - 22
             - 443
             - 80
+            - 3000 # debugging while skipping nginx
         ext:
             # external hdd
             size: 20 # GB
             device: /dev/sdh
             type: gp2
     aws-alt:
+        demo:
+            s3:
+                "{instance}-elife-xpub":
         prod:
             subdomains:
                 - xpub
+            s3:
+                "{instance}-elife-xpub":
+                     deletion-policy: retain
+            rds:
+                multi-az: true
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 28 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                deletion-policy: Snapshot
     vagrant:
         ram: 2048
         ports:
@@ -2045,3 +2067,15 @@ fastly-logs:
             "{instance}-elife-fastly":
                 project: elife-fastly
     aws-alt: {}
+
+data-pipeline:
+    description: Data consolidation project
+    domain: false
+    intdomain: false
+    aws:
+        ec2: false
+        s3:
+            "{instance}-elife-data-pipeline":
+                 deletion-policy: delete
+            "{instance}-elife-data-pipeline-archive":
+                 deletion-policy: retain

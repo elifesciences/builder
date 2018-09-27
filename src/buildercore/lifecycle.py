@@ -5,6 +5,7 @@ The primary reason for doing this is to save on costs."""
 from datetime import datetime
 import logging
 import re
+import backoff
 from fabric.contrib import files
 import fabric.exceptions as fabric_exceptions
 import boto # route53 boto2 > route53 boto3
@@ -83,7 +84,7 @@ def start(stackname):
 
     # TODO: do the same exclusion for EC2
     ec2_states = _ec2_nodes_states(stackname)
-    if context['project']['aws'].get('rds'):
+    if context.get('rds'):
         rds_states = _rds_nodes_states(stackname)
     else:
         rds_states = {}
@@ -143,7 +144,7 @@ def stop(stackname, services=None):
     context = load_context(stackname)
 
     ec2_states = _ec2_nodes_states(stackname)
-    if context['project']['aws'].get('rds'):
+    if context.get('rds'):
         rds_states = _rds_nodes_states(stackname)
     else:
         rds_states = {}
@@ -245,11 +246,15 @@ def update_dns(stackname):
         LOG.info("No EC2 nodes expected")
         return
 
-    nodes = find_ec2_instances(stackname, allow_empty=True)
-    LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
+    def _log_backoff(event):
+        LOG.warn("Backing off in waiting for running nodes on %s to map them onto a DNS entry", event['args'][0])
 
-    if len(nodes) == 0:
-        raise RuntimeError("No nodes found for %s, they may be in a stopped state: (%s). They need to be `running` to have a (public, at least) ip address that can be mapped onto a DNS" % (stackname, _ec2_nodes_states(stackname)))
+    @backoff.on_exception(backoff.expo, core.NoRunningInstances, on_backoff=_log_backoff, max_time=30)
+    def _wait_for_running_nodes(stackname):
+        return find_ec2_instances(stackname)
+
+    nodes = _wait_for_running_nodes(stackname)
+    LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
 
     if context.get('elb', False):
         # ELB has its own DNS, EC2 nodes will autoregister
