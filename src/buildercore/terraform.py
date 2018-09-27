@@ -511,6 +511,13 @@ def init(stackname, context):
                 'google': {
                     'version': "= %s" % '1.13.0',
                     'region': 'us-east4',
+                    # TODO: the system-wide authentication is being used
+                    # to provision through this provider (see `gcloud auth list`)
+                    # It could be possible to create a Service Account for 
+                    # a certain project and put it in Vault to allow more
+                    # people to run `update_infrastructure`
+                    # This is not ideal anyway, as it would be a set of credentials
+                    # with large powers (but maybe limited to the single GCP project)
                 },
                 'vault': {
                     'address': context['vault']['address'],
