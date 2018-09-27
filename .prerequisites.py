@@ -31,7 +31,8 @@ def osx():
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
 def terraform_version_checker(_cmd):
-    installed_version = StrictVersion(shs('terraform --version').replace('Terraform v', ''))
+    ver = shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip()
+    installed_version = StrictVersion(ver)
     if not installed_version >= MINIMUM_VERSION_TERRAFORM:
         raise RuntimeError("Installed terraform version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_TERRAFORM))
 
@@ -73,19 +74,15 @@ both_checks = [
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
      None),
 
-    (
-        'terraform',
-        {'all': 'download from https://www.terraform.io/downloads.html'},
-        lambda x: shs('which terraform'),
-        terraform_version_checker
-    ),
+    ('terraform',
+     {'all': 'download from https://www.terraform.io/downloads.html'},
+     lambda x: shs('which terraform'),
+     terraform_version_checker),
 
-    (
-        'vault',
-        {'all': 'download from https://www.vaultproject.io/downloads.html'},
-        lambda x: shs('vault --version'),
-        None
-    ),
+    ('vault',
+     {'all': 'download from https://www.vaultproject.io/downloads.html'},
+     lambda x: shs('vault --version'),
+     None),
 ]
 
 mac_checks = [

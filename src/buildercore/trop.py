@@ -10,14 +10,13 @@ data called a `context`.
 it to the correct file etc."""
 
 from collections import OrderedDict
-import copy
 from os.path import join
 from . import config, utils, bvars
 from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
-from .utils import ensure, subdict, lmap, isstr
+from .utils import ensure, subdict, lmap, isstr, deepcopy
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -110,7 +109,7 @@ def security_group(group_id, vpc_id, ingress_data, description=""):
     })
 
 def ec2_security(context):
-    ec2_port_data = context['project']['aws'].get('ports', {})
+    ec2_port_data = context['ec2']['ports']
     ec2_ports = _convert_ports_to_dictionary(ec2_port_data)
     security_group_data = context['ec2']['security-group'].get('ports', {})
     security_group_ports = _convert_ports_to_dictionary(security_group_data)
@@ -118,7 +117,7 @@ def ec2_security(context):
 
     return security_group(
         SECURITY_GROUP_TITLE,
-        context['project']['aws']['vpc-id'],
+        context['aws']['vpc-id'],
         ingress
     )
 
@@ -130,10 +129,10 @@ def rds_security(context):
         'postgres': 5432,
         'mysql': 3306
     }
-    ingress_data = [engine_ports[context['project']['aws']['rds']['engine'].lower()]]
+    ingress_data = [engine_ports[context['rds']['engine'].lower()]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
     return security_group("VPCSecurityGroup",
-                          context['project']['aws']['vpc-id'],
+                          context['aws']['vpc-id'],
                           ingress_ports,
                           "RDS DB security group")
 
@@ -143,15 +142,12 @@ def rds_security(context):
 
 def _generic_tags(context, name=True):
     tags = {
-        'Project': context['project_name'], # journal
-        'Environment': context['instance_id'], # stack instance id
+        'Project': context['project_name'], # "journal"
+        'Environment': context['instance_id'], # "prod"
         # the name AWS Console uses to label an instance
-        'Cluster': context['stackname'], # ll: journal--prod
-
-        # potential new tags
-        # 'Masterless': context['masterless'] # True or False
+        'Cluster': context['stackname'], # "journal--prod"
     }
-    tags['Name'] = context['stackname'] # ll: journal-prod
+    tags['Name'] = context['stackname'] # "journal--prod"
     return tags
 
 def instance_tags(context, node=None):
@@ -160,15 +156,15 @@ def instance_tags(context, node=None):
     if node:
         # this instance is part of a cluster
         tags.update({
-            'Name': '%s--%d' % (context['stackname'], node), # ll: journal--prod--1
-            'Node': node, # ll: 1
+            'Name': '%s--%d' % (context['stackname'], node), # "journal--prod--1"
+            'Node': node, # "1"
         })
     return [ec2.Tag(key, str(value)) for key, value in tags.items()]
 
 def elb_tags(context):
     tags = _generic_tags(context)
     tags.update({
-        'Name': '%s--elb' % context['stackname'], # ll: journal--prod--elb
+        'Name': '%s--elb' % context['stackname'], # "journal--prod--elb"
     })
     return [ec2.Tag(key, value) for key, value in tags.items()]
 
@@ -183,8 +179,8 @@ def mkoutput(title, desc, val):
 
 def build_vars(context, node):
     """returns a subset of given context data with some extra node information
-    that will be encoded and stored on the ec2 instance"""
-    buildvars = copy.deepcopy(context)
+    that will be encoded and stored on the ec2 instance at /etc/build-vars.json.b64"""
+    buildvars = deepcopy(context)
 
     # preseve some of the project data. all of it is too much
     keepers = [
@@ -194,9 +190,8 @@ def build_vars(context, node):
     buildvars['project'] = subdict(buildvars['project'], keepers)
 
     buildvars['node'] = node
-    buildvars['nodename'] = "%s--%s" % (context['stackname'], node)
-    # the above context will reside on the server at /etc/build-vars.json.b64
-    # this gives Salt all (most) of the data that was available at template compile time.
+    buildvars['nodename'] = "%s--%s" % (context['stackname'], node) # "journal--prod--1"
+
     return buildvars
 
 def ec2instance(context, node):
@@ -205,18 +200,14 @@ def ec2instance(context, node):
     buildvars_serialization = bvars.encode_bvars(buildvars)
 
     odd = node % 2 == 1
-    if odd:
-        subnet_id = lu('project.aws.subnet-id')
-    else:
-        subnet_id = lu('project.aws.redundant-subnet-id')
-
+    subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
     clean_server = _read_script('.clean-server.sh.fragment')
     project_ec2 = {
-        "ImageId": lu('project.aws.ec2.ami'),
-        "InstanceType": context['ec2']['type'], # t2.small, m1.medium, etc
+        "ImageId": lu('ec2.ami'),
+        "InstanceType": lu('ec2.type'), # "t2.small", "m1.medium", etc
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
-        "SubnetId": subnet_id, # ll: "subnet-1d4eb46a"
+        "SubnetId": subnet_id, # "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
 
         # https://alestic.com/2010/12/ec2-user-data-output/
@@ -228,6 +219,7 @@ echo %s > /etc/build-vars.json.b64
 %s""" % (buildvars_serialization, clean_server)),
     }
 
+    # TODO: 'root' is undefined in the project definition
     # TODO: extract in private method?
     if context['ec2'].get('root'):
         project_ec2['BlockDeviceMappings'] = [{
@@ -243,11 +235,11 @@ def rdsdbparams(context, template):
     if not context.get('rds_params'):
         return None
     lu = partial(utils.lu, context)
-    engine = lu('project.aws.rds.engine')
-    version = str(lu('project.aws.rds.version'))
+    engine = lu('rds.engine')
+    version = str(lu('rds.version'))
     name = RDS_DB_PG
     dbpg = rds.DBParameterGroup(name, **{
-        'Family': "%s%s" % (engine.lower(), version), # ll: mysql5.6, postgres9.4
+        'Family': "%s%s" % (engine.lower(), version), # "mysql5.6", "postgres9.4"
         'Description': '%s (%s) custom parameters' % (context['project_name'], context['instance_id']),
         'Parameters': context['rds_params']
     })
@@ -263,7 +255,7 @@ def render_rds(context, template):
     # not really sure if a subnet group is anything more meaningful than 'a collection of subnet ids'
     rsn = rds.DBSubnetGroup(DBSUBNETGROUP_TITLE, **{
         "DBSubnetGroupDescription": "a group of subnets for this rds instance.",
-        "SubnetIds": lu('project.aws.rds.subnets'),
+        "SubnetIds": lu('rds.subnets'),
     })
 
     # rds security group. uses the ec2 security group
@@ -278,22 +270,24 @@ def render_rds(context, template):
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
         'DBInstanceIdentifier': lu('rds_instance_id'), # ll: 'lax-2015-12-31' from 'lax--2015-12-31'
         'PubliclyAccessible': False,
-        'AllocatedStorage': lu('project.aws.rds.storage'),
-        'StorageType': lu('project.aws.rds.storage-type'),
-        'MultiAZ': lu('project.aws.rds.multi-az'),
+        'AllocatedStorage': lu('rds.storage'),
+        'StorageType': lu('rds.storage-type'),
+        'MultiAZ': lu('rds.multi-az'),
         'VPCSecurityGroups': [Ref(vpcdbsg)],
         'DBSubnetGroupName': Ref(rsn),
-        'DBInstanceClass': lu('project.aws.rds.type'),
-        'Engine': lu('project.aws.rds.engine'),
+        'DBInstanceClass': lu('rds.type'),
+        'Engine': lu('rds.engine'),
         # something is converting this value to an int from a float :(
-        "EngineVersion": str(lu('project.aws.rds.version')), # 'defaults.aws.rds.storage')),
+        "EngineVersion": str(lu('rds.version')), # 'defaults.aws.rds.storage')),
         'MasterUsername': lu('rds_username'), # pillar data is now UNavailable
         'MasterUserPassword': lu('rds_password'),
-        'BackupRetentionPeriod': lu('project.aws.rds.backup-retention'),
+        'BackupRetentionPeriod': lu('rds.backup-retention'),
         'DeletionPolicy': lu('rds.deletion-policy'),
         "Tags": tags,
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default
+        'StorageEncrypted': True if lu('rds.encryption') else False,
+        'KmsKeyId': lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else '',
     }
 
     if param_group_ref:
@@ -310,8 +304,8 @@ def render_rds(context, template):
 
 def render_ext_volume(context, context_ext, template, node=1):
     vtype = context_ext.get('type', 'standard')
-    # who cares what gp2 stands for? everyone knows what 'ssd' and 'standard' mean ...
     if vtype == 'ssd':
+        LOG.warn("deprecated value of 'ssd' used in aws.ext.type: %s", context['stackname'])
         vtype = 'gp2'
 
     args = {
@@ -684,7 +678,7 @@ def render_elb(context, template, ec2_instances):
 
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
-        context['project']['aws']['vpc-id'],
+        context['aws']['vpc-id'],
         _convert_ports_to_dictionary(elb_ports)
     )) # list of strings or dicts
 
@@ -843,7 +837,7 @@ def elasticache_security_group(context):
     ingress_data = [engine_ports[context['elasticache']['engine']]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
-                          context['project']['aws']['vpc-id'],
+                          context['aws']['vpc-id'],
                           ingress_ports,
                           "ElastiCache security group")
 
@@ -918,24 +912,24 @@ def render_elasticache(context, template):
     if default_parameter_group_use:
         template.add_resource(parameter_group)
 
-def render(context):
-    template = Template()
-
-    ec2_instances = render_ec2(context, template) if context['ec2'] else {}
-    context['rds_instance_id'] and render_rds(context, template)
-
-    # TODO: move to a render_ext
+def render_ext(context, template, ec2_instances):
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
         all_nodes = list(ec2_instances.keys())
         for node in all_nodes:
             overrides = context['ec2'].get('overrides', {}).get(node, {})
-            overridden_context = copy.deepcopy(context)
+            overridden_context = deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
             node_context = overridden_component(context, 'ec2', node, ['ext'])
             render_ext_volume(overridden_context, node_context.get('ext', {}), template, node)
 
+def render(context):
+    template = Template()
+
+    ec2_instances = render_ec2(context, template) if context['ec2'] else {}
+    context['rds'] and render_rds(context, template)
+    render_ext(context, template, ec2_instances)
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
@@ -1000,7 +994,7 @@ def overridden_component(context, component, index, allowed):
     overrides = context[component].get('overrides', {}).get(index, {})
     for element in overrides:
         ensure(element in allowed, "`%s` override is not allowed for single elasticache clusters" % element)
-    overridden_context = copy.deepcopy(context)
+    overridden_context = deepcopy(context)
     overridden_context[component].pop('overrides', None)
     for key, value in overrides.items():
         if isinstance(overridden_context[component][key], dict):

@@ -17,6 +17,7 @@ defaults:
     # will need permissions to clone it
     # TODO: hunt down ssh:// remotes
     private-repo: git@github.com:elifesciences/builder-private
+    configuration-repo: git@github.com:elifesciences/builder-configuration
     # default branch to use when creating new instances
     default-branch: master
     # in rare cases we have formulas requiring the states of other formulas
@@ -90,6 +91,7 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         ext:
             # external hdd
+            type: standard # magnetic, use 'gp2' for ssd
             size: 10 # GB
             device: /dev/sdh
         elb:
@@ -199,6 +201,12 @@ defaults:
                 ami: ami-14a1d06e # created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
+        standalone1804:
+            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                ami: ami-089646d3d52f14f1f # created from basebox--1804
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
@@ -213,6 +221,7 @@ defaults:
         cpucap: 100 # percent (vagrant default)
 
 basebox:
+    salt: '2017.7.7' # overridden for 18.04 support
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
@@ -230,16 +239,19 @@ basebox:
         1604:
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-
+        1804:
+            ec2:
+                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
                 masterless: true
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        box: bento/ubuntu-18.04 # Ubuntu 18.04
 
 heavybox:
+    salt: '2017.7.7' # overridden for 18.04 support
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
@@ -256,6 +268,8 @@ heavybox:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
     vagrant:
+        # disabled until supported
+        #box: bento/ubuntu-18.04 # Ubuntu 18.04
         ram: 2048
 
 master-server:
@@ -556,7 +570,6 @@ journal:
                     - "{instance}--cdn-journal"
                     - "placeholder-prod-journal" # only here to avoid rewriting the following values
                     - ""
-                shield: false
                 healthcheck:
                     path: /ping-fastly
                     check-interval: 10000
@@ -1895,6 +1908,7 @@ crm:
             22: 22
             80: 80
             443: 443
+            30639: 30649 # civinky
 
     aws-alt:
         standalone:
@@ -1942,7 +1956,7 @@ crm:
                 params:
                     log_bin_trust_function_creators: 1
             ext:
-                size: 10 # GB
+                size: 50 # GB
 
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
@@ -1960,15 +1974,31 @@ elife-xpub:
             - 22
             - 443
             - 80
+            - 3000 # debugging while skipping nginx
         ext:
             # external hdd
             size: 20 # GB
             device: /dev/sdh
             type: gp2
     aws-alt:
+        demo:
+            s3:
+                "{instance}-elife-xpub":
         prod:
             subdomains:
                 - xpub
+            s3:
+                "{instance}-elife-xpub":
+                     deletion-policy: retain
+            rds:
+                multi-az: true
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 28 # days
+                deletion-policy: Snapshot
     vagrant:
         ram: 2048
         ports:
