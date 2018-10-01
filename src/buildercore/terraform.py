@@ -414,7 +414,7 @@ def render_bigquery(context):
                 'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
             } for table_name, options in tables.items()
         }
-    
+
     return resources
 
 def _generate_bigquery_schema_file(stackname, schema_name):
@@ -515,7 +515,7 @@ def init(stackname, context):
                     'region': 'us-east4',
                     # TODO: the system-wide authentication is being used
                     # to provision through this provider (see `gcloud auth list`)
-                    # It could be possible to create a Service Account for 
+                    # It could be possible to create a Service Account for
                     # a certain project and put it in Vault to allow more
                     # people to run `update_infrastructure`
                     # This is not ideal anyway, as it would be a set of credentials
