@@ -640,8 +640,7 @@ project-with-bigquery:
     gcp:
         bigquery:
             #location: US
-            # TODO: change to my_dataset_{instance}
-            "my-dataset-{instance}":
+            "my_dataset_{instance}":
                 project: elife-something
                 tables:
                     widgets:
