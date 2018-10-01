@@ -2070,12 +2070,11 @@ fastly-logs:
                 project: elife-fastly
     gcp:
         bigquery:
-            datasets:
-                "{instance}":
-                    project: elife-fastly
-                    tables:
-                        iiif:
-                            schema: fastly-logs-201809
+            "{instance}":
+                project: elife-fastly
+                tables:
+                    iiif:
+                        schema: fastly-logs-201809
     aws-alt: {}
 
 data-pipeline:

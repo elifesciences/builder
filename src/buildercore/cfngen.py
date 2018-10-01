@@ -423,7 +423,7 @@ def build_context_bigquery(pdata, context):
     context['bigquery'] = False
     if pdata['gcp']['bigquery']:
         context['bigquery'] = OrderedDict()
-        for dataset_template_name, options in pdata['gcp']['bigquery']['datasets'].items():
+        for dataset_template_name, options in pdata['gcp']['bigquery'].items():
             dataset_name = parameterize(context)(dataset_template_name)
             context['bigquery'][dataset_name] = {
                 'project': options['project'],
