@@ -8,7 +8,7 @@ from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p
-from . import fastly
+from . import fastly, bigquery
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
@@ -81,7 +81,8 @@ FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
     generated_template = render_fastly(context)
-    generated_template.update(render_gcp(context))
+    generated_template.update(render_gcs(context))
+    generated_template.update(render_bigquery(context))
 
     if not generated_template:
         return EMPTY_TEMPLATE
@@ -363,7 +364,7 @@ def _generate_vcl_file(stackname, content, key, extension='vcl'):
         fp.write(str(content))
         return '${file("%s")}' % basename(fp.name)
 
-def render_gcp(context):
+def render_gcs(context):
     if not context['gcs']:
         return {}
 
@@ -379,6 +380,48 @@ def render_gcp(context):
             },
         },
     }
+
+def render_bigquery(context):
+    if not context['bigquery']:
+        return {}
+
+    tables = OrderedDict({})
+    for dataset_id, dataset_options in context['bigquery'].items():
+        for table_id, table_options in dataset_options['tables'].items():
+            table_options['dataset_id'] = dataset_id
+            table_options['project'] = dataset_options['project']
+            tables[table_id] = table_options
+
+    resources = {'resource': OrderedDict()}
+
+    resources['resource']['google_bigquery_dataset'] = {
+        dataset_id: {
+            'dataset_id': dataset_id,
+            'project': options['project'],
+        } for dataset_id, options in context['bigquery'].items()
+    }
+
+    if tables:
+        resources['resource']['google_bigquery_table'] = {
+            # generated fully qualified resource name
+            ("%s_%s" % (options['dataset_id'], table_id)): {
+                'dataset_id': options['dataset_id'],
+                'table_id': table_id,
+                'project': options['project'],
+                'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
+            } for table_id, options in tables.items()
+        }
+
+    return resources
+
+def _generate_bigquery_schema_file(stackname, schema_name):
+    """
+    places a schema JSON file for Terraform to dynamically load it on apply
+    """
+    with bigquery.schema(schema_name) as source:
+        with _open(stackname, schema_name, extension='json', mode='w') as target:
+            target.write(source.read())
+            return '${file("%s")}' % basename(target.name)
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
@@ -466,6 +509,13 @@ def init(stackname, context):
                 'google': {
                     'version': "= %s" % '1.13.0',
                     'region': 'us-east4',
+                    # TODO: the system-wide authentication is being used
+                    # to provision through this provider (see `gcloud auth list`)
+                    # It could be possible to create a Service Account for
+                    # a certain project and put it in Vault to allow more
+                    # people to run `update_infrastructure`
+                    # This is not ideal anyway, as it would be a set of credentials
+                    # with large powers (but maybe limited to the single GCP project)
                 },
                 'vault': {
                     'address': context['vault']['address'],

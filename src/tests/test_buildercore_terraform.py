@@ -426,12 +426,48 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-on-gcp', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['google_storage_bucket']['widgets-prod']
-        self.assertEqual(service, {
+        bucket = template['resource']['google_storage_bucket']['widgets-prod']
+        self.assertEqual(bucket, {
             'name': 'widgets-prod',
             'location': 'us-east4',
             'storage_class': 'REGIONAL',
             'project': 'elife-something',
+        })
+
+    def test_bigquery_datasets_only(self):
+        extra = {
+            'stackname': 'project-with-bigquery-datasets-only--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery-datasets-only', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        self.assertNotIn('google_bigquery_table', template['resource'])
+
+    def test_bigquery_full_template(self):
+        extra = {
+            'stackname': 'project-with-bigquery--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        table = template['resource']['google_bigquery_table']['my_dataset_prod_widgets']
+        self.assertEqual(table, {
+            'dataset_id': 'my_dataset_prod',
+            'table_id': 'widgets',
+            'project': 'elife-something',
+            'schema': '${file("key-value.json")}',
         })
 
     def test_sanity_of_rendered_log_format(self):

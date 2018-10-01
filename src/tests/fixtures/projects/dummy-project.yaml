@@ -133,6 +133,8 @@ defaults:
             description: uses a plain Ubuntu basebox instead of an ami
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
+    gcp:
+        bigquery: false
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         box-url: null # not needed for boxes hosted on Atlas 
@@ -618,7 +620,7 @@ project-on-gcp:
     intdomain: False
     # I know, this should be gcp, but actually should be renamed
     # to "cloud" or "remote" or similar
-    # TODO: use separate key with 'gcp'?
+    # TODO: move onto separate key with 'gcp'?
     aws:
         ec2: false
         gcs:
@@ -626,4 +628,34 @@ project-on-gcp:
                 project: elife-something
                 # space for options
                 #
+    aws-alt: {}
+
+project-with-bigquery-datasets-only:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            my_dataset_{instance}:
+                project: elife-something
+    aws-alt: {}
+
+project-with-bigquery:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            #location: US
+            "my_dataset_{instance}":
+                project: elife-something
+                tables:
+                    widgets:
+                        schema: key-value
     aws-alt: {}

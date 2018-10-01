@@ -41,6 +41,9 @@
             22
         ]
     }, 
+    "gcp": {
+        "bigquery": false
+    },
     "vagrant": {
         "box": "ubuntu/trusty64", 
         "box-url": null, 
