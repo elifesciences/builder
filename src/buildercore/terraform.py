@@ -386,31 +386,30 @@ def render_bigquery(context):
         return {}
 
     tables = OrderedDict({})
-    for dataset_name, dataset_options in context['bigquery'].items():
-        for table_name, table_options in dataset_options['tables'].items():
-            table_options['dataset_id'] = dataset_name
+    for dataset_id, dataset_options in context['bigquery'].items():
+        for table_id, table_options in dataset_options['tables'].items():
+            table_options['dataset_id'] = dataset_id
             table_options['project'] = dataset_options['project']
-            tables[table_name] = table_options
+            tables[table_id] = table_options
 
     resources = {'resource': OrderedDict()}
 
     resources['resource']['google_bigquery_dataset'] = {
-        dataset_name: {
-            'dataset_id': dataset_name,
+        dataset_id: {
+            'dataset_id': dataset_id,
             'project': options['project'],
-        } for dataset_name, options in context['bigquery'].items()
+        } for dataset_id, options in context['bigquery'].items()
     }
 
     if tables:
         resources['resource']['google_bigquery_table'] = {
             # generated fully qualified resource name
-            ("%s_%s" % (options['dataset_id'], table_name)): {
+            ("%s_%s" % (options['dataset_id'], table_id)): {
                 'dataset_id': options['dataset_id'],
-                # TODO 'table_id' : table_id
-                'table_id': table_name,
+                'table_id': table_id,
                 'project': options['project'],
                 'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
-            } for table_name, options in tables.items()
+            } for table_id, options in tables.items()
         }
 
     return resources
