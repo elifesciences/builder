@@ -8,7 +8,7 @@ from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p
-from . import fastly
+from . import fastly, bigquery
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
@@ -78,8 +78,6 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 # around by using a full VCL
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
-
-BIGQUERY_SCHEMAS_FOLDER = 'src/buildercore/bigquery/schemas'
 
 def render(context):
     generated_template = render_fastly(context)
@@ -421,8 +419,7 @@ def _generate_bigquery_schema_file(stackname, schema_name):
     """
     places a schema JSON file for Terraform to dynamically load it on apply
     """
-    # TODO: extract into buildercore.bigquery
-    with open('%s/%s.json' % (BIGQUERY_SCHEMAS_FOLDER, schema_name)) as source:
+    with bigquery.schema(schema_name) as source:
         with _open(stackname, schema_name, extension='json', mode='w') as target:
             target.write(source.read())
             return '${file("%s")}' % basename(target.name)
