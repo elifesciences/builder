@@ -434,7 +434,22 @@ class TestBuildercoreTerraform(base.BaseCase):
             'project': 'elife-something',
         })
 
-    def test_bigquery_template(self):
+    def test_bigquery_datasets_only(self):
+        extra = {
+            'stackname': 'project-with-bigquery-datasets-only--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery-datasets-only', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        self.assertNotIn('google_bigquery_table', template['resource'])
+
+    def test_bigquery_full_template(self):
         extra = {
             'stackname': 'project-with-bigquery--prod',
         }

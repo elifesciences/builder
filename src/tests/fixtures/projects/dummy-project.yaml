@@ -630,6 +630,19 @@ project-on-gcp:
                 #
     aws-alt: {}
 
+project-with-bigquery-datasets-only:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            my_dataset_{instance}:
+                project: elife-something
+    aws-alt: {}
+
 project-with-bigquery:
     description: project on Google Cloud Platform, using BigQuery
     domain: False
@@ -646,5 +659,3 @@ project-with-bigquery:
                     widgets:
                         schema: key-value
     aws-alt: {}
-
-# TODO: add project with datasets but no tables
