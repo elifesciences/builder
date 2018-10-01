@@ -1975,6 +1975,17 @@ elife-xpub:
         demo:
             s3:
                 "{instance}-elife-xpub":
+        staging:
+            s3:
+                "{instance}-elife-xpub":
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
         prod:
             subdomains:
                 - xpub
