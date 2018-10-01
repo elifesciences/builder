@@ -33,7 +33,8 @@ elifePipeline {
                     try {
                         sh "tox -e ${python}"
                     } finally {
-                        step([$class: "JUnitResultArchiver", testResults: "build/pytest-${python}.xml"])
+                        // https://issues.jenkins-ci.org/browse/JENKINS-27395?focusedCommentId=345589&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-345589
+                        junit testResults: 'build/pytest-${python}.xml'
                     }
                 }, python, commit)
             }
