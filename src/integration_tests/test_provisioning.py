@@ -10,7 +10,7 @@ import logging
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
-class TestProvisioning(base.BaseCase):
+class TestProvisioning(base.BaseIntegrationCase):
     def setUp(self):
         self.stacknames = []
         self.environment = base.generate_environment_name()

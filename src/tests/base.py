@@ -1,12 +1,16 @@
 from datetime import datetime
+import json
+import logging
 import os
 from os.path import join
 from random import randint
 from subprocess import check_output
 # pylint: disable-msg=import-error
 from unittest2 import TestCase
+from fabric.api import settings
 from buildercore import config, project
-import logging
+from buildercore import bootstrap, cfngen, lifecycle, core
+import cfn
 import imp
 
 LOG = logging.getLogger(__name__)
@@ -77,3 +81,65 @@ class BaseCase(TestCase):
         for x in lst:
             with self.subTest(given=x):
                 self.assertNotEqual(fn(x), "failed, fn(%s) != False" % x)
+
+class BaseIntegrationCase(BaseCase):
+    @classmethod
+    def setup_stack(cls, project, explicitly_start=False):
+        switch_in_test_settings()
+
+        # to re-use an existing stack, ensure cls.reuse_existing_stack is True
+        # this will read the instance name from a temporary file (if it exists) and
+        # look for that, creating it if doesn't exist yet
+        # also ensure cls.cleanup is False so the instance isn't destroyed after tests complete
+        cls.reuse_existing_stack = config.TWI_REUSE_STACK
+        cls.cleanup = config.TWI_CLEANUP
+
+        cls.stacknames = []
+        cls.environment = generate_environment_name()
+        # cls.temp_dir, cls.rm_temp_dir = utils.tempdir()
+
+        # debugging only, where we keep an instance up between processes
+        cls.state, cls.statefile = {}, '/tmp/.open-test-instances.txt'
+
+        if cls.reuse_existing_stack and os.path.exists(cls.statefile):
+            # evidence of a previous instance and we've been told to re-use old instances
+            old_state = json.load(open(cls.statefile, 'r'))
+            old_env = old_state.get('environment')
+
+            # test if the old stack still exists ...
+            if old_env and core.describe_stack(project + "--" + old_env, allow_missing=True):
+                cls.state = old_state
+                cls.environment = old_env
+            else:
+                # nope. old statefile is bogus, delete it
+                os.unlink(cls.statefile)
+
+        cls.state['environment'] = cls.environment # will be saved later
+
+        with settings(abort_on_prompts=True):
+            cls.stackname = '%s--%s' % (project, cls.environment)
+            cls.stacknames.append(cls.stackname)
+
+            if cls.cleanup:
+                cfn.ensure_destroyed(cls.stackname)
+
+            cls.context, cls.cfn_template, _ = cfngen.generate_stack(project, stackname=cls.stackname)
+            cls.region = cls.context['aws']['region']
+            bootstrap.create_stack(cls.stackname)
+
+            if explicitly_start:
+                lifecycle.start(cls.stackname)
+
+    @classmethod
+    def tearDownStack(cls):
+        try:
+            if cls.reuse_existing_stack:
+                json.dump(cls.state, open(cls.statefile, 'w'))
+            if cls.cleanup:
+                for stackname in cls.stacknames:
+                    cfn.ensure_destroyed(stackname)
+            # cls.rm_temp_dir()
+            # cls.assertFalse(os.path.exists(cls.temp_dir), "failed to delete path %r in tearDown" % cls.temp_dir)
+        except BaseException:
+            # important, as anything in body will silently fail
+            LOG.exception('uncaught error tearing down test class')
