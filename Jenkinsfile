@@ -49,7 +49,9 @@ elifePipeline {
             }
         }
 
-        parallel actions
+        stage 'Project tests', {
+            parallel actions
+        }
     }
 
     elifeMainlineOnly {
