@@ -2050,25 +2050,38 @@ fastly-logs:
 
 data-pipeline:
     description: Data consolidation project
-    domain: false
-    intdomain: false
+    domain: pipeline
+    intdomain: pipeline
+    formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
-        ec2: false
+        ec2:
+            ami: ami-089646d3d52f14f1f # 18.04
+        ports:
+            - 22
+            - 443
         s3:
             "{instance}-elife-data-pipeline":
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    vagrant:
+        box: bento/ubuntu-18.04
+        cpus: 2
+        ram: 2048
+        ports:
+            1222: 8080
 
+# deprecated, remove once all nifi-demo instances are destroyed
 nifi-demo:
     formula-repo: https://github.com/elifesciences/nifi-demo-formula
     subdomain: nifidemo
     aws:
         ec2:
             ami: ami-1d4e7a66
+            masterless: True
         ports:
             - 22
-            - 8080
+            - 443
     vagrant:
         cpus: 2
         ram: 2048
