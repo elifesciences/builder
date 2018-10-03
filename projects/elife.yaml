@@ -2055,7 +2055,7 @@ data-pipeline:
     formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
         ec2:
-            ami: ami-089646d3d52f14f1f # 18.04
+            ami: ami-1d4e7a66 # 16.04
         ports:
             - 22
             - 443
@@ -2065,7 +2065,7 @@ data-pipeline:
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
     vagrant:
-        box: bento/ubuntu-18.04
+        box: bento/ubuntu-16.04
         cpus: 2
         ram: 2048
         ports:
