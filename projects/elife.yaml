@@ -2085,7 +2085,7 @@ fastly-logs:
                 project: elife-fastly
                 tables:
                     iiif:
-                        schema: fastly-logs-201809
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
     aws-alt: {}
 
 data-pipeline:
@@ -2099,3 +2099,17 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    gcp:
+        bigquery:
+            "{instance}": # dataset
+                # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
+                project: elife-data-pipeline
+                tables:
+                    # bit of repetition here
+                    380_datascience_early_career_researchers:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/380_datascience_early_career_researchers.json
+                    489_datascience_editor_keywords:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/489_datascience_editor_keywords.json
+                    455_datascience_editors:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
+

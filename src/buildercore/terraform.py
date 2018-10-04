@@ -1,9 +1,6 @@
 from collections import namedtuple, OrderedDict
-import json
-import os
-from os.path import exists, join, basename
-import re
-import shutil
+import os, re, shutil, json
+from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
 from .context_handler import only_if, load_context
@@ -362,7 +359,7 @@ def _generate_vcl_file(stackname, content, key, extension='vcl'):
     """
     with _open(stackname, key, extension=extension, mode='w') as fp:
         fp.write(str(content))
-        return '${file("%s")}' % basename(fp.name)
+        return '${file("%s")}' % os.path.basename(fp.name)
 
 def render_gcs(context):
     if not context['gcs']:
@@ -415,13 +412,12 @@ def render_bigquery(context):
     return resources
 
 def _generate_bigquery_schema_file(stackname, schema_name):
-    """
-    places a schema JSON file for Terraform to dynamically load it on apply
-    """
-    with bigquery.schema(schema_name) as source:
-        with _open(stackname, schema_name, extension='json', mode='w') as target:
-            target.write(source.read())
-            return '${file("%s")}' % basename(target.name)
+    """copies a schema file to the config.TERRAFORM_DIR for Terraform to load on 'apply'.
+    relies on `buildercore/bigquery.py` to provide a local path to the schema file"""
+    project_schema_file = bigquery.schema_path(stackname, schema_name)
+    terraform_schema_file = _file_path(stackname, schema_name, extension='json')
+    shutil.copyfile(project_schema_file, terraform_schema_file)
+    return '${file("%s")}' % os.path.basename(terraform_schema_file)
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
@@ -550,14 +546,17 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
+# TODO: not a great function name. 'stack_tform_path' ? 'tform_stackfile_path' ?
 def _file_path(stackname, name, extension='tf.json'):
     return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
 
 def _open(stackname, name, extension='tf.json', mode='r'):
+    "`open`s a file in the conf.TERRAFORM_DIR belonging to given `stackname` (./cfn/terraform/$stackname/)"
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
-    # remove deprecated file
+
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
-    if exists(deprecated_path):
+    if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
+
     return open(_file_path(stackname, name, extension), mode)

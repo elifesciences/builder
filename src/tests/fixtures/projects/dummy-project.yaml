@@ -657,5 +657,5 @@ project-with-bigquery:
                 project: elife-something
                 tables:
                     widgets:
-                        schema: key-value
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}
