@@ -315,6 +315,9 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 if str(err).startswith('Timed out trying to connect'):
                     LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
                     continue
+                if str(err).startswith('Low level socket error connecting to host'):
+                    LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
+                    continue
                 else:
                     raise err
             except config.FabricException as err:

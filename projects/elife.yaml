@@ -207,6 +207,8 @@ defaults:
                 ami: ami-089646d3d52f14f1f # created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
+    gcp:
+        bigquery: false
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
@@ -415,14 +417,6 @@ api-gateway:
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
-        test:
-            fastly:
-                errors:
-                    url: https://prod-elife-error-pages.s3.amazonaws.com/
-                    codes:
-                        404: "404.html"
-                        # temporarily disabled because of non-ASCII characters
-                        #503: "5xx.html"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -483,7 +477,12 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -514,7 +513,12 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -568,7 +572,12 @@ journal:
                     # always prod for simplicity
                     url: https://prod-elife-error-pages.s3.amazonaws.com/
                     codes:
+                        404: "404.html"
+                        410: "410.html"
                         503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -1966,9 +1975,36 @@ elife-xpub:
             device: /dev/sdh
             type: gp2
     aws-alt:
+        demo:
+            s3:
+                "{instance}-elife-xpub":
+        staging:
+            s3:
+                "{instance}-elife-xpub":
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
         prod:
             subdomains:
                 - xpub
+            s3:
+                "{instance}-elife-xpub":
+                     deletion-policy: retain
+            rds:
+                multi-az: true
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 28 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                deletion-policy: Snapshot
     vagrant:
         ram: 2048
         ports:
@@ -2046,6 +2082,13 @@ fastly-logs:
         gcs:
             "{instance}-elife-fastly":
                 project: elife-fastly
+    gcp:
+        bigquery:
+            "{instance}":
+                project: elife-fastly
+                tables:
+                    iiif:
+                        schema: fastly-logs-201809
     aws-alt: {}
 
 data-pipeline:

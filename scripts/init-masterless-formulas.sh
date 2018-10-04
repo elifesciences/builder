@@ -10,6 +10,7 @@ set -x
 # "https://github.com/elifesciences/builder-base-formula https://github.com/elifesciences/api-dummy-formula"
 formula_list=$1
 pillar_repo=$2 # what secrets do I know?
+configuration_repo=$3 # what configuration do I know?
 
 # clone the private repo (whatever it's name is) into /opt/builder-private/
 # REQUIRES CREDENTIALS!
@@ -23,6 +24,21 @@ else
     git pull || {
         # known case - we've set a specific revision and cannot pull
         echo "builder-private is pinned, could not update to head"
+    }
+fi
+
+# clone the configuration repo into /opt/builder-configuration/
+# REQUIRES CREDENTIALS!
+if [ ! -d /opt/builder-configuration ]; then
+    cd /opt
+    git clone "$configuration_repo" builder-configuration
+else
+    cd /opt/builder-configuration
+    git clean -d --force # remove any unknown files
+    git reset --hard # revert any changes to known files
+    git pull || {
+        # known case - we've set a specific revision and cannot pull
+        echo "builder-configuration is pinned, could not update to head"
     }
 fi
 
@@ -50,12 +66,14 @@ fileserver_backend:
 echo "file_roots:
   base:
     - /srv/salt/
+    - /opt/builder-configuration/salt/
     - /opt/builder-private/salt/" > /etc/salt/minion.d/file_roots.conf
 
 # we only care about the pillar data in builder-private
 echo "pillar_roots:
   base:
     - /srv/salt/pillar/
+    - /opt/builder-configuration/pillar/
     - /opt/builder-private/pillar/" > /etc/salt/minion.d/pillar_roots.conf
 
 # convenience. 

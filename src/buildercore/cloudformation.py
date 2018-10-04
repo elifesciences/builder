@@ -215,7 +215,12 @@ def destroy(stackname, context):
         meta = ex.response['ResponseMetadata']
         err = ex.response['Error']
         # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        if "No updates are to be performed" in err['Message']:
+            return
         LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
+        # ll: ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-xpub--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS
+        raise
+
 
 def _delete_stack_file(stackname):
     path = os.path.join(config.STACK_DIR, stackname + ".json")

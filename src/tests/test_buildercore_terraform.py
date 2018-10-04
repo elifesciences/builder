@@ -110,7 +110,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
                                                'ttf'],
                             },
-                            'force_destroy': True
+                            'force_destroy': True,
+                            'vcl': {},
                         }
                     }
                 },
@@ -129,16 +130,46 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'data': {
                     'http': {
+                        'error-page-404': {
+                            'url': 'https://example.com/404.html'
+                        },
                         'error-page-503': {
-                            'url': 'https://example.com/'
+                            'url': 'https://example.com/503.html'
+                        },
+                        'error-page-4xx': {
+                            'url': 'https://example.com/4xx.html'
+                        },
+                        'error-page-5xx': {
+                            'url': 'https://example.com/5xx.html'
                         },
                     },
                     'template_file': {
                         'error-page-vcl-503': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'code': 503,
+                                'test': 'obj.status == 503',
                                 'synthetic_response': '${data.http.error-page-503.body}',
+                            },
+                        },
+                        'error-page-vcl-404': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status == 404',
+                                'synthetic_response': '${data.http.error-page-404.body}',
+                            },
+                        },
+                        'error-page-vcl-4xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status >= 400 && obj.status <= 499',
+                                'synthetic_response': '${data.http.error-page-4xx.body}',
+                            },
+                        },
+                        'error-page-vcl-5xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status >= 500 && obj.status <= 599',
+                                'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
                         },
                     },
@@ -294,6 +325,18 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '${data.template_file.error-page-vcl-503.rendered}',
                                 },
                                 {
+                                    'name': 'error-page-vcl-404',
+                                    'content': '${data.template_file.error-page-vcl-404.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-4xx',
+                                    'content': '${data.template_file.error-page-vcl-4xx.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-5xx',
+                                    'content': '${data.template_file.error-page-vcl-5xx.rendered}',
+                                },
+                                {
                                     'name': 'main',
                                     'content': '${file("main.vcl")}',
                                     'main': True,
@@ -383,12 +426,48 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-on-gcp', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['google_storage_bucket']['widgets-prod']
-        self.assertEqual(service, {
+        bucket = template['resource']['google_storage_bucket']['widgets-prod']
+        self.assertEqual(bucket, {
             'name': 'widgets-prod',
             'location': 'us-east4',
             'storage_class': 'REGIONAL',
             'project': 'elife-something',
+        })
+
+    def test_bigquery_datasets_only(self):
+        extra = {
+            'stackname': 'project-with-bigquery-datasets-only--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery-datasets-only', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        self.assertNotIn('google_bigquery_table', template['resource'])
+
+    def test_bigquery_full_template(self):
+        extra = {
+            'stackname': 'project-with-bigquery--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        table = template['resource']['google_bigquery_table']['my_dataset_prod_widgets']
+        self.assertEqual(table, {
+            'dataset_id': 'my_dataset_prod',
+            'table_id': 'widgets',
+            'project': 'elife-something',
+            'schema': '${file("key-value.json")}',
         })
 
     def test_sanity_of_rendered_log_format(self):
