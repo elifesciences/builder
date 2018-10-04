@@ -23,7 +23,7 @@ def fetch_remote_schema(stackname, file_url):
 
 def relative_local_schema_path(_, schema_name):
     "returns a local path to the given `schema_name` when `schema_name` is a path relative to the root of the project"
-    return join(config.PROJECT_DIR, schema_name)
+    return join(config.PROJECT_PATH, schema_name)
 
 def schema_path(stackname, schema_name):
     "returns a local path to the given `schema_name`, downloading it if necessary"
