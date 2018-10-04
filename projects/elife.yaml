@@ -2058,6 +2058,7 @@ data-pipeline:
             ami: ami-1d4e7a66 # 16.04
         ports:
             - 22
+            - 80 # used only to upgrade to https
             - 443
         s3:
             "{instance}-elife-data-pipeline":
