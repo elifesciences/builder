@@ -2,10 +2,10 @@ from collections import namedtuple, OrderedDict
 import os, re, shutil, json
 from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
+from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p
-from . import fastly, bigquery
+from .utils import ensure, mkdir_p, dictmap
+from . import fastly
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
@@ -79,7 +79,7 @@ FASTLY_MAIN_VCL_KEY = 'main'
 def render(context):
     generated_template = render_fastly(context)
     generated_template.update(render_gcs(context))
-    generated_template.update(render_bigquery(context))
+    generated_template.update(render_bigquery(context, generated_template))
 
     if not generated_template:
         return EMPTY_TEMPLATE
@@ -378,7 +378,7 @@ def render_gcs(context):
         },
     }
 
-def render_bigquery(context):
+def render_bigquery(context, tf_file):
     if not context['bigquery']:
         return {}
 
@@ -398,30 +398,38 @@ def render_bigquery(context):
         } for dataset_id, options in context['bigquery'].items()
     }
 
-    if tables:
+    def add_table(table_id, table_options):
+        schema_name = table_options['schema']
+        stackname = context['stackname']
+
+        # 'fully qualified resource name'
+        fqrn = "%s_%s" % (table_options['dataset_id'], table_id)
+
+        if schema_name.startswith('https://'):
+            # remote schema, add a 'http' provider and have terraform pull it down for us
+            # https://www.terraform.io/docs/providers/http/data_source.html
+            tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema_name}
+            schema_ref = '${data.http.%s.body}' % fqrn
+
+        else:
+            # local schema. the `schema_name` is relative to `PROJECT_PATH`
+            schema_file = join(PROJECT_PATH, schema_name)
+            terraform_schema_file = join(TERRAFORM_DIR, stackname, schema_name)
+            shutil.copyfile(schema_file, terraform_schema_file)
+            schema_ref = '${file("%s")}' % os.path.basename(schema_name)
+
         resources['resource']['google_bigquery_table'] = {
-            # generated fully qualified resource name
-            ("%s_%s" % (options['dataset_id'], table_id)): {
-                'dataset_id': options['dataset_id'],
-                'table_id': table_id,
-                'project': options['project'],
-                'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
-            } for table_id, options in tables.items()
+            fqrn: {
+                'dataset_id': table_options['dataset_id'], # "dataset"
+                'table_id': table_id, # "csv_report_380"
+                'project': table_options['project'], # "elife-data-pipeline"
+                'schema': schema_ref,
+            }
         }
 
-    return resources
+    dictmap(add_table, tables)
 
-def _generate_bigquery_schema_file(stackname, schema_name):
-    """copies a schema file to the config.TERRAFORM_DIR for Terraform to load on 'apply'.
-    relies on `buildercore/bigquery.py` to provide a local path to the schema file"""
-    ref = schema_name
-    if not schema_name.startswith('https://'):
-        # local file. copy to terraform dir
-        project_schema_file = bigquery.schema_path(stackname, schema_name)
-        terraform_schema_file = _file_path(stackname, schema_name, extension='json')
-        shutil.copyfile(project_schema_file, terraform_schema_file)
-        ref = os.path.basename(terraform_schema_file)
-    return '${file("%s")}' % ref
+    return resources
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
