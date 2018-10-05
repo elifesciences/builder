@@ -111,7 +111,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                                'ttf'],
                             },
                             'force_destroy': True,
-                            'vcl': {},
+                            'vcl': [],
                         }
                     }
                 },
