@@ -56,13 +56,11 @@ KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
 # the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
 # perhaps a namechange from .cfn to .state or something later
 TERRAFORM_DIR = join(CFN, "terraform")
-BIGQUERY_SCHEMA_DIR = join(CFN, "bigquery-schema")
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # "/.../.cfn/stacks/"
 CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # "/.../.cfn/contexts/"
 KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # "/.../.cfn/keypairs/"
 SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # "/.../scripts/"
-BIGQUERY_SCHEMA_PATH = join(PROJECT_PATH, BIGQUERY_SCHEMA_DIR) # "/.../.cfn/bigquery-schema/"
 
 # create all necessary paths and ensure they are writable
 lmap(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
