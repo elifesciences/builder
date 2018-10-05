@@ -399,24 +399,24 @@ def render_bigquery(context, tf_file):
     }
 
     def add_table(table_id, table_options):
-        schema_name = table_options['schema']
+        schema = table_options['schema']
         stackname = context['stackname']
+        fqrn = "%s_%s" % (table_options['dataset_id'], table_id) # 'fully qualified resource name'
 
-        # 'fully qualified resource name'
-        fqrn = "%s_%s" % (table_options['dataset_id'], table_id)
-
-        if schema_name.startswith('https://'):
+        if schema.startswith('https://'):
             # remote schema, add a 'http' provider and have terraform pull it down for us
             # https://www.terraform.io/docs/providers/http/data_source.html
-            tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema_name}
+            tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema}
             schema_ref = '${data.http.%s.body}' % fqrn
 
         else:
-            # local schema. the `schema_name` is relative to `PROJECT_PATH`
-            schema_file = join(PROJECT_PATH, schema_name)
-            terraform_schema_file = join(TERRAFORM_DIR, stackname, schema_name)
-            shutil.copyfile(schema_file, terraform_schema_file)
-            schema_ref = '${file("%s")}' % os.path.basename(schema_name)
+            # local schema. the `schema` is relative to `PROJECT_PATH`
+            schema_path = join(PROJECT_PATH, schema)
+            schema_file = os.path.basename(schema)
+            terraform_schema_dir = join(TERRAFORM_DIR, stackname)
+            mkdir_p(terraform_schema_dir)
+            shutil.copyfile(schema_path, join(terraform_schema_dir, schema_file))
+            schema_ref = '${file("%s")}' % schema_file
 
         resources['resource']['google_bigquery_table'] = {
             fqrn: {
