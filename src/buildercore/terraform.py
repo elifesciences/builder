@@ -155,7 +155,7 @@ def render_fastly(context):
                         'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
                     'force_destroy': True,
-                    'vcl': OrderedDict(),
+                    'vcl': []
                 }
             }
         },
@@ -414,10 +414,14 @@ def render_bigquery(context):
 def _generate_bigquery_schema_file(stackname, schema_name):
     """copies a schema file to the config.TERRAFORM_DIR for Terraform to load on 'apply'.
     relies on `buildercore/bigquery.py` to provide a local path to the schema file"""
-    project_schema_file = bigquery.schema_path(stackname, schema_name)
-    terraform_schema_file = _file_path(stackname, schema_name, extension='json')
-    shutil.copyfile(project_schema_file, terraform_schema_file)
-    return '${file("%s")}' % os.path.basename(terraform_schema_file)
+    ref = schema_name
+    if not schema_name.startswith('https://'):
+        # local file. copy to terraform dir
+        project_schema_file = bigquery.schema_path(stackname, schema_name)
+        terraform_schema_file = _file_path(stackname, schema_name, extension='json')
+        shutil.copyfile(project_schema_file, terraform_schema_file)
+        ref = os.path.basename(terraform_schema_file)
+    return '${file("%s")}' % ref
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
