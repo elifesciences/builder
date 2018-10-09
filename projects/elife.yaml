@@ -2099,8 +2099,6 @@ data-pipeline:
     aws:
         ec2:
             ami: ami-1d4e7a66 # 16.04
-        ext:
-            size: 100 # GB
         type: t2.medium
         ports:
             - 22
@@ -2111,6 +2109,10 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    aws-alt:
+        prod:
+            ext:
+                size: 100 # GB
     vagrant:
         box: bento/ubuntu-16.04
         cpus: 2
