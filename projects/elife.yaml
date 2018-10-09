@@ -120,6 +120,7 @@ defaults:
         #               prefix: 'elife-'
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
+        #       encryption: false
         s3: {}
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
