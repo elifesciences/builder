@@ -413,9 +413,9 @@ def render_bigquery(context, tf_file):
             # local schema. the `schema` is relative to `PROJECT_PATH`
             schema_path = join(PROJECT_PATH, schema)
             schema_file = os.path.basename(schema)
-            terraform_schema_dir = join(TERRAFORM_DIR, stackname)
-            mkdir_p(terraform_schema_dir)
-            shutil.copyfile(schema_path, join(terraform_schema_dir, schema_file))
+            terraform_working_dir = join(TERRAFORM_DIR, stackname)
+            mkdir_p(terraform_working_dir)
+            shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
             schema_ref = '${file("%s")}' % schema_file
 
         resources['resource']['google_bigquery_table'] = {
