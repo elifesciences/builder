@@ -563,7 +563,7 @@ def _file_path(stackname, name, extension='tf.json'):
     return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
 
 def _open(stackname, name, extension='tf.json', mode='r'):
-    "`open`s a file in the conf.TERRAFORM_DIR belonging to given `stackname` (./cfn/terraform/$stackname/)"
+    "`open`s a file in the conf.TERRAFORM_DIR belonging to given `stackname` (./.cfn/terraform/$stackname/)"
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
