@@ -125,7 +125,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
         ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")
 
     # prompt user for alternate configurations
-    if 'aws-alt' in pdata:
+    if pdata['aws-alt']:
         def helpfn(altkey):
             try:
                 return pdata['aws-alt'][altkey]['description']
