@@ -141,7 +141,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
                 alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
             if alt_config != default:
                 more_context['alt-config'] = alt_config
-    # TODO: return the templates used here, so that they can be passed down to 
+    # TODO: return the templates used here, so that they can be passed down to
     # bootstrap.create_stack() without relying on them implicitly existing
     # on the filesystem
     cfngen.generate_stack(pname, **more_context)

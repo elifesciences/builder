@@ -218,7 +218,7 @@ def destroy(stackname, context):
         # ClientError(u'An error occurred (ValidationError) when calling the DescribeStacks operation: Stack with id basebox--1234 does not exist',)
         # e.operation_name == 'DescribeStacks'
         # e.response['Error'] == {'Message': 'Stack with id basebox--1234 does not exist', 'Code': 'ValidationError', 'Type': 'Sender'}
-        if ex.operation_name == 'DescribeStacks' && "does not exist" in err['Message']:
+        if ex.operation_name == 'DescribeStacks' and "does not exist" in err['Message']:
             LOG.info("Stack %s does not exist on CloudFormation", stackname)
             return
 
