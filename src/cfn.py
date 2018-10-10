@@ -1,3 +1,4 @@
+import os
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
@@ -300,9 +301,10 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 
 @task
 @requires_aws_stack
-def upload_file(stackname, local_path, remote_path, overwrite=False):
-    with stack_conn(stackname):
-        print('stack:', stackname)
+def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1):
+    remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
+    with stack_conn(stackname, node=node):
+        print('stack:', stackname, 'node', node)
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
