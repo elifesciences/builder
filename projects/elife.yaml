@@ -221,6 +221,9 @@ defaults:
         ram: 1024
         cpus: 2
         cpucap: 100 # percent (vagrant default)
+        #ports:
+        #    1239: 80
+        #    1240: 8001
 
 basebox:
     salt: '2017.7.7' # overridden for 18.04 support
@@ -2090,10 +2093,19 @@ fastly-logs:
 
 data-pipeline:
     description: Data consolidation project
-    domain: false
-    intdomain: false
+    domain: pipeline
+    intdomain: pipeline
+    formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
-        ec2: false
+        ec2:
+            ami: ami-1d4e7a66 # 16.04
+        ext:
+            size: 100 # GB
+        type: t2.medium
+        ports:
+            - 22
+            - 80 # used only to upgrade to https
+            - 443
         s3:
             "{instance}-elife-data-pipeline":
                  deletion-policy: delete
@@ -2112,4 +2124,27 @@ data-pipeline:
                         schema: https://github.com/elifesciences/data-pipeline/schemas/489_datascience_editor_keywords.json
                     455_datascience_editors:
                         schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
+    vagrant:
+        box: bento/ubuntu-16.04
+        cpus: 2
+        ram: 2048
+        ports:
+            1222: 80
 
+
+# deprecated, remove once all nifi-demo instances are destroyed
+nifi-demo:
+    formula-repo: https://github.com/elifesciences/nifi-demo-formula
+    subdomain: nifidemo
+    aws:
+        ec2:
+            ami: ami-1d4e7a66
+            masterless: True
+        ports:
+            - 22
+            - 443
+    vagrant:
+        cpus: 2
+        ram: 2048
+        ports:
+            1222: 8080

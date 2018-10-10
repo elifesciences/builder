@@ -447,6 +447,10 @@ def stack_path(stackname, relative=False):
         return join(path, stackname) + ".json"
     raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
 
+#def stack_body(stackname):
+#    stack = boto_conn(stackname, 'cloudformation', client=True)
+#    return stack.get_template()['TemplateBody']
+
 def stack_json(stackname, parse=False):
     "returns the json of the given stack as a STRING, not the parsed json unless `parse = True`."
     fp = open(stack_path(stackname), 'r')
