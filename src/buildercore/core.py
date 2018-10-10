@@ -447,7 +447,7 @@ def stack_path(stackname, relative=False):
         return join(path, stackname) + ".json"
     raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
 
-#def stack_body(stackname):
+# def stack_body(stackname):
 #    stack = boto_conn(stackname, 'cloudformation', client=True)
 #    return stack.get_template()['TemplateBody']
 
