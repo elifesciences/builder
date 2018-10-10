@@ -85,6 +85,7 @@ def bootstrap(stackname, context):
     parameters = []
     on_start = _noop
     on_error = _noop
+    # TODO: should use context by this point
     if pdata['aws']['ec2']:
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
         on_start = lambda: keypair.create_keypair(stackname)
