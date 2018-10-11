@@ -881,6 +881,7 @@ journal-cms:
             journal-cms--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
+                    - bus-digests--{instance}
                     - bus-metrics--{instance}
     aws-alt:
         standalone:
