@@ -4,8 +4,9 @@ from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, dictmap
+from .utils import ensure, mkdir_p, dictmap, deepmerge
 from . import fastly
+from functools import reduce
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
@@ -77,9 +78,18 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
-    generated_template = render_fastly(context)
-    generated_template.update(render_gcs(context))
-    generated_template.update(render_bigquery(context, generated_template))
+    fn_list = [
+        render_fastly,
+        render_gcs,
+        render_bigquery
+    ]
+    partial_tf_list = [fn(context) for fn in fn_list]
+
+    def merge(a, b):
+        deepmerge(a, b)
+        return a
+
+    generated_template = reduce(merge, partial_tf_list)
 
     if not generated_template:
         return EMPTY_TEMPLATE
@@ -378,7 +388,7 @@ def render_gcs(context):
         },
     }
 
-def render_bigquery(context, tf_file):
+def render_bigquery(context):
     if not context['bigquery']:
         return {}
 
@@ -389,9 +399,12 @@ def render_bigquery(context, tf_file):
             table_options['project'] = dataset_options['project']
             tables[table_id] = table_options
 
-    resources = {'resource': OrderedDict()}
+    tf_file = {
+        'data': {DATA_TYPE_HTTP: {}},
+        'resource': OrderedDict()
+    }
 
-    resources['resource']['google_bigquery_dataset'] = {
+    tf_file['resource']['google_bigquery_dataset'] = {
         dataset_id: {
             'dataset_id': dataset_id,
             'project': options['project'],
@@ -418,7 +431,7 @@ def render_bigquery(context, tf_file):
             shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
             schema_ref = '${file("%s")}' % schema_file
 
-        resources['resource']['google_bigquery_table'] = {
+        tf_file['resource']['google_bigquery_table'] = {
             fqrn: {
                 'dataset_id': table_options['dataset_id'], # "dataset"
                 'table_id': table_id, # "csv_report_380"
@@ -429,7 +442,7 @@ def render_bigquery(context, tf_file):
 
     dictmap(add_table, tables)
 
-    return resources
+    return tf_file
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
