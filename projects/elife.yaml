@@ -2030,7 +2030,6 @@ elife-ink:
             - 4569 # slanger nginx https
             - 8080 # slanger api
             - 8082 # slanger api nginx https
-    aws-alt: {}
     vagrant:
         ram: 4096
         ports:
@@ -2095,7 +2094,6 @@ fastly-logs:
                 tables:
                     iiif:
                         schema: fastly-logs-201809
-    aws-alt: {}
 
 data-pipeline:
     description: Data consolidation project
