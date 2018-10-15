@@ -1048,6 +1048,12 @@ elife-libraries:
         load:
             description: running load tests
             type: t2.2xlarge
+        spectrum:
+            description: running end2end tests
+            # 1 core, 4 GB of memory may be enough
+            type: t2.small
+            ext:
+                size: 10 # GB
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
