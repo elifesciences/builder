@@ -19,7 +19,8 @@ import logging
 from kids.cache import cache as cached
 
 LOG = logging.getLogger(__name__)
-boto3.set_stream_logger(name='botocore', level=logging.INFO)
+boto3.set_stream_logger(name='botocore', level=logging.WARN)
+boto3.set_stream_logger(name='boto3', level=logging.WARN)
 
 class DeprecationException(Exception):
     pass
