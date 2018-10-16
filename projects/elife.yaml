@@ -1050,8 +1050,8 @@ elife-libraries:
             type: t2.2xlarge
         spectrum:
             description: running end2end tests
-            # 1 core, 4 GB of memory may be enough
-            type: t2.small
+            # 2 core, 8 GB of memory
+            type: t2.medium
             ext:
                 size: 10 # GB
         powerful:
