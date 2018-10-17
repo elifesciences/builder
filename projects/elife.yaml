@@ -120,6 +120,7 @@ defaults:
         #               prefix: 'elife-'
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
+        #       encryption: false
         s3: {}
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
@@ -1047,6 +1048,12 @@ elife-libraries:
         load:
             description: running load tests
             type: t2.2xlarge
+        spectrum:
+            description: running end2end tests
+            # 2 core, 8 GB of memory
+            type: t2.medium
+            ext:
+                size: 10 # GB
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
@@ -1975,12 +1982,22 @@ elife-xpub:
             device: /dev/sdh
             type: gp2
     aws-alt:
-        demo:
+        end2end:
             s3:
                 "{instance}-elife-xpub":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
         staging:
             s3:
                 "{instance}-elife-xpub":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.4'
@@ -1994,7 +2011,8 @@ elife-xpub:
                 - xpub
             s3:
                 "{instance}-elife-xpub":
-                     deletion-policy: retain
+                    deletion-policy: retain
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
@@ -2024,7 +2042,6 @@ elife-ink:
             - 4569 # slanger nginx https
             - 8080 # slanger api
             - 8082 # slanger api nginx https
-    aws-alt: {}
     vagrant:
         ram: 4096
         ports:
@@ -2093,8 +2110,7 @@ fastly-logs:
 
 data-pipeline:
     description: Data consolidation project
-    domain: pipeline
-    intdomain: pipeline
+    subdomain: pipeline
     formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
         ec2:

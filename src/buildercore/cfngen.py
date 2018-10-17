@@ -179,6 +179,7 @@ def build_context_s3(pdata, context):
         'website-configuration': None,
         'cors': None,
         'public': False,
+        'encryption': False,
     }
     for bucket_template_name in pdata['aws'].get('s3', {}):
         bucket_name = parameterize(context)(bucket_template_name)

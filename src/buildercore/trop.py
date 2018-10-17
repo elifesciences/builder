@@ -560,6 +560,9 @@ def render_s3(context, template):
             _add_bucket_policy(template, bucket_title, bucket_name)
             props['AccessControl'] = s3.PublicRead
 
+        if context['s3'][bucket_name]['encryption']:
+            props['BucketEncryption'] = _bucket_kms_encryption(context['s3'][bucket_name]['encryption'])
+
         template.add_resource(s3.Bucket(
             bucket_title,
             BucketName=bucket_name,
@@ -583,6 +586,18 @@ def _add_bucket_policy(template, bucket_title, bucket_name):
             }]
         }
     ))
+
+def _bucket_kms_encryption(key_arn):
+    return s3.BucketEncryption(
+        ServerSideEncryptionConfiguration=[
+            s3.ServerSideEncryptionRule(
+                ServerSideEncryptionByDefault=s3.ServerSideEncryptionByDefault(
+                    KMSMasterKeyID=key_arn,
+                    SSEAlgorithm='aws:kms'
+                )
+            )
+        ]
+    )
 
 def _elb_protocols(context):
     if isstr(context['elb']['protocol']):

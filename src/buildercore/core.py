@@ -582,6 +582,9 @@ def find_region(stackname=None):
     if more than one region available, it will raise an MultipleRegionsError.
     until we have some means of supporting multiple regions, this is the best solution"""
     if stackname:
+        # TODO: should use context, not project data
+        # as updates in project data do not immediately affect existing stacks
+        # which reside in a region
         pdata = project_data_for_stackname(stackname)
         return pdata['aws']['region']
 
