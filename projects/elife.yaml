@@ -78,6 +78,7 @@ defaults:
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
+            encryption: false
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
