@@ -442,6 +442,9 @@ def render_bigquery(context):
 
     dictmap(add_table, tables)
 
+    if not tf_file['resource']['google_bigquery_table']:
+        del tf_file['resource']['google_bigquery_table']
+
     return tf_file
 
 def write_template(stackname, contents):
