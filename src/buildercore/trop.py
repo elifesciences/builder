@@ -286,12 +286,14 @@ def render_rds(context, template):
         "Tags": tags,
         "AllowMajorVersionUpgrade": False, # default? not specified.
         "AutoMinorVersionUpgrade": True, # default
-        'StorageEncrypted': True if lu('rds.encryption') else False,
-        'KmsKeyId': lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else '',
     }
 
     if param_group_ref:
         data['DBParameterGroupName'] = param_group_ref
+
+    if lu('rds.encryption'):
+        data['StorageEncrypted'] = True
+        data['KmsKeyId'] = lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else ''
 
     rdbi = rds.DBInstance(RDS_TITLE, **data)
     lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
