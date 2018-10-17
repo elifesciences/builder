@@ -404,6 +404,8 @@ def render_bigquery(context):
         'resource': OrderedDict()
     }
 
+    tf_file['resource']['google_bigquery_table'] = {}
+
     tf_file['resource']['google_bigquery_dataset'] = {
         dataset_id: {
             'dataset_id': dataset_id,
@@ -431,13 +433,11 @@ def render_bigquery(context):
             shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
             schema_ref = '${file("%s")}' % schema_file
 
-        tf_file['resource']['google_bigquery_table'] = {
-            fqrn: {
-                'dataset_id': table_options['dataset_id'], # "dataset"
-                'table_id': table_id, # "csv_report_380"
-                'project': table_options['project'], # "elife-data-pipeline"
-                'schema': schema_ref,
-            }
+        tf_file['resource']['google_bigquery_table'][fqrn] = {
+            'dataset_id': table_options['dataset_id'], # "dataset"
+            'table_id': table_id, # "csv_report_380"
+            'project': table_options['project'], # "elife-data-pipeline"
+            'schema': schema_ref,
         }
 
     dictmap(add_table, tables)
