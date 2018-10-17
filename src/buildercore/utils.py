@@ -1,3 +1,4 @@
+from pprint import pformat
 import pytz
 import os, sys, json, time, random, string
 from io import BytesIO
@@ -322,7 +323,7 @@ def lu(context, *paths, **kwargs):
         default = kwargs['default']
     v = firstnn(map(lambda path: lookup(context, path, default), paths))
     if v is None:
-        raise ValueError("no value available for paths %r. %s" % (paths, context))
+        raise ValueError("no value available for paths %r. %s" % (paths, pformat(context)))
     return v
 
 def hasallkeys(ddict, key_list):
