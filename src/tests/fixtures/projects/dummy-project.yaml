@@ -108,6 +108,7 @@ defaults:
             default-ttl: 3600 # seconds
             shield: false
             gcslogging: false
+            bigquerylogging: false
             healthcheck: false
             errors: false
             vcl: []
@@ -402,6 +403,20 @@ project-with-fastly-gcs:
                 bucket: my-bucket
                 path: my-project/
                 period: 1800
+
+project-with-fastly-bigquery:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        fastly:
+            subdomains:
+                - "{instance}--cdn-of-www"
+            bigquerylogging:
+                project: my-project
+                dataset: my_dataset
+                table: my_table
 
 project-with-fastly-shield:
     repo: ssh://git@github.com/elifesciences/dummy3

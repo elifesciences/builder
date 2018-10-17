@@ -419,6 +419,17 @@ class TestBuildercoreTerraform(base.BaseCase):
         data = template['data']['vault_generic_secret']['fastly-gcs-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
 
+    def test_fastly_template_bigquery_logging(self):
+        extra = {
+            'stackname': 'project-with-fastly-bigquery--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-bigquery', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertIn('bigquerylogging', service)
+        self.assertEqual(service['bigquerylogging'].get('name'), 'default')
+
     def test_gcp_template(self):
         extra = {
             'stackname': 'project-on-gcp--prod',

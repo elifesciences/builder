@@ -391,6 +391,13 @@ def build_context_fastly(pdata, context):
 
         return gcslogging
 
+    def _parameterize_bigquerylogging(bigquerylogging):
+        if bigquerylogging:
+            bigquerylogging['dataset'] = _parameterize(bigquerylogging['dataset'])
+            bigquerylogging['table'] = _parameterize(bigquerylogging['table'])
+
+        return bigquerylogging
+
     context['fastly'] = False
     if pdata['aws'].get('fastly'):
         backends = pdata['aws']['fastly'].get('backends', OrderedDict({}))
@@ -404,6 +411,7 @@ def build_context_fastly(pdata, context):
             'healthcheck': pdata['aws']['fastly']['healthcheck'],
             'errors': pdata['aws']['fastly']['errors'],
             'gcslogging': _parameterize_gcslogging(pdata['aws']['fastly']['gcslogging']),
+            'biguerylogging': _parameterize_bigquerylogging(pdata['aws']['fastly']['bigquerylogging']),
             'vcl': pdata['aws']['fastly']['vcl'],
             'surrogate-keys': pdata['aws']['fastly']['surrogate-keys'],
         }
