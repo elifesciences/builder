@@ -41,6 +41,7 @@
             22
         ]
     }, 
+    "aws-alt": {},
     "gcp": {
         "bigquery": false
     },
