@@ -629,23 +629,6 @@ pattern-library:
         ports:
             1340: 80
 
-evanthia-prototype:
-    subdomain: evanthia-prototype
-    repo: https://github.com/code56/node_web_server
-    formula-repo: https://github.com/code56/node-web-server-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small
-        ports:
-            - 22
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
-        ports:
-            1340: 80
-
-
 elife-metrics:
     description: journal-level metrics
     subdomain: metrics # metrics.elifesciences.org
@@ -1016,14 +999,6 @@ elife-api:
             1233: 80
 
 
-elife-reporting:
-    formula-repo: https://github.com/elifesciences/elife-reporting-formula
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 1024
-        ports:
-            1333: 80
-
 elife-libraries:
     domain: false
     subdomain: libraries
@@ -1161,16 +1136,6 @@ api-dummy:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1242: 80
-
-anonymous:
-    description: a server without any eLife credentials; if you log in here, you will be using the anonymous separate AWS account
-    formula-repo: https://github.com/elifesciences/anonymous-formula
-    aws:
-        type: t2.micro
-        ports:
-            - 22
-    vagrant:
-        ram: 1024
 
 # used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
 # this is a free form instance jats4r can do what they like with
@@ -1434,29 +1399,6 @@ schematron-validator:
         ports:
             1246: 80
             1247: 8080
-
-statusbase:
-    subdomain: statusbase
-    repo: https://github.com/ep320/statusbase
-    formula-repo: https://github.com/elifesciences/statusbase-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        ports:
-            - 22
-            - 80
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ports:
-            1246: 80
 
 observer:
     description: article-level reporting
@@ -1880,22 +1822,6 @@ digests:
         ram: 1024
         ports:
             1290: 80
-
-evanthia-simpler-component:
-    subdomain: evanthia-simpler-component
-    repo: https://github.com/code56/nodeServerSimplerFig
-    formula-repo: https://github.com/code56/simpler-component-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small
-        ports:
-            - 22
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
-        ports:
-            1340: 80
 
 crm:
     subdomain: crm # crm.elifesciences.org
