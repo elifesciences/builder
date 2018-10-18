@@ -205,6 +205,23 @@ def render_fastly(context):
             }
         }
 
+    if context['fastly']['bigquerylogging']:
+        bigquerylogging = context['fastly']['bigquerylogging']
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['bigquerylogging'] = {
+            'name': 'default',
+            'project_id': bigquerylogging['project'],
+            'dataset': bigquerylogging['dataset'],
+            'table': bigquerylogging['table'],
+        #    'format': FASTLY_LOG_FORMAT,
+        #    'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+        #    'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+        #}
+        #data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
+        #    DATA_NAME_VAULT_GCS_LOGGING: {
+        #        'path': VAULT_PATH_FASTLY_GCS_LOGGING,
+        #    }
+        }
+
     if vcl_constant_snippets or vcl_templated_snippets:
         # constant snippets
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
