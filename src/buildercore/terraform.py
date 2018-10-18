@@ -212,7 +212,7 @@ def render_fastly(context):
             'project_id': bigquerylogging['project'],
             'dataset': bigquerylogging['dataset'],
             'table': bigquerylogging['table'],
-        #    'format': FASTLY_LOG_FORMAT,
+            'format': FASTLY_LOG_FORMAT,
         #    'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         #    'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         #}

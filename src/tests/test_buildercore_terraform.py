@@ -435,10 +435,10 @@ class TestBuildercoreTerraform(base.BaseCase):
         #self.assertEqual(service['gcslogging'].get('email'), '${data.vault_generic_secret.fastly-gcs-logging.data["email"]}')
         #self.assertEqual(service['gcslogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcs-logging.data["secret_key"]}')
 
-        #log_format = service['gcslogging'].get('format')
-        ## the non-rendered log_format is not even valid JSON
-        #self.assertIsNotNone(log_format)
-        #self.assertRegex(log_format, "\{.*\}")
+        log_format = service['bigquerylogging'].get('format')
+        # the non-rendered log_format is not even valid JSON
+        self.assertIsNotNone(log_format)
+        self.assertRegex(log_format, "\{.*\}")
 
         #data = template['data']['vault_generic_secret']['fastly-gcs-logging']
         #self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
