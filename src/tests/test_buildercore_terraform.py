@@ -483,43 +483,45 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_bigquery_remote_paths(self):
         "remote paths require terraform to fetch and load the files, which requires another entry in the 'data' list"
-        pname = "project-with-bigquery-remote-schemas"
-        iid = pname + "--prod"
+        pname = 'project-with-bigquery-remote-schemas'
+        iid = pname + '--prod'
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
 
-        expecting = json.loads('''{
-            "resource": {
-                "google_bigquery_dataset": {
-                    "my_dataset_prod": {
-                        "project": "elife-something",
-                        "dataset_id": "my_dataset_prod"
+        self.assertEqual(
+            terraform_template,
+            {
+                'resource': {
+                    'google_bigquery_dataset': {
+                        'my_dataset_prod': {
+                            'project': 'elife-something',
+                            'dataset_id': 'my_dataset_prod'
+                        }
+                    },
+                    'google_bigquery_table': {
+                        'my_dataset_prod_remote': {
+                            'project': 'elife-something',
+                            'dataset_id': 'my_dataset_prod',
+                            'table_id': 'remote',
+                            'schema': '${data.http.my_dataset_prod_remote.body}'
+                        },
+                        'my_dataset_prod_local': {
+                            'project': 'elife-something',
+                            'dataset_id': 'my_dataset_prod',
+                            'table_id': 'local',
+                            'schema': '${file("key-value.json")}'
+                        }
                     }
                 },
-                "google_bigquery_table": {
-                    "my_dataset_prod_remote": {
-                        "project": "elife-something",
-                        "dataset_id": "my_dataset_prod",
-                        "table_id": "remote",
-                        "schema": "${data.http.my_dataset_prod_remote.body}"
-                    },
-                    "my_dataset_prod_local": {
-                        "project": "elife-something",
-                        "dataset_id": "my_dataset_prod",
-                        "table_id": "local",
-                        "schema": "${file(\\"key-value.json\\")}"
-                    }
-                }
-            },
-            "data": {
-                "http": {
-                    "my_dataset_prod_remote": {
-                        "url": "https://example.org/schemas/remote.json"
+                'data': {
+                    'http': {
+                        'my_dataset_prod_remote': {
+                            'url': 'https://example.org/schemas/remote.json'
+                        }
                     }
                 }
             }
-        }''')
-        self.assertEqual(expecting, terraform_template)
+        )
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
