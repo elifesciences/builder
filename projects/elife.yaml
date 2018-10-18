@@ -2099,6 +2099,7 @@ fastly-logs:
     aws:
         ec2: false
         gcs:
+            # TODO: recreate `continuumtest` as `staging`
             "{instance}-elife-fastly":
                 project: elife-fastly
     gcp:
