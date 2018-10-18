@@ -107,6 +107,7 @@ def render_fastly(context):
     request_settings = []
     headers = []
     data = {}
+    data[DATA_TYPE_VAULT_GENERIC_SECRET] = {}
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = OrderedDict()
 
@@ -201,10 +202,9 @@ def render_fastly(context):
             'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         }
-        data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
-            DATA_NAME_VAULT_GCS_LOGGING: {
-                'path': VAULT_PATH_FASTLY_GCS_LOGGING,
-            }
+        # TODO: refactor to TerraformTemplate().add_data([DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING, 'path'], VAULT_PATH_FASTLY_GCS_LOGGING)
+        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCS_LOGGING] = {
+            'path': VAULT_PATH_FASTLY_GCS_LOGGING,
         }
 
     if context['fastly']['bigquerylogging']:
@@ -218,10 +218,8 @@ def render_fastly(context):
             'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
         }
-        data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
-            DATA_NAME_VAULT_GCP_LOGGING: {
-                'path': VAULT_PATH_FASTLY_GCP_LOGGING,
-            }
+        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCP_LOGGING] = {
+            'path': VAULT_PATH_FASTLY_GCP_LOGGING,
         }
 
     if vcl_constant_snippets or vcl_templated_snippets:
@@ -291,6 +289,9 @@ def render_fastly(context):
 
     if request_settings:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
+
+    if not data[DATA_TYPE_VAULT_GENERIC_SECRET]:
+        del data[DATA_TYPE_VAULT_GENERIC_SECRET]
 
     if data:
         tf_file['data'] = data
