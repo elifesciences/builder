@@ -19,6 +19,7 @@ DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATE_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
+DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 
 # keys to lookup in Vault
@@ -26,6 +27,7 @@ DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 #     VAULT_ADDR=https://...:8200 vault put secret/builder/apikey/fastly-gcs-logging email=... secret_key=@~/file.json
 VAULT_PATH_FASTLY = 'secret/builder/apikey/fastly'
 VAULT_PATH_FASTLY_GCS_LOGGING = 'secret/builder/apikey/fastly-gcs-logging'
+VAULT_PATH_FASTLY_GCP_LOGGING = 'secret/builder/apikey/fastly-gcp-logging'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -213,13 +215,13 @@ def render_fastly(context):
             'dataset': bigquerylogging['dataset'],
             'table': bigquerylogging['table'],
             'format': FASTLY_LOG_FORMAT,
-        #    'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-        #    'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-        #}
-        #data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
-        #    DATA_NAME_VAULT_GCS_LOGGING: {
-        #        'path': VAULT_PATH_FASTLY_GCS_LOGGING,
-        #    }
+            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+        }
+        data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
+            DATA_NAME_VAULT_GCP_LOGGING: {
+                'path': VAULT_PATH_FASTLY_GCP_LOGGING,
+            }
         }
 
     if vcl_constant_snippets or vcl_templated_snippets:

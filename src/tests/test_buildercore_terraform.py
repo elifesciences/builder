@@ -432,16 +432,16 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(service['bigquerylogging'].get('project_id'), 'my-project')
         self.assertEqual(service['bigquerylogging'].get('dataset'), 'my_dataset')
         self.assertEqual(service['bigquerylogging'].get('table'), 'my_table')
-        #self.assertEqual(service['gcslogging'].get('email'), '${data.vault_generic_secret.fastly-gcs-logging.data["email"]}')
-        #self.assertEqual(service['gcslogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcs-logging.data["secret_key"]}')
+        self.assertEqual(service['bigquerylogging'].get('email'), '${data.vault_generic_secret.fastly-gcp-logging.data["email"]}')
+        self.assertEqual(service['bigquerylogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcp-logging.data["secret_key"]}')
 
         log_format = service['bigquerylogging'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
         self.assertRegex(log_format, "\{.*\}")
 
-        #data = template['data']['vault_generic_secret']['fastly-gcs-logging']
-        #self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
+        data = template['data']['vault_generic_secret']['fastly-gcp-logging']
+        self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcp-logging'})
 
     def test_gcp_template(self):
         extra = {
