@@ -418,7 +418,10 @@ api-gateway:
                 masterless: true
             fastly: false
         end2end: {}
-        continuumtest: {}
+        continuumtest:
+            fastly:
+                bigquerylogging:
+                    dataset: "staging"
         prod:
             fastly:
                 subdomains:
