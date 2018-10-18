@@ -467,6 +467,9 @@ def render_bigquery(context):
     if not tf_file['data'][DATA_TYPE_HTTP]:
         del tf_file['data'][DATA_TYPE_HTTP]
 
+    if not tf_file['data']:
+        del tf_file['data']
+
     return tf_file
 
 def write_template(stackname, contents):
