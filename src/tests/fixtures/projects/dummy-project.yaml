@@ -674,5 +674,24 @@ project-with-bigquery:
                 project: elife-something
                 tables:
                     widgets:
-                        schema: key-value
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
+    aws-alt: {}
+
+project-with-bigquery-remote-schemas:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            #location: US
+            "my_dataset_{instance}":
+                project: elife-something
+                tables:
+                    remote:
+                        schema: https://example.org/schemas/remote.json
+                    local:
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}

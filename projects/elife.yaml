@@ -2107,7 +2107,8 @@ fastly-logs:
                 project: elife-fastly
                 tables:
                     iiif:
-                        schema: fastly-logs-201809
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+    aws-alt: {}
 
 data-pipeline:
     description: Data consolidation project
@@ -2128,12 +2129,26 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    gcp:
+        bigquery:
+            "{instance}": # dataset
+                # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
+                project: elife-data-pipeline
+                tables:
+                    # bit of repetition here
+                    380_datascience_early_career_researchers:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/380_datascience_early_career_researchers.json
+                    489_datascience_editor_keywords:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/489_datascience_editor_keywords.json
+                    455_datascience_editors:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
     vagrant:
         box: bento/ubuntu-16.04
         cpus: 2
         ram: 2048
         ports:
             1222: 80
+
 
 # deprecated, remove once all nifi-demo instances are destroyed
 nifi-demo:
