@@ -1,14 +1,12 @@
 from collections import namedtuple, OrderedDict
-import json
-import os
-from os.path import exists, join, basename
-import re
-import shutil
+import os, re, shutil, json
+from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
+from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p
-from . import fastly, bigquery
+from .utils import ensure, mkdir_p, dictmap, deepmerge
+from . import fastly
+from functools import reduce
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.1.4',
@@ -80,9 +78,18 @@ FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
-    generated_template = render_fastly(context)
-    generated_template.update(render_gcs(context))
-    generated_template.update(render_bigquery(context))
+    fn_list = [
+        render_fastly,
+        render_gcs,
+        render_bigquery
+    ]
+    partial_tf_list = [fn(context) for fn in fn_list]
+
+    def merge(a, b):
+        deepmerge(a, b)
+        return a
+
+    generated_template = reduce(merge, partial_tf_list)
 
     if not generated_template:
         return EMPTY_TEMPLATE
@@ -158,7 +165,7 @@ def render_fastly(context):
                         'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
                     'force_destroy': True,
-                    'vcl': OrderedDict(),
+                    'vcl': []
                 }
             }
         },
@@ -362,7 +369,7 @@ def _generate_vcl_file(stackname, content, key, extension='vcl'):
     """
     with _open(stackname, key, extension=extension, mode='w') as fp:
         fp.write(str(content))
-        return '${file("%s")}' % basename(fp.name)
+        return '${file("%s")}' % os.path.basename(fp.name)
 
 def render_gcs(context):
     if not context['gcs']:
@@ -392,36 +399,53 @@ def render_bigquery(context):
             table_options['project'] = dataset_options['project']
             tables[table_id] = table_options
 
-    resources = {'resource': OrderedDict()}
+    tf_file = {
+        'data': {DATA_TYPE_HTTP: {}},
+        'resource': OrderedDict()
+    }
 
-    resources['resource']['google_bigquery_dataset'] = {
+    tf_file['resource']['google_bigquery_table'] = {}
+
+    tf_file['resource']['google_bigquery_dataset'] = {
         dataset_id: {
             'dataset_id': dataset_id,
             'project': options['project'],
         } for dataset_id, options in context['bigquery'].items()
     }
 
-    if tables:
-        resources['resource']['google_bigquery_table'] = {
-            # generated fully qualified resource name
-            ("%s_%s" % (options['dataset_id'], table_id)): {
-                'dataset_id': options['dataset_id'],
-                'table_id': table_id,
-                'project': options['project'],
-                'schema': _generate_bigquery_schema_file(context['stackname'], options['schema']),
-            } for table_id, options in tables.items()
+    def add_table(table_id, table_options):
+        schema = table_options['schema']
+        stackname = context['stackname']
+        fqrn = "%s_%s" % (table_options['dataset_id'], table_id) # 'fully qualified resource name'
+
+        if schema.startswith('https://'):
+            # remote schema, add a 'http' provider and have terraform pull it down for us
+            # https://www.terraform.io/docs/providers/http/data_source.html
+            tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema}
+            schema_ref = '${data.http.%s.body}' % fqrn
+
+        else:
+            # local schema. the `schema` is relative to `PROJECT_PATH`
+            schema_path = join(PROJECT_PATH, schema)
+            schema_file = os.path.basename(schema)
+            terraform_working_dir = join(TERRAFORM_DIR, stackname)
+            mkdir_p(terraform_working_dir)
+            shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
+            schema_ref = '${file("%s")}' % schema_file
+
+        tf_file['resource']['google_bigquery_table'][fqrn] = {
+            'dataset_id': table_options['dataset_id'], # "dataset"
+            'table_id': table_id, # "csv_report_380"
+            'project': table_options['project'], # "elife-data-pipeline"
+            'schema': schema_ref,
         }
 
-    return resources
+    dictmap(add_table, tables)
 
-def _generate_bigquery_schema_file(stackname, schema_name):
-    """
-    places a schema JSON file for Terraform to dynamically load it on apply
-    """
-    with bigquery.schema(schema_name) as source:
-        with _open(stackname, schema_name, extension='json', mode='w') as target:
-            target.write(source.read())
-            return '${file("%s")}' % basename(target.name)
+    if not tf_file['resource']['google_bigquery_table']:
+        del tf_file['resource']['google_bigquery_table']
+
+    return tf_file
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
@@ -550,14 +574,17 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
+# TODO: not a great function name. 'stack_tform_path' ? 'tform_stackfile_path' ?
 def _file_path(stackname, name, extension='tf.json'):
     return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
 
 def _open(stackname, name, extension='tf.json', mode='r'):
+    "`open`s a file in the conf.TERRAFORM_DIR belonging to given `stackname` (./.cfn/terraform/$stackname/)"
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
-    # remove deprecated file
+
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
-    if exists(deprecated_path):
+    if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
+
     return open(_file_path(stackname, name, extension), mode)

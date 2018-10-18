@@ -57,10 +57,10 @@ KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
 # perhaps a namechange from .cfn to .state or something later
 TERRAFORM_DIR = join(CFN, "terraform")
 
-STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/
-CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # ll: /.../cfn/contexts/
-KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # ll: /.../cfn/keypairs/
-SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # ll: /.../scripts/
+STACK_PATH = join(PROJECT_PATH, STACK_DIR) # "/.../.cfn/stacks/"
+CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # "/.../.cfn/contexts/"
+KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # "/.../.cfn/keypairs/"
+SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # "/.../scripts/"
 
 # create all necessary paths and ensure they are writable
 lmap(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
