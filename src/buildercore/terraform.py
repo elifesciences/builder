@@ -9,7 +9,7 @@ from . import fastly
 from functools import reduce
 
 EMPTY_TEMPLATE = '{}'
-PROVIDER_FASTLY_VERSION = '0.1.4',
+PROVIDER_FASTLY_VERSION = '0.4.0',
 PROVIDER_VAULT_VERSION = '1.1'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
