@@ -488,7 +488,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
         table = template['resource']['google_bigquery_table']['my_dataset_prod_widgets']
         self.assertEqual(table, {
-            'dataset_id': 'my_dataset_prod',
+            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
             'table_id': 'widgets',
             'project': 'elife-something',
             'schema': '${file("key-value.json")}',
@@ -514,13 +514,13 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'google_bigquery_table': {
                         'my_dataset_prod_remote': {
                             'project': 'elife-something',
-                            'dataset_id': 'my_dataset_prod',
+                            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
                             'table_id': 'remote',
                             'schema': '${data.http.my_dataset_prod_remote.body}'
                         },
                         'my_dataset_prod_local': {
                             'project': 'elife-something',
-                            'dataset_id': 'my_dataset_prod',
+                            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
                             'table_id': 'local',
                             'schema': '${file("key-value.json")}'
                         }
