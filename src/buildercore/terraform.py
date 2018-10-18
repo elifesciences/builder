@@ -74,6 +74,16 @@ FASTLY_LOG_FORMAT = """{
 # see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
+# keeps different logging configurations unique in the syslog implementation
+# used by Fastly, avoiding
+#     fastly_service_v1.fastly-cdn: 409 - Conflict:
+#     Title:  Duplicate record
+#     Detail: Duplicate logging_syslog: 'default'
+FASTLY_LOG_UNIQUE_IDENTIFIERS = {
+    'gcs': 'default', # historically the first one
+    'bigquery': 'bigquery',
+}
+
 # at the moment VCL snippets are unsupported, this can be worked
 # around by using a full VCL
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
@@ -190,7 +200,7 @@ def render_fastly(context):
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging'] = {
-            'name': 'default',
+            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
             'bucket_name': gcslogging['bucket'],
             # TODO: validate it starts with /
             'path': gcslogging['path'],
@@ -210,7 +220,7 @@ def render_fastly(context):
     if context['fastly']['bigquerylogging']:
         bigquerylogging = context['fastly']['bigquerylogging']
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['bigquerylogging'] = {
-            'name': 'default',
+            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
             'project_id': bigquerylogging['project'],
             'dataset': bigquerylogging['dataset'],
             'table': bigquerylogging['table'],

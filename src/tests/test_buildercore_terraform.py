@@ -428,7 +428,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         template = self._parse_template(terraform_template)
         service = template['resource']['fastly_service_v1']['fastly-cdn']
         self.assertIn('bigquerylogging', service)
-        self.assertEqual(service['bigquerylogging'].get('name'), 'default')
+        self.assertEqual(service['bigquerylogging'].get('name'), 'bigquery')
         self.assertEqual(service['bigquerylogging'].get('project_id'), 'my-project')
         self.assertEqual(service['bigquerylogging'].get('dataset'), 'my_dataset')
         self.assertEqual(service['bigquerylogging'].get('table'), 'my_table')
