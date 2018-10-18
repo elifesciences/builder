@@ -151,6 +151,7 @@ defaults:
                     - 151.101.130.217
                     - 151.101.194.217
             gcslogging: false
+            bigquerylogging: false
             healthcheck: false
             errors: false
             vcl:
@@ -403,6 +404,10 @@ api-gateway:
                 bucket: "{instance}-elife-fastly"
                 path: "api-gateway--{instance}/"
                 period: 600
+            bigquerylogging:
+                project: "elife-fastly"
+                dataset: "{instance}"
+                table: "api_gateway"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -2107,6 +2112,8 @@ fastly-logs:
             "{instance}":
                 project: elife-fastly
                 tables:
+                    api_gateway:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
     aws-alt: {}
