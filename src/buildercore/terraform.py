@@ -612,8 +612,8 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
-# TODO: not a great function name. 'stack_tform_path' ? 'tform_stackfile_path' ?
-def _file_path(stackname, name, extension='tf.json'):
+def _file_path_for_generation(stackname, name, extension='tf.json'):
+    "builds a path for a file to be placed in conf.TERRAFORM_DIR"
     return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
 
 def _open(stackname, name, extension='tf.json', mode='r'):
@@ -625,4 +625,4 @@ def _open(stackname, name, extension='tf.json', mode='r'):
     if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
 
-    return open(_file_path(stackname, name, extension), mode)
+    return open(_file_path_for_generation(stackname, name, extension), mode)
