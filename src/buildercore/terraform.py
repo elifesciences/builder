@@ -464,7 +464,7 @@ def render_bigquery(context):
             schema_ref = '${file("%s")}' % schema_file
 
         tf_file['resource']['google_bigquery_table'][fqrn] = {
-            # TODO: this should refer to the dataset resource to express the implicit dependency
+            # this refers to the dataset resource to express the implicit dependency
             # otherwise a table can be created before the dataset, which fails
             'dataset_id': "${google_bigquery_dataset.%s.dataset_id}" % dataset_id, # "dataset"
             'table_id': table_id, # "csv_report_380"
