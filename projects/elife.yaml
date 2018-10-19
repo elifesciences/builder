@@ -834,6 +834,10 @@ generic-cdn:
                         article-figure-video:
                             path: /articles/26866/elife-26866-fig3-video1.mp4
                             expected: "article/26866 article/26866/videos"
+            bigquerylogging:
+                project: "elife-fastly"
+                dataset: "{instance}"
+                table: "generic_cdn"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
@@ -860,6 +864,8 @@ generic-cdn:
                     bucket: continuumtest-elife-fastly
                     path: generic-cdn--continuumtest/
                     period: 600
+                bigquerylogging:
+                    dataset: "staging"
         prod:
             fastly:
                 subdomains:
@@ -2107,7 +2113,6 @@ fastly-logs:
     aws:
         ec2: false
         gcs:
-            # TODO: recreate `continuumtest` as `staging`
             "{instance}-elife-fastly":
                 project: elife-fastly
     gcp:
@@ -2116,6 +2121,10 @@ fastly-logs:
                 project: elife-fastly
                 tables:
                     api_gateway:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                    generic_cdn:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                    journal:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
