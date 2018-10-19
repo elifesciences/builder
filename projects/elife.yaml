@@ -1640,6 +1640,10 @@ iiif:
                 bucket: "{instance}-elife-fastly"
                 path: "iiif--{instance}/"
                 period: 600
+            bigquerylogging:
+                project: "elife-fastly"
+                dataset: "{instance}"
+                table: "iiif"
             healthcheck:
                 path: /ping-fastly
                 check-interval: 10000
@@ -1738,6 +1742,9 @@ iiif:
                     - https
                 healthcheck:
                     path: /
+            fastly:
+                bigquerylogging:
+                    dataset: "staging"
         prod:
             ports:
                 - 22
