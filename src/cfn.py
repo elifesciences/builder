@@ -119,6 +119,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     """creates a new CloudFormation file for the given project."""
     instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
     stackname = core.mk_stackname(pname, instance_id)
+    checks.ensure_stack_does_not_exist(stackname)
     more_context = {'stackname': stackname}
 
     pdata = project.project_data(pname)
@@ -127,7 +128,10 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
     # prompt user for alternate configurations
     if pdata['aws-alt']:
+        default = 'skip'
         def helpfn(altkey):
+            if altkey == default:
+                return 'uses the default configuration'
             try:
                 return pdata['aws-alt'][altkey]['description']
             except KeyError:
@@ -136,12 +140,12 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
             LOG.info("instance-id found in known alternative configurations. using configuration %r", instance_id)
             more_context['alt-config'] = instance_id
         else:
-            default = 'skip this step'
             alt_config_choices = [default] + list(pdata['aws-alt'].keys())
             if not alt_config:
                 alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
             if alt_config != default:
                 more_context['alt-config'] = alt_config
+
     # TODO: return the templates used here, so that they can be passed down to
     # bootstrap.create_stack() without relying on them implicitly existing
     # on the filesystem
@@ -151,16 +155,18 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 @task
 @requires_project
 def launch(pname, instance_id=None, alt_config=None):
-    stackname = generate_stack_from_input(pname, instance_id, alt_config)
+    try:
+        stackname = generate_stack_from_input(pname, instance_id, alt_config)
+    except checks.StackAlreadyExistsProblem as e:
+        LOG.info('stack %s already exists', e.stackname)
+        return
+
     pdata = core.project_data_for_stackname(stackname)
 
-    LOG.info('attempting to create stack:')
-    LOG.info('stackname:\t%s', stackname)
-    LOG.info('region:\t%s', pdata['aws']['region'])
+    LOG.info('attempting to create %s (AWS region %s)', stackname, pdata['aws']['region'])
 
     if core.is_master_server_stack(stackname):
         checks.ensure_can_access_builder_private(pname)
-    checks.ensure_stack_does_not_exist(stackname)
 
     bootstrap.create_stack(stackname)
 
