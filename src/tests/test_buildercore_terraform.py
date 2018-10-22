@@ -111,7 +111,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                                'ttf'],
                             },
                             'force_destroy': True,
-                            'vcl': {},
+                            'vcl': [],
                         }
                     }
                 },
@@ -426,13 +426,89 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-on-gcp', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['google_storage_bucket']['widgets-prod']
-        self.assertEqual(service, {
+        bucket = template['resource']['google_storage_bucket']['widgets-prod']
+        self.assertEqual(bucket, {
             'name': 'widgets-prod',
             'location': 'us-east4',
             'storage_class': 'REGIONAL',
             'project': 'elife-something',
         })
+
+    def test_bigquery_datasets_only(self):
+        extra = {
+            'stackname': 'project-with-bigquery-datasets-only--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery-datasets-only', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        self.assertNotIn('google_bigquery_table', template['resource'])
+
+    def test_bigquery_full_template(self):
+        extra = {
+            'stackname': 'project-with-bigquery--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        table = template['resource']['google_bigquery_table']['my_dataset_prod_widgets']
+        self.assertEqual(table, {
+            'dataset_id': 'my_dataset_prod',
+            'table_id': 'widgets',
+            'project': 'elife-something',
+            'schema': '${file("key-value.json")}',
+        })
+
+    def test_bigquery_remote_paths(self):
+        "remote paths require terraform to fetch and load the files, which requires another entry in the 'data' list"
+        pname = "project-with-bigquery-remote-schemas"
+        iid = pname + "--prod"
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        expecting = json.loads('''{
+            "resource": {
+                "google_bigquery_dataset": {
+                    "my_dataset_prod": {
+                        "project": "elife-something",
+                        "dataset_id": "my_dataset_prod"
+                    }
+                },
+                "google_bigquery_table": {
+                    "my_dataset_prod_remote": {
+                        "project": "elife-something",
+                        "dataset_id": "my_dataset_prod",
+                        "table_id": "remote",
+                        "schema": "${data.http.my_dataset_prod_remote.body}"
+                    },
+                    "my_dataset_prod_local": {
+                        "project": "elife-something",
+                        "dataset_id": "my_dataset_prod",
+                        "table_id": "local",
+                        "schema": "${file(\\"key-value.json\\")}"
+                    }
+                }
+            },
+            "data": {
+                "http": {
+                    "my_dataset_prod_remote": {
+                        "url": "https://example.org/schemas/remote.json"
+                    }
+                }
+            }
+        }''')
+        self.assertEqual(expecting, terraform_template)
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():

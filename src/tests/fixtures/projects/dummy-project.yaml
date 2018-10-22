@@ -133,6 +133,8 @@ defaults:
             description: uses a plain Ubuntu basebox instead of an ami
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
+    gcp:
+        bigquery: false
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
         box-url: null # not needed for boxes hosted on Atlas 
@@ -245,6 +247,8 @@ project-with-s3:
                 cors: true
             widgets-just-access-{instance}:
                 public: true
+            widgets-encrypted-{instance}:
+                encryption: arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
@@ -618,7 +622,7 @@ project-on-gcp:
     intdomain: False
     # I know, this should be gcp, but actually should be renamed
     # to "cloud" or "remote" or similar
-    # TODO: use separate key with 'gcp'?
+    # TODO: move onto separate key with 'gcp'?
     aws:
         ec2: false
         gcs:
@@ -626,4 +630,53 @@ project-on-gcp:
                 project: elife-something
                 # space for options
                 #
+    aws-alt: {}
+
+project-with-bigquery-datasets-only:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            my_dataset_{instance}:
+                project: elife-something
+    aws-alt: {}
+
+project-with-bigquery:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            #location: US
+            "my_dataset_{instance}":
+                project: elife-something
+                tables:
+                    widgets:
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
+    aws-alt: {}
+
+project-with-bigquery-remote-schemas:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            #location: US
+            "my_dataset_{instance}":
+                project: elife-something
+                tables:
+                    remote:
+                        schema: https://example.org/schemas/remote.json
+                    local:
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}

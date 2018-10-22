@@ -315,6 +315,9 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 if str(err).startswith('Timed out trying to connect'):
                     LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
                     continue
+                if str(err).startswith('Low level socket error connecting to host'):
+                    LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
+                    continue
                 else:
                     raise err
             except config.FabricException as err:
@@ -443,6 +446,10 @@ def stack_path(stackname, relative=False):
         path = config.STACK_DIR if relative else config.STACK_PATH
         return join(path, stackname) + ".json"
     raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
+
+# def stack_body(stackname):
+#    stack = boto_conn(stackname, 'cloudformation', client=True)
+#    return stack.get_template()['TemplateBody']
 
 def stack_json(stackname, parse=False):
     "returns the json of the given stack as a STRING, not the parsed json unless `parse = True`."
@@ -575,6 +582,9 @@ def find_region(stackname=None):
     if more than one region available, it will raise an MultipleRegionsError.
     until we have some means of supporting multiple regions, this is the best solution"""
     if stackname:
+        # TODO: should use context, not project data
+        # as updates in project data do not immediately affect existing stacks
+        # which reside in a region
         pdata = project_data_for_stackname(stackname)
         return pdata['aws']['region']
 

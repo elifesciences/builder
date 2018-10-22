@@ -52,6 +52,7 @@ class BaseCase(TestCase):
         self.fixtures_dir = fixtures_dir
 
     # TODO: python2 warning
+    # pylint: disable=E1101
     def assertCountEqual(self, *args):
         parent = super(BaseCase, self)
         if not hasattr(parent, 'assertCountEqual'):

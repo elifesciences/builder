@@ -78,6 +78,7 @@ defaults:
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
+            encryption: false
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
@@ -120,6 +121,7 @@ defaults:
         #               prefix: 'elife-'
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
+        #       encryption: false
         s3: {}
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
@@ -207,6 +209,8 @@ defaults:
                 ami: ami-089646d3d52f14f1f # created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
+    gcp:
+        bigquery: false
     vagrant:
         # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
@@ -219,6 +223,9 @@ defaults:
         ram: 1024
         cpus: 2
         cpucap: 100 # percent (vagrant default)
+        #ports:
+        #    1239: 80
+        #    1240: 8001
 
 basebox:
     salt: '2017.7.7' # overridden for 18.04 support
@@ -875,6 +882,7 @@ journal-cms:
             journal-cms--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
+                    - bus-digests--{instance}
                     - bus-metrics--{instance}
     aws-alt:
         standalone:
@@ -1042,6 +1050,12 @@ elife-libraries:
         load:
             description: running load tests
             type: t2.2xlarge
+        spectrum:
+            description: running end2end tests
+            # 2 core, 8 GB of memory
+            type: t2.medium
+            ext:
+                size: 10 # GB
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
@@ -1970,15 +1984,37 @@ elife-xpub:
             device: /dev/sdh
             type: gp2
     aws-alt:
-        demo:
+        end2end:
             s3:
                 "{instance}-elife-xpub":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+        staging:
+            s3:
+                "{instance}-elife-xpub":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
         prod:
             subdomains:
                 - xpub
             s3:
                 "{instance}-elife-xpub":
-                     deletion-policy: retain
+                    deletion-policy: retain
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
@@ -2008,7 +2044,6 @@ elife-ink:
             - 4569 # slanger nginx https
             - 8080 # slanger api
             - 8082 # slanger api nginx https
-    aws-alt: {}
     vagrant:
         ram: 4096
         ports:
@@ -2066,16 +2101,68 @@ fastly-logs:
         gcs:
             "{instance}-elife-fastly":
                 project: elife-fastly
+    gcp:
+        bigquery:
+            "{instance}":
+                project: elife-fastly
+                tables:
+                    iiif:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
     aws-alt: {}
 
 data-pipeline:
     description: Data consolidation project
-    domain: false
-    intdomain: false
+    subdomain: pipeline
+    formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
-        ec2: false
+        ec2:
+            ami: ami-1d4e7a66 # 16.04
+        ext:
+            size: 100 # GB
+        type: t2.medium
+        ports:
+            - 22
+            - 80 # used only to upgrade to https
+            - 443
         s3:
             "{instance}-elife-data-pipeline":
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    gcp:
+        bigquery:
+            "{instance}": # dataset
+                # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
+                project: elife-data-pipeline
+                tables:
+                    # bit of repetition here
+                    380_datascience_early_career_researchers:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/380_datascience_early_career_researchers.json
+                    489_datascience_editor_keywords:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/489_datascience_editor_keywords.json
+                    455_datascience_editors:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
+    vagrant:
+        box: bento/ubuntu-16.04
+        cpus: 2
+        ram: 2048
+        ports:
+            1222: 80
+
+
+# deprecated, remove once all nifi-demo instances are destroyed
+nifi-demo:
+    formula-repo: https://github.com/elifesciences/nifi-demo-formula
+    subdomain: nifidemo
+    aws:
+        ec2:
+            ami: ami-1d4e7a66
+            masterless: True
+        ports:
+            - 22
+            - 443
+    vagrant:
+        cpus: 2
+        ram: 2048
+        ports:
+            1222: 8080
