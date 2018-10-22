@@ -16,11 +16,11 @@ class TestWithInstance(base.BaseIntegrationCase):
     @classmethod
     def setUpClass(cls):
         super(TestWithInstance, cls).setUpClass()
-        cls.setup_stack(project='dummy1', explicitly_start=True)
+        cls.set_up_stack(project='dummy1', explicitly_start=True)
 
     @classmethod
     def tearDownClass(cls):
-        cls.tear_down_stack(cls)
+        cls.tear_down_stack()
         super(TestWithInstance, cls).tearDownClass()
 
     def test_bootstrap_create_stack_idempotence(self):

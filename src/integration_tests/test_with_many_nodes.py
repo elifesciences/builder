@@ -18,14 +18,14 @@ class TestWithManyNodes(base.BaseIntegrationCase):
     def setUpClass(cls):
         super(TestWithManyNodes, cls).setUpClass()
 
-        cls.setup_stack(
+        cls.set_up_stack(
             project='project-with-cluster-integration-tests',
             explicitly_start=False # see self.setUp
         )
 
     @classmethod
     def tearDownClass(cls):
-        cls.tear_down_stack(cls)
+        cls.tear_down_stack()
         super(TestWithManyNodes, cls).tearDownClass()
 
     def setUp(self):

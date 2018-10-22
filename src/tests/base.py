@@ -85,7 +85,7 @@ class BaseCase(TestCase):
 
 class BaseIntegrationCase(BaseCase):
     @classmethod
-    def setup_stack(cls, project, explicitly_start=False):
+    def set_up_stack(cls, project, explicitly_start=False):
         switch_in_test_settings()
 
         # to re-use an existing stack, ensure cls.reuse_existing_stack is True
@@ -122,22 +122,26 @@ class BaseIntegrationCase(BaseCase):
             cls.stacknames.append(cls.stackname)
 
             if cls.cleanup:
+                LOG.info("ensure_destroyed %s", cls.stackname)
                 cfn.ensure_destroyed(cls.stackname)
 
             cls.context, cls.cfn_template, _ = cfngen.generate_stack(project, stackname=cls.stackname)
             cls.region = cls.context['aws']['region']
+            LOG.info("create_stack %s", cls.stackname)
             bootstrap.create_stack(cls.stackname)
 
             if explicitly_start:
+                LOG.info("start %s", cls.stackname)
                 lifecycle.start(cls.stackname)
 
     @classmethod
-    def tearDownStack(cls):
+    def tear_down_stack(cls):
         try:
             if cls.reuse_existing_stack:
                 json.dump(cls.state, open(cls.statefile, 'w'))
             if cls.cleanup:
                 for stackname in cls.stacknames:
+                    LOG.info("ensure_destroyed %s", stackname)
                     cfn.ensure_destroyed(stackname)
             # cls.rm_temp_dir()
             # cls.assertFalse(os.path.exists(cls.temp_dir), "failed to delete path %r in tearDown" % cls.temp_dir)
