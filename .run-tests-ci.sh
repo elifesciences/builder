@@ -9,6 +9,7 @@ if [ -z "$envname" ]; then
     exit 1
 fi
 
+echo "Running tests"
 export PYTHONPATH="src"
 pytest \
     --cov=src \
@@ -17,4 +18,5 @@ pytest \
     --junitxml=build/pytest-$envname.xml \
     src/tests src/integration_tests
 
+echo "Checking coverage report"
 coverage report --fail-under=67
