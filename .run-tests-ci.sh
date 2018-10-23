@@ -12,7 +12,7 @@ fi
 export PYTHONPATH="src"
 pytest \
     --cov=src \
-    -n 2 \
+    -n 4 \
     -s \
     --junitxml=build/pytest-$envname.xml \
     src/tests src/integration_tests
