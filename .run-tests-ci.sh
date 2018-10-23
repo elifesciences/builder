@@ -13,6 +13,7 @@ echo "Running tests"
 export PYTHONPATH="src"
 pytest \
     -n 4 \
+    --dist=loadscope \
     -s \
     --junitxml=build/pytest-$envname.xml \
     src/tests src/integration_tests
