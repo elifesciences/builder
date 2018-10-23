@@ -11,15 +11,20 @@ fi
 
 echo "Running tests"
 export PYTHONPATH="src"
+if [ "$envname" = "py27" ]; then
+    coverage_options="--cov-config=.coveragerc --cov-report= --cov=src"
+else
+    coverage_options=
+fi
 pytest \
-    --cov-config=.coveragerc \
-    --cov-report= \
-    --cov=src \
+    $coverage_options
     -n 4 \
     --dist=loadscope \
     -s \
-    --junitxml=build/pytest-$envname.xml \
+    --junitxml="build/pytest-$envname.xml" \
     src/tests src/integration_tests
 
-echo "Checking coverage report"
-coverage report --fail-under=50
+if [ ! -z "$coverage_options" ]; then
+    echo "Checking coverage report"
+    coverage report --fail-under=50
+fi
