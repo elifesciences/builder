@@ -12,7 +12,6 @@ fi
 echo "Running tests"
 export PYTHONPATH="src"
 pytest \
-    --cov=src \
     -n 4 \
     -s \
     --junitxml=build/pytest-$envname.xml \
