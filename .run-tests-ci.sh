@@ -17,7 +17,7 @@ else
     coverage_options=
 fi
 pytest \
-    $coverage_options
+    $coverage_options \
     -n 4 \
     --dist=loadscope \
     -s \
