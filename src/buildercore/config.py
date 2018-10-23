@@ -81,19 +81,19 @@ ROOTLOG = logging.getLogger() # important! this is the *root LOG*
 ROOTLOG.setLevel(logging.DEBUG) # *default* output level for all LOGs
 
 # StreamHandler sends to stderr by default
-H1 = logging.StreamHandler()
-H1.setLevel(logging.INFO) # output level for *this handler*
-H1.setFormatter(CONSOLE_FORMAT)
+CONSOLE_HANDLER = logging.StreamHandler()
+CONSOLE_HANDLER.setLevel(logging.INFO) # output level for *this handler*
+CONSOLE_HANDLER.setFormatter(CONSOLE_FORMAT)
 
 
 # FileHandler sends to a named file
-H2 = logging.FileHandler(LOG_FILE)
+FILE_HANDLER = logging.FileHandler(LOG_FILE)
 _log_level = os.environ.get('LOG_LEVEL_FILE', 'INFO')
-H2.setLevel(getattr(logging, _log_level))
-H2.setFormatter(FORMAT)
+FILE_HANDLER.setLevel(getattr(logging, _log_level))
+FILE_HANDLER.setFormatter(FORMAT)
 
-ROOTLOG.addHandler(H1)
-ROOTLOG.addHandler(H2)
+ROOTLOG.addHandler(CONSOLE_HANDLER)
+ROOTLOG.addHandler(FILE_HANDLER)
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('paramiko.transport').setLevel(logging.ERROR)

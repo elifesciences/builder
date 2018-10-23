@@ -1,2 +1,5 @@
 import logging
-logging.disable(logging.CRITICAL)
+
+from buildercore.config import CONSOLE_HANDLER
+
+CONSOLE_HANDLER.setLevel(logging.CRITICAL)
