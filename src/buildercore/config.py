@@ -97,6 +97,7 @@ ROOTLOG.addHandler(H2)
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
+logging.getLogger('botocore.vendored').setLevel(logging.ERROR)
 
 #
 # remote
