@@ -12,6 +12,9 @@ fi
 echo "Running tests"
 export PYTHONPATH="src"
 pytest \
+    --cov-config=.coveragerc \
+    --cov-report= \
+    --cov=src \
     -n 4 \
     --dist=loadscope \
     -s \
