@@ -26,5 +26,5 @@ pytest \
 
 if [ ! -z "$coverage_options" ]; then
     echo "Checking coverage report"
-    coverage report --fail-under=50
+    coverage report --fail-under=69
 fi
