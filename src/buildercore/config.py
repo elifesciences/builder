@@ -99,6 +99,10 @@ LOG = logging.getLogger(__name__)
 logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 logging.getLogger('botocore.vendored').setLevel(logging.ERROR)
 
+def get_logger(name):
+    "ensures logging is setup before handing out a Logger object to use"
+    return logging.getLogger(name)
+
 #
 # remote
 #

@@ -1,8 +1,7 @@
-import logging
 import pytest
-import buildercore.config
+from buildercore.config import get_logger
 
-LOG = logging.getLogger("conftest")
+LOG = get_logger("conftest")
 
 def pytest_addoption(parser):
     parser.addoption("--filter-project-name",
