@@ -11,8 +11,6 @@ LOG = logging.getLogger(__name__)
 # * run any logic that requires multiple ec2 nodes
 # * optionally leave the nodes running while debugging happens
 
-# TODO: this class is a copy with `test_with_instance.py` with one value tweaked
-# turn into a base class perhaps?
 class TestWithManyNodes(base.BaseIntegrationCase):
     @classmethod
     def setUpClass(cls):
