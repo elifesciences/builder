@@ -18,4 +18,4 @@ pytest \
     src/tests src/integration_tests
 
 echo "Checking coverage report"
-coverage report --fail-under=67
+coverage report --fail-under=50
