@@ -67,7 +67,9 @@ after the setup of the key, complete this process by running builder's 'update' 
 
     ./bldr update:$stackname
 
-This key will also be used to access to any private formula you want the master-server to use. The elife-master-builder Github user should already have access to these formulas.
+This key will also be used to access any private formula you want the master-server to use.
+
+The elife-master-builder Github user should already have access to these formulas.
 
 ----------"
 
