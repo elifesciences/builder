@@ -129,6 +129,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     # prompt user for alternate configurations
     if pdata['aws-alt']:
         default = 'skip'
+
         def helpfn(altkey):
             if altkey == default:
                 return 'uses the default configuration'
