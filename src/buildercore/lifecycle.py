@@ -4,6 +4,7 @@ The primary reason for doing this is to save on costs."""
 
 from datetime import datetime
 import logging
+from pprint import pformat
 import re
 import backoff
 from fabric.contrib import files
@@ -50,30 +51,34 @@ def restart(stackname):
 
     history = []
 
-    for node in node_list:
-        push(history, node_states(node_list))
+    try:
+        for node in node_list:
+            push(history, node_states(node_list))
 
-        node.stop()
-        push(history, node_states(node_list))
+            node.stop()
+            push(history, node_states(node_list))
 
-        node.wait_until_stopped()
-        push(history, node_states(node_list))
+            node.wait_until_stopped()
+            push(history, node_states(node_list))
 
-        node.start()
-        push(history, node_states(node_list))
+            node.start()
+            push(history, node_states(node_list))
 
-        node.wait_until_running()
-        push(history, node_states(node_list))
+            node.wait_until_running()
+            push(history, node_states(node_list))
 
-        node_id = _node_id(node)
-        call_while(
-            lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
-            interval=2,
-            update_msg="waiting for nodes to be networked",
-            done_msg="all nodes have public ips"
-        )
-    update_dns(stackname)
-    return history
+            node_id = _node_id(node)
+            call_while(
+                lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
+                interval=2,
+                update_msg="waiting for nodes to be networked",
+                done_msg="all nodes have public ips"
+            )
+        update_dns(stackname)
+        return history
+    except Exception:
+        LOG.info("Partial restart history of %s: %s", stackname, pformat(history))
+        raise
 
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
