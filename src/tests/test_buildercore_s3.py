@@ -47,7 +47,9 @@ class SimpleCases(base.BaseCase):
         ]
         for key in keys:
             s3.write(key, 'asdf')
-        self.assertEqual(sorted(keys), sorted(s3.simple_listing("test/")))
+        list_result = sorted(s3.simple_listing("test/"))
+        for key in keys:
+            self.assertIn(key, list_result)
 
     def test_download(self):
         key = "test/foo-%s" % self.envname
