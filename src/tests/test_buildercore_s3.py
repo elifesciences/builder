@@ -3,37 +3,39 @@ import os
 from . import base
 from buildercore import s3
 
-class SimpleCases(base.BaseCase):
+class TestReadWrite(base.BaseCase):
     def setUp(self):
-        s3.delete_contents("test/")
-        os.system("mkdir -p /tmp/builder/")
         self.envname = base.generate_environment_name()
 
+        self.prefix = "test/%s" % self.envname
+        s3.delete_contents("%s/" % self.prefix)
+
+        self.local_path = "/tmp/builder-%s/" % self.envname
+        os.system("mkdir -p %s" % self.local_path)
+
     def tearDown(self):
-        s3.delete_contents("test/")
-        os.system("rm -f /tmp/builder/*")
+        s3.delete_contents("%s/" % self.prefix)
+        os.system("rm -rf %s" % self.local_path)
 
     def test_exists(self):
-        key = "test/boo"
+        key = "%s/boo" % self.prefix
         self.assertFalse(s3.exists(key))
 
     def test_writable(self):
-        key = "test/foo-%s" % self.envname
+        key = "%s/foo" % self.prefix
         self.assertFalse(s3.exists(key))
         s3.write(key, "asdf")
         self.assertTrue(s3.exists(key))
 
     def test_overwrite(self):
-        key = "test/foo-%s" % self.envname
+        key = "%s/foo" % self.prefix
         self.assertFalse(s3.exists(key))
         s3.write(key, "asdf")
         self.assertRaises(KeyError, s3.write, key, "fdsa")
         s3.write(key, "fdsa", overwrite=True)
 
-        # TODO: test content was actually overwritten
-
     def test_delete(self):
-        key = "test/foo-%s" % self.envname
+        key = "%s/foo" % self.prefix
         s3.write(key, "asdf")
         self.assertTrue(s3.exists(key))
         s3.delete(key)
@@ -41,20 +43,20 @@ class SimpleCases(base.BaseCase):
 
     def test_list(self):
         keys = [
-            "test/foo-%s" % base.generate_environment_name(),
-            "test/bar-%s" % base.generate_environment_name(),
-            "test/baz-%s" % base.generate_environment_name(),
+            "%s/foo-%s" % (self.prefix, base.generate_environment_name()),
+            "%s/bar-%s" % (self.prefix, base.generate_environment_name()),
+            "%s/baz-%s" % (self.prefix, base.generate_environment_name()),
         ]
         for key in keys:
             s3.write(key, 'asdf')
-        list_result = sorted(s3.simple_listing("test/"))
+        list_result = sorted(s3.simple_listing("%s/" % self.prefix))
         for key in keys:
             self.assertIn(key, list_result)
 
     def test_download(self):
-        key = "test/foo-%s" % self.envname
+        key = "%s/foo" % self.prefix
         expected_contents = "test content"
-        expected_output = '/tmp/builder/baz'
+        expected_output = '%s/baz' % self.local_path
         s3.write(key, expected_contents)
         s3.download(key, expected_output)
         self.assertTrue(os.path.exists(expected_output))
