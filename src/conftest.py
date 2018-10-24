@@ -1,5 +1,8 @@
+import logging
 import pytest
-from buildercore.config import get_logger
+from buildercore.config import get_logger, CONSOLE_HANDLER
+
+CONSOLE_HANDLER.setLevel(logging.CRITICAL)
 
 LOG = get_logger("conftest")
 
