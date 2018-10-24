@@ -421,7 +421,9 @@ api-gateway:
         continuumtest:
             fastly:
                 bigquerylogging:
-                    dataset: "staging"
+                    dataset: staging
+                gcslogging:
+                    bucket: staging-elife-fastly
         prod:
             fastly:
                 subdomains:
@@ -540,7 +542,7 @@ journal:
                     - "journal-google-scholar"
                     - "journal-google-scholar-vary"
                 gcslogging:
-                    bucket: "{instance}-elife-fastly"
+                    bucket: staging-elife-fastly
                     path: "journal--{instance}/"
                     period: 600
                 bigquerylogging:
@@ -873,7 +875,7 @@ generic-cdn:
         continuumtest:
             fastly:
                 gcslogging:
-                    bucket: continuumtest-elife-fastly
+                    bucket: staging-elife-fastly
                     path: generic-cdn--continuumtest/
                     period: 600
                 bigquerylogging:
@@ -1757,6 +1759,8 @@ iiif:
             fastly:
                 bigquerylogging:
                     dataset: "staging"
+                gcslogging:
+                    bucket: staging-elife-fastly
         prod:
             ports:
                 - 22
