@@ -49,10 +49,6 @@ class TestProvisioning(base.BaseIntegrationCase):
             buildvars.switch_revision(stackname, 'master')
             buildvars.force(stackname, 'answer', 'forty-two')
 
-            # TODO: remove as it is tested separately?
-            lifecycle.stop(stackname)
-            lifecycle.start(stackname)
-
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel', node=1)
 
