@@ -95,7 +95,7 @@ class TestUpdates(base.BaseCase):
     def test_template_delta_includes_ec2_security_group(self):
         "it's useful to open and close ports"
         context = self._base_context()
-        context['project']['aws']['ports'] = [110]
+        context['ec2']['ports'] = [110]
         (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_edit['Resources'].keys()), ['StackSecurityGroup'])
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
@@ -103,7 +103,7 @@ class TestUpdates(base.BaseCase):
     def test_template_delta_includes_parts_of_rds(self):
         "we want to update RDS instances in place to avoid data loss"
         context = self._base_context('dummy2')
-        context['project']['aws']['rds']['multi-az'] = True
+        context['rds']['multi-az'] = True
         (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_edit['Resources'].keys()), ['AttachedDB'])
         self.assertEqual(delta_edit['Resources']['AttachedDB']['Properties']['MultiAZ'], 'true')

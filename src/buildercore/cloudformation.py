@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 def render_template(context):
     pname = context['project_name']
     msg = 'could not render a CloudFormation template for %r' % pname
-    ensure('aws' in context['project'], msg, ValueError)
+    ensure('aws' in context, msg, ValueError)
     return trop.render(context)
 
 def _give_up_backoff(e):
@@ -85,6 +85,7 @@ def bootstrap(stackname, context):
     parameters = []
     on_start = _noop
     on_error = _noop
+    # TODO: should use context by this point
     if pdata['aws']['ec2']:
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
         on_start = lambda: keypair.create_keypair(stackname)
@@ -192,10 +193,6 @@ def _update_template(stackname, template):
     call_while(stack_is_updating, interval=2, timeout=7200, update_msg=waiting, done_msg=done)
 
 def destroy(stackname, context):
-    stack_body = core.stack_json(stackname)
-    if json.loads(stack_body) == EMPTY_TEMPLATE:
-        return
-
     try:
         core.describe_stack(stackname).delete()
 
@@ -215,7 +212,20 @@ def destroy(stackname, context):
         meta = ex.response['ResponseMetadata']
         err = ex.response['Error']
         # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        if "No updates are to be performed" in err['Message']:
+            LOG.info("Stack %s does not need updates on CloudFormation", stackname)
+            return
+        # ClientError(u'An error occurred (ValidationError) when calling the DescribeStacks operation: Stack with id basebox--1234 does not exist',)
+        # e.operation_name == 'DescribeStacks'
+        # e.response['Error'] == {'Message': 'Stack with id basebox--1234 does not exist', 'Code': 'ValidationError', 'Type': 'Sender'}
+        if ex.operation_name == 'DescribeStacks' and "does not exist" in err['Message']:
+            LOG.info("Stack %s does not exist on CloudFormation", stackname)
+            return
+
         LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
+        # ll: ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-xpub--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS
+        raise
+
 
 def _delete_stack_file(stackname):
     path = os.path.join(config.STACK_DIR, stackname + ".json")

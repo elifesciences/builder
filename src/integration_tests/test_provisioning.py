@@ -10,7 +10,7 @@ import logging
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
-class TestProvisioning(base.BaseCase):
+class TestProvisioning(base.BaseIntegrationCase):
     def setUp(self):
         self.stacknames = []
         self.environment = base.generate_environment_name()
@@ -48,9 +48,6 @@ class TestProvisioning(base.BaseCase):
 
             buildvars.switch_revision(stackname, 'master')
             buildvars.force(stackname, 'answer', 'forty-two')
-
-            lifecycle.stop(stackname)
-            lifecycle.start(stackname)
 
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel')
             cfn.cmd(stackname, "ls -l /", username=BOOTSTRAP_USER, concurrency='parallel', node=1)

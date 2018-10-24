@@ -110,7 +110,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'extensions': ['css', 'eot', 'html', 'ico', 'js', 'json', 'otf',
                                                'ttf'],
                             },
-                            'force_destroy': True
+                            'force_destroy': True,
+                            'vcl': [],
                         }
                     }
                 },
@@ -129,16 +130,46 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'data': {
                     'http': {
+                        'error-page-404': {
+                            'url': 'https://example.com/404.html'
+                        },
                         'error-page-503': {
-                            'url': 'https://example.com/'
+                            'url': 'https://example.com/503.html'
+                        },
+                        'error-page-4xx': {
+                            'url': 'https://example.com/4xx.html'
+                        },
+                        'error-page-5xx': {
+                            'url': 'https://example.com/5xx.html'
                         },
                     },
                     'template_file': {
                         'error-page-vcl-503': {
                             'template': '${file("error-page.vcl.tpl")}',
                             'vars': {
-                                'code': 503,
+                                'test': 'obj.status == 503',
                                 'synthetic_response': '${data.http.error-page-503.body}',
+                            },
+                        },
+                        'error-page-vcl-404': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status == 404',
+                                'synthetic_response': '${data.http.error-page-404.body}',
+                            },
+                        },
+                        'error-page-vcl-4xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status >= 400 && obj.status <= 499',
+                                'synthetic_response': '${data.http.error-page-4xx.body}',
+                            },
+                        },
+                        'error-page-vcl-5xx': {
+                            'template': '${file("error-page.vcl.tpl")}',
+                            'vars': {
+                                'test': 'obj.status >= 500 && obj.status <= 599',
+                                'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
                         },
                     },
@@ -294,6 +325,18 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '${data.template_file.error-page-vcl-503.rendered}',
                                 },
                                 {
+                                    'name': 'error-page-vcl-404',
+                                    'content': '${data.template_file.error-page-vcl-404.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-4xx',
+                                    'content': '${data.template_file.error-page-vcl-4xx.rendered}',
+                                },
+                                {
+                                    'name': 'error-page-vcl-5xx',
+                                    'content': '${data.template_file.error-page-vcl-5xx.rendered}',
+                                },
+                                {
                                     'name': 'main',
                                     'content': '${file("main.vcl")}',
                                     'main': True,
@@ -376,6 +419,30 @@ class TestBuildercoreTerraform(base.BaseCase):
         data = template['data']['vault_generic_secret']['fastly-gcs-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
 
+    def test_fastly_template_bigquery_logging(self):
+        extra = {
+            'stackname': 'project-with-fastly-bigquery--prod',
+        }
+        context = cfngen.build_context('project-with-fastly-bigquery', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        self.assertIn('bigquerylogging', service)
+        self.assertEqual(service['bigquerylogging'].get('name'), 'bigquery')
+        self.assertEqual(service['bigquerylogging'].get('project_id'), 'my-project')
+        self.assertEqual(service['bigquerylogging'].get('dataset'), 'my_dataset')
+        self.assertEqual(service['bigquerylogging'].get('table'), 'my_table')
+        self.assertEqual(service['bigquerylogging'].get('email'), '${data.vault_generic_secret.fastly-gcp-logging.data["email"]}')
+        self.assertEqual(service['bigquerylogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcp-logging.data["secret_key"]}')
+
+        log_format = service['bigquerylogging'].get('format')
+        # the non-rendered log_format is not even valid JSON
+        self.assertIsNotNone(log_format)
+        self.assertRegex(log_format, "\{.*\}")
+
+        data = template['data']['vault_generic_secret']['fastly-gcp-logging']
+        self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcp-logging'})
+
     def test_gcp_template(self):
         extra = {
             'stackname': 'project-on-gcp--prod',
@@ -383,13 +450,91 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-on-gcp', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['google_storage_bucket']['widgets-prod']
-        self.assertEqual(service, {
+        bucket = template['resource']['google_storage_bucket']['widgets-prod']
+        self.assertEqual(bucket, {
             'name': 'widgets-prod',
             'location': 'us-east4',
             'storage_class': 'REGIONAL',
             'project': 'elife-something',
         })
+
+    def test_bigquery_datasets_only(self):
+        extra = {
+            'stackname': 'project-with-bigquery-datasets-only--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery-datasets-only', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        self.assertNotIn('google_bigquery_table', template['resource'])
+
+    def test_bigquery_full_template(self):
+        extra = {
+            'stackname': 'project-with-bigquery--prod',
+        }
+        context = cfngen.build_context('project-with-bigquery', **extra)
+        terraform_template = terraform.render(context)
+        template = self._parse_template(terraform_template)
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        self.assertEqual(dataset, {
+            'dataset_id': 'my_dataset_prod',
+            'project': 'elife-something',
+        })
+
+        table = template['resource']['google_bigquery_table']['my_dataset_prod_widgets']
+        self.assertEqual(table, {
+            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
+            'table_id': 'widgets',
+            'project': 'elife-something',
+            'schema': '${file("key-value.json")}',
+        })
+
+    def test_bigquery_remote_paths(self):
+        "remote paths require terraform to fetch and load the files, which requires another entry in the 'data' list"
+        pname = 'project-with-bigquery-remote-schemas'
+        iid = pname + '--prod'
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertEqual(
+            terraform_template,
+            {
+                'resource': {
+                    'google_bigquery_dataset': {
+                        'my_dataset_prod': {
+                            'project': 'elife-something',
+                            'dataset_id': 'my_dataset_prod'
+                        }
+                    },
+                    'google_bigquery_table': {
+                        'my_dataset_prod_remote': {
+                            'project': 'elife-something',
+                            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
+                            'table_id': 'remote',
+                            'schema': '${data.http.my_dataset_prod_remote.body}'
+                        },
+                        'my_dataset_prod_local': {
+                            'project': 'elife-something',
+                            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
+                            'table_id': 'local',
+                            'schema': '${file("key-value.json")}'
+                        }
+                    }
+                },
+                'data': {
+                    'http': {
+                        'my_dataset_prod_remote': {
+                            'url': 'https://example.org/schemas/remote.json'
+                        }
+                    }
+                }
+            }
+        )
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():

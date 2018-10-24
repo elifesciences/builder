@@ -1,11 +1,7 @@
-import os, json
-from fabric.api import settings
-from tests import base
-from buildercore import bootstrap, cfngen, cloudformation, lifecycle, utils, core, config
-from buildercore.config import BOOTSTRAP_USER
-import cfn
 import logging
-#import mock
+from tests import base
+from buildercore import bootstrap, cloudformation, utils, core
+from buildercore.config import BOOTSTRAP_USER
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
@@ -16,69 +12,16 @@ LOG = logging.getLogger(__name__)
 # * run any logic against it that needs a running ec2 instance
 # * optionally leave the instance running while debugging happens
 
-class One(base.BaseCase):
+class TestWithInstance(base.BaseIntegrationCase):
     @classmethod
-    def setUpClass(self): # cls, not self
-        super(One, self).setUpClass()
-        base.switch_in_test_settings()
-
-        # to re-use an existing stack, ensure self.reuse_existing_stack is True
-        # this will read the instance name from a temporary file (if it exists) and
-        # look for that, creating it if doesn't exist yet
-        # also ensure self.cleanup is False so the instance isn't destroyed after tests complete
-        self.reuse_existing_stack = config.TWI_REUSE_STACK
-        self.cleanup = config.TWI_CLEANUP
-
-        self.stacknames = []
-        self.environment = base.generate_environment_name()
-        # self.temp_dir, self.rm_temp_dir = utils.tempdir()
-
-        # debugging only, where we keep an instance up between processes
-        self.state, self.statefile = {}, '/tmp/.open-test-instances.txt'
-        project = 'dummy1'
-
-        if self.reuse_existing_stack and os.path.exists(self.statefile):
-            # evidence of a previous instance and we've been told to re-use old instances
-            old_state = json.load(open(self.statefile, 'r'))
-            old_env = old_state.get('environment')
-
-            # test if the old stack still exists ...
-            if old_env and core.describe_stack(project + "--" + old_env, allow_missing=True):
-                self.state = old_state
-                self.environment = old_env
-            else:
-                # nope. old statefile is bogus, delete it
-                os.unlink(self.statefile)
-
-        self.state['environment'] = self.environment # will be saved later
-
-        with settings(abort_on_prompts=True):
-            self.stackname = '%s--%s' % (project, self.environment)
-            self.stacknames.append(self.stackname)
-
-            if self.cleanup:
-                cfn.ensure_destroyed(self.stackname)
-
-            self.context, self.cfn_template, _ = cfngen.generate_stack(project, stackname=self.stackname)
-            self.region = self.context['project']['aws']['region']
-            bootstrap.create_stack(self.stackname)
-
-            lifecycle.start(self.stackname)
+    def setUpClass(cls):
+        super(TestWithInstance, cls).setUpClass()
+        cls.set_up_stack(project='dummy1', explicitly_start=True)
 
     @classmethod
-    def tearDownClass(self): # cls, not self
-        super(One, self).tearDownClass()
-        try:
-            if self.reuse_existing_stack:
-                json.dump(self.state, open(self.statefile, 'w'))
-            if self.cleanup:
-                for stackname in self.stacknames:
-                    cfn.ensure_destroyed(stackname)
-            # self.rm_temp_dir()
-            # self.assertFalse(os.path.exists(self.temp_dir), "failed to delete path %r in tearDown" % self.temp_dir)
-        except BaseException:
-            # important, as anything in body will silently fail
-            LOG.exception('uncaught error tearing down test class')
+    def tearDownClass(cls):
+        cls.tear_down_stack()
+        super(TestWithInstance, cls).tearDownClass()
 
     def test_bootstrap_create_stack_idempotence(self):
         "the same stack cannot be created multiple times"

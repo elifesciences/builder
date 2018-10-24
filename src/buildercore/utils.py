@@ -1,5 +1,6 @@
+from pprint import pformat
 import pytz
-import os, sys, copy, json, time, random, string
+import os, sys, json, time, random, string
 from io import BytesIO
 from functools import wraps
 from datetime import datetime
@@ -10,7 +11,7 @@ from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
 from fabric.operations import get, put
-import tempfile, shutil
+import tempfile, shutil, copy
 
 LOG = logging.getLogger(__name__)
 
@@ -27,6 +28,10 @@ lfilter = lambda func, *iterable: list(filter(func, *iterable))
 keys = lambda d: list(d.keys())
 
 lzip = lambda *iterable: list(zip(*iterable))
+
+def deepcopy(x):
+    # return pickle.loads(pickle.dumps(x, -1))
+    return copy.deepcopy(x) # very very slow
 
 def isint(v):
     return str(v).lstrip('-+').isdigit()
@@ -51,7 +56,7 @@ def iterable(x):
 
 def conj(x, y):
     "performs a non-mutating update of dict a with the contents of dict b"
-    z = copy.deepcopy(x)
+    z = deepcopy(x)
     z.update(y)
     return z
 
@@ -318,7 +323,7 @@ def lu(context, *paths, **kwargs):
         default = kwargs['default']
     v = firstnn(map(lambda path: lookup(context, path, default), paths))
     if v is None:
-        raise ValueError("no value available for paths %r. %s" % (paths, context))
+        raise ValueError("no value available for paths %r. %s" % (paths, pformat(context)))
     return v
 
 def hasallkeys(ddict, key_list):

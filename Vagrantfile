@@ -211,7 +211,6 @@ CUSTOM_SSH_USERNAME = "elife"
 if ENV.fetch("CUSTOM_SSH_USER", nil)
     CUSTOM_SSH_USER = (true if ENV.fetch("CUSTOM_SSH_USER") =~ /^true$/i) || false
 end
-prn "Using ssh key #{CUSTOM_SSH_KEY}"
 
 # finally! configure the beast
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -220,6 +219,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.ssh.insert_key = false
 
     if CUSTOM_SSH_USER and ["ssh", "ssh-config"].include? VAGRANT_COMMAND
+        prn "Using ssh key #{CUSTOM_SSH_KEY}"
         config.ssh.username = CUSTOM_SSH_USERNAME
         config.ssh.private_key_path = File.expand_path(CUSTOM_SSH_KEY)
     end
@@ -357,9 +357,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # configure the instance as if it were a master server
         if IS_MASTER
             pillar_repo = "https://github.com/elifesciences/builder-private-example"
+            configuration_repo = "https://github.com/elifesciences/builder-configuration"
             all_formulas = project_cmd("--formula")
             project.vm.provision("shell", path: "scripts/init-master.sh", \
-                keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo, all_formulas.join(' ')])
+                keep_color: true, privileged: true, args: [INSTANCE_NAME, pillar_repo, configuration_repo, all_formulas.join(' ')])
             master_configuration = project_cmd("master-server --task salt-master-config | tee etc-salt-master")
             project.vm.provision("file", source: "./etc-salt-master", destination: "/tmp/etc-salt-master")
             project.vm.provision("shell", inline: "sudo mv /tmp/etc-salt-master /etc/salt/master")

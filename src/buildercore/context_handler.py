@@ -31,7 +31,14 @@ def load_context(stackname):
     if not os.path.exists(path):
         if not download_from_s3(stackname):
             raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
-    return json.load(open(path, 'r'))
+    contents = json.load(open(path, 'r'))
+
+    # fallback: if no `aws` key is there, copy from legacy `project.aws` key
+    if contents.get('project', {}).get('aws'):
+        contents['aws'] = contents['project']['aws']
+    # end of fallback
+
+    return contents
 
 def write_context(stackname, context):
     write_context_locally(stackname, json.dumps(context))

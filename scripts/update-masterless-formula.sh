@@ -12,6 +12,9 @@ formula_root="/opt/formulas"
 if [ "$pname" = "builder-private" ]; then
     formula_root="/opt"
 fi
+if [ "$pname" = "builder-configuration" ]; then
+    formula_root="/opt"
+fi
 formula_path="$formula_root/$pname"
 
 mkdir -p "$formula_root"
