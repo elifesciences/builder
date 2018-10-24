@@ -26,11 +26,14 @@ defaults:
             default-ttl: 3600 # seconds
             shield: false
             gcslogging: false
+            bigquerylogging: false
             healthcheck: false
             errors: false
             vcl: []
             surrogate-keys: {}
         subdomains: []
+    gcp:
+        bigquery: false
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
 

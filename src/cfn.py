@@ -1,3 +1,4 @@
+import os
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
@@ -125,7 +126,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
         ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")
 
     # prompt user for alternate configurations
-    if 'aws-alt' in pdata:
+    if pdata['aws-alt']:
         def helpfn(altkey):
             try:
                 return pdata['aws-alt'][altkey]['description']
@@ -141,6 +142,9 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
                 alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
             if alt_config != default:
                 more_context['alt-config'] = alt_config
+    # TODO: return the templates used here, so that they can be passed down to
+    # bootstrap.create_stack() without relying on them implicitly existing
+    # on the filesystem
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
@@ -300,9 +304,11 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 
 @task
 @requires_aws_stack
-def upload_file(stackname, local_path, remote_path, overwrite=False):
-    with stack_conn(stackname):
-        print('stack:', stackname)
+def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1):
+    remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
+    overwrite, node = str(overwrite).lower() == "true", int(node)
+    with stack_conn(stackname, node=node):
+        print('stack:', stackname, 'node', node)
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)

@@ -1,17 +1,15 @@
-from collections import namedtuple
-import json
-import os
-from os.path import exists, join, basename
-import re
-import shutil
+from collections import namedtuple, OrderedDict
+import os, re, shutil, json
+from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR
+from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p
+from .utils import ensure, mkdir_p, dictmap, deepmerge
 from . import fastly
+from functools import reduce
 
 EMPTY_TEMPLATE = '{}'
-PROVIDER_FASTLY_VERSION = '0.1.4',
+PROVIDER_FASTLY_VERSION = '0.4.0',
 PROVIDER_VAULT_VERSION = '1.1'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
@@ -21,6 +19,7 @@ DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATE_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
+DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 
 # keys to lookup in Vault
@@ -28,6 +27,7 @@ DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 #     VAULT_ADDR=https://...:8200 vault put secret/builder/apikey/fastly-gcs-logging email=... secret_key=@~/file.json
 VAULT_PATH_FASTLY = 'secret/builder/apikey/fastly'
 VAULT_PATH_FASTLY_GCS_LOGGING = 'secret/builder/apikey/fastly-gcs-logging'
+VAULT_PATH_FASTLY_GCP_LOGGING = 'secret/builder/apikey/fastly-gcp-logging'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -74,14 +74,34 @@ FASTLY_LOG_FORMAT = """{
 # see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
+# keeps different logging configurations unique in the syslog implementation
+# used by Fastly, avoiding
+#     fastly_service_v1.fastly-cdn: 409 - Conflict:
+#     Title:  Duplicate record
+#     Detail: Duplicate logging_syslog: 'default'
+FASTLY_LOG_UNIQUE_IDENTIFIERS = {
+    'gcs': 'default', # historically the first one
+    'bigquery': 'bigquery',
+}
+
 # at the moment VCL snippets are unsupported, this can be worked
 # around by using a full VCL
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
-    generated_template = render_fastly(context)
-    generated_template.update(render_gcp(context))
+    fn_list = [
+        render_fastly,
+        render_gcs,
+        render_bigquery
+    ]
+    partial_tf_list = [fn(context) for fn in fn_list]
+
+    def merge(a, b):
+        deepmerge(a, b)
+        return a
+
+    generated_template = reduce(merge, partial_tf_list)
 
     if not generated_template:
         return EMPTY_TEMPLATE
@@ -97,8 +117,9 @@ def render_fastly(context):
     request_settings = []
     headers = []
     data = {}
+    data[DATA_TYPE_VAULT_GENERIC_SECRET] = {}
     vcl_constant_snippets = context['fastly']['vcl']
-    vcl_templated_snippets = {}
+    vcl_templated_snippets = OrderedDict()
 
     request_settings.append(_fastly_request_setting({
         'name': 'force-ssl',
@@ -156,7 +177,8 @@ def render_fastly(context):
                         'content_types': sorted(FASTLY_GZIP_TYPES),
                         'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
                     },
-                    'force_destroy': True
+                    'force_destroy': True,
+                    'vcl': []
                 }
             }
         },
@@ -178,7 +200,7 @@ def render_fastly(context):
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging'] = {
-            'name': 'default',
+            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
             'bucket_name': gcslogging['bucket'],
             # TODO: validate it starts with /
             'path': gcslogging['path'],
@@ -190,10 +212,24 @@ def render_fastly(context):
             'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         }
-        data[DATA_TYPE_VAULT_GENERIC_SECRET] = {
-            DATA_NAME_VAULT_GCS_LOGGING: {
-                'path': VAULT_PATH_FASTLY_GCS_LOGGING,
-            }
+        # TODO: refactor to TerraformTemplate().add_data([DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING, 'path'], VAULT_PATH_FASTLY_GCS_LOGGING)
+        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCS_LOGGING] = {
+            'path': VAULT_PATH_FASTLY_GCS_LOGGING,
+        }
+
+    if context['fastly']['bigquerylogging']:
+        bigquerylogging = context['fastly']['bigquerylogging']
+        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['bigquerylogging'] = {
+            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
+            'project_id': bigquerylogging['project'],
+            'dataset': bigquerylogging['dataset'],
+            'table': bigquerylogging['table'],
+            'format': FASTLY_LOG_FORMAT,
+            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+        }
+        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCP_LOGGING] = {
+            'path': VAULT_PATH_FASTLY_GCP_LOGGING,
         }
 
     if vcl_constant_snippets or vcl_templated_snippets:
@@ -216,6 +252,7 @@ def render_fastly(context):
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + list(vcl_templated_snippets.values())
+        inclusions.reverse()
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
@@ -263,6 +300,9 @@ def render_fastly(context):
     if request_settings:
         tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
 
+    if not data[DATA_TYPE_VAULT_GENERIC_SECRET]:
+        del data[DATA_TYPE_VAULT_GENERIC_SECRET]
+
     if data:
         tf_file['data'] = data
 
@@ -278,19 +318,46 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
             extension='vcl.tpl'
         )
         errors = context['fastly']['errors']
+        codes = errors.get('codes', {})
+        fallbacks = errors.get('fallbacks', {})
         data[DATA_TYPE_HTTP] = {}
-        for code, path in errors['codes'].items():
+        data[DATE_TYPE_TEMPLATE] = {}
+        for code, path in codes.items():
             data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
                 'url': '%s%s' % (errors['url'], path),
             }
             name = 'error-page-vcl-%d' % code
-            data[DATE_TYPE_TEMPLATE] = {
-                name: {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'code': code,
-                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                    }
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status == %s' % code,
+                    'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('4xx'):
+            data[DATA_TYPE_HTTP]['error-page-4xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
+            }
+            name = 'error-page-vcl-4xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status >= 400 && obj.status <= 499',
+                    'synthetic_response': '${data.http.error-page-4xx.body}',
+                },
+            }
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+        if fallbacks.get('5xx'):
+            data[DATA_TYPE_HTTP]['error-page-5xx'] = {
+                'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
+            }
+            name = 'error-page-vcl-5xx'
+            data[DATE_TYPE_TEMPLATE][name] = {
+                'template': error_vcl_template_file,
+                'vars': {
+                    'test': 'obj.status >= 500 && obj.status <= 599',
+                    'synthetic_response': '${data.http.error-page-5xx.body}',
                 },
             }
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
@@ -332,9 +399,9 @@ def _generate_vcl_file(stackname, content, key, extension='vcl'):
     """
     with _open(stackname, key, extension=extension, mode='w') as fp:
         fp.write(str(content))
-        return '${file("%s")}' % basename(fp.name)
+        return '${file("%s")}' % os.path.basename(fp.name)
 
-def render_gcp(context):
+def render_gcs(context):
     if not context['gcs']:
         return {}
 
@@ -350,6 +417,73 @@ def render_gcp(context):
             },
         },
     }
+
+def render_bigquery(context):
+    if not context['bigquery']:
+        return {}
+
+    tables = OrderedDict({})
+    for dataset_id, dataset_options in context['bigquery'].items():
+        for table_id, table_options in dataset_options['tables'].items():
+            table_options['dataset_id'] = dataset_id
+            table_options['project'] = dataset_options['project']
+            tables[table_id] = table_options
+
+    tf_file = {
+        'data': {DATA_TYPE_HTTP: {}},
+        'resource': OrderedDict()
+    }
+
+    tf_file['resource']['google_bigquery_table'] = {}
+
+    tf_file['resource']['google_bigquery_dataset'] = {
+        dataset_id: {
+            'dataset_id': dataset_id,
+            'project': options['project'],
+        } for dataset_id, options in context['bigquery'].items()
+    }
+
+    def add_table(table_id, table_options):
+        schema = table_options['schema']
+        stackname = context['stackname']
+        fqrn = "%s_%s" % (table_options['dataset_id'], table_id) # 'fully qualified resource name'
+
+        if schema.startswith('https://'):
+            # remote schema, add a 'http' provider and have terraform pull it down for us
+            # https://www.terraform.io/docs/providers/http/data_source.html
+            tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema}
+            schema_ref = '${data.http.%s.body}' % fqrn
+
+        else:
+            # local schema. the `schema` is relative to `PROJECT_PATH`
+            schema_path = join(PROJECT_PATH, schema)
+            schema_file = os.path.basename(schema)
+            terraform_working_dir = join(TERRAFORM_DIR, stackname)
+            mkdir_p(terraform_working_dir)
+            shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
+            schema_ref = '${file("%s")}' % schema_file
+
+        tf_file['resource']['google_bigquery_table'][fqrn] = {
+            # this refers to the dataset resource to express the implicit dependency
+            # otherwise a table can be created before the dataset, which fails
+            'dataset_id': "${google_bigquery_dataset.%s.dataset_id}" % dataset_id, # "dataset"
+            'table_id': table_id, # "csv_report_380"
+            'project': table_options['project'], # "elife-data-pipeline"
+            'schema': schema_ref,
+        }
+
+    dictmap(add_table, tables)
+
+    if not tf_file['resource']['google_bigquery_table']:
+        del tf_file['resource']['google_bigquery_table']
+
+    if not tf_file['data'][DATA_TYPE_HTTP]:
+        del tf_file['data'][DATA_TYPE_HTTP]
+
+    if not tf_file['data']:
+        del tf_file['data']
+
+    return tf_file
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
@@ -437,6 +571,13 @@ def init(stackname, context):
                 'google': {
                     'version': "= %s" % '1.13.0',
                     'region': 'us-east4',
+                    # TODO: the system-wide authentication is being used
+                    # to provision through this provider (see `gcloud auth list`)
+                    # It could be possible to create a Service Account for
+                    # a certain project and put it in Vault to allow more
+                    # people to run `update_infrastructure`
+                    # This is not ideal anyway, as it would be a set of credentials
+                    # with large powers (but maybe limited to the single GCP project)
                 },
                 'vault': {
                     'address': context['vault']['address'],
@@ -471,14 +612,17 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
-def _file_path(stackname, name, extension='tf.json'):
+def _file_path_for_generation(stackname, name, extension='tf.json'):
+    "builds a path for a file to be placed in conf.TERRAFORM_DIR"
     return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
 
 def _open(stackname, name, extension='tf.json', mode='r'):
+    "`open`s a file in the conf.TERRAFORM_DIR belonging to given `stackname` (./.cfn/terraform/$stackname/)"
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
-    # remove deprecated file
+
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
-    if exists(deprecated_path):
+    if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
-    return open(_file_path(stackname, name, extension), mode)
+
+    return open(_file_path_for_generation(stackname, name, extension), mode)

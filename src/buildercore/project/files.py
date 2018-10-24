@@ -89,25 +89,38 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     utils.deepmerge(pdata, project_overrides)
 
     # handle the alternate configurations
-    for altname, altdata in pdata.get('aws-alt', {}).items():
-        # take project's *current aws state*,
-        project_aws = copy.deepcopy(pdata['aws'])
+    pdata['aws-alt'] = project_aws_alt(
+        pdata.get('aws-alt', {}),
+        pdata.get('aws', {}),
+        global_defaults['aws']
+    )
 
-        # merge in any overrides
-        utils.deepmerge(project_aws, altdata)
-
-        # merge this over top of original aws defaults
-        orig_defaults = copy.deepcopy(global_defaults['aws'])
-
-        utils.deepmerge(orig_defaults, project_aws, AWS_EXCLUDING)
-        pdata['aws-alt'][altname] = orig_defaults
-
+    # TODO: drop support for unused vagrant-alt?
     for altname, altdata in pdata.get('vagrant-alt', {}).items():
         orig = copy.deepcopy(altdata)
         utils.deepmerge(altdata, pdata['vagrant'])
         utils.deepmerge(altdata, orig)
 
     return pdata
+
+def project_aws_alt(project_alt_contents, project_base_aws, global_aws):
+    aws_alt = OrderedDict()
+
+    # handle the alternate configurations
+    for altname, altdata in project_alt_contents.items():
+        # take project's *current aws state*,
+        project_aws = copy.deepcopy(project_base_aws)
+
+        # merge in any overrides
+        utils.deepmerge(project_aws, altdata)
+
+        # merge this over top of original aws defaults
+        orig_defaults = copy.deepcopy(global_aws)
+
+        utils.deepmerge(orig_defaults, project_aws, AWS_EXCLUDING)
+        aws_alt[str(altname)] = orig_defaults
+
+    return aws_alt
 
 def project_file_name(project_file):
     "returns the name of the project file without the extension"

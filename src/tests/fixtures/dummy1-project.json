@@ -41,6 +41,10 @@
             22
         ]
     }, 
+    "aws-alt": {},
+    "gcp": {
+        "bigquery": false
+    },
     "vagrant": {
         "box": "ubuntu/trusty64", 
         "box-url": null, 

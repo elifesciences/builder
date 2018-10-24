@@ -1,4 +1,10 @@
+import logging
 import pytest
+from buildercore.config import get_logger, CONSOLE_HANDLER
+
+CONSOLE_HANDLER.setLevel(logging.CRITICAL)
+
+LOG = get_logger("conftest")
 
 def pytest_addoption(parser):
     parser.addoption("--filter-project-name",
@@ -9,3 +15,9 @@ def pytest_addoption(parser):
 @pytest.fixture
 def filter_project_name(request):
     return request.config.getoption('--filter-project-name')
+
+def pytest_runtest_setup(item):
+    LOG.info("Setting up %s::%s", item.cls, item.name)
+
+def pytest_runtest_teardown(item, nextitem):
+    LOG.info("Tearing down up %s::%s", item.cls, item.name)
