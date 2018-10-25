@@ -31,9 +31,12 @@ class TestCfn(base.BaseCase):
 
     # all non-interactive cases
     def test_generate_stack_from_input(self):
-        self.assertEqual(generate_stack_from_input('dummy1', 'prod'), 'dummy1--prod')
-        self.assertEqual(generate_stack_from_input('dummy2', 'alt-config1'), 'dummy2--alt-config1')
-        self.assertEqual(generate_stack_from_input('dummy2', 'end2end', alt_config='alt-config1'), 'dummy2--end2end')
+        prod = base.generate_environment_name()
+        self.assertEqual(generate_stack_from_input('dummy1', prod, 'prod'), 'dummy1--%s' % prod)
+        alt_config = base.generate_environment_name()
+        self.assertEqual(generate_stack_from_input('dummy2', alt_config, 'alt-config1'), 'dummy2--%s' % alt_config)
+        end2end = base.generate_environment_name()
+        self.assertEqual(generate_stack_from_input('dummy2', end2end, alt_config='alt-config1'), 'dummy2--%s' % end2end)
 
     def _dummy_instance_is_active(self, find_ec2_instances, load_context, active_stack_names):
         active_stack_names.return_value = ['dummy1--prod']
