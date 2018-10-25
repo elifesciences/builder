@@ -2037,9 +2037,6 @@ elife-xpub:
                 protocol:
                     - https
                     - http
-                healthcheck:
-                    #path: /ping
-                    path: /
         staging:
             s3:
                 "{instance}-elife-xpub":
