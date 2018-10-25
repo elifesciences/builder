@@ -2021,6 +2021,10 @@ elife-xpub:
             device: /dev/sdh
             type: gp2
     aws-alt:
+        ci:
+            s3:
+                "{instance}-elife-xpub-styleguide":
+                    public: true
         end2end:
             s3:
                 "{instance}-elife-xpub":
