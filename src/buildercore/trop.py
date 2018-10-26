@@ -651,6 +651,16 @@ def render_elb(context, template, ec2_instances):
                 SSLCertificateId=context['elb']['certificate']
             ))
             elb_ports.append(443)
+        elif isinstance(protocol, int):
+            port = protocol
+            listeners.append(elb.Listener(
+                InstanceProtocol='TCP',
+                InstancePort=str(port),
+                LoadBalancerPort=str(port),
+                PolicyNames=listeners_policy_names,
+                Protocol='TCP'
+            ))
+            elb_ports.append(port)
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 

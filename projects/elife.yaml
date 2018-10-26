@@ -2012,9 +2012,8 @@ elife-xpub:
         type: t2.medium
         ports:
             - 22
-            - 443
             - 80
-            - 3000 # debugging while skipping nginx
+            - 443
         ext:
             # external hdd
             size: 20 # GB
@@ -2037,6 +2036,11 @@ elife-xpub:
                 storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol:
+                    - 443
         staging:
             s3:
                 "{instance}-elife-xpub":
@@ -2049,6 +2053,11 @@ elife-xpub:
                 storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol:
+                    - 443
         prod:
             subdomains:
                 - xpub
@@ -2066,6 +2075,11 @@ elife-xpub:
                 backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
                 deletion-policy: Snapshot
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol:
+                    - 443
     vagrant:
         ram: 2048
         ports:
