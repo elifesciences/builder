@@ -64,7 +64,7 @@ sub vcl_fetch {
     # keep the ttl here
   } else {
     # apply the default ttl
-    set beresp.ttl = 3600s;
+    set beresp.ttl = 300s;
   }
 
   return(deliver);

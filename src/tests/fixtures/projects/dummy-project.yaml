@@ -108,6 +108,7 @@ defaults:
             default-ttl: 3600 # seconds
             shield: false
             gcslogging: false
+            bigquerylogging: false
             healthcheck: false
             errors: false
             vcl: []
@@ -403,6 +404,20 @@ project-with-fastly-gcs:
                 path: my-project/
                 period: 1800
 
+project-with-fastly-bigquery:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ports:
+            - 80
+        fastly:
+            subdomains:
+                - "{instance}--cdn-of-www"
+            bigquerylogging:
+                project: my-project
+                dataset: my_dataset
+                table: my_table
+
 project-with-fastly-shield:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
@@ -659,5 +674,24 @@ project-with-bigquery:
                 project: elife-something
                 tables:
                     widgets:
-                        schema: key-value
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
+    aws-alt: {}
+
+project-with-bigquery-remote-schemas:
+    description: project on Google Cloud Platform, using BigQuery
+    domain: False
+    intdomain: False
+    # see project-on-gcp:
+    aws:
+        ec2: false
+    gcp:
+        bigquery:
+            #location: US
+            "my_dataset_{instance}":
+                project: elife-something
+                tables:
+                    remote:
+                        schema: https://example.org/schemas/remote.json
+                    local:
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}

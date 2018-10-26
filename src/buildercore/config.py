@@ -57,10 +57,10 @@ KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
 # perhaps a namechange from .cfn to .state or something later
 TERRAFORM_DIR = join(CFN, "terraform")
 
-STACK_PATH = join(PROJECT_PATH, STACK_DIR) # ll: /.../cfn/stacks/
-CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # ll: /.../cfn/contexts/
-KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # ll: /.../cfn/keypairs/
-SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # ll: /.../scripts/
+STACK_PATH = join(PROJECT_PATH, STACK_DIR) # "/.../.cfn/stacks/"
+CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # "/.../.cfn/contexts/"
+KEYPAIR_PATH = join(PROJECT_PATH, KEYPAIR_DIR) # "/.../.cfn/keypairs/"
+SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # "/.../scripts/"
 
 # create all necessary paths and ensure they are writable
 lmap(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
@@ -81,22 +81,28 @@ ROOTLOG = logging.getLogger() # important! this is the *root LOG*
 ROOTLOG.setLevel(logging.DEBUG) # *default* output level for all LOGs
 
 # StreamHandler sends to stderr by default
-H1 = logging.StreamHandler()
-H1.setLevel(logging.INFO) # output level for *this handler*
-H1.setFormatter(CONSOLE_FORMAT)
+CONSOLE_HANDLER = logging.StreamHandler()
+CONSOLE_HANDLER.setLevel(logging.INFO) # output level for *this handler*
+CONSOLE_HANDLER.setFormatter(CONSOLE_FORMAT)
 
 
 # FileHandler sends to a named file
-H2 = logging.FileHandler(LOG_FILE)
+FILE_HANDLER = logging.FileHandler(LOG_FILE)
 _log_level = os.environ.get('LOG_LEVEL_FILE', 'INFO')
-H2.setLevel(getattr(logging, _log_level))
-H2.setFormatter(FORMAT)
+FILE_HANDLER.setLevel(getattr(logging, _log_level))
+FILE_HANDLER.setFormatter(FORMAT)
 
-ROOTLOG.addHandler(H1)
-ROOTLOG.addHandler(H2)
+ROOTLOG.addHandler(CONSOLE_HANDLER)
+ROOTLOG.addHandler(FILE_HANDLER)
 
 LOG = logging.getLogger(__name__)
 logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
+# TODO: leave on for FILE_HANDLER but not for CONSOLE_HANDLER
+# logging.getLogger('botocore.vendored').setLevel(logging.ERROR)
+
+def get_logger(name):
+    "ensures logging is setup before handing out a Logger object to use"
+    return logging.getLogger(name)
 
 #
 # remote
