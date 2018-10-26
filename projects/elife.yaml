@@ -2071,6 +2071,11 @@ elife-xpub:
                 backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
                 deletion-policy: Snapshot
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol:
+                    - 443
     vagrant:
         ram: 2048
         ports:
