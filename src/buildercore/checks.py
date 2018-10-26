@@ -9,7 +9,9 @@ class AccessProblem(RuntimeError):
     pass
 
 class StackAlreadyExistsProblem(RuntimeError):
-    pass
+    def __init__(self, message, stackname):
+        RuntimeError.__init__(self, message)
+        self.stackname = stackname
 
 def can_access_builder_private(pname):
     "True if current user can access the private-repo for given project"
@@ -24,7 +26,7 @@ def ensure_can_access_builder_private(pname):
 
 def ensure_stack_does_not_exist(stackname):
     if core.stack_is_active(stackname):
-        raise StackAlreadyExistsProblem("%s is an active stack" % stackname)
+        raise StackAlreadyExistsProblem("%s is an active stack" % stackname, stackname)
 
 def requires_certificate(stackname):
     "True if the given stack has a subdomain but is not using a properly configured certificate"
