@@ -33,3 +33,22 @@ To lookup information about a token:
 To revoke a token:
 
 `./bldr vault.token_revoke:<token>`
+
+## Reading and writing secrets (admin only)
+
+Some commands can be manually run to directly interact with Vault's key-value secrets store:
+
+```
+$ VAULT_ADDR=https://master-server.elifesciences.org:8200 vault kv get secret/builder/apikey/fastly-gcs-logging
+Key                 Value
+---                 -----
+email               fastly@elife-fastly.iam.gserviceaccount.com
+secret_key          -----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----
+```
+
+```
+$ VAULT_ADDR=https://master-server.elifesciences.org:8200 vault kv put secret/builder/apikey/fastly-gcp-logging email=fastly@elife-fastly.iam.gserviceaccount.com secret_key=@../../fastly-gcp-logging.secret
+Success! Data written to: secret/builder/apikey/fastly-gcp-logging
+```

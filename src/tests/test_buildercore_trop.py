@@ -518,6 +518,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'website-configuration': None,
                 'cors': None,
                 'public': False,
+                'encryption': False,
             },
             context['s3']['widgets-prod']
         )
@@ -647,6 +648,33 @@ class TestBuildercoreTrop(base.BaseCase):
                 },
             },
             data['Resources']['WidgetsJustAccessProdBucketPolicy']
+        )
+
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::Bucket',
+                'DeletionPolicy': 'Delete',
+                'Properties': {
+                    'BucketEncryption': {
+                        'ServerSideEncryptionConfiguration': [
+                            {
+                                'ServerSideEncryptionByDefault': {
+                                    'KMSMasterKeyID': 'arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012',
+                                    'SSEAlgorithm': 'aws:kms',
+                                },
+                            },
+                        ],
+                    },
+                    'BucketName': 'widgets-encrypted-prod',
+                    'Tags': [
+                        {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Environment', 'Value': 'prod'},
+                        {'Key': 'Name', 'Value': 'project-with-s3--prod'},
+                        {'Key': 'Project', 'Value': 'project-with-s3'},
+                    ],
+                },
+            },
+            data['Resources']['WidgetsEncryptedProdBucket']
         )
 
     def test_cdn_template(self):

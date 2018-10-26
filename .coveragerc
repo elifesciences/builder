@@ -7,5 +7,7 @@ show_missing = false
 precision = 0
 exclude_lines = true
 omit =
+    */src/integration_tests/*
+    */src/tests/*
     */venv/*
     */.tox/*

@@ -78,6 +78,7 @@ defaults:
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
+            encryption: false
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
@@ -120,6 +121,7 @@ defaults:
         #               prefix: 'elife-'
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
+        #       encryption: false
         s3: {}
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
@@ -149,6 +151,7 @@ defaults:
                     - 151.101.130.217
                     - 151.101.194.217
             gcslogging: false
+            bigquerylogging: false
             healthcheck: false
             errors: false
             vcl:
@@ -401,6 +404,10 @@ api-gateway:
                 bucket: "{instance}-elife-fastly"
                 path: "api-gateway--{instance}/"
                 period: 600
+            bigquerylogging:
+                project: "elife-fastly"
+                dataset: "{instance}"
+                table: "api_gateway"
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -411,7 +418,12 @@ api-gateway:
                 masterless: true
             fastly: false
         end2end: {}
-        continuumtest: {}
+        continuumtest:
+            fastly:
+                bigquerylogging:
+                    dataset: staging
+                gcslogging:
+                    bucket: staging-elife-fastly
         prod:
             fastly:
                 subdomains:
@@ -493,6 +505,10 @@ journal:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
                     period: 600
+                bigquerylogging:
+                    project: "elife-fastly"
+                    dataset: "{instance}"
+                    table: "journal"
         continuumtest:
             elasticache:
                 engine: redis
@@ -526,9 +542,13 @@ journal:
                     - "journal-google-scholar"
                     - "journal-google-scholar-vary"
                 gcslogging:
-                    bucket: "{instance}-elife-fastly"
+                    bucket: staging-elife-fastly
                     path: "journal--{instance}/"
                     period: 600
+                bigquerylogging:
+                    project: "elife-fastly"
+                    dataset: "staging"
+                    table: "journal"
         prod:
             description: prod environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -588,6 +608,10 @@ journal:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
                     period: 600
+                bigquerylogging:
+                    project: "elife-fastly"
+                    dataset: "{instance}"
+                    table: "journal"
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
@@ -824,6 +848,10 @@ generic-cdn:
                         article-figure-video:
                             path: /articles/26866/elife-26866-fig3-video1.mp4
                             expected: "article/26866 article/26866/videos"
+            bigquerylogging:
+                project: "elife-fastly"
+                dataset: "{instance}"
+                table: "generic_cdn"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
@@ -847,9 +875,11 @@ generic-cdn:
         continuumtest:
             fastly:
                 gcslogging:
-                    bucket: continuumtest-elife-fastly
+                    bucket: staging-elife-fastly
                     path: generic-cdn--continuumtest/
                     period: 600
+                bigquerylogging:
+                    dataset: "staging"
         prod:
             fastly:
                 subdomains:
@@ -880,6 +910,7 @@ journal-cms:
             journal-cms--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
+                    - bus-digests--{instance}
                     - bus-metrics--{instance}
     aws-alt:
         standalone:
@@ -1047,6 +1078,12 @@ elife-libraries:
         load:
             description: running load tests
             type: t2.2xlarge
+        spectrum:
+            description: running end2end tests
+            # 2 core, 8 GB of memory
+            type: t2.medium
+            ext:
+                size: 10 # GB
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
@@ -1617,6 +1654,10 @@ iiif:
                 bucket: "{instance}-elife-fastly"
                 path: "iiif--{instance}/"
                 period: 600
+            bigquerylogging:
+                project: "elife-fastly"
+                dataset: "{instance}"
+                table: "iiif"
             healthcheck:
                 path: /ping-fastly
                 check-interval: 10000
@@ -1715,6 +1756,11 @@ iiif:
                     - https
                 healthcheck:
                     path: /
+            fastly:
+                bigquerylogging:
+                    dataset: "staging"
+                gcslogging:
+                    bucket: staging-elife-fastly
         prod:
             ports:
                 - 22
@@ -1975,12 +2021,26 @@ elife-xpub:
             device: /dev/sdh
             type: gp2
     aws-alt:
-        demo:
+        ci:
+            s3:
+                "{instance}-elife-xpub-styleguide":
+                    public: true
+        end2end:
             s3:
                 "{instance}-elife-xpub":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.4'
+                type: db.t2.small
+                storage: 5 # GB
+                storage-type: gp2
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
         staging:
             s3:
                 "{instance}-elife-xpub":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.4'
@@ -1994,7 +2054,8 @@ elife-xpub:
                 - xpub
             s3:
                 "{instance}-elife-xpub":
-                     deletion-policy: retain
+                    deletion-policy: retain
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
@@ -2024,7 +2085,6 @@ elife-ink:
             - 4569 # slanger nginx https
             - 8080 # slanger api
             - 8082 # slanger api nginx https
-    aws-alt: {}
     vagrant:
         ram: 4096
         ports:
@@ -2087,14 +2147,19 @@ fastly-logs:
             "{instance}":
                 project: elife-fastly
                 tables:
+                    api_gateway:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                    generic_cdn:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                    journal:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
                     iiif:
-                        schema: fastly-logs-201809
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
     aws-alt: {}
 
 data-pipeline:
     description: Data consolidation project
-    domain: pipeline
-    intdomain: pipeline
+    subdomain: pipeline
     formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
         ec2:
@@ -2109,6 +2174,19 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    gcp:
+        bigquery:
+            "{instance}": # dataset
+                # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
+                project: elife-data-pipeline
+                tables:
+                    # bit of repetition here
+                    380_datascience_early_career_researchers:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/380_datascience_early_career_researchers.json
+                    489_datascience_editor_keywords:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/489_datascience_editor_keywords.json
+                    455_datascience_editors:
+                        schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
     aws-alt:
         prod:
             ext:
@@ -2119,6 +2197,7 @@ data-pipeline:
         ram: 2048
         ports:
             1222: 80
+
 
 # deprecated, remove once all nifi-demo instances are destroyed
 nifi-demo:
