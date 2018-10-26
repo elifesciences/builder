@@ -656,11 +656,11 @@ def render_elb(context, template, ec2_instances):
             listeners.append(elb.Listener(
                 InstanceProtocol='TCP',
                 InstancePort=str(port),
-                LoadBalancerPort=port,
+                LoadBalancerPort=str(port),
                 PolicyNames=listeners_policy_names,
                 Protocol='TCP'
             ))
-            elb_ports.append(443)
+            elb_ports.append(port)
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
