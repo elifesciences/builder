@@ -1,7 +1,7 @@
 """Tests concerning S3 interaction."""
 import os
 from . import base
-from buildercore import s3
+from buildercore import s3, utils
 
 class TestReadWrite(base.BaseCase):
     def setUp(self):
@@ -10,12 +10,12 @@ class TestReadWrite(base.BaseCase):
         self.prefix = "test/%s" % self.envname
         s3.delete_contents("%s/" % self.prefix)
 
-        self.local_path = "/tmp/builder-%s/" % self.envname
+        self.local_path, self.local_cleanup = utils.tempdir()
         os.system("mkdir -p %s" % self.local_path)
 
     def tearDown(self):
         s3.delete_contents("%s/" % self.prefix)
-        os.system("rm -rf %s" % self.local_path)
+        self.local_cleanup()
 
     def test_exists(self):
         key = "%s/boo" % self.prefix
