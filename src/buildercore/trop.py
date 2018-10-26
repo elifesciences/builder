@@ -651,7 +651,7 @@ def render_elb(context, template, ec2_instances):
                 SSLCertificateId=context['elb']['certificate']
             ))
             elb_ports.append(443)
-        elif type(protocol) == int:
+        elif isinstance(protocol, int):
             port = protocol
             listeners.append(elb.Listener(
                 InstanceProtocol='TCP',
