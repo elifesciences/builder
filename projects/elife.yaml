@@ -2036,8 +2036,7 @@ elife-xpub:
                 cluster-size: 2
             elb:
                 protocol:
-                    - https
-                    - http
+                    - 443
         staging:
             s3:
                 "{instance}-elife-xpub":
