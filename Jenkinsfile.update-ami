@@ -9,5 +9,7 @@ elifeUpdatePipeline(
     {
         return "Update AMI for ${release} to ${amiId}"
     },
-    "update_ami/"
+    "update_ami/",
+    false,
+    "master"
 )
