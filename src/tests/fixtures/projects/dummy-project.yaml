@@ -524,12 +524,15 @@ project-with-multiple-elb-listeners:
     intdomain: false
     aws:
         ports:
+            - 25
             - 80
             - 8001
         ec2:
             cluster-size: 2
         elb: 
-            protocol: http
+            protocol:
+                - http
+                - 25
             additional_listeners:
                 some_daemon:
                     protocol: https

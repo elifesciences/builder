@@ -400,63 +400,97 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']
         listeners = elb['Listeners']
+        self.assertEqual(len(listeners), 3)
         self.assertEqual(
-            listeners,
-            [
-                {
-                    'InstancePort': '80',
-                    'InstanceProtocol': 'HTTP',
-                    'LoadBalancerPort': '80',
-                    'PolicyNames': [],
-                    'Protocol': 'HTTP',
-                },
-                {
-                    'InstancePort': '8001',
-                    'InstanceProtocol': 'HTTP',
-                    'LoadBalancerPort': '8001',
-                    'PolicyNames': [],
-                    'Protocol': 'HTTPS',
-                    'SSLCertificateId': 'arn:aws:iam::...:...',
-                },
-            ]
+            listeners[0],
+            {
+                'InstancePort': '80',
+                'InstanceProtocol': 'HTTP',
+                'LoadBalancerPort': '80',
+                'PolicyNames': [],
+                'Protocol': 'HTTP',
+            }
+        )
+        self.assertEqual(
+            listeners[1],
+            {
+                'InstancePort': '25',
+                'InstanceProtocol': 'TCP',
+                'LoadBalancerPort': '25',
+                'PolicyNames': [],
+                'Protocol': 'TCP',
+            }
+        )
+        self.assertEqual(
+            listeners[2],
+            {
+                'InstancePort': '8001',
+                'InstanceProtocol': 'HTTP',
+                'LoadBalancerPort': '8001',
+                'PolicyNames': [],
+                'Protocol': 'HTTPS',
+                'SSLCertificateId': 'arn:aws:iam::...:...',
+            }
         )
         self.assertIn('ELBSecurityGroup', list(resources.keys()))
         elb_security_group_ingress = resources['ELBSecurityGroup']['Properties']['SecurityGroupIngress']
+        self.assertEqual(len(elb_security_group_ingress), 3)
         self.assertEqual(
-            [
-                {
-                    'ToPort': 80,
-                    'FromPort': 80,
-                    'CidrIp': '0.0.0.0/0',
-                    'IpProtocol': 'tcp',
-                },
-                {
-                    'ToPort': 8001,
-                    'FromPort': 8001,
-                    'CidrIp': '0.0.0.0/0',
-                    'IpProtocol': 'tcp',
-                },
-            ],
-            elb_security_group_ingress
+            elb_security_group_ingress[0],
+            {
+                'ToPort': 80,
+                'FromPort': 80,
+                'CidrIp': '0.0.0.0/0',
+                'IpProtocol': 'tcp',
+            }
+        )
+        self.assertEqual(
+            elb_security_group_ingress[1],
+            {
+                'ToPort': 25,
+                'FromPort': 25,
+                'CidrIp': '0.0.0.0/0',
+                'IpProtocol': 'tcp',
+            }
+        )
+        self.assertEqual(
+            elb_security_group_ingress[2],
+            {
+                'ToPort': 8001,
+                'FromPort': 8001,
+                'CidrIp': '0.0.0.0/0',
+                'IpProtocol': 'tcp',
+            }
         )
 
         stack_security_group_ingress = resources['StackSecurityGroup']['Properties']['SecurityGroupIngress']
+        self.assertEqual(len(stack_security_group_ingress), 3)
         self.assertEqual(
-            [
-                {
-                    'ToPort': 80,
-                    'FromPort': 80,
-                    'CidrIp': '0.0.0.0/0',
-                    'IpProtocol': 'tcp',
-                },
-                {
-                    'ToPort': 8001,
-                    'FromPort': 8001,
-                    'CidrIp': '0.0.0.0/0',
-                    'IpProtocol': 'tcp',
-                },
-            ],
-            stack_security_group_ingress
+            stack_security_group_ingress[0],
+            {
+                'ToPort': 25,
+                'FromPort': 25,
+                'CidrIp': '0.0.0.0/0',
+                'IpProtocol': 'tcp',
+            }
+        )
+        self.assertEqual(
+            stack_security_group_ingress[1],
+            {
+                'ToPort': 80,
+                'FromPort': 80,
+                'CidrIp': '0.0.0.0/0',
+                'IpProtocol': 'tcp',
+            }
+        )
+        self.assertEqual(
+            stack_security_group_ingress[2],
+            {
+                'ToPort': 8001,
+                'FromPort': 8001,
+                'CidrIp': '0.0.0.0/0',
+                'IpProtocol': 'tcp',
+            }
         )
 
     def test_additional_cnames(self):

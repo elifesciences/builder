@@ -39,7 +39,7 @@ defaults:
             # for future re-creation
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
-            ami: ami-14a1d06e # created from basebox--1604
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
                               # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
             # deprecated. all projects have 16.04 support now. explicit trusty images
             # are being used until each project is running 16.04 in production
@@ -180,7 +180,7 @@ defaults:
         1604:
             description: uses Ubuntu 16.04 (Xenial) instead of 14.04 (Trusty)
             ec2:
-                ami: ami-14a1d06e # created from basebox--1604
+                ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         1404:
             description: uses Ubuntu 14.04 (Trusty) instead of 16.04 (Xenial)
@@ -189,7 +189,7 @@ defaults:
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # created from basebox--1604
+                ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
         standalone1404:
@@ -201,13 +201,13 @@ defaults:
         standalone:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # created from basebox--1604
+                ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-089646d3d52f14f1f # created from basebox--1804
+                ami: ami-089646d3d52f14f1f # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
     gcp:
@@ -421,7 +421,9 @@ api-gateway:
         continuumtest:
             fastly:
                 bigquerylogging:
-                    dataset: "staging"
+                    dataset: staging
+                gcslogging:
+                    bucket: staging-elife-fastly
         prod:
             fastly:
                 subdomains:
@@ -540,7 +542,7 @@ journal:
                     - "journal-google-scholar"
                     - "journal-google-scholar-vary"
                 gcslogging:
-                    bucket: "{instance}-elife-fastly"
+                    bucket: staging-elife-fastly
                     path: "journal--{instance}/"
                     period: 600
                 bigquerylogging:
@@ -873,7 +875,7 @@ generic-cdn:
         continuumtest:
             fastly:
                 gcslogging:
-                    bucket: continuumtest-elife-fastly
+                    bucket: staging-elife-fastly
                     path: generic-cdn--continuumtest/
                     period: 600
                 bigquerylogging:
@@ -1757,6 +1759,8 @@ iiif:
             fastly:
                 bigquerylogging:
                     dataset: "staging"
+                gcslogging:
+                    bucket: staging-elife-fastly
         prod:
             ports:
                 - 22
@@ -2008,15 +2012,18 @@ elife-xpub:
         type: t2.medium
         ports:
             - 22
-            - 443
             - 80
-            - 3000 # debugging while skipping nginx
+            - 443
         ext:
             # external hdd
             size: 20 # GB
             device: /dev/sdh
             type: gp2
     aws-alt:
+        ci:
+            s3:
+                "{instance}-elife-xpub-styleguide":
+                    public: true
         end2end:
             s3:
                 "{instance}-elife-xpub":
@@ -2029,6 +2036,11 @@ elife-xpub:
                 storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol:
+                    - 443
         staging:
             s3:
                 "{instance}-elife-xpub":
@@ -2041,6 +2053,11 @@ elife-xpub:
                 storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol:
+                    - 443
         prod:
             subdomains:
                 - xpub
@@ -2058,6 +2075,11 @@ elife-xpub:
                 backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
                 deletion-policy: Snapshot
+            ec2:
+                cluster-size: 2
+            elb:
+                protocol:
+                    - 443
     vagrant:
         ram: 2048
         ports:

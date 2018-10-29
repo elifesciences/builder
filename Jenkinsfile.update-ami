@@ -1,0 +1,15 @@
+def release = params.release
+def amiId = params.amiId
+
+elifeUpdatePipeline(
+    { commit ->
+        sh "./update-ami.sh ${release} ${amiId}"
+        sh "git add projects/elife.yaml"
+    },
+    {
+        return "Update AMI for ${release} to ${amiId}"
+    },
+    "update_ami/",
+    false,
+    "master"
+)
