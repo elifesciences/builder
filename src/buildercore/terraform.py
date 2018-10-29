@@ -115,8 +115,6 @@ def render_fastly(context):
     conditions = []
     request_settings = []
     headers = []
-    data = {}
-    data[DATA_TYPE_VAULT_GENERIC_SECRET] = {}
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = OrderedDict()
     template = TerraformTemplate()
@@ -197,7 +195,7 @@ def render_fastly(context):
         for b in template.resource[RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
             b['healthcheck'] = 'default'
 
-    _render_fastly_errors(context, data, template, vcl_templated_snippets)
+    _render_fastly_errors(context, template, vcl_templated_snippets)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -219,9 +217,6 @@ def render_fastly(context):
                 'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
             }
         )
-        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCS_LOGGING] = {
-            'path': VAULT_PATH_FASTLY_GCS_LOGGING,
-        }
         template.add_data(
             DATA_TYPE_VAULT_GENERIC_SECRET,
             DATA_NAME_VAULT_GCS_LOGGING,
@@ -246,9 +241,6 @@ def render_fastly(context):
                 'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
             }
         )
-        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCP_LOGGING] = {
-            'path': VAULT_PATH_FASTLY_GCP_LOGGING,
-        }
         template.add_data(
             DATA_TYPE_VAULT_GENERIC_SECRET,
             DATA_NAME_VAULT_GCP_LOGGING,
@@ -352,7 +344,7 @@ def render_fastly(context):
 
     return template.to_dict()
 
-def _render_fastly_errors(context, data, template, vcl_templated_snippets):
+def _render_fastly_errors(context, template, vcl_templated_snippets):
     if context['fastly']['errors']:
         error_vcl_template = fastly.VCL_TEMPLATES['error-page']
         error_vcl_template_file = _generate_vcl_file(
@@ -364,12 +356,7 @@ def _render_fastly_errors(context, data, template, vcl_templated_snippets):
         errors = context['fastly']['errors']
         codes = errors.get('codes', {})
         fallbacks = errors.get('fallbacks', {})
-        data[DATA_TYPE_HTTP] = {}
-        data[DATE_TYPE_TEMPLATE] = {}
         for code, path in codes.items():
-            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
-                'url': '%s%s' % (errors['url'], path),
-            }
             template.add_data(
                 DATA_TYPE_HTTP,
                 'error-page-%d' % code,
@@ -379,13 +366,6 @@ def _render_fastly_errors(context, data, template, vcl_templated_snippets):
             )
                 
             name = 'error-page-vcl-%d' % code
-            data[DATE_TYPE_TEMPLATE][name] = {
-                'template': error_vcl_template_file,
-                'vars': {
-                    'test': 'obj.status == %s' % code,
-                    'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                },
-            }
             template.add_data(
                 # TODO: rename to DATA_*
                 DATE_TYPE_TEMPLATE,
@@ -400,9 +380,6 @@ def _render_fastly_errors(context, data, template, vcl_templated_snippets):
             )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
         if fallbacks.get('4xx'):
-            data[DATA_TYPE_HTTP]['error-page-4xx'] = {
-                'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
-            }
             template.add_data(
                 DATA_TYPE_HTTP,
                 'error-page-4xx',
@@ -411,13 +388,6 @@ def _render_fastly_errors(context, data, template, vcl_templated_snippets):
                 }
             )
             name = 'error-page-vcl-4xx'
-            data[DATE_TYPE_TEMPLATE][name] = {
-                'template': error_vcl_template_file,
-                'vars': {
-                    'test': 'obj.status >= 400 && obj.status <= 499',
-                    'synthetic_response': '${data.http.error-page-4xx.body}',
-                },
-            }
             template.add_data(
                 DATE_TYPE_TEMPLATE,
                 name,
@@ -431,9 +401,6 @@ def _render_fastly_errors(context, data, template, vcl_templated_snippets):
             )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
         if fallbacks.get('5xx'):
-            data[DATA_TYPE_HTTP]['error-page-5xx'] = {
-                'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
-            }
             template.add_data(
                 DATA_TYPE_HTTP,
                 'error-page-5xx',
@@ -442,13 +409,6 @@ def _render_fastly_errors(context, data, template, vcl_templated_snippets):
                 }
             )
             name = 'error-page-vcl-5xx'
-            data[DATE_TYPE_TEMPLATE][name] = {
-                'template': error_vcl_template_file,
-                'vars': {
-                    'test': 'obj.status >= 500 && obj.status <= 599',
-                    'synthetic_response': '${data.http.error-page-5xx.body}',
-                },
-            }
             template.add_data(
                 DATE_TYPE_TEMPLATE,
                 name,
@@ -619,7 +579,7 @@ class TerraformTemplate():
         else:
             target[name] = block
 
-    # TODO: optional argument
+    # TODO: optional `argument`
     def add_resource_element(self, type, name, argument, block=None):
         if not type in self.resource:
             self.resource[type] = OrderedDict()
