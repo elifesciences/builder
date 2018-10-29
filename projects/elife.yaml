@@ -39,7 +39,7 @@ defaults:
             # for future re-creation
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
-            ami: ami-14a1d06e # created from basebox--1604
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
                               # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
             # deprecated. all projects have 16.04 support now. explicit trusty images
             # are being used until each project is running 16.04 in production
@@ -180,7 +180,7 @@ defaults:
         1604:
             description: uses Ubuntu 16.04 (Xenial) instead of 14.04 (Trusty)
             ec2:
-                ami: ami-14a1d06e # created from basebox--1604
+                ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         1404:
             description: uses Ubuntu 14.04 (Trusty) instead of 16.04 (Xenial)
@@ -189,7 +189,7 @@ defaults:
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # created from basebox--1604
+                ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
         standalone1404:
@@ -201,13 +201,13 @@ defaults:
         standalone:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # created from basebox--1604
+                ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-089646d3d52f14f1f # created from basebox--1804
+                ami: ami-089646d3d52f14f1f # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
     gcp:
