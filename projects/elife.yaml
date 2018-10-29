@@ -1978,26 +1978,6 @@ elife-xpub:
         ports:
             1201: 80
 
-elife-ink:
-    subdomain: ink
-    repo: git@github.com:elifesciences/elife-ink
-    formula-repo: git@github.com:elifesciences/elife-ink-formula
-    aws:
-        type: t2.medium
-        ports:
-            - 22
-            - 443 # ink
-            - 3000 # ink
-            - 4567 # slanger
-            - 4569 # slanger nginx https
-            - 8080 # slanger api
-            - 8082 # slanger api nginx https
-    vagrant:
-        ram: 4096
-        ports:
-            1223: 80
-
-
 task-adept:
     description: production data dumps from TaskAdept
     default-branch: null
