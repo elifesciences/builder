@@ -70,6 +70,30 @@ class TestTerraformTemplate(TestCase):
             }
         )
 
+    def test_resource_elements_creation(self):
+        template = terraform.TerraformTemplate()
+        template.add_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
+            'role': 'reader',
+        })
+        template.add_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
+            'role': 'writer',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', OrderedDict([
+                            ('access', [
+                                {'role': 'reader'},
+                                {'role': 'writer'},
+                            ]),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
