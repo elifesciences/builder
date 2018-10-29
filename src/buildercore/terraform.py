@@ -159,30 +159,6 @@ def render_fastly(context):
             shield=shield
         ))
 
-    tf_file = {
-        'resource': {
-            RESOURCE_TYPE_FASTLY: {
-                # must be unique but only in a certain context like this, use some constants
-                RESOURCE_NAME_FASTLY: {
-                    'name': context['stackname'],
-                    'domain': [
-                        {'name': subdomain} for subdomain in all_allowed_subdomains
-                    ],
-                    'backend': backends,
-                    'default_ttl': context['fastly']['default-ttl'],
-                    'gzip': {
-                        'name': 'default',
-                        # shouldn't need to replicate the defaults
-                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
-                        'content_types': sorted(FASTLY_GZIP_TYPES),
-                        'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
-                    },
-                    'force_destroy': True,
-                    'vcl': []
-                }
-            }
-        },
-    }
     template.add_resource(
         RESOURCE_TYPE_FASTLY,
         RESOURCE_NAME_FASTLY,
@@ -206,16 +182,6 @@ def render_fastly(context):
     )
 
     if context['fastly']['healthcheck']:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['healthcheck'] = {
-            'name': 'default',
-            'host': context['full_hostname'],
-            'path': context['fastly']['healthcheck']['path'],
-            'check_interval': context['fastly']['healthcheck']['check-interval'],
-            'timeout': context['fastly']['healthcheck']['timeout'],
-        }
-        for b in tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
-            b['healthcheck'] = 'default'
-
         template.add_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -235,24 +201,23 @@ def render_fastly(context):
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging'] = {
-            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
-            'bucket_name': gcslogging['bucket'],
-            # TODO: validate it starts with /
-            'path': gcslogging['path'],
-            'period': gcslogging.get('period', 3600),
-            'format': FASTLY_LOG_FORMAT,
-            # not supported yet
-            #'format_version': FASTLY_LOG_FORMAT_VERSION,
-            'message_type': FASTLY_LOG_LINE_PREFIX,
-            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-        }
         template.add_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'gcslogging',
-            block=tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging']
+            block={
+                'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
+                'bucket_name': gcslogging['bucket'],
+                # TODO: validate it starts with /
+                'path': gcslogging['path'],
+                'period': gcslogging.get('period', 3600),
+                'format': FASTLY_LOG_FORMAT,
+                # not supported yet
+                #'format_version': FASTLY_LOG_FORMAT_VERSION,
+                'message_type': FASTLY_LOG_LINE_PREFIX,
+                'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+                'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+            }
         )
         data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCS_LOGGING] = {
             'path': VAULT_PATH_FASTLY_GCS_LOGGING,
@@ -267,15 +232,6 @@ def render_fastly(context):
 
     if context['fastly']['bigquerylogging']:
         bigquerylogging = context['fastly']['bigquerylogging']
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['bigquerylogging'] = {
-            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
-            'project_id': bigquerylogging['project'],
-            'dataset': bigquerylogging['dataset'],
-            'table': bigquerylogging['table'],
-            'format': FASTLY_LOG_FORMAT,
-            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
-            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
-        }
         template.add_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -303,12 +259,6 @@ def render_fastly(context):
 
     if vcl_constant_snippets or vcl_templated_snippets:
         # constant snippets
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
-            {
-                'name': snippet_name,
-                'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[snippet_name].content, snippet_name),
-            } for snippet_name in vcl_constant_snippets
-        ]
         [template.add_resource_element(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -319,12 +269,6 @@ def render_fastly(context):
             }) for snippet_name in vcl_constant_snippets]
 
         # templated snippets
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].extend([
-            {
-                'name': snippet_name,
-                'content': '${data.template_file.%s.rendered}' % snippet_name,
-            } for snippet_name in vcl_templated_snippets
-        ])
         [template.add_resource_element(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -342,15 +286,6 @@ def render_fastly(context):
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
-            'name': FASTLY_MAIN_VCL_KEY,
-            'content': _generate_vcl_file(
-                context['stackname'],
-                linked_main_vcl,
-                FASTLY_MAIN_VCL_KEY
-            ),
-            'main': True,
-        })
         template.add_resource_element(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -392,7 +327,6 @@ def render_fastly(context):
             })
 
     if conditions:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = conditions
         template.add_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -401,7 +335,6 @@ def render_fastly(context):
         )
 
     if headers:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['header'] = headers
         template.add_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -410,7 +343,6 @@ def render_fastly(context):
         )
 
     if request_settings:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
         template.add_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
@@ -418,14 +350,7 @@ def render_fastly(context):
             block=request_settings
         )
 
-    if not data[DATA_TYPE_VAULT_GENERIC_SECRET]:
-        del data[DATA_TYPE_VAULT_GENERIC_SECRET]
-
-    if data:
-        tf_file['data'] = data
-
     return template.to_dict()
-    return tf_file
 
 def _render_fastly_errors(context, data, template, vcl_templated_snippets):
     if context['fastly']['errors']:
