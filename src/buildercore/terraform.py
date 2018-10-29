@@ -579,7 +579,7 @@ class TerraformTemplate():
         else:
             target[name] = block
 
-    # TODO: optional `argument`
+    # TODO: optional `argument`?
     def add_resource_element(self, type, name, argument, block=None):
         if not type in self.resource:
             self.resource[type] = OrderedDict()
@@ -596,9 +596,6 @@ class TerraformTemplate():
         self.data[type][name] = block
 
     def to_dict(self):
-        """supported and not deprecated anymore
-        
-        https://docs.python.org/3/library/collections.html#collections.somenamedtuple._asdict"""
         result = {}
         if self.resource:
             result['resource'] = self.resource
