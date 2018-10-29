@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 import os
 import re
@@ -5,8 +6,47 @@ import shutil
 import yaml
 from os.path import exists, join
 from mock import patch, MagicMock
+# pylint: disable-msg=import-error
+from unittest2 import TestCase
 from . import base
 from buildercore import cfngen, terraform
+
+
+class TestTerraformTemplate(TestCase):
+    def test_resource_creation(self):
+        template = terraform.TerraformTemplate()
+        template.add_resource('google_bigquery_dataset', 'my_dataset', block={
+            'location': 'EU',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', {'location': 'EU'}),
+                    ])),
+                ])
+            }
+        )
+
+    def test_resource_partial_creation(self):
+        template = terraform.TerraformTemplate()
+        template.add_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+            'project': 'journal',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', OrderedDict([
+                            ('labels', {'project': 'journal'}),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
