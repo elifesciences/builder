@@ -29,7 +29,7 @@ class TestTerraformTemplate(TestCase):
             }
         )
 
-    def test_resource_partial_creation(self):
+    def test_nested_resource_creation(self):
         template = terraform.TerraformTemplate()
         template.add_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
             'project': 'journal',
@@ -40,6 +40,29 @@ class TestTerraformTemplate(TestCase):
                 'resource': OrderedDict([
                     ('google_bigquery_dataset', OrderedDict([
                         ('my_dataset', OrderedDict([
+                            ('labels', {'project': 'journal'}),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
+    def test_resource_creation_in_multiple_phases(self):
+        template = terraform.TerraformTemplate()
+        # TODO: naming needs to change, we are configuring/populating a resource rather then creating it from scratch every time
+        template.add_resource('google_bigquery_dataset', 'my_dataset', block={
+            'location': 'EU',
+        })
+        template.add_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+            'project': 'journal',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', OrderedDict([
+                            ('location', 'EU'),
                             ('labels', {'project': 'journal'}),
                         ])),
                     ])),
