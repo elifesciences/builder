@@ -157,7 +157,7 @@ def render_fastly(context):
             shield=shield
         ))
 
-    template.add_resource(
+    template.populate_resource(
         RESOURCE_TYPE_FASTLY,
         RESOURCE_NAME_FASTLY,
         block={
@@ -180,7 +180,7 @@ def render_fastly(context):
     )
 
     if context['fastly']['healthcheck']:
-        template.add_resource(
+        template.populate_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'healthcheck',
@@ -199,7 +199,7 @@ def render_fastly(context):
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
-        template.add_resource(
+        template.populate_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'gcslogging',
@@ -227,7 +227,7 @@ def render_fastly(context):
 
     if context['fastly']['bigquerylogging']:
         bigquerylogging = context['fastly']['bigquerylogging']
-        template.add_resource(
+        template.populate_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'bigquerylogging',
@@ -251,7 +251,7 @@ def render_fastly(context):
 
     if vcl_constant_snippets or vcl_templated_snippets:
         # constant snippets
-        [template.add_resource_element(
+        [template.populate_resource_element(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'vcl',
@@ -261,7 +261,7 @@ def render_fastly(context):
             }) for snippet_name in vcl_constant_snippets]
 
         # templated snippets
-        [template.add_resource_element(
+        [template.populate_resource_element(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'vcl',
@@ -277,7 +277,7 @@ def render_fastly(context):
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
-        template.add_resource_element(
+        template.populate_resource_element(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'vcl',
@@ -318,7 +318,7 @@ def render_fastly(context):
             })
 
     if conditions:
-        template.add_resource(
+        template.populate_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'condition',
@@ -326,7 +326,7 @@ def render_fastly(context):
         )
 
     if headers:
-        template.add_resource(
+        template.populate_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'header',
@@ -334,7 +334,7 @@ def render_fastly(context):
         )
 
     if request_settings:
-        template.add_resource(
+        template.populate_resource(
             RESOURCE_TYPE_FASTLY,
             RESOURCE_NAME_FASTLY,
             'request_setting',
@@ -556,6 +556,9 @@ def read_template(stackname):
     with _open(stackname, 'generated', mode='r') as fp:
         return fp.read()
 
+class TerraformTemplateError(RuntimeError):
+    pass
+
 class TerraformTemplate():
     def __init__(self, resource=None, data=None):
         if not resource:
@@ -565,7 +568,7 @@ class TerraformTemplate():
             data = OrderedDict()
         self.data = data
 
-    def add_resource(self, type, name, argument=None, block=None):
+    def populate_resource(self, type, name, argument=None, block=None):
         if not type in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]
@@ -573,13 +576,13 @@ class TerraformTemplate():
             if not name in target:
                 target[name] = OrderedDict()
             if argument in target[name]:
-                raise RuntimeError("Target %s being overwritten (%s)" % ((type, name, argument), target[name][argument]))
+                raise TerraformTemplateError("Target %s being overwritten (%s)" % ((type, name, argument), target[name][argument]))
             target[name][argument] = block
         else:
             target[name] = block
 
     # TODO: optional `argument`?
-    def add_resource_element(self, type, name, argument, block=None):
+    def populate_resource_element(self, type, name, argument, block=None):
         if not type in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]

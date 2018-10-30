@@ -15,7 +15,7 @@ from buildercore import cfngen, terraform
 class TestTerraformTemplate(TestCase):
     def test_resource_creation(self):
         template = terraform.TerraformTemplate()
-        template.add_resource('google_bigquery_dataset', 'my_dataset', block={
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', block={
             'location': 'EU',
         })
         self.assertEqual(
@@ -31,7 +31,7 @@ class TestTerraformTemplate(TestCase):
 
     def test_nested_resource_creation(self):
         template = terraform.TerraformTemplate()
-        template.add_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
             'project': 'journal',
         })
         self.assertEqual(
@@ -47,13 +47,20 @@ class TestTerraformTemplate(TestCase):
             }
         )
 
+    def test_nested_resource_creation_if_already_existing(self):
+        template = terraform.TerraformTemplate()
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+            'project': 'journal',
+        })
+        overwrite = lambda: template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={ 'project': 'lax', })
+        self.assertRaises(terraform.TerraformTemplateError, overwrite)
+
     def test_resource_creation_in_multiple_phases(self):
         template = terraform.TerraformTemplate()
-        # TODO: naming needs to change, we are configuring/populating a resource rather then creating it from scratch every time
-        template.add_resource('google_bigquery_dataset', 'my_dataset', block={
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', block={
             'location': 'EU',
         })
-        template.add_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
             'project': 'journal',
         })
         self.assertEqual(
@@ -72,10 +79,10 @@ class TestTerraformTemplate(TestCase):
 
     def test_resource_elements_creation(self):
         template = terraform.TerraformTemplate()
-        template.add_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
+        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
             'role': 'reader',
         })
-        template.add_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
+        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
             'role': 'writer',
         })
         self.assertEqual(
@@ -94,7 +101,6 @@ class TestTerraformTemplate(TestCase):
             }
         )
 
-    # def test_resource_nested_already_exists
     # def test_data
     # def test_data_same_type
     # def test_data_different_type
