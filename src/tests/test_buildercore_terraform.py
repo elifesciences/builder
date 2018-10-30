@@ -101,10 +101,87 @@ class TestTerraformTemplate(TestCase):
             }
         )
 
-    # def test_data
-    # def test_data_same_type
-    # def test_data_different_type
-    # def test_data_already_exists
+    def test_data_creation(self):
+        template = terraform.TerraformTemplate()
+        template.add_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+            'password': 'mouse',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'data': OrderedDict([
+                    ('vault_generic_secret', OrderedDict([
+                        ('my_credentials', OrderedDict([
+                            ('username', 'mickey'),
+                            ('password', 'mouse'),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
+    def test_data_creation_same_type(self):
+        template = terraform.TerraformTemplate()
+        template.add_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+            'password': 'mouse',
+        })
+        template.add_data('vault_generic_secret', 'my_ssh_key', block={
+            'private': '-----BEGIN RSA PRIVATE KEY-----',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'data': OrderedDict([
+                    ('vault_generic_secret', OrderedDict([
+                        ('my_credentials', {
+                            'username': 'mickey',
+                            'password': 'mouse',
+                        }),
+                        ('my_ssh_key', {
+                            'private': '-----BEGIN RSA PRIVATE KEY-----',
+                        }),
+                    ])),
+                ])
+            }
+        )
+
+    def test_data_creation_different_type(self):
+        template = terraform.TerraformTemplate()
+        template.add_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+            'password': 'mouse',
+        })
+        template.add_data('http', 'my_page', block={
+            'url': 'https://example.com',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'data': OrderedDict([
+                    ('vault_generic_secret', OrderedDict([
+                        ('my_credentials', {
+                            'username': 'mickey',
+                            'password': 'mouse',
+                        }),
+                    ])),
+                    ('http', OrderedDict([
+                        ('my_page', {
+                            'url': 'https://example.com',
+                        }),
+                    ])),
+                ])
+            }
+        )
+
+    def test_data_creation_if_already_existing(self):
+        template = terraform.TerraformTemplate()
+        template.add_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+        })
+        overwrite = lambda: template.add_data('vault_generic_secret', 'my_credentials', block={ 'username': 'minnie' })
+        self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
 
 class TestBuildercoreTerraform(base.BaseCase):

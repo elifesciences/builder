@@ -576,7 +576,9 @@ class TerraformTemplate():
             if not name in target:
                 target[name] = OrderedDict()
             if argument in target[name]:
-                raise TerraformTemplateError("Target %s being overwritten (%s)" % ((type, name, argument), target[name][argument]))
+                raise TerraformTemplateError(
+                    "Resource %s being overwritten (%s)" % ((type, name, argument), target[name][argument])
+                )
             target[name][argument] = block
         else:
             target[name] = block
@@ -595,6 +597,10 @@ class TerraformTemplate():
     def add_data(self, type, name, block=None):
         if not type in self.data:
             self.data[type] = OrderedDict()
+        if name in self.data[type]:
+            raise TerraformTemplateError(
+                "Data %s being overwritten (%s)" % ((type, name), self.data[type][name])
+            )
         self.data[type][name] = block
 
     def to_dict(self):
