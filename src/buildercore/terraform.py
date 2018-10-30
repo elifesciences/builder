@@ -270,7 +270,6 @@ def render_fastly(context):
                 'content': '${data.template_file.%s.rendered}' % snippet_name,
             }) for snippet_name in vcl_templated_snippets]
 
-
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
         inclusions = [fastly.VCL_SNIPPETS[name].as_inclusion() for name in vcl_constant_snippets] + list(vcl_templated_snippets.values())
@@ -364,7 +363,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
                     'url': '%s%s' % (errors['url'], path),
                 }
             )
-                
+
             name = 'error-page-vcl-%d' % code
             template.add_data(
                 # TODO: rename to DATA_*
@@ -565,7 +564,7 @@ class TerraformTemplate():
         if not data:
             data = OrderedDict()
         self.data = data
-        
+
     def add_resource(self, type, name, argument=None, block=None):
         if not type in self.resource:
             self.resource[type] = OrderedDict()
