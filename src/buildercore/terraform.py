@@ -217,7 +217,7 @@ def render_fastly(context):
                 'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
             }
         )
-        template.add_data(
+        template.populate_data(
             DATA_TYPE_VAULT_GENERIC_SECRET,
             DATA_NAME_VAULT_GCS_LOGGING,
             block={
@@ -241,7 +241,7 @@ def render_fastly(context):
                 'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
             }
         )
-        template.add_data(
+        template.populate_data(
             DATA_TYPE_VAULT_GENERIC_SECRET,
             DATA_NAME_VAULT_GCP_LOGGING,
             {
@@ -356,7 +356,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
         codes = errors.get('codes', {})
         fallbacks = errors.get('fallbacks', {})
         for code, path in codes.items():
-            template.add_data(
+            template.populate_data(
                 DATA_TYPE_HTTP,
                 'error-page-%d' % code,
                 block={
@@ -365,7 +365,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
             )
 
             name = 'error-page-vcl-%d' % code
-            template.add_data(
+            template.populate_data(
                 # TODO: rename to DATA_*
                 DATE_TYPE_TEMPLATE,
                 name,
@@ -379,7 +379,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
             )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
         if fallbacks.get('4xx'):
-            template.add_data(
+            template.populate_data(
                 DATA_TYPE_HTTP,
                 'error-page-4xx',
                 {
@@ -387,7 +387,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
                 }
             )
             name = 'error-page-vcl-4xx'
-            template.add_data(
+            template.populate_data(
                 DATE_TYPE_TEMPLATE,
                 name,
                 {
@@ -400,7 +400,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
             )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
         if fallbacks.get('5xx'):
-            template.add_data(
+            template.populate_data(
                 DATA_TYPE_HTTP,
                 'error-page-5xx',
                 {
@@ -408,7 +408,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
                 }
             )
             name = 'error-page-vcl-5xx'
-            template.add_data(
+            template.populate_data(
                 DATE_TYPE_TEMPLATE,
                 name,
                 {
@@ -594,7 +594,7 @@ class TerraformTemplate():
             target[name][argument] = []
         target[name][argument].append(block)
 
-    def add_data(self, type, name, block=None):
+    def populate_data(self, type, name, block=None):
         if not type in self.data:
             self.data[type] = OrderedDict()
         if name in self.data[type]:
