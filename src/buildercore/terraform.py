@@ -17,7 +17,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
-DATE_TYPE_TEMPLATE = 'template_file'
+DATA_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
@@ -367,7 +367,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
             name = 'error-page-vcl-%d' % code
             template.populate_data(
                 # TODO: rename to DATA_*
-                DATE_TYPE_TEMPLATE,
+                DATA_TYPE_TEMPLATE,
                 name,
                 {
                     'template': error_vcl_template_file,
@@ -388,7 +388,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
             )
             name = 'error-page-vcl-4xx'
             template.populate_data(
-                DATE_TYPE_TEMPLATE,
+                DATA_TYPE_TEMPLATE,
                 name,
                 {
                     'template': error_vcl_template_file,
@@ -409,7 +409,7 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
             )
             name = 'error-page-vcl-5xx'
             template.populate_data(
-                DATE_TYPE_TEMPLATE,
+                DATA_TYPE_TEMPLATE,
                 name,
                 {
                     'template': error_vcl_template_file,
