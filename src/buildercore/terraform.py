@@ -366,7 +366,6 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
 
             name = 'error-page-vcl-%d' % code
             template.populate_data(
-                # TODO: rename to DATA_*
                 DATA_TYPE_TEMPLATE,
                 name,
                 {
@@ -568,31 +567,32 @@ class TerraformTemplate():
             data = OrderedDict()
         self.data = data
 
-    def populate_resource(self, type, name, argument=None, block=None):
+    # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
+    def populate_resource(self, type, name, key=None, block=None):
         if not type in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]
-        if argument:
+        if key:
             if not name in target:
                 target[name] = OrderedDict()
-            if argument in target[name]:
+            if key in target[name]:
                 raise TerraformTemplateError(
-                    "Resource %s being overwritten (%s)" % ((type, name, argument), target[name][argument])
+                    "Resource %s being overwritten (%s)" % ((type, name, key), target[name][key])
                 )
-            target[name][argument] = block
+            target[name][key] = block
         else:
             target[name] = block
 
-    # TODO: optional `argument`?
-    def populate_resource_element(self, type, name, argument, block=None):
+    # TODO: optional `key`?
+    def populate_resource_element(self, type, name, key, block=None):
         if not type in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]
         if not name in target:
             target[name] = OrderedDict()
-        if not argument in target[name]:
-            target[name][argument] = []
-        target[name][argument].append(block)
+        if not key in target[name]:
+            target[name][key] = []
+        target[name][key].append(block)
 
     def populate_data(self, type, name, block=None):
         if not type in self.data:

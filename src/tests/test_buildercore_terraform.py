@@ -31,7 +31,7 @@ class TestTerraformTemplate(TestCase):
 
     def test_nested_resource_creation(self):
         template = terraform.TerraformTemplate()
-        template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
             'project': 'journal',
         })
         self.assertEqual(
@@ -49,10 +49,10 @@ class TestTerraformTemplate(TestCase):
 
     def test_nested_resource_creation_if_already_existing(self):
         template = terraform.TerraformTemplate()
-        template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
             'project': 'journal',
         })
-        overwrite = lambda: template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={ 'project': 'lax', })
+        overwrite = lambda: template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={'project': 'lax', })
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
     def test_resource_creation_in_multiple_phases(self):
@@ -60,7 +60,7 @@ class TestTerraformTemplate(TestCase):
         template.populate_resource('google_bigquery_dataset', 'my_dataset', block={
             'location': 'EU',
         })
-        template.populate_resource('google_bigquery_dataset', 'my_dataset', argument='labels', block={
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
             'project': 'journal',
         })
         self.assertEqual(
@@ -79,10 +79,10 @@ class TestTerraformTemplate(TestCase):
 
     def test_resource_elements_creation(self):
         template = terraform.TerraformTemplate()
-        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
+        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', key='access', block={
             'role': 'reader',
         })
-        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', argument='access', block={
+        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', key='access', block={
             'role': 'writer',
         })
         self.assertEqual(
@@ -180,7 +180,7 @@ class TestTerraformTemplate(TestCase):
         template.populate_data('vault_generic_secret', 'my_credentials', block={
             'username': 'mickey',
         })
-        overwrite = lambda: template.populate_data('vault_generic_secret', 'my_credentials', block={ 'username': 'minnie' })
+        overwrite = lambda: template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
 
