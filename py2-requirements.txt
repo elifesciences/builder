@@ -21,6 +21,6 @@ python-slugify==1.2.1
 python-terraform==0.10.0
 pytz==2016.10
 PyYAML==3.12
-requests==2.13.0
+requests==2.20.0
 troposphere==2.3.3
 unittest2==1.1.0
