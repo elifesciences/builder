@@ -2162,13 +2162,13 @@ fastly-logs:
                 project: elife-fastly
                 tables:
                     api_gateway:
-                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     generic_cdn:
-                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     journal:
-                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     iiif:
-                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201809.json
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
     aws-alt: {}
 
 data-pipeline:
