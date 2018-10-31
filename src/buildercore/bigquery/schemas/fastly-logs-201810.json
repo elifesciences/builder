@@ -24,10 +24,6 @@
     "type": "STRING"
   },
   {
-    "name": "forwarded_for",
-    "type": "STRING"
-  },
-  {
     "name": "geo_city",
     "type": "STRING"
   },
@@ -52,10 +48,6 @@
     "type": "STRING"
   },
   {
-    "name": "original_host",
-    "type": "STRING"
-  },
-  {
     "name": "host",
     "type": "STRING"
   },
@@ -72,10 +64,6 @@
     "type": "STRING"
   },
   {
-    "name": "request_accept",
-    "type": "STRING"
-  },
-  {
     "name": "request_accept_language",
     "type": "STRING"
   },
@@ -89,6 +77,18 @@
   },
   {
     "name": "cache_status",
+    "type": "STRING"
+  },
+  {
+    "name": "forwarded_for",
+    "type": "STRING"
+  },
+  {
+    "name": "original_host",
+    "type": "STRING"
+  },
+  {
+    "name": "request_accept",
     "type": "STRING"
   }
 ]
