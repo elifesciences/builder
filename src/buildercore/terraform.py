@@ -17,7 +17,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
-DATE_TYPE_TEMPLATE = 'template_file'
+DATA_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
@@ -115,10 +115,9 @@ def render_fastly(context):
     conditions = []
     request_settings = []
     headers = []
-    data = {}
-    data[DATA_TYPE_VAULT_GENERIC_SECRET] = {}
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = OrderedDict()
+    template = TerraformTemplate()
 
     request_settings.append(_fastly_request_setting({
         'name': 'force-ssl',
@@ -158,95 +157,118 @@ def render_fastly(context):
             shield=shield
         ))
 
-    tf_file = {
-        'resource': {
-            RESOURCE_TYPE_FASTLY: {
-                # must be unique but only in a certain context like this, use some constants
-                RESOURCE_NAME_FASTLY: {
-                    'name': context['stackname'],
-                    'domain': [
-                        {'name': subdomain} for subdomain in all_allowed_subdomains
-                    ],
-                    'backend': backends,
-                    'default_ttl': context['fastly']['default-ttl'],
-                    'gzip': {
-                        'name': 'default',
-                        # shouldn't need to replicate the defaults
-                        # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
-                        'content_types': sorted(FASTLY_GZIP_TYPES),
-                        'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
-                    },
-                    'force_destroy': True,
-                    'vcl': []
-                }
-            }
-        },
-    }
+    template.populate_resource(
+        RESOURCE_TYPE_FASTLY,
+        RESOURCE_NAME_FASTLY,
+        block={
+            'name': context['stackname'],
+            'domain': [
+                {'name': subdomain} for subdomain in all_allowed_subdomains
+            ],
+            'backend': backends,
+            'default_ttl': context['fastly']['default-ttl'],
+            'gzip': {
+                'name': 'default',
+                # shouldn't need to replicate the defaults
+                # https://github.com/terraform-providers/terraform-provider-fastly/issues/66
+                'content_types': sorted(FASTLY_GZIP_TYPES),
+                'extensions': sorted(FASTLY_GZIP_EXTENSIONS),
+            },
+            'force_destroy': True,
+            'vcl': []
+        }
+    )
 
     if context['fastly']['healthcheck']:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['healthcheck'] = {
-            'name': 'default',
-            'host': context['full_hostname'],
-            'path': context['fastly']['healthcheck']['path'],
-            'check_interval': context['fastly']['healthcheck']['check-interval'],
-            'timeout': context['fastly']['healthcheck']['timeout'],
-        }
-        for b in tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
+        template.populate_resource(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'healthcheck',
+            block={
+                'name': 'default',
+                'host': context['full_hostname'],
+                'path': context['fastly']['healthcheck']['path'],
+                'check_interval': context['fastly']['healthcheck']['check-interval'],
+                'timeout': context['fastly']['healthcheck']['timeout'],
+            }
+        )
+        for b in template.resource[RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
             b['healthcheck'] = 'default'
 
-    _render_fastly_errors(context, data, vcl_templated_snippets)
+    _render_fastly_errors(context, template, vcl_templated_snippets)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['gcslogging'] = {
-            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
-            'bucket_name': gcslogging['bucket'],
-            # TODO: validate it starts with /
-            'path': gcslogging['path'],
-            'period': gcslogging.get('period', 3600),
-            'format': FASTLY_LOG_FORMAT,
-            # not supported yet
-            #'format_version': FASTLY_LOG_FORMAT_VERSION,
-            'message_type': FASTLY_LOG_LINE_PREFIX,
-            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-        }
-        # TODO: refactor to TerraformTemplate().add_data([DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING, 'path'], VAULT_PATH_FASTLY_GCS_LOGGING)
-        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCS_LOGGING] = {
-            'path': VAULT_PATH_FASTLY_GCS_LOGGING,
-        }
+        template.populate_resource(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'gcslogging',
+            block={
+                'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
+                'bucket_name': gcslogging['bucket'],
+                # TODO: validate it starts with /
+                'path': gcslogging['path'],
+                'period': gcslogging.get('period', 3600),
+                'format': FASTLY_LOG_FORMAT,
+                # not supported yet
+                #'format_version': FASTLY_LOG_FORMAT_VERSION,
+                'message_type': FASTLY_LOG_LINE_PREFIX,
+                'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+                'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+            }
+        )
+        template.populate_data(
+            DATA_TYPE_VAULT_GENERIC_SECRET,
+            DATA_NAME_VAULT_GCS_LOGGING,
+            block={
+                'path': VAULT_PATH_FASTLY_GCS_LOGGING,
+            }
+        )
 
     if context['fastly']['bigquerylogging']:
         bigquerylogging = context['fastly']['bigquerylogging']
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['bigquerylogging'] = {
-            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
-            'project_id': bigquerylogging['project'],
-            'dataset': bigquerylogging['dataset'],
-            'table': bigquerylogging['table'],
-            'format': FASTLY_LOG_FORMAT,
-            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
-            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
-        }
-        data[DATA_TYPE_VAULT_GENERIC_SECRET][DATA_NAME_VAULT_GCP_LOGGING] = {
-            'path': VAULT_PATH_FASTLY_GCP_LOGGING,
-        }
+        template.populate_resource(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'bigquerylogging',
+            block={
+                'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
+                'project_id': bigquerylogging['project'],
+                'dataset': bigquerylogging['dataset'],
+                'table': bigquerylogging['table'],
+                'format': FASTLY_LOG_FORMAT,
+                'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+                'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+            }
+        )
+        template.populate_data(
+            DATA_TYPE_VAULT_GENERIC_SECRET,
+            DATA_NAME_VAULT_GCP_LOGGING,
+            {
+                'path': VAULT_PATH_FASTLY_GCP_LOGGING,
+            }
+        )
 
     if vcl_constant_snippets or vcl_templated_snippets:
         # constant snippets
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'] = [
+        [template.populate_resource_element(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'vcl',
             {
                 'name': snippet_name,
                 'content': _generate_vcl_file(context['stackname'], fastly.VCL_SNIPPETS[snippet_name].content, snippet_name),
-            } for snippet_name in vcl_constant_snippets
-        ]
+            }) for snippet_name in vcl_constant_snippets]
 
         # templated snippets
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].extend([
+        [template.populate_resource_element(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'vcl',
             {
                 'name': snippet_name,
                 'content': '${data.template_file.%s.rendered}' % snippet_name,
-            } for snippet_name in vcl_templated_snippets
-        ])
+            }) for snippet_name in vcl_templated_snippets]
 
         # main
         linked_main_vcl = fastly.MAIN_VCL_TEMPLATE
@@ -255,15 +277,20 @@ def render_fastly(context):
         for i in inclusions:
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['vcl'].append({
-            'name': FASTLY_MAIN_VCL_KEY,
-            'content': _generate_vcl_file(
-                context['stackname'],
-                linked_main_vcl,
-                FASTLY_MAIN_VCL_KEY
-            ),
-            'main': True,
-        })
+        template.populate_resource_element(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'vcl',
+            block={
+                'name': FASTLY_MAIN_VCL_KEY,
+                'content': _generate_vcl_file(
+                    context['stackname'],
+                    linked_main_vcl,
+                    FASTLY_MAIN_VCL_KEY
+                ),
+                'main': True,
+            }
+        )
 
     if context['fastly']['surrogate-keys']:
         for name, surrogate in context['fastly']['surrogate-keys'].items():
@@ -291,23 +318,32 @@ def render_fastly(context):
             })
 
     if conditions:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['condition'] = conditions
+        template.populate_resource(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'condition',
+            block=conditions
+        )
 
     if headers:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['header'] = headers
+        template.populate_resource(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'header',
+            block=headers
+        )
 
     if request_settings:
-        tf_file['resource'][RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['request_setting'] = request_settings
+        template.populate_resource(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'request_setting',
+            block=request_settings
+        )
 
-    if not data[DATA_TYPE_VAULT_GENERIC_SECRET]:
-        del data[DATA_TYPE_VAULT_GENERIC_SECRET]
+    return template.to_dict()
 
-    if data:
-        tf_file['data'] = data
-
-    return tf_file
-
-def _render_fastly_errors(context, data, vcl_templated_snippets):
+def _render_fastly_errors(context, template, vcl_templated_snippets):
     if context['fastly']['errors']:
         error_vcl_template = fastly.VCL_TEMPLATES['error-page']
         error_vcl_template_file = _generate_vcl_file(
@@ -319,46 +355,69 @@ def _render_fastly_errors(context, data, vcl_templated_snippets):
         errors = context['fastly']['errors']
         codes = errors.get('codes', {})
         fallbacks = errors.get('fallbacks', {})
-        data[DATA_TYPE_HTTP] = {}
-        data[DATE_TYPE_TEMPLATE] = {}
         for code, path in codes.items():
-            data[DATA_TYPE_HTTP]['error-page-%d' % code] = {
-                'url': '%s%s' % (errors['url'], path),
-            }
+            template.populate_data(
+                DATA_TYPE_HTTP,
+                'error-page-%d' % code,
+                block={
+                    'url': '%s%s' % (errors['url'], path),
+                }
+            )
+
             name = 'error-page-vcl-%d' % code
-            data[DATE_TYPE_TEMPLATE][name] = {
-                'template': error_vcl_template_file,
-                'vars': {
-                    'test': 'obj.status == %s' % code,
-                    'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                },
-            }
+            template.populate_data(
+                DATA_TYPE_TEMPLATE,
+                name,
+                {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'test': 'obj.status == %s' % code,
+                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                    },
+                }
+            )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
         if fallbacks.get('4xx'):
-            data[DATA_TYPE_HTTP]['error-page-4xx'] = {
-                'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
-            }
+            template.populate_data(
+                DATA_TYPE_HTTP,
+                'error-page-4xx',
+                {
+                    'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
+                }
+            )
             name = 'error-page-vcl-4xx'
-            data[DATE_TYPE_TEMPLATE][name] = {
-                'template': error_vcl_template_file,
-                'vars': {
-                    'test': 'obj.status >= 400 && obj.status <= 499',
-                    'synthetic_response': '${data.http.error-page-4xx.body}',
-                },
-            }
+            template.populate_data(
+                DATA_TYPE_TEMPLATE,
+                name,
+                {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'test': 'obj.status >= 400 && obj.status <= 499',
+                        'synthetic_response': '${data.http.error-page-4xx.body}',
+                    },
+                }
+            )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
         if fallbacks.get('5xx'):
-            data[DATA_TYPE_HTTP]['error-page-5xx'] = {
-                'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
-            }
+            template.populate_data(
+                DATA_TYPE_HTTP,
+                'error-page-5xx',
+                {
+                    'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
+                }
+            )
             name = 'error-page-vcl-5xx'
-            data[DATE_TYPE_TEMPLATE][name] = {
-                'template': error_vcl_template_file,
-                'vars': {
-                    'test': 'obj.status >= 500 && obj.status <= 599',
-                    'synthetic_response': '${data.http.error-page-5xx.body}',
-                },
-            }
+            template.populate_data(
+                DATA_TYPE_TEMPLATE,
+                name,
+                {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'test': 'obj.status >= 500 && obj.status <= 599',
+                        'synthetic_response': '${data.http.error-page-5xx.body}',
+                    }
+                }
+            )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
 
 def _fastly_backend(hostname, name, request_condition=None, shield=None):
@@ -495,6 +554,63 @@ def write_template(stackname, contents):
 def read_template(stackname):
     with _open(stackname, 'generated', mode='r') as fp:
         return fp.read()
+
+class TerraformTemplateError(RuntimeError):
+    pass
+
+class TerraformTemplate():
+    def __init__(self, resource=None, data=None):
+        if not resource:
+            resource = OrderedDict()
+        self.resource = resource
+        if not data:
+            data = OrderedDict()
+        self.data = data
+
+    # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
+    def populate_resource(self, type, name, key=None, block=None):
+        if not type in self.resource:
+            self.resource[type] = OrderedDict()
+        target = self.resource[type]
+        if key:
+            if not name in target:
+                target[name] = OrderedDict()
+            if key in target[name]:
+                raise TerraformTemplateError(
+                    "Resource %s being overwritten (%s)" % ((type, name, key), target[name][key])
+                )
+            target[name][key] = block
+        else:
+            target[name] = block
+
+    # TODO: optional `key`?
+    def populate_resource_element(self, type, name, key, block=None):
+        if not type in self.resource:
+            self.resource[type] = OrderedDict()
+        target = self.resource[type]
+        if not name in target:
+            target[name] = OrderedDict()
+        if not key in target[name]:
+            target[name][key] = []
+        target[name][key].append(block)
+
+    def populate_data(self, type, name, block=None):
+        if not type in self.data:
+            self.data[type] = OrderedDict()
+        if name in self.data[type]:
+            raise TerraformTemplateError(
+                "Data %s being overwritten (%s)" % ((type, name), self.data[type][name])
+            )
+        self.data[type][name] = block
+
+    def to_dict(self):
+        result = {}
+        if self.resource:
+            result['resource'] = self.resource
+        if self.data:
+            result['data'] = self.data
+        return result
+
 
 class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
     """represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed.

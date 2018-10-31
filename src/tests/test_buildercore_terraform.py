@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 import os
 import re
@@ -5,8 +6,183 @@ import shutil
 import yaml
 from os.path import exists, join
 from mock import patch, MagicMock
+# pylint: disable-msg=import-error
+from unittest2 import TestCase
 from . import base
 from buildercore import cfngen, terraform
+
+
+class TestTerraformTemplate(TestCase):
+    def test_resource_creation(self):
+        template = terraform.TerraformTemplate()
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', block={
+            'location': 'EU',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', {'location': 'EU'}),
+                    ])),
+                ])
+            }
+        )
+
+    def test_nested_resource_creation(self):
+        template = terraform.TerraformTemplate()
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
+            'project': 'journal',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', OrderedDict([
+                            ('labels', {'project': 'journal'}),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
+    def test_nested_resource_creation_if_already_existing(self):
+        template = terraform.TerraformTemplate()
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
+            'project': 'journal',
+        })
+        overwrite = lambda: template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={'project': 'lax', })
+        self.assertRaises(terraform.TerraformTemplateError, overwrite)
+
+    def test_resource_creation_in_multiple_phases(self):
+        template = terraform.TerraformTemplate()
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', block={
+            'location': 'EU',
+        })
+        template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
+            'project': 'journal',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', OrderedDict([
+                            ('location', 'EU'),
+                            ('labels', {'project': 'journal'}),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
+    def test_resource_elements_creation(self):
+        template = terraform.TerraformTemplate()
+        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', key='access', block={
+            'role': 'reader',
+        })
+        template.populate_resource_element('google_bigquery_dataset', 'my_dataset', key='access', block={
+            'role': 'writer',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'resource': OrderedDict([
+                    ('google_bigquery_dataset', OrderedDict([
+                        ('my_dataset', OrderedDict([
+                            ('access', [
+                                {'role': 'reader'},
+                                {'role': 'writer'},
+                            ]),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
+    def test_data_creation(self):
+        template = terraform.TerraformTemplate()
+        template.populate_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+            'password': 'mouse',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'data': OrderedDict([
+                    ('vault_generic_secret', OrderedDict([
+                        ('my_credentials', OrderedDict([
+                            ('username', 'mickey'),
+                            ('password', 'mouse'),
+                        ])),
+                    ])),
+                ])
+            }
+        )
+
+    def test_data_creation_same_type(self):
+        template = terraform.TerraformTemplate()
+        template.populate_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+            'password': 'mouse',
+        })
+        template.populate_data('vault_generic_secret', 'my_ssh_key', block={
+            'private': '-----BEGIN RSA PRIVATE KEY-----',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'data': OrderedDict([
+                    ('vault_generic_secret', OrderedDict([
+                        ('my_credentials', {
+                            'username': 'mickey',
+                            'password': 'mouse',
+                        }),
+                        ('my_ssh_key', {
+                            'private': '-----BEGIN RSA PRIVATE KEY-----',
+                        }),
+                    ])),
+                ])
+            }
+        )
+
+    def test_data_creation_different_type(self):
+        template = terraform.TerraformTemplate()
+        template.populate_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+            'password': 'mouse',
+        })
+        template.populate_data('http', 'my_page', block={
+            'url': 'https://example.com',
+        })
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'data': OrderedDict([
+                    ('vault_generic_secret', OrderedDict([
+                        ('my_credentials', {
+                            'username': 'mickey',
+                            'password': 'mouse',
+                        }),
+                    ])),
+                    ('http', OrderedDict([
+                        ('my_page', {
+                            'url': 'https://example.com',
+                        }),
+                    ])),
+                ])
+            }
+        )
+
+    def test_data_creation_if_already_existing(self):
+        template = terraform.TerraformTemplate()
+        template.populate_data('vault_generic_secret', 'my_credentials', block={
+            'username': 'mickey',
+        })
+        overwrite = lambda: template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
+        self.assertRaises(terraform.TerraformTemplateError, overwrite)
+
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
