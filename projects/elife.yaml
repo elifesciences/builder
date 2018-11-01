@@ -1988,38 +1988,6 @@ task-adept:
         s3:
             "{instance}-elife-task-adept":
 
-exeter-adapter:
-    description: Exeter history API integration
-    domain: false
-    intdomain: False
-    aws:
-        ec2: false
-        sqs:
-            exeter-adapter--{instance}: {}
-    aws-alt:
-        fresh:
-            ec2: false
-        1604:
-            ec2: false
-        1404:
-            ec2: false
-        standalone1604:
-            ec2: false
-        standalone1404:
-            ec2: false
-        standalone:
-            ec2: false
-        continuumtest:
-            sqs:
-                exeter-adapter--{instance}:
-                    subscriptions:
-                        - elife-bot-event-property--continuumtest
-        prod:
-            sqs:
-                exeter-adapter--{instance}:
-                    subscriptions:
-                        - elife-bot-event-property--prod
-
 fastly-logs:
     description: Fastly CDN access logs
     domain: false
