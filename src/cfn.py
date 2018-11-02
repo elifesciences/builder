@@ -266,7 +266,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
     if not instances:
         return
     public_ip = _pick_node(instances, node).public_ip_address
-    _interactive_ssh("ssh %s@%s -i %s" % (username, public_ip, USER_PRIVATE_KEY))
+    _interactive_ssh("ssh -o StrictHostKeyChecking=no %s@%s -i %s" % (username, public_ip, USER_PRIVATE_KEY))
 
 @task
 @requires_aws_stack
