@@ -652,23 +652,6 @@ pattern-library:
         ports:
             1340: 80
 
-evanthia-prototype:
-    subdomain: evanthia-prototype
-    repo: https://github.com/code56/node_web_server
-    formula-repo: https://github.com/code56/node-web-server-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small
-        ports:
-            - 22
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
-        ports:
-            1340: 80
-
-
 elife-metrics:
     description: journal-level metrics
     subdomain: metrics # metrics.elifesciences.org
@@ -1045,7 +1028,6 @@ elife-api:
         ports:
             1233: 80
 
-
 elife-reporting:
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
@@ -1192,16 +1174,6 @@ api-dummy:
         ports:
             1242: 80
 
-anonymous:
-    description: a server without any eLife credentials; if you log in here, you will be using the anonymous separate AWS account
-    formula-repo: https://github.com/elifesciences/anonymous-formula
-    aws:
-        type: t2.micro
-        ports:
-            - 22
-    vagrant:
-        ram: 1024
-
 # used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
 # this is a free form instance jats4r can do what they like with
 # hosts http://jatswiki.org at the moment
@@ -1214,32 +1186,6 @@ jats4r:
             - 22
             - 80
             - 443
-
-# distinct from the 'jats4r' project, this runs an instance of the validator only
-jats4r-validator:
-    #domain: jats4r.org
-    subdomain: validator # validator.jats4r.org
-    repo: https://github.com/jats4r/validator
-    formula-repo: https://github.com/elifesciences/jats4r-validator-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        ports:
-            - 22
-            - 80
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ports:
-            1239: 80
-
 
 medium:
     description: microservice that gives access to eLife posts on Medium.com
@@ -1464,29 +1410,6 @@ schematron-validator:
         ports:
             1246: 80
             1247: 8080
-
-statusbase:
-    subdomain: statusbase
-    repo: https://github.com/ep320/statusbase
-    formula-repo: https://github.com/elifesciences/statusbase-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        ports:
-            - 22
-            - 80
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ports:
-            1246: 80
 
 observer:
     description: article-level reporting
@@ -1920,22 +1843,6 @@ digests:
         ports:
             1290: 80
 
-evanthia-simpler-component:
-    subdomain: evanthia-simpler-component
-    repo: https://github.com/code56/nodeServerSimplerFig
-    formula-repo: https://github.com/code56/simpler-component-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small
-        ports:
-            - 22
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
-        ports:
-            1340: 80
-
 crm:
     subdomain: crm # crm.elifesciences.org
     repo: https://github.com/elifesciences/drupal-civi
@@ -2085,26 +1992,6 @@ elife-xpub:
         ports:
             1201: 80
 
-elife-ink:
-    subdomain: ink
-    repo: git@github.com:elifesciences/elife-ink
-    formula-repo: git@github.com:elifesciences/elife-ink-formula
-    aws:
-        type: t2.medium
-        ports:
-            - 22
-            - 443 # ink
-            - 3000 # ink
-            - 4567 # slanger
-            - 4569 # slanger nginx https
-            - 8080 # slanger api
-            - 8082 # slanger api nginx https
-    vagrant:
-        ram: 4096
-        ports:
-            1223: 80
-
-
 task-adept:
     description: production data dumps from TaskAdept
     default-branch: null
@@ -2114,38 +2001,6 @@ task-adept:
         ec2: false
         s3:
             "{instance}-elife-task-adept":
-
-exeter-adapter:
-    description: Exeter history API integration
-    domain: false
-    intdomain: False
-    aws:
-        ec2: false
-        sqs:
-            exeter-adapter--{instance}: {}
-    aws-alt:
-        fresh:
-            ec2: false
-        1604:
-            ec2: false
-        1404:
-            ec2: false
-        standalone1604:
-            ec2: false
-        standalone1404:
-            ec2: false
-        standalone:
-            ec2: false
-        continuumtest:
-            sqs:
-                exeter-adapter--{instance}:
-                    subscriptions:
-                        - elife-bot-event-property--continuumtest
-        prod:
-            sqs:
-                exeter-adapter--{instance}:
-                    subscriptions:
-                        - elife-bot-event-property--prod
 
 fastly-logs:
     description: Fastly CDN access logs
@@ -2209,21 +2064,3 @@ data-pipeline:
         ram: 2048
         ports:
             1222: 80
-
-
-# deprecated, remove once all nifi-demo instances are destroyed
-nifi-demo:
-    formula-repo: https://github.com/elifesciences/nifi-demo-formula
-    subdomain: nifidemo
-    aws:
-        ec2:
-            ami: ami-1d4e7a66
-            masterless: True
-        ports:
-            - 22
-            - 443
-    vagrant:
-        cpus: 2
-        ram: 2048
-        ports:
-            1222: 8080
