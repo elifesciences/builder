@@ -207,7 +207,7 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-089646d3d52f14f1f # GENERATED created from basebox--1804
+                ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
     gcp:
