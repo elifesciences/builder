@@ -1696,7 +1696,9 @@ iiif:
                             path: /lax/26866%2Felife-26866-fig3-video1.jpg
                             expected: "article/26866 article/26866/videos"
                 digest-id:
-                    url: "^/digests/([0-9]+)(?:/|%2F)(?:.+)$"
+                    url: "^/digests/([0-9]+).*$"
+                    # doesn't work:
+                    #url: "^/digests/([0-9]+)(?:/|%2F)(?:.+)$"
                     value: "digest/\\1"
                     samples:
                         digest-image-info-json:
