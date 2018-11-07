@@ -1950,6 +1950,8 @@ elife-xpub:
     aws-alt:
         ci:
             s3:
+                "{instance}-elife-xpub":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
                 "{instance}-elife-xpub-styleguide":
                     public: true
         end2end:
