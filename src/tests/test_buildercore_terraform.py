@@ -188,7 +188,8 @@ class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
         self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         os.environ['LOGNAME'] = 'my_user'
-        test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--test')
+        self.environment = base.generate_environment_name()
+        test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--%s' % self.environment)
         if exists(test_directory):
             shutil.rmtree(test_directory)
 
@@ -199,7 +200,7 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_init_providers(self, Terraform):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
-        stackname = 'project-with-fastly-minimal--prod'
+        stackname = 'project-with-fastly-minimal--%s' % self.environment
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
         terraform_binary.init.assert_called_once()
@@ -210,7 +211,7 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_fastly_provider_reads_api_key_from_vault(self, Terraform):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
-        stackname = 'project-with-fastly-minimal--prod'
+        stackname = 'project-with-fastly-minimal--%s' % self.environment
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
         providers_file = self._load_terraform_file(stackname, 'providers')
@@ -230,7 +231,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
         terraform_binary.plan.return_value = (0, 'Plan output: ...', '')
-        stackname = 'project-with-fastly-minimal--prod'
+        stackname = 'project-with-fastly-minimal--%s' % self.environment
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
         delta = terraform.generate_delta(context)
@@ -238,7 +239,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_fastly_template_minimal(self):
         extra = {
-            'stackname': 'project-with-fastly-minimal--prod',
+            'stackname': 'project-with-fastly-minimal--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-fastly-minimal', **extra)
         terraform_template = terraform.render(context)
@@ -249,17 +250,17 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'fastly_service_v1': {
                         # must be unique but only in a certain context like this, use some constants
                         'fastly-cdn': {
-                            'name': 'project-with-fastly-minimal--prod',
+                            'name': 'project-with-fastly-minimal--%s' % self.environment,
                             'domain': [{
-                                'name': 'prod--cdn-of-www.example.org'
+                                'name': '%s--cdn-of-www.example.org' % self.environment,
                             }],
                             'backend': [{
-                                'address': 'prod--www.example.org',
-                                'name': 'project-with-fastly-minimal--prod',
+                                'address': '%s--www.example.org' % self.environment,
+                                'name': 'project-with-fastly-minimal--%s' % self.environment,
                                 'port': 443,
                                 'use_ssl': True,
-                                'ssl_cert_hostname': 'prod--www.example.org',
-                                'ssl_sni_hostname': 'prod--www.example.org',
+                                'ssl_cert_hostname': '%s--www.example.org' % self.environment,
+                                'ssl_sni_hostname': '%s--www.example.org' % self.environment,
                                 'ssl_check_cert': True,
                             }],
                             'default_ttl': 3600,
@@ -297,7 +298,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_fastly_template_complex(self):
         extra = {
-            'stackname': 'project-with-fastly-complex--prod',
+            'stackname': 'project-with-fastly-complex--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-fastly-complex', **extra)
         terraform_template = terraform.render(context)
@@ -354,13 +355,13 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'fastly_service_v1': {
                         # must be unique but only in a certain context like this, use some constants
                         'fastly-cdn': {
-                            'name': 'project-with-fastly-complex--prod',
+                            'name': 'project-with-fastly-complex--%s' % self.environment,
                             'domain': [
                                 {
-                                    'name': 'prod--cdn1-of-www.example.org'
+                                    'name': '%s--cdn1-of-www.example.org' % self.environment,
                                 },
                                 {
-                                    'name': 'prod--cdn2-of-www.example.org'
+                                    'name': '%s--cdn2-of-www.example.org' % self.environment,
                                 },
                                 {
                                     'name': 'example.org'
@@ -384,36 +385,36 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'healthcheck': 'default',
                                 },
                                 {
-                                    'address': 'prod-special.example.org',
+                                    'address': '%s-special.example.org' % self.environment,
                                     'name': 'articles',
                                     'port': 443,
                                     'use_ssl': True,
-                                    'ssl_cert_hostname': 'prod-special.example.org',
-                                    'ssl_sni_hostname': 'prod-special.example.org',
+                                    'ssl_cert_hostname': '%s-special.example.org' % self.environment,
+                                    'ssl_sni_hostname': '%s-special.example.org' % self.environment,
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles-condition',
                                     'healthcheck': 'default',
                                     'shield': 'amsterdam-nl',
                                 },
                                 {
-                                    'address': 'prod-special2.example.org',
+                                    'address': '%s-special2.example.org' % self.environment,
                                     'name': 'articles2',
                                     'port': 443,
                                     'use_ssl': True,
-                                    'ssl_cert_hostname': 'prod-special2.example.org',
-                                    'ssl_sni_hostname': 'prod-special2.example.org',
+                                    'ssl_cert_hostname': '%s-special2.example.org' % self.environment,
+                                    'ssl_sni_hostname': '%s-special2.example.org' % self.environment,
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles2-condition',
                                     'healthcheck': 'default',
                                     'shield': 'dca-dc-us',
                                 },
                                 {
-                                    'address': 'prod-special3.example.org',
+                                    'address': '%s-special3.example.org' % self.environment,
                                     'name': 'articles3',
                                     'port': 443,
                                     'use_ssl': True,
-                                    'ssl_cert_hostname': 'prod-special3.example.org',
-                                    'ssl_sni_hostname': 'prod-special3.example.org',
+                                    'ssl_cert_hostname': '%s-special3.example.org' % self.environment,
+                                    'ssl_sni_hostname': '%s-special3.example.org' % self.environment,
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles3-condition',
                                     'healthcheck': 'default',
@@ -463,7 +464,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                                'ttf'],
                             },
                             'healthcheck': {
-                                'host': 'prod--www.example.org',
+                                'host': '%s--www.example.org' % self.environment,
                                 'name': 'default',
                                 'path': '/ping-fastly',
                                 'check_interval': 30000,
@@ -539,7 +540,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_fastly_template_shield(self):
         extra = {
-            'stackname': 'project-with-fastly-shield--prod',
+            'stackname': 'project-with-fastly-shield--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-fastly-shield', **extra)
         terraform_template = terraform.render(context)
@@ -550,7 +551,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_fastly_template_shield_pop(self):
         extra = {
-            'stackname': 'project-with-fastly-shield-pop--prod',
+            'stackname': 'project-with-fastly-shield-pop--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-fastly-shield-pop', **extra)
         terraform_template = terraform.render(context)
@@ -562,7 +563,7 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_fastly_template_shield_aws_region(self):
         base.switch_in_test_settings('dummy-settings2.yaml')
         extra = {
-            'stackname': 'project-with-fastly-shield-aws-region--prod',
+            'stackname': 'project-with-fastly-shield-aws-region--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-fastly-shield-aws-region', **extra)
         terraform_template = terraform.render(context)
@@ -572,7 +573,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_fastly_template_gcs_logging(self):
         extra = {
-            'stackname': 'project-with-fastly-gcs--prod',
+            'stackname': 'project-with-fastly-gcs--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-fastly-gcs', **extra)
         terraform_template = terraform.render(context)
@@ -597,7 +598,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_fastly_template_bigquery_logging(self):
         extra = {
-            'stackname': 'project-with-fastly-bigquery--prod',
+            'stackname': 'project-with-fastly-bigquery--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-fastly-bigquery', **extra)
         terraform_template = terraform.render(context)
@@ -621,14 +622,14 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_gcp_template(self):
         extra = {
-            'stackname': 'project-on-gcp--prod',
+            'stackname': 'project-on-gcp--%s' % self.environment,
         }
         context = cfngen.build_context('project-on-gcp', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        bucket = template['resource']['google_storage_bucket']['widgets-prod']
+        bucket = template['resource']['google_storage_bucket']['widgets-%s' % self.environment]
         self.assertEqual(bucket, {
-            'name': 'widgets-prod',
+            'name': 'widgets-%s' % self.environment,
             'location': 'us-east4',
             'storage_class': 'REGIONAL',
             'project': 'elife-something',
@@ -636,14 +637,14 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_bigquery_datasets_only(self):
         extra = {
-            'stackname': 'project-with-bigquery-datasets-only--prod',
+            'stackname': 'project-with-bigquery-datasets-only--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-bigquery-datasets-only', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_%s' % self.environment]
         self.assertEqual(dataset, {
-            'dataset_id': 'my_dataset_prod',
+            'dataset_id': 'my_dataset_%s' % self.environment,
             'project': 'elife-something',
         })
 
@@ -651,20 +652,20 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_bigquery_full_template(self):
         extra = {
-            'stackname': 'project-with-bigquery--prod',
+            'stackname': 'project-with-bigquery--%s' % self.environment,
         }
         context = cfngen.build_context('project-with-bigquery', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        dataset = template['resource']['google_bigquery_dataset']['my_dataset_prod']
+        dataset = template['resource']['google_bigquery_dataset']['my_dataset_%s' % self.environment]
         self.assertEqual(dataset, {
-            'dataset_id': 'my_dataset_prod',
+            'dataset_id': 'my_dataset_%s' % self.environment,
             'project': 'elife-something',
         })
 
-        table = template['resource']['google_bigquery_table']['my_dataset_prod_widgets']
+        table = template['resource']['google_bigquery_table']['my_dataset_%s_widgets' % self.environment]
         self.assertEqual(table, {
-            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
+            'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
             'table_id': 'widgets',
             'project': 'elife-something',
             'schema': '${file("key-value.json")}',
@@ -673,7 +674,7 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_bigquery_remote_paths(self):
         "remote paths require terraform to fetch and load the files, which requires another entry in the 'data' list"
         pname = 'project-with-bigquery-remote-schemas'
-        iid = pname + '--prod'
+        iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
 
@@ -682,21 +683,21 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'resource': {
                     'google_bigquery_dataset': {
-                        'my_dataset_prod': {
+                        'my_dataset_%s' % self.environment: {
                             'project': 'elife-something',
-                            'dataset_id': 'my_dataset_prod'
+                            'dataset_id': 'my_dataset_%s' % self.environment
                         }
                     },
                     'google_bigquery_table': {
-                        'my_dataset_prod_remote': {
+                        'my_dataset_%s_remote' % self.environment: {
                             'project': 'elife-something',
-                            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
+                            'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
                             'table_id': 'remote',
-                            'schema': '${data.http.my_dataset_prod_remote.body}'
+                            'schema': '${data.http.my_dataset_%s_remote.body}' % self.environment,
                         },
-                        'my_dataset_prod_local': {
+                        'my_dataset_%s_local' % self.environment: {
                             'project': 'elife-something',
-                            'dataset_id': '${google_bigquery_dataset.my_dataset_prod.dataset_id}',
+                            'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
                             'table_id': 'local',
                             'schema': '${file("key-value.json")}'
                         }
@@ -704,7 +705,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 },
                 'data': {
                     'http': {
-                        'my_dataset_prod_remote': {
+                        'my_dataset_%s_remote' % self.environment: {
                             'url': 'https://example.org/schemas/remote.json'
                         }
                     }
@@ -725,9 +726,9 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'
-        filename = terraform.write_template('dummy1--test', contents)
-        self.assertEqual(filename, '.cfn/terraform/dummy1--test/generated.tf.json')
-        self.assertEqual(terraform.read_template('dummy1--test'), contents)
+        filename = terraform.write_template('dummy1--%s' % self.environment, contents)
+        self.assertEqual(filename, '.cfn/terraform/dummy1--%s/generated.tf.json' % self.environment)
+        self.assertEqual(terraform.read_template('dummy1--%s' % self.environment), contents)
 
     def _parse_template(self, terraform_template):
         """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
