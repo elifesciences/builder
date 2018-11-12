@@ -118,8 +118,9 @@ def start(stackname):
         call_while(
             lambda: _some_node_is_not_ready(stackname),
             interval=2,
-            update_msg="waiting for nodes to be networked",
-            done_msg="all nodes have public ips"
+            timeout=120,
+            update_msg="waiting for nodes to complete boot",
+            done_msg="all nodes have public ips, are reachable via SSH and have completed boot"
         )
     else:
         LOG.info("EC2 nodes are all running")
@@ -140,6 +141,9 @@ def _some_node_is_not_ready(stackname, **kwargs):
         # and sometimes selecting instances filtering for the `running` state doesn't find them
         # even if their state is `running` according to the latest API call
         LOG.info("No running instances yet: %s", e)
+        return True
+    except config.FabricException as e:
+        LOG.info("Generic failure of _wait_daemons execution: %s", e)
         return True
     return False
 
