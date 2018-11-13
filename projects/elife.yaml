@@ -2086,4 +2086,5 @@ data-pipeline:
         cpus: 2
         ram: 2048
         ports:
-            1222: 80
+            1222: 8080 # bypass nginx for development, it's glitchy
+            1223: 18080 # nifi-registry service
