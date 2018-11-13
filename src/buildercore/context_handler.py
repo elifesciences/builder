@@ -28,9 +28,8 @@ def load_context(stackname):
     """Returns the store context data structure for 'stackname'.
     Downloads from S3 if missing on the local builder instance"""
     path = local_context_file(stackname)
-    if not os.path.exists(path):
-        if not download_from_s3(stackname):
-            raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+    if not download_from_s3(stackname, refresh=True):
+        raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
     contents = json.load(open(path, 'r'))
 
     # fallback: if no `aws` key is there, copy from legacy `project.aws` key

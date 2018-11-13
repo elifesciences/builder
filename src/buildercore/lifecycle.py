@@ -13,7 +13,7 @@ import boto # route53 boto2 > route53 boto3
 from . import config, core
 from .core import boto_conn, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure, lmap
-from .context_handler import load_context, download_from_s3
+from .context_handler import load_context
 
 LOG = logging.getLogger(__name__)
 
@@ -83,8 +83,6 @@ def restart(stackname):
 def start(stackname):
     "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
 
-    # update local copy of context from s3
-    download_from_s3(stackname, refresh=True)
     context = load_context(stackname)
 
     # TODO: do the same exclusion for EC2
