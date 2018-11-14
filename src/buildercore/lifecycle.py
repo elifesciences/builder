@@ -130,7 +130,7 @@ def start(stackname):
 
 def _some_node_is_not_ready(stackname, **kwargs):
     try:
-        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER, **kwargs)
+        return stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER, **kwargs)
     except NoPublicIps as e:
         LOG.info("No public ips available yet: %s", e)
         return True
@@ -239,13 +239,11 @@ def _wait_daemons():
     node_id = current_ec2_node_id()
     path = '/var/lib/cloud/instance/boot-finished'
 
-    def is_starting_daemons():
-        try:
-            return not files.exists(path)
-        except fabric_exceptions.NetworkError:
-            LOG.debug("failed to connect to %s...", node_id)
-            return True
-    call_while(is_starting_daemons, interval=3, update_msg='Waiting for %s to be detected on %s...' % (path, node_id))
+    try:
+        return not files.exists(path)
+    except fabric_exceptions.NetworkError:
+        LOG.debug("failed to connect to %s...", node_id)
+        return True
 
 def update_dns(stackname):
     context = load_context(stackname)
