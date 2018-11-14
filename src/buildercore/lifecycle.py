@@ -130,7 +130,10 @@ def start(stackname):
 
 def _some_node_is_not_ready(stackname, **kwargs):
     try:
-        stack_all_ec2_nodes(stackname, _wait_daemons, username=config.BOOTSTRAP_USER, **kwargs)
+        # TODO: what if there are more than 1 node?
+        ip_to_ready = stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)
+        LOG.info("_daemons_ready: %s", ip_to_ready)
+        return False in ip_to_ready.values()
     except NoPublicIps as e:
         LOG.info("No public ips available yet: %s", e)
         return True
@@ -141,7 +144,7 @@ def _some_node_is_not_ready(stackname, **kwargs):
         LOG.info("No running instances yet: %s", e)
         return True
     except config.FabricException as e:
-        LOG.info("Generic failure of _wait_daemons execution: %s", e)
+        LOG.info("Generic failure of _daemons_ready execution: %s", e)
         return True
     return False
 
@@ -234,18 +237,16 @@ def _ensure_valid_ec2_states(states, valid_states):
         "The states of EC2 nodes are not supported, manual recovery is needed: %s" % states
     )
 
-def _wait_daemons():
+def _daemons_ready():
     "Assumes it is connected to an ec2 host via fabric"
     node_id = current_ec2_node_id()
     path = '/var/lib/cloud/instance/boot-finished'
 
-    def is_starting_daemons():
-        try:
-            return not files.exists(path)
-        except fabric_exceptions.NetworkError:
-            LOG.debug("failed to connect to %s...", node_id)
-            return True
-    call_while(is_starting_daemons, interval=3, update_msg='Waiting for %s to be detected on %s...' % (path, node_id))
+    try:
+        return files.exists(path)
+    except fabric_exceptions.NetworkError:
+        LOG.debug("failed to connect to %s...", node_id)
+        return False
 
 def update_dns(stackname):
     context = load_context(stackname)
