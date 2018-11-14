@@ -2068,6 +2068,16 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    aws-alt:
+        masterless:
+            ec2:
+                masterless: True
+            ports:
+                - 22
+                - 80 # used only to upgrade to https
+                - 443
+                - 18443
+            s3: {}
     gcp:
         bigquery:
             "{instance}": # dataset
