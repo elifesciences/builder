@@ -2061,6 +2061,7 @@ data-pipeline:
             - 22
             - 80 # used only to upgrade to https
             - 443
+            - 18443
         s3:
             "{instance}-elife-data-pipeline":
                  deletion-policy: delete
