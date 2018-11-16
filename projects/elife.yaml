@@ -2068,6 +2068,16 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
+    aws-alt:
+        masterless:
+            ec2:
+                masterless: True
+            ports:
+                - 22
+                - 80 # used only to upgrade to https
+                - 443
+                - 18443
+            s3: {}
     gcp:
         bigquery:
             "{instance}": # dataset
@@ -2086,4 +2096,5 @@ data-pipeline:
         cpus: 2
         ram: 2048
         ports:
-            1222: 80
+            1222: 8080 # bypass nginx for development, it's glitchy
+            1223: 18080 # nifi-registry service
