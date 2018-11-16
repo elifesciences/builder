@@ -2056,8 +2056,6 @@ data-pipeline:
     aws:
         ec2:
             ami: ami-1d4e7a66 # 16.04
-        ext:
-            size: 100 # GB
         type: t2.medium
         ports:
             - 22
@@ -2091,6 +2089,10 @@ data-pipeline:
                         schema: https://github.com/elifesciences/data-pipeline/schemas/489_datascience_editor_keywords.json
                     455_datascience_editors:
                         schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
+    aws-alt:
+        prod:
+            ext:
+                size: 100 # GB
     vagrant:
         box: bento/ubuntu-16.04
         cpus: 2
