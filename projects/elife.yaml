@@ -541,6 +541,7 @@ journal:
                     - "strip-non-journal-cookies"
                     - "journal-google-scholar"
                     - "journal-google-scholar-vary"
+                    - "journal-submit"
                 gcslogging:
                     bucket: staging-elife-fastly
                     path: "journal--{instance}/"
