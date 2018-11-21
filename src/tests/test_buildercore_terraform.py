@@ -349,6 +349,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
                         },
+                        'journal-submit': {
+                            'template': '${file("journal-submit.vcl.tpl")}',
+                            'vars': {
+                                'xpub_uri': 'https://xpub.example.com/',
+                            },
+                        },
                     },
                 },
                 'resource': {
@@ -512,6 +518,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 {
                                     'name': 'error-page-vcl-5xx',
                                     'content': '${data.template_file.error-page-vcl-5xx.rendered}',
+                                },
+                                {
+                                    'name': 'journal-submit',
+                                    'content': '${data.template_file.journal-submit.rendered}',
                                 },
                                 {
                                     'name': 'main',

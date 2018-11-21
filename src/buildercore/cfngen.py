@@ -410,6 +410,7 @@ def build_context_fastly(pdata, context):
             'default-ttl': pdata['aws']['fastly']['default-ttl'],
             'healthcheck': pdata['aws']['fastly']['healthcheck'],
             'errors': pdata['aws']['fastly']['errors'],
+            'xpub': pdata['aws']['fastly']['xpub'],
             'gcslogging': _parameterize_gcslogging(pdata['aws']['fastly']['gcslogging']),
             'bigquerylogging': _parameterize_bigquerylogging(pdata['aws']['fastly']['bigquerylogging']),
             'vcl': pdata['aws']['fastly']['vcl'],

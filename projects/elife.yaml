@@ -154,6 +154,7 @@ defaults:
             bigquerylogging: false
             healthcheck: false
             errors: false
+            xpub: false
             vcl:
                 - "original-host"
             surrogate-keys: {}
@@ -535,13 +536,13 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
+                xpub: https://staging--xpub.elifesciences.org/
                 vcl:
                     - "original-host"
                     - "ping-status"
                     - "strip-non-journal-cookies"
                     - "journal-google-scholar"
                     - "journal-google-scholar-vary"
-                    - "journal-submit"
                 gcslogging:
                     bucket: staging-elife-fastly
                     path: "journal--{instance}/"

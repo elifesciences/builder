@@ -111,6 +111,7 @@ defaults:
             bigquerylogging: false
             healthcheck: false
             errors: false
+            xpub: false
             vcl: []
             surrogate-keys: {}
         subdomains: []
@@ -378,6 +379,7 @@ project-with-fastly-complex:
                 fallbacks:
                     5xx: "/5xx.html"
                     4xx: "/4xx.html"
+            xpub: https://xpub.example.com/
             vcl:
                 - "gzip-by-content-type-suffix"
             surrogate-keys:

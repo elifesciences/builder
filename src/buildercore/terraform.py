@@ -196,6 +196,7 @@ def render_fastly(context):
             b['healthcheck'] = 'default'
 
     _render_fastly_errors(context, template, vcl_templated_snippets)
+    _render_fastly_journal_submit(context, template, vcl_templated_snippets)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -419,6 +420,31 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
                 }
             )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+
+
+def _render_fastly_journal_submit(context, template, vcl_templated_snippets):
+    if context['fastly']['xpub']:
+        journal_submit_vcl_template = fastly.VCL_TEMPLATES['journal-submit']
+        journal_submit_vcl_template_file = _generate_vcl_file(
+            context['stackname'],
+            journal_submit_vcl_template.content,
+            journal_submit_vcl_template.name,
+            extension='vcl.tpl'
+        )
+
+        template.populate_data(
+            DATA_TYPE_TEMPLATE,
+            'journal-submit',
+            {
+                'template': journal_submit_vcl_template_file,
+                'vars': {
+                    'xpub_uri': context['fastly']['xpub'],
+                },
+            }
+        )
+
+        vcl_templated_snippets['journal-submit'] = journal_submit_vcl_template.as_inclusion()
+
 
 def _fastly_backend(hostname, name, request_condition=None, shield=None):
     backend_resource = {
