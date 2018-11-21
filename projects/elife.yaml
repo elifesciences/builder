@@ -747,6 +747,8 @@ elife-bot:
                 "{instance}-elife-bot-digests-input":
                     sqs-notifications:
                         end2end-incoming-queue: {}
+                "{instance}-elife-ejp-poa-delivery":
+                    deletion-policy: delete
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
@@ -762,6 +764,8 @@ elife-bot:
                         ct-incoming-queue: {}
                 "{instance}-elife-bot":
                     deletion-policy: delete
+                "{instance}-elife-ejp-poa-delivery":
+                    deletion-policy: delete
         prod:
             # don't change type through CloudFormation because the template is too old to be modified successfully
             #type: c5.2xlarge
@@ -772,6 +776,9 @@ elife-bot:
                 "{instance}-elife-bot-digests-input":
                     sqs-notifications:
                         incoming-queue: {}
+                # already existing bucket, do not uncomment
+                #"{instance}-elife-ejp-poa-delivery":
+                #    deletion-policy: retain
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 2048
