@@ -1866,6 +1866,7 @@ digests:
 
 crm:
     subdomain: crm # crm.elifesciences.org
+    domain: False
     repo: https://github.com/elifesciences/drupal-civi
     formula-repo: git@github.com:elifesciences/crm-formula
     aws:
