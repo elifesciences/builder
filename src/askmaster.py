@@ -31,14 +31,6 @@ def syslog_conf():
     return salt_master_cmd("'cat /etc/syslog-ng/syslog-ng.conf | grep use_fqdn'", minions=minions)
 
 @task
-@osissue("very specific code. possibly a once-off that can be deleted")
-def update_syslog():
-    module = 'state.sls_id'
-    cmd = "syslog-ng-hook base.syslog-ng test=True"
-    minions = 'elife-crm-production'
-    return salt_master_cmd(cmd, module, minions)
-
-@task
 def fail2ban_running():
     # return salt_master_cmd("'ps aux | grep fail2ban-server'")
     return salt_master_cmd(r"'salt \* state.single service.running name=fail2ban'")
