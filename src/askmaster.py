@@ -6,7 +6,6 @@ from buildercore import core
 from fabric.api import sudo, task
 from decorators import echo_output
 from buildercore.core import stack_conn
-from buildercore.decorators import osissue
 import utils
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
