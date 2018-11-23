@@ -29,6 +29,7 @@ defaults:
             bigquerylogging: false
             healthcheck: false
             errors: false
+            vcl-templates: {}
             vcl: []
             surrogate-keys: {}
         subdomains: []
