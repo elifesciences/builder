@@ -154,7 +154,7 @@ defaults:
             bigquerylogging: false
             healthcheck: false
             errors: false
-            xpub: false
+            vcl-templates: {}
             vcl:
                 - "original-host"
             surrogate-keys: {}
@@ -536,7 +536,9 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                xpub: https://staging--xpub.elifesciences.org/
+                vcl-templates:
+                    journal-submit:
+                        xpub_uri: https://staging--xpub.elifesciences.org/
                 vcl:
                     - "original-host"
                     - "ping-status"

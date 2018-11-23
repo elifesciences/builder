@@ -195,8 +195,8 @@ def render_fastly(context):
         for b in template.resource[RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
             b['healthcheck'] = 'default'
 
+    _render_fastly_vcl_templates(context, template, vcl_templated_snippets)
     _render_fastly_errors(context, template, vcl_templated_snippets)
-    _render_fastly_journal_submit(context, template, vcl_templated_snippets)
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
@@ -344,6 +344,29 @@ def render_fastly(context):
 
     return template.to_dict()
 
+
+def _render_fastly_vcl_templates(context, template, vcl_templated_snippets):
+    for name, variables in context['fastly']['vcl-templates'].items():
+        vcl_template = fastly.VCL_TEMPLATES[name]
+        vcl_template_file = _generate_vcl_file(
+            context['stackname'],
+            vcl_template.content,
+            vcl_template.name,
+            extension='vcl.tpl'
+        )
+
+        template.populate_data(
+            DATA_TYPE_TEMPLATE,
+            name,
+            {
+                'template': vcl_template_file,
+                'vars': variables,
+            }
+        )
+
+        vcl_templated_snippets[name] = vcl_template.as_inclusion()
+
+
 def _render_fastly_errors(context, template, vcl_templated_snippets):
     if context['fastly']['errors']:
         error_vcl_template = fastly.VCL_TEMPLATES['error-page']
@@ -420,30 +443,6 @@ def _render_fastly_errors(context, template, vcl_templated_snippets):
                 }
             )
             vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
-
-
-def _render_fastly_journal_submit(context, template, vcl_templated_snippets):
-    if context['fastly']['xpub']:
-        journal_submit_vcl_template = fastly.VCL_TEMPLATES['journal-submit']
-        journal_submit_vcl_template_file = _generate_vcl_file(
-            context['stackname'],
-            journal_submit_vcl_template.content,
-            journal_submit_vcl_template.name,
-            extension='vcl.tpl'
-        )
-
-        template.populate_data(
-            DATA_TYPE_TEMPLATE,
-            'journal-submit',
-            {
-                'template': journal_submit_vcl_template_file,
-                'vars': {
-                    'xpub_uri': context['fastly']['xpub'],
-                },
-            }
-        )
-
-        vcl_templated_snippets['journal-submit'] = journal_submit_vcl_template.as_inclusion()
 
 
 def _fastly_backend(hostname, name, request_condition=None, shield=None):
