@@ -54,7 +54,6 @@ class SimpleCases(base.BaseCase):
             ('elife-bot--large-gnott-again-2015-12-13', 'elife-bot'),
             ('elife-ci--2015-03-13', 'elife-ci'),
             ('elife-civiapi--2015-02-13', 'elife-civiapi'),
-            ('elife-crm--2015-08-18', 'elife-crm'),
             ('elife-dashboard--2016-01-26', 'elife-dashboard'),
             ('elife-lax--2015-10-15-develop', 'elife-lax'),
             ('elife-metrics--2015-09-25', 'elife-metrics'),

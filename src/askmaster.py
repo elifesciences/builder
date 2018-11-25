@@ -6,7 +6,6 @@ from buildercore import core
 from fabric.api import sudo, task
 from decorators import echo_output
 from buildercore.core import stack_conn
-from buildercore.decorators import osissue
 import utils
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
@@ -29,14 +28,6 @@ def daily_updates_enabled():
 def syslog_conf():
     minions = "-C 'elife-metrics-* or elife-lax-* or elife-api-*'"
     return salt_master_cmd("'cat /etc/syslog-ng/syslog-ng.conf | grep use_fqdn'", minions=minions)
-
-@task
-@osissue("very specific code. possibly a once-off that can be deleted")
-def update_syslog():
-    module = 'state.sls_id'
-    cmd = "syslog-ng-hook base.syslog-ng test=True"
-    minions = 'elife-crm-production'
-    return salt_master_cmd(cmd, module, minions)
 
 @task
 def fail2ban_running():
