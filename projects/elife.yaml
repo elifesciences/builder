@@ -538,7 +538,8 @@ journal:
                         5xx: "5xx.html"
                 vcl-templates:
                     journal-submit:
-                        xpub_uri: https://staging--xpub.elifesciences.org/
+                        referer: ^(?:https://staging--xpub\.elifesciences\.org/|https://sandbox\.orcid\.org/)
+                        xpub_uri: https://staging--xpub.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"

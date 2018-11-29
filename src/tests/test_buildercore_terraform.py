@@ -352,7 +352,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'journal-submit': {
                             'template': '${file("journal-submit.vcl.tpl")}',
                             'vars': {
-                                'xpub_uri': 'https://xpub.example.com/',
+                                'referer': '^https://xpub\.example\.com/',
+                                'xpub_uri': 'https://xpub.example.com/login',
                             },
                         },
                     },

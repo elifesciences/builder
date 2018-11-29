@@ -381,7 +381,8 @@ project-with-fastly-complex:
                     4xx: "/4xx.html"
             vcl-templates:
                 journal-submit:
-                    xpub_uri: https://xpub.example.com/
+                    referer: ^https://xpub\.example\.com/
+                    xpub_uri: https://xpub.example.com/login
             vcl:
                 - "gzip-by-content-type-suffix"
             surrogate-keys:
