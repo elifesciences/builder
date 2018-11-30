@@ -498,7 +498,8 @@ journal:
                         5xx: "5xx.html"
                 vcl-templates:
                     journal-submit:
-                        percentage: 0
+                        percentage: 100
+                        referer: ^(?:https://end2end--xpub\.elifesciences\.org/|https://end2end--profiles\.elifesciences.org:8082/)
                         referer: ^https://end2end--xpub\.elifesciences\.org/
                         xpub_uri: https://end2end--xpub.elifesciences.org/login
                 vcl:
