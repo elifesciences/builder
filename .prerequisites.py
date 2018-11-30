@@ -4,7 +4,7 @@ from distutils.version import StrictVersion
 from shlex import split
 import os, sys
 
-MINIMUM_VERSION_TERRAFORM = StrictVersion('0.11.7')
+MINIMUM_VERSION_TERRAFORM = StrictVersion('0.11.10')
 
 def sh(cmd):
     return os.system(cmd) == 0
