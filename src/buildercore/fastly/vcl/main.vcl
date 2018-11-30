@@ -109,6 +109,12 @@ sub vcl_error {
     return(deliver_stale);
   }
 
+  if (obj.status == 302) {
+     set obj.http.Location = req.http.X-eLife-Redirect;
+     synthetic {""};
+     return (deliver);
+  }
+
   #FASTLY error
 }
 

@@ -154,6 +154,7 @@ defaults:
             bigquerylogging: false
             healthcheck: false
             errors: false
+            vcl-templates: {}
             vcl:
                 - "original-host"
             surrogate-keys: {}
@@ -495,6 +496,11 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
+                vcl-templates:
+                    journal-submit:
+                        percentage: 100
+                        referer: ^https://end2end--xpub\.elifesciences\.org/
+                        xpub_uri: https://end2end--xpub.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -535,6 +541,11 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
+                vcl-templates:
+                    journal-submit:
+                        percentage: 10
+                        referer: ^(?:https://staging--xpub\.elifesciences\.org/|https://sandbox\.orcid\.org/)
+                        xpub_uri: https://staging--xpub.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -598,6 +609,11 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
+                vcl-templates:
+                    journal-submit:
+                        percentage: 0
+                        referer: ^(?:https://xpub\.elifesciences\.org/|https://orcid\.org/)
+                        xpub_uri: https://xpub.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"

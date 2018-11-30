@@ -137,4 +137,10 @@ VCL_TEMPLATES = {
         type='error',
         hook='after'
     ),
+    'journal-submit': FastlyVCLSnippet(
+        name='journal-submit',
+        content=_read_vcl_file('journal-submit.vcl.tpl'),
+        type='recv',
+        hook='before'
+    ),
 }
