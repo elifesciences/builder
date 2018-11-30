@@ -381,6 +381,7 @@ project-with-fastly-complex:
                     4xx: "/4xx.html"
             vcl-templates:
                 journal-submit:
+                    percentage: 10
                     referer: ^https://xpub\.example\.com/
                     xpub_uri: https://xpub.example.com/login
             vcl:

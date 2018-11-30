@@ -3,7 +3,7 @@ if (req.url.path == "/submit") {
         return(pass);
     }
 
-    if (randomint(1, 100) <= 10) {
+    if (randomint(1, 100) <= ${percentage}) {
       set req.http.X-eLife-Redirect = "${xpub_uri}";
     } else {
       set req.http.X-eLife-Redirect = "https://submit.elifesciences.org/cgi-bin/main.plex";
