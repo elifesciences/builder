@@ -300,7 +300,8 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     if not public_ips:
         LOG.info("No EC2 nodes to execute on")
-        return
+        # should be a dictionary mapping ip address to result
+        return {}
 
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 

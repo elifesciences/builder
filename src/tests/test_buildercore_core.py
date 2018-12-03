@@ -162,6 +162,14 @@ class SimpleCases(base.BaseCase):
 
 class Errors(base.BaseCase):
     @patch('buildercore.core.stack_data')
+    def test_no_running_instances_found(self, stack_data):
+        stack_data.return_value = []
+        self.assertEqual(
+            core.stack_all_ec2_nodes('dummy1--test', lambda: True),
+            {}
+        )
+
+    @patch('buildercore.core.stack_data')
     def test_no_public_ips_available(self, stack_data):
         stack_data.return_value = [
             {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Tags': []},

@@ -133,7 +133,7 @@ def _some_node_is_not_ready(stackname, **kwargs):
         # TODO: what if there are more than 1 node?
         ip_to_ready = stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)
         LOG.info("_daemons_ready: %s", ip_to_ready)
-        return False in ip_to_ready.values()
+        return len(ip_to_ready) == 0 or False in ip_to_ready.values()
     except NoPublicIps as e:
         LOG.info("No public ips available yet: %s", e)
         return True
