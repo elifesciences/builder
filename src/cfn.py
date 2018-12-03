@@ -311,15 +311,18 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 
 @task
 @requires_aws_stack
-def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1):
+def upload_file(stackname, local_path, remote_path=None, overwrite=False, confirm=False, node=1):
     remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
-    overwrite, node = str(overwrite).lower() == "true", int(node)
+    overwrite = str(overwrite).lower() == "true"
+    confirm = str(confirm).lower() == "true"
+    node = int(node)
     with stack_conn(stackname, node=node):
         print('stack:', stackname, 'node', node)
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
-        utils.get_input('continue?')
+        if not confirm:
+            utils.get_input('continue?')
         if files.exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
             exit(1)
