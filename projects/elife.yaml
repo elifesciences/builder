@@ -2065,5 +2065,7 @@ bastion:
         type: t2.nano # 500 MB
         ports:
             - 22
+        subdomains:
+            - bastion
     vagrant:
         ram: 512
