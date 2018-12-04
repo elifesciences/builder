@@ -2056,3 +2056,14 @@ data-pipeline:
         ports:
             1222: 8080 # bypass nginx for development, it's glitchy
             1223: 18080 # nifi-registry service
+
+bastion:
+    description: intermediate server that gives access to the inside of the VPC
+    subdomain: bastion
+    formula-repo: https://github.com/elifesciences/bastion-formula
+    aws:
+        type: t2.nano # 500 MB
+        ports:
+            - 22
+    vagrant:
+        ram: 512
