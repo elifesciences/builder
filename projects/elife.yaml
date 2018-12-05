@@ -1923,6 +1923,7 @@ elife-xpub:
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
             ec2:
                 cluster-size: 2
+                dns-internal: True
             elb:
                 protocol:
                     - 443
@@ -1940,6 +1941,7 @@ elife-xpub:
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
             ec2:
                 cluster-size: 2
+                dns-internal: True
             elb:
                 protocol:
                     - 443
@@ -1962,6 +1964,7 @@ elife-xpub:
                 deletion-policy: Snapshot
             ec2:
                 cluster-size: 2
+                dns-internal: True
             elb:
                 protocol:
                     - 443
@@ -2056,3 +2059,16 @@ data-pipeline:
         ports:
             1222: 8080 # bypass nginx for development, it's glitchy
             1223: 18080 # nifi-registry service
+
+bastion:
+    description: intermediate server that gives access to the inside of the VPC
+    subdomain: bastion
+    formula-repo: https://github.com/elifesciences/bastion-formula
+    aws:
+        type: t2.nano # 500 MB
+        ports:
+            - 22
+        subdomains:
+            - bastion
+    vagrant:
+        ram: 512
