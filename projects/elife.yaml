@@ -1610,7 +1610,7 @@ iiif:
                 timeout: 2000
             surrogate-keys:
                 article-id-versioned:
-                    url: "^/lax[:/]([0-9]+)(?:/|%2F)elife-(?:[a-z0-9-]+)-v([0-9]+)\\.(?:.+)$"
+                    url: "^/lax[:/]([0-9]+)(?:/|%252F)elife-(?:[a-z0-9-]+)-v([0-9]+)\\.(?:.+)$"
                     value: "article/\\1 article/\\1v\\2"
                     samples:
                         figure:
@@ -1623,10 +1623,10 @@ iiif:
                             path: /lax:18215/elife-18215-app2-fig1-figsupp2-v2.tif
                             expected: "article/18215 article/18215v2"
                         encoded-urls:
-                            path: /lax/18215%2Felife-18215-app2-fig1-figsupp2-v2.tif
+                            path: /lax/18215%252Felife-18215-app2-fig1-figsupp2-v2.tif
                             expected: "article/18215 article/18215v2"
                 article-id-unversioned:
-                    url: "^/lax[:/]([0-9]+)(?:/|%2F)elife-(?:[a-z-0-9]+)-(?:video|media)(?:[0-9]+)\\.(?:.+)$"
+                    url: "^/lax[:/]([0-9]+)(?:/|%252F)elife-(?:[a-z-0-9]+)-(?:video|media)(?:[0-9]+)\\.(?:.+)$"
                     value: "article/\\1 article/\\1/videos"
                     samples:
                         video-still:
@@ -1639,25 +1639,20 @@ iiif:
                             path: /lax:26866/elife-26866-fig3-video1.jpg
                             expected: "article/26866 article/26866/videos"
                         encoded-urls:
-                            path: /lax/26866%2Felife-26866-fig3-video1.jpg
+                            path: /lax/26866%252Felife-26866-fig3-video1.jpg
                             expected: "article/26866 article/26866/videos"
                 digest-id:
-                    # does work:
-                    url: "^/digests/([0-9]+).*$"
-                    # doesn't work:
-                    #url: "^/digests/([0-9]+)(?:/|%2F)(?:.+)$"
-                    # also doesn't work:
-                    #url: "^/digests/([0-9]+)(?:/|%2F)"
+                    url: "^/digests/([0-9]+)(?:/|%252F)(?:.+)$"
                     value: "digest/\\1"
                     samples:
                         digest-image-info-json:
-                            path: /digests/39984%2Fdigest-39984.jpg/info.json
+                            path: /digests/39984%252Fdigest-39984.jpg/info.json
                             expected: "digest/39984"
                         digest-image-full:
-                            path: /digests/39984%2Fdigest-39984.jpg/full/full/0/default.jpg
+                            path: /digests/39984%252Fdigest-39984.jpg/full/full/0/default.jpg
                             expected: "digest/39984"
                         digest-image-resized:
-                            path: /digests/39984%2Fdigest-39984.jpg/full/500,/0/default.jpg
+                            path: /digests/39984%252Fdigest-39984.jpg/full/500,/0/default.jpg
                             expected: "digest/39984"
                         non-encoded-urls:
                             path: /digests/39984/digest-39984.jpg/info.json
