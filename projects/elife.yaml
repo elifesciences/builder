@@ -2043,11 +2043,11 @@ data-pipeline:
                 tables:
                     # bit of repetition here
                     380_datascience_early_career_researchers:
-                        schema: https://github.com/elifesciences/data-pipeline/schemas/380_datascience_early_career_researchers.json
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/380_datascience_early_career_researchers.json
                     489_datascience_editor_keywords:
-                        schema: https://github.com/elifesciences/data-pipeline/schemas/489_datascience_editor_keywords.json
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/489_datascience_editor_keywords.json
                     455_datascience_editors:
-                        schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/455_datascience_editors.json
     aws-alt:
         staging:
             ext:
