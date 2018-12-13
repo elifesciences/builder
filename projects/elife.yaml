@@ -2049,6 +2049,9 @@ data-pipeline:
                     455_datascience_editors:
                         schema: https://github.com/elifesciences/data-pipeline/schemas/455_datascience_editors.json
     aws-alt:
+        staging:
+            ext:
+                size: 100 # GB
         prod:
             ext:
                 size: 100 # GB
