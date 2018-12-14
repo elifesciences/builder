@@ -43,12 +43,14 @@ class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
         return any([
             self.plus['Resources'],
             self.plus['Outputs'],
+            self.plus['Parameters'],
             self.edit['Resources'],
             self.edit['Outputs'],
             self.minus['Resources'],
             self.minus['Outputs'],
+            self.minus['Parameters'],
         ])
-_empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
+_empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}, 'Parameters': {}}
 CloudFormationDelta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary)
 
 EMPTY_TEMPLATE = {'Resources': {}}
@@ -133,7 +135,7 @@ def read_template(stackname):
 
 def apply_delta(template, delta):
     for component in delta.plus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        ensure(component in ["Resources", "Outputs", "Parameters"], "Template component %s not recognized" % component)
         data = template.get(component, {})
         data.update(delta.plus[component])
         template[component] = data
@@ -143,7 +145,7 @@ def apply_delta(template, delta):
         data.update(delta.edit[component])
         template[component] = data
     for component in delta.minus:
-        ensure(component in ["Resources", "Outputs"], "Template component %s not recognized" % component)
+        ensure(component in ["Resources", "Outputs", "Parameters"], "Template component %s not recognized" % component)
         for title in delta.minus[component]:
             del template[component][title]
 
@@ -177,6 +179,7 @@ def _update_template(stackname, template):
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
     try:
         conn = core.describe_stack(stackname)
+        print(json.dumps(template))
         conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
     except botocore.exceptions.ClientError as ex:
         # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
