@@ -2040,14 +2040,14 @@ data-pipeline:
             "{instance}": # dataset
                 # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
                 project: elife-data-pipeline
-                tables:
-                    # bit of repetition here
-                    380_datascience_early_career_researchers:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/380_datascience_early_career_researchers.json
-                    489_datascience_editor_keywords:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/489_datascience_editor_keywords.json
-                    455_datascience_editors:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/455_datascience_editors.json
+                #tables:
+                #    # bit of repetition here
+                #    380_datascience_early_career_researchers:
+                #        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/380_datascience_early_career_researchers.json
+                #    489_datascience_editor_keywords:
+                #        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/489_datascience_editor_keywords.json
+                #    455_datascience_editors:
+                #        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/455_datascience_editors.json
     aws-alt:
         staging:
             ext:
