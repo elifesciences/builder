@@ -649,14 +649,14 @@ def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
     # TODO: what if the new context doesn't have fastly, but it was there before?
-    if not new_context['fastly'] and not new_context['gcs']:
+    if not new_context['fastly'] and not new_context['gcs'] and not new_context['bigquery']:
         return None
 
     new_template = render(new_context)
     write_template(new_context['stackname'], new_template)
     return plan(new_context)
 
-@only_if('fastly', 'gcs')
+@only_if('fastly', 'gcs', 'bigquery')
 def bootstrap(stackname, context):
     plan(context)
     update(stackname, context)
@@ -718,6 +718,7 @@ def init(stackname, context):
                     # people to run `update_infrastructure`
                     # This is not ideal anyway, as it would be a set of credentials
                     # with large powers (but maybe limited to the single GCP project)
+                    # TODO: definitely do the above
                 },
                 'vault': {
                     'address': context['vault']['address'],
@@ -725,6 +726,7 @@ def init(stackname, context):
                     'version': "= %s" % PROVIDER_VAULT_VERSION,
                 },
             },
+            # TODO: this should not be used unless Fastly is involved
             'data': {
                 DATA_TYPE_VAULT_GENERIC_SECRET: {
                     DATA_NAME_VAULT_FASTLY_API_KEY: {
@@ -740,12 +742,12 @@ def update_template(stackname):
     context = load_context(stackname)
     update(stackname, context)
 
-@only_if('fastly', 'gcs')
+@only_if('fastly', 'gcs', 'bigquery')
 def update(stackname, context):
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
-@only_if('fastly', 'gcs')
+@only_if('fastly', 'gcs', 'bigquery')
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
