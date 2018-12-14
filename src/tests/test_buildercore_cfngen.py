@@ -37,7 +37,7 @@ class TestUpdates(base.BaseCase):
     def test_empty_template_delta(self):
         context = self._base_context()
         (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
-        self.assertEqual(delta_plus, {'Outputs': {}, 'Resources': {}})
+        self.assertEqual(delta_plus, {'Outputs': {}, 'Resources': {}, 'Parameters': {}})
 
     def test_template_delta_includes_cloudfront(self):
         "we can add CDNs (that takes an hour or more) without downtime"
