@@ -1899,6 +1899,7 @@ elife-xpub:
             type: gp2
     aws-alt:
         ci:
+            ec2: false
             s3:
                 "{instance}-elife-xpub":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 

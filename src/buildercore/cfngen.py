@@ -535,7 +535,7 @@ def generate_stack(pname, **more_context):
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
 UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$']
 
-REMOVABLE_TITLE_PATTERNS = ['^CloudFront.*', '^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$', '^AttachedDB$', '^AttachedDBSubnet$', '^VPCSecurityGroup$']
+REMOVABLE_TITLE_PATTERNS = ['^CloudFront.*', '^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$', '^AttachedDB$', '^AttachedDBSubnet$', '^VPCSecurityGroup$', '^KeyName$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 # CloudFormation is nicely chopped up into:
@@ -634,6 +634,10 @@ def template_delta(context):
         title: o for (title, o) in template.get('Outputs', {}).items()
         if (title not in old_template.get('Outputs', {}) and not _related_to_ec2(o))
     }
+    delta_plus_parameters = {
+        title: o for (title, o) in template.get('Parameters', {}).items()
+        if (title not in old_template.get('Parameters', {}))
+    }
 
     delta_edit_resources = {
         title: r for (title, r) in template['Resources'].items()
@@ -646,12 +650,14 @@ def template_delta(context):
 
     delta_minus_resources = {r: v for r, v in old_template['Resources'].items() if r not in template['Resources'] and _title_is_removable(r)}
     delta_minus_outputs = {o: v for o, v in old_template.get('Outputs', {}).items() if o not in template.get('Outputs', {})}
+    delta_minus_parameters = {p: v for p, v in old_template.get('Parameters', {}).items() if p not in template.get('Parameters', {})}
 
     return Delta.from_cloudformation_and_terraform(
         cloudformation.CloudFormationDelta(
             {
                 'Resources': delta_plus_resources,
                 'Outputs': delta_plus_outputs,
+                'Parameters': delta_plus_parameters,
             },
             {
                 'Resources': delta_edit_resources,
@@ -660,6 +666,7 @@ def template_delta(context):
             {
                 'Resources': delta_minus_resources,
                 'Outputs': delta_minus_outputs,
+                'Parameters': delta_minus_parameters,
             }
         ),
         terraform.generate_delta(context)
