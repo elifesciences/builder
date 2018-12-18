@@ -539,7 +539,7 @@ def render_bigquery(context):
             # https://www.terraform.io/docs/providers/http/data_source.html
             tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema}
             schema_ref = '${data.http.%s.body}' % fqrn
-            if re.match('^https://raw\.githubusercontent\.com/', schema):
+            if schema.startswith('https://raw.githubusercontent.com/'):
                 tf_file['data'][DATA_TYPE_HTTP][fqrn]['request_headers'] = {
                     'Authorization': 'token ${data.%s.%s.data["token"]}' % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GITHUB)
                 }
