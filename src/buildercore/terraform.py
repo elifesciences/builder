@@ -532,7 +532,7 @@ def render_bigquery(context):
         schema = table_options['schema']
         stackname = context['stackname']
         fqrn = "%s_%s" % (table_options['dataset_id'], table_id) # 'fully qualified resource name'
-        github_token = False
+        needs_github_token = False
 
         if schema.startswith('https://'):
             # remote schema, add a 'http' provider and have terraform pull it down for us
@@ -543,7 +543,7 @@ def render_bigquery(context):
                 tf_file['data'][DATA_TYPE_HTTP][fqrn]['request_headers'] = {
                     'Authorization': 'token ${data.%s.%s.data["token"]}' % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GITHUB)
                 }
-                github_token = True
+                needs_github_token = True
         else:
             # local schema. the `schema` is relative to `PROJECT_PATH`
             schema_path = join(PROJECT_PATH, schema)
@@ -562,7 +562,7 @@ def render_bigquery(context):
             'schema': schema_ref,
         }
 
-        if github_token:
+        if needs_github_token:
             if not DATA_TYPE_VAULT_GENERIC_SECRET in tf_file['data']:
                 tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET] = OrderedDict()
             tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET]['github'] = {
