@@ -701,6 +701,8 @@ project-with-bigquery-remote-schemas:
                 tables:
                     remote:
                         schema: https://example.org/schemas/remote.json
+                    remote_github:
+                        schema: https://raw.githubusercontent.com/myrepo/something.json
                     local:
                         schema: ./src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}

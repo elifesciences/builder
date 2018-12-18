@@ -707,6 +707,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'table_id': 'remote',
                             'schema': '${data.http.my_dataset_%s_remote.body}' % self.environment,
                         },
+                        'my_dataset_%s_remote_github' % self.environment: {
+                            'project': 'elife-something',
+                            'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
+                            'table_id': 'remote_github',
+                            'schema': '${data.http.my_dataset_%s_remote_github.body}' % self.environment,
+                        },
                         'my_dataset_%s_local' % self.environment: {
                             'project': 'elife-something',
                             'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
@@ -719,8 +725,17 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'http': {
                         'my_dataset_%s_remote' % self.environment: {
                             'url': 'https://example.org/schemas/remote.json'
-                        }
-                    }
+                        },
+                        'my_dataset_%s_remote_github' % self.environment: {
+                            'url': 'https://raw.githubusercontent.com/myrepo/something.json',
+                            'request_headers': {
+                                'Authorization': 'token ${data.vault_generic_secret.github.data["token"]}',
+                            },
+                        },
+                    },
+                    'vault_generic_secret': {
+                        'github': {'path': 'secret/builder/apikey/github'}
+                    },
                 }
             }
         )

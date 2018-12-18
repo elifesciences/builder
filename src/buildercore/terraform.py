@@ -563,6 +563,8 @@ def render_bigquery(context):
         }
 
         if needs_github_token:
+            # TODO: extract and reuse as it's good for all data.http Github source,
+            # not just for schemas
             if not DATA_TYPE_VAULT_GENERIC_SECRET in tf_file['data']:
                 tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET] = OrderedDict()
             tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET]['github'] = {
