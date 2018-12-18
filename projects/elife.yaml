@@ -2050,6 +2050,14 @@ data-pipeline:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/767_datascience_person_roles.json
                     779_datascience_reviewer_info_all:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/779_datascience_reviewer_info_all.json
+                    manuscript:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript.bqschema.json
+                    manuscript_full:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript_full.bqschema.json
+                    manuscript_version:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript_version.bqschema.json
+                    person:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person.bqschema.json
     aws-alt:
         staging:
             ext:
