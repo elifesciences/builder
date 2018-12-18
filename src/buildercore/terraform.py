@@ -21,6 +21,7 @@ DATA_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
+DATA_NAME_VAULT_GITHUB = 'github'
 
 # keys to lookup in Vault
 # cannot modify these without putting new values inside Vault:
@@ -28,6 +29,7 @@ DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 VAULT_PATH_FASTLY = 'secret/builder/apikey/fastly'
 VAULT_PATH_FASTLY_GCS_LOGGING = 'secret/builder/apikey/fastly-gcs-logging'
 VAULT_PATH_FASTLY_GCP_LOGGING = 'secret/builder/apikey/fastly-gcp-logging'
+VAULT_PATH_GITHUB = 'secret/builder/apikey/github'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
                      'text/javascript', 'application/json', 'application/vnd.ms-fontobject',
@@ -530,13 +532,18 @@ def render_bigquery(context):
         schema = table_options['schema']
         stackname = context['stackname']
         fqrn = "%s_%s" % (table_options['dataset_id'], table_id) # 'fully qualified resource name'
+        github_token = False
 
         if schema.startswith('https://'):
             # remote schema, add a 'http' provider and have terraform pull it down for us
             # https://www.terraform.io/docs/providers/http/data_source.html
             tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema}
             schema_ref = '${data.http.%s.body}' % fqrn
-
+            if re.match('^https://raw\.githubusercontent\.com/', schema):
+                tf_file['data'][DATA_TYPE_HTTP][fqrn]['request_headers'] = {
+                    'Authorization': 'token ${data.%s.%s.data["token"]}' % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GITHUB)
+                }
+                github_token = True
         else:
             # local schema. the `schema` is relative to `PROJECT_PATH`
             schema_path = join(PROJECT_PATH, schema)
@@ -554,6 +561,13 @@ def render_bigquery(context):
             'project': table_options['project'], # "elife-data-pipeline"
             'schema': schema_ref,
         }
+
+        if github_token:
+            if not DATA_TYPE_VAULT_GENERIC_SECRET in tf_file['data']:
+                tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET] = OrderedDict()
+            tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET]['github'] = {
+                'path': VAULT_PATH_GITHUB,
+            }
 
     dictmap(add_table, tables)
 
