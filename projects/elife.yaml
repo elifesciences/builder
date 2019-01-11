@@ -1920,6 +1920,12 @@ elife-xpub:
             ec2:
                 cluster-size: 2
                 dns-internal: True
+            ports:
+                - 22
+                - 80
+                - 443
+                - 2222:
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             elb:
                 protocol:
                     - 443
