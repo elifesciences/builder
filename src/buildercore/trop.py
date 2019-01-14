@@ -513,7 +513,7 @@ def render_ec2_dns(context, template):
             template.add_resource(dns_record)
 
     # primary ec2 node in a cluster may get an external hostname
-    if context['ec2']['dns-external-primary']:
+    if context['domain'] and context['ec2']['dns-external-primary']:
         hostedzone = context['domain'] + "."
         primary = 1
         dns_record = route53.RecordSetType(
