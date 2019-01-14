@@ -678,6 +678,7 @@ def hostname_struct(stackname):
     if domain:
         updates['project_hostname'] = subdomain + "." + domain
         updates['full_hostname'] = hostname + "." + domain
+        updates['ext_node_hostname'] = hostname + "--%s." + domain
 
     if intdomain:
         updates['int_project_hostname'] = subdomain + "." + intdomain
