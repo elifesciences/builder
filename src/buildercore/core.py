@@ -668,8 +668,8 @@ def hostname_struct(stackname):
         return struct
 
     # removes any non-alphanumeric or hyphen characters
-    subsubdomain = re.sub(r'[^\w\-]', '', instance_id)
-    hostname = subsubdomain + "--" + subdomain
+    instance_subdomain_fragment = re.sub(r'[^\w\-]', '', instance_id)
+    hostname = instance_subdomain_fragment + "--" + subdomain
 
     updates = {
         'hostname': hostname,
