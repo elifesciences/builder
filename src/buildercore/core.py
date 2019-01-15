@@ -132,7 +132,7 @@ def tags2dict(tags):
     return dict((el['Key'], el['Value']) for el in tags)
 
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
-    "returns list of ec2 instances data for a *specific* stackname"
+    "returns list of ec2 instances data for a *specific* stackname. Ordered by node index (1 to N)"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
     conn = boto_conn(stackname, 'ec2')
     filters = [

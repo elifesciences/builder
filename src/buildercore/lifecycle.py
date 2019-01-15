@@ -267,8 +267,9 @@ def update_dns(stackname):
     if context['ec2']['dns-external-primary']:
         primary = 1
         primary_hostname = context['ext_node_hostname'] % primary
+        primary_ip_address = nodes[0].public_ip_address
         LOG.info("External primary full hostname: %s", primary_hostname)
-        _update_dns_a_record(context['domain'], primary_hostname, node.public_ip_address)
+        _update_dns_a_record(context['domain'], primary_hostname, primary_ip_address)
 
     if context.get('elb', False):
         # ELB has its own DNS, EC2 nodes will autoregister
