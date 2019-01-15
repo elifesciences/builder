@@ -24,7 +24,7 @@ defaults:
     aws:
         ec2:
             cluster-size: 1
-            dns-external-primary: false
+            tns-external-primary: false
             dns-internal: false
             # nodes to temporarily delete, for later recreation
             # https://martinfowler.com/bliki/PhoenixServer.html
@@ -455,8 +455,8 @@ project-with-cluster:
             - 80
         ec2:
             cluster-size: 2
-            dns-external-primary: True
-            dns-internal: True
+            dns-external-primary: true
+            dns-internal: true
         elb: 
             protocol: http
         subdomains:
