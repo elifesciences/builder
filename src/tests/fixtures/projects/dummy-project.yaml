@@ -24,7 +24,7 @@ defaults:
     aws:
         ec2:
             cluster-size: 1
-            tns-external-primary: false
+            dns-external-primary: false
             dns-internal: false
             # nodes to temporarily delete, for later recreation
             # https://martinfowler.com/bliki/PhoenixServer.html
