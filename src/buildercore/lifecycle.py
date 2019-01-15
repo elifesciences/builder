@@ -281,15 +281,6 @@ def update_dns(stackname):
         for node in nodes:
             _update_dns_a_record(context['domain'], context['full_hostname'], node.public_ip_address)
 
-    # We don't strictly need to do this, as the private ip address
-    # inside a VPC should stay the same. For consistency we update all DNS
-    # entries as the operation is idempotent
-    # TODO: possibly drop
-    LOG.info("Internal full hostname: %s", context['int_full_hostname'])
-    if context['int_full_hostname']:
-        for node in nodes:
-            _update_dns_a_record(context['int_domain'], context['int_full_hostname'], node.private_ip_address)
-
 def delete_dns(stackname):
     context = load_context(stackname)
     if context['full_hostname']:
