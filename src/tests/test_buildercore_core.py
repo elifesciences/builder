@@ -37,6 +37,7 @@ class SimpleCases(base.BaseCase):
             'int_project_hostname': 'dummy2.example.internal',
             'full_hostname': 'ci--dummy2.example.org',
             'int_full_hostname': 'ci--dummy2.example.internal',
+            'ext_node_hostname': 'ci--dummy2--%s.example.org',
             'int_node_hostname': 'ci--dummy2--%s.example.internal',
         }
         stackname = 'dummy2--ci'

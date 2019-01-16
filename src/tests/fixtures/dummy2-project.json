@@ -15,6 +15,7 @@
     "aws": {
         "ec2": {
             "cluster-size": 1, 
+            "dns-external-primary": false,
             "dns-internal": false, 
             "suppressed": [], 
             "overrides": {}, 
@@ -69,6 +70,7 @@
         "fresh": {
             "ec2": {
                 "cluster-size": 1, 
+                "dns-external-primary": false,
                 "dns-internal": false, 
                 "suppressed": [], 
                 "overrides": {}, 
@@ -123,6 +125,7 @@
         "alt-config1": {
             "ec2": {
                 "cluster-size": 1, 
+                "dns-external-primary": false,
                 "dns-internal": false, 
                 "suppressed": [], 
                 "overrides": {}, 

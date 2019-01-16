@@ -264,9 +264,16 @@ def update_dns(stackname):
     nodes = _wait_for_running_nodes(stackname)
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
 
+    if context['ec2']['dns-external-primary']:
+        primary = 1
+        primary_hostname = context['ext_node_hostname'] % primary
+        primary_ip_address = nodes[0].public_ip_address
+        LOG.info("External primary full hostname: %s", primary_hostname)
+        _update_dns_a_record(context['domain'], primary_hostname, primary_ip_address)
+
     if context.get('elb', False):
         # ELB has its own DNS, EC2 nodes will autoregister
-        LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB, nothing to do")
+        LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB that has a stable hostname, nothing else to do")
         # TODO: time to implement this as there may be an old A record around...
         return
 
@@ -274,14 +281,6 @@ def update_dns(stackname):
     if context['full_hostname']:
         for node in nodes:
             _update_dns_a_record(context['domain'], context['full_hostname'], node.public_ip_address)
-
-    # We don't strictly need to do this, as the private ip address
-    # inside a VPC should stay the same. For consistency we update all DNS
-    # entries as the operation is idempotent
-    LOG.info("Internal full hostname: %s", context['int_full_hostname'])
-    if context['int_full_hostname']:
-        for node in nodes:
-            _update_dns_a_record(context['int_domain'], context['int_full_hostname'], node.private_ip_address)
 
 def delete_dns(stackname):
     context = load_context(stackname)

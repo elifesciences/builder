@@ -29,9 +29,12 @@ defaults:
         ec2:
             # how many EC2 instance per stack instance
             cluster-size: 1
+            # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
+            # only makes sense if cluster-size > 1
+            dns-external-primary: false
             # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
             # only makes sense if cluster-size > 1
-            dns-internal: False
+            dns-internal: false
             # override 'ext' (only supported key)
             # for some EC2 instances
             overrides: {}
@@ -1309,7 +1312,7 @@ search:
                     cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
                 cluster-size: 2
-                dns-internal: True
+                dns-internal: true
             elb: 
                 protocol: 
                     - http
@@ -1324,7 +1327,7 @@ search:
                     cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
                 cluster-size: 2
-                dns-internal: True
+                dns-internal: true
             elb: 
                 protocol: 
                     - http
@@ -1919,13 +1922,15 @@ elife-xpub:
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
             ec2:
                 cluster-size: 2
-                dns-internal: True
+                dns-internal: true
             ports:
                 - 22
                 - 80
                 - 443
                 - 2222:
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                - 8020 # nginx-public-folders via HTTP
+                - 8021 # nginx-public-folders via HTTPS
             elb:
                 protocol:
                     - 443
@@ -1943,7 +1948,8 @@ elife-xpub:
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
             ec2:
                 cluster-size: 2
-                dns-internal: True
+                dns-external-primary: true
+                dns-internal: true
             elb:
                 protocol:
                     - 443
@@ -1966,7 +1972,7 @@ elife-xpub:
                 deletion-policy: Snapshot
             ec2:
                 cluster-size: 2
-                dns-internal: True
+                dns-internal: true
             elb:
                 protocol:
                     - 443

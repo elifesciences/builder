@@ -35,6 +35,7 @@ DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
 EXT_TITLE = "ExtraStorage%s"
 EXT_MP_TITLE = "MountPoint%s"
 R53_EXT_TITLE = "ExtDNS"
+R53_EXT_TITLE_NODE = "ExtDNS%s"
 R53_INT_TITLE = "IntDNS"
 R53_INT_TITLE_NODE = "IntDNS%s"
 R53_CDN_TITLE = "CloudFrontCDNDNS%s"
@@ -510,6 +511,21 @@ def render_ec2_dns(context, template):
                 ResourceRecords=[GetAtt(EC2_TITLE_NODE % node, "PrivateIp")],
             )
             template.add_resource(dns_record)
+
+    # primary ec2 node in a cluster may get an external hostname
+    if context['domain'] and context['ec2']['dns-external-primary']:
+        hostedzone = context['domain'] + "."
+        primary = 1
+        dns_record = route53.RecordSetType(
+            R53_EXT_TITLE_NODE % primary,
+            HostedZoneName=hostedzone,
+            Comment="External DNS record for EC2 primary",
+            Name=context['ext_node_hostname'] % primary,
+            Type="A",
+            TTL="60",
+            ResourceRecords=[GetAtt(EC2_TITLE_NODE % primary, "PublicIp")],
+        )
+        template.add_resource(dns_record)
 
 def render_sns(context, template):
     for topic_name in context['sns']:

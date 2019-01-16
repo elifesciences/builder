@@ -132,7 +132,7 @@ def tags2dict(tags):
     return dict((el['Key'], el['Value']) for el in tags)
 
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
-    "returns list of ec2 instances data for a *specific* stackname"
+    "returns list of ec2 instances data for a *specific* stackname. Ordered by node index (1 to N)"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
     conn = boto_conn(stackname, 'ec2')
     filters = [
@@ -668,8 +668,8 @@ def hostname_struct(stackname):
         return struct
 
     # removes any non-alphanumeric or hyphen characters
-    subsubdomain = re.sub(r'[^\w\-]', '', instance_id)
-    hostname = subsubdomain + "--" + subdomain
+    instance_subdomain_fragment = re.sub(r'[^\w\-]', '', instance_id)
+    hostname = instance_subdomain_fragment + "--" + subdomain
 
     updates = {
         'hostname': hostname,
@@ -678,6 +678,7 @@ def hostname_struct(stackname):
     if domain:
         updates['project_hostname'] = subdomain + "." + domain
         updates['full_hostname'] = hostname + "." + domain
+        updates['ext_node_hostname'] = hostname + "--%s." + domain
 
     if intdomain:
         updates['int_project_hostname'] = subdomain + "." + intdomain

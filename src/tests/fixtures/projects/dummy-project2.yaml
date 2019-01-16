@@ -22,7 +22,8 @@ defaults:
     aws:
         ec2:
             cluster-size: 1
-            dns-internal: False
+            dns-external-primary: false
+            dns-internal: false
             # find more here: http://cloud-images.ubuntu.com/releases/
             ami: ami-9eaa1cf6  # Ubuntu 14.04
             master_ip: 192.168.1.254
