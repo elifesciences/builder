@@ -264,7 +264,8 @@ def update_dns(stackname):
     nodes = _wait_for_running_nodes(stackname)
     LOG.info("Nodes found for DNS update: %s", [node.id for node in nodes])
 
-    if context['ec2']['dns-external-primary']:
+    # TODO: switch to ['dns-external-primary'] after backward compatibility is not needed anymore
+    if context['ec2'].get('dns-external-primary'):
         primary = 1
         primary_hostname = context['ext_node_hostname'] % primary
         primary_ip_address = nodes[0].public_ip_address
