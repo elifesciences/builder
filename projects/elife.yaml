@@ -2129,9 +2129,9 @@ reproducible-document-stack:
             #    fallbacks:
             #        4xx: "4xx.html"
             #        5xx: "5xx.html"
-            #vcl:
-            #    - "original-host"
-            #    - "ping-status"
+            vcl:
+                - "original-host"
+                - "ping-status"
             gcslogging:
                 bucket: "{instance}-elife-fastly"
                 path: "reproducible-document-stack--{instance}/"
