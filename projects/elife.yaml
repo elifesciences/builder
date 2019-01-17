@@ -2108,3 +2108,35 @@ reproducible-document-stack:
         s3:
             "{instance}-elife-reproducible-document-stack":
                 public: true
+        fastly:
+            backends:
+                # first is default
+                default:
+                    hostname: "{instance}-elife-reproducible-document-stack.s3.amazonaws.com"
+            subdomains:
+                - "{instance}--cdn-rds"
+            healthcheck:
+                path: /ping-fastly
+                check-interval: 10000
+                timeout: 2000
+            #errors:
+            #    # always prod for simplicity
+            #    url: https://prod-elife-error-pages.s3.amazonaws.com/
+            #    codes:
+            #        404: "404.html"
+            #        410: "410.html"
+            #        503: "503.html"
+            #    fallbacks:
+            #        4xx: "4xx.html"
+            #        5xx: "5xx.html"
+            #vcl:
+            #    - "original-host"
+            #    - "ping-status"
+            gcslogging:
+                bucket: "{instance}-elife-fastly"
+                path: "reproducible-document-stack--{instance}/"
+                period: 600
+            bigquerylogging:
+                project: "elife-fastly"
+                dataset: "{instance}"
+                table: "reproducible_document_stack"
