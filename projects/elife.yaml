@@ -2125,8 +2125,6 @@ reproducible-document-stack:
                 # always prod for simplicity
                 url: https://prod-elife-error-pages.s3.amazonaws.com/
                 codes:
-                    404: "404.html"
-                    410: "410.html"
                     503: "503.html"
                 fallbacks:
                     4xx: "4xx.html"
