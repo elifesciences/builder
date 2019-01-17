@@ -2013,6 +2013,8 @@ fastly-logs:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
+                    reproducible_document_stack:
+                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
     aws-alt: {}
 
 data-pipeline:
