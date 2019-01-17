@@ -2115,6 +2115,7 @@ reproducible-document-stack:
                     hostname: "{instance}-elife-reproducible-document-stack.s3.amazonaws.com"
             subdomains:
                 - "{instance}--cdn-repro"
+            default-ttl: 60 # seconds
             # doesn't work and there's no information about why
             # https://community.fastly.com/t/monitoring-health-status-from-fastly-health-checks/516
             #healthcheck:
