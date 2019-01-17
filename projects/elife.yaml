@@ -2097,3 +2097,13 @@ bastion:
             - bastion
     vagrant:
         ram: 512
+
+reproducible-document-stack:
+    description: Reproducible Document Stack example
+    subdomain: rds
+    repo: https://github.com/elifesciences/rds-example
+    aws: 
+        ec2: false
+        s3:
+            "{instance}-elife-reproducible-document-stack":
+                public: true
