@@ -2140,3 +2140,9 @@ reproducible-document-stack:
                 project: "elife-fastly"
                 dataset: "{instance}"
                 table: "reproducible_document_stack"
+    aws-alt:
+        prod:
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-repro"
+                    - repro
