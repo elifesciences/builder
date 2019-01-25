@@ -5,7 +5,7 @@ from collections import OrderedDict
 # from . import core # DONT import core. this module should be relatively independent
 from buildercore import utils
 from buildercore.decorators import testme
-from buildercore.config import AWS_EXCLUDING
+from buildercore.config import CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT
 from kids.cache import cache as cached
 from functools import reduce
 
@@ -79,7 +79,7 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         'vagrant-alt',
         'aws-alt',
         'gcp-alt',
-        {'aws': AWS_EXCLUDING},
+        {'aws': CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT},
     ]
     pdata = copy.deepcopy(global_defaults)
     utils.deepmerge(pdata, project_list[pname], excluding)
@@ -124,7 +124,7 @@ def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
         # merge this over top of original cloud defaults
         orig_defaults = copy.deepcopy(global_cloud)
 
-        utils.deepmerge(orig_defaults, project_cloud, AWS_EXCLUDING)
+        utils.deepmerge(orig_defaults, project_cloud, CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT)
         cloud_alt[str(altname)] = orig_defaults
 
     return cloud_alt
