@@ -2035,16 +2035,6 @@ data-pipeline:
                  deletion-policy: delete
             "{instance}-elife-data-pipeline-archive":
                  deletion-policy: retain
-    aws-alt:
-        masterless:
-            ec2:
-                masterless: True
-            ports:
-                - 22
-                - 80 # used only to upgrade to https
-                - 443
-                - 18443
-            s3: {}
     gcp:
         bigquery:
             "{instance}": # dataset
@@ -2073,6 +2063,15 @@ data-pipeline:
                     person:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person.bqschema.json
     aws-alt:
+        standalone:
+            ec2:
+                masterless: True
+            ports:
+                - 22
+                - 80 # used only to upgrade to https
+                - 443
+                - 18443
+            s3: false
         staging:
             ext:
                 size: 100 # GB
