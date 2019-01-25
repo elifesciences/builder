@@ -185,11 +185,12 @@ def build_context_s3(pdata, context):
         'public': False,
         'encryption': False,
     }
-    for bucket_template_name in pdata['aws'].get('s3', {}):
-        bucket_name = parameterize(context)(bucket_template_name)
-        configuration = pdata['aws']['s3'][bucket_template_name]
-        context['s3'][bucket_name] = default_bucket_configuration.copy()
-        context['s3'][bucket_name].update(configuration if configuration else {})
+    if pdata['aws'].get('s3'):
+        for bucket_template_name in pdata['aws']['s3']:
+            bucket_name = parameterize(context)(bucket_template_name)
+            configuration = pdata['aws']['s3'][bucket_template_name]
+            context['s3'][bucket_name] = default_bucket_configuration.copy()
+            context['s3'][bucket_name].update(configuration if configuration else {})
     return context
 
 def build_context_sns_sqs(pdata, context):
