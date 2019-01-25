@@ -670,6 +670,12 @@ project-with-bigquery-datasets-only:
             my_dataset_{instance}:
                 project: elife-something
     aws-alt: {}
+    gcp-alt:
+        staging:
+            bigquery:
+                my_dataset_{instance}:
+                    tables:
+                        my_table: {}
 
 project-with-bigquery:
     description: project on Google Cloud Platform, using BigQuery

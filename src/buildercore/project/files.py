@@ -78,6 +78,7 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         'vagrant',
         'vagrant-alt',
         'aws-alt',
+        'gcp-alt',
         {'aws': AWS_EXCLUDING},
     ]
     pdata = copy.deepcopy(global_defaults)
@@ -89,10 +90,15 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     utils.deepmerge(pdata, project_overrides)
 
     # handle the alternate configurations
-    pdata['aws-alt'] = project_aws_alt(
+    pdata['aws-alt'] = project_cloud_alt(
         pdata.get('aws-alt', {}),
         pdata.get('aws', {}),
         global_defaults['aws']
+    )
+    pdata['gcp-alt'] = project_cloud_alt(
+        pdata.get('gcp-alt', {}),
+        pdata.get('gcp', {}),
+        global_defaults['gcp']
     )
 
     # TODO: drop support for unused vagrant-alt?
@@ -103,7 +109,8 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
 
     return pdata
 
-def project_aws_alt(project_alt_contents, project_base_aws, global_aws):
+# TODO: make less AWS-specific
+def project_cloud_alt(project_alt_contents, project_base_aws, global_aws):
     aws_alt = OrderedDict()
 
     # handle the alternate configurations

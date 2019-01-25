@@ -16,12 +16,12 @@ LOG = logging.getLogger(__name__)
 
 def project_alt_config_names(pdata, env='aws'):
     "returns names of all alternate configurations for given project data and environment (default aws)"
-    assert env in ['vagrant', 'aws'], "'env' must be either 'vagrant' or 'aws'"
+    assert env in ['vagrant', 'aws', 'gcp'], "'env' must be either 'vagrant' or 'aws'"
     return list(pdata.get(env + '-alt', {}).keys())
 
 def set_project_alt(pdata, env, altkey):
     "non-destructive update of given project data with the specified alternative configuration."
-    assert env in ['vagrant', 'aws'], "'env' must be either 'vagrant' or 'aws'"
+    assert env in ['vagrant', 'aws', 'gcp'], "'env' must be either 'vagrant' or 'aws'"
     env_key = env + '-alt'
     assert altkey in pdata[env_key], "project has no alternative config %r. Available: %s" % (altkey, list(pdata[env_key].keys()))
     pdata_copy = copy.deepcopy(pdata) # don't modify the data given to us

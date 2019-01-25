@@ -166,15 +166,14 @@ class TestProjectData(base.BaseCase):
         # dummy3 only has no RDS settings in it's alt-config section
         # by updating the project settings, I expect it to now have the rds section with the overrides
         # and for the altconfigs to replicate that
-        snippet = {'dummy3':
-                   {'aws': {
-                       'rds': {
-                           'subnets': ['subnet-baz']}}}}
-        project_data = project_files.project_data('dummy3', self.dummy_yaml, [snippet])
+        snippet = {'project-with-bigquery-datasets-only':
+                   {'gcp': {'bigquery': {'my_dataset_{instance}': { 'project': 'elife-default-project'}}}}}
+        project_data = project_files.project_data('project-with-bigquery-datasets-only', self.dummy_yaml, [snippet])
         project_data = utils.remove_ordereddict(project_data)
 
-        self.assertEqual(project_data['aws']['rds']['subnets'][0], 'subnet-baz')
-        self.assertEqual(project_data['aws-alt']['alt-config1']['rds']['subnets'][0], 'subnet-baz')
+        
+        self.assertEqual(project_data['gcp']['bigquery']['my_dataset_{instance}']['project'], 'elife-default-project')
+        self.assertEqual(project_data['gcp-alt']['staging']['bigquery']['my_dataset_{instance}']['project'], 'elife-default-project')
 
     def test_merge_multiple_default_snippets(self):
         """merging multiple overlapping snippets into the defaults
