@@ -78,8 +78,12 @@ def build_context(pname, **more_context):
     project_data = project.project_data(pname)
     if alt_config and project_data.get('aws-alt', {}).get(alt_config):
         project_data = project.set_project_alt(project_data, 'aws', alt_config)
+    if alt_config and project_data.get('gcp-alt', {}).get(alt_config):
+        project_data = project.set_project_alt(project_data, 'gcp', alt_config)
     if project_data.get('aws-alt'):
         del project_data['aws-alt']
+    if project_data.get('gcp-alt'):
+        del project_data['gcp-alt']
 
     defaults = {
         'project_name': pname,

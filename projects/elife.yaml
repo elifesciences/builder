@@ -2079,6 +2079,9 @@ data-pipeline:
         prod:
             ext:
                 size: 100 # GB
+    gcp-alt:
+        standalone:
+            bigquery: false
     vagrant:
         box: bento/ubuntu-16.04
         cpus: 2
