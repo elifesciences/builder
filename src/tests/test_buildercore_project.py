@@ -167,11 +167,10 @@ class TestProjectData(base.BaseCase):
         # by updating the project settings, I expect it to now have the rds section with the overrides
         # and for the altconfigs to replicate that
         snippet = {'project-with-bigquery-datasets-only':
-                   {'gcp': {'bigquery': {'my_dataset_{instance}': { 'project': 'elife-default-project'}}}}}
+                   {'gcp': {'bigquery': {'my_dataset_{instance}': {'project': 'elife-default-project'}}}}}
         project_data = project_files.project_data('project-with-bigquery-datasets-only', self.dummy_yaml, [snippet])
         project_data = utils.remove_ordereddict(project_data)
 
-        
         self.assertEqual(project_data['gcp']['bigquery']['my_dataset_{instance}']['project'], 'elife-default-project')
         self.assertEqual(project_data['gcp-alt']['staging']['bigquery']['my_dataset_{instance}']['project'], 'elife-default-project')
 

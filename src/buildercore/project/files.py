@@ -110,24 +110,24 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     return pdata
 
 # TODO: make less AWS-specific
-def project_cloud_alt(project_alt_contents, project_base_aws, global_aws):
-    aws_alt = OrderedDict()
+def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
+    cloud_alt = OrderedDict()
 
     # handle the alternate configurations
     for altname, altdata in project_alt_contents.items():
-        # take project's *current aws state*,
-        project_aws = copy.deepcopy(project_base_aws)
+        # take project's *current cloud state*,
+        project_cloud = copy.deepcopy(project_base_cloud)
 
         # merge in any overrides
-        utils.deepmerge(project_aws, altdata)
+        utils.deepmerge(project_cloud, altdata)
 
-        # merge this over top of original aws defaults
-        orig_defaults = copy.deepcopy(global_aws)
+        # merge this over top of original cloud defaults
+        orig_defaults = copy.deepcopy(global_cloud)
 
-        utils.deepmerge(orig_defaults, project_aws, AWS_EXCLUDING)
-        aws_alt[str(altname)] = orig_defaults
+        utils.deepmerge(orig_defaults, project_cloud, AWS_EXCLUDING)
+        cloud_alt[str(altname)] = orig_defaults
 
-    return aws_alt
+    return cloud_alt
 
 def project_file_name(project_file):
     "returns the name of the project file without the extension"
