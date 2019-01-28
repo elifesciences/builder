@@ -180,6 +180,8 @@
     "gcp": {
         "bigquery": false
     },
+    "gcp-alt": {
+    },
     "vagrant": {
         "box": "ubuntu/trusty64", 
         "box-url": null, 

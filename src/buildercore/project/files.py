@@ -5,7 +5,7 @@ from collections import OrderedDict
 # from . import core # DONT import core. this module should be relatively independent
 from buildercore import utils
 from buildercore.decorators import testme
-from buildercore.config import AWS_EXCLUDING
+from buildercore.config import CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT
 from kids.cache import cache as cached
 from functools import reduce
 
@@ -78,7 +78,8 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         'vagrant',
         'vagrant-alt',
         'aws-alt',
-        {'aws': AWS_EXCLUDING},
+        'gcp-alt',
+        {'aws': CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT},
     ]
     pdata = copy.deepcopy(global_defaults)
     utils.deepmerge(pdata, project_list[pname], excluding)
@@ -89,10 +90,15 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     utils.deepmerge(pdata, project_overrides)
 
     # handle the alternate configurations
-    pdata['aws-alt'] = project_aws_alt(
+    pdata['aws-alt'] = project_cloud_alt(
         pdata.get('aws-alt', {}),
         pdata.get('aws', {}),
         global_defaults['aws']
+    )
+    pdata['gcp-alt'] = project_cloud_alt(
+        pdata.get('gcp-alt', {}),
+        pdata.get('gcp', {}),
+        global_defaults['gcp']
     )
 
     # TODO: drop support for unused vagrant-alt?
@@ -103,24 +109,25 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
 
     return pdata
 
-def project_aws_alt(project_alt_contents, project_base_aws, global_aws):
-    aws_alt = OrderedDict()
+# TODO: make less AWS-specific
+def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
+    cloud_alt = OrderedDict()
 
     # handle the alternate configurations
     for altname, altdata in project_alt_contents.items():
-        # take project's *current aws state*,
-        project_aws = copy.deepcopy(project_base_aws)
+        # take project's *current cloud state*,
+        project_cloud = copy.deepcopy(project_base_cloud)
 
         # merge in any overrides
-        utils.deepmerge(project_aws, altdata)
+        utils.deepmerge(project_cloud, altdata)
 
-        # merge this over top of original aws defaults
-        orig_defaults = copy.deepcopy(global_aws)
+        # merge this over top of original cloud defaults
+        orig_defaults = copy.deepcopy(global_cloud)
 
-        utils.deepmerge(orig_defaults, project_aws, AWS_EXCLUDING)
-        aws_alt[str(altname)] = orig_defaults
+        utils.deepmerge(orig_defaults, project_cloud, CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT)
+        cloud_alt[str(altname)] = orig_defaults
 
-    return aws_alt
+    return cloud_alt
 
 def project_file_name(project_file):
     "returns the name of the project file without the extension"

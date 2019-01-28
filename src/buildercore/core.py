@@ -697,6 +697,8 @@ def project_data_for_stackname(stackname):
     project_data = project.project_data(pname)
     if 'aws-alt' in project_data and instance_id in project_data['aws-alt']:
         project_data = project.set_project_alt(project_data, 'aws', instance_id)
+    if 'gcp-alt' in project_data and instance_id in project_data['gcp-alt']:
+        project_data = project.set_project_alt(project_data, 'gcp', instance_id)
     return project_data
 
 def listfiles_remote(path=None, use_sudo=False):

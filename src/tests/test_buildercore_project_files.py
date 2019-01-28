@@ -25,12 +25,12 @@ class TestFiles(base.BaseCase):
         self.assertNotIn('elb', list(dummy2['aws-alt']['alt-config1'].keys()))
         self.assertNotIn('cloudfront', list(dummy2['aws-alt']['alt-config1'].keys()))
 
-    def test_project_aws_alt_integer_names_should_be_converted_to_string(self):
+    def test_project_cloud_alt_integer_names_should_be_converted_to_string(self):
         self.assertEqual(
-            files.project_aws_alt(
+            files.project_cloud_alt(
                 {1804: {'ec2': {'ami': 'ami-22222222'}}},
-                project_base_aws={},
-                global_aws={}
+                project_base_cloud={},
+                global_cloud={}
             ),
             {'1804': {'ec2': {'ami': 'ami-22222222'}}},
         )

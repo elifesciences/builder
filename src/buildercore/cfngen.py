@@ -78,8 +78,12 @@ def build_context(pname, **more_context):
     project_data = project.project_data(pname)
     if alt_config and project_data.get('aws-alt', {}).get(alt_config):
         project_data = project.set_project_alt(project_data, 'aws', alt_config)
+    if alt_config and project_data.get('gcp-alt', {}).get(alt_config):
+        project_data = project.set_project_alt(project_data, 'gcp', alt_config)
     if project_data.get('aws-alt'):
         del project_data['aws-alt']
+    if project_data.get('gcp-alt'):
+        del project_data['gcp-alt']
 
     defaults = {
         'project_name': pname,
@@ -181,11 +185,12 @@ def build_context_s3(pdata, context):
         'public': False,
         'encryption': False,
     }
-    for bucket_template_name in pdata['aws'].get('s3', {}):
-        bucket_name = parameterize(context)(bucket_template_name)
-        configuration = pdata['aws']['s3'][bucket_template_name]
-        context['s3'][bucket_name] = default_bucket_configuration.copy()
-        context['s3'][bucket_name].update(configuration if configuration else {})
+    if pdata['aws'].get('s3'):
+        for bucket_template_name in pdata['aws']['s3']:
+            bucket_name = parameterize(context)(bucket_template_name)
+            configuration = pdata['aws']['s3'][bucket_template_name]
+            context['s3'][bucket_name] = default_bucket_configuration.copy()
+            context['s3'][bucket_name].update(configuration if configuration else {})
     return context
 
 def build_context_sns_sqs(pdata, context):

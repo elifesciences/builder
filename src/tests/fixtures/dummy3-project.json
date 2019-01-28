@@ -175,6 +175,8 @@
     "gcp": {
         "bigquery": false
     },
+    "gcp-alt": {
+    },
     "meta": {
         "description": "foo"
     }
