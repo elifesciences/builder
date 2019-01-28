@@ -2066,6 +2066,8 @@ data-pipeline:
         standalone:
             ec2:
                 masterless: True
+            ext:
+                size: 100 # GB
             ports:
                 - 22
                 - 80 # used only to upgrade to https
