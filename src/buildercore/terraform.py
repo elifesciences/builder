@@ -4,9 +4,8 @@ from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, dictmap, deepmerge
+from .utils import ensure, mkdir_p, dictmap
 from . import fastly
-from functools import reduce
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.4.0',
@@ -91,25 +90,22 @@ FASTLY_LOG_UNIQUE_IDENTIFIERS = {
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
+    template = TerraformTemplate()
     fn_list = [
         render_fastly,
         render_gcs,
         render_bigquery
     ]
-    partial_tf_list = [fn(context) for fn in fn_list]
+    [fn(context, template) for fn in fn_list]
 
-    def merge(a, b):
-        deepmerge(a, b)
-        return a
-
-    generated_template = reduce(merge, partial_tf_list)
+    generated_template = template.to_dict()
 
     if not generated_template:
         return EMPTY_TEMPLATE
 
     return json.dumps(generated_template)
 
-def render_fastly(context):
+def render_fastly(context, template):
     if not context['fastly']:
         return {}
 
@@ -119,7 +115,6 @@ def render_fastly(context):
     headers = []
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = OrderedDict()
-    template = TerraformTemplate()
 
     request_settings.append(_fastly_request_setting({
         'name': 'force-ssl',
@@ -486,11 +481,10 @@ def _generate_vcl_file(stackname, content, key, extension='vcl'):
         fp.write(str(content))
         return '${file("%s")}' % os.path.basename(fp.name)
 
-def render_gcs(context):
+def render_gcs(context, template):
     if not context['gcs']:
         return {}
 
-    template = TerraformTemplate()
     for bucket_name, options in context['gcs'].items():
         template.populate_resource('google_storage_bucket', bucket_name, block={
             'name': bucket_name,
@@ -501,11 +495,10 @@ def render_gcs(context):
 
     return template.to_dict()
 
-def render_bigquery(context):
+def render_bigquery(context, template):
     if not context['bigquery']:
         return {}
 
-    template = TerraformTemplate()
 
     tables = OrderedDict({})
     for dataset_id, dataset_options in context['bigquery'].items():
