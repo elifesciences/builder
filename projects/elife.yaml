@@ -1954,9 +1954,9 @@ elife-xpub:
                 protocol:
                     - 443
         prod:
-            #subdomains:
-            #    - reviewer
-            #    - xpub
+            subdomains:
+                - reviewer
+                - xpub
             s3:
                 "{instance}-elife-xpub":
                     deletion-policy: retain
