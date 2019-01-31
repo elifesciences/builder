@@ -1955,6 +1955,7 @@ elife-xpub:
                     - 443
         prod:
             subdomains:
+                - reviewer
                 - xpub
             s3:
                 "{instance}-elife-xpub":
