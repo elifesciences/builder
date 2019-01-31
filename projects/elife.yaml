@@ -1934,6 +1934,10 @@ elife-xpub:
             elb:
                 protocol:
                     - 443
+                healthcheck:
+                    protocol: http
+                    port: 80
+                    path: /ping-elb
         staging:
             s3:
                 "{instance}-elife-xpub":
@@ -1953,6 +1957,10 @@ elife-xpub:
             elb:
                 protocol:
                     - 443
+                healthcheck:
+                    protocol: http
+                    port: 80
+                    path: /ping-elb
         prod:
             subdomains:
                 - reviewer
@@ -1977,6 +1985,10 @@ elife-xpub:
             elb:
                 protocol:
                     - 443
+                healthcheck:
+                    protocol: http
+                    port: 80
+                    path: /ping-elb
     vagrant:
         ram: 2048
         ports:
