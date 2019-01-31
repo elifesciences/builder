@@ -499,7 +499,6 @@ def render_bigquery(context, template):
     if not context['bigquery']:
         return {}
 
-
     tables = OrderedDict({})
     for dataset_id, dataset_options in context['bigquery'].items():
         for table_id, table_options in dataset_options['tables'].items():
