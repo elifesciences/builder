@@ -4,9 +4,8 @@ from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, dictmap, deepmerge
+from .utils import ensure, mkdir_p, dictmap
 from . import fastly
-from functools import reduce
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.4.0',
@@ -91,25 +90,23 @@ FASTLY_LOG_UNIQUE_IDENTIFIERS = {
 FASTLY_MAIN_VCL_KEY = 'main'
 
 def render(context):
+    template = TerraformTemplate()
     fn_list = [
         render_fastly,
         render_gcs,
         render_bigquery
     ]
-    partial_tf_list = [fn(context) for fn in fn_list]
+    for fn in fn_list:
+        fn(context, template)
 
-    def merge(a, b):
-        deepmerge(a, b)
-        return a
-
-    generated_template = reduce(merge, partial_tf_list)
+    generated_template = template.to_dict()
 
     if not generated_template:
         return EMPTY_TEMPLATE
 
     return json.dumps(generated_template)
 
-def render_fastly(context):
+def render_fastly(context, template):
     if not context['fastly']:
         return {}
 
@@ -119,7 +116,6 @@ def render_fastly(context):
     headers = []
     vcl_constant_snippets = context['fastly']['vcl']
     vcl_templated_snippets = OrderedDict()
-    template = TerraformTemplate()
 
     request_settings.append(_fastly_request_setting({
         'name': 'force-ssl',
@@ -486,24 +482,21 @@ def _generate_vcl_file(stackname, content, key, extension='vcl'):
         fp.write(str(content))
         return '${file("%s")}' % os.path.basename(fp.name)
 
-def render_gcs(context):
+def render_gcs(context, template):
     if not context['gcs']:
         return {}
 
-    return {
-        'resource': {
-            'google_storage_bucket': {
-                bucket_name: {
-                    'name': bucket_name,
-                    'location': 'us-east4',
-                    'storage_class': 'REGIONAL',
-                    'project': options['project'],
-                } for bucket_name, options in context['gcs'].items()
-            },
-        },
-    }
+    for bucket_name, options in context['gcs'].items():
+        template.populate_resource('google_storage_bucket', bucket_name, block={
+            'name': bucket_name,
+            'location': 'us-east4',
+            'storage_class': 'REGIONAL',
+            'project': options['project'],
+        })
 
-def render_bigquery(context):
+    return template.to_dict()
+
+def render_bigquery(context, template):
     if not context['bigquery']:
         return {}
 
@@ -514,19 +507,11 @@ def render_bigquery(context):
             table_options['project'] = dataset_options['project']
             tables[table_id] = table_options
 
-    tf_file = {
-        'data': {DATA_TYPE_HTTP: {}},
-        'resource': OrderedDict()
-    }
-
-    tf_file['resource']['google_bigquery_table'] = {}
-
-    tf_file['resource']['google_bigquery_dataset'] = {
-        dataset_id: {
+    for dataset_id, options in context['bigquery'].items():
+        template.populate_resource('google_bigquery_dataset', dataset_id, block={
             'dataset_id': dataset_id,
             'project': options['project'],
-        } for dataset_id, options in context['bigquery'].items()
-    }
+        })
 
     def add_table(table_id, table_options):
         schema = table_options['schema']
@@ -537,13 +522,18 @@ def render_bigquery(context):
         if schema.startswith('https://'):
             # remote schema, add a 'http' provider and have terraform pull it down for us
             # https://www.terraform.io/docs/providers/http/data_source.html
-            tf_file['data'][DATA_TYPE_HTTP][fqrn] = {'url': schema}
+            block = {'url': schema}
             schema_ref = '${data.http.%s.body}' % fqrn
             if schema.startswith('https://raw.githubusercontent.com/'):
-                tf_file['data'][DATA_TYPE_HTTP][fqrn]['request_headers'] = {
+                block['request_headers'] = {
                     'Authorization': 'token ${data.%s.%s.data["token"]}' % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GITHUB)
                 }
                 needs_github_token = True
+            template.populate_data(
+                DATA_TYPE_HTTP,
+                fqrn,
+                block=block
+            )
         else:
             # local schema. the `schema` is relative to `PROJECT_PATH`
             schema_path = join(PROJECT_PATH, schema)
@@ -553,36 +543,25 @@ def render_bigquery(context):
             shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
             schema_ref = '${file("%s")}' % schema_file
 
-        tf_file['resource']['google_bigquery_table'][fqrn] = {
+        template.populate_resource('google_bigquery_table', fqrn, block={
             # this refers to the dataset resource to express the implicit dependency
             # otherwise a table can be created before the dataset, which fails
             'dataset_id': "${google_bigquery_dataset.%s.dataset_id}" % dataset_id, # "dataset"
             'table_id': table_id, # "csv_report_380"
             'project': table_options['project'], # "elife-data-pipeline"
             'schema': schema_ref,
-        }
+        })
 
         if needs_github_token:
             # TODO: extract and reuse as it's good for all data.http Github source,
             # not just for schemas
-            if not DATA_TYPE_VAULT_GENERIC_SECRET in tf_file['data']:
-                tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET] = OrderedDict()
-            tf_file['data'][DATA_TYPE_VAULT_GENERIC_SECRET]['github'] = {
+            template.populate_data(DATA_TYPE_VAULT_GENERIC_SECRET, 'github', block={
                 'path': VAULT_PATH_GITHUB,
-            }
+            })
 
     dictmap(add_table, tables)
 
-    if not tf_file['resource']['google_bigquery_table']:
-        del tf_file['resource']['google_bigquery_table']
-
-    if not tf_file['data'][DATA_TYPE_HTTP]:
-        del tf_file['data'][DATA_TYPE_HTTP]
-
-    if not tf_file['data']:
-        del tf_file['data']
-
-    return tf_file
+    return template.to_dict()
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
