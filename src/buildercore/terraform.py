@@ -96,7 +96,8 @@ def render(context):
         render_gcs,
         render_bigquery
     ]
-    [fn(context, template) for fn in fn_list]
+    for fn in fn_list:
+        fn(context, template)
 
     generated_template = template.to_dict()
 
