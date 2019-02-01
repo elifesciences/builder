@@ -259,6 +259,9 @@ basebox:
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
                 masterless: true
+        pillar-vault:
+            ec2:
+                master_ip: 10.0.2.164
     vagrant:
         box: bento/ubuntu-18.04 # Ubuntu 18.04
 
