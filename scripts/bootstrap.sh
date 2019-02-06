@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # *ALL INSTANCES*
 # copied into the virtual machine and executed. DO NOT run on your host machine.
 
