@@ -81,6 +81,18 @@ echo "pillar_roots:
 cd /srv/salt/pillar
 ln -sfT /opt/builder-private/pillar/top.sls top.sls
 
+# sets up connection to Vault
+echo "vault:
+    url: $vault_addr
+    auth:
+        method: token
+        token: $vault_token
+    # hopefully this is optional
+    #policies:
+    #    - default
+    #    - project/$project
+"> /etc/salt/minion.d/vault.conf
+
 clone_update() {
     repo=$1
     repo_name=${repo##*/}
