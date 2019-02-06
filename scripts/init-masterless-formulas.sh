@@ -11,6 +11,8 @@ set -x
 formula_list=$1
 pillar_repo=$2 # what secrets do I know?
 configuration_repo=$3 # what configuration do I know?
+vault_addr=$4 # where is Vault?
+vault_token=$5 # how do I authenticate with Vault?
 
 # clone the private repo (whatever it's name is) into /opt/builder-private/
 # REQUIRES CREDENTIALS!

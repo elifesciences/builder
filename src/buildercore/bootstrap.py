@@ -505,14 +505,22 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             upload_master_builder_key(master_builder_key)
             envvars = {
                 'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', ''),
-                'vault_addr': context['vault']['address'],
-                # TODO: should be optional e.g. a master-server shouldn't depend on its own vault
-                # TODO: extract constant 'master-server'
-                # TODO: reduce scope to a project if possible?
-                'vault_token': token_create(context['vault']['address'], 'master-server', context['stackname']),
             }
+            vault_addr = context['vault']['address']
+            # TODO: should be optional e.g. a master-server shouldn't depend on its own vault
+            # TODO: extract constant 'master-server'
+            # TODO: reduce scope to a project if possible?
+            vault_token = token_create(context['vault']['address'], 'master-server', context['stackname'])
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-masterless-formulas.sh', formula_list, fdata['private-repo'], fdata['configuration-repo'], **envvars)
+            run_script(
+                'init-masterless-formulas.sh',
+                formula_list,
+                fdata['private-repo'],
+                fdata['configuration-repo'],
+                vault_addr,
+                vault_token,
+                **envvars
+            )
 
             # second pass to optionally update formulas to specific revisions
             for repo, formula, revision in formula_revisions or []:
