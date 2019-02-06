@@ -344,6 +344,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             path: "scripts/bootstrap.sh", \
             keep_color: true, \
             privileged: true, \
+            env: {'grain_project': PROJECT_NAME},
             args: [PRJ["salt"], INSTANCE_NAME, String(IS_MASTER)])
 
         # link up formulas

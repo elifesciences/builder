@@ -490,7 +490,11 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
         master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'PrivateIpAddress'))
-        run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
+        grains = {
+            'project': context['project_name'],
+        }
+        environment_vars = {('grain_%s' % k):v for k, v in grains.items()}
+        run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip, **environment_vars)
 
         if is_masterless:
             # order is important.

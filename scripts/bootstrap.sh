@@ -137,6 +137,13 @@ if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.lo
 printf "master: %s\\nlog_level: info\\n" "$master_ipaddr" > /etc/salt/minion
 echo "$minion_id" > /etc/salt/minion_id
 echo "mysql.unix_socket: '/var/run/mysqld/mysqld.sock'" > /etc/salt/minion.d/mysql-defaults.conf
+grains=
+while IFS='=' read -r variable_name grain_value ; do
+    grain_name=${variable_name#grain_} # delete `grain_`
+    printf -v grain_line "%s: %s\n" "$grain_name" "$grain_value"
+    grains+="${grain_line}"
+done < <(env | grep '^grain_.*')
+echo "$grains" > /etc/salt/grains
 
 # restart salt-minion. necessary as we may have changed minion's configuration
 systemctl restart salt-minion 2> /dev/null || service salt-minion restart
