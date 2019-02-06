@@ -87,10 +87,6 @@ echo "vault:
     auth:
         method: token
         token: $vault_token
-    # hopefully this is optional
-    #policies:
-    #    - default
-    #    - project/$project
 "> /etc/salt/minion.d/vault.conf
 
 clone_update() {

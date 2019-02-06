@@ -508,8 +508,8 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
                 'vault_addr': context['vault']['address'],
                 # TODO: should be optional e.g. a master-server shouldn't depend on its own vault
                 # TODO: extract constant 'master-server'
+                # TODO: reduce scope to a project if possible?
                 'vault_token': token_create(context['vault']['address'], 'master-server', context['stackname']),
-                'project': 'unused',
             }
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
             run_script('init-masterless-formulas.sh', formula_list, fdata['private-repo'], fdata['configuration-repo'], **envvars)
