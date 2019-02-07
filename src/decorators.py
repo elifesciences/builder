@@ -129,7 +129,6 @@ def requires_feature(key, silent=False):
                 return func(*args, **kwargs)
             print()
             print("feature %r is disabled." % key)
-            print("you can enable it with \"%s: True\" in your `settings.yml` file" % key)
             print()
             exit(1)
         return wrap2
