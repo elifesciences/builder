@@ -7,8 +7,6 @@ set -e
 # errcho() { echo "$@" 1>&2; } # writes to stderr, will not be interpreted as YAML
 # errcho "debug"
 
-. .settings.sh
-
 if [ -e .use-python-3.flag ]; then
     image=py3
 else
