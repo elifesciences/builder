@@ -13,7 +13,6 @@
 import os, json
 from os.path import join
 from . import config, s3
-from .decorators import if_enabled
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -46,7 +45,6 @@ def write_context(stackname, context):
 def write_context_locally(stackname, contents):
     open(local_context_file(stackname), 'w').write(contents)
 
-@if_enabled('write-context-to-s3', silent=True)
 def write_context_to_s3(stackname):
     path = local_context_file(stackname)
     key = s3_context_key(stackname)
@@ -56,7 +54,6 @@ def delete_context(stackname):
     delete_context_locally(stackname)
     delete_context_from_s3(stackname)
 
-@if_enabled('write-context-to-s3', silent=True)
 def delete_context_from_s3(stackname):
     key = s3_context_key(stackname)
     return s3.delete(key)
@@ -66,7 +63,6 @@ def delete_context_locally(stackname):
     if os.path.exists(path):
         os.unlink(path)
 
-@if_enabled('write-context-to-s3', silent=True)
 def download_from_s3(stackname, refresh=False):
     key = s3_context_key(stackname)
     if not s3.exists(key):

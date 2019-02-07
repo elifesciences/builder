@@ -25,24 +25,6 @@ def _requires_fn_stack(func, pred, message=None):
         raise PredicateException(msg)
     return _wrapper
 
-def if_enabled(key, silent=False):
-    def wrap1(func):
-        @wraps(func)
-        def wrap2(*args, **kwargs):
-            settings = config.app()
-            assert key in settings, "no setting with value %r" % key
-            enabled = settings[key]
-            assert isinstance(enabled, bool), "expecting the value at %r to be a boolean" % key
-            if enabled:
-                return func(*args, **kwargs)
-            if silent:
-                LOG.info("feature %r is disabled, returning silently", key)
-                return None
-            msg = "the feature %r is disabled. you can enable it with \"%s: True\" in your `settings.yml` file" % (key, key)
-            raise FeatureDisabledException(msg)
-        return wrap2
-    return wrap1
-
 def osissuefn(issue):
     LOG.warn("TODO: " + issue)
 

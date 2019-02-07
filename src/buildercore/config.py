@@ -131,9 +131,7 @@ CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'cloudfront', 'e
 # believe it or not but buildercore.config is NOT the place for user config
 #
 
-SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
-SETTINGS_FILE = os.environ.get('SETTINGS_FILE', SETTINGS_FILE)
-PROJECTS_FILE = join(PROJECT_PATH, 'projects/elife.yaml')
+PROJECTS_FILES = ['projects/elife.yaml']
 
 USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 #
@@ -189,18 +187,8 @@ def parse_loc_list(loc_list):
 
     return p_loc_list
 
-def parse(settings_data):
-    "iterate through the settings file and do any data coercion necessary"
-    processors = {
-        'project-locations': parse_loc_list,
-    }
-    for key, processor in processors.items():
-        settings_data[key] = processor(settings_data[key])
-    return settings_data
-
 @cache
 def app(settings_path=None):
-    # set default here so tests can change the value of SETTINGS_FILE
-    settings_path = settings_path or SETTINGS_FILE
-    LOG.debug("using settings path %r", settings_path)
-    return parse(load(settings_path))
+    return {
+        'project-locations': parse_loc_list([join(PROJECT_PATH, f) for f in PROJECTS_FILES]),
+    }

@@ -5,7 +5,6 @@ from os.path import join
 from . import core, utils, config, s3
 from .core import stack_pem
 from .utils import lfilter
-from .decorators import if_enabled
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -17,7 +16,6 @@ LOG = logging.getLogger(__name__)
 def s3_keypair_key(stackname):
     return config.KEYPAIR_PREFIX + stackname + ".pem"
 
-@if_enabled('write-keypairs-to-s3', silent=True)
 def write_keypair_to_s3(stackname):
     # this is the path to where .save() puts it
     # http://boto.readthedocs.io/en/latest/ref/ec2.html#boto.ec2.keypair.KeyPair
@@ -26,13 +24,11 @@ def write_keypair_to_s3(stackname):
     s3.write(key, open(path, 'r'))
     return s3.exists(key)
 
-@if_enabled('write-keypairs-to-s3', silent=True)
 def delete_keypair_from_s3(stackname):
     key = s3_keypair_key(stackname)
     s3.delete(key)
     return s3.exists(key)
 
-@if_enabled('write-keypairs-to-s3', silent=True)
 def download_from_s3(stackname):
     expected_path = stack_pem(stackname, die_if_exists=True)
     s3.download(s3_keypair_key(stackname), expected_path)
@@ -87,7 +83,6 @@ def delete_keypair(stackname):
 #
 #
 
-@if_enabled('write-keypairs-to-s3')
 def all_in_s3():
     return lfilter(None, map(os.path.basename, s3.simple_listing(config.KEYPAIR_PREFIX)))
 

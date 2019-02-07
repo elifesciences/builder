@@ -20,8 +20,9 @@ ALL_PROJECTS = [
 class TestProject(base.BaseCase):
     def setUp(self):
         self.project_file = join(self.fixtures_dir, 'projects', 'dummy-project.yaml')
-        self.parsed_config = config.parse({
-            'project-locations': [self.project_file]})
+        self.parsed_config = {
+            'project-locations': config.parse_loc_list([self.project_file])
+        }
 
     def tearDown(self):
         pass
@@ -193,21 +194,3 @@ class TestProjectData(base.BaseCase):
         expected_data['vagrant']['cpus'] = 999
         expected_data['vagrant']['cpucap'] = 111
         self.assertEqual(project_data, expected_data)
-
-
-class TestMultiProjects(base.BaseCase):
-    def setUp(self):
-        loaded_config = {
-            'project-locations': [
-                join(self.fixtures_dir, 'projects', 'dummy-project.yaml'),
-                join(self.fixtures_dir, 'projects', 'dummy-project2.yaml'),
-            ]
-        }
-        self.parsed_config = config.parse(loaded_config)['project-locations']
-
-    def tearDown(self):
-        pass
-
-    def test_project_list_from_multiple_files(self):
-        expected = ALL_PROJECTS + ['yummy1']
-        self.assertEqual(project.project_list(self.parsed_config), expected)

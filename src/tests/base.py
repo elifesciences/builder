@@ -25,8 +25,10 @@ def generate_environment_name():
 this_dir = os.path.realpath(os.path.dirname(__file__))
 fixtures_dir = join(this_dir, 'fixtures')
 
-def switch_in_test_settings(new_settings='dummy-settings.yaml'):
-    config.SETTINGS_FILE = join(fixtures_dir, new_settings)
+def switch_in_test_settings(projects_files=None):
+    if not projects_files:
+        projects_files = ['src/tests/fixtures/projects/', 'src/tests/fixtures/projects/dummy-project.yaml']
+    config.PROJECTS_FILES = projects_files
     project.project_map.cache_clear()
     config.app.cache_clear()
 

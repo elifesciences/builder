@@ -1,3 +1,0 @@
-project-locations:
-    - ./src/tests/fixtures/projects/dummy-project.yaml
-    - ./src/tests/fixtures/additional-projects/dummy-project-eu.yaml
