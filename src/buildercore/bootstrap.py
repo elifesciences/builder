@@ -8,12 +8,11 @@ import os, json, re
 from os.path import join
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
+from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, vault, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
-from .vault import token_create
 from .config import BOOTSTRAP_USER
 from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
@@ -510,7 +509,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             # TODO: should be optional e.g. a master-server shouldn't depend on its own vault
             # TODO: extract constant 'master-server'
             # TODO: reduce scope to a project if possible?
-            vault_token = token_create(context['vault']['address'], 'master-server', context['stackname'])
+            vault_token = vault.token_create(context['vault']['address'], vault.SALT_MASTERLESS_POLICY, display_name=context['stackname'])
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
             run_script(
                 'init-masterless-formulas.sh',
