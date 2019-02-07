@@ -16,9 +16,6 @@ if which shellcheck &> /dev/null; then
     }
     
     checkshell "bash"
-    checkshell "sh"
-    checkshell "dash"
-    checkshell "ksh"
 
 else
     echo "shellcheck not found! scripts NOT linted"
