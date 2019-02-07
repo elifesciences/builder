@@ -133,6 +133,7 @@ CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'cloudfront', 'e
 
 SETTINGS_FILE = join(PROJECT_PATH, 'settings.yml')
 SETTINGS_FILE = os.environ.get('SETTINGS_FILE', SETTINGS_FILE)
+PROJECTS_FILE = join(PROJECT_PATH, 'projects/elife.yaml')
 
 USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 #
@@ -203,6 +204,3 @@ def app(settings_path=None):
     settings_path = settings_path or SETTINGS_FILE
     LOG.debug("using settings path %r", settings_path)
     return parse(load(settings_path))
-
-def feature_enabled(feature):
-    return app().get(feature, False)
