@@ -21,7 +21,9 @@ def write_keypair_to_s3(stackname):
     # http://boto.readthedocs.io/en/latest/ref/ec2.html#boto.ec2.keypair.KeyPair
     path = stack_pem(stackname, die_if_doesnt_exist=True)
     key = s3_keypair_key(stackname)
-    s3.write(key, open(path, 'r'))
+    with open(path, 'r') as fp:
+        pem_contents = fp.read()
+    s3.write(key, pem_contents)
     return s3.exists(key)
 
 def delete_keypair_from_s3(stackname):
