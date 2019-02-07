@@ -1,6 +1,5 @@
 import json, inspect
 from functools import wraps
-from . import config
 import logging
 
 LOG = logging.getLogger(__name__)
