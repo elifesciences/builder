@@ -29,3 +29,8 @@ and then:
 
 Salt has been very stable with almost no problems upgrading `builder` instances from `2014.7` to `2015.8` to `2016.3` to `2017.8`.
 
+## Grains
+
+[Grains](https://docs.saltstack.com/en/latest/topics/grains/) are provided on EC2 instances and can be useful to target particular servers. Besides standard grains like `osrelease` (`16.04`) and `oscodename` (`xenial`), the following custom grains are set up during bootstrap:
+
+- `project` e.g. `elife-xpub`
