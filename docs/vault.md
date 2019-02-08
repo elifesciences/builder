@@ -6,7 +6,7 @@ Vault is a tool for managing secrets, such as API keys and other credentials. In
 
 ### User scenario
 
-To perform `updte_infrastructure`, builder assumes a logged-in Vault client, probably running on the master server.
+To perform `update_infrastructure`, builder assumes a logged-in Vault client, probably running on the master server.
 
 Run the following command to log in:
 
