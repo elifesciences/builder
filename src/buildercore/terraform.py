@@ -9,7 +9,7 @@ from . import fastly
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.4.0',
-PROVIDER_VAULT_VERSION = '1.1'
+PROVIDER_VAULT_VERSION = '1.3'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
