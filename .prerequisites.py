@@ -2,9 +2,10 @@
 
 from distutils.version import StrictVersion
 from shlex import split
-import os, sys
+import os, re, sys
 
 MINIMUM_VERSION_TERRAFORM = StrictVersion('0.11.10')
+MINIMUM_VERSION_VAULT = StrictVersion('0.11.0')
 
 def sh(cmd):
     return os.system(cmd) == 0
@@ -31,10 +32,16 @@ def osx():
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
 def terraform_version_checker(_cmd):
-    ver = shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip()
-    installed_version = StrictVersion(ver)
+    installed_version = StrictVersion(shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip())
     if not installed_version >= MINIMUM_VERSION_TERRAFORM:
         raise RuntimeError("Installed terraform version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_TERRAFORM))
+
+    return str(installed_version)
+
+def vault_version_checker(_cmd):
+    installed_version = StrictVersion(re.match("Vault v([^ ]+) ", shs('vault -version')).groups()[0])
+    if not installed_version >= MINIMUM_VERSION_VAULT:
+        raise RuntimeError("Installed vault version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_VAULT))
 
     return str(installed_version)
 
@@ -82,7 +89,7 @@ both_checks = [
     ('vault',
      {'all': 'download from https://www.vaultproject.io/downloads.html'},
      lambda x: shs('vault --version'),
-     None),
+     vault_version_checker),
 ]
 
 mac_checks = [

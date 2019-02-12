@@ -8,7 +8,7 @@ import os, json, re
 from os.path import join
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod
+from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, vault, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
@@ -490,7 +490,11 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
         master_ip = build_vars.get('ec2', {}).get('master_ip', master(region, 'PrivateIpAddress'))
-        run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip)
+        grains = {
+            'project': context['project_name'],
+        }
+        environment_vars = {('grain_%s' % k): v for k, v in grains.items()}
+        run_script('bootstrap.sh', salt_version, minion_id, install_master_flag, master_ip, **environment_vars)
 
         if is_masterless:
             # order is important.
@@ -499,10 +503,23 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             # the master-builder key
             upload_master_builder_key(master_builder_key)
             envvars = {
-                'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', '')
+                'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', ''),
             }
+            vault_addr = context['vault']['address']
+            # TODO: should be optional e.g. a master-server shouldn't depend on its own vault
+            # TODO: extract constant 'master-server'
+            # TODO: reduce scope to a project if possible?
+            vault_token = vault.token_create(context['vault']['address'], vault.SALT_MASTERLESS_POLICY, display_name=context['stackname'])
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
-            run_script('init-masterless-formulas.sh', formula_list, fdata['private-repo'], fdata['configuration-repo'], **envvars)
+            run_script(
+                'init-masterless-formulas.sh',
+                formula_list,
+                fdata['private-repo'],
+                fdata['configuration-repo'],
+                vault_addr,
+                vault_token,
+                **envvars
+            )
 
             # second pass to optionally update formulas to specific revisions
             for repo, formula, revision in formula_revisions or []:
