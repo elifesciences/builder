@@ -6,7 +6,11 @@ from buildercore import project, utils as core_utils, config
 
 def _hackgibson():
     fixtures_dir = join(config.SRC_PATH, 'tests', 'fixtures')
-    config.SETTINGS_FILE = join(fixtures_dir, 'dummy-settings.yaml')
+    config.PROJECTS_FILES = [
+        'src/tests/fixtures/projects/',
+        # specific file
+        'src/tests/fixtures/projects/dummy-project.yaml',
+    ]
     project.project_map.cache_clear()
     config.app.cache_clear()
     return fixtures_dir

@@ -10,9 +10,3 @@ project-locations:
     - ./src/tests/fixtures/projects/
     # specific file
     - ./src/tests/fixtures/projects/dummy-project.yaml
-    # path relative to user's home directory that will be expanded
-    #- ~/dev/python/builder/
-    # remote instance of builder's API requiring server access
-    #- ssh://master.elifesciences.org/projects/
-    # remote public instance of builder (not recommended)
-    #- https://master.elifesciences.org/projects/

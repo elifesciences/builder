@@ -155,10 +155,8 @@ PRJ = project_cmd(PROJECT_NAME)
 
 # every project needs to tell us where to find it's formula for building it
 if not PRJ.key?("formula-repo")
-    prn "project data for '#{PROJECT_NAME}' has no key 'formula-repo'."
+    prn "project data (projects/elife.yaml) for '#{PROJECT_NAME}' has no key 'formula-repo'."
     prn "this value is used to clone the formula repository and build the project."
-    prn
-    prn "your `settings.yml` file contains project configuration locations"
     prn
     exit 1
 end
