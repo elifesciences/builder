@@ -7,7 +7,7 @@ import buildvars, utils
 from fabric.api import sudo, local, task
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
-from decorators import debugtask, echo_output, requires_aws_stack, requires_feature
+from decorators import debugtask, echo_output, requires_aws_stack
 from kids.cache import cache as cached
 import logging
 
@@ -27,7 +27,6 @@ def update(master_stackname=None):
 #
 
 @debugtask
-@requires_feature('write-keypairs-to-s3')
 def write_missing_keypairs_to_s3():
     "uploads any missing ec2 keys to S3 if they're present locally"
     remote_keys = keypair.all_in_s3()
@@ -51,7 +50,6 @@ def write_missing_context_to_s3():
     pass
 
 @debugtask
-@requires_feature('write-keypairs-to-s3')
 @requires_aws_stack
 @echo_output
 def download_keypair(stackname):

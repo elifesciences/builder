@@ -1,4 +1,0 @@
-write-context-to-s3: True
-write-keypairs-to-s3: False
-project-locations:
-    - ./src/tests/fixtures/additional-projects/
