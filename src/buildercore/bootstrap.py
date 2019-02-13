@@ -505,19 +505,26 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             envvars = {
                 'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', ''),
             }
-            vault_addr = context['vault']['address']
-            # TODO: should be optional e.g. a master-server shouldn't depend on its own vault
-            # TODO: extract constant 'master-server'
-            # TODO: reduce scope to a project if possible?
-            vault_token = vault.token_create(context['vault']['address'], vault.SALT_MASTERLESS_POLICY, display_name=context['stackname'])
+            # TODO: only do this if is_master is False, and then leave the self-connection of the masterless master-server to itself to the formula?
+            # or do it here through the scripts for consistency?
+            # since Vault is not running at this time, we have to do it in the formula
+            if not is_master:
+                vault_addr = context['vault']['address']
+                # TODO: a master-server should depend on its own vault, not the remote one?
+                # TODO: extract constant 'master-server'
+                # TODO: reduce scope to a project if possible?
+                vault_token = vault.token_create(context['vault']['address'], vault.SALT_MASTERLESS_POLICY, display_name=context['stackname'])
+                vault_arguments = [vault_addr, vault_token]
+            else:
+                vault_arguments = []
+
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
             run_script(
                 'init-masterless-formulas.sh',
                 formula_list,
                 fdata['private-repo'],
                 fdata['configuration-repo'],
-                vault_addr,
-                vault_token,
+                *vault_arguments,
                 **envvars
             )
 
