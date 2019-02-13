@@ -59,16 +59,16 @@ Success! Data written to: secret/builder/apikey/fastly-gcp-logging
 
 Non-`master-server` stacks can pull secrets from Vault through the Salt master, rather than from pillars:
 
-| Virtual machine | Using Salt Master? | Can use Vault for secrets? |
-| --------------- | ------------------ | -------------------------- |
-| Vagrant         | Masterless         | No                         |
-| EC2             | Masterful          | Yes                        |
-| EC2             | Masterless         | Yes                        |
+| Virtual machine | Using Salt Master? | Can use Vault? | Which Vault?  |
+| --------------- | ------------------ | -------------- | ------------- |
+| Vagrant         | Masterless         | No             | -             |
+| EC2             | Masterful          | Yes            | master-server |
+| EC2             | Masterless         | Yes            | master-server |
 
 `master-server` stacks cannot depend on themselves during bootstrap, and hence can't use Vault:
 
-| Virtual machine | Using Salt Master? | Can use Vault for secrets? |
-| --------------- | ------------------ | -------------------------- |
-| Vagrant         | Masterless?        | No                         |
-| EC2             | Masterful          | No                         |
-| EC2             | Masterless         | No                         |
+| Virtual machine | Using Salt Master? | Can use Vault? | Which Vault?- |
+| --------------- | ------------------ | -------------- | ------------- |
+| Vagrant         | Masterless?        | No             | -             |
+| EC2             | Masterful          | Only for tests | Itself        |
+| EC2             | Masterless         | Only for tests | Itself        |
