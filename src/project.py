@@ -5,14 +5,6 @@ from decorators import requires_project, echo_output
 import utils
 
 @task
-def lst():
-    for org, plist in project.org_project_map().items():
-        print(org)
-        for project_name in plist:
-            print('  ', project_name)
-        print()
-
-@task
 @requires_project
 @echo_output
 def data(pname, output_format=None):

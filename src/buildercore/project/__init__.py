@@ -60,11 +60,6 @@ def org_project_map(project_locations_list=None):
     data = map(find_project, project_locations_list)
     return reduce(merge, data)
 
-def org_map(project_locations_list=None):
-    "returns a map of {org => project names} excluding project data"
-    opm = org_project_map(project_locations_list)
-    return {org: list(pdata.keys()) for org, pdata in opm.items()}
-
 @cache
 def project_map(project_locations_list=None):
     """returns a single map of all projects and their data, ignoring organizations
