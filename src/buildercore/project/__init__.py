@@ -58,9 +58,9 @@ def project_map(project_locations_list=None):
 
     return reduce(merge, data)
 
-def project_list(project_locations_list=None):
+def project_list():
     "returns a single list of projects, ignoring organization and project data"
-    return list(project_map(project_locations_list).keys())
+    return list(project_map().keys())
 
 def project_data(pname, project_locations_list=None):
     "returns the data for a single project."

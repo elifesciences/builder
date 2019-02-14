@@ -31,7 +31,7 @@ class TestProject(base.BaseCase):
         "a simple list of projects are returned, ignoring which org they belong to"
         prj_loc_lst = self.parsed_config['project-locations']
         expected = ALL_PROJECTS + ['yummy1']
-        self.assertEqual(project.project_list(prj_loc_lst), expected)
+        self.assertEqual(project.project_list(), expected)
 
 
 class TestProjectData(base.BaseCase):
