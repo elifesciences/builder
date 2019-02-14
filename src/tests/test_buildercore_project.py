@@ -3,7 +3,6 @@ import json
 from os.path import join
 from buildercore import config, project, utils
 from buildercore.project import files as project_files
-from collections import OrderedDict
 
 ALL_PROJECTS = [
     'dummy1', 'dummy2', 'dummy3',
@@ -29,7 +28,6 @@ class TestProject(base.BaseCase):
 
     def test_project_list(self):
         "a simple list of projects are returned, ignoring which org they belong to"
-        prj_loc_lst = self.parsed_config['project-locations']
         expected = ALL_PROJECTS + ['yummy1']
         self.assertEqual(project.project_list(), expected)
 
