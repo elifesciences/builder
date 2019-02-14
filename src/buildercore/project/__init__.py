@@ -48,11 +48,10 @@ def raw_project_map():
     utils.ensure(len(struct) == 1, "`raw_project_map` doesn't support multiple project files")
     return struct.values()[0]
 
-def org_project_map(project_locations_list=None):
+def org_project_map():
     """returns a merged map of {org => project data} after inspecting each location
     in given list duplicate projects in the same organisation will be merged."""
-    if not project_locations_list:
-        project_locations_list = config.app()['project-locations']
+    project_locations_list = config.app()['project-locations']
 
     def merge(p1, p2):
         utils.deepmerge(p1, p2)
@@ -66,7 +65,7 @@ def project_map(project_locations_list=None):
     overwriting any duplicates"""
     # ll: {'elife': {'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}},
     #      'barorg': {'example': {}}}
-    opm = org_project_map(project_locations_list)
+    opm = org_project_map()
     # ll: [{'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}}], {'example': {}}]
     data = opm.values()
     # ll: {'lax': {...}, 'metrics': {...}, 'example': {...}}
