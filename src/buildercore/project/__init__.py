@@ -62,9 +62,9 @@ def project_list():
     "returns a single list of projects, ignoring organization and project data"
     return list(project_map().keys())
 
-def project_data(pname, project_locations_list=None):
+def project_data(pname):
     "returns the data for a single project."
-    data = project_map(project_locations_list)
+    data = project_map()
     try:
         return data[pname]
     except KeyError:
