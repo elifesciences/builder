@@ -14,11 +14,6 @@ LOG = logging.getLogger(__name__)
 # project data utilities
 #
 
-def project_alt_config_names(pdata, env='aws'):
-    "returns names of all alternate configurations for given project data and environment (default aws)"
-    assert env in ['vagrant', 'aws', 'gcp'], "'env' must be either 'vagrant' or 'aws'"
-    return list(pdata.get(env + '-alt', {}).keys())
-
 def set_project_alt(pdata, env, altkey):
     "non-destructive update of given project data with the specified alternative configuration."
     assert env in ['vagrant', 'aws', 'gcp'], "'env' must be either 'vagrant' or 'aws'"
