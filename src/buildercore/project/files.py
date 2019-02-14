@@ -31,18 +31,8 @@ def all_projects(project_file):
 #
 #
 
-def _merge_snippets(pname, snippets):
-    snippets = [{}] + snippets # so none of the snippets are mutated
-
-    def mergedefs(snip1, snip2):
-        utils.deepmerge(snip1, snip2)
-        return snip1
-    overrides = reduce(mergedefs, snippets).get(pname, {})
-    return overrides
-
 def project_data(pname, project_file):
     "does a deep merge of defaults+project data with a few exceptions"
-    snippets = []
 
     global_defaults, project_list = all_projects(project_file)
 

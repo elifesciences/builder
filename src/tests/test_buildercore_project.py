@@ -2,7 +2,6 @@ from . import base
 import json
 from os.path import join
 from buildercore import config, project, utils
-from buildercore.project import files as project_files
 
 ALL_PROJECTS = [
     'dummy1', 'dummy2', 'dummy3',
