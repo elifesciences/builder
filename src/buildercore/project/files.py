@@ -40,17 +40,11 @@ def _merge_snippets(pname, snippets):
     overrides = reduce(mergedefs, snippets).get(pname, {})
     return overrides
 
-def project_data(pname, project_file, snippets=0xDEADBEEF):
+def project_data(pname, project_file):
     "does a deep merge of defaults+project data with a few exceptions"
-
-    if snippets == 0xDEADBEEF:
-        snippets = find_snippets(project_file)
-
-    # merge all snippets providing a 'defaults' key first
-    default_overrides = _merge_snippets('defaults', snippets)
+    snippets = []
 
     global_defaults, project_list = all_projects(project_file)
-    utils.deepmerge(global_defaults, default_overrides)
 
     # exceptions.
     excluding = [
@@ -62,11 +56,6 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     ]
     pdata = copy.deepcopy(global_defaults)
     utils.deepmerge(pdata, project_list[pname], excluding)
-
-    # merge in any per-project overrides
-    # DO NOT use exclusions here
-    project_overrides = _merge_snippets(pname, snippets)
-    utils.deepmerge(pdata, project_overrides)
 
     # handle the alternate configurations
     pdata['aws-alt'] = project_cloud_alt(
@@ -122,20 +111,6 @@ def project_dir_path(project_file):
             print(subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT))
             raise
     return path
-
-def find_snippets(project_file):
-    path = project_dir_path(project_file)
-    fnames = os.listdir(path)
-    fnames = filter(lambda fname: not fname.startswith('.'), fnames)
-    fnames = filter(lambda fname: fname.endswith('.yaml'), fnames)
-    path_list = map(lambda fname: join(path, fname), fnames)
-    path_list = sorted(filter(os.path.isfile, path_list))
-    return [utils.ordered_load(open(p, 'r')) for p in path_list]
-
-
-#
-#
-#
 
 def projects_from_file(path_to_file, *args, **kwargs):
     "returns a map of {org => project data} for a given file"
