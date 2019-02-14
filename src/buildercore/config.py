@@ -146,10 +146,6 @@ TWI_CLEANUP = os.environ.get('BLDR_TWI_CLEANUP', '1') == '1' # tear down test st
 # logic
 #
 
-def load(settings_yaml_file):
-    "read the settings.yml file in from yaml"
-    return utils.ordered_load(open(settings_yaml_file, 'r'))
-
 def _parse_loc(loc):
     "turn a project-location path into a triple of (protocol, hostname, path)"
     bits = loc.split('://', 1)
