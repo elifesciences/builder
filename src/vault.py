@@ -6,8 +6,8 @@ import logging
 LOG = logging.getLogger(__name__)
 
 def vault_addr():
-    defaults, _ = project.raw_project_map()
-    return defaults['aws']['vault']['address']
+    master = project.project_map()['master-server']
+    return master['aws']['vault']['address']
 
 def vault_policy():
     return 'builder-user'

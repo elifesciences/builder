@@ -40,14 +40,6 @@ def find_project(project_location_triple):
         return {}  # OrderedDict({})
     return fnmap[protocol](path, hostname)
 
-def raw_project_map():
-    "returns an unprocessed list of maps of project data"
-    project_locations_list = config.app()['project-locations']
-
-    struct = {files.project_file_name(path): files.all_projects(path) for _, _, path in project_locations_list}
-    utils.ensure(len(struct) == 1, "`raw_project_map` doesn't support multiple project files")
-    return struct.values()[0]
-
 @cache
 def project_map(project_locations_list=None):
     """returns a single map of all projects and their data"""
