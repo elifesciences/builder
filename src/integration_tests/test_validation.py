@@ -21,8 +21,6 @@ class TestValidationFixtures():
 class TestValidationElife():
     @classmethod
     def setup_class(cls):
-        # HERE BE DRAGONS
-        # resets the testing config.SETTINGS_FILE we set in the base.BaseCase class
         base.switch_out_test_settings()
 
     @classmethod

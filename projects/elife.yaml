@@ -261,7 +261,7 @@ basebox:
                 masterless: true
         pillar-vault:
             ec2:
-                master_ip: 10.0.2.231
+                master_ip: 10.0.2.55
     vagrant:
         box: bento/ubuntu-18.04 # Ubuntu 18.04
 
@@ -617,7 +617,7 @@ journal:
                         5xx: "5xx.html"
                 vcl-templates:
                     journal-submit:
-                        percentage: 47 # 30% of total traffic, given we control 2/3 from this entry point
+                        percentage: 63 # ~40% of total traffic, given we control 2/3 from this entry point
                         referer: ^(?:https://(?:reviewer|xpub)\.elifesciences\.org/|https://orcid\.org/)
                         xpub_uri: https://reviewer.elifesciences.org/login
                 vcl:

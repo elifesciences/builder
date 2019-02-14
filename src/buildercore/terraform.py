@@ -4,7 +4,7 @@ from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, dictmap
+from .utils import ensure, mkdir_p
 from . import fastly
 
 EMPTY_TEMPLATE = '{}'
@@ -513,11 +513,12 @@ def render_bigquery(context, template):
             'project': options['project'],
         })
 
-    def add_table(table_id, table_options):
+    needs_github_token = False
+
+    for table_id, table_options in tables.items():
         schema = table_options['schema']
         stackname = context['stackname']
         fqrn = "%s_%s" % (table_options['dataset_id'], table_id) # 'fully qualified resource name'
-        needs_github_token = False
 
         if schema.startswith('https://'):
             # remote schema, add a 'http' provider and have terraform pull it down for us
@@ -552,14 +553,12 @@ def render_bigquery(context, template):
             'schema': schema_ref,
         })
 
-        if needs_github_token:
-            # TODO: extract and reuse as it's good for all data.http Github source,
-            # not just for schemas
-            template.populate_data(DATA_TYPE_VAULT_GENERIC_SECRET, 'github', block={
-                'path': VAULT_PATH_GITHUB,
-            })
-
-    dictmap(add_table, tables)
+    if needs_github_token:
+        # TODO: extract and reuse as it's good for all data.http Github source,
+        # not just for schemas
+        template.populate_data(DATA_TYPE_VAULT_GENERIC_SECRET, 'github', block={
+            'path': VAULT_PATH_GITHUB,
+        })
 
     return template.to_dict()
 

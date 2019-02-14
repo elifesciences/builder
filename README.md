@@ -21,16 +21,9 @@ message. Updating in the future is as simple as:
     git pull
     ./update.sh
 
-If you are outside of the eLife organization, make sure to set the `write-context-to-s3` and `write-keypairs-to-s3` keys in `settings.yml` keys are `False`. Their use is related to backing up information about the generated resources on an S3 bucket, but the customization of this bucket is not supported yet.
-
 ## Next
 
-Your `settings.yaml` file was created automatically and contains options for tweaking the behaviour of `builder`, like the project file it should be using.
-
-By default it points to the `./projects/elife.yaml` project file. This file describes all eLife projects that can be built and their environments. [See here](docs/projects.md) for more 
-project file documentation.
-
-Project files and the `settings.yml` file are the **only** two places where configuration is _supported_.
+Your project file is located at `./projects/elife.yaml`. This file describes all eLife projects that can be built and their environments. [See here](docs/projects.md) for more project file documentation.
 
 > 'configuration' also exists in `./src/buildercore/config.py` if you're a `builder` dev.
 
