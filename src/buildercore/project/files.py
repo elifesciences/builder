@@ -76,7 +76,6 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
     excluding = [
         'aws',
         'vagrant',
-        'vagrant-alt',
         'aws-alt',
         'gcp-alt',
         {'aws': CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT},
@@ -100,12 +99,6 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         pdata.get('gcp', {}),
         global_defaults['gcp']
     )
-
-    # TODO: drop support for unused vagrant-alt?
-    for altname, altdata in pdata.get('vagrant-alt', {}).items():
-        orig = copy.deepcopy(altdata)
-        utils.deepmerge(altdata, pdata['vagrant'])
-        utils.deepmerge(altdata, orig)
 
     return pdata
 
