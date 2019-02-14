@@ -28,27 +28,6 @@ def set_project_alt(pdata, env, altkey):
     pdata_copy[env] = pdata[env_key][altkey]
     return pdata_copy
 
-#
-# unimplemented
-#
-
-# the intent of this function was to update a project's config and then save it back
-# this is fine for files, but not remotes.
-# there will be a class of projects of that cannot be updated
-
-@osissue("this or something like this needs to be implemented")
-def update_project_file(*args, **kwargs):
-    raise NotImplementedError()
-
-@osissue("how is this different from `update_project_file`?")
-def write_project_file(new_project_file):
-    raise NotImplementedError()
-
-
-#
-#
-#
-
 def find_project(project_location_triple):
     "given a triple of (protocol, hostname, path) returns a map of {org => project data}"
     plt = project_location_triple
