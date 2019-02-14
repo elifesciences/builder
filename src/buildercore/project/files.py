@@ -18,26 +18,6 @@ def update_project_file(path, value, pdata, project_file):
     utils.updatein(pdata, path, value, create=True)
     return pdata
 
-# TODO: deletion candidate
-@testme
-def write_project_file(new_project_data, project_file):
-    data = utils.yaml_dumps(new_project_data)
-    # this awful bit of code injects two new lines after before each top level element
-    lines = []
-    for line in data.split('\n'):
-        if line and lines and line[0] != " ":
-            lines.append("")
-            lines.append("")
-        lines.append(line)
-    # all done. convert back to ordereddict
-    open(project_file, 'w').write("\n".join(lines))
-    return project_file
-
-
-#
-#
-#
-
 @cached
 def all_projects(project_file):
     allp = utils.ordered_load(open(project_file))
