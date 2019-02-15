@@ -195,18 +195,5 @@
     }, 
     "meta": {
         "description": "foo"
-    }, 
-    "vagrant-alt": {
-        "alt-config1": {
-            "ram": 256, 
-            "cpus": 1, 
-            "cpucap": 25, 
-            "box": "ubuntu/trusty64", 
-            "box-url": null, 
-            "ip": "192.168.33.44", 
-            "ports": {
-                "1239": 80
-            }
-        }
     }
 }

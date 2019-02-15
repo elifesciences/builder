@@ -27,7 +27,7 @@ fixtures_dir = join(this_dir, 'fixtures')
 
 def switch_in_test_settings(projects_files=None):
     if not projects_files:
-        projects_files = ['src/tests/fixtures/projects/', 'src/tests/fixtures/projects/dummy-project.yaml']
+        projects_files = ['src/tests/fixtures/projects/']
     config.PROJECTS_FILES = projects_files
     project.project_map.cache_clear()
     config.app.cache_clear()

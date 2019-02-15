@@ -188,12 +188,6 @@ dummy2:
     vagrant:
         ports:
             1239: 80
-    vagrant-alt:
-        # a cut down instance
-        alt-config1:
-            ram: 256
-            cpus: 1
-            cpucap: 25
 
 # basic aws, no vagrant, alternate aws configs
 dummy3:

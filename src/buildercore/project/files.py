@@ -7,7 +7,6 @@ from buildercore import utils
 from buildercore.decorators import testme
 from buildercore.config import CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT
 from kids.cache import cache as cached
-from functools import reduce
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -17,26 +16,6 @@ LOG = logging.getLogger(__name__)
 def update_project_file(path, value, pdata, project_file):
     utils.updatein(pdata, path, value, create=True)
     return pdata
-
-# TODO: deletion candidate
-@testme
-def write_project_file(new_project_data, project_file):
-    data = utils.yaml_dumps(new_project_data)
-    # this awful bit of code injects two new lines after before each top level element
-    lines = []
-    for line in data.split('\n'):
-        if line and lines and line[0] != " ":
-            lines.append("")
-            lines.append("")
-        lines.append(line)
-    # all done. convert back to ordereddict
-    open(project_file, 'w').write("\n".join(lines))
-    return project_file
-
-
-#
-#
-#
 
 @cached
 def all_projects(project_file):
@@ -51,43 +30,21 @@ def all_projects(project_file):
 #
 #
 
-def _merge_snippets(pname, snippets):
-    snippets = [{}] + snippets # so none of the snippets are mutated
-
-    def mergedefs(snip1, snip2):
-        utils.deepmerge(snip1, snip2)
-        return snip1
-    overrides = reduce(mergedefs, snippets).get(pname, {})
-    return overrides
-
-def project_data(pname, project_file, snippets=0xDEADBEEF):
+def project_data(pname, project_file):
     "does a deep merge of defaults+project data with a few exceptions"
 
-    if snippets == 0xDEADBEEF:
-        snippets = find_snippets(project_file)
-
-    # merge all snippets providing a 'defaults' key first
-    default_overrides = _merge_snippets('defaults', snippets)
-
     global_defaults, project_list = all_projects(project_file)
-    utils.deepmerge(global_defaults, default_overrides)
 
     # exceptions.
     excluding = [
         'aws',
         'vagrant',
-        'vagrant-alt',
         'aws-alt',
         'gcp-alt',
         {'aws': CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT},
     ]
     pdata = copy.deepcopy(global_defaults)
     utils.deepmerge(pdata, project_list[pname], excluding)
-
-    # merge in any per-project overrides
-    # DO NOT use exclusions here
-    project_overrides = _merge_snippets(pname, snippets)
-    utils.deepmerge(pdata, project_overrides)
 
     # handle the alternate configurations
     pdata['aws-alt'] = project_cloud_alt(
@@ -100,12 +57,6 @@ def project_data(pname, project_file, snippets=0xDEADBEEF):
         pdata.get('gcp', {}),
         global_defaults['gcp']
     )
-
-    # TODO: drop support for unused vagrant-alt?
-    for altname, altdata in pdata.get('vagrant-alt', {}).items():
-        orig = copy.deepcopy(altdata)
-        utils.deepmerge(altdata, pdata['vagrant'])
-        utils.deepmerge(altdata, orig)
 
     return pdata
 
@@ -149,20 +100,6 @@ def project_dir_path(project_file):
             print(subprocess.check_output(["ls", "-l", os.path.dirname(path)], stderr=subprocess.STDOUT))
             raise
     return path
-
-def find_snippets(project_file):
-    path = project_dir_path(project_file)
-    fnames = os.listdir(path)
-    fnames = filter(lambda fname: not fname.startswith('.'), fnames)
-    fnames = filter(lambda fname: fname.endswith('.yaml'), fnames)
-    path_list = map(lambda fname: join(path, fname), fnames)
-    path_list = sorted(filter(os.path.isfile, path_list))
-    return [utils.ordered_load(open(p, 'r')) for p in path_list]
-
-
-#
-#
-#
 
 def projects_from_file(path_to_file, *args, **kwargs):
     "returns a map of {org => project data} for a given file"
