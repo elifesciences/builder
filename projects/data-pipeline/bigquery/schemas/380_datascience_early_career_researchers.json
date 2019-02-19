@@ -1,0 +1,56 @@
+[
+  {
+    "mode": "NULLABLE", 
+    "name": "p_id", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "first_nm", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "last_nm", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "orcid", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "first_subject_area", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "second_subject_area", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "keywords", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "date_generated", 
+    "type": "DATE"
+  }, 
+  {
+    "name": "imported_timestamp", 
+    "type": "TIMESTAMP"
+  }, 
+  {
+    "fields": [
+      {
+        "name": "source_filename", 
+        "type": "STRING"
+      }
+    ], 
+    "name": "provenance", 
+    "type": "RECORD"
+  }
+]

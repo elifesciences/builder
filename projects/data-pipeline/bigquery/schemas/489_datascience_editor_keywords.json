@@ -1,0 +1,52 @@
+[
+  {
+    "name": "person_id", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "first_name", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "last_name", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "email", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "institution", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "areas_of_expertise", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "role", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "subject_areas", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "date_generated", 
+    "type": "DATE"
+  }, 
+  {
+    "name": "imported_timestamp", 
+    "type": "TIMESTAMP"
+  }, 
+  {
+    "fields": [
+      {
+        "name": "source_filename", 
+        "type": "STRING"
+      }
+    ], 
+    "name": "provenance", 
+    "type": "RECORD"
+  }
+]

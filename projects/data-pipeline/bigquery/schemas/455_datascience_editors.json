@@ -1,0 +1,40 @@
+[
+  {
+    "name": "id", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "first_name", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "last_name", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "email", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "secondary_email", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "date_generated", 
+    "type": "DATE"
+  }, 
+  {
+    "name": "imported_timestamp", 
+    "type": "TIMESTAMP"
+  }, 
+  {
+    "fields": [
+      {
+        "name": "source_filename", 
+        "type": "STRING"
+      }
+    ], 
+    "name": "provenance", 
+    "type": "RECORD"
+  }
+]

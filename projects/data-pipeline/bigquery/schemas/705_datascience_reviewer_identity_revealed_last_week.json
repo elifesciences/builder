@@ -1,0 +1,60 @@
+[
+  {
+    "name": "manuscript_id", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "manuscript_revision_no", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "long_manuscript_identifier", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "manuscript_version_created_timestamp_us_eastern", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "reviewer_person_id", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "reviewer_name", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "evaluation_type_code", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "evaluation_value", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "decision", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "review_end_date", 
+    "type": "STRING"
+  }, 
+  {
+    "name": "date_generated", 
+    "type": "DATE"
+  }, 
+  {
+    "name": "imported_timestamp", 
+    "type": "TIMESTAMP"
+  }, 
+  {
+    "fields": [
+      {
+        "name": "source_filename", 
+        "type": "STRING"
+      }
+    ], 
+    "name": "provenance", 
+    "type": "RECORD"
+  }
+]

@@ -8,6 +8,7 @@ settings.yml
 cloned-projects/
 builder-private/
 builder-private-example/
+builder-configuration/
 custom-vagrant/
 
 .vagrant*
@@ -24,7 +25,6 @@ private/
 downloads
 .coverage.*
 .coverage
-projects/*/
 scripts/customize.sh
 scripts/salt/*.minion
 /custom-vagrant/salt/

@@ -41,8 +41,8 @@ ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
 
-PROJECT_PATH = os.getcwd() # ll: /path/to/elife-builder/
-SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
+PROJECT_PATH = os.getcwd() # ll: /path/to/builder/
+SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/builder/src/
 
 TEMP_PATH = "/tmp/"
 

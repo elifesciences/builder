@@ -685,7 +685,7 @@ project-with-bigquery:
                 project: elife-something
                 tables:
                     widgets:
-                        schema: ./src/buildercore/bigquery/schemas/key-value.json
+                        schema: /src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}
 
 project-with-bigquery-remote-schemas:
@@ -706,5 +706,5 @@ project-with-bigquery-remote-schemas:
                     remote_github:
                         schema: https://raw.githubusercontent.com/myrepo/something.json
                     local:
-                        schema: ./src/buildercore/bigquery/schemas/key-value.json
+                        schema: /src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}
