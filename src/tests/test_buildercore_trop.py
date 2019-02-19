@@ -1365,4 +1365,3 @@ def _parse_json(dump):
     """
     # return yaml.safe_load(dump) # slightly improved in python3?
     return json.loads(dump)
-
