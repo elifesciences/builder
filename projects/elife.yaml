@@ -1930,7 +1930,7 @@ elife-xpub:
                 overrides:
                     2:
                         type: t2.medium
-                suppressed: [1]
+                #suppressed: [1]
             ports:
                 - 22
                 - 80
