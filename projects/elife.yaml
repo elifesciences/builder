@@ -1893,7 +1893,7 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        type: t2.medium
+        type: t2.large
         ports:
             - 22
             - 80
