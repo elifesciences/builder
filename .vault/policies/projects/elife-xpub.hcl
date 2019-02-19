@@ -1,3 +1,7 @@
 path "secret/data/projects/elife-xpub/*" {
-    capabilities = ["read"]
+    capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "secret/*" {
+    capabilities = ["list"]
 }
