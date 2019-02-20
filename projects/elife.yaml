@@ -2010,15 +2010,15 @@ fastly-logs:
                 project: elife-fastly
                 tables:
                     api_gateway:
-                        schema: bigquery/schemas/fastly-logs-201810.json
+                        schema: ./projects/fastly-logs/bigquery/schemas/fastly-logs-201810.json
                     generic_cdn:
-                        schema: bigquery/schemas/fastly-logs-201810.json
+                        schema: ./projects/fastly-logs/bigquery/schemas/fastly-logs-201810.json
                     journal:
-                        schema: bigquery/schemas/fastly-logs-201810.json
+                        schema: ./projects/fastly-logs/bigquery/schemas/fastly-logs-201810.json
                     iiif:
-                        schema: bigquery/schemas/fastly-logs-201810.json
+                        schema: ./projects/fastly-logs/bigquery/schemas/fastly-logs-201810.json
                     reproducible_document_stack:
-                        schema: bigquery/schemas/fastly-logs-201810.json
+                        schema: ./projects/fastly-logs/bigquery/schemas/fastly-logs-201810.json
     aws-alt: {}
 
 data-pipeline:
@@ -2047,17 +2047,17 @@ data-pipeline:
                 tables:
                     # bit of repetition here
                     380_datascience_early_career_researchers:
-                        schema: bigquery/schemas/380_datascience_early_career_researchers.json
+                        schema: ./projects/data-pipeline/bigquery/schemas/380_datascience_early_career_researchers.json
                     455_datascience_editors:
-                        schema: bigquery/schemas/455_datascience_editors.json
+                        schema: ./projects/data-pipeline/bigquery/schemas/455_datascience_editors.json
                     489_datascience_editor_keywords:
-                        schema: bigquery/schemas/489_datascience_editor_keywords.json
+                        schema: ./projects/data-pipeline/bigquery/schemas/489_datascience_editor_keywords.json
                     705_datascience_reviewer_identity_revealed_last_week:
-                        schema: bigquery/schemas/705_datascience_reviewer_identity_revealed_last_week.json
+                        schema: ./projects/data-pipeline/bigquery/schemas/705_datascience_reviewer_identity_revealed_last_week.json
                     767_datascience_person_roles:
-                        schema: bigquery/schemas/767_datascience_person_roles.json
+                        schema: ./projects/data-pipeline/bigquery/schemas/767_datascience_person_roles.json
                     779_datascience_reviewer_info_all:
-                        schema: bigquery/schemas/779_datascience_reviewer_info_all.json
+                        schema: ./projects/data-pipeline/bigquery/schemas/779_datascience_reviewer_info_all.json
                     # these are private
                     manuscript:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript.bqschema.json

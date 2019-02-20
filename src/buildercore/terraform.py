@@ -536,11 +536,8 @@ def render_bigquery(context, template):
                 block=block
             )
         else:
-            # local schema. the `schema` is relative to `$PROJECT_PATH/projects/$project/`
-            schema_path = join(PROJECT_PATH, "projects", context["project_name"], schema)
-            if schema.startswith('/'):
-                # path is absolute so look within project root. good for test fixtures
-                schema_path = join(PROJECT_PATH, schema[1:])
+            # local schema. the `schema` is relative to `PROJECT_PATH`
+            schema_path = join(PROJECT_PATH, schema)
             schema_file = os.path.basename(schema)
             terraform_working_dir = join(TERRAFORM_DIR, stackname)
             mkdir_p(terraform_working_dir)
