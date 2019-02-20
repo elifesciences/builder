@@ -703,7 +703,7 @@ def init(stackname, context):
                     'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
                 },
                 'google': {
-                    'version': "= %s" % '1.13.0',
+                    'version': "= %s" % '1.20.0',
                     'region': 'us-east4',
                     # TODO: the system-wide authentication is being used
                     # to provision through this provider (see `gcloud auth list`)

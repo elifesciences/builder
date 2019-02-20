@@ -2058,6 +2058,8 @@ data-pipeline:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/767_datascience_person_roles.json
                     779_datascience_reviewer_info_all:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/779_datascience_reviewer_info_all.json
+                    795_datascience_person_merge_info_all:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/795_datascience_person_merge_info_all.json
                     manuscript:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript.bqschema.json
                     manuscript_full:
