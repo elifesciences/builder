@@ -2058,9 +2058,9 @@ data-pipeline:
                         schema: ./projects/data-pipeline/bigquery/schemas/767_datascience_person_roles.json
                     779_datascience_reviewer_info_all:
                         schema: ./projects/data-pipeline/bigquery/schemas/779_datascience_reviewer_info_all.json
-                    # these are private
                     795_datascience_person_merge_info_all:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-csv-deposit/master/schemas/795_datascience_person_merge_info_all.json
+                        schema: ./projects/data-pipeline/bigquery/schemas/795_datascience_person_merge_info_all.json
+                    # these are private
                     extract_history:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/extract_history.bqschema.json
                     manuscript:
