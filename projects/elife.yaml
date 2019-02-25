@@ -617,8 +617,7 @@ journal:
                         5xx: "5xx.html"
                 vcl-templates:
                     journal-submit:
-                        percentage: 0 # emergency fix 2019-02-23
-                        #percentage: 63 # ~40% of total traffic, given we control 2/3 from this entry point
+                        percentage: 63 # ~40% of total traffic, given we control 2/3 from this entry point
                         referer: ^(?:https://(?:reviewer|xpub)\.elifesciences\.org/|https://orcid\.org/)
                         xpub_uri: https://reviewer.elifesciences.org/login
                 vcl:
