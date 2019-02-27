@@ -462,7 +462,12 @@ def render_ec2(context, template):
     for node in range(1, context['ec2']['cluster-size'] + 1):
         if node in suppressed:
             continue
-        instance = ec2instance(context, node)
+
+        overridden_context = deepcopy(context)
+        overridden_ec2 = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'], interesting=['type'])
+        overridden_context['ec2'] = overridden_ec2
+
+        instance = ec2instance(overridden_context, node)
         ec2_instances[node] = instance
         template.add_resource(instance)
 
@@ -921,7 +926,7 @@ def render_elasticache(context, template):
         if cluster in suppressed:
             continue
 
-        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az', 'configuration'])
+        cluster_context = overridden_component(context, 'elasticache', index=cluster, allowed=['type', 'version', 'az', 'configuration'])
 
         if cluster_context['configuration'] != context['elasticache']['configuration']:
             cluster_parameter_group = elasticache_overridden_parameter_group(context, cluster_context, cluster)
@@ -964,7 +969,8 @@ def render_ext(context, template, ec2_instances):
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
-            node_context = overridden_component(context, 'ec2', node, ['ext'])
+            # TODO: extract `allowed` variable
+            node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
             render_ext_volume(overridden_context, node_context.get('ext', {}), template, node)
 
 def render(context):
@@ -1032,14 +1038,19 @@ def _is_domain_2nd_level(hostname):
     "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
     return hostname.count(".") == 1
 
-def overridden_component(context, component, index, allowed):
-    "two-level merging of overrides into one of context's componenets"
+def overridden_component(context, component, index, allowed, interesting=None):
+    "two-level merging of overrides into one of context's components"
+    if not interesting:
+        interesting = allowed
     overrides = context[component].get('overrides', {}).get(index, {})
     for element in overrides:
-        ensure(element in allowed, "`%s` override is not allowed for single elasticache clusters" % element)
+        ensure(element in allowed, "`%s` override is not allowed for `%s` clusters" % (element, component))
     overridden_context = deepcopy(context)
     overridden_context[component].pop('overrides', None)
     for key, value in overrides.items():
+        if key not in interesting:
+            continue
+        assert key in overridden_context[component], "Can't override `%s` as it's not already a key in `%s`" % (key, overridden_context[component].keys())
         if isinstance(overridden_context[component][key], dict):
             overridden_context[component][key].update(value)
         else:

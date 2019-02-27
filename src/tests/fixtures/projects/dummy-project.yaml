@@ -485,6 +485,7 @@ project-with-cluster-overrides:
             cluster-size: 2
             overrides:
                 1: 
+                    type: t2.xlarge
                     ext: 
                         size: 20
         ext:
