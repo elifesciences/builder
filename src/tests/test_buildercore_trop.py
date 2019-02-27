@@ -2,6 +2,7 @@ from collections import OrderedDict
 import json  # , yaml
 import os
 from os.path import join
+import unittest
 from . import base
 from buildercore import cfngen, trop
 
@@ -14,17 +15,6 @@ class TestBuildercoreTrop(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
-    def _parse_json(self, dump):
-        """Parses dump into a dictionary, using strings rather than unicode strings
-
-        Ridiculously, the yaml module is more helpful in parsing JSON than the json module. Using json.loads() will result in unhelpful error messages like
-        -  'Type': 'AWS::Route53::RecordSet'}
-        +  u'Type': u'AWS::Route53::RecordSet'}
-        that hide the true comparison problem in self.assertEquals().
-        """
-        # return yaml.safe_load(dump) # slightly improved in python3?
-        return json.loads(dump)
-
     def test_rds_template_contains_rds(self):
         extra = {
             'stackname': 'dummy3--test',
@@ -33,7 +23,7 @@ class TestBuildercoreTrop(base.BaseCase):
         context = cfngen.build_context('dummy3', **extra)
         self.assertEqual(context['rds_dbname'], "dummy3test")
         self.assertEqual(context['rds_instance_id'], "dummy3-test")
-        data = self._parse_json(trop.render(context))
+        data = _parse_json(trop.render(context))
         self.assertTrue(isinstance(data['Resources']['AttachedDB'], dict))
         self.assertTrue(isinstance(data['Resources']['AttachedDB']['Properties'], dict))
         properties = data['Resources']['AttachedDB']['Properties']
@@ -90,7 +80,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('just-some-sns', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertEqual(['WidgetsProdTopic'], list(data['Resources'].keys()))
         self.assertEqual(
             {'Type': 'AWS::SNS::Topic', 'Properties': {'TopicName': 'widgets-prod'}},
@@ -108,7 +98,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-sqs', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertEqual(['ProjectWithSqsIncomingProdQueue'], list(data['Resources'].keys()))
         self.assertEqual(
             {'Type': 'AWS::SQS::Queue', 'Properties': {'QueueName': 'project-with-sqs-incoming-prod'}},
@@ -126,7 +116,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-ext', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertIn('MountPoint1', list(data['Resources'].keys()))
         self.assertIn('ExtraStorage1', list(data['Resources'].keys()))
         self.assertCountEqual(
@@ -159,7 +149,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-ec2-custom-root', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         ec2 = data['Resources']['EC2Instance1']['Properties']
         self.assertIn('BlockDeviceMappings', ec2)
         self.assertEqual(
@@ -181,7 +171,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cluster', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         resources = data['Resources']
         self.assertIn('EC2Instance1', list(resources.keys()))
         self.assertIn('EC2Instance2', list(resources.keys()))
@@ -334,7 +324,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cluster-suppressed', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         resources = data['Resources']
         self.assertNotIn('EC2Instance1', list(resources.keys()))
         self.assertIn('EC2Instance2', list(resources.keys()))
@@ -363,7 +353,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cluster-empty', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         resources = data['Resources']
         self.assertEqual(list(resources.keys()), ['StackSecurityGroup'])
         security_group = resources['StackSecurityGroup']['Properties']
@@ -387,12 +377,21 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cluster-overrides', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         resources = data['Resources']
         self.assertIn('EC2Instance1', list(resources.keys()))
         self.assertIn('EC2Instance2', list(resources.keys()))
+        self.assertEqual(
+            resources['EC2Instance1']['Properties']['InstanceType'],
+            't2.xlarge'
+        )
+        self.assertEqual(
+            resources['EC2Instance2']['Properties']['InstanceType'],
+            't2.small'
+        )
         self.assertIn('ExtraStorage1', list(resources.keys()))
         self.assertIn('ExtraStorage2', list(resources.keys()))
+
         self.assertEqual(
             resources['ExtraStorage1']['Properties']['Size'],
             '20'
@@ -408,7 +407,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-multiple-elb-listeners', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         resources = data['Resources']
         self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']
@@ -512,7 +511,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('dummy2', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         resources = data['Resources']
         self.assertIn('CnameDNS1', list(resources.keys()))
         dns = resources['CnameDNS1']['Properties']
@@ -533,7 +532,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-stickiness', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         resources = data['Resources']
         self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']
@@ -570,7 +569,7 @@ class TestBuildercoreTrop(base.BaseCase):
             context['s3']['widgets-prod']
         )
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertTrue('WidgetsProdBucket' in list(data['Resources'].keys()))
         self.assertTrue('WidgetsArchiveProdBucket' in list(data['Resources'].keys()))
         self.assertTrue('WidgetsStaticHostingProdBucket' in list(data['Resources'].keys()))
@@ -747,7 +746,7 @@ class TestBuildercoreTrop(base.BaseCase):
             context['cloudfront']
         )
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
         self.assertEqual(
             {
@@ -844,7 +843,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cloudfront-minimal', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
         self.assertEqual(
             {
@@ -859,7 +858,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cloudfront-origins', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
         distribution_config = data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']
         self.assertEqual(
@@ -918,7 +917,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-cloudfront-error-pages', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
         self.assertEqual(
             {
@@ -965,7 +964,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-fastly-complex', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertTrue('FastlyDNS1' in list(data['Resources'].keys()))
         self.assertEqual(
             {
@@ -1020,7 +1019,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-elasticache-redis', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertIn('ElastiCache1', list(data['Resources'].keys()))
         self.assertIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
         self.assertIn('ElastiCacheSecurityGroup', list(data['Resources'].keys()))
@@ -1098,7 +1097,7 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-multiple-elasticaches', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertIn('ElastiCache1', list(data['Resources'].keys()))
         self.assertIn('ElastiCache2', list(data['Resources'].keys()))
         # default parameter group
@@ -1142,9 +1141,10 @@ class TestBuildercoreTrop(base.BaseCase):
         }
         context = cfngen.build_context('project-with-fully-overridden-elasticaches', **extra)
         cfn_template = trop.render(context)
-        data = self._parse_json(cfn_template)
+        data = _parse_json(cfn_template)
         self.assertNotIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
 
+class TestOverriddenComponent(unittest.TestCase):
     def test_overrides_scalar(self):
         context = {
             'elasticache': {
@@ -1217,7 +1217,7 @@ class TestBuildercoreTrop(base.BaseCase):
             'alt-config': 'alt-config1'
         }
         context = cfngen.build_context('dummy3', **extra)
-        data = self._parse_json(trop.render(context))
+        data = _parse_json(trop.render(context))
         self.assertEqual(context['rds']['deletion-policy'], "Snapshot")
         self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Snapshot')
 
@@ -1228,7 +1228,7 @@ class TestBuildercoreTrop(base.BaseCase):
             'alt-config': 'alt-config2'
         }
         context = cfngen.build_context('dummy3', **extra)
-        data = self._parse_json(trop.render(context))
+        data = _parse_json(trop.render(context))
         self.assertEqual(context['rds']['deletion-policy'], "Delete")
         self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Delete')
 
@@ -1354,3 +1354,14 @@ class TestIngress(base.BaseCase):
 
     def _dump_to_list_of_rules(self, ingress):
         return [r.to_dict() for r in trop.convert_ports_dict_to_troposphere(ingress)]
+
+def _parse_json(dump):
+    """Parses dump into a dictionary, using strings rather than unicode strings
+
+    Ridiculously, the yaml module is more helpful in parsing JSON than the json module. Using json.loads() will result in unhelpful error messages like
+    -  'Type': 'AWS::Route53::RecordSet'}
+    +  u'Type': u'AWS::Route53::RecordSet'}
+    that hide the true comparison problem in self.assertEquals().
+    """
+    # return yaml.safe_load(dump) # slightly improved in python3?
+    return json.loads(dump)
