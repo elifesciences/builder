@@ -1893,7 +1893,7 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        type: t2.medium
+        type: t2.large
         ports:
             - 22
             - 80
@@ -1923,7 +1923,6 @@ elife-xpub:
                 storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
-            type: t2.large
             ec2:
                 cluster-size: 2
                 dns-external-primary: true
@@ -1951,7 +1950,6 @@ elife-xpub:
                 storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
-            type: t2.large
             ec2:
                 cluster-size: 2
                 dns-internal: true
@@ -1976,7 +1974,6 @@ elife-xpub:
                 backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
                 deletion-policy: Snapshot
-            type: t2.large
             ec2:
                 cluster-size: 2
             elb:
