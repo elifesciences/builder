@@ -1976,6 +1976,7 @@ elife-xpub:
                 deletion-policy: Snapshot
             ec2:
                 cluster-size: 2
+                dns-internal: true
             elb:
                 protocol:
                     - 443
