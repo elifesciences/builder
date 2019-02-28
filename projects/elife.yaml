@@ -617,7 +617,7 @@ journal:
                         5xx: "5xx.html"
                 vcl-templates:
                     journal-submit:
-                        percentage: 63 # ~40% of total traffic, given we control 2/3 from this entry point
+                        percentage: 100 # ~64% of total traffic, given we control 2/3 from this entry point
                         referer: ^(?:https://(?:reviewer|xpub)\.elifesciences\.org/|https://orcid\.org/)
                         xpub_uri: https://reviewer.elifesciences.org/login
                 vcl:
