@@ -116,13 +116,17 @@ clone_update() {
     # tell the minion where it can find the formula's state and pillar data
     echo "    - $repo_path/salt/" >> /etc/salt/minion.d/file_roots.conf
 
-    topfile="$repo_path/salt/${BUILDER_TOPFILE:-example.top}"
+    if [ "${BUILDER_TOPFILE}" != "" ]; then
+        topfile="$repo_path/salt/${BUILDER_TOPFILE}"
+    else
+        topfile="$repo_path/salt/example.top"
+    fi
 
     # successively overwrites the top file until the last one (project formula) wins
-    if [ -e "$topfile" ]; then
-        cd /srv/salt 
-        ln -sfT "$topfile" top.sls
-    fi
+    #if [ -e "$topfile" ]; then
+    cd /srv/salt 
+    ln -sfT "$topfile" top.sls
+    #fi
 }
 
 for formula in $formula_list; do
