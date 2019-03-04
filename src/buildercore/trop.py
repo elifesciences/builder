@@ -305,27 +305,34 @@ def render_rds(context, template):
     ]
     lmap(template.add_output, outputs)
 
-def render_ext_volume(context, context_ext, template, node=1):
+def render_ext_volume(context, context_ext, template, actual_ec2_instances, node=1):
     vtype = context_ext.get('type', 'standard')
+    # TODO: remove if not in use
     if vtype == 'ssd':
-        LOG.warn("deprecated value of 'ssd' used in aws.ext.type: %s", context['stackname'])
-        vtype = 'gp2'
+        raise RuntimeError("deprecated value of 'ssd' used in aws.ext.type: %s", context['stackname'])
+
+    if node in actual_ec2_instances:
+        availability_zone = GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone")
+    else:
+        availability_zone = context['aws']['availability-zone'] if node % 2 == 1 else context['aws']['redundant-availability-zone']
 
     args = {
         "Size": str(context_ext['size']),
-        "AvailabilityZone": GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone"),
+        # TODO: change
+        "AvailabilityZone": availability_zone,
         "VolumeType": vtype,
         "Tags": instance_tags(context, node),
     }
     ec2v = ec2.Volume(EXT_TITLE % node, **args)
+    template.add_resource(ec2v)
 
-    args = {
-        "InstanceId": Ref(EC2_TITLE_NODE % node),
-        "VolumeId": Ref(ec2v),
-        "Device": context_ext.get('device'),
-    }
-    ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
-    lmap(template.add_resource, [ec2v, ec2va])
+    if node in actual_ec2_instances:
+        args = {
+            "InstanceId": Ref(EC2_TITLE_NODE % node),
+            "VolumeId": Ref(ec2v),
+            "Device": context_ext.get('device'),
+        }
+        template.add_resource(ec2.VolumeAttachment(EXT_MP_TITLE % node, **args))
 
 def external_dns_ec2_single(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -960,25 +967,25 @@ def render_elasticache(context, template):
     if default_parameter_group_use:
         template.add_resource(parameter_group)
 
-def render_ext(context, template, ec2_instances):
+def render_ext(context, template, cluster_size, actual_ec2_instances):
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
-        all_nodes = list(ec2_instances.keys())
-        for node in all_nodes:
+        for node in range(1, cluster_size+1):
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
             # TODO: extract `allowed` variable
             node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
-            render_ext_volume(overridden_context, node_context.get('ext', {}), template, node)
+            render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
 
 def render(context):
     template = Template()
 
     ec2_instances = render_ec2(context, template) if context['ec2'] else {}
+    cluster_size = context['ec2']['cluster-size'] if context['ec2'] else 0
     context['rds'] and render_rds(context, template)
-    render_ext(context, template, ec2_instances)
+    render_ext(context, template, cluster_size, ec2_instances.keys())
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
