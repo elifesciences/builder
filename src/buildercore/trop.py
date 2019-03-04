@@ -971,7 +971,7 @@ def render_ext(context, template, cluster_size, actual_ec2_instances):
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
-        for node in range(1, cluster_size+1):
+        for node in range(1, cluster_size + 1):
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
