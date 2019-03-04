@@ -36,6 +36,56 @@
   }, 
   {
     "mode": "NULLABLE", 
+    "name": "title", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "middle_name", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "email", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "institution", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "address_stage_datetime", 
+    "type": "DATETIME"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "address_end_datetime", 
+    "type": "DATETIME"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "country", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "city", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "post_code", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
+    "name": "nomination_note", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "NULLABLE", 
     "name": "date_generated", 
     "type": "DATE"
   }, 
