@@ -307,9 +307,6 @@ def render_rds(context, template):
 
 def render_ext_volume(context, context_ext, template, actual_ec2_instances, node=1):
     vtype = context_ext.get('type', 'standard')
-    # TODO: remove if not in use
-    if vtype == 'ssd':
-        raise RuntimeError("deprecated value of 'ssd' used in aws.ext.type: %s", context['stackname'])
 
     if node in actual_ec2_instances:
         availability_zone = GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone")
