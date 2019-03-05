@@ -354,6 +354,7 @@ def template_info(stackname):
     utils.renkeys(data, keepers.items()) # in-place changes
 
     # replaces the standand list-of-dicts 'outputs' with a simpler dict
+    # TODO: outputs may be empty in the input `data` here
     data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
 
     return subdict(data, keepers.values())
