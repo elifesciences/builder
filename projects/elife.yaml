@@ -799,7 +799,6 @@ elife-bot:
                 #    deletion-policy: retain
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -969,7 +968,6 @@ journal-cms:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1241: 80
-        ram: 2048
 
 
 elife-dashboard:
@@ -1025,7 +1023,6 @@ elife-dashboard:
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
-        ram: 2048
 
 
 # legacy API, do not use nor upgrade
@@ -1344,7 +1341,6 @@ search:
                 masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
         ports:
             1244: 80
             1245: 8080
@@ -1376,7 +1372,6 @@ recommendations:
                 masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
         ports:
             1254: 80
 
@@ -1485,7 +1480,6 @@ observer:
                 multi-az: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048 # metabase, mostly
         ports:
             1239: 80
             1240: 8001
@@ -1584,7 +1578,6 @@ sciencebeam-texture:
     vagrant:
         ports:
             1222: 80
-        ram: 2048
 
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
@@ -1982,7 +1975,6 @@ elife-xpub:
                 protocol:
                     - 443
     vagrant:
-        ram: 2048
         ports:
             1201: 80
 
@@ -2096,8 +2088,6 @@ data-pipeline:
             bigquery: false
     vagrant:
         box: bento/ubuntu-16.04
-        cpus: 2
-        ram: 2048
         ports:
             1222: 8080 # bypass nginx for development, it's glitchy
             1223: 18080 # nifi-registry service
