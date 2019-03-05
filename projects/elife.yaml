@@ -699,13 +699,6 @@ elife-metrics:
             - 80
             - 5432
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
@@ -719,7 +712,6 @@ elife-metrics:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1240: 80
-
 
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
@@ -748,12 +740,6 @@ elife-bot:
             - elife-bot-event-property--{instance}
     aws-alt:
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
             s3:
                 "{instance}-elife-silent-corrections":
                     deletion-policy: delete
@@ -876,12 +862,19 @@ generic-cdn:
                 dataset: "{instance}"
                 table: "generic_cdn"
     aws-alt:
-        # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
+        # have to specify this because otherwise configuration such as `fresh` inherited from defaults 
+        # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
+            ec2: false
+        1804:
             ec2: false
         1604:
             ec2: false
+        s1604:
+            ec2: false
         1404:
+            ec2: false
+        standalone1804:
             ec2: false
         standalone1604:
             ec2: false
@@ -936,13 +929,6 @@ journal-cms:
                     - bus-digests--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         ckeditor:
             description: testing environment. backed by RDS
             ext:
