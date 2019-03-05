@@ -1079,8 +1079,6 @@ elife-reporting:
 
 elife-libraries:
     domain: false
-    # temporary for OS upgrade
-    #intdomain: false
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
