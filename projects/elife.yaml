@@ -1086,13 +1086,6 @@ elife-libraries:
             size: 30 # GB
             type: gp2
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         ci:
             description: running unit tests
             ec2:
