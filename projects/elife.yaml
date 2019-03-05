@@ -1088,19 +1088,13 @@ elife-libraries:
     aws-alt:
         ci:
             description: running unit tests
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
         load:
             description: running load tests
             type: t2.2xlarge
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
         spectrum:
             description: running end2end tests
             # 2 core, 8 GB of memory
             type: t2.medium
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
             ext:
                 size: 10 # GB
         powerful:
