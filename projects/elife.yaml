@@ -221,6 +221,11 @@ defaults:
                 ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
+        s1804:
+            description: alias for standalone1604 short enough to fit into hostnames
+            ec2:
+                ami: ami-00aedeb287fe8c9d6
+                masterless: true
     gcp:
         bigquery: false
     vagrant:
