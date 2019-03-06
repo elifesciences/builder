@@ -1085,8 +1085,7 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
-        # 16.04, deprecated
-        box: bento/ubuntu-16.04
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 containers:
@@ -1094,6 +1093,9 @@ containers:
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4GB of RAM
         ports:
             - 22
@@ -1110,12 +1112,14 @@ containers:
                 root:
                     size: 100 # GB
 
+        # WARN: this alternate config should be removed in favour of using standalone1404 or s1604 or s1804
         1404:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+                masterless: true # inconsistent usage
+
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 elife-alfred:
