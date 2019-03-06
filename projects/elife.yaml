@@ -201,7 +201,7 @@ defaults:
                 ami: ami-92002785 # GENERATED from a 14.04 basebox instance "basebox.2016-11-03"
                                   # possibly based on ami-9eaa1cf6 (see basebox aws-alt 14.04)
         # 18.04
-        standalone1804:
+        s1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
                 ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
@@ -232,11 +232,6 @@ defaults:
         standalone:
             description: isolated from the master-server and uses same AMI as default configuration
             ec2:
-                masterless: true
-        s1804:
-            description: alias for standalone1604 short enough to fit into hostnames
-            ec2:
-                ami: ami-00aedeb287fe8c9d6
                 masterless: true
     gcp:
         bigquery: false
