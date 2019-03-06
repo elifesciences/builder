@@ -1386,6 +1386,9 @@ schematron-validator:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215`
         ports:
             - 22
             - 80
@@ -1395,6 +1398,7 @@ schematron-validator:
             subdomains:
                 - schematron
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1246: 80
             1247: 8080
@@ -1419,13 +1423,6 @@ observer:
                     - bus-articles--{instance}
                     - bus-press-packages--{instance}
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         standalone1404:
             rds:
                 storage: 10
@@ -1490,13 +1487,6 @@ peerscout:
             size: 20 # GB
             device: /dev/sdf
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         end2end:
             rds:
                 storage: 5
@@ -1527,6 +1517,9 @@ sciencebeam-texture:
     repo: https://github.com/elifesciences/sciencebeam-texture
     formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4 GB RAM
         ports:
             - 22
@@ -1539,6 +1532,7 @@ sciencebeam-texture:
             subdomains:
                 - sciencebeam-texture
     vagrant:
+        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
         ports:
             1222: 80
 
@@ -1622,12 +1616,6 @@ iiif:
                             expected: "digest/39984"
     aws-alt:
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
             fastly: false
         # for testing new versions
         ci:
@@ -1723,13 +1711,6 @@ redirects:
             - 80
             - 443
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         prod:
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
@@ -1756,6 +1737,9 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80
@@ -1778,6 +1762,7 @@ profiles:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
         ram: 1024
         ports:
             1265: 80
@@ -1789,6 +1774,9 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1803,6 +1791,7 @@ annotations:
                 "{instance}-elife-annotations-hypothesis-emails":
                     # bucket policy http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3 has been added
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
         ports:
             1248: 80
@@ -1813,6 +1802,9 @@ digests:
     repo: https://github.com/elifesciences/digests
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1840,6 +1832,7 @@ digests:
                 storage-type: gp2
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
         ports:
             1290: 80
@@ -1849,6 +1842,9 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1937,6 +1933,7 @@ elife-xpub:
                 protocol:
                     - 443
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1201: 80
 
@@ -1982,7 +1979,8 @@ data-pipeline:
     formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
         ec2:
-            ami: ami-1d4e7a66 # 16.04
+            # Ubuntu 16.04 (non-basebox), deprecated
+            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         type: t2.medium
         ports:
             - 22
@@ -2029,8 +2027,6 @@ data-pipeline:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person_v2.bqschema.json
     aws-alt:
         standalone:
-            ec2:
-                masterless: True
             ext:
                 size: 100 # GB
             ports:
@@ -2049,7 +2045,7 @@ data-pipeline:
         standalone:
             bigquery: false
     vagrant:
-        box: bento/ubuntu-16.04
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1222: 8080 # bypass nginx for development, it's glitchy
             1223: 18080 # nifi-registry service
@@ -2059,12 +2055,16 @@ bastion:
     subdomain: bastion
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.nano # 500 MB
         ports:
             - 22
         subdomains:
             - bastion
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 512
 
 reproducible-document-stack:
