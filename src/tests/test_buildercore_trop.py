@@ -329,9 +329,17 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertNotIn('EC2Instance1', list(resources.keys()))
         self.assertIn('EC2Instance2', list(resources.keys()))
         self.assertIn('EC2Instance3', list(resources.keys()))
-        self.assertNotIn('ExtraStorage1', list(resources.keys()))
+        self.assertIn('ExtraStorage1', list(resources.keys()))
+        unmounted_volume = resources['ExtraStorage1']['Properties']
+        self.assertEqual(
+            unmounted_volume.get('AvailabilityZone'),
+            'us-east-1d'
+        )
         self.assertIn('ExtraStorage2', list(resources.keys()))
         self.assertIn('ExtraStorage3', list(resources.keys()))
+        self.assertNotIn('MountPoint1', list(resources.keys()))
+        self.assertIn('MountPoint2', list(resources.keys()))
+        self.assertIn('MountPoint3', list(resources.keys()))
 
         self.assertIn('ElasticLoadBalancer', list(resources.keys()))
         elb = resources['ElasticLoadBalancer']['Properties']

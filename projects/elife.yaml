@@ -55,12 +55,14 @@ defaults:
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
         subnet-cidr: '10.0.2.0/24'
+        availability-zone: us-east-1d
         ## additional value in case of capacity problems: elife-public-subnet-3, us-east-1a
         # subnet-id: subnet-2116727b
         # subnet-cidr: '10.0.10.0/24'
         # necessary for multiple-node EC2 and for ELB
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.3.0/24'
+        redundant-availability-zone: us-east-1e
         # TODO: this will be moved inside aws.ec2
         type: t2.small  # ~ $20/mo
         # TODO: this will be moved inside aws.ec2
@@ -230,6 +232,11 @@ defaults:
         standalone:
             description: isolated from the master-server and uses same AMI as default configuration
             ec2:
+                masterless: true
+        s1804:
+            description: alias for standalone1604 short enough to fit into hostnames
+            ec2:
+                ami: ami-00aedeb287fe8c9d6
                 masterless: true
     gcp:
         bigquery: false
@@ -1063,8 +1070,6 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.small # 2GB of RAM
         ports:
             - 22
@@ -1072,13 +1077,8 @@ elife-libraries:
             size: 30 # GB
             type: gp2
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+        ci:
+            description: running unit tests
         load:
             description: running load tests
             type: t2.2xlarge
@@ -1097,9 +1097,7 @@ elife-libraries:
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
-
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
 
 containers:
