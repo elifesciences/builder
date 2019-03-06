@@ -874,7 +874,7 @@ generic-cdn:
             ec2: false
         1404:
             ec2: false
-        standalone1804:
+        s1804:
             ec2: false
         standalone1604:
             ec2: false
