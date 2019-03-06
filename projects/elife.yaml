@@ -251,6 +251,7 @@ defaults:
         ram: 2048
         cpus: 2
         cpucap: 100 # percent (vagrant default)
+        # port mapping from host => guest
         #ports:
         #    1239: 80
         #    1240: 8001
@@ -672,7 +673,6 @@ pattern-library:
     aws:
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small
         ports:
             - 22
             - 80
@@ -920,7 +920,6 @@ journal-cms:
     aws:
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small # explicitly 2GB RAM
         ports:
             - 22
             - 443
@@ -992,13 +991,6 @@ elife-dashboard:
             - 8081 # dashboard_2
             - 8082 # dashboard_2
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         end2end:
             description: production-like environment. backed by RDS
             rds:
@@ -1044,14 +1036,7 @@ elife-api:
             - 22
             - 80
             - 443
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1070,7 +1055,9 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        type: t2.small # 2GB of RAM
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
         ext:
@@ -1098,6 +1085,8 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
+        # 16.04, deprecated
+        box: bento/ubuntu-16.04
         ram: 1024
 
 containers:
@@ -1420,7 +1409,6 @@ schematron-validator:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
-        type: t2.small # Composer and Java need memory
         ports:
             - 22
             - 80
@@ -1824,7 +1812,6 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        type: t2.small
         ports:
             - 22
             - 80:
