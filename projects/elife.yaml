@@ -662,12 +662,11 @@ journal:
             1240: 80
 
 pattern-library:
+    salt: '2017.7.8' 
     subdomain: ui-patterns
     repo: https://github.com/elifesciences/pattern-library
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -682,7 +681,6 @@ pattern-library:
             subdomains:
                 - ui-patterns
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1340: 80
 
