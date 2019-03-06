@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2017.7.5' # the version of salt these project use
+    salt: '2017.7.8' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -245,7 +245,6 @@ defaults:
         #    1240: 8001
 
 basebox:
-    salt: '2017.7.7' # overridden for 18.04 support
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
@@ -278,7 +277,6 @@ basebox:
         box: bento/ubuntu-18.04 # Ubuntu 18.04
 
 heavybox:
-    salt: '2017.7.7' # overridden for 18.04 support
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
