@@ -1186,14 +1186,7 @@ api-dummy:
             - 22
             - 443
             - 80
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1227,13 +1220,6 @@ medium:
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         clustered:
             ec2:
                 cluster-size: 2
@@ -1330,13 +1316,6 @@ search:
             elb: 
                 protocol: 
                     - http
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1360,14 +1339,7 @@ recommendations:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1393,12 +1365,6 @@ personalised-covers:
                 deletion-policy: retain
     aws-alt:
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
             s3:
                 "{instance}-elife-personalised-covers":
                     deletion-policy: delete
