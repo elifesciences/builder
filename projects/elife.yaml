@@ -1126,6 +1126,9 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1149,6 +1152,7 @@ elife-alfred:
                 - alfred
                 - ci--alfred # backward compatibility
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 4096
         ports:
             1433: 80
@@ -1160,6 +1164,9 @@ elife-alfred-nodes:
     domain: false
     intdomain: false
     aws:
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ec2:
             cluster-size: 0
             security-group:
