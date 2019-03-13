@@ -6,6 +6,9 @@ To correct the situation, the `EC2Instance` resource and all its dependencies su
 
 ## Assumption
 
+- the stack is named `elife-dashboard--ci`
+- there are no old `ExtVolume` entries
+
 ## Procedure
 
 ### Get the existing template
@@ -39,13 +42,19 @@ aws s3 cp elife-dashboard--ci.json s3://elife-builder/temporary-patches/elife-da
 aws cloudformation update-stack --stack-name elife-dashboard--ci --template-url s3://elife-builder/temporary-patches/elife-dashboard--ci.json
 ```
 
+Wait for the `StackStatus` to go from `UPDATE_COMPLETE_CLEANUP_IN_PROGRESS` (or else) to `UPDATE_COMPLETE`:
+
+```
+aws cloudformation describe-stacks --stack-name elife-dashboard--end2end | jq .Stacks[0].StackStatus
+```
+
 ### Check Route53 for orphan DNS entries and remove them
 
 Open https://console.aws.amazon.com/route53/home and select the relevant hosted zones (`elifesciences.org`, `elife.internal`). Filter using the `subdomain` from `project/elife.yaml`.
 
 For example, delete `ci--ppp-dash.elifesciences.org.` from the `elifesciences.org` hosted zone.
 
-### Clean the Salt maste
+### Clean the Salt master
 
 To fully clear the existence of node 1, run also:
 
