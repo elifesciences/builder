@@ -720,7 +720,8 @@ elife-bot:
     subdomain: bot
     aws:
         ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium
         ports:
             - 22
@@ -800,7 +801,7 @@ elife-bot:
                 #"{instance}-elife-ejp-poa-delivery":
                 #    deletion-policy: retain
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        box: bento/ubuntu-16.04 # 16.04, deprecated
 
 generic-cdn:
     description: generic CDN for content like PDF, images
