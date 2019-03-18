@@ -64,7 +64,7 @@ def update(stackname, autostart="0", concurrency='serial'):
 
 @task
 @timeit
-def update_infrastructure(stackname, skip=None):
+def update_infrastructure(stackname, skip=None, start=['ec2']):
     """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
@@ -78,15 +78,18 @@ def update_infrastructure(stackname, skip=None):
     Moreover, EC2 instances must be running while this is executed or their
     resources like PublicIP will be inaccessible.
 
-    Allows to skip EC2, SQS, S3 updates by passing `skip=ec2\\,sqs\\,s3`"""
+    Allows to skip EC2, SQS, S3 updates by passing `skip=ec2\\,sqs\\,s3`
+
+    By default starts EC2 instances but this can be avoid by passing `start=`"""
 
     skip = skip.split(",") if skip else []
+    start = start.split(",") if start else []
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
     context, delta, current_context = cfngen.regenerate_stack(stackname, **more_context)
 
-    if _are_there_existing_servers(current_context):
+    if _are_there_existing_servers(current_context) and 'ec2' in start:
         core_lifecycle.start(stackname)
     LOG.info("Create: %s", pformat(delta.plus))
     LOG.info("Update: %s", pformat(delta.edit))
