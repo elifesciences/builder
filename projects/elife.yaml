@@ -1327,8 +1327,6 @@ recommendations:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium # 4 GB of RAM, same as search for now.
         ports:
             - 22
@@ -1336,7 +1334,6 @@ recommendations:
                 cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1254: 80
 
