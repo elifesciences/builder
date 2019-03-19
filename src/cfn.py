@@ -83,7 +83,7 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     By default starts EC2 instances but this can be avoid by passing `start=`"""
 
     skip = skip.split(",") if skip else []
-    start = start.split(",") if start else []
+    start = start.split(",") if isinstance(start, str) else start or []
 
     (pname, _) = core.parse_stackname(stackname)
     more_context = {}
