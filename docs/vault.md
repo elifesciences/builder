@@ -72,6 +72,27 @@ vault write auth/approle/role/master-server policies=default,master-server
 
 `policies` specifies the policies this role will attach to its tokens. On creation, `role_id` and `secret_id` need to be stored into the application that will make use of them.
 
+### Periodic tokens
+
+Create a periodic token:
+```
+vault token create -display-name=periodic-token-example -policy=master-server -period=1h
+```
+
+This token will expire in 1 hour unless a renewal is performed:
+
+```
+VAULT_TOKEN=$(cat periodic.vault-token) vault token renew
+```
+
+This should be in a cron job and is only suitable for servers that are always alive to perform the renewal.
+
+You can check the remaining time with:
+
+```
+VAULT_TOKEN=$(cat periodic.vault-token) vault token lookup
+```
+
 ## Secrets for formulas
 
 Non-`master-server` stacks can pull secrets from Vault through the Salt master, rather than from pillars:
