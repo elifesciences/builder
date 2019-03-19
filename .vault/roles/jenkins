@@ -1,5 +1,5 @@
 {
-  "request_id": "8ad9906c-5721-c21d-211d-23acecb3960d",
+  "request_id": "a50afc6f-5315-b5b9-635f-869c2eb75061",
   "lease_id": "",
   "lease_duration": 0,
   "renewable": false,
@@ -20,7 +20,7 @@
     "token_bound_cidrs": null,
     "token_max_ttl": 0,
     "token_num_uses": 0,
-    "token_ttl": 0
+    "token_ttl": 3600
   },
   "warnings": [
     "The \"bound_cidr_list\" parameter is deprecated and will be removed in favor of \"secret_id_bound_cidrs\"."
