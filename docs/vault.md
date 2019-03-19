@@ -36,6 +36,15 @@ To revoke a token:
 
 `./bldr vault.token_revoke:<token>`
 
+### Creating child tokens
+
+```
+vault token create -display-name=elife-alfred-exploratory-test-master-server -policy=master-server
+```
+
+`policy` here limits the policies attached to the child token, which would be inherited from the current token otherwise.
+
+
 ### Reading and writing secrets (admin only)
 
 Some commands can be manually run to directly interact with Vault's key-value secrets store:
@@ -54,6 +63,14 @@ secret_key          -----BEGIN PRIVATE KEY-----
 $ VAULT_ADDR=https://master-server.elifesciences.org:8200 vault kv put secret/builder/apikey/fastly-gcp-logging email=fastly@elife-fastly.iam.gserviceaccount.com secret_key=@../../fastly-gcp-logging.secret
 Success! Data written to: secret/builder/apikey/fastly-gcp-logging
 ```
+
+### AppRoles
+
+```
+vault write auth/approle/role/master-server policies=default,master-server
+```
+
+`policies` specifies the policies this role will attach to its tokens. On creation, `role_id` and `secret_id` need to be stored into the application that will make use of them.
 
 ## Secrets for formulas
 
