@@ -20,6 +20,7 @@ DATA_TYPE_TEMPLATE = 'template_file'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
+DATA_NAME_VAULT_GCP_API_KEY = 'gcp'
 DATA_NAME_VAULT_GITHUB = 'github'
 
 # keys to lookup in Vault
@@ -28,6 +29,7 @@ DATA_NAME_VAULT_GITHUB = 'github'
 VAULT_PATH_FASTLY = 'secret/builder/apikey/fastly'
 VAULT_PATH_FASTLY_GCS_LOGGING = 'secret/builder/apikey/fastly-gcs-logging'
 VAULT_PATH_FASTLY_GCP_LOGGING = 'secret/builder/apikey/fastly-gcp-logging'
+VAULT_PATH_GCP = 'secret/builder/apikey/gcp'
 VAULT_PATH_GITHUB = 'secret/builder/apikey/github'
 
 FASTLY_GZIP_TYPES = ['text/html', 'application/x-javascript', 'text/css', 'application/javascript',
@@ -705,6 +707,7 @@ def init(stackname, context):
                 'google': {
                     'version': "= %s" % '1.20.0',
                     'region': 'us-east4',
+                    'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
                     # TODO: the system-wide authentication is being used
                     # to provision through this provider (see `gcloud auth list`)
                     # It could be possible to create a Service Account for
@@ -720,13 +723,17 @@ def init(stackname, context):
                     'version': "= %s" % PROVIDER_VAULT_VERSION,
                 },
             },
-            # TODO: this should not be used unless Fastly is involved
             'data': {
                 DATA_TYPE_VAULT_GENERIC_SECRET: {
+                    # TODO: this should not be used unless Fastly is involved
                     DATA_NAME_VAULT_FASTLY_API_KEY: {
                         'path': VAULT_PATH_FASTLY,
-                    }
-                }
+                    },
+                    # TODO: this should not be used unless GCP is involved
+                    DATA_NAME_VAULT_GCP_API_KEY: {
+                        'path': VAULT_PATH_GCP,
+                    },
+                },
             },
         }))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
