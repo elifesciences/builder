@@ -67,10 +67,21 @@ Success! Data written to: secret/builder/apikey/fastly-gcp-logging
 ### AppRoles
 
 ```
-vault write auth/approle/role/master-server policies=default,master-server
+vault write auth/approle/role/jenkins policies=default,jenkins-elife-alfred,master-server
 ```
 
-`policies` specifies the policies this role will attach to its tokens. On creation, `role_id` and `secret_id` need to be stored into the application that will make use of them.
+`policies` specifies the policies this role will attach to its tokens. However, `role_id` and `secret_id` need to be stored into the application that will make use of them.
+
+```
+vault read auth/approle/role/jenkins/role-id
+```
+reads the `role-id` from the AppRole.
+
+```
+vault write -f auth/approle/role/jenkins/secret-id
+```
+creates a new `secret-id` for the AppRole.
+
 
 ### Periodic tokens
 
