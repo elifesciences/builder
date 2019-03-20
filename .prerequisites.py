@@ -4,7 +4,7 @@ from distutils.version import StrictVersion
 from shlex import split
 import os, re, sys
 
-MINIMUM_VERSION_TERRAFORM = StrictVersion('0.11.10')
+MINIMUM_VERSION_TERRAFORM = StrictVersion('0.11.13')
 MINIMUM_VERSION_VAULT = StrictVersion('0.11.0')
 
 def sh(cmd):
