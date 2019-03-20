@@ -166,7 +166,7 @@ def prj(key, default=nil)
 end
 
 # ask user if they want to use the large amount of RAM requested  
-RAM_CHECK_THRESHOLD = 2048
+RAM_CHECK_THRESHOLD = 4096
 if (prj('ram').to_i > RAM_CHECK_THRESHOLD) and ['up', 'reload'].include? VAGRANT_COMMAND
     requested = prj('ram')
     
@@ -175,7 +175,7 @@ if (prj('ram').to_i > RAM_CHECK_THRESHOLD) and ['up', 'reload'].include? VAGRANT
     if File.exists?(flag)
         prn "found #{flag}, skipping excessive ram check"
     else 
-        prn "project is requesting an unreasonable amount of RAM (#{requested}MB)"
+        prn "project is requesting a large amount of RAM (#{requested}MB)"
         
         prn "1 - #{RAM_CHECK_THRESHOLD}MB"
         prn "2 - #{requested}MB"
@@ -233,7 +233,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.define INSTANCE_NAME do |project|
         project.vm.box_check_update = false # don't gab to the internet, please :(
         project.vm.box = prj("box")
-        project.vm.box_url = prj("box-url")
         project.vm.host_name = INSTANCE_NAME
         prn " [info] hostname is #{INSTANCE_NAME} (this affects Salt configuration)"
         project.vm.network :private_network, ip: prj("ip")

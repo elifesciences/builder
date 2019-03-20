@@ -42,11 +42,9 @@ defaults:
             # for future re-creation
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
-            # deprecated. all projects have 16.04 support now. explicit trusty images
-            # are being used until each project is running 16.04 in production
-            # ami: ami-92002785   # elife 'basebox.2016-11-03'
+            # Ubuntu 18.04
+            ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
+                                       # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
             # optional: pin a master server for all new instances of a project
@@ -179,67 +177,76 @@ defaults:
         vault:
             address: https://master-server.elifesciences.org:8200
     aws-alt:
+
+        # note! all aws-alt configurations below will be inherited by all projects.
+
         fresh:
-            description: uses a plain Ubuntu basebox instead of an ami
+            description: uses a public Ubuntu AMI instead of an elife generated basebox.
             ec2:
-                ami: ami-1d4e7a66 # Ubuntu 16.04 (Xenial), us-east-1, build date 20170811, hvm:ebs-ssd
+                # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
+                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+        1804:
+            description: Ubuntu 18.04 (Bionic)
+            ec2: true # explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
+        # deprecated
         1604:
-            description: uses Ubuntu 16.04 (Xenial) instead of 14.04 (Trusty)
+            description: uses Ubuntu 16.04 (Xenial)
             ec2:
                 ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+        # deprecated
         1404:
-            description: uses Ubuntu 14.04 (Trusty) instead of 16.04 (Xenial)
+            description: uses Ubuntu 14.04 (Trusty)
             ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
+                ami: ami-92002785 # created from a 14.04 basebox instance "basebox.2016-11-03"
+                                  # possibly based on ami-9eaa1cf6 (see basebox aws-alt 14.04)
+        # 18.04
+        s1804:
+            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
+        # 16.04, deprecated
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
                 ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
+        # 16.04, deprecated
         s1604:
             description: alias for standalone1604 short enough to fit into hostnames
             ec2:
-                ami: ami-14a1d06e
+                ami: ami-14a1d06e # GENERATED created from basebox--1604
+                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
+        # 14.04, deprecated
         standalone1404:
             description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
             type: t2.small
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+        # 18.04, same as default
         standalone:
-            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
+            description: isolated from the master-server and uses same AMI as default configuration
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
-                masterless: true
-        standalone1804:
-            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
-            ec2:
-                ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-                masterless: true
-        s1804:
-            description: alias for standalone1604 short enough to fit into hostnames
-            ec2:
-                ami: ami-00aedeb287fe8c9d6
                 masterless: true
     gcp:
         bigquery: false
     vagrant:
-        # why 'bento'? https://bugs.launchpad.net/cloud-images/+bug/1569237
-        box: bento/ubuntu-16.04 # Ubuntu 16.04 "Xenial"
-        # deprecated. all projects have 16.04 support now. explicit trusty images
-        # are being used until each project is running 16.04 in production
-        #box: ubuntu/trusty64 # Ubuntu 14.04
-        # box-url not needed for boxes hosted on Atlas
-        box-url: null
+        # why 'bento' and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
+        box: bento/ubuntu-18.04
+        # 16.04, deprecated
+        #box: bento/ubuntu-16.04
+        # 14.04, deprecated
+        #box: ubuntu/trusty64
         ip: 192.168.33.44
-        ram: 1024
+        ram: 2048
         cpus: 2
         cpucap: 100 # percent (vagrant default)
+        # port mapping from host => guest
         #ports:
         #    1239: 80
         #    1240: 8001
@@ -259,22 +266,42 @@ basebox:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
+
+        # overrides to default aws-alt configurations to use non-basebox AMIs
+        
+        1404:
+            ec2:
+                ami: ami-9eaa1cf6 # trusty
         1604:
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         1804:
             ec2:
+                # should match aws-alt 'fresh'
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+
+        # overrides to default aws-alt configurations to use non-basebox AMIs and run isolated from master-server
+
+        # 14.04, deprecated
+        standalone1404:
+            description: isolated from the master-server and uses Ubuntu 14.04 (Trusty)
+            ec2:
+                ami: ami-9eaa1cf6 # trusty
+        # 16.04, deprecated
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
                 ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-                masterless: true
+        # 18.04
+        standalone18.04:
+            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                # should match aws-alt 'fresh'
+                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
         pillar-vault:
             ec2:
                 master_ip: 10.0.2.55
-    vagrant:
-        box: bento/ubuntu-18.04 # Ubuntu 18.04
+    vagrant: {}
 
 heavybox:
     description: builds as many of the builder-base-formula states as possible
@@ -292,10 +319,7 @@ heavybox:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
                 masterless: true
-    vagrant:
-        # disabled until supported
-        #box: bento/ubuntu-18.04 # Ubuntu 18.04
-        ram: 2048
+    vagrant: {}
 
 master-server:
     subdomain: master-server
@@ -304,7 +328,10 @@ master-server:
     # see: https://github.com/elifesciences/builder-private
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
-        ec2: {}
+        ec2:
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 4506: # salt publish port
@@ -318,7 +345,9 @@ master-server:
         '2018-04-09-2':
             subdomains:
                 - master-server
-    vagrant: {}
+    vagrant:
+        # 16.04, deprecated
+        box: bento/ubuntu-16.04
 
 lax:
     description: article-json store
@@ -339,13 +368,6 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         standalone1404:
             rds:
                 storage: 5
@@ -393,7 +415,7 @@ lax:
             1240: 8001
 
 api-gateway:
-    subdomain: gateway # ll: gateway.elifesciences.org
+    subdomain: gateway # "gateway.elifesciences.org"
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
@@ -427,12 +449,6 @@ api-gateway:
                 table: "api_gateway"
     aws-alt:
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
             fastly: false
         end2end: {}
         continuumtest:
@@ -468,13 +484,6 @@ journal:
             - 80:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         ci:
             #type: t2.2xlarge
             type: c4.2xlarge
@@ -657,19 +666,11 @@ pattern-library:
     aws:
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small
         ports:
             - 22
             - 80
             - 443
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         ci:
             ec2: false
             s3:
@@ -680,7 +681,6 @@ pattern-library:
                 - ui-patterns
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
         ports:
             1340: 80
 
@@ -698,13 +698,6 @@ elife-metrics:
             - 80
             - 5432
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
@@ -718,7 +711,6 @@ elife-metrics:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1240: 80
-
 
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
@@ -747,12 +739,6 @@ elife-bot:
             - elife-bot-event-property--{instance}
     aws-alt:
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
             s3:
                 "{instance}-elife-silent-corrections":
                     deletion-policy: delete
@@ -813,7 +799,6 @@ elife-bot:
                 #    deletion-policy: retain
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -875,12 +860,19 @@ generic-cdn:
                 dataset: "{instance}"
                 table: "generic_cdn"
     aws-alt:
-        # have to specify this because otherwise configuration such as `fresh` inherited from defaults won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
+        # have to specify this because otherwise configuration such as `fresh` inherited from defaults 
+        # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
+            ec2: false
+        1804:
             ec2: false
         1604:
             ec2: false
+        s1604:
+            ec2: false
         1404:
+            ec2: false
+        s1804:
             ec2: false
         standalone1604:
             ec2: false
@@ -921,7 +913,6 @@ journal-cms:
     aws:
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.small # explicitly 2GB RAM
         ports:
             - 22
             - 443
@@ -935,13 +926,6 @@ journal-cms:
                     - bus-digests--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         ckeditor:
             description: testing environment. backed by RDS
             ext:
@@ -983,7 +967,6 @@ journal-cms:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1241: 80
-        ram: 2048
 
 
 elife-dashboard:
@@ -1001,13 +984,6 @@ elife-dashboard:
             - 8081 # dashboard_2
             - 8082 # dashboard_2
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         end2end:
             description: production-like environment. backed by RDS
             rds:
@@ -1039,7 +1015,6 @@ elife-dashboard:
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
-        ram: 2048
 
 
 # legacy API, do not use nor upgrade
@@ -1054,14 +1029,7 @@ elife-api:
             - 22
             - 80
             - 443
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1080,7 +1048,9 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        type: t2.small # 2GB of RAM
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
         ext:
@@ -1108,6 +1078,7 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 containers:
@@ -1115,6 +1086,9 @@ containers:
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4GB of RAM
         ports:
             - 22
@@ -1131,18 +1105,23 @@ containers:
                 root:
                     size: 100 # GB
 
+        # WARN: this alternate config should be removed in favour of using standalone1404 or s1604 or s1804
         1404:
             ec2:
                 ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+                masterless: true # inconsistent usage
+
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1166,6 +1145,7 @@ elife-alfred:
                 - alfred
                 - ci--alfred # backward compatibility
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 4096
         ports:
             1433: 80
@@ -1177,6 +1157,9 @@ elife-alfred-nodes:
     domain: false
     intdomain: false
     aws:
+        # 16.04, deprecated
+        ami: ami-14a1d06e # GENERATED created from basebox--1604
+                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ec2:
             cluster-size: 0
             security-group:
@@ -1196,14 +1179,7 @@ api-dummy:
             - 22
             - 443
             - 80
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
@@ -1237,13 +1213,6 @@ medium:
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         clustered:
             ec2:
                 cluster-size: 2
@@ -1340,16 +1309,8 @@ search:
             elb: 
                 protocol: 
                     - http
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
         ports:
             1244: 80
             1245: 8080
@@ -1371,17 +1332,9 @@ recommendations:
             - 22
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+    aws-alt: {}
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048
         ports:
             1254: 80
 
@@ -1405,12 +1358,6 @@ personalised-covers:
                 deletion-policy: retain
     aws-alt:
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
             s3:
                 "{instance}-elife-personalised-covers":
                     deletion-policy: delete
@@ -1432,7 +1379,9 @@ schematron-validator:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
-        type: t2.small # Composer and Java need memory
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215`
         ports:
             - 22
             - 80
@@ -1442,6 +1391,7 @@ schematron-validator:
             subdomains:
                 - schematron
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1246: 80
             1247: 8080
@@ -1466,13 +1416,6 @@ observer:
                     - bus-articles--{instance}
                     - bus-press-packages--{instance}
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         standalone1404:
             rds:
                 storage: 10
@@ -1490,7 +1433,6 @@ observer:
                 multi-az: true
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 2048 # metabase, mostly
         ports:
             1239: 80
             1240: 8001
@@ -1538,13 +1480,6 @@ peerscout:
             size: 20 # GB
             device: /dev/sdf
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         end2end:
             rds:
                 storage: 5
@@ -1575,6 +1510,9 @@ sciencebeam-texture:
     repo: https://github.com/elifesciences/sciencebeam-texture
     formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4 GB RAM
         ports:
             - 22
@@ -1587,9 +1525,9 @@ sciencebeam-texture:
             subdomains:
                 - sciencebeam-texture
     vagrant:
+        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
         ports:
             1222: 80
-        ram: 2048
 
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
@@ -1671,12 +1609,6 @@ iiif:
                             expected: "digest/39984"
     aws-alt:
         standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
             fastly: false
         # for testing new versions
         ci:
@@ -1772,13 +1704,6 @@ redirects:
             - 80
             - 443
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         prod:
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
@@ -1805,6 +1730,9 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80
@@ -1827,6 +1755,7 @@ profiles:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
         ram: 1024
         ports:
             1265: 80
@@ -1838,7 +1767,9 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        type: t2.small
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1853,6 +1784,7 @@ annotations:
                 "{instance}-elife-annotations-hypothesis-emails":
                     # bucket policy http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3 has been added
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
         ports:
             1248: 80
@@ -1863,6 +1795,9 @@ digests:
     repo: https://github.com/elifesciences/digests
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1890,6 +1825,7 @@ digests:
                 storage-type: gp2
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
         ports:
             1290: 80
@@ -1899,6 +1835,9 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1987,7 +1926,7 @@ elife-xpub:
                 protocol:
                     - 443
     vagrant:
-        ram: 2048
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1201: 80
 
@@ -2033,7 +1972,8 @@ data-pipeline:
     formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
         ec2:
-            ami: ami-1d4e7a66 # 16.04
+            # Ubuntu 16.04 (non-basebox), deprecated
+            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
         type: t2.medium
         ports:
             - 22
@@ -2080,8 +2020,6 @@ data-pipeline:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person_v2.bqschema.json
     aws-alt:
         standalone:
-            ec2:
-                masterless: True
             ext:
                 size: 100 # GB
             ports:
@@ -2100,9 +2038,7 @@ data-pipeline:
         standalone:
             bigquery: false
     vagrant:
-        box: bento/ubuntu-16.04
-        cpus: 2
-        ram: 2048
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1222: 8080 # bypass nginx for development, it's glitchy
             1223: 18080 # nifi-registry service
@@ -2112,12 +2048,16 @@ bastion:
     subdomain: bastion
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.nano # 500 MB
         ports:
             - 22
         subdomains:
             - bastion
     vagrant:
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 512
 
 reproducible-document-stack:
