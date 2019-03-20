@@ -352,7 +352,6 @@ master-server:
 lax:
     description: article-json store
     subdomain: lax # lax.elifesciences.org
-    intdomain: False
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
