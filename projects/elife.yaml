@@ -201,8 +201,14 @@ defaults:
                 ami: ami-92002785 # created from a 14.04 basebox instance "basebox.2016-11-03"
                                   # possibly based on ami-9eaa1cf6 (see basebox aws-alt 14.04)
         # 18.04
-        s1804:
+        standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
+        s1804:
+            description: alias for standalone1804
             ec2:
                 ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
