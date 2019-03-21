@@ -1048,9 +1048,10 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+        ec2:
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
         ext:
@@ -1086,9 +1087,10 @@ containers:
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+        ec2:
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4GB of RAM
         ports:
             - 22
@@ -1119,9 +1121,10 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+        ec2:
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1157,9 +1160,6 @@ elife-alfred-nodes:
     domain: false
     intdomain: false
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ec2:
             cluster-size: 0
             security-group:
