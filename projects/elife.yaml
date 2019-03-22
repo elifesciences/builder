@@ -1720,6 +1720,7 @@ redirects:
                 headers:
                     - Host
     vagrant:
+        ram: 512
         ports:
             1262: 80
 
