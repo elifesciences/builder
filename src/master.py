@@ -5,8 +5,8 @@ See `askmaster.py` for tasks that are run on minions."""
 import os, time
 import buildvars, utils
 from fabric.api import sudo, local, task
-from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
-from buildercore.utils import lmap, exsubdict, mkidx
+from buildercore import core, bootstrap, config, project, cfngen, context_handler
+from buildercore.utils import exsubdict, mkidx
 from decorators import debugtask, echo_output, requires_aws_stack
 from kids.cache import cache as cached
 import logging
@@ -21,44 +21,6 @@ def update(master_stackname=None):
         'ec2' # master-server should be a self-contained EC2 instance
     ])
     bootstrap.remove_all_orphaned_keys(master_stackname)
-
-#
-#
-#
-
-@debugtask
-def write_missing_keypairs_to_s3():
-    "uploads any missing ec2 keys to S3 if they're present locally"
-    remote_keys = keypair.all_in_s3()
-    local_paths = keypair.all_locally()
-    local_keys = lmap(os.path.basename, local_paths)
-
-    to_upload = set(local_keys).difference(set(remote_keys))
-
-    print('remote:', remote_keys)
-    print('local:', local_keys)
-    print('to upload:', to_upload)
-
-    def write(key):
-        stackname = os.path.splitext(key)[0]
-        keypair.write_keypair_to_s3(stackname)
-
-    lmap(write, to_upload)
-
-# TODO: implement or remove
-def write_missing_context_to_s3():
-    pass
-
-@debugtask
-@requires_aws_stack
-@echo_output
-def download_keypair(stackname):
-    try:
-        path = keypair.download_from_s3(stackname)
-        local('chmod 400 -R %s' % path)
-        return path
-    except EnvironmentError as err:
-        LOG.info(err)
 
 #
 #
@@ -141,12 +103,109 @@ def remaster(stackname, new_master_stackname):
     bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
     return True
 
-# TODO: extract just the salt update part from `remaster`
 @debugtask
 @requires_aws_stack
 def update_salt(stackname):
-    current_master_stack = core.find_master_for_stack(stackname)
-    return remaster(stackname, current_master_stack)
+    "updates the installed version of salt to the version specified in the project file. see `docs/salt.md`"
+    # TODO: turn this into a decorator
+    import cfn
+    # start the machine if it's stopped
+    # you might also want to acquire a lock so alfred doesn't stop things or update things
+    cfn._check_want_to_be_running(stackname, 1)
+
+    # complete knowledge of a stack's particulars
+    context = context_handler.load_context(stackname)
+    if not context.get('ec2'):
+        LOG.info("no ec2 context: %s", stackname)
+        return
+
+    # 1. get the value of the desired version of salt from the project config file (pdata)
+    # 2. update the stack's current context and write that back to s3
+    # 3. update the subset of the context on the ec2 instance itself (buildvars)
+    # 4. run highstate
+    LOG.info("updating salt version in context file")
+    pdata = core.project_data_for_stackname(stackname)
+    context['project']['salt'] = pdata['salt']
+    context_handler.write_context(stackname, context)
+
+    LOG.info("updating buildvars on ec2 instance")
+    buildvars.refresh(stackname, context)
+
+    LOG.info("running highstate")
+    bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
+
+    return True
+
+# this is untested and probably unsafe/buggy
+#@debugtask
+def update_salt_everywhere():
+
+    # lsh, 2019-03-22: below code is copied from remaster_all, which *has* been used before
+
+    assert False, "this is meant for our future selves as an example in bulk updating the salt version on all minions"
+
+    # always update the master-server first
+    assert update_salt("master-server--2018-04-09-2"), "failed to update the master server"
+
+    ec2stacks = project.ec2_projects()
+
+    # populate with any projects we can dismiss immediately
+    ignore = [
+        'master-server',
+        'jats4r',
+    ]
+    ec2stacks = exsubdict(ec2stacks, ignore)
+
+    # specific sorting by project name. when you want to run certain projects before others
+    def sortbypname(n):
+        unknown = 9
+        porder = {
+            'observer': 1,
+            'elife-metrics': 2,
+            'lax': 3,
+            'basebox': 4,
+            'containers': 5,
+            'elife-dashboard': 6,
+            'elife-ink': 7
+        }
+        return porder.get(n, unknown)
+
+    # arbitrary sorting is disabled
+    # pname_list = sorted(ec2stacks.keys(), key=sortbypname)
+
+    # sorting alphabetically enabled
+    pname_list = sorted(ec2stacks.keys())
+
+    # TODO: might want to extend this to *all* stacks, regardless of whether they are up and running
+    active_stacks = core.active_stack_names(core.find_region())
+
+    # make a mapping of {pname: [stackname]}
+    # example: {"lax": ["lax--prod--1", "lax--prod--2", "lax--continuumtest--1", ...], "journal": [...]}
+    stack_idx = mkidx(lambda v: core.parse_stackname(v)[0], active_stacks)
+
+    # specific sorting of a project's stacks by environment. when certain environments should go first
+    def sortbyenv(n):
+        adhoc = 0 # do these first
+        order = {
+            'continuumtest': 1,
+            'ci': 2,
+            'end2end': 3,
+            'prod': 4, # update prod last
+        }
+        _, iid = core.parse_stackname(n)
+        return order.get(iid, adhoc)
+
+    for pname in pname_list: # if pname in stack_idx
+        if pname not in stack_idx:
+            LOG.warn("skipping, project not in list: %s", pname)
+            continue
+        project_stack_list = sorted(stack_idx[pname], key=sortbyenv)
+        LOG.info("%r instances: %s" % (pname, ", ".join(project_stack_list)))
+        try:
+            for stackname in project_stack_list:
+                update_salt(stackname)
+        except BaseException:
+            raise
 
 # TODO: extract just the salt update part from `remaster`
 @debugtask
