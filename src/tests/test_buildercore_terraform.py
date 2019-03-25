@@ -759,8 +759,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
                 },
                 'depends_on': [
-                    "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSClusterPolicy",
-                    "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSServicePolicy",
+                    "aws_iam_role_policy_attachment.kubernetes",
+                    "aws_iam_role_policy_attachment.ecs",
                 ]
             }
         )
@@ -787,16 +787,23 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-
-#resource "aws_iam_role_policy_attachment" "kubernetes--demo--AmazonEKSClusterPolicy" {
-#  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-#  role       = "${aws_iam_role.kubernetes--demo.name}"
-#}
-#
-#resource "aws_iam_role_policy_attachment" "kubernetes--demo--AmazonEKSServicePolicy" {
-#  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-#  role       = "${aws_iam_role.kubernetes--demo.name}"
-#}
+        self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'])
+        self.assertIn('kubernetes', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['kubernetes'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+                'role': "${aws_iam_role.eks_master.name}",
+            }
+        )
+        self.assertIn('ecs', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['ecs'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
+                'role': "${aws_iam_role.eks_master.name}",
+            }
+        )
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
