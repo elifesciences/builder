@@ -820,6 +820,7 @@ def init(stackname, context):
                 },
                 'aws': {
                     # TODO: pin version constraint
+                    'version': ">= %s" % '2.0.0',
                     'region': context['aws']['region'],
                 },
                 'google': {

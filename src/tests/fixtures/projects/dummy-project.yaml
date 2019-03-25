@@ -87,6 +87,7 @@ defaults:
         sns: []
         sqs: []
         s3: []
+        eks: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
