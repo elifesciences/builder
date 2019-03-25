@@ -724,6 +724,10 @@ def init(stackname, context):
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
                     'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
                 },
+                'aws': {
+                    # TODO: pin version constraint
+                    'region': context['aws']['region'],
+                },
                 'google': {
                     'version': "= %s" % '1.20.0',
                     'region': 'us-east4',
