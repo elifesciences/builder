@@ -569,9 +569,9 @@ def render_eks(context, template):
     if not context['eks']:
         return {}
 
-    template.populate_resource('aws_eks_cluster', 'demo', block={
+    template.populate_resource('aws_eks_cluster', 'main', block={
         'name': 'project-with-eks--%s' % context['instance_id'],
-        'role_arn': '${aws_iam_role.kubernetes--demo.arn}',
+        'role_arn': '${aws_iam_role.eks_master.arn}',
         'vpc_config': {
             'security_group_ids': ["${aws_security_group.kubernetes--demo.id}"],
             'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
@@ -582,7 +582,7 @@ def render_eks(context, template):
         ]
     })
 
-    template.populate_resource('aws_iam_role', 'demo', block={
+    template.populate_resource('aws_iam_role', 'eks_master', block={
         'name': 'kubernetes--demo--AmazonEKSMasterRole',
         'assume_role_policy': json.dumps({
             "Version": "2012-10-17",
