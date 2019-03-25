@@ -755,7 +755,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'name': 'project-with-eks--%s' % self.environment,
                 'role_arn': '${aws_iam_role.eks_master.arn}',
                 'vpc_config': {
-                    'security_group_ids': ["${aws_security_group.kubernetes--demo.id}"],
+                    'security_group_ids': ["${aws_security_group.kubernetes--%s.id}" % self.environment],
                     'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
                 },
                 'depends_on': [
@@ -767,7 +767,10 @@ class TestBuildercoreTerraform(base.BaseCase):
 
         self.assertIn('aws_iam_role', terraform_template['resource'])
         self.assertIn('eks_master', terraform_template['resource']['aws_iam_role'])
-        self.assertEqual(terraform_template['resource']['aws_iam_role']['eks_master']['name'], 'kubernetes--demo--AmazonEKSMasterRole')
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role']['eks_master']['name'],
+            'kubernetes--%s--AmazonEKSMasterRole' % self.environment
+        )
         self.assertEqual(
             json.loads(terraform_template['resource']['aws_iam_role']['eks_master']['assume_role_policy']),
             {
@@ -785,10 +788,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
 
-## TODO: rename to kubernetes--demo--master
-#resource "aws_iam_role" "kubernetes--demo" {
-#}
-#
 #resource "aws_iam_role_policy_attachment" "kubernetes--demo--AmazonEKSClusterPolicy" {
 #  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 #  role       = "${aws_iam_role.kubernetes--demo.name}"
