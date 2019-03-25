@@ -826,9 +826,9 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
         self.assertIn('aws_security_group_rule', terraform_template['resource'])
-        self.assertIn('eks_workers_to_master', terraform_template['resource']['aws_security_group_rule'])
+        self.assertIn('eks_worker_to_master', terraform_template['resource']['aws_security_group_rule'])
         self.assertEqual(
-            terraform_template['resource']['aws_security_group_rule']['eks_workers_to_master'],
+            terraform_template['resource']['aws_security_group_rule']['eks_worker_to_master'],
             {
                 'description': 'Allow pods to communicate with the cluster API Server',
                 'from_port': 443,
@@ -840,6 +840,66 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        self.assertIn('eks_worker', terraform_template['resource']['aws_security_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group']['eks_worker'],
+            {
+                'name': 'project-with-eks--%s--worker' % self.environment,
+                'description': 'Security group for all worker nodes in the cluster',
+                'vpc_id': 'vpc-78a2071d',
+                'egress': {
+                    'from_port': 0,
+                    'to_port': 0,
+                    'protocol': '-1',
+                    'cidr_blocks': ['0.0.0.0/0'],
+                },
+                'tags': {
+                    'Project': 'kubernetes--%s' % self.environment,
+                }
+            }
+        )
+
+        self.assertIn('eks_worker_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['eks_worker_to_worker'],
+            {
+                'description': 'Allow worker nodes to communicate with each other',
+                'from_port': 0,
+                'protocol': '-1',
+                'security_group_id': '${aws_security_group.eks_worker.id}',
+                'source_security_group_id': '${aws_security_group.eks_worker.id}',
+                'to_port': 65535,
+                'type': 'ingress',
+            }
+        )
+
+        self.assertIn('eks_master_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['eks_master_to_worker'],
+            {
+                'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
+                'from_port': 1025,
+                'protocol': 'tcp',
+                'security_group_id': '${aws_security_group.eks_worker.id}',
+                'source_security_group_id': '${aws_security_group.eks_master.id}',
+                'to_port': 65535,
+                'type': 'ingress',
+            }
+        )
+
+        self.assertIn('eks_public_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['eks_public_to_worker'],
+            {
+                'description': "Allow worker to expose NodePort services",
+                'from_port': 30000,
+                'protocol': 'tcp',
+                'security_group_id': '${aws_security_group.eks_worker.id}',
+                'to_port': 32767,
+                'cidr_blocks': ["0.0.0.0/0"],
+                'type': 'ingress',
+            }
+        )
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():

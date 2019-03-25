@@ -623,7 +623,7 @@ def render_eks(context, template):
         }
     })
 
-    template.populate_resource('aws_security_group_rule', 'eks_workers_to_master', block={
+    template.populate_resource('aws_security_group_rule', 'eks_worker_to_master', block={
         'description': 'Allow pods to communicate with the cluster API Server',
         'from_port': 443,
         'protocol': 'tcp',
@@ -633,7 +633,50 @@ def render_eks(context, template):
         'type': 'ingress',
     })
 
-    return template.to_dict()
+    template.populate_resource('aws_security_group', 'eks_worker', block={
+        'name': 'project-with-eks--%s--worker' % context['instance_id'],
+        'description': 'Security group for all worker nodes in the cluster',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
+        },
+        'tags': {
+            'Project': 'kubernetes--%s' % context['instance_id'],
+        }
+    })
+
+    template.populate_resource('aws_security_group_rule', 'eks_worker_to_worker', block={
+        'description': 'Allow worker nodes to communicate with each other',
+        'from_port': 0,
+        'protocol': '-1',
+        'security_group_id': '${aws_security_group.eks_worker.id}',
+        'source_security_group_id': '${aws_security_group.eks_worker.id}',
+        'to_port': 65535,
+        'type': 'ingress',
+    })
+
+    template.populate_resource('aws_security_group_rule', 'eks_master_to_worker', block={
+        'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
+        'from_port': 1025,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.eks_worker.id}',
+        'source_security_group_id': '${aws_security_group.eks_master.id}',
+        'to_port': 65535,
+        'type': 'ingress',
+    })
+
+    template.populate_resource('aws_security_group_rule', 'eks_public_to_worker', block={
+        'description': "Allow worker to expose NodePort services",
+        'from_port': 30000,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.eks_worker.id}',
+        'to_port': 32767,
+        'type': 'ingress',
+        'cidr_blocks': ["0.0.0.0/0"],
+    })
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
