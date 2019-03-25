@@ -96,7 +96,8 @@ def render(context):
     fn_list = [
         render_fastly,
         render_gcs,
-        render_bigquery
+        render_bigquery,
+        render_eks,
     ]
     for fn in fn_list:
         fn(context, template)
@@ -561,6 +562,25 @@ def render_bigquery(context, template):
         template.populate_data(DATA_TYPE_VAULT_GENERIC_SECRET, 'github', block={
             'path': VAULT_PATH_GITHUB,
         })
+
+    return template.to_dict()
+
+def render_eks(context, template):
+    if not context['eks']:
+        return {}
+
+    template.populate_resource('aws_eks_cluster', 'demo', block={
+        'name': 'project-with-eks--%s' % context['instance_id'],
+        'role_arn': '${aws_iam_role.kubernetes--demo.arn}',
+        'vpc_config': {
+            'security_group_ids': ["${aws_security_group.kubernetes--demo.id}"],
+            'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
+        },
+        'depends_on': [
+            "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSClusterPolicy",
+            "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSServicePolicy",
+        ]
+    })
 
     return template.to_dict()
 

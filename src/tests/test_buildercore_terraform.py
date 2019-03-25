@@ -740,6 +740,34 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+    def test_eks_cluster(self):
+        pname = 'project-with-eks'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertEqual(
+            terraform_template,
+            {
+                'resource': {
+                    'aws_eks_cluster': {
+                        'demo': {
+                            'name': 'project-with-eks--%s' % self.environment,
+                            'role_arn': '${aws_iam_role.kubernetes--demo.arn}',
+                            'vpc_config': {
+                                'security_group_ids': ["${aws_security_group.kubernetes--demo.id}"],
+                                'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
+                            },
+                            'depends_on': [
+                                "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSClusterPolicy",
+                                "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSServicePolicy",
+                            ]
+                        }
+                    },
+                }
+            }
+        )
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

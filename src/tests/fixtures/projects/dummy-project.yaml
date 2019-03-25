@@ -711,3 +711,12 @@ project-with-bigquery-remote-schemas:
                     local:
                         schema: ./src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}
+
+project-with-eks:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            subnet-id: subnet-a1a1a1a1 #
+            redundant-subnet-id: subnet-b2b2b2b2
