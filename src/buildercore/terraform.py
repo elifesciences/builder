@@ -574,7 +574,7 @@ def render_eks(context, template):
         'role_arn': '${aws_iam_role.eks_master.arn}',
         'vpc_config': {
             'security_group_ids': ["${aws_security_group.kubernetes--%s.id}" % context['instance_id']],
-            'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
+            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
         'depends_on': [
             "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSClusterPolicy",

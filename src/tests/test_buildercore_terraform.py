@@ -756,7 +756,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'role_arn': '${aws_iam_role.eks_master.arn}',
                 'vpc_config': {
                     'security_group_ids': ["${aws_security_group.kubernetes--%s.id}" % self.environment],
-                    'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
+                    'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
                 },
                 'depends_on': [
                     "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSClusterPolicy",
