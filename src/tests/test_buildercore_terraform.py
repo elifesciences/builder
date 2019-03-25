@@ -755,7 +755,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'name': 'project-with-eks--%s' % self.environment,
                 'role_arn': '${aws_iam_role.eks_master.arn}',
                 'vpc_config': {
-                    'security_group_ids': ["${aws_security_group.kubernetes--%s.id}" % self.environment],
+                    'security_group_ids': ['${aws_security_group.eks_master.id}'],
                     'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
                 },
                 'depends_on': [
@@ -804,6 +804,42 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'role': "${aws_iam_role.eks_master.name}",
             }
         )
+
+        self.assertIn('aws_security_group', terraform_template['resource'])
+        self.assertIn('eks_master', terraform_template['resource']['aws_security_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group']['eks_master'],
+            {
+                'name': 'project-with-eks--%s--master' % self.environment,
+                'description': 'Cluster communication with worker nodes',
+                'vpc_id': 'vpc-78a2071d',
+                'egress': {
+                    'from_port': 0,
+                    'to_port': 0,
+                    'protocol': '-1',
+                    'cidr_blocks': ['0.0.0.0/0'],
+                },
+                'tags': {
+                    'Project': 'kubernetes--%s' % self.environment,
+                }
+            }
+        )
+
+        self.assertIn('aws_security_group_rule', terraform_template['resource'])
+        self.assertIn('eks_workers_to_master', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['eks_workers_to_master'],
+            {
+                'description': 'Allow pods to communicate with the cluster API Server',
+                'from_port': 443,
+                'protocol': 'tcp',
+                'security_group_id': '${aws_security_group.eks_master.id}',
+                'source_security_group_id': '${aws_security_group.eks_worker.id}',
+                'to_port': 443,
+                'type': 'ingress',
+            }
+        )
+
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():

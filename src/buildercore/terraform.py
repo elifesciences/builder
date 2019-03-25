@@ -573,7 +573,7 @@ def render_eks(context, template):
         'name': 'project-with-eks--%s' % context['instance_id'],
         'role_arn': '${aws_iam_role.eks_master.arn}',
         'vpc_config': {
-            'security_group_ids': ["${aws_security_group.kubernetes--%s.id}" % context['instance_id']],
+            'security_group_ids': ['${aws_security_group.eks_master.id}'],
             'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
         'depends_on': [
@@ -606,6 +606,31 @@ def render_eks(context, template):
     template.populate_resource('aws_iam_role_policy_attachment', 'ecs', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
         'role': "${aws_iam_role.eks_master.name}",
+    })
+
+    template.populate_resource('aws_security_group', 'eks_master', block={
+        'name': 'project-with-eks--%s--master' % context['instance_id'],
+        'description': 'Cluster communication with worker nodes',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
+        },
+        'tags': {
+            'Project': 'kubernetes--%s' % context['instance_id'],
+        }
+    })
+
+    template.populate_resource('aws_security_group_rule', 'eks_workers_to_master', block={
+        'description': 'Allow pods to communicate with the cluster API Server',
+        'from_port': 443,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.eks_master.id}',
+        'source_security_group_id': '${aws_security_group.eks_worker.id}',
+        'to_port': 443,
+        'type': 'ingress',
     })
 
     return template.to_dict()
