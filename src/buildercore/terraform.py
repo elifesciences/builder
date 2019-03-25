@@ -582,6 +582,22 @@ def render_eks(context, template):
         ]
     })
 
+    template.populate_resource('aws_iam_role', 'demo', block={
+        'name': 'kubernetes--demo--AmazonEKSMasterRole',
+        'assume_role_policy': json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "eks.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }),
+    })
+
     return template.to_dict()
 
 def write_template(stackname, contents):

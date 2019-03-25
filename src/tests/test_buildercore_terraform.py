@@ -746,27 +746,58 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
 
+        self.assertIn('resource', terraform_template)
+        self.assertIn('aws_eks_cluster', terraform_template['resource'])
+        self.assertIn('demo', terraform_template['resource']['aws_eks_cluster'])
         self.assertEqual(
-            terraform_template,
+            terraform_template['resource']['aws_eks_cluster']['demo'],
             {
-                'resource': {
-                    'aws_eks_cluster': {
-                        'demo': {
-                            'name': 'project-with-eks--%s' % self.environment,
-                            'role_arn': '${aws_iam_role.kubernetes--demo.arn}',
-                            'vpc_config': {
-                                'security_group_ids': ["${aws_security_group.kubernetes--demo.id}"],
-                                'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
-                            },
-                            'depends_on': [
-                                "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSClusterPolicy",
-                                "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSServicePolicy",
-                            ]
-                        }
-                    },
-                }
+                'name': 'project-with-eks--%s' % self.environment,
+                'role_arn': '${aws_iam_role.kubernetes--demo.arn}',
+                'vpc_config': {
+                    'security_group_ids': ["${aws_security_group.kubernetes--demo.id}"],
+                    'subnet_ids': ["${var.subnet_id_1}", "${var.subnet_id_2}"],
+                },
+                'depends_on': [
+                    "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSClusterPolicy",
+                    "aws_iam_role_policy_attachment.kubernetes--demo--AmazonEKSServicePolicy",
+                ]
             }
         )
+
+        self.assertIn('aws_iam_role', terraform_template['resource'])
+        self.assertIn('demo', terraform_template['resource']['aws_iam_role'])
+        self.assertEqual(terraform_template['resource']['aws_iam_role']['demo']['name'], 'kubernetes--demo--AmazonEKSMasterRole')
+        self.assertEqual(
+            json.loads(terraform_template['resource']['aws_iam_role']['demo']['assume_role_policy']),
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "eks.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole"
+                    }
+                ]
+            }
+        )
+
+
+## TODO: rename to kubernetes--demo--master
+#resource "aws_iam_role" "kubernetes--demo" {
+#}
+#
+#resource "aws_iam_role_policy_attachment" "kubernetes--demo--AmazonEKSClusterPolicy" {
+#  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+#  role       = "${aws_iam_role.kubernetes--demo.name}"
+#}
+#
+#resource "aws_iam_role_policy_attachment" "kubernetes--demo--AmazonEKSServicePolicy" {
+#  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+#  role       = "${aws_iam_role.kubernetes--demo.name}"
+#}
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
