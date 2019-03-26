@@ -39,6 +39,7 @@
         "sns": [], 
         "sqs": [], 
         "s3": [], 
+        "eks": false,
         "subdomains": [], 
         "ports": [
             22

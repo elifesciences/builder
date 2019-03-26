@@ -55,6 +55,7 @@
         "sns": [], 
         "sqs": [], 
         "s3": [], 
+        "eks": false,
         "subdomains": [
             "official"
         ], 
@@ -112,6 +113,7 @@
             "sns": [], 
             "sqs": [], 
             "s3": [], 
+            "eks": false,
             "subdomains": [
                 "official"
             ], 
@@ -169,6 +171,7 @@
             "sns": [], 
             "sqs": [], 
             "s3": [], 
+            "eks": false,
             "subdomains": [
                 "official"
             ], 
