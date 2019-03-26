@@ -1407,8 +1407,6 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium
         ports:
             - 22
@@ -1437,7 +1435,6 @@ observer:
                 storage: 10
                 multi-az: true
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1239: 80
             1240: 8001
