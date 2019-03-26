@@ -766,7 +766,7 @@ def generate_delta(new_context):
     write_template(new_context['stackname'], new_template)
     return plan(new_context)
 
-@only_if('fastly', 'gcs', 'bigquery')
+@only_if('fastly', 'gcs', 'bigquery', 'eks')
 def bootstrap(stackname, context):
     plan(context)
     update(stackname, context)
@@ -820,7 +820,7 @@ def init(stackname, context):
                 },
                 'aws': {
                     # TODO: pin version constraint
-                    'version': ">= %s" % '2.0.0',
+                    'version': "= %s" % '2.3.0',
                     'region': context['aws']['region'],
                 },
                 'google': {
@@ -854,12 +854,13 @@ def update_template(stackname):
     context = load_context(stackname)
     update(stackname, context)
 
-@only_if('fastly', 'gcs', 'bigquery')
+# TODO: extract?
+@only_if('fastly', 'gcs', 'bigquery', 'eks')
 def update(stackname, context):
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
-@only_if('fastly', 'gcs', 'bigquery')
+@only_if('fastly', 'gcs', 'bigquery', 'eks')
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
