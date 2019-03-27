@@ -726,7 +726,7 @@ def render_eks(context, template):
         'associate_public_ip_address': True,
         'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
         'image_id': '${data.aws_ami.worker.id}',
-        'instance_type': 't2.small',
+        'instance_type': context['eks']['worker']['type'],
         'name_prefix': '%s--worker' % context['stackname'],
         'security_groups': ['${aws_security_group.worker.id}'],
         'user_data_base64': '${base64encode(local.worker-userdata)}',

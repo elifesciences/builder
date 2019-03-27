@@ -2124,3 +2124,5 @@ kubernetes-aws:
         eks:
             subnet-id: subnet-0c60bc3cb24a2816b
             redundant-subnet-id: subnet-009a04cbefc8e3661
+            worker:
+                type: t2.small    

@@ -721,3 +721,5 @@ project-with-eks:
         eks:
             subnet-id: subnet-a1a1a1a1
             redundant-subnet-id: subnet-b2b2b2b2
+            worker:
+                type: t2.small
