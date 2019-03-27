@@ -747,7 +747,13 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform_template = json.loads(terraform.render(context))
 
         self.assertIn('resource', terraform_template)
-        self.assertIn('aws_eks_cluster', terraform_template['resource'])
+        self.assertIn('aws_eks_cluster', terraform_template['resource'].keys())
+        self.assertIn('aws_iam_role', terraform_template['resource'].keys())
+        self.assertIn('aws_security_group', terraform_template['resource'].keys())
+        self.assertIn('aws_iam_instance_profile', terraform_template['resource'].keys())
+        self.assertIn('aws_security_group_rule', terraform_template['resource'].keys())
+        self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
+
         self.assertIn('main', terraform_template['resource']['aws_eks_cluster'])
         self.assertEqual(
             terraform_template['resource']['aws_eks_cluster']['main'],
@@ -765,7 +771,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('aws_iam_role', terraform_template['resource'])
         self.assertIn('eks_master', terraform_template['resource']['aws_iam_role'])
         self.assertEqual(
             terraform_template['resource']['aws_iam_role']['eks_master']['name'],
@@ -787,7 +792,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'])
         self.assertIn('master_kubernetes', terraform_template['resource']['aws_iam_role_policy_attachment'])
         self.assertEqual(
             terraform_template['resource']['aws_iam_role_policy_attachment']['master_kubernetes'],
@@ -805,7 +809,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('aws_security_group', terraform_template['resource'])
         self.assertIn('eks_master', terraform_template['resource']['aws_security_group'])
         self.assertEqual(
             terraform_template['resource']['aws_security_group']['eks_master'],
@@ -828,7 +831,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('aws_security_group_rule', terraform_template['resource'])
         self.assertIn('eks_worker_to_master', terraform_template['resource']['aws_security_group_rule'])
         self.assertEqual(
             terraform_template['resource']['aws_security_group_rule']['eks_worker_to_master'],
@@ -907,7 +909,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        # worker role 
         self.assertIn('eks_worker', terraform_template['resource']['aws_iam_role'])
         self.assertEqual(
             terraform_template['resource']['aws_iam_role']['eks_worker']['name'],
@@ -957,7 +958,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
 
-        self.assertIn('aws_iam_instance_profile', terraform_template['resource'].keys())
         self.assertIn('worker', terraform_template['resource']['aws_iam_instance_profile'])
         self.assertEqual(
             terraform_template['resource']['aws_iam_instance_profile']['worker'],
