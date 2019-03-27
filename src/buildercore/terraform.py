@@ -17,6 +17,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_TYPE_TEMPLATE = 'template_file'
+DATA_TYPE_AWS_AMI = 'aws_ami'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
@@ -711,6 +712,15 @@ def render_eks(context, template):
     })
 
     # TODO: Helm may need an additional policy
+
+    template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
+        'filter': {
+            'name': 'name',
+            'values': ['amazon-eks-node-v*'],
+        },
+        'most_recent': True,
+        'owners': [aws.ACCOUNT_EKS_AMI],
+    })
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"

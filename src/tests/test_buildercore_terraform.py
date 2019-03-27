@@ -746,13 +746,15 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
 
-        self.assertIn('resource', terraform_template)
+        self.assertIn('resource', terraform_template.keys())
         self.assertIn('aws_eks_cluster', terraform_template['resource'].keys())
         self.assertIn('aws_iam_role', terraform_template['resource'].keys())
         self.assertIn('aws_security_group', terraform_template['resource'].keys())
         self.assertIn('aws_iam_instance_profile', terraform_template['resource'].keys())
         self.assertIn('aws_security_group_rule', terraform_template['resource'].keys())
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
+        self.assertIn('data', terraform_template.keys())
+        self.assertIn('aws_ami', terraform_template['data'].keys())
 
         self.assertIn('main', terraform_template['resource']['aws_eks_cluster'])
         self.assertEqual(
@@ -957,7 +959,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-
         self.assertIn('worker', terraform_template['resource']['aws_iam_instance_profile'])
         self.assertEqual(
             terraform_template['resource']['aws_iam_instance_profile']['worker'],
@@ -967,7 +968,18 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        # worker autoscaling group
+        self.assertIn('worker', terraform_template['data']['aws_ami'])
+        self.assertEqual(
+            terraform_template['data']['aws_ami']['worker'],
+            {
+                'filter': {
+                    'name': 'name',
+                    'values': ['amazon-eks-node-v*'],
+                },
+                'most_recent': True,
+                'owners': ['602401143452'],
+            }
+        )
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():

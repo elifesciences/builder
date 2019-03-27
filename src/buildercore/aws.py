@@ -1,3 +1,5 @@
+ACCOUNT_EKS_AMI = '602401143452'
+
 def generic_tags(context, name=True):
     tags = {
         'Project': context['project_name'], # "journal"
