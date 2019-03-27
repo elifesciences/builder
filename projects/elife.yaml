@@ -695,8 +695,6 @@ elife-metrics:
     repo: https://github.com/elifesciences/elife-metrics
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 443
@@ -713,7 +711,6 @@ elife-metrics:
                 multi-az: true
                 storage: 10
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1240: 80
 
