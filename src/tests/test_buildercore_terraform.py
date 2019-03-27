@@ -923,7 +923,34 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        # worker role policy attachment
+        self.assertIn('worker_connect', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_connect'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+                'role': "${aws_iam_role.eks_worker.name}",
+            }
+        )
+
+        self.assertIn('worker_cni', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_cni'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+                'role': "${aws_iam_role.eks_worker.name}",
+            }
+        )
+
+        self.assertIn('worker_ecr', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_ecr'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+                'role': "${aws_iam_role.eks_worker.name}",
+            }
+        )
+
+
         # worker instance profile
         # worker autoscaling group
 

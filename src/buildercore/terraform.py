@@ -694,6 +694,21 @@ def render_eks(context, template):
         }),
     })
 
+    template.populate_resource('aws_iam_role_policy_attachment', 'worker_connect', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+        'role': "${aws_iam_role.eks_worker.name}",
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', 'worker_cni', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+        'role': "${aws_iam_role.eks_worker.name}",
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', 'worker_ecr', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+        'role': "${aws_iam_role.eks_worker.name}",
+    })
+
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
