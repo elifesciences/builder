@@ -759,8 +759,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
                 },
                 'depends_on': [
-                    "aws_iam_role_policy_attachment.kubernetes",
-                    "aws_iam_role_policy_attachment.ecs",
+                    "aws_iam_role_policy_attachment.master_kubernetes",
+                    "aws_iam_role_policy_attachment.master_ecs",
                 ]
             }
         )
@@ -788,17 +788,17 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'])
-        self.assertIn('kubernetes', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertIn('master_kubernetes', terraform_template['resource']['aws_iam_role_policy_attachment'])
         self.assertEqual(
-            terraform_template['resource']['aws_iam_role_policy_attachment']['kubernetes'],
+            terraform_template['resource']['aws_iam_role_policy_attachment']['master_kubernetes'],
             {
                 'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
                 'role': "${aws_iam_role.eks_master.name}",
             }
         )
-        self.assertIn('ecs', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertIn('master_ecs', terraform_template['resource']['aws_iam_role_policy_attachment'])
         self.assertEqual(
-            terraform_template['resource']['aws_iam_role_policy_attachment']['ecs'],
+            terraform_template['resource']['aws_iam_role_policy_attachment']['master_ecs'],
             {
                 'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
                 'role': "${aws_iam_role.eks_master.name}",

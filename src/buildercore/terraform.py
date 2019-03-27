@@ -577,8 +577,8 @@ def render_eks(context, template):
             'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
         'depends_on': [
-            "aws_iam_role_policy_attachment.kubernetes",
-            "aws_iam_role_policy_attachment.ecs",
+            "aws_iam_role_policy_attachment.master_kubernetes",
+            "aws_iam_role_policy_attachment.master_ecs",
         ]
     })
 
@@ -598,12 +598,12 @@ def render_eks(context, template):
         }),
     })
 
-    template.populate_resource('aws_iam_role_policy_attachment', 'kubernetes', block={
+    template.populate_resource('aws_iam_role_policy_attachment', 'master_kubernetes', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
         'role': "${aws_iam_role.eks_master.name}",
     })
 
-    template.populate_resource('aws_iam_role_policy_attachment', 'ecs', block={
+    template.populate_resource('aws_iam_role_policy_attachment', 'master_ecs', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
         'role': "${aws_iam_role.eks_master.name}",
     })
