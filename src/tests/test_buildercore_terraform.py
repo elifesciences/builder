@@ -769,7 +769,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('eks_master', terraform_template['resource']['aws_iam_role'])
         self.assertEqual(
             terraform_template['resource']['aws_iam_role']['eks_master']['name'],
-            'kubernetes--%s--AmazonEKSMasterRole' % self.environment
+            'project-with-eks--%s--AmazonEKSMasterRole' % self.environment
         )
         self.assertEqual(
             json.loads(terraform_template['resource']['aws_iam_role']['eks_master']['assume_role_policy']),
@@ -820,7 +820,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'cidr_blocks': ['0.0.0.0/0'],
                 },
                 'tags': {
-                    'Project': 'kubernetes--%s' % self.environment,
+                    'Project': 'project-with-eks--%s' % self.environment,
                 }
             }
         )
@@ -854,7 +854,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'cidr_blocks': ['0.0.0.0/0'],
                 },
                 'tags': {
-                    'Project': 'kubernetes--%s' % self.environment,
+                    'Project': 'project-with-eks--%s' % self.environment,
                 }
             }
         )
@@ -905,7 +905,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('eks_worker', terraform_template['resource']['aws_iam_role'])
         self.assertEqual(
             terraform_template['resource']['aws_iam_role']['eks_worker']['name'],
-            'kubernetes--%s--AmazonEKSWorkerRole' % self.environment
+            'project-with-eks--%s--AmazonEKSWorkerRole' % self.environment
         )
         self.assertEqual(
             json.loads(terraform_template['resource']['aws_iam_role']['eks_worker']['assume_role_policy']),
@@ -956,7 +956,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(
             terraform_template['resource']['aws_iam_instance_profile']['worker'],
             {
-                'name': 'kubernetes--%s--worker' % self.environment,
+                'name': 'project-with-eks--%s--worker' % self.environment,
                 'role': '${aws_iam_role.eks_worker.name}'
             }
         )

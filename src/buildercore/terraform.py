@@ -583,7 +583,7 @@ def render_eks(context, template):
     })
 
     template.populate_resource('aws_iam_role', 'eks_master', block={
-        'name': 'kubernetes--%s--AmazonEKSMasterRole' % context['instance_id'],
+        'name': '%s--AmazonEKSMasterRole' % context['stackname'],
         'assume_role_policy': json.dumps({
             "Version": "2012-10-17",
             "Statement": [
@@ -619,7 +619,7 @@ def render_eks(context, template):
             'cidr_blocks': ['0.0.0.0/0'],
         },
         'tags': {
-            'Project': 'kubernetes--%s' % context['instance_id'],
+            'Project': context['stackname'],
         }
     })
 
@@ -644,7 +644,7 @@ def render_eks(context, template):
             'cidr_blocks': ['0.0.0.0/0'],
         },
         'tags': {
-            'Project': 'kubernetes--%s' % context['instance_id'],
+            'Project': context['stackname'],
         }
     })
 
@@ -679,7 +679,7 @@ def render_eks(context, template):
     })
 
     template.populate_resource('aws_iam_role', 'eks_worker', block={
-        'name': 'kubernetes--%s--AmazonEKSWorkerRole' % context['instance_id'],
+        'name': '%s--AmazonEKSWorkerRole' % context['stackname'],
         'assume_role_policy': json.dumps({
             "Version": "2012-10-17",
             "Statement": [
@@ -710,7 +710,7 @@ def render_eks(context, template):
     })
 
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
-        'name': 'kubernetes--%s--worker' % context['instance_id'],
+        'name': '%s--worker' % context['stackname'],
         'role': '${aws_iam_role.eks_worker.name}'
     })
 
