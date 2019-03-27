@@ -678,6 +678,22 @@ def render_eks(context, template):
         'cidr_blocks': ["0.0.0.0/0"],
     })
 
+    template.populate_resource('aws_iam_role', 'eks_worker', block={
+        'name': 'kubernetes--%s--AmazonEKSWorkerRole' % context['instance_id'],
+        'assume_role_policy': json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "ec2.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }),
+    })
+
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
@@ -781,6 +797,7 @@ def plan(context):
     def _explain_plan(plan_filename):
         return_code, stdout, stderr = terraform.plan(plan_filename, input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
         ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)
+        # TODO: may not be empty if TF_LOG is used
         ensure(stderr == '', "Stderr of `terraform plan out.plan` should be empty:\n%s" % stderr)
         return _clean_stdout(stdout)
 

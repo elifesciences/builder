@@ -901,6 +901,32 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        # worker role 
+        self.assertIn('eks_worker', terraform_template['resource']['aws_iam_role'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role']['eks_worker']['name'],
+            'kubernetes--%s--AmazonEKSWorkerRole' % self.environment
+        )
+        self.assertEqual(
+            json.loads(terraform_template['resource']['aws_iam_role']['eks_worker']['assume_role_policy']),
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "ec2.amazonaws.com",
+                        },
+                        "Action": "sts:AssumeRole"
+                    }
+                ]
+            }
+        )
+
+        # worker role policy attachment
+        # worker instance profile
+        # worker autoscaling group
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(
