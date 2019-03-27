@@ -722,6 +722,19 @@ def render_eks(context, template):
         'owners': [aws.ACCOUNT_EKS_AMI],
     })
 
+    template.populate_resource('aws_launch_configuration', 'worker', block={
+        'associate_public_ip_address': True,
+        'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
+        'image_id': '${data.aws_ami.worker.id}',
+        'instance_type': 't2.small',
+        'name_prefix': '%s--worker' % context['stackname'],
+        'security_groups': ['${aws_security_group.worker.id}'],
+        'user_data_base64': '${base64encode(local.worker-userdata)}',
+        'lifecycle': {
+            'create_before_destroy': True,
+        },
+    })
+
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?

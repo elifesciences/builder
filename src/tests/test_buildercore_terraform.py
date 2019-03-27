@@ -753,6 +753,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('aws_iam_instance_profile', terraform_template['resource'].keys())
         self.assertIn('aws_security_group_rule', terraform_template['resource'].keys())
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
+        self.assertIn('aws_launch_configuration', terraform_template['resource'].keys())
         self.assertIn('data', terraform_template.keys())
         self.assertIn('aws_ami', terraform_template['data'].keys())
 
@@ -978,6 +979,23 @@ class TestBuildercoreTerraform(base.BaseCase):
                 },
                 'most_recent': True,
                 'owners': ['602401143452'],
+            }
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_launch_configuration'])
+        self.assertEqual(
+            terraform_template['resource']['aws_launch_configuration']['worker'],
+            {
+                'associate_public_ip_address': True,
+                'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
+                'image_id': '${data.aws_ami.worker.id}',
+                'instance_type': 't2.small',
+                'name_prefix': 'project-with-eks--%s--worker' % self.environment,
+                'security_groups': ['${aws_security_group.worker.id}'],
+                'user_data_base64': '${base64encode(local.worker-userdata)}',
+                'lifecycle': {
+                    'create_before_destroy': True,
+                },
             }
         )
 
