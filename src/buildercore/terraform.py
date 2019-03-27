@@ -5,7 +5,7 @@ from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p
-from . import fastly
+from . import aws, fastly
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.4.0',
@@ -618,9 +618,7 @@ def render_eks(context, template):
             'protocol': '-1',
             'cidr_blocks': ['0.0.0.0/0'],
         },
-        'tags': {
-            'Project': context['stackname'],
-        }
+        'tags': aws.generic_tags(context),
     })
 
     template.populate_resource('aws_security_group_rule', 'eks_worker_to_master', block={
@@ -643,9 +641,7 @@ def render_eks(context, template):
             'protocol': '-1',
             'cidr_blocks': ['0.0.0.0/0'],
         },
-        'tags': {
-            'Project': context['stackname'],
-        }
+        'tags': aws.generic_tags(context),
     })
 
     template.populate_resource('aws_security_group_rule', 'eks_worker_to_worker', block={

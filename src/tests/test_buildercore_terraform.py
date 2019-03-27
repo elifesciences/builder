@@ -820,7 +820,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'cidr_blocks': ['0.0.0.0/0'],
                 },
                 'tags': {
-                    'Project': 'project-with-eks--%s' % self.environment,
+                    'Project': 'project-with-eks',
+                    'Environment': self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
+                    'Name': 'project-with-eks--%s' % self.environment,
                 }
             }
         )
@@ -854,7 +857,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'cidr_blocks': ['0.0.0.0/0'],
                 },
                 'tags': {
-                    'Project': 'project-with-eks--%s' % self.environment,
+                    'Project': 'project-with-eks',
+                    'Environment': self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
+                    'Name': 'project-with-eks--%s' % self.environment,
                 }
             }
         )
