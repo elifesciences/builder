@@ -1706,6 +1706,8 @@ redirects:
             - 80
             - 443
     aws-alt:
+        s1804:
+            type: t2.small
         prod:
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
