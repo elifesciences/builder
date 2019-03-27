@@ -183,6 +183,20 @@ class TestTerraformTemplate(TestCase):
         overwrite = lambda: template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
+    def test_local_creation(self):
+        template = terraform.TerraformTemplate()
+        template.populate_local('answer', 42)
+        template.populate_local('incorrect', 43)
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'locals': OrderedDict([
+                    ('answer', 42),
+                    ('incorrect', 43),
+                ])
+            }
+        )
+
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
@@ -992,7 +1006,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'instance_type': 't2.small',
                 'name_prefix': 'project-with-eks--%s--worker' % self.environment,
                 'security_groups': ['${aws_security_group.worker.id}'],
-                'user_data_base64': '${base64encode(local.worker-userdata)}',
+                'user_data_base64': '${base64encode(local.worker_userdata)}',
                 'lifecycle': {
                     'create_before_destroy': True,
                 },

@@ -9,4 +9,3 @@ def generic_tags(context, name=True):
     # the name AWS Console uses to label an instance
     tags['Name'] = context['stackname'] # "journal--prod"
     return tags
-

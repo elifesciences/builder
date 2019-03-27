@@ -722,6 +722,16 @@ def render_eks(context, template):
         'owners': [aws.ACCOUNT_EKS_AMI],
     })
 
+    # EKS currently documents this required userdata for EKS worker nodes to
+    # properly configure Kubernetes applications on the EC2 instance.
+    # We utilize a Terraform local here to simplify Base64 encoding this
+    # information into the AutoScaling Launch Configuration.
+    # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+    template.populate_local('worker_userdata', """
+#!/bin/bash
+set -o xtrace
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.demo.endpoint}' --b64-cluster-ca '${aws_eks_cluster.demo.certificate_authority.0.data}' '${var.cluster-name}""")
+
     template.populate_resource('aws_launch_configuration', 'worker', block={
         'associate_public_ip_address': True,
         'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
@@ -729,7 +739,7 @@ def render_eks(context, template):
         'instance_type': context['eks']['worker']['type'],
         'name_prefix': '%s--worker' % context['stackname'],
         'security_groups': ['${aws_security_group.worker.id}'],
-        'user_data_base64': '${base64encode(local.worker-userdata)}',
+        'user_data_base64': '${base64encode(local.worker_userdata)}',
         'lifecycle': {
             'create_before_destroy': True,
         },
@@ -751,13 +761,16 @@ class TerraformTemplateError(RuntimeError):
     pass
 
 class TerraformTemplate():
-    def __init__(self, resource=None, data=None):
+    def __init__(self, resource=None, data=None, locals=None):
         if not resource:
             resource = OrderedDict()
         self.resource = resource
         if not data:
             data = OrderedDict()
         self.data = data
+        if not locals:
+            locals = OrderedDict()
+        self.locals = locals
 
     # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
     def populate_resource(self, type, name, key=None, block=None):
@@ -795,12 +808,17 @@ class TerraformTemplate():
             )
         self.data[type][name] = block
 
+    def populate_local(self, name, value):
+        self.locals[name] = value
+
     def to_dict(self):
         result = {}
         if self.resource:
             result['resource'] = self.resource
         if self.data:
             result['data'] = self.data
+        if self.locals:
+            result['locals'] = self.locals
         return result
 
 
