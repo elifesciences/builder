@@ -951,7 +951,16 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
 
-        # worker instance profile
+        self.assertIn('aws_iam_instance_profile', terraform_template['resource'].keys())
+        self.assertIn('worker', terraform_template['resource']['aws_iam_instance_profile'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_instance_profile']['worker'],
+            {
+                'name': 'kubernetes--%s--worker' % self.environment,
+                'role': '${aws_iam_role.eks_worker.name}'
+            }
+        )
+
         # worker autoscaling group
 
     def test_sanity_of_rendered_log_format(self):

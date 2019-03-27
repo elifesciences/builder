@@ -709,6 +709,13 @@ def render_eks(context, template):
         'role': "${aws_iam_role.eks_worker.name}",
     })
 
+    template.populate_resource('aws_iam_instance_profile', 'worker', block={
+        'name': 'kubernetes--%s--worker' % context['instance_id'],
+        'role': '${aws_iam_role.eks_worker.name}'
+    })
+
+    # TODO: Helm may need an additional policy
+
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
