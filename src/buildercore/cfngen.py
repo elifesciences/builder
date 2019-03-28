@@ -451,11 +451,7 @@ def build_context_bigquery(pdata, context):
     return context
 
 def build_context_eks(pdata, context):
-    if 'eks' not in pdata['aws']:
-        return context
-
-    if pdata['aws']['eks']:
-        # TODO: introduce templating if needed
+    if pdata['aws'].get('eks'):
         context['eks'] = pdata['aws']['eks']
 
     return context
