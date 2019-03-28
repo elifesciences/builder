@@ -778,18 +778,21 @@ set -o xtrace
     })
 
     template.populate_local('config_map_aws_auth', """
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: aws-auth
-  namespace: kube-system
-data:
-  mapRoles: |
-    - rolearn: ${aws_iam_role.worker.arn}
-      username: system:node:{{EC2PrivateDNSName}}
-      groups:
-        - system:bootstrappers
-        - system:nodes""")
+- rolearn: ${aws_iam_role.worker.arn}
+  username: system:node:{{EC2PrivateDNSName}}
+  groups:
+    - system:bootstrappers
+    - system:nodes""")
+
+    template.populate_resource('kubernetes_config_map', 'aws_auth_2', block={
+        'metadata': {
+            'name': 'aws-auth',
+            'namespace': 'kube-system',
+        },
+        'data': {
+            'mapRoles': '${local.config_map_aws_auth}',
+        }
+    })
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
@@ -934,7 +937,7 @@ def init(stackname, context):
         # TODO: possibly remove unused providers
         # Terraform already prunes them when running, but would
         # simplify the .cfn/terraform/$stackname/ files
-        fp.write(json.dumps({
+        providers = {
             'provider': {
                 'fastly': {
                     # exact version constraint
@@ -956,6 +959,14 @@ def init(stackname, context):
                     # exact version constraint
                     'version': "= %s" % PROVIDER_VAULT_VERSION,
                 },
+                # TODO: only add if context['eks']
+                'kubernetes': {
+                    'version': "= %s" % '1.5.2',
+                    'host': '${data.aws_eks_cluster.main.endpoint}',
+                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                    'token': '${data.aws_eks_cluster_auth.main.token}',
+                    'load_config_file': False,
+                },
             },
             'data': {
                 DATA_TYPE_VAULT_GENERIC_SECRET: {
@@ -968,8 +979,21 @@ def init(stackname, context):
                         'path': VAULT_PATH_GCP,
                     },
                 },
+                # TODO: only add if context['eks']
+                'aws_eks_cluster': {
+                    'main': {
+                        'name': context['stackname'],
+                    },
+                },
+                # TODO: only add if context['eks']
+                'aws_eks_cluster_auth': {
+                    'main': {
+                        'name': context['stackname'],
+                    },
+                },
             },
-        }))
+        }
+        fp.write(json.dumps(providers))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
