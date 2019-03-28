@@ -7,6 +7,9 @@ from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p
 from . import aws, fastly
 
+MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
+only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
+
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.4.0',
 PROVIDER_VAULT_VERSION = '1.3'
@@ -833,16 +836,16 @@ class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
 def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
-    # TODO: extract list of services in a constant to share with @only_if, at least
     # TODO: what if the new context doesn't have fastly, but it was there before?
-    if not new_context['fastly'] and not new_context['gcs'] and not new_context['bigquery'] and not new_context['eks']:
+    managed_services = [k for k in MANAGED_SERVICES if new_context[k]]
+    if not managed_services:
         return None
 
     new_template = render(new_context)
     write_template(new_context['stackname'], new_template)
     return plan(new_context)
 
-@only_if('fastly', 'gcs', 'bigquery', 'eks')
+@only_if_managed_services_are_present
 def bootstrap(stackname, context):
     plan(context)
     update(stackname, context)
@@ -931,13 +934,12 @@ def update_template(stackname):
     context = load_context(stackname)
     update(stackname, context)
 
-# TODO: extract?
-@only_if('fastly', 'gcs', 'bigquery', 'eks')
+@only_if_managed_services_are_present
 def update(stackname, context):
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
-@only_if('fastly', 'gcs', 'bigquery', 'eks')
+@only_if_managed_services_are_present
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
