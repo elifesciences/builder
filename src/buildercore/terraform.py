@@ -738,7 +738,7 @@ set -o xtrace
         'image_id': '${data.aws_ami.worker.id}',
         'instance_type': context['eks']['worker']['type'],
         'name_prefix': '%s--worker' % context['stackname'],
-        'security_groups': ['${aws_security_group.worker.id}'],
+        'security_groups': ['${aws_security_group.eks_worker.id}'],
         'user_data_base64': '${base64encode(local.worker_userdata)}',
         'lifecycle': {
             'create_before_destroy': True,

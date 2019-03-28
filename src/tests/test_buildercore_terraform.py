@@ -1005,7 +1005,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'image_id': '${data.aws_ami.worker.id}',
                 'instance_type': 't2.small',
                 'name_prefix': 'project-with-eks--%s--worker' % self.environment,
-                'security_groups': ['${aws_security_group.worker.id}'],
+                'security_groups': ['${aws_security_group.eks_worker.id}'],
                 'user_data_base64': '${base64encode(local.worker_userdata)}',
                 'lifecycle': {
                     'create_before_destroy': True,
