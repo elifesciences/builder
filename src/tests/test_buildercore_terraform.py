@@ -754,6 +754,44 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+    @patch('buildercore.terraform.Terraform')
+    def test_kubernetes_provider(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        stackname = 'project-with-eks--%s' % self.environment
+        context = cfngen.build_context('project-with-eks', stackname=stackname)
+        terraform.init(stackname, context)
+        providers = self._load_terraform_file(stackname, 'providers')
+        self.assertIn('kubernetes', providers['provider'].keys())
+        self.assertEqual(
+            {
+                'version': "= %s" % '1.5.2',
+                'host': '${data.aws_eks_cluster.main.endpoint}',
+                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                'token': '${data.aws_eks_cluster_auth.main.token}',
+                'load_config_file': False,
+            },
+            providers['provider']['kubernetes']
+        )
+        self.assertIn('aws_eks_cluster', providers['data'])
+        self.assertEqual(
+            {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            },
+            providers['data']['aws_eks_cluster']
+        )
+        self.assertIn('aws_eks_cluster_auth', providers['data'])
+        self.assertEqual(
+            {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            },
+            providers['data']['aws_eks_cluster_auth']
+        )
+
     def test_eks_cluster(self):
         pname = 'project-with-eks'
         iid = pname + '--%s' % self.environment

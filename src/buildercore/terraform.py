@@ -957,14 +957,6 @@ def init(stackname, context):
                     # exact version constraint
                     'version': "= %s" % PROVIDER_VAULT_VERSION,
                 },
-                # TODO: only add if context['eks']
-                'kubernetes': {
-                    'version': "= %s" % '1.5.2',
-                    'host': '${data.aws_eks_cluster.main.endpoint}',
-                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                    'token': '${data.aws_eks_cluster_auth.main.token}',
-                    'load_config_file': False,
-                },
             },
             'data': {
                 DATA_TYPE_VAULT_GENERIC_SECRET: {
@@ -977,20 +969,26 @@ def init(stackname, context):
                         'path': VAULT_PATH_GCP,
                     },
                 },
-                # TODO: only add if context['eks']
-                'aws_eks_cluster': {
-                    'main': {
-                        'name': '${aws_eks_cluster.main.name}',
-                    },
-                },
-                # TODO: only add if context['eks']
-                'aws_eks_cluster_auth': {
-                    'main': {
-                        'name': '${aws_eks_cluster.main.name}',
-                    },
-                },
             },
         }
+        if context.get('eks'):
+            providers['provider']['kubernetes'] = {
+                'version': "= %s" % '1.5.2',
+                'host': '${data.aws_eks_cluster.main.endpoint}',
+                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                'token': '${data.aws_eks_cluster_auth.main.token}',
+                'load_config_file': False,
+            }
+            providers['data']['aws_eks_cluster'] = {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            }
+            providers['data']['aws_eks_cluster_auth'] = {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            }
         fp.write(json.dumps(providers))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
