@@ -996,6 +996,9 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        self.assertIn('worker_userdata', terraform_template['locals'])
+        self.assertIn('/bin/bash', terraform_template['locals']['worker_userdata'])
+
         self.assertIn('worker', terraform_template['resource']['aws_launch_configuration'])
         self.assertEqual(
             terraform_template['resource']['aws_launch_configuration']['worker'],

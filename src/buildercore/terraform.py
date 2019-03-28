@@ -571,7 +571,7 @@ def render_eks(context, template):
         return {}
 
     template.populate_resource('aws_eks_cluster', 'main', block={
-        'name': 'project-with-eks--%s' % context['instance_id'],
+        'name': context['stackname'],
         'role_arn': '${aws_iam_role.eks_master.arn}',
         'vpc_config': {
             'security_group_ids': ['${aws_security_group.eks_master.id}'],
@@ -730,7 +730,7 @@ def render_eks(context, template):
     template.populate_local('worker_userdata', """
 #!/bin/bash
 set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.demo.endpoint}' --b64-cluster-ca '${aws_eks_cluster.demo.certificate_authority.0.data}' '${var.cluster-name}""")
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
 
     template.populate_resource('aws_launch_configuration', 'worker', block={
         'associate_public_ip_address': True,
