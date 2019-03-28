@@ -132,7 +132,7 @@ defaults:
             redundant-subnet-id: subnet-009a04cbefc8e3661
             worker:
                 type: t2.small
-                desired-capacity: 3
+                desired-capacity: 1
                 min-size: 1
                 max-size: 3
         cloudfront: 
