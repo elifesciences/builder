@@ -784,15 +784,15 @@ set -o xtrace
     - system:bootstrappers
     - system:nodes""")
 
-    template.populate_resource('kubernetes_config_map', 'aws_auth_2', block={
-        'metadata': {
-            'name': 'aws-auth',
-            'namespace': 'kube-system',
-        },
-        'data': {
-            'mapRoles': '${local.config_map_aws_auth}',
-        }
-    })
+    #template.populate_resource('kubernetes_config_map', 'aws_auth_2', block={
+    #    'metadata': {
+    #        'name': 'aws-auth',
+    #        'namespace': 'kube-system',
+    #    },
+    #    'data': {
+    #        'mapRoles': '${local.config_map_aws_auth}',
+    #    }
+    #})
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"

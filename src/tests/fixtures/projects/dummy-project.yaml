@@ -87,7 +87,15 @@ defaults:
         sns: []
         sqs: []
         s3: []
-        eks: false
+        eks:
+            # eks defaults only used if a 'eks' section present in project
+            subnet-id: subnet-a1a1a1a1
+            redundant-subnet-id: subnet-b2b2b2b2
+            worker:
+                type: t2.small
+                desired-capacity: 3
+                min-size: 1
+                max-size: 3
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []

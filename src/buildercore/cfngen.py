@@ -111,6 +111,7 @@ def build_context(pname, **more_context):
 
         'ec2': False,
         's3': {},
+        'eks': False,
         'elb': False,
         'sns': [],
         'sqs': {},
@@ -450,10 +451,13 @@ def build_context_bigquery(pdata, context):
     return context
 
 def build_context_eks(pdata, context):
-    context['eks'] = False
+    if 'eks' not in pdata['aws']:
+        return context
+
     if pdata['aws']['eks']:
         # TODO: introduce templating if needed
         context['eks'] = pdata['aws']['eks']
+
     return context
 
 def complete_domain(host, default_main):

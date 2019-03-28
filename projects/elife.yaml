@@ -126,8 +126,15 @@ defaults:
         #       deletion-policy: delete|retain
         #       encryption: false
         s3: {}
-        # TODO: sample configuration, commented out or not
-        eks: false
+        eks:
+            # eks defaults only used if a 'eks' section present in project
+            subnet-id: subnet-0c60bc3cb24a2816b
+            redundant-subnet-id: subnet-009a04cbefc8e3661
+            worker:
+                type: t2.small
+                desired-capacity: 3
+                min-size: 1
+                max-size: 3
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -2122,7 +2129,5 @@ kubernetes-aws:
     aws:
         ec2: false
         eks:
-            subnet-id: subnet-0c60bc3cb24a2816b
-            redundant-subnet-id: subnet-009a04cbefc8e3661
             worker:
                 type: t2.small    
