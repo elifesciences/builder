@@ -577,6 +577,8 @@ def render_eks(context, template):
     _render_eks_workers(context, template)
 
 def _render_eks_master(context, template):
+    # all from https://learn.hashicorp.com/terraform/aws/eks-intro
+
     template.populate_resource('aws_eks_cluster', 'main', block={
         'name': context['stackname'],
         'role_arn': '${aws_iam_role.master.arn}',
@@ -640,6 +642,8 @@ def _render_eks_workers(context, template):
         'type': 'ingress',
     })
 
+    security_group_tags = aws.generic_tags(context)
+    security_group_tags['kubernetes.io/cluster/%s'] = 'owned'
     template.populate_resource('aws_security_group', 'worker', block={
         'name': 'project-with-eks--%s--worker' % context['instance_id'],
         'description': 'Security group for all worker nodes in the cluster',
@@ -650,7 +654,7 @@ def _render_eks_workers(context, template):
             'protocol': '-1',
             'cidr_blocks': ['0.0.0.0/0'],
         },
-        'tags': aws.generic_tags(context),
+        'tags': security_group_tags,
     })
 
     template.populate_resource('aws_security_group_rule', 'worker_to_worker', block={
