@@ -833,6 +833,7 @@ class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
 def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
+    # TODO: extract list of services in a constant to share with @only_if, at least
     # TODO: what if the new context doesn't have fastly, but it was there before?
     if not new_context['fastly'] and not new_context['gcs'] and not new_context['bigquery'] and not new_context['eks']:
         return None
