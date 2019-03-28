@@ -982,13 +982,13 @@ def init(stackname, context):
                 # TODO: only add if context['eks']
                 'aws_eks_cluster': {
                     'main': {
-                        'name': context['stackname'],
+                        'name': '${aws_eks_cluster.main.name}',
                     },
                 },
                 # TODO: only add if context['eks']
                 'aws_eks_cluster_auth': {
                     'main': {
-                        'name': context['stackname'],
+                        'name': '${aws_eks_cluster.main.name}',
                     },
                 },
             },
