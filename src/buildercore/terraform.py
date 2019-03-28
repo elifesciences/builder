@@ -724,13 +724,10 @@ def _render_eks_workers(context, template):
         'role': '${aws_iam_role.worker.name}'
     })
 
-    # TODO: Helm may need an additional policy
-
     template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
         'filter': {
             'name': 'name',
-            # TODO: parameterize version and pass it to aws_eks_cluster
-            'values': ['amazon-eks-node-1.11-v*'],
+            'values': ['amazon-eks-node-%s-v*' % context['eks']['version']],
         },
         'most_recent': True,
         'owners': [aws.ACCOUNT_EKS_AMI],
@@ -947,7 +944,6 @@ def init(stackname, context):
                     'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
                 },
                 'aws': {
-                    # TODO: pin version constraint
                     'version': "= %s" % '2.3.0',
                     'region': context['aws']['region'],
                 },
