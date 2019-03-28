@@ -128,6 +128,8 @@ defaults:
         s3: {}
         eks:
             # eks defaults only used if a 'eks' section present in project
+            #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
+            version: 1.11
             subnet-id: subnet-0c60bc3cb24a2816b
             redundant-subnet-id: subnet-009a04cbefc8e3661
             worker:

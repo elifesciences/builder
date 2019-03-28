@@ -769,6 +769,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
         self.assertIn('aws_launch_configuration', terraform_template['resource'].keys())
         self.assertIn('aws_autoscaling_group', terraform_template['resource'].keys())
+        self.assertIn('kubernetes_config_map', terraform_template['resource'].keys())
         self.assertIn('data', terraform_template.keys())
         self.assertIn('aws_ami', terraform_template['data'].keys())
 
@@ -777,6 +778,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_eks_cluster']['main'],
             {
                 'name': 'project-with-eks--%s' % self.environment,
+                'version': '1.11',
                 'role_arn': '${aws_iam_role.master.arn}',
                 'vpc_config': {
                     'security_group_ids': ['${aws_security_group.master.id}'],
@@ -991,7 +993,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'filter': {
                     'name': 'name',
-                    'values': ['amazon-eks-node-v*'],
+                    'values': ['amazon-eks-node-1.11-v*'],
                 },
                 'most_recent': True,
                 'owners': ['602401143452'],
