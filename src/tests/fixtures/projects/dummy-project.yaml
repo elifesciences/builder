@@ -723,3 +723,6 @@ project-with-eks:
             redundant-subnet-id: subnet-b2b2b2b2
             worker:
                 type: t2.small
+                desired-capacity: 3
+                min-size: 1
+                max-size: 3

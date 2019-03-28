@@ -768,6 +768,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('aws_security_group_rule', terraform_template['resource'].keys())
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
         self.assertIn('aws_launch_configuration', terraform_template['resource'].keys())
+        self.assertIn('aws_autoscaling_group', terraform_template['resource'].keys())
         self.assertIn('data', terraform_template.keys())
         self.assertIn('aws_ami', terraform_template['data'].keys())
 
@@ -1013,6 +1014,46 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'lifecycle': {
                     'create_before_destroy': True,
                 },
+            }
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_autoscaling_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_autoscaling_group']['worker'],
+            {
+                'name': "project-with-eks--%s--worker" % self.environment,
+                'launch_configuration': "${aws_launch_configuration.worker.id}",
+                'min_size': 1,
+                'max_size': 3,
+                'desired_capacity': 3,
+                'vpc_zone_identifier': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
+                'tags': [
+                    {
+                        'key': 'Project',
+                        'value': 'project-with-eks',
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'Environment',
+                        'value': self.environment,
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'Cluster',
+                        'value': 'project-with-eks--%s' % self.environment,
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'Name',
+                        'value': 'project-with-eks--%s' % self.environment,
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'kubernetes.io/cluster/project-with-eks--%s' % self.environment,
+                        'value': 'owned',
+                        'propagate_at_launch': True,
+                    },
+                ],
             }
         )
 

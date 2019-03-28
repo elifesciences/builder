@@ -753,6 +753,26 @@ set -o xtrace
         },
     })
 
+    autoscaling_group_tags = [{
+            'key': k, 
+            'value': v,
+            'propagate_at_launch': True,
+    } for (k, v) in aws.generic_tags(context).items()]
+    autoscaling_group_tags.append({
+        'key': 'kubernetes.io/cluster/%s' % context['stackname'],
+        'value': 'owned',
+        'propagate_at_launch': True,
+    })
+    template.populate_resource('aws_autoscaling_group', 'worker', block={
+        'name': '%s--worker' % context['stackname'],
+        'launch_configuration': '${aws_launch_configuration.worker.id}',
+        'min_size': context['eks']['worker'].get('min-size', 1),
+        'max_size': context['eks']['worker'].get('max-size', 3),
+        'desired_capacity': context['eks']['worker'].get('desired-capacity', 1),
+        'vpc_zone_identifier': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+        'tags': autoscaling_group_tags,
+    })
+
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
