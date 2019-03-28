@@ -581,6 +581,8 @@ def _render_eks_master(context, template):
 
     template.populate_resource('aws_eks_cluster', 'main', block={
         'name': context['stackname'],
+        # TODO: parameterize
+        'version': '1.11',
         'role_arn': '${aws_iam_role.master.arn}',
         'vpc_config': {
             'security_group_ids': ['${aws_security_group.master.id}'],
@@ -728,7 +730,8 @@ def _render_eks_workers(context, template):
     template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
         'filter': {
             'name': 'name',
-            'values': ['amazon-eks-node-v*'],
+            # TODO: parameterize version and pass it to aws_eks_cluster
+            'values': ['amazon-eks-node-1.11-v*'],
         },
         'most_recent': True,
         'owners': [aws.ACCOUNT_EKS_AMI],
