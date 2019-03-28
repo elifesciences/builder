@@ -834,7 +834,7 @@ def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
     # TODO: what if the new context doesn't have fastly, but it was there before?
-    if not new_context['fastly'] and not new_context['gcs'] and not new_context['bigquery']:
+    if not new_context['fastly'] and not new_context['gcs'] and not new_context['bigquery'] and not new_context['eks']:
         return None
 
     new_template = render(new_context)
