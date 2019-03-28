@@ -776,9 +776,9 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_eks_cluster']['main'],
             {
                 'name': 'project-with-eks--%s' % self.environment,
-                'role_arn': '${aws_iam_role.eks_master.arn}',
+                'role_arn': '${aws_iam_role.master.arn}',
                 'vpc_config': {
-                    'security_group_ids': ['${aws_security_group.eks_master.id}'],
+                    'security_group_ids': ['${aws_security_group.master.id}'],
                     'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
                 },
                 'depends_on': [
@@ -788,13 +788,13 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('eks_master', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('master', terraform_template['resource']['aws_iam_role'])
         self.assertEqual(
-            terraform_template['resource']['aws_iam_role']['eks_master']['name'],
+            terraform_template['resource']['aws_iam_role']['master']['name'],
             'project-with-eks--%s--AmazonEKSMasterRole' % self.environment
         )
         self.assertEqual(
-            json.loads(terraform_template['resource']['aws_iam_role']['eks_master']['assume_role_policy']),
+            json.loads(terraform_template['resource']['aws_iam_role']['master']['assume_role_policy']),
             {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -814,7 +814,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['master_kubernetes'],
             {
                 'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
-                'role': "${aws_iam_role.eks_master.name}",
+                'role': "${aws_iam_role.master.name}",
             }
         )
         self.assertIn('master_ecs', terraform_template['resource']['aws_iam_role_policy_attachment'])
@@ -822,13 +822,13 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['master_ecs'],
             {
                 'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
-                'role': "${aws_iam_role.eks_master.name}",
+                'role': "${aws_iam_role.master.name}",
             }
         )
 
-        self.assertIn('eks_master', terraform_template['resource']['aws_security_group'])
+        self.assertIn('master', terraform_template['resource']['aws_security_group'])
         self.assertEqual(
-            terraform_template['resource']['aws_security_group']['eks_master'],
+            terraform_template['resource']['aws_security_group']['master'],
             {
                 'name': 'project-with-eks--%s--master' % self.environment,
                 'description': 'Cluster communication with worker nodes',
@@ -848,23 +848,23 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('eks_worker_to_master', terraform_template['resource']['aws_security_group_rule'])
+        self.assertIn('worker_to_master', terraform_template['resource']['aws_security_group_rule'])
         self.assertEqual(
-            terraform_template['resource']['aws_security_group_rule']['eks_worker_to_master'],
+            terraform_template['resource']['aws_security_group_rule']['worker_to_master'],
             {
                 'description': 'Allow pods to communicate with the cluster API Server',
                 'from_port': 443,
                 'protocol': 'tcp',
-                'security_group_id': '${aws_security_group.eks_master.id}',
-                'source_security_group_id': '${aws_security_group.eks_worker.id}',
+                'security_group_id': '${aws_security_group.master.id}',
+                'source_security_group_id': '${aws_security_group.worker.id}',
                 'to_port': 443,
                 'type': 'ingress',
             }
         )
 
-        self.assertIn('eks_worker', terraform_template['resource']['aws_security_group'])
+        self.assertIn('worker', terraform_template['resource']['aws_security_group'])
         self.assertEqual(
-            terraform_template['resource']['aws_security_group']['eks_worker'],
+            terraform_template['resource']['aws_security_group']['worker'],
             {
                 'name': 'project-with-eks--%s--worker' % self.environment,
                 'description': 'Security group for all worker nodes in the cluster',
@@ -884,29 +884,29 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('eks_worker_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertIn('worker_to_worker', terraform_template['resource']['aws_security_group_rule'])
         self.assertEqual(
-            terraform_template['resource']['aws_security_group_rule']['eks_worker_to_worker'],
+            terraform_template['resource']['aws_security_group_rule']['worker_to_worker'],
             {
                 'description': 'Allow worker nodes to communicate with each other',
                 'from_port': 0,
                 'protocol': '-1',
-                'security_group_id': '${aws_security_group.eks_worker.id}',
-                'source_security_group_id': '${aws_security_group.eks_worker.id}',
+                'security_group_id': '${aws_security_group.worker.id}',
+                'source_security_group_id': '${aws_security_group.worker.id}',
                 'to_port': 65535,
                 'type': 'ingress',
             }
         )
 
-        self.assertIn('eks_master_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertIn('master_to_worker', terraform_template['resource']['aws_security_group_rule'])
         self.assertEqual(
-            terraform_template['resource']['aws_security_group_rule']['eks_master_to_worker'],
+            terraform_template['resource']['aws_security_group_rule']['master_to_worker'],
             {
                 'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
                 'from_port': 1025,
                 'protocol': 'tcp',
-                'security_group_id': '${aws_security_group.eks_worker.id}',
-                'source_security_group_id': '${aws_security_group.eks_master.id}',
+                'security_group_id': '${aws_security_group.worker.id}',
+                'source_security_group_id': '${aws_security_group.master.id}',
                 'to_port': 65535,
                 'type': 'ingress',
             }
@@ -919,20 +919,20 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'description': "Allow worker to expose NodePort services",
                 'from_port': 30000,
                 'protocol': 'tcp',
-                'security_group_id': '${aws_security_group.eks_worker.id}',
+                'security_group_id': '${aws_security_group.worker.id}',
                 'to_port': 32767,
                 'cidr_blocks': ["0.0.0.0/0"],
                 'type': 'ingress',
             }
         )
 
-        self.assertIn('eks_worker', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('worker', terraform_template['resource']['aws_iam_role'])
         self.assertEqual(
-            terraform_template['resource']['aws_iam_role']['eks_worker']['name'],
+            terraform_template['resource']['aws_iam_role']['worker']['name'],
             'project-with-eks--%s--AmazonEKSWorkerRole' % self.environment
         )
         self.assertEqual(
-            json.loads(terraform_template['resource']['aws_iam_role']['eks_worker']['assume_role_policy']),
+            json.loads(terraform_template['resource']['aws_iam_role']['worker']['assume_role_policy']),
             {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -952,7 +952,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_connect'],
             {
                 'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
-                'role': "${aws_iam_role.eks_worker.name}",
+                'role': "${aws_iam_role.worker.name}",
             }
         )
 
@@ -961,7 +961,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_cni'],
             {
                 'policy_arn': "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
-                'role': "${aws_iam_role.eks_worker.name}",
+                'role': "${aws_iam_role.worker.name}",
             }
         )
 
@@ -970,7 +970,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_ecr'],
             {
                 'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-                'role': "${aws_iam_role.eks_worker.name}",
+                'role': "${aws_iam_role.worker.name}",
             }
         )
 
@@ -979,7 +979,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_instance_profile']['worker'],
             {
                 'name': 'project-with-eks--%s--worker' % self.environment,
-                'role': '${aws_iam_role.eks_worker.name}'
+                'role': '${aws_iam_role.worker.name}'
             }
         )
 
@@ -1008,7 +1008,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'image_id': '${data.aws_ami.worker.id}',
                 'instance_type': 't2.small',
                 'name_prefix': 'project-with-eks--%s--worker' % self.environment,
-                'security_groups': ['${aws_security_group.eks_worker.id}'],
+                'security_groups': ['${aws_security_group.worker.id}'],
                 'user_data_base64': '${base64encode(local.worker_userdata)}',
                 'lifecycle': {
                     'create_before_destroy': True,

@@ -572,9 +572,9 @@ def render_eks(context, template):
 
     template.populate_resource('aws_eks_cluster', 'main', block={
         'name': context['stackname'],
-        'role_arn': '${aws_iam_role.eks_master.arn}',
+        'role_arn': '${aws_iam_role.master.arn}',
         'vpc_config': {
-            'security_group_ids': ['${aws_security_group.eks_master.id}'],
+            'security_group_ids': ['${aws_security_group.master.id}'],
             'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
         'depends_on': [
@@ -583,7 +583,7 @@ def render_eks(context, template):
         ]
     })
 
-    template.populate_resource('aws_iam_role', 'eks_master', block={
+    template.populate_resource('aws_iam_role', 'master', block={
         'name': '%s--AmazonEKSMasterRole' % context['stackname'],
         'assume_role_policy': json.dumps({
             "Version": "2012-10-17",
@@ -601,15 +601,15 @@ def render_eks(context, template):
 
     template.populate_resource('aws_iam_role_policy_attachment', 'master_kubernetes', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
-        'role': "${aws_iam_role.eks_master.name}",
+        'role': "${aws_iam_role.master.name}",
     })
 
     template.populate_resource('aws_iam_role_policy_attachment', 'master_ecs', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
-        'role': "${aws_iam_role.eks_master.name}",
+        'role': "${aws_iam_role.master.name}",
     })
 
-    template.populate_resource('aws_security_group', 'eks_master', block={
+    template.populate_resource('aws_security_group', 'master', block={
         'name': 'project-with-eks--%s--master' % context['instance_id'],
         'description': 'Cluster communication with worker nodes',
         'vpc_id': context['aws']['vpc-id'],
@@ -622,17 +622,17 @@ def render_eks(context, template):
         'tags': aws.generic_tags(context),
     })
 
-    template.populate_resource('aws_security_group_rule', 'eks_worker_to_master', block={
+    template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
         'description': 'Allow pods to communicate with the cluster API Server',
         'from_port': 443,
         'protocol': 'tcp',
-        'security_group_id': '${aws_security_group.eks_master.id}',
-        'source_security_group_id': '${aws_security_group.eks_worker.id}',
+        'security_group_id': '${aws_security_group.master.id}',
+        'source_security_group_id': '${aws_security_group.worker.id}',
         'to_port': 443,
         'type': 'ingress',
     })
 
-    template.populate_resource('aws_security_group', 'eks_worker', block={
+    template.populate_resource('aws_security_group', 'worker', block={
         'name': 'project-with-eks--%s--worker' % context['instance_id'],
         'description': 'Security group for all worker nodes in the cluster',
         'vpc_id': context['aws']['vpc-id'],
@@ -645,22 +645,22 @@ def render_eks(context, template):
         'tags': aws.generic_tags(context),
     })
 
-    template.populate_resource('aws_security_group_rule', 'eks_worker_to_worker', block={
+    template.populate_resource('aws_security_group_rule', 'worker_to_worker', block={
         'description': 'Allow worker nodes to communicate with each other',
         'from_port': 0,
         'protocol': '-1',
-        'security_group_id': '${aws_security_group.eks_worker.id}',
-        'source_security_group_id': '${aws_security_group.eks_worker.id}',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'source_security_group_id': '${aws_security_group.worker.id}',
         'to_port': 65535,
         'type': 'ingress',
     })
 
-    template.populate_resource('aws_security_group_rule', 'eks_master_to_worker', block={
+    template.populate_resource('aws_security_group_rule', 'master_to_worker', block={
         'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
         'from_port': 1025,
         'protocol': 'tcp',
-        'security_group_id': '${aws_security_group.eks_worker.id}',
-        'source_security_group_id': '${aws_security_group.eks_master.id}',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'source_security_group_id': '${aws_security_group.master.id}',
         'to_port': 65535,
         'type': 'ingress',
     })
@@ -669,13 +669,13 @@ def render_eks(context, template):
         'description': "Allow worker to expose NodePort services",
         'from_port': 30000,
         'protocol': 'tcp',
-        'security_group_id': '${aws_security_group.eks_worker.id}',
+        'security_group_id': '${aws_security_group.worker.id}',
         'to_port': 32767,
         'type': 'ingress',
         'cidr_blocks': ["0.0.0.0/0"],
     })
 
-    template.populate_resource('aws_iam_role', 'eks_worker', block={
+    template.populate_resource('aws_iam_role', 'worker', block={
         'name': '%s--AmazonEKSWorkerRole' % context['stackname'],
         'assume_role_policy': json.dumps({
             "Version": "2012-10-17",
@@ -693,22 +693,22 @@ def render_eks(context, template):
 
     template.populate_resource('aws_iam_role_policy_attachment', 'worker_connect', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
-        'role': "${aws_iam_role.eks_worker.name}",
+        'role': "${aws_iam_role.worker.name}",
     })
 
     template.populate_resource('aws_iam_role_policy_attachment', 'worker_cni', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
-        'role': "${aws_iam_role.eks_worker.name}",
+        'role': "${aws_iam_role.worker.name}",
     })
 
     template.populate_resource('aws_iam_role_policy_attachment', 'worker_ecr', block={
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-        'role': "${aws_iam_role.eks_worker.name}",
+        'role': "${aws_iam_role.worker.name}",
     })
 
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
         'name': '%s--worker' % context['stackname'],
-        'role': '${aws_iam_role.eks_worker.name}'
+        'role': '${aws_iam_role.worker.name}'
     })
 
     # TODO: Helm may need an additional policy
@@ -738,7 +738,7 @@ set -o xtrace
         'image_id': '${data.aws_ami.worker.id}',
         'instance_type': context['eks']['worker']['type'],
         'name_prefix': '%s--worker' % context['stackname'],
-        'security_groups': ['${aws_security_group.eks_worker.id}'],
+        'security_groups': ['${aws_security_group.worker.id}'],
         'user_data_base64': '${base64encode(local.worker_userdata)}',
         'lifecycle': {
             'create_before_destroy': True,
