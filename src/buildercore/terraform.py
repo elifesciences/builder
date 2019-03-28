@@ -581,8 +581,7 @@ def _render_eks_master(context, template):
 
     template.populate_resource('aws_eks_cluster', 'main', block={
         'name': context['stackname'],
-        # TODO: parameterize
-        'version': '1.11',
+        'version': context['eks']['version'],
         'role_arn': '${aws_iam_role.master.arn}',
         'vpc_config': {
             'security_group_ids': ['${aws_security_group.master.id}'],
