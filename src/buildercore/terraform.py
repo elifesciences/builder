@@ -758,9 +758,9 @@ set -o xtrace
     })
 
     autoscaling_group_tags = [{
-            'key': k, 
-            'value': v,
-            'propagate_at_launch': True,
+        'key': k,
+        'value': v,
+        'propagate_at_launch': True,
     } for (k, v) in aws.generic_tags(context).items()]
     autoscaling_group_tags.append({
         'key': 'kubernetes.io/cluster/%s' % context['stackname'],
@@ -784,7 +784,7 @@ set -o xtrace
     - system:bootstrappers
     - system:nodes""")
 
-    #template.populate_resource('kubernetes_config_map', 'aws_auth_2', block={
+    # template.populate_resource('kubernetes_config_map', 'aws_auth_2', block={
     #    'metadata': {
     #        'name': 'aws-auth',
     #        'namespace': 'kube-system',
