@@ -573,6 +573,10 @@ def render_eks(context, template):
     if not context['eks']:
         return {}
 
+    _render_eks_master(context, template)
+    _render_eks_workers(context, template)
+
+def _render_eks_master(context, template):
     template.populate_resource('aws_eks_cluster', 'main', block={
         'name': context['stackname'],
         'role_arn': '${aws_iam_role.master.arn}',
@@ -625,6 +629,7 @@ def render_eks(context, template):
         'tags': aws.generic_tags(context),
     })
 
+def _render_eks_workers(context, template):
     template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
         'description': 'Allow pods to communicate with the cluster API Server',
         'from_port': 443,
