@@ -1058,6 +1058,9 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        self.assertIn('config_map_aws_auth', terraform_template['locals'])
+        self.assertIn('aws_iam_role.worker.arn', terraform_template['locals']['config_map_aws_auth'])
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(
