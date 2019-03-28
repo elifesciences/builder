@@ -90,7 +90,7 @@ defaults:
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
-            version: 1.11
+            version: '1.11'
             subnet-id: subnet-a1a1a1a1
             redundant-subnet-id: subnet-b2b2b2b2
             worker:
