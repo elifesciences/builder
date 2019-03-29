@@ -130,13 +130,17 @@ defaults:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
             version: '1.11'
+            # two subnets in two different availability zones, both used in master nodes and in worker nodes
             subnet-id: subnet-0c60bc3cb24a2816b
             redundant-subnet-id: subnet-009a04cbefc8e3661
             worker:
                 type: t2.small
-                desired-capacity: 1
+                # autoscaling group will never have fewer than these EC2 nodes
                 min-size: 1
+                # autoscaling group will never have more than these EC2 nodes
                 max-size: 3
+                # (currently fixed) number of EC2 nodes
+                desired-capacity: 1
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
