@@ -812,16 +812,16 @@ class TerraformTemplateError(RuntimeError):
     pass
 
 class TerraformTemplate():
-    def __init__(self, resource=None, data=None, locals=None):
+    def __init__(self, resource=None, data=None, local=None):
         if not resource:
             resource = OrderedDict()
         self.resource = resource
         if not data:
             data = OrderedDict()
         self.data = data
-        if not locals:
-            locals = OrderedDict()
-        self.locals = locals
+        if not local:
+            local = OrderedDict()
+        self.local = local
 
     # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
     def populate_resource(self, type, name, key=None, block=None):
@@ -860,7 +860,7 @@ class TerraformTemplate():
         self.data[type][name] = block
 
     def populate_local(self, name, value):
-        self.locals[name] = value
+        self.local[name] = value
 
     def to_dict(self):
         result = {}
@@ -868,8 +868,8 @@ class TerraformTemplate():
             result['resource'] = self.resource
         if self.data:
             result['data'] = self.data
-        if self.locals:
-            result['locals'] = self.locals
+        if self.local:
+            result['locals'] = self.local
         return result
 
 
