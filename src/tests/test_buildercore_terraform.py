@@ -183,6 +183,20 @@ class TestTerraformTemplate(TestCase):
         overwrite = lambda: template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
+    def test_local_creation(self):
+        template = terraform.TerraformTemplate()
+        template.populate_local('answer', 42)
+        template.populate_local('incorrect', 43)
+        self.assertEqual(
+            template.to_dict(),
+            {
+                'locals': OrderedDict([
+                    ('answer', 42),
+                    ('incorrect', 43),
+                ])
+            }
+        )
+
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
@@ -736,6 +750,366 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'vault_generic_secret': {
                         'github': {'path': 'secret/builder/apikey/github'}
                     },
+                }
+            }
+        )
+
+    @patch('buildercore.terraform.Terraform')
+    def test_kubernetes_provider(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        stackname = 'project-with-eks--%s' % self.environment
+        context = cfngen.build_context('project-with-eks', stackname=stackname)
+        terraform.init(stackname, context)
+        providers = self._load_terraform_file(stackname, 'providers')
+        self.assertIn('kubernetes', providers['provider'].keys())
+        self.assertEqual(
+            {
+                'version': "= %s" % '1.5.2',
+                'host': '${data.aws_eks_cluster.main.endpoint}',
+                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                'token': '${data.aws_eks_cluster_auth.main.token}',
+                'load_config_file': False,
+            },
+            providers['provider']['kubernetes']
+        )
+        self.assertIn('aws_eks_cluster', providers['data'])
+        self.assertEqual(
+            {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            },
+            providers['data']['aws_eks_cluster']
+        )
+        self.assertIn('aws_eks_cluster_auth', providers['data'])
+        self.assertEqual(
+            {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            },
+            providers['data']['aws_eks_cluster_auth']
+        )
+
+    def test_eks_cluster(self):
+        pname = 'project-with-eks'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('resource', terraform_template.keys())
+        self.assertIn('aws_eks_cluster', terraform_template['resource'].keys())
+        self.assertIn('aws_iam_role', terraform_template['resource'].keys())
+        self.assertIn('aws_security_group', terraform_template['resource'].keys())
+        self.assertIn('aws_iam_instance_profile', terraform_template['resource'].keys())
+        self.assertIn('aws_security_group_rule', terraform_template['resource'].keys())
+        self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
+        self.assertIn('aws_launch_configuration', terraform_template['resource'].keys())
+        self.assertIn('aws_autoscaling_group', terraform_template['resource'].keys())
+        self.assertIn('kubernetes_config_map', terraform_template['resource'].keys())
+        self.assertIn('data', terraform_template.keys())
+        self.assertIn('aws_ami', terraform_template['data'].keys())
+
+        self.assertIn('main', terraform_template['resource']['aws_eks_cluster'])
+        self.assertEqual(
+            terraform_template['resource']['aws_eks_cluster']['main'],
+            {
+                'name': 'project-with-eks--%s' % self.environment,
+                'version': '1.11',
+                'role_arn': '${aws_iam_role.master.arn}',
+                'vpc_config': {
+                    'security_group_ids': ['${aws_security_group.master.id}'],
+                    'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
+                },
+                'depends_on': [
+                    "aws_iam_role_policy_attachment.master_kubernetes",
+                    "aws_iam_role_policy_attachment.master_ecs",
+                ]
+            }
+        )
+
+        self.assertIn('master', terraform_template['resource']['aws_iam_role'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role']['master']['name'],
+            'project-with-eks--%s--AmazonEKSMasterRole' % self.environment
+        )
+        self.assertEqual(
+            json.loads(terraform_template['resource']['aws_iam_role']['master']['assume_role_policy']),
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "eks.amazonaws.com"
+                        },
+                        "Action": "sts:AssumeRole"
+                    }
+                ]
+            }
+        )
+
+        self.assertIn('master_kubernetes', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['master_kubernetes'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+                'role': "${aws_iam_role.master.name}",
+            }
+        )
+        self.assertIn('master_ecs', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['master_ecs'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
+                'role': "${aws_iam_role.master.name}",
+            }
+        )
+
+        self.assertIn('master', terraform_template['resource']['aws_security_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group']['master'],
+            {
+                'name': 'project-with-eks--%s--master' % self.environment,
+                'description': 'Cluster communication with worker nodes',
+                'vpc_id': 'vpc-78a2071d',
+                'egress': {
+                    'from_port': 0,
+                    'to_port': 0,
+                    'protocol': '-1',
+                    'cidr_blocks': ['0.0.0.0/0'],
+                },
+                'tags': {
+                    'Project': 'project-with-eks',
+                    'Environment': self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
+                    'Name': 'project-with-eks--%s' % self.environment,
+                }
+            }
+        )
+
+        self.assertIn('worker_to_master', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['worker_to_master'],
+            {
+                'description': 'Allow pods to communicate with the cluster API Server',
+                'from_port': 443,
+                'protocol': 'tcp',
+                'security_group_id': '${aws_security_group.master.id}',
+                'source_security_group_id': '${aws_security_group.worker.id}',
+                'to_port': 443,
+                'type': 'ingress',
+            }
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_security_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group']['worker'],
+            {
+                'name': 'project-with-eks--%s--worker' % self.environment,
+                'description': 'Security group for all worker nodes in the cluster',
+                'vpc_id': 'vpc-78a2071d',
+                'egress': {
+                    'from_port': 0,
+                    'to_port': 0,
+                    'protocol': '-1',
+                    'cidr_blocks': ['0.0.0.0/0'],
+                },
+                'tags': {
+                    'Project': 'project-with-eks',
+                    'Environment': self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
+                    'Name': 'project-with-eks--%s' % self.environment,
+                    'kubernetes.io/cluster/%s': 'owned',
+                }
+            }
+        )
+
+        self.assertIn('worker_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['worker_to_worker'],
+            {
+                'description': 'Allow worker nodes to communicate with each other',
+                'from_port': 0,
+                'protocol': '-1',
+                'security_group_id': '${aws_security_group.worker.id}',
+                'source_security_group_id': '${aws_security_group.worker.id}',
+                'to_port': 65535,
+                'type': 'ingress',
+            }
+        )
+
+        self.assertIn('master_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['master_to_worker'],
+            {
+                'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
+                'from_port': 1025,
+                'protocol': 'tcp',
+                'security_group_id': '${aws_security_group.worker.id}',
+                'source_security_group_id': '${aws_security_group.master.id}',
+                'to_port': 65535,
+                'type': 'ingress',
+            }
+        )
+
+        self.assertIn('eks_public_to_worker', terraform_template['resource']['aws_security_group_rule'])
+        self.assertEqual(
+            terraform_template['resource']['aws_security_group_rule']['eks_public_to_worker'],
+            {
+                'description': "Allow worker to expose NodePort services",
+                'from_port': 30000,
+                'protocol': 'tcp',
+                'security_group_id': '${aws_security_group.worker.id}',
+                'to_port': 32767,
+                'cidr_blocks': ["0.0.0.0/0"],
+                'type': 'ingress',
+            }
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_iam_role'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role']['worker']['name'],
+            'project-with-eks--%s--AmazonEKSWorkerRole' % self.environment
+        )
+        self.assertEqual(
+            json.loads(terraform_template['resource']['aws_iam_role']['worker']['assume_role_policy']),
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": "ec2.amazonaws.com",
+                        },
+                        "Action": "sts:AssumeRole"
+                    }
+                ]
+            }
+        )
+
+        self.assertIn('worker_connect', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_connect'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+                'role': "${aws_iam_role.worker.name}",
+            }
+        )
+
+        self.assertIn('worker_cni', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_cni'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+                'role': "${aws_iam_role.worker.name}",
+            }
+        )
+
+        self.assertIn('worker_ecr', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_ecr'],
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+                'role': "${aws_iam_role.worker.name}",
+            }
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_iam_instance_profile'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_instance_profile']['worker'],
+            {
+                'name': 'project-with-eks--%s--worker' % self.environment,
+                'role': '${aws_iam_role.worker.name}'
+            }
+        )
+
+        self.assertIn('worker', terraform_template['data']['aws_ami'])
+        self.assertEqual(
+            terraform_template['data']['aws_ami']['worker'],
+            {
+                'filter': {
+                    'name': 'name',
+                    'values': ['amazon-eks-node-1.11-v*'],
+                },
+                'most_recent': True,
+                'owners': ['602401143452'],
+            }
+        )
+
+        self.assertIn('worker_userdata', terraform_template['locals'])
+        self.assertIn('/bin/bash', terraform_template['locals']['worker_userdata'])
+
+        self.assertIn('worker', terraform_template['resource']['aws_launch_configuration'])
+        self.assertEqual(
+            terraform_template['resource']['aws_launch_configuration']['worker'],
+            {
+                'associate_public_ip_address': True,
+                'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
+                'image_id': '${data.aws_ami.worker.id}',
+                'instance_type': 't2.small',
+                'name_prefix': 'project-with-eks--%s--worker' % self.environment,
+                'security_groups': ['${aws_security_group.worker.id}'],
+                'user_data_base64': '${base64encode(local.worker_userdata)}',
+                'lifecycle': {
+                    'create_before_destroy': True,
+                },
+            }
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_autoscaling_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_autoscaling_group']['worker'],
+            {
+                'name': "project-with-eks--%s--worker" % self.environment,
+                'launch_configuration': "${aws_launch_configuration.worker.id}",
+                'min_size': 1,
+                'max_size': 3,
+                'desired_capacity': 3,
+                'vpc_zone_identifier': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
+                'tags': [
+                    {
+                        'key': 'Project',
+                        'value': 'project-with-eks',
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'Environment',
+                        'value': self.environment,
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'Cluster',
+                        'value': 'project-with-eks--%s' % self.environment,
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'Name',
+                        'value': 'project-with-eks--%s' % self.environment,
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'kubernetes.io/cluster/project-with-eks--%s' % self.environment,
+                        'value': 'owned',
+                        'propagate_at_launch': True,
+                    },
+                ],
+            }
+        )
+
+        self.assertIn('config_map_aws_auth', terraform_template['locals'])
+        self.assertIn('aws_iam_role.worker.arn', terraform_template['locals']['config_map_aws_auth'])
+        self.assertIn('aws_auth', terraform_template['resource']['kubernetes_config_map'])
+        self.assertEqual(
+            terraform_template['resource']['kubernetes_config_map']['aws_auth'],
+            {
+                'metadata': [{
+                    'name': 'aws-auth',
+                    'namespace': 'kube-system',
+                }],
+                'data': {
+                    'mapRoles': '${local.config_map_aws_auth}',
                 }
             }
         )

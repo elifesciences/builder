@@ -111,6 +111,7 @@ def build_context(pname, **more_context):
 
         'ec2': False,
         's3': {},
+        'eks': False,
         'elb': False,
         'sns': [],
         'sqs': {},
@@ -146,6 +147,7 @@ def build_context(pname, **more_context):
         build_context_fastly,
         build_context_gcs,
         build_context_bigquery,
+        build_context_eks,
         build_context_subdomains,
         build_context_elasticache,
         build_context_vault,
@@ -446,6 +448,12 @@ def build_context_bigquery(pdata, context):
                 'project': options['project'],
                 'tables': options.get('tables', OrderedDict()),
             }
+    return context
+
+def build_context_eks(pdata, context):
+    if pdata['aws'].get('eks'):
+        context['eks'] = pdata['aws']['eks']
+
     return context
 
 def complete_domain(host, default_main):

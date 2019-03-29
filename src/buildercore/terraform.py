@@ -5,7 +5,10 @@ from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p
-from . import fastly
+from . import aws, fastly
+
+MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
+only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.4.0',
@@ -17,6 +20,7 @@ RESOURCE_NAME_FASTLY = 'fastly-cdn'
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_TYPE_TEMPLATE = 'template_file'
+DATA_TYPE_AWS_AMI = 'aws_ami'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
@@ -96,7 +100,8 @@ def render(context):
     fn_list = [
         render_fastly,
         render_gcs,
-        render_bigquery
+        render_bigquery,
+        render_eks,
     ]
     for fn in fn_list:
         fn(context, template)
@@ -564,6 +569,233 @@ def render_bigquery(context, template):
 
     return template.to_dict()
 
+def render_eks(context, template):
+    if not context['eks']:
+        return {}
+
+    _render_eks_master(context, template)
+    _render_eks_workers(context, template)
+
+def _render_eks_master(context, template):
+    # all from https://learn.hashicorp.com/terraform/aws/eks-intro
+
+    template.populate_resource('aws_eks_cluster', 'main', block={
+        'name': context['stackname'],
+        'version': context['eks']['version'],
+        'role_arn': '${aws_iam_role.master.arn}',
+        'vpc_config': {
+            'security_group_ids': ['${aws_security_group.master.id}'],
+            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+        },
+        'depends_on': [
+            "aws_iam_role_policy_attachment.master_kubernetes",
+            "aws_iam_role_policy_attachment.master_ecs",
+        ]
+    })
+
+    template.populate_resource('aws_iam_role', 'master', block={
+        'name': '%s--AmazonEKSMasterRole' % context['stackname'],
+        'assume_role_policy': json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "eks.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }),
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', 'master_kubernetes', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+        'role': "${aws_iam_role.master.name}",
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', 'master_ecs', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
+        'role': "${aws_iam_role.master.name}",
+    })
+
+    template.populate_resource('aws_security_group', 'master', block={
+        'name': 'project-with-eks--%s--master' % context['instance_id'],
+        'description': 'Cluster communication with worker nodes',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
+        },
+        'tags': aws.generic_tags(context),
+    })
+
+def _render_eks_workers(context, template):
+    template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
+        'description': 'Allow pods to communicate with the cluster API Server',
+        'from_port': 443,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.master.id}',
+        'source_security_group_id': '${aws_security_group.worker.id}',
+        'to_port': 443,
+        'type': 'ingress',
+    })
+
+    security_group_tags = aws.generic_tags(context)
+    security_group_tags['kubernetes.io/cluster/%s'] = 'owned'
+    template.populate_resource('aws_security_group', 'worker', block={
+        'name': 'project-with-eks--%s--worker' % context['instance_id'],
+        'description': 'Security group for all worker nodes in the cluster',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
+        },
+        'tags': security_group_tags,
+    })
+
+    template.populate_resource('aws_security_group_rule', 'worker_to_worker', block={
+        'description': 'Allow worker nodes to communicate with each other',
+        'from_port': 0,
+        'protocol': '-1',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'source_security_group_id': '${aws_security_group.worker.id}',
+        'to_port': 65535,
+        'type': 'ingress',
+    })
+
+    template.populate_resource('aws_security_group_rule', 'master_to_worker', block={
+        'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
+        'from_port': 1025,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'source_security_group_id': '${aws_security_group.master.id}',
+        'to_port': 65535,
+        'type': 'ingress',
+    })
+
+    template.populate_resource('aws_security_group_rule', 'eks_public_to_worker', block={
+        'description': "Allow worker to expose NodePort services",
+        'from_port': 30000,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'to_port': 32767,
+        'type': 'ingress',
+        'cidr_blocks': ["0.0.0.0/0"],
+    })
+
+    template.populate_resource('aws_iam_role', 'worker', block={
+        'name': '%s--AmazonEKSWorkerRole' % context['stackname'],
+        'assume_role_policy': json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "ec2.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }),
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', 'worker_connect', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+        'role': "${aws_iam_role.worker.name}",
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', 'worker_cni', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+        'role': "${aws_iam_role.worker.name}",
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', 'worker_ecr', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+        'role': "${aws_iam_role.worker.name}",
+    })
+
+    template.populate_resource('aws_iam_instance_profile', 'worker', block={
+        'name': '%s--worker' % context['stackname'],
+        'role': '${aws_iam_role.worker.name}'
+    })
+
+    template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
+        'filter': {
+            'name': 'name',
+            'values': ['amazon-eks-node-%s-v*' % context['eks']['version']],
+        },
+        'most_recent': True,
+        'owners': [aws.ACCOUNT_EKS_AMI],
+    })
+
+    # EKS currently documents this required userdata for EKS worker nodes to
+    # properly configure Kubernetes applications on the EC2 instance.
+    # We utilize a Terraform local here to simplify Base64 encoding this
+    # information into the AutoScaling Launch Configuration.
+    # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+    template.populate_local('worker_userdata', """
+#!/bin/bash
+set -o xtrace
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
+
+    template.populate_resource('aws_launch_configuration', 'worker', block={
+        'associate_public_ip_address': True,
+        'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
+        'image_id': '${data.aws_ami.worker.id}',
+        'instance_type': context['eks']['worker']['type'],
+        'name_prefix': '%s--worker' % context['stackname'],
+        'security_groups': ['${aws_security_group.worker.id}'],
+        'user_data_base64': '${base64encode(local.worker_userdata)}',
+        'lifecycle': {
+            'create_before_destroy': True,
+        },
+    })
+
+    autoscaling_group_tags = [
+        {
+            'key': k,
+            'value': v,
+            'propagate_at_launch': True,
+        }
+        for k, v in aws.generic_tags(context).items()
+    ]
+    autoscaling_group_tags.append({
+        'key': 'kubernetes.io/cluster/%s' % context['stackname'],
+        'value': 'owned',
+        'propagate_at_launch': True,
+    })
+    template.populate_resource('aws_autoscaling_group', 'worker', block={
+        'name': '%s--worker' % context['stackname'],
+        'launch_configuration': '${aws_launch_configuration.worker.id}',
+        'min_size': context['eks']['worker']['min-size'],
+        'max_size': context['eks']['worker']['max-size'],
+        'desired_capacity': context['eks']['worker']['desired-capacity'],
+        'vpc_zone_identifier': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+        'tags': autoscaling_group_tags,
+    })
+
+    template.populate_local('config_map_aws_auth', """
+- rolearn: ${aws_iam_role.worker.arn}
+  username: system:node:{{EC2PrivateDNSName}}
+  groups:
+    - system:bootstrappers
+    - system:nodes""")
+
+    template.populate_resource('kubernetes_config_map', 'aws_auth', block={
+        'metadata': [{
+            'name': 'aws-auth',
+            'namespace': 'kube-system',
+        }],
+        'data': {
+            'mapRoles': '${local.config_map_aws_auth}',
+        }
+    })
+
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
@@ -580,13 +812,16 @@ class TerraformTemplateError(RuntimeError):
     pass
 
 class TerraformTemplate():
-    def __init__(self, resource=None, data=None):
+    def __init__(self, resource=None, data=None, locals_=None):
         if not resource:
             resource = OrderedDict()
         self.resource = resource
         if not data:
             data = OrderedDict()
         self.data = data
+        if not locals_:
+            locals_ = OrderedDict()
+        self.locals_ = locals_
 
     # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
     def populate_resource(self, type, name, key=None, block=None):
@@ -624,12 +859,17 @@ class TerraformTemplate():
             )
         self.data[type][name] = block
 
+    def populate_local(self, name, value):
+        self.locals_[name] = value
+
     def to_dict(self):
         result = {}
         if self.resource:
             result['resource'] = self.resource
         if self.data:
             result['data'] = self.data
+        if self.locals_:
+            result['locals'] = self.locals_
         return result
 
 
@@ -645,14 +885,15 @@ def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
     # TODO: what if the new context doesn't have fastly, but it was there before?
-    if not new_context['fastly'] and not new_context['gcs'] and not new_context['bigquery']:
+    used_managed_services = [k for k in MANAGED_SERVICES if new_context[k]]
+    if not used_managed_services:
         return None
 
     new_template = render(new_context)
     write_template(new_context['stackname'], new_template)
     return plan(new_context)
 
-@only_if('fastly', 'gcs', 'bigquery')
+@only_if_managed_services_are_present
 def bootstrap(stackname, context):
     plan(context)
     update(stackname, context)
@@ -667,6 +908,7 @@ def plan(context):
     def _explain_plan(plan_filename):
         return_code, stdout, stderr = terraform.plan(plan_filename, input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
         ensure(return_code == 0, "Exit code of `terraform plan out.plan` should be 0, not %s" % return_code)
+        # TODO: may not be empty if TF_LOG is used
         ensure(stderr == '', "Stderr of `terraform plan out.plan` should be empty:\n%s" % stderr)
         return _clean_stdout(stdout)
 
@@ -697,12 +939,16 @@ def init(stackname, context):
         # TODO: possibly remove unused providers
         # Terraform already prunes them when running, but would
         # simplify the .cfn/terraform/$stackname/ files
-        fp.write(json.dumps({
+        providers = {
             'provider': {
                 'fastly': {
                     # exact version constraint
                     'version': "= %s" % PROVIDER_FASTLY_VERSION,
                     'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
+                },
+                'aws': {
+                    'version': "= %s" % '2.3.0',
+                    'region': context['aws']['region'],
                 },
                 'google': {
                     'version': "= %s" % '1.20.0',
@@ -727,7 +973,26 @@ def init(stackname, context):
                     },
                 },
             },
-        }))
+        }
+        if context.get('eks'):
+            providers['provider']['kubernetes'] = {
+                'version': "= %s" % '1.5.2',
+                'host': '${data.aws_eks_cluster.main.endpoint}',
+                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                'token': '${data.aws_eks_cluster_auth.main.token}',
+                'load_config_file': False,
+            }
+            providers['data']['aws_eks_cluster'] = {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            }
+            providers['data']['aws_eks_cluster_auth'] = {
+                'main': {
+                    'name': '${aws_eks_cluster.main.name}',
+                },
+            }
+        fp.write(json.dumps(providers))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
@@ -735,12 +1000,12 @@ def update_template(stackname):
     context = load_context(stackname)
     update(stackname, context)
 
-@only_if('fastly', 'gcs', 'bigquery')
+@only_if_managed_services_are_present
 def update(stackname, context):
     terraform = init(stackname, context)
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
 
-@only_if('fastly', 'gcs', 'bigquery')
+@only_if_managed_services_are_present
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
