@@ -756,11 +756,14 @@ set -o xtrace
         },
     })
 
-    autoscaling_group_tags = [{
-        'key': k,
-        'value': v,
-        'propagate_at_launch': True,
-    } for (k, v) in aws.generic_tags(context).items()]
+    autoscaling_group_tags = [
+        {
+            'key': k,
+            'value': v,
+            'propagate_at_launch': True,
+        }
+        for k, v in aws.generic_tags(context).items()
+    ]
     autoscaling_group_tags.append({
         'key': 'kubernetes.io/cluster/%s' % context['stackname'],
         'value': 'owned',
