@@ -104,6 +104,7 @@ AWS:
 * [feature: write keypairs to S3](docs/feature,write-keypairs-to-s3.md)
 * [creating a master server](docs/master-server.md)
 * [caveats](docs/caveats.md)
+* [EKS](docs/eks.md)
 
 Troubleshooting:
 

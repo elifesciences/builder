@@ -779,12 +779,32 @@ set -o xtrace
         'tags': autoscaling_group_tags,
     })
 
+    template.populate_resource('aws_iam_role', 'user', block={
+        'name': '%s--AmazonEKSUserRole' % context['stackname'],
+        'assume_role_policy': json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "AWS": "arn:aws:iam::%s:root" % context['aws']['account-id'],
+                    },
+                    "Action": "sts:AssumeRole"
+                },
+            ],
+        }),
+    })
+
     template.populate_local('config_map_aws_auth', """
 - rolearn: ${aws_iam_role.worker.arn}
   username: system:node:{{EC2PrivateDNSName}}
   groups:
     - system:bootstrappers
-    - system:nodes""")
+    - system:nodes
+- rolearn: ${aws_iam_role.user.arn}
+  groups:
+    - system:masters
+""")
 
     template.populate_resource('kubernetes_config_map', 'aws_auth', block={
         'metadata': [{
