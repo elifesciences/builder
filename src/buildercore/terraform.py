@@ -885,8 +885,8 @@ def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
     # this should eventually be removed, for example after test_buildercore_cfngen tests have been ported to test_buildercore_cloudformation
     # TODO: what if the new context doesn't have fastly, but it was there before?
-    managed_services = [k for k in MANAGED_SERVICES if new_context[k]]
-    if not managed_services:
+    used_managed_services = [k for k in MANAGED_SERVICES if new_context[k]]
+    if not used_managed_services:
         return None
 
     new_template = render(new_context)
