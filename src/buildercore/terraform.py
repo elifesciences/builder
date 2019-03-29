@@ -816,6 +816,43 @@ set -o xtrace
         }
     })
 
+    template.populate_resource('kubernetes_service_account', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+            'namespace': 'kube-system',
+        },
+    })
+
+    template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+        },
+        'role_ref': {
+            'api_group': 'rbac.authorization.k8s.io',
+            'kind': 'ClusterRole',
+            'name': 'cluster-admin',
+        },
+        'subject': [
+            {
+                'kind': 'ServiceAccount',
+                'name': '${kubernetes_service_account.tiller.metadata.0.name}',
+                'namespace': 'kube-system',
+            },
+        ],
+    })
+
+    template.populate_data('helm_repository', 'incubator', block={
+        'name': 'incubator',
+        'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
+    })
+
+    template.populate_resource('helm_release', 'raw_hello_world', block={
+        'name': 'hello-world',
+        'repository': "${data.helm_repository.incubator.metadata.0.name}",
+        'chart': 'incubator/raw',
+        'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+    })
+
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
@@ -1010,6 +1047,17 @@ def init(stackname, context):
             providers['data']['aws_eks_cluster_auth'] = {
                 'main': {
                     'name': '${aws_eks_cluster.main.name}',
+                },
+            }
+            # TODO if helm is required
+            providers['provider']['helm'] = {
+                'version': '= 0.9.0',
+                'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
+                'kubernetes': {
+                    'host': '${data.aws_eks_cluster.main.endpoint}',
+                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                    'token': '${data.aws_eks_cluster_auth.main.token}',
+                    'load_config_file': False,
                 },
             }
         fp.write(json.dumps(providers))
