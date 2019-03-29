@@ -24,7 +24,7 @@ defaults:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
-        account_id: 512686554592
+        account-id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
             # how many EC2 instance per stack instance

@@ -1098,6 +1098,27 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        self.assertIn('user', terraform_template['resource']['aws_iam_role'])
+        self.assertEqual(
+            terraform_template['resource']['aws_iam_role']['user']['name'],
+            'project-with-eks--%s--AmazonEKSUserRole' % self.environment
+        )
+        self.assertEqual(
+            json.loads(terraform_template['resource']['aws_iam_role']['user']['assume_role_policy']),
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            'AWS': 'arn:aws:iam::512686554592:root',
+                        },
+                        "Action": "sts:AssumeRole"
+                    }
+                ]
+            }
+        )
+
         self.assertIn('config_map_aws_auth', terraform_template['locals'])
         self.assertIn('aws_iam_role.worker.arn', terraform_template['locals']['config_map_aws_auth'])
         self.assertIn('aws_auth', terraform_template['resource']['kubernetes_config_map'])

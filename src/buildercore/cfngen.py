@@ -168,6 +168,7 @@ def build_context_aws(pdata, context):
         return context
     keepers = [
         'region',
+        'account-id',
         'vpc-id',
         'subnet-id',
         'subnet-cidr',
