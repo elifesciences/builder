@@ -772,9 +772,9 @@ set -o xtrace
     template.populate_resource('aws_autoscaling_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'launch_configuration': '${aws_launch_configuration.worker.id}',
-        'min_size': context['eks']['worker'].get('min-size', 1),
-        'max_size': context['eks']['worker'].get('max-size', 3),
-        'desired_capacity': context['eks']['worker'].get('desired-capacity', 1),
+        'min_size': context['eks']['worker']['min-size'],
+        'max_size': context['eks']['worker']['max-size'],
+        'desired_capacity': context['eks']['worker']['desired-capacity'],
         'vpc_zone_identifier': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         'tags': autoscaling_group_tags,
     })
