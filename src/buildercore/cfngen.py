@@ -467,7 +467,8 @@ def complete_domain(host, default_main):
     return host + '.' + default_main # something + '.' + elifesciences.org
 
 def build_context_subdomains(pdata, context):
-    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', [])]
+    # note! a distinction is being made between 'subdomain' and 'subdomains'
+    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', []) if pdata['domain']]
     return context
 
 def build_context_elasticache(pdata, context):
