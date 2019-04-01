@@ -21,11 +21,13 @@ DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_TYPE_TEMPLATE = 'template_file'
 DATA_TYPE_AWS_AMI = 'aws_ami'
+DATA_TYPE_HELM_REPOSITORY = 'helm_repository'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 DATA_NAME_VAULT_GCP_API_KEY = 'gcp'
 DATA_NAME_VAULT_GITHUB = 'github'
+DATA_NAME_HELM_INCUBATOR = 'incubator'
 
 # keys to lookup in Vault
 # cannot modify these without putting new values inside Vault:
@@ -843,7 +845,7 @@ set -o xtrace
         })
 
         # TODO: extract constants
-        template.populate_data('helm_repository', 'incubator', block={
+        template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
             'name': 'incubator',
             'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
         })
@@ -851,7 +853,7 @@ set -o xtrace
         # creating at least one release is necessary to trigger the Tiller installation
         template.populate_resource('helm_release', 'raw_hello_world', block={
             'name': 'hello-world',
-            'repository': "${data.helm_repository.incubator.metadata.0.name}",
+            'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
             'chart': 'incubator/raw',
             'depends_on': ['kubernetes_cluster_role_binding.tiller'],
         })
