@@ -11,7 +11,7 @@ it to the correct file etc."""
 
 from collections import OrderedDict
 from os.path import join
-from . import config, utils, bvars
+from . import config, utils, bvars, aws
 from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
@@ -141,19 +141,9 @@ def rds_security(context):
 #
 #
 
-def _generic_tags(context, name=True):
-    tags = {
-        'Project': context['project_name'], # "journal"
-        'Environment': context['instance_id'], # "prod"
-        # the name AWS Console uses to label an instance
-        'Cluster': context['stackname'], # "journal--prod"
-    }
-    tags['Name'] = context['stackname'] # "journal--prod"
-    return tags
-
 def instance_tags(context, node=None):
     # NOTE: RDS and Elasticache instances also call this function
-    tags = _generic_tags(context)
+    tags = aws.generic_tags(context)
     if node:
         # this instance is part of a cluster
         tags.update({
@@ -163,7 +153,7 @@ def instance_tags(context, node=None):
     return [ec2.Tag(key, str(value)) for key, value in tags.items()]
 
 def elb_tags(context):
-    tags = _generic_tags(context)
+    tags = aws.generic_tags(context)
     tags.update({
         'Name': '%s--elb' % context['stackname'], # "journal--prod--elb"
     })
@@ -562,7 +552,7 @@ def render_s3(context, template):
     for bucket_name in context['s3']:
         props = {
             'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize(),
-            'Tags': s3.Tags(**_generic_tags(context, name=False)),
+            'Tags': s3.Tags(**aws.generic_tags(context, name=False)),
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:
@@ -951,7 +941,7 @@ def render_elasticache(context, template):
             PreferredAvailabilityZone=cluster_context['az'],
             # we only support Redis, and it only supports 1 node
             NumCacheNodes=1,
-            Tags=Tags(**_generic_tags(context)),
+            Tags=Tags(**aws.generic_tags(context)),
             VpcSecurityGroupIds=[Ref(cache_security_group)],
         ))
 

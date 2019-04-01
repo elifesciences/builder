@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2017.7.5' # the version of salt these project use
+    salt: '2017.7.8' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -24,7 +24,7 @@ defaults:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
-        account_id: 512686554592
+        account-id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
             # how many EC2 instance per stack instance
@@ -126,6 +126,21 @@ defaults:
         #       deletion-policy: delete|retain
         #       encryption: false
         s3: {}
+        eks:
+            # eks defaults only used if a 'eks' section present in project
+            #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
+            version: '1.11'
+            # two subnets in two different availability zones, both used in master nodes and in worker nodes
+            subnet-id: subnet-0c60bc3cb24a2816b
+            redundant-subnet-id: subnet-009a04cbefc8e3661
+            worker:
+                type: t2.small
+                # autoscaling group will never have fewer than these EC2 nodes
+                min-size: 1
+                # autoscaling group will never have more than these EC2 nodes
+                max-size: 3
+                # (currently fixed) number of EC2 nodes
+                desired-capacity: 1
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -201,8 +216,14 @@ defaults:
                 ami: ami-92002785 # created from a 14.04 basebox instance "basebox.2016-11-03"
                                   # possibly based on ami-9eaa1cf6 (see basebox aws-alt 14.04)
         # 18.04
-        s1804:
+        standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            ec2:
+                ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
+        s1804:
+            description: alias for standalone1804
             ec2:
                 ami: ami-00aedeb287fe8c9d6 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
@@ -252,7 +273,6 @@ defaults:
         #    1240: 8001
 
 basebox:
-    salt: '2017.7.7' # overridden for 18.04 support
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
@@ -305,7 +325,6 @@ basebox:
     vagrant: {}
 
 heavybox:
-    salt: '2017.7.7' # overridden for 18.04 support
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
@@ -354,7 +373,6 @@ master-server:
 lax:
     description: article-json store
     subdomain: lax # lax.elifesciences.org
-    intdomain: False
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
@@ -666,8 +684,6 @@ pattern-library:
     repo: https://github.com/elifesciences/pattern-library
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80
@@ -682,7 +698,6 @@ pattern-library:
             subdomains:
                 - ui-patterns
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1340: 80
 
@@ -692,8 +707,6 @@ elife-metrics:
     repo: https://github.com/elifesciences/elife-metrics
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 443
@@ -710,7 +723,6 @@ elife-metrics:
                 multi-az: true
                 storage: 10
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1240: 80
 
@@ -1050,9 +1062,10 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+        ec2:
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
         ext:
@@ -1088,9 +1101,10 @@ containers:
     subdomain: containers
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+        ec2:
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4GB of RAM
         ports:
             - 22
@@ -1121,9 +1135,10 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+        ec2:
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1159,9 +1174,6 @@ elife-alfred-nodes:
     domain: false
     intdomain: false
     aws:
-        # 16.04, deprecated
-        ami: ami-14a1d06e # GENERATED created from basebox--1604
-                          # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ec2:
             cluster-size: 0
             security-group:
@@ -1404,8 +1416,6 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium
         ports:
             - 22
@@ -1434,7 +1444,6 @@ observer:
                 storage: 10
                 multi-az: true
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1239: 80
             1240: 8001
@@ -1704,6 +1713,8 @@ redirects:
             - 80
             - 443
     aws-alt:
+        s1804:
+            type: t2.small
         prod:
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
@@ -2106,3 +2117,13 @@ reproducible-document-stack:
                 subdomains:
                     - "{instance}--cdn-repro"
                     - repro
+
+kubernetes-aws:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        ec2: false
+        eks:
+            worker:
+                type: t2.small    
