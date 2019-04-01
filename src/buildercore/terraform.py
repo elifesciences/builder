@@ -572,31 +572,35 @@ def render_bigquery(context, template):
     return template.to_dict()
 
 def render_eks(context, template):
+    "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
     if not context['eks']:
         return {}
 
+    _render_eks_master_security_group(context, template)
+    _render_eks_master_role(context, template)
     _render_eks_master(context, template)
-    _render_eks_workers(context, template)
+    _render_eks_workers_security_group(context, template)
+    _render_eks_workers_role(context, template)
+    _render_eks_workers_autoscaling_group(context, template)
+    _render_eks_user_access(context, template)
     if context['eks']['helm']:
         _render_helm(context, template)
 
-def _render_eks_master(context, template):
-    # all from https://learn.hashicorp.com/terraform/aws/eks-intro
-
-    template.populate_resource('aws_eks_cluster', 'main', block={
-        'name': context['stackname'],
-        'version': context['eks']['version'],
-        'role_arn': '${aws_iam_role.master.arn}',
-        'vpc_config': {
-            'security_group_ids': ['${aws_security_group.master.id}'],
-            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+def _render_eks_master_security_group(context, template):
+    template.populate_resource('aws_security_group', 'master', block={
+        'name': 'project-with-eks--%s--master' % context['instance_id'],
+        'description': 'Cluster communication with worker nodes',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
         },
-        'depends_on': [
-            "aws_iam_role_policy_attachment.master_kubernetes",
-            "aws_iam_role_policy_attachment.master_ecs",
-        ]
+        'tags': aws.generic_tags(context),
     })
 
+def _render_eks_master_role(context, template):
     template.populate_resource('aws_iam_role', 'master', block={
         'name': '%s--AmazonEKSMasterRole' % context['stackname'],
         'assume_role_policy': json.dumps({
@@ -623,20 +627,23 @@ def _render_eks_master(context, template):
         'role': "${aws_iam_role.master.name}",
     })
 
-    template.populate_resource('aws_security_group', 'master', block={
-        'name': 'project-with-eks--%s--master' % context['instance_id'],
-        'description': 'Cluster communication with worker nodes',
-        'vpc_id': context['aws']['vpc-id'],
-        'egress': {
-            'from_port': 0,
-            'to_port': 0,
-            'protocol': '-1',
-            'cidr_blocks': ['0.0.0.0/0'],
+def _render_eks_master(context, template):
+
+    template.populate_resource('aws_eks_cluster', 'main', block={
+        'name': context['stackname'],
+        'version': context['eks']['version'],
+        'role_arn': '${aws_iam_role.master.arn}',
+        'vpc_config': {
+            'security_group_ids': ['${aws_security_group.master.id}'],
+            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
-        'tags': aws.generic_tags(context),
+        'depends_on': [
+            "aws_iam_role_policy_attachment.master_kubernetes",
+            "aws_iam_role_policy_attachment.master_ecs",
+        ]
     })
 
-def _render_eks_workers(context, template):
+def _render_eks_workers_security_group(context, template):
     template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
         'description': 'Allow pods to communicate with the cluster API Server',
         'from_port': 443,
@@ -692,6 +699,7 @@ def _render_eks_workers(context, template):
         'cidr_blocks': ["0.0.0.0/0"],
     })
 
+def _render_eks_workers_role(context, template):
     template.populate_resource('aws_iam_role', 'worker', block={
         'name': '%s--AmazonEKSWorkerRole' % context['stackname'],
         'assume_role_policy': json.dumps({
@@ -723,6 +731,7 @@ def _render_eks_workers(context, template):
         'role': "${aws_iam_role.worker.name}",
     })
 
+def _render_eks_workers_autoscaling_group(context, template):
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'role': '${aws_iam_role.worker.name}'
@@ -783,6 +792,7 @@ set -o xtrace
         'tags': autoscaling_group_tags,
     })
 
+def _render_eks_user_access(context, template):
     template.populate_resource('aws_iam_role', 'user', block={
         'name': '%s--AmazonEKSUserRole' % context['stackname'],
         'assume_role_policy': json.dumps({
