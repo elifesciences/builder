@@ -1134,7 +1134,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 }
             }
         )
-        
+
     @patch('buildercore.terraform.Terraform')
     def test_helm_provider(self, Terraform):
         terraform_binary = MagicMock()
