@@ -1135,6 +1135,67 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+    def test_eks_and_helm(self):
+        pname = 'project-with-eks-helm'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('tiller', terraform_template['resource']['kubernetes_service_account'])
+        self.assertEqual(
+            terraform_template['resource']['kubernetes_service_account']['tiller'],
+            {
+                'metadata': {
+                    'name': 'tiller',
+                    'namespace': 'kube-system',
+                },
+            }
+        )
+
+        self.assertIn('tiller', terraform_template['resource']['kubernetes_cluster_role_binding'])
+        self.assertEqual(
+            terraform_template['resource']['kubernetes_cluster_role_binding']['tiller'],
+            {
+                'metadata': {
+                    'name': 'tiller',
+                },
+                'role_ref': {
+                    'api_group': 'rbac.authorization.k8s.io',
+                    'kind': 'ClusterRole',
+                    'name': 'cluster-admin',
+                },
+                'subject': [
+                    {
+                        'kind': 'ServiceAccount',
+                        'name': '${kubernetes_service_account.tiller.metadata.0.name}',
+                        'namespace': 'kube-system',
+                    },
+                ],
+            }
+        )
+
+        self.assertIn('incubator', terraform_template['data']['helm_repository'])
+        self.assertEqual(
+            terraform_template['data']['helm_repository']['incubator'],
+            {
+                'name': 'incubator',
+                'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
+            }
+        )
+
+        self.assertIn('raw_hello_world', terraform_template['resource']['helm_release'])
+        self.assertEqual(
+            terraform_template['resource']['helm_release']['raw_hello_world'],
+            {
+                'name': 'hello-world',
+                'repository': "${data.helm_repository.incubator.metadata.0.name}",
+                'chart': 'incubator/raw',
+                'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+            }
+        )
+
+    # TODO: test_helm_provider
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

@@ -99,6 +99,7 @@ defaults:
                 desired-capacity: 3
                 min-size: 1
                 max-size: 3
+            helm: False
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
@@ -737,3 +738,11 @@ project-with-eks:
                 desired-capacity: 3
                 min-size: 1
                 max-size: 3
+
+project-with-eks-helm:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            helm: true
