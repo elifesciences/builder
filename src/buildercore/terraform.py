@@ -1001,6 +1001,7 @@ def init(stackname, context):
         # TODO: possibly remove unused providers
         # Terraform already prunes them when running, but would
         # simplify the .cfn/terraform/$stackname/ files
+        # TODO: use TerraformTemplate?
         providers = {
             'provider': {
                 'fastly': {
