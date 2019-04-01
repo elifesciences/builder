@@ -1052,17 +1052,17 @@ def init(stackname, context):
                     'name': '${aws_eks_cluster.main.name}',
                 },
             }
-            # TODO if helm is required
-            providers['provider']['helm'] = {
-                'version': '= 0.9.0',
-                'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
-                'kubernetes': {
-                    'host': '${data.aws_eks_cluster.main.endpoint}',
-                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                    'token': '${data.aws_eks_cluster_auth.main.token}',
-                    'load_config_file': False,
-                },
-            }
+            if context['eks']['helm']:
+                providers['provider']['helm'] = {
+                    'version': '= 0.9.0',
+                    'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
+                    'kubernetes': {
+                        'host': '${data.aws_eks_cluster.main.endpoint}',
+                        'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                        'token': '${data.aws_eks_cluster_auth.main.token}',
+                        'load_config_file': False,
+                    },
+                }
         fp.write(json.dumps(providers))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform

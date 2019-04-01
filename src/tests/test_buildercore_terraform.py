@@ -1134,6 +1134,29 @@ class TestBuildercoreTerraform(base.BaseCase):
                 }
             }
         )
+        
+    @patch('buildercore.terraform.Terraform')
+    def test_helm_provider(self, Terraform):
+        terraform_binary = MagicMock()
+        Terraform.return_value = terraform_binary
+        stackname = 'project-with-eks-helm--%s' % self.environment
+        context = cfngen.build_context('project-with-eks-helm', stackname=stackname)
+        terraform.init(stackname, context)
+        providers = self._load_terraform_file(stackname, 'providers')
+        self.assertIn('helm', providers['provider'].keys())
+        self.assertEqual(
+            {
+                'version': "= %s" % '0.9.0',
+                'kubernetes': {
+                    'host': '${data.aws_eks_cluster.main.endpoint}',
+                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                    'token': '${data.aws_eks_cluster_auth.main.token}',
+                    'load_config_file': False,
+                },
+                'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
+            },
+            providers['provider']['helm']
+        )
 
     def test_eks_and_helm(self):
         pname = 'project-with-eks-helm'
@@ -1193,8 +1216,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'depends_on': ['kubernetes_cluster_role_binding.tiller'],
             }
         )
-
-    # TODO: test_helm_provider
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
