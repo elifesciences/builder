@@ -577,6 +577,8 @@ def render_eks(context, template):
 
     _render_eks_master(context, template)
     _render_eks_workers(context, template)
+    if context['eks']['helm']:
+        _render_helm(context, template)
 
 def _render_eks_master(context, template):
     # all from https://learn.hashicorp.com/terraform/aws/eks-intro
@@ -818,45 +820,44 @@ set -o xtrace
         }
     })
 
-    if context['eks']['helm']:
-        template.populate_resource('kubernetes_service_account', 'tiller', block={
-            'metadata': {
-                'name': 'tiller',
+def _render_helm(context, template):
+    template.populate_resource('kubernetes_service_account', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+            'namespace': 'kube-system',
+        },
+    })
+
+    template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+        },
+        'role_ref': {
+            'api_group': 'rbac.authorization.k8s.io',
+            'kind': 'ClusterRole',
+            'name': 'cluster-admin',
+        },
+        'subject': [
+            {
+                'kind': 'ServiceAccount',
+                'name': '${kubernetes_service_account.tiller.metadata.0.name}',
                 'namespace': 'kube-system',
             },
-        })
+        ],
+    })
 
-        template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
-            'metadata': {
-                'name': 'tiller',
-            },
-            'role_ref': {
-                'api_group': 'rbac.authorization.k8s.io',
-                'kind': 'ClusterRole',
-                'name': 'cluster-admin',
-            },
-            'subject': [
-                {
-                    'kind': 'ServiceAccount',
-                    'name': '${kubernetes_service_account.tiller.metadata.0.name}',
-                    'namespace': 'kube-system',
-                },
-            ],
-        })
+    template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
+        'name': 'incubator',
+        'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
+    })
 
-        # TODO: extract constants
-        template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
-            'name': 'incubator',
-            'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
-        })
-
-        # creating at least one release is necessary to trigger the Tiller installation
-        template.populate_resource('helm_release', 'raw_hello_world', block={
-            'name': 'hello-world',
-            'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-            'chart': 'incubator/raw',
-            'depends_on': ['kubernetes_cluster_role_binding.tiller'],
-        })
+    # creating at least one release is necessary to trigger the Tiller installation
+    template.populate_resource('helm_release', 'raw_hello_world', block={
+        'name': 'hello-world',
+        'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+        'chart': 'incubator/raw',
+        'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+    })
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
