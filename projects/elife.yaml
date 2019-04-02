@@ -2125,4 +2125,6 @@ kubernetes-aws:
         eks:
             worker:
                 type: t2.small    
+                max-size: 3
+                desired-capacity: 3
             helm: true
