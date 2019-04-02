@@ -1206,11 +1206,11 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('raw_hello_world', terraform_template['resource']['helm_release'])
+        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
         self.assertEqual(
-            terraform_template['resource']['helm_release']['raw_hello_world'],
+            terraform_template['resource']['helm_release']['common_resources'],
             {
-                'name': 'hello-world',
+                'name': 'common-resources',
                 'repository': "${data.helm_repository.incubator.metadata.0.name}",
                 'chart': 'incubator/raw',
                 'depends_on': ['kubernetes_cluster_role_binding.tiller'],

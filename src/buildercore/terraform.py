@@ -862,8 +862,8 @@ def _render_helm(context, template):
     })
 
     # creating at least one release is necessary to trigger the Tiller installation
-    template.populate_resource('helm_release', 'raw_hello_world', block={
-        'name': 'hello-world',
+    template.populate_resource('helm_release', 'common_resources', block={
+        'name': 'common-resources',
         'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
         'chart': 'incubator/raw',
         'depends_on': ['kubernetes_cluster_role_binding.tiller'],
