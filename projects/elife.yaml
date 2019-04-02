@@ -141,6 +141,7 @@ defaults:
                 max-size: 3
                 # (currently fixed) number of EC2 nodes
                 desired-capacity: 1
+            helm: false
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -2124,3 +2125,4 @@ kubernetes-aws:
         eks:
             worker:
                 type: t2.small    
+            helm: true

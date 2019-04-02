@@ -21,11 +21,13 @@ DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_TYPE_TEMPLATE = 'template_file'
 DATA_TYPE_AWS_AMI = 'aws_ami'
+DATA_TYPE_HELM_REPOSITORY = 'helm_repository'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 DATA_NAME_VAULT_GCP_API_KEY = 'gcp'
 DATA_NAME_VAULT_GITHUB = 'github'
+DATA_NAME_HELM_INCUBATOR = 'incubator'
 
 # keys to lookup in Vault
 # cannot modify these without putting new values inside Vault:
@@ -570,29 +572,35 @@ def render_bigquery(context, template):
     return template.to_dict()
 
 def render_eks(context, template):
+    "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
     if not context['eks']:
         return {}
 
+    _render_eks_master_security_group(context, template)
+    _render_eks_master_role(context, template)
     _render_eks_master(context, template)
-    _render_eks_workers(context, template)
+    _render_eks_workers_security_group(context, template)
+    _render_eks_workers_role(context, template)
+    _render_eks_workers_autoscaling_group(context, template)
+    _render_eks_user_access(context, template)
+    if context['eks']['helm']:
+        _render_helm(context, template)
 
-def _render_eks_master(context, template):
-    # all from https://learn.hashicorp.com/terraform/aws/eks-intro
-
-    template.populate_resource('aws_eks_cluster', 'main', block={
-        'name': context['stackname'],
-        'version': context['eks']['version'],
-        'role_arn': '${aws_iam_role.master.arn}',
-        'vpc_config': {
-            'security_group_ids': ['${aws_security_group.master.id}'],
-            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+def _render_eks_master_security_group(context, template):
+    template.populate_resource('aws_security_group', 'master', block={
+        'name': 'project-with-eks--%s--master' % context['instance_id'],
+        'description': 'Cluster communication with worker nodes',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
         },
-        'depends_on': [
-            "aws_iam_role_policy_attachment.master_kubernetes",
-            "aws_iam_role_policy_attachment.master_ecs",
-        ]
+        'tags': aws.generic_tags(context),
     })
 
+def _render_eks_master_role(context, template):
     template.populate_resource('aws_iam_role', 'master', block={
         'name': '%s--AmazonEKSMasterRole' % context['stackname'],
         'assume_role_policy': json.dumps({
@@ -619,20 +627,23 @@ def _render_eks_master(context, template):
         'role': "${aws_iam_role.master.name}",
     })
 
-    template.populate_resource('aws_security_group', 'master', block={
-        'name': 'project-with-eks--%s--master' % context['instance_id'],
-        'description': 'Cluster communication with worker nodes',
-        'vpc_id': context['aws']['vpc-id'],
-        'egress': {
-            'from_port': 0,
-            'to_port': 0,
-            'protocol': '-1',
-            'cidr_blocks': ['0.0.0.0/0'],
+def _render_eks_master(context, template):
+
+    template.populate_resource('aws_eks_cluster', 'main', block={
+        'name': context['stackname'],
+        'version': context['eks']['version'],
+        'role_arn': '${aws_iam_role.master.arn}',
+        'vpc_config': {
+            'security_group_ids': ['${aws_security_group.master.id}'],
+            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
-        'tags': aws.generic_tags(context),
+        'depends_on': [
+            "aws_iam_role_policy_attachment.master_kubernetes",
+            "aws_iam_role_policy_attachment.master_ecs",
+        ]
     })
 
-def _render_eks_workers(context, template):
+def _render_eks_workers_security_group(context, template):
     template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
         'description': 'Allow pods to communicate with the cluster API Server',
         'from_port': 443,
@@ -688,6 +699,7 @@ def _render_eks_workers(context, template):
         'cidr_blocks': ["0.0.0.0/0"],
     })
 
+def _render_eks_workers_role(context, template):
     template.populate_resource('aws_iam_role', 'worker', block={
         'name': '%s--AmazonEKSWorkerRole' % context['stackname'],
         'assume_role_policy': json.dumps({
@@ -719,6 +731,7 @@ def _render_eks_workers(context, template):
         'role': "${aws_iam_role.worker.name}",
     })
 
+def _render_eks_workers_autoscaling_group(context, template):
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'role': '${aws_iam_role.worker.name}'
@@ -779,6 +792,7 @@ set -o xtrace
         'tags': autoscaling_group_tags,
     })
 
+def _render_eks_user_access(context, template):
     template.populate_resource('aws_iam_role', 'user', block={
         'name': '%s--AmazonEKSUserRole' % context['stackname'],
         'assume_role_policy': json.dumps({
@@ -814,6 +828,45 @@ set -o xtrace
         'data': {
             'mapRoles': '${local.config_map_aws_auth}',
         }
+    })
+
+def _render_helm(context, template):
+    template.populate_resource('kubernetes_service_account', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+            'namespace': 'kube-system',
+        },
+    })
+
+    template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+        },
+        'role_ref': {
+            'api_group': 'rbac.authorization.k8s.io',
+            'kind': 'ClusterRole',
+            'name': 'cluster-admin',
+        },
+        'subject': [
+            {
+                'kind': 'ServiceAccount',
+                'name': '${kubernetes_service_account.tiller.metadata.0.name}',
+                'namespace': 'kube-system',
+            },
+        ],
+    })
+
+    template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
+        'name': 'incubator',
+        'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
+    })
+
+    # creating at least one release is necessary to trigger the Tiller installation
+    template.populate_resource('helm_release', 'common_resources', block={
+        'name': 'common-resources',
+        'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+        'chart': 'incubator/raw',
+        'depends_on': ['kubernetes_cluster_role_binding.tiller'],
     })
 
 def write_template(stackname, contents):
@@ -959,6 +1012,7 @@ def init(stackname, context):
         # TODO: possibly remove unused providers
         # Terraform already prunes them when running, but would
         # simplify the .cfn/terraform/$stackname/ files
+        # TODO: use TerraformTemplate?
         providers = {
             'provider': {
                 'fastly': {
@@ -1012,6 +1066,17 @@ def init(stackname, context):
                     'name': '${aws_eks_cluster.main.name}',
                 },
             }
+            if context['eks']['helm']:
+                providers['provider']['helm'] = {
+                    'version': '= 0.9.0',
+                    'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
+                    'kubernetes': {
+                        'host': '${data.aws_eks_cluster.main.endpoint}',
+                        'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+                        'token': '${data.aws_eks_cluster_auth.main.token}',
+                        'load_config_file': False,
+                    },
+                }
         fp.write(json.dumps(providers))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
