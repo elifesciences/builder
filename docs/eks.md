@@ -33,3 +33,9 @@ You can now execute:
 $ kubectl version
 $ kubectl get nodes
 ```
+
+## AMI update
+
+Workers are managed through an [autoscaling group](https://docs.aws.amazon.com/autoscaling/ec2/userguide/AutoScalingGroup.html). When the AMI of the worker is updated, only newly created EC2 instances will use it; existing ones won't be deleted.
+
+The best option to update the AMI is to cordon off servers, drain them and delete them so that they are recreated by the autoscaling group. This is not implemented in `builder`.
