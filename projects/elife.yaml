@@ -1707,8 +1707,6 @@ redirects:
     intdomain: null
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.nano
         ports:
             - 22
@@ -1732,9 +1730,8 @@ redirects:
                     - elifejournal.org
                 headers:
                     - Host
-
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        ram: 512
         ports:
             1262: 80
 
