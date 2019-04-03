@@ -1371,9 +1371,9 @@ personalised-covers:
                 deletion-policy: retain
     aws-alt:
         standalone:
-            s3:
-                "{instance}-elife-personalised-covers":
-                    deletion-policy: delete
+            s3: false
+        s1804:
+            s3: false
         prod:
             subdomains:
                 - covers
