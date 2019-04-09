@@ -985,13 +985,12 @@ journal-cms:
 
 
 elife-dashboard:
+    salt: '2017.7.8'
     subdomain: ppp-dash # ppp-dash.elifesciences.org
     repo: https://github.com/elifesciences/elife-dashboard
     formula-repo: https://github.com/elifesciences/elife-dashboard-formula
     default-branch: develop
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 80 # dashboard
@@ -1026,7 +1025,6 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--prod
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
