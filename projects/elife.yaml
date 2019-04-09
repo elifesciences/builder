@@ -1118,13 +1118,6 @@ containers:
             ec2:
                 root:
                     size: 100 # GB
-
-        # WARN: this alternate config should be removed in favour of using standalone1404 or s1604 or s1804
-        1404:
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true # inconsistent usage
-
     vagrant:
         box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
