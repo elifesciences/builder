@@ -985,7 +985,6 @@ journal-cms:
 
 
 elife-dashboard:
-    salt: '2017.7.8'
     subdomain: ppp-dash # ppp-dash.elifesciences.org
     repo: https://github.com/elifesciences/elife-dashboard
     formula-repo: https://github.com/elifesciences/elife-dashboard-formula
