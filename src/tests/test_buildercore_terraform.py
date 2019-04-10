@@ -883,8 +883,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'tags': {
                     'Project': 'project-with-eks',
                     'Environment': self.environment,
-                    'Cluster': 'project-with-eks--%s' % self.environment,
                     'Name': 'project-with-eks--%s' % self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
                 }
             }
         )
@@ -919,8 +919,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'tags': {
                     'Project': 'project-with-eks',
                     'Environment': self.environment,
-                    'Cluster': 'project-with-eks--%s' % self.environment,
                     'Name': 'project-with-eks--%s' % self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
                     'kubernetes.io/cluster/%s': 'owned',
                 }
             }
@@ -1080,12 +1080,12 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'propagate_at_launch': True,
                     },
                     {
-                        'key': 'Cluster',
+                        'key': 'Name',
                         'value': 'project-with-eks--%s' % self.environment,
                         'propagate_at_launch': True,
                     },
                     {
-                        'key': 'Name',
+                        'key': 'Cluster',
                         'value': 'project-with-eks--%s' % self.environment,
                         'propagate_at_launch': True,
                     },
