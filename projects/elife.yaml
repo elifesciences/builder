@@ -2118,3 +2118,17 @@ kubernetes-aws:
                 max-size: 3
                 desired-capacity: 3
             helm: true
+
+large-repo-wrangler:
+    description: large git repo wrangler
+    domain: False
+    intdomain: False
+    aws:
+        ec2: {}
+        ext:
+            type: gp2
+            size: 20 # GB
+            device: /dev/sdh
+        ports:
+            - 22
+
