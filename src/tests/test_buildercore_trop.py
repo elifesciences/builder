@@ -165,6 +165,22 @@ class TestBuildercoreTrop(base.BaseCase):
             ]
         )
 
+    def test_t2_unlimited_template(self):
+        extra = {
+            'stackname': 'project-with-ec2-t2-unlimited--prod',
+        }
+        context = cfngen.build_context('project-with-ec2-t2-unlimited', **extra)
+        cfn_template = trop.render(context)
+        data = _parse_json(cfn_template)
+        ec2 = data['Resources']['EC2Instance1']['Properties']
+        self.assertIn('CreditSpecification', ec2)
+        self.assertEqual(
+            ec2['CreditSpecification'],
+            {
+                'CPUCredits': 'unlimited',
+            },
+        )
+
     def test_clustered_template(self):
         extra = {
             'stackname': 'project-with-cluster--prod',

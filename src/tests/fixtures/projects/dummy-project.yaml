@@ -25,6 +25,7 @@ defaults:
         account-id: 512686554592
         ec2:
             cluster-size: 1
+            cpu-credits: standard
             dns-external-primary: false
             dns-internal: false
             # nodes to temporarily delete, for later recreation
@@ -455,6 +456,12 @@ project-with-ec2-custom-root:
         ec2:
             root:
                 size: 20 # GB
+
+project-with-ec2-t2-unlimited:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2:
+            cpu-credits: unlimited
 
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3

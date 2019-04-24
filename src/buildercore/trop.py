@@ -196,6 +196,9 @@ def ec2instance(context, node):
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
         "InstanceType": lu('ec2.type'), # "t2.small", "m1.medium", etc
+        "CreditSpecification": ec2.CreditSpecification(
+            CPUCredits=lu('ec2.cpu-credits'),
+        ),
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
         "SubnetId": subnet_id, # "subnet-1d4eb46a"
