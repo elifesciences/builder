@@ -22,6 +22,7 @@ defaults:
     formula-dependencies:
         - https://github.com/example/builder-base-formula
     aws:
+        account-id: 512686554592
         ec2:
             cluster-size: 1
             dns-external-primary: false
@@ -87,6 +88,18 @@ defaults:
         sns: []
         sqs: []
         s3: []
+        eks:
+            # eks defaults only used if a 'eks' section present in project
+            #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
+            version: '1.11'
+            subnet-id: subnet-a1a1a1a1
+            redundant-subnet-id: subnet-b2b2b2b2
+            worker:
+                type: t2.small
+                desired-capacity: 3
+                min-size: 1
+                max-size: 3
+            helm: False
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
@@ -711,3 +724,25 @@ project-with-bigquery-remote-schemas:
                     local:
                         schema: ./src/buildercore/bigquery/schemas/key-value.json
     aws-alt: {}
+
+project-with-eks:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            subnet-id: subnet-a1a1a1a1
+            redundant-subnet-id: subnet-b2b2b2b2
+            worker:
+                type: t2.small
+                desired-capacity: 3
+                min-size: 1
+                max-size: 3
+
+project-with-eks-helm:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            helm: true

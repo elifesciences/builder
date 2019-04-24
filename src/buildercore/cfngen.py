@@ -111,6 +111,7 @@ def build_context(pname, **more_context):
 
         'ec2': False,
         's3': {},
+        'eks': False,
         'elb': False,
         'sns': [],
         'sqs': {},
@@ -146,6 +147,7 @@ def build_context(pname, **more_context):
         build_context_fastly,
         build_context_gcs,
         build_context_bigquery,
+        build_context_eks,
         build_context_subdomains,
         build_context_elasticache,
         build_context_vault,
@@ -166,6 +168,7 @@ def build_context_aws(pdata, context):
         return context
     keepers = [
         'region',
+        'account-id',
         'vpc-id',
         'subnet-id',
         'subnet-cidr',
@@ -448,6 +451,12 @@ def build_context_bigquery(pdata, context):
             }
     return context
 
+def build_context_eks(pdata, context):
+    if pdata['aws'].get('eks'):
+        context['eks'] = pdata['aws']['eks']
+
+    return context
+
 def complete_domain(host, default_main):
     is_main = host == ''
     is_complete = host.count(".") > 0
@@ -458,7 +467,8 @@ def complete_domain(host, default_main):
     return host + '.' + default_main # something + '.' + elifesciences.org
 
 def build_context_subdomains(pdata, context):
-    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', [])]
+    # note! a distinction is being made between 'subdomain' and 'subdomains'
+    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', []) if pdata['domain']]
     return context
 
 def build_context_elasticache(pdata, context):
