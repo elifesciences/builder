@@ -29,6 +29,8 @@ defaults:
         ec2:
             # how many EC2 instance per stack instance
             cluster-size: 1
+            # turn on T2 `unlimited` if necessary
+            cpu-credits: standard
             # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
             # only makes sense if cluster-size > 1
             dns-external-primary: false
@@ -393,6 +395,9 @@ lax:
             rds:
                 storage: 5
                 deletion-policy: Delete
+        ci:
+            ec2:
+                cpu-credits: unlimited
         end2end:
             description: production-like
             ec2:

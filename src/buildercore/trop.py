@@ -210,6 +210,11 @@ echo %s > /etc/build-vars.json.b64
 %s""" % (buildvars_serialization, clean_server)),
     }
 
+    if lu('ec2.cpu-credits') != 'standard':
+        project_ec2["CreditSpecification"] = ec2.CreditSpecification(
+            CPUCredits=lu('ec2.cpu-credits'),
+        )
+
     # TODO: 'root' is undefined in the project definition
     # TODO: extract in private method?
     if context['ec2'].get('root'):
