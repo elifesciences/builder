@@ -2125,7 +2125,6 @@ large-repo-wrangler:
     intdomain: False
     formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
     aws:
-        ec2: {}
         ext:
             type: gp2
             size: 20 # GB
