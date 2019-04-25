@@ -2120,9 +2120,10 @@ kubernetes-aws:
             helm: true
 
 large-repo-wrangler:
-    description: large git repo wrangler
+    description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.
     domain: False
     intdomain: False
+    formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
     aws:
         ec2: {}
         ext:
@@ -2131,4 +2132,5 @@ large-repo-wrangler:
             device: /dev/sdh
         ports:
             - 22
+    vagrant: {}
 
