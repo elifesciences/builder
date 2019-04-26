@@ -6,25 +6,20 @@ settings.yml
 *~
 
 cloned-projects/
-builder-private/
-builder-private-example/
 custom-vagrant/
 
-.vagrant*
-payload.tar.gz
-stacks/*.json
+.vagrant/
+.vagrant-error
 *.orig
 *.log
 venv/
 *.swp
 .cfn/
 logs/
-public/
 private/
 downloads
 .coverage.*
 .coverage
-projects/*/
 scripts/customize.sh
 scripts/salt/*.minion
 /custom-vagrant/salt/
