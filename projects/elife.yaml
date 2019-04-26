@@ -969,7 +969,7 @@ journal-cms:
                 type: db.t2.small
                 engine: MySQL
                 version: '5.7'
-                storage: 12 # GB
+                storage: 24 # GB
                 backup-retention: 2 # days
             ext:
                 size: 30 # GB
