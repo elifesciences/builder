@@ -926,9 +926,6 @@ journal-cms:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 443
@@ -980,7 +977,6 @@ journal-cms:
             ext:
                 size: 30 # GB
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1241: 80
 
