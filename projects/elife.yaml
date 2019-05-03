@@ -372,6 +372,8 @@ master-server:
     vagrant:
         # 16.04, deprecated
         box: bento/ubuntu-16.04
+        ports:
+            8200: 8200 # Vault GUI
 
 lax:
     description: article-json store
