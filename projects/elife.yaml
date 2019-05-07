@@ -1289,6 +1289,9 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
+        ci:
+            ec2:
+                cpu-credits: unlimited
         end2end:
             ports:
                 - 22
