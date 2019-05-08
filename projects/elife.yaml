@@ -926,11 +926,17 @@ journal-cms:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
+        # deprecated
+        ec2:
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 443
             - 80:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+        ext:
+            size: 30 # GB
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
@@ -954,8 +960,6 @@ journal-cms:
                 version: '5.7'
                 storage: 12 # GB
                 backup-retention: 2 # days
-            ext:
-                size: 30 # GB
         continuumtest:
             description: production-like environment.
             rds:
@@ -964,8 +968,6 @@ journal-cms:
                 version: '5.7'
                 storage: 12 # GB
                 backup-retention: 2 # days
-            ext:
-                size: 30 # GB
         prod:
             description: production environment. backed by RDS
             rds:
@@ -974,9 +976,9 @@ journal-cms:
                 version: '5.7'
                 multi-az: true
                 storage: 24 # GB
-            ext:
-                size: 30 # GB
     vagrant:
+        # 16.04, deprecated
+        box: bento/ubuntu-16.04
         ports:
             1241: 80
 
