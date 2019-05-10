@@ -1263,10 +1263,11 @@ search:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.medium # 4 GB of RAM: once we know more about which software
-                        # will be installed, we can choose the right machine
+        type: t2.medium
         ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
+            # 16.04, deprecated
+            ami: ami-14a1d06e # GENERATED created from basebox--1604
+                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1314,7 +1315,7 @@ search:
                 protocol: 
                     - http
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
+        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1244: 80
             1245: 8080
