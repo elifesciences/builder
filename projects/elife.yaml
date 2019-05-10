@@ -935,8 +935,6 @@ journal-cms:
             - 443
             - 80:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-        ext:
-            size: 30 # GB
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
@@ -960,6 +958,8 @@ journal-cms:
                 version: '5.7'
                 storage: 12 # GB
                 backup-retention: 2 # days
+            ext:
+                size: 30 # GB
         continuumtest:
             description: production-like environment.
             rds:
@@ -968,6 +968,8 @@ journal-cms:
                 version: '5.7'
                 storage: 12 # GB
                 backup-retention: 2 # days
+            ext:
+                size: 30 # GB
         prod:
             description: production environment. backed by RDS
             rds:
@@ -976,6 +978,8 @@ journal-cms:
                 version: '5.7'
                 multi-az: true
                 storage: 24 # GB
+            ext:
+                size: 30 # GB
     vagrant:
         # 16.04, deprecated
         box: bento/ubuntu-16.04
