@@ -2150,7 +2150,7 @@ large-repo-wrangler:
 
 microsimulation-demo:
     domain: false
-    subdomain: demo--ijm
+    subdomain: ijm
     repo: https://github.com/microsimulation/demo
     formula-repo: https://github.com/elifesciences/microsimulation-demo-formula
     aws:
