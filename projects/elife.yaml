@@ -502,8 +502,6 @@ journal:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 443
@@ -680,7 +678,6 @@ journal:
                     dataset: "{instance}"
                     table: "journal"
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 4096
         ports:
             1240: 80
