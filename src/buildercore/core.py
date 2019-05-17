@@ -246,12 +246,16 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
 
 def _ec2_connection_params(stackname, username, **kwargs):
     "returns a dictionary of settings to be used with Fabric's api.settings context manager"
+    # http://docs.fabfile.org/en/1.14/usage/env.html
     params = {'user': username}
     pem = stack_pem(stackname)
     # handles cases where we want to establish a connection to run a task
     # when machine has failed to provision correctly.
-    if os.path.exists(pem) and username == config.BOOTSTRAP_USER:
-        params['key_filename'] = pem
+    if username == config.BOOTSTRAP_USER:
+        if os.path.exists(pem):
+            params['key_filename'] = pem
+        else:
+            raise RuntimeError("private key for the bootstrap user for this host does not exist. I looked here: %s" % pem)
     params.update(kwargs)
     return params
 
