@@ -476,6 +476,10 @@ api-gateway:
     aws-alt:
         standalone:
             fastly: false
+        s1604:
+            fastly: false
+        s1804:
+            fastly: false
         end2end: {}
         continuumtest:
             fastly:
