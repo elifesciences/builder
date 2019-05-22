@@ -1624,6 +1624,10 @@ iiif:
     aws-alt:
         standalone:
             fastly: false
+        s1604:
+            fastly: false
+        s1804:
+            fastly: false
         # for testing new versions
         ci:
             ports:
