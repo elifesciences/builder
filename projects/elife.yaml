@@ -1482,8 +1482,6 @@ peerscout:
     repo: https://github.com/elifesciences/peerscout
     formula-repo: https://github.com/elifesciences/peerscout-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.xlarge # explicitly 16GB RAM for heavy background processing
         ports:
             - 22
@@ -1513,7 +1511,6 @@ peerscout:
             subdomains:
                 - peerscout
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1241: 80
         ram: 4096
