@@ -1911,6 +1911,7 @@ elife-xpub:
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
             ec2:
                 cluster-size: 2
+                dns-external-primary: true
                 dns-internal: true
             elb:
                 protocol:
@@ -1935,6 +1936,7 @@ elife-xpub:
                 deletion-policy: Snapshot
             ec2:
                 cluster-size: 2
+                dns-external-primary: true
                 dns-internal: true
             elb:
                 protocol:
