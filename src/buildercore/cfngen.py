@@ -409,7 +409,7 @@ def build_context_fastly(pdata, context):
         return bigquerylogging
 
     context['fastly'] = False
-    if pdata['aws'].get('fastly'):
+    if pdata['aws'].get('fastly') and pdata['domain']:
         backends = pdata['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
             'backends': OrderedDict([(n, _build_backend(b)) for n, b in backends.items()]),
