@@ -124,6 +124,9 @@ def _update_remote_bvars(stackname, buildvars):
 def refresh(stackname, context):
     "(safely) replaces the buildvars file on the ec2 instance(s)"
 
+    from master import download_keypair
+    download_keypair(stackname)
+
     def _refresh_buildvars():
         old_buildvars = _retrieve_build_vars()
 
