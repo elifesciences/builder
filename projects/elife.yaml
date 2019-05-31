@@ -275,6 +275,11 @@ defaults:
         #    1239: 80
         #    1240: 8001
 
+builder:
+    formula-repo: https://github.com/elifesciences/builder-formula
+    vagrant:
+        box: bento/ubuntu-16.04
+
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
