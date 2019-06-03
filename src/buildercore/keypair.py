@@ -5,6 +5,7 @@ from os.path import join
 from . import core, utils, config, s3
 from .core import stack_pem
 from .utils import lfilter
+from fabric.api import local
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ def download_from_s3(stackname):
     expected_path = stack_pem(stackname, die_if_exists=True)
     s3.download(s3_keypair_key(stackname), expected_path)
     stack_pem(stackname, die_if_doesnt_exist=True)
+    local('chmod 400 -R %s' % expected_path) # is the -R (recursive) necessary?
     return expected_path
 
 #

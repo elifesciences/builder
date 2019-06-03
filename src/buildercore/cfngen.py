@@ -409,7 +409,9 @@ def build_context_fastly(pdata, context):
         return bigquerylogging
 
     context['fastly'] = False
-    if pdata['aws'].get('fastly') and pdata['domain']:
+    # as 'domain' is the top-level elifesciences.org used to build DNS entries, if it's not around it means
+    # no DNS entries are possible and hence no Fastly CDN can be setup
+    if pdata['domain'] and pdata['aws'].get('fastly'):
         backends = pdata['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
             'backends': OrderedDict([(n, _build_backend(b)) for n, b in backends.items()]),
