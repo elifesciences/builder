@@ -36,7 +36,7 @@ def download_from_s3(stackname):
     expected_path = stack_pem(stackname, die_if_exists=True)
     s3.download(s3_keypair_key(stackname), expected_path)
     stack_pem(stackname, die_if_doesnt_exist=True)
-    local('chmod 400 -R %s' % expected_path) # is the -R (recursive) necessary?
+    local('chmod 400 %s' % expected_path)
     return expected_path
 
 #
