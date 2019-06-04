@@ -45,18 +45,12 @@ def write_missing_keypairs_to_s3():
 
     lmap(write, to_upload)
 
-# TODO: implement or remove
-def write_missing_context_to_s3():
-    pass
-
 @debugtask
 @requires_aws_stack
 @echo_output
 def download_keypair(stackname):
     try:
-        path = keypair.download_from_s3(stackname)
-        local('chmod 400 -R %s' % path)
-        return path
+        return keypair.download_from_s3(stackname)
     except EnvironmentError as err:
         LOG.info(err)
 
