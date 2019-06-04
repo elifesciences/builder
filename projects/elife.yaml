@@ -1538,8 +1538,6 @@ iiif:
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.medium
         ports:
             - 22
@@ -1688,7 +1686,6 @@ iiif:
                     - "{instance}--cdn-iiif"
                     - iiif
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1261: 80
 
