@@ -602,11 +602,6 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                vcl-templates:
-                    journal-submit:
-                        percentage: 100
-                        referer: ^(?:https://staging--xpub\.elifesciences\.org/|https://sandbox\.orcid\.org/)
-                        xpub_uri: https://staging--xpub.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"
