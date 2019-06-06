@@ -149,6 +149,6 @@ def refresh(stackname, context):
 
     # lsh@2019-06: cfn.update_infrastructure fails to run highstate on new ec2 instance if keypair not present,
     # it prompts for a password for the deploy user. prompts when executing in parallel cause operation to fail
-    keypair.download_from_s3(stackname)
+    keypair.download_from_s3(stackname, die_if_exists=False)
 
     stack_all_ec2_nodes(stackname, _refresh_buildvars, username=BOOTSTRAP_USER)

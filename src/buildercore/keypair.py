@@ -32,9 +32,9 @@ def delete_keypair_from_s3(stackname):
     s3.delete(key)
     return s3.exists(key)
 
-def download_from_s3(stackname):
-    expected_path = stack_pem(stackname, die_if_exists=True)
-    s3.download(s3_keypair_key(stackname), expected_path)
+def download_from_s3(stackname, die_if_exists=True):
+    expected_path = stack_pem(stackname, die_if_exists=die_if_exists)
+    s3.download(s3_keypair_key(stackname), expected_path, overwrite=True)
     stack_pem(stackname, die_if_doesnt_exist=True)
     local('chmod 400 %s' % expected_path)
     return expected_path
