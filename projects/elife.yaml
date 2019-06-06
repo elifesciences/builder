@@ -557,11 +557,6 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                vcl-templates:
-                    journal-submit:
-                        percentage: 100
-                        referer: ^https://end2end--xpub\.elifesciences\.org/
-                        xpub_uri: https://end2end--xpub.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -602,11 +597,6 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                vcl-templates:
-                    journal-submit:
-                        percentage: 100
-                        referer: ^(?:https://staging--xpub\.elifesciences\.org/|https://sandbox\.orcid\.org/)
-                        xpub_uri: https://staging--xpub.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -670,11 +660,6 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                vcl-templates:
-                    journal-submit:
-                        percentage: 100 # ~64% of total traffic, given we control 2/3 from this entry point
-                        referer: ^(?:https://(?:reviewer|xpub)\.elifesciences\.org/|https://orcid\.org/)
-                        xpub_uri: https://reviewer.elifesciences.org/login
                 vcl:
                     - "original-host"
                     - "ping-status"
