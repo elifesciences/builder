@@ -2172,6 +2172,7 @@ microsimulation-demo:
 
 bioprotocol:
     repo: https://github.com/elifesciences/bioprotocol-service
+    formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
         type: t2.micro
         ports:
