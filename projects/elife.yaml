@@ -731,6 +731,7 @@ elife-bot:
     repo: https://github.com/elifesciences/elife-bot
     formula-repo: https://github.com/elifesciences/elife-bot-formula
     subdomain: bot
+    # ip: 54.164.145.166 # bot.elifesciences.org must be available at this IP
     aws:
         ec2:
             ami: ami-14a1d06e # GENERATED created from basebox--1604
