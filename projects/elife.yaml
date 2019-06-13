@@ -2179,17 +2179,11 @@ bioprotocol:
             - 22
             - 80
             - 443
-        sns:
-            # endpoint for BioProtocol to publish updates to article protocol data
-            - bioprotocol-updates--{instance}
         sqs:
-            # single queue that receives messages about:
-            # - updates to articles (internally)
-            # - updates to article protocol data (from BioProtocol)
+            # single queue that receives messages about updates to articles (internally)
             bioprotocol--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-                    - bioprotocol-updates--{instance}
     aws-alt: {}
     vagrant:
         ports:
