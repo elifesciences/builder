@@ -2170,3 +2170,22 @@ microsimulation-demo:
         ports:
             1280: 80
             1281: 8081
+
+bioprotocol:
+    repo: https://github.com/elifesciences/bioprotocol-service
+    formula-repo: https://github.com/elifesciences/bioprotocol-formula
+    aws:
+        type: t2.micro
+        ports:
+            - 22
+            - 80
+            - 443
+        sqs:
+            # single queue that receives messages about updates to articles (internally)
+            bioprotocol--{instance}:
+                subscriptions:
+                    - bus-articles--{instance}
+    aws-alt: {}
+    vagrant:
+        ports:
+            1280: 80
