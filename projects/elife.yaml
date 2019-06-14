@@ -2172,6 +2172,7 @@ microsimulation-demo:
             1281: 8081
 
 bioprotocol:
+    subdomain: bp # ci--bp.elifesciences.org
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
