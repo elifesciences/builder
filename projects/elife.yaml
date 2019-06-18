@@ -1286,6 +1286,7 @@ search:
                         # will be installed, we can choose the right machine
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
+            cpu-credits: unlimited
         ports:
             - 22
             - 80:
@@ -1302,9 +1303,6 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
-        ci:
-            ec2:
-                cpu-credits: unlimited
         end2end:
             ports:
                 - 22
