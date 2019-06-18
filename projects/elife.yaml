@@ -1724,8 +1724,8 @@ redirects:
             type: t2.small
         prod:
             cloudfront:
-                # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
-                certificate_id: ASCAIM46DMZL26YCYELLY
+                # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
+                certificate_id: ASCAXOXT77XQJYKX6YHQ5
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
