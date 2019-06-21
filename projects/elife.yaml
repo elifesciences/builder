@@ -1286,6 +1286,7 @@ search:
                         # will be installed, we can choose the right machine
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
+            cpu-credits: unlimited
         ports:
             - 22
             - 80:
@@ -1302,9 +1303,6 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
-        ci:
-            ec2:
-                cpu-credits: unlimited
         end2end:
             ports:
                 - 22
@@ -1724,8 +1722,8 @@ redirects:
             type: t2.small
         prod:
             cloudfront:
-                # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/redirects-2018
-                certificate_id: ASCAIM46DMZL26YCYELLY
+                # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
+                certificate_id: ASCAXOXT77XQJYKX6YHQ5
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
@@ -2142,8 +2140,8 @@ kubernetes-aws:
         eks:
             worker:
                 type: t2.small    
-                max-size: 3
-                desired-capacity: 3
+                max-size: 4
+                desired-capacity: 4
             helm: true
 
 large-repo-wrangler:
