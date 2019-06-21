@@ -2134,8 +2134,8 @@ kubernetes-aws:
         eks:
             worker:
                 type: t2.small    
-                max-size: 3
-                desired-capacity: 3
+                max-size: 4
+                desired-capacity: 4
             helm: true
 
 large-repo-wrangler:
