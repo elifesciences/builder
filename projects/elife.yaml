@@ -2174,7 +2174,6 @@ bioprotocol:
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
-        type: t2.micro
         ports:
             - 22
             - 80
@@ -2184,9 +2183,6 @@ bioprotocol:
             bioprotocol--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-    aws-alt:
-        prod:
-            type: t2.small
     vagrant:
         ports:
             1280: 80
