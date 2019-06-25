@@ -2184,7 +2184,9 @@ bioprotocol:
             bioprotocol--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-    aws-alt: {}
+    aws-alt:
+        prod:
+            type: t2.small
     vagrant:
         ports:
             1280: 80
