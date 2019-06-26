@@ -2176,6 +2176,7 @@ bioprotocol:
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
+        # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
         ports:
             - 22
             - 80
