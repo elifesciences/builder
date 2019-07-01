@@ -1053,6 +1053,7 @@ elife-api:
     repo: https://github.com/elifesciences/elife-api
     formula-repo: https://github.com/elifesciences/elife-api-formula
     aws:
+        # ip: 52.72.250.79 # legacy--api.elifesciences.org
         ec2:
             ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
@@ -1423,6 +1424,7 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
+        # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
         type: t2.medium
         ports:
             - 22
@@ -2174,6 +2176,7 @@ bioprotocol:
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
+        # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
         ports:
             - 22
             - 80
