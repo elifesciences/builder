@@ -384,8 +384,6 @@ lax:
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
             - 443
@@ -440,7 +438,6 @@ lax:
                 healthcheck:
                     path: /api/v2/ping
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1239: 80
             1240: 8001
