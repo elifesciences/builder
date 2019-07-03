@@ -717,6 +717,8 @@ elife-metrics:
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed
+            ext:
+                size: 10 # GB
             rds:
                 multi-az: true
                 storage: 10
