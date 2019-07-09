@@ -66,6 +66,8 @@ Success! Data written to: secret/builder/apikey/fastly-gcp-logging
 
 ### AppRoles
 
+AppRoles are a way for applications or their formula to integrate with Vault via a fixed set of credentials: role and secret are akin to username and password. These fixed credentials can be used to issue a temporary token.
+
 ```
 vault write auth/approle/role/jenkins policies=default,jenkins-elife-alfred,master-server
 ```
@@ -84,6 +86,8 @@ creates a new `secret-id` for the AppRole.
 
 
 ### Periodic tokens
+
+Periodic tokens allow an issued Vault token to essentially never expire, hence are useful for applications or formulas that for simplicity need to store a token without updating it for a long time.
 
 Create a periodic token:
 ```
