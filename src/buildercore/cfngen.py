@@ -111,6 +111,7 @@ def build_context(pname, **more_context):
 
         'ec2': False,
         's3': {},
+        'eks': False,
         'elb': False,
         'sns': [],
         'sqs': {},
@@ -146,6 +147,7 @@ def build_context(pname, **more_context):
         build_context_fastly,
         build_context_gcs,
         build_context_bigquery,
+        build_context_eks,
         build_context_subdomains,
         build_context_elasticache,
         build_context_vault,
@@ -166,6 +168,7 @@ def build_context_aws(pdata, context):
         return context
     keepers = [
         'region',
+        'account-id',
         'vpc-id',
         'subnet-id',
         'subnet-cidr',
@@ -406,7 +409,9 @@ def build_context_fastly(pdata, context):
         return bigquerylogging
 
     context['fastly'] = False
-    if pdata['aws'].get('fastly'):
+    # as 'domain' is the top-level elifesciences.org used to build DNS entries, if it's not around it means
+    # no DNS entries are possible and hence no Fastly CDN can be setup
+    if pdata['domain'] and pdata['aws'].get('fastly'):
         backends = pdata['aws']['fastly'].get('backends', OrderedDict({}))
         context['fastly'] = {
             'backends': OrderedDict([(n, _build_backend(b)) for n, b in backends.items()]),
@@ -448,6 +453,12 @@ def build_context_bigquery(pdata, context):
             }
     return context
 
+def build_context_eks(pdata, context):
+    if pdata['aws'].get('eks'):
+        context['eks'] = pdata['aws']['eks']
+
+    return context
+
 def complete_domain(host, default_main):
     is_main = host == ''
     is_complete = host.count(".") > 0
@@ -458,7 +469,8 @@ def complete_domain(host, default_main):
     return host + '.' + default_main # something + '.' + elifesciences.org
 
 def build_context_subdomains(pdata, context):
-    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', [])]
+    # note! a distinction is being made between 'subdomain' and 'subdomains'
+    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', []) if pdata['domain']]
     return context
 
 def build_context_elasticache(pdata, context):
@@ -540,7 +552,7 @@ def generate_stack(pname, **more_context):
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^AZ.+$', '^InstanceId.+$', '^PrivateIP.+$', '^DomainName$']
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^AZ.+$', '^InstanceId.+$', '^PrivateIP.+$', '^DomainName$', '^RDSHost$', '^RDSPort$']
 
 REMOVABLE_TITLE_PATTERNS = ['^CloudFront.*', '^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtDNS1$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$', '^AttachedDB$', '^AttachedDBSubnet$', '^VPCSecurityGroup$', '^KeyName$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']

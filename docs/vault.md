@@ -121,3 +121,16 @@ Non-`master-server` stacks can pull secrets from Vault through the Salt master, 
 | Vagrant         | Masterless?        | No             | -             |
 | EC2             | Masterful          | Only for tests | Itself        |
 | EC2             | Masterless         | Only for tests | Itself        |
+
+## Builder secrets dependencies
+
+```
+VAULT_ADDR=https://master-server.elifesciences.org:8200 vault kv list secret/builder/apikey
+```
+gives the following:
+
+- `fastly`: API key for Fastly `it-admin@elifesciences.org` user, with permission to modify the CDN
+- `fastly-gcp-logging`: API key for Fastly to write logs to GCP (BigQuery)
+- `fastly-gcs-logging`: API key for Fastly to write logs to GCS (Google Cloud Storage buckets)
+- `gcp`: JSON credentials for the `builder@elife-infrastructure.iam.gserviceaccount.com` Service Account
+- `github`: Github token for accessing private repositories
