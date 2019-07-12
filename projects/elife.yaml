@@ -1136,6 +1136,10 @@ containers:
             ec2:
                 root:
                     size: 100 # GB
+        xlarge:
+            type: t2.xlarge # 4 CPUs
+            ec2:
+                cpu-credits: unlimited
     vagrant:
         box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
