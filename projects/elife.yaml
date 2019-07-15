@@ -1114,7 +1114,8 @@ elife-libraries:
 
 containers:
     description: run any Docker-based workload
-    subdomain: containers
+    domain: false
+    intdomain: false
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
         ec2:
