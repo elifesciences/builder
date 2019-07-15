@@ -1136,6 +1136,7 @@ containers:
             ec2:
                 root:
                     size: 100 # GB
+                    type: gp2
         xlarge:
             type: t2.xlarge # 4 CPUs
             ec2:
