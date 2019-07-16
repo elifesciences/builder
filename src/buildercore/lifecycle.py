@@ -74,6 +74,7 @@ def restart(stackname):
             call_while(
                 lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
                 interval=2,
+                timeout=config.BUILDER_TIMEOUT,
                 update_msg="waiting for nodes to be networked",
                 done_msg="all nodes have public ips"
             )
@@ -123,7 +124,7 @@ def start(stackname):
         call_while(
             lambda: _some_node_is_not_ready(stackname),
             interval=2,
-            timeout=120,
+            timeout=config.BUILDER_TIMEOUT,
             update_msg="waiting for nodes to complete boot",
             done_msg="all nodes have public ips, are reachable via SSH and have completed boot",
             exception_class=EC2Timeout
@@ -134,11 +135,11 @@ def start(stackname):
         # in case of botched boot and/or inability to
         # access through SSH, try once to stop and
         # start the instances again
-        raise
-        #_ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).stop()
-        #_wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_checked)
-        #_ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).start()
-        #_wait_for_ec2_steady_state(ec2_to_be_checked)
+        LOG.info("Retrying boot on %s", ec2_to_be_checked)
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).stop()
+        _wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_checked)
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).start()
+        _wait_for_ec2_steady_state()
 
     if rds_to_be_started:
         _wait_rds_all_in_state(stackname, 'available', rds_to_be_started)
@@ -244,6 +245,7 @@ def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_descri
     call_while(
         some_node_is_still_not_compliant,
         interval=2,
+        timeout=config.BUILDER_TIMEOUT,
         update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
         done_msg="all nodes in state %s" % state
     )
