@@ -16,7 +16,7 @@ def stop(stackname, *services):
     """Stops the nodes of 'stackname' without losing their state.
 
     Idempotent. Default to stopping only EC2 but additional services like 'rds' can be passed in"""
-    if services == []:
+    if not services:
         services = ['ec2']
 
     lifecycle.stop(stackname, services)
