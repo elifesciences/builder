@@ -45,7 +45,7 @@ def push(lst, rec):
 def restart(stackname, initial_states='pending|running|stopping|stopped'):
     """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
     rds is started if stopped (if *exists*) but otherwise not affected"""
-    #start_rds_nodes(stackname) # something a bit buggy here
+    # start_rds_nodes(stackname) # something a bit buggy here
 
     node_list = find_ec2_instances(stackname, state=initial_states, allow_empty=True)
 

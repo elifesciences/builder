@@ -1,10 +1,8 @@
 import os
 import json
-import time, tempfile
 from fabric.api import task
 from buildercore import lifecycle, core
 from utils import get_input
-from buildercore.utils import splitfilter
 from decorators import requires_aws_stack, timeit, debugtask, echo_output
 import logging
 
@@ -42,7 +40,7 @@ def restart_all(statefile):
     "restarts all running ec2 instances. multiple nodes are restarted serially and failures prevent the rest of the node from being restarted"
 
     os.system("touch " + statefile)
-    
+
     results = core.active_stack_names(core.find_region())
 
     u1404 = [
@@ -56,7 +54,7 @@ def restart_all(statefile):
     legacy = [
         'elife-api'
     ]
-    
+
     dont_do = u1404 + legacy
 
     # order not preserved
@@ -69,41 +67,38 @@ def restart_all(statefile):
     ]
 
     pname = lambda stackname: core.parse_stackname(stackname)[0]
-    todo = sorted(results, key=lambda stackname: pname(stackname) in do_first, reverse=True)
+    todo = sorted(results, key=pname in do_first, reverse=True)
     todo = filter(lambda stackname: pname(stackname) not in dont_do, todo)
 
     print('todo:')
-    print(json.dumps(todo,indent=4))
+    print(json.dumps(todo, indent=4))
 
     with open(statefile, 'r') as fh:
         done = fh.read().split('\n')
 
-    todo = ['bioprotocol--end2end']
-        
     with open(statefile, 'a') as fh:
-        print('writing state to',fh.name)
+        print('writing state to', fh.name)
 
         for stackname in todo:
             if stackname in done:
-                print('skipping',stackname)
+                print('skipping', stackname)
                 continue
             try:
-                print('restarting',stackname)
+                print('restarting', stackname)
                 # only restart instances that are currently running
                 # this will skip ci/end2end
-                lifecycle.restart(stackname, initial_states='running') 
-                #time.sleep(2)
-                print('done',stackname)
+                lifecycle.restart(stackname, initial_states='running')
+                print('done', stackname)
                 fh.write(stackname + "\n")
                 fh.flush()
-            
-            except:
+
+            except BaseException:
                 LOG.exception("unhandled exception restarting %s", stackname)
-                print(stackname,"is in an unknown state")
+                print(stackname, "is in an unknown state")
                 get_input('pausing, any key to continue, ctrl+c to quit')
 
         print
-        print('wrote state to',fh.name)                
+        print('wrote state to', fh.name)
 
 @task
 @requires_aws_stack
