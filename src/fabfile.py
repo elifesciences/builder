@@ -17,6 +17,6 @@ import askmaster
 import buildvars
 import project
 from deploy import switch_revision_update_instance
-from lifecycle import start, stop, restart, stop_if_running_for, update_dns
+from lifecycle import start, stop, restart, restart_all, stop_if_running_for, update_dns
 import masterless
 import vault
