@@ -75,8 +75,8 @@ def restart(stackname):
                 lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
                 interval=2,
                 timeout=config.BUILDER_TIMEOUT,
-                update_msg="waiting for nodes to be networked",
-                done_msg="all nodes have public ips"
+                update_msg="waiting for nodes to complete boot",
+                done_msg="all nodes have public ips, are reachable via SSH and have completed boot"
             )
         update_dns(stackname)
         return history
