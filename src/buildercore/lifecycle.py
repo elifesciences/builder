@@ -140,7 +140,7 @@ def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
     _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_checked)
     # TODO: this should only look at ec2_to_be_checked
     call_while(
-        lambda: _some_node_is_not_ready(stackname),
+        lambda: _some_node_is_not_ready(stackname, instance_ids=ec2_to_be_checked),
         interval=2,
         timeout=config.BUILDER_TIMEOUT,
         update_msg="waiting for nodes to complete boot",
