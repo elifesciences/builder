@@ -119,18 +119,8 @@ def start(stackname):
     if not ec2_to_be_started:
         LOG.info("EC2 nodes are all running")
 
-    def _wait_for_ec2_steady_state():
-        _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_checked)
-        call_while(
-            lambda: _some_node_is_not_ready(stackname),
-            interval=2,
-            timeout=config.BUILDER_TIMEOUT,
-            update_msg="waiting for nodes to complete boot",
-            done_msg="all nodes have public ips, are reachable via SSH and have completed boot",
-            exception_class=EC2Timeout
-        )
     try:
-        _wait_for_ec2_steady_state()
+        wait_for_ec2_steady_state(stackname, ec2_to_be_checked)
     except EC2Timeout:
         # in case of botched boot and/or inability to
         # access through SSH, try once to stop and
@@ -139,12 +129,24 @@ def start(stackname):
         _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).stop()
         _wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_checked)
         _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).start()
-        _wait_for_ec2_steady_state()
+        wait_for_ec2_steady_state(stackname, ec2_to_be_checked)
 
     if rds_to_be_started:
         _wait_rds_all_in_state(stackname, 'available', rds_to_be_started)
 
     update_dns(stackname)
+
+def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
+    _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_checked)
+    # TODO: this should only look at ec2_to_be_checked
+    call_while(
+        lambda: _some_node_is_not_ready(stackname),
+        interval=2,
+        timeout=config.BUILDER_TIMEOUT,
+        update_msg="waiting for nodes to complete boot",
+        done_msg="all nodes have public ips, are reachable via SSH and have completed boot",
+        exception_class=EC2Timeout
+    )
 
 def _some_node_is_not_ready(stackname, **kwargs):
     try:
