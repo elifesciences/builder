@@ -135,7 +135,7 @@ def start(stackname):
         # in case of botched boot and/or inability to
         # access through SSH, try once to stop and
         # start the instances again
-        LOG.info("Retrying boot on %s", ec2_to_be_checked)
+        LOG.info("Boot failed (instance(s) not accessible through SSH). Attempting boot one more time: %s", ec2_to_be_checked)
         _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).stop()
         _wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_checked)
         _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).start()
