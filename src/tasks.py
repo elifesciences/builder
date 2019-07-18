@@ -96,7 +96,7 @@ def restart_all_running_ec2(statefile):
     ]
 
     pname = lambda stackname: core.parse_stackname(stackname)[0]
-    todo = sorted(results, key=pname in do_first, reverse=True)
+    todo = sorted(results, key=lambda stackname: pname(stackname) in do_first, reverse=True)
     todo = filter(lambda stackname: pname(stackname) not in dont_do, todo)
 
     with open(statefile, 'r') as fh:
