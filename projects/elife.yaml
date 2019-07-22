@@ -1199,8 +1199,6 @@ api-dummy:
     repo: https://github.com/elifesciences/api-dummy
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
         type: t2.micro
         ports:
             - 22
@@ -1208,7 +1206,6 @@ api-dummy:
             - 80
     aws-alt: {}
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ports:
             1242: 80
 
