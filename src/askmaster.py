@@ -37,3 +37,13 @@ def fail2ban_running():
 @task
 def installed_linux():
     return salt_master_cmd("'dpkg -l | grep -i linux-image'")
+
+@task
+def update_kernel():
+    cmd = "'apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install linux-image-aws -y'"
+    # 16.04+ minions only
+    minion_set = [
+        'G@osrelease:16.04',
+        'G@osrelease:18.04',
+    ]
+    [salt_master_cmd(cmd, minions="--compound '%s'" % m) for m in minion_set]

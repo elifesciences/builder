@@ -1,6 +1,6 @@
 from fabric.api import task
 from buildercore import lifecycle
-from decorators import requires_aws_stack, timeit, debugtask
+from decorators import requires_aws_stack, timeit, debugtask, echo_output
 
 @task
 @requires_aws_stack
@@ -24,8 +24,9 @@ def stop(stackname, *services):
 @task
 @requires_aws_stack
 @timeit
+@echo_output
 def restart(stackname):
-    lifecycle.restart(stackname)
+    return lifecycle.restart(stackname)
 
 @task
 @requires_aws_stack
