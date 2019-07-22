@@ -12,30 +12,30 @@ class TestBuildercoreLifecycle(base.BaseCase):
         self._generate_context('dummy1--test')
         self._generate_context('project-with-rds-only--test')
 
-    @patch('buildercore.lifecycle._some_node_is_not_ready')
+    @patch('buildercore.lifecycle.wait_for_ec2_steady_state')
     @patch('buildercore.lifecycle._ec2_connection')
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
     @patch('buildercore.lifecycle.load_context')
-    def test_start_a_not_running_ec2_instance(self, load_context, find_ec2_instances, find_rds_instances, ec2_connection, some_node_is_not_ready):
+    def test_start_a_not_running_ec2_instance(self, load_context, find_ec2_instances, find_rds_instances, ec2_connection, wait_for_ec2_steady_state):
         load_context.return_value = self.contexts['dummy1--test']
         find_ec2_instances.side_effect = [
             [self._ec2_instance('stopped')],
             [self._ec2_instance('running')],
             [self._ec2_instance('running')] # update_dns additional call
         ]
-        some_node_is_not_ready.return_value = False
 
         c = MagicMock()
         c.start_instances = MagicMock()
         ec2_connection.return_value = c
         lifecycle.start('dummy1--test')
 
+    @patch('buildercore.lifecycle.wait_for_ec2_steady_state')
     @patch('buildercore.lifecycle._rds_connection')
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
     @patch('buildercore.lifecycle.load_context')
-    def test_start_a_not_running_rds_instance(self, load_context, find_ec2_instances, find_rds_instances, rds_connection):
+    def test_start_a_not_running_rds_instance(self, load_context, find_ec2_instances, find_rds_instances, rds_connection, wait_for_ec2_steady_state):
         load_context.return_value = self.contexts['project-with-rds-only--test']
         find_ec2_instances.return_value = []
         find_rds_instances.side_effect = [
@@ -49,18 +49,20 @@ class TestBuildercoreLifecycle(base.BaseCase):
 
         lifecycle.start('project-with-rds-only--test')
 
+    @patch('buildercore.lifecycle.wait_for_ec2_steady_state')
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
     @patch('buildercore.lifecycle.load_context')
-    def test_start_ec2_idempotence(self, load_context, find_ec2_instances, find_rds_instances):
+    def test_start_ec2_idempotence(self, load_context, find_ec2_instances, find_rds_instances, wait_for_ec2_steady_state):
         load_context.return_value = self.contexts['dummy1--test']
         find_ec2_instances.return_value = [self._ec2_instance('running')]
         lifecycle.start('dummy1--test')
 
+    @patch('buildercore.lifecycle.wait_for_ec2_steady_state')
     @patch('buildercore.lifecycle.find_rds_instances')
     @patch('buildercore.lifecycle.find_ec2_instances')
     @patch('buildercore.lifecycle.load_context')
-    def test_start_rds_idempotence(self, load_context, find_ec2_instances, find_rds_instances):
+    def test_start_rds_idempotence(self, load_context, find_ec2_instances, find_rds_instances, wait_for_ec2_steady_state):
         load_context.return_value = self.contexts['project-with-rds-only--test']
         find_rds_instances.return_value = [self._rds_instance('available')]
         lifecycle.start('project-with-rds-only--test')
