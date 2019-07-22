@@ -525,10 +525,11 @@ def stack_triple(aws_stack):
 # lists of aws stacks
 #
 
-@cached # disable until finished debugging
+@cached
 def _aws_stacks(region, status=None, formatter=stack_triple):
     "returns all stacks, even stacks deleted in the last 90 days, optionally filtered by status"
-    # NOTE: uses client rather than resource. resource cannot filter by stack status
+    # NOTE: uses boto3 client interface rather than resource interface
+    # resource interface cannot filter by stack status
     paginator = boto_client('cloudformation', region).get_paginator('list_stacks')
     paginator = paginator.paginate(StackStatusFilter=status or [])
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
