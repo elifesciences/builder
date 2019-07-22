@@ -42,12 +42,12 @@ def push(lst, rec):
     if not lst or lst[-1] != rec:
         lst.append(rec)
 
-def restart(stackname):
+def restart(stackname, initial_states='pending|running|stopping|stopped'):
     """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
     rds is started if stopped (if *exists*) but otherwise not affected"""
-    start_rds_nodes(stackname)
+    # start_rds_nodes(stackname) # something a bit buggy here
 
-    node_list = find_ec2_instances(stackname, state='pending|running|stopping|stopped')
+    node_list = find_ec2_instances(stackname, state=initial_states, allow_empty=True)
 
     history = []
 
@@ -74,7 +74,9 @@ def restart(stackname):
                 update_msg="waiting for nodes to be networked",
                 done_msg="all nodes have public ips"
             )
-        update_dns(stackname)
+        if history:
+            # only update dns if we have a history of affected nodes
+            update_dns(stackname)
         return history
     except Exception:
         LOG.info("Partial restart history of %s: %s", stackname, pformat(history))

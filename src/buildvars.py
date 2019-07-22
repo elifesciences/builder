@@ -5,7 +5,7 @@ from decorators import requires_aws_stack, debugtask
 from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
-from buildercore import utils as core_utils, trop
+from buildercore import utils as core_utils, trop, keypair
 from buildercore.utils import ensure, lmap
 from pprint import pprint
 import utils
@@ -146,5 +146,9 @@ def refresh(stackname, context):
         new_buildvars = trop.build_vars(context, int(node))
         new_buildvars['revision'] = old_buildvars.get('revision') # TODO: is this still necessary?
         _update_remote_bvars(stackname, new_buildvars)
+
+    # lsh@2019-06: cfn.update_infrastructure fails to run highstate on new ec2 instance if keypair not present,
+    # it prompts for a password for the deploy user. prompts when executing in parallel cause operation to fail
+    keypair.download_from_s3(stackname, die_if_exists=False)
 
     stack_all_ec2_nodes(stackname, _refresh_buildvars, username=BOOTSTRAP_USER)

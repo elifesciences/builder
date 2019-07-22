@@ -94,8 +94,9 @@ def simple_listing(prefix):
     "returns a realized list of the names of the keys from the `list` function. "
     return [key.key for key in listing(prefix)]
 
-def download(key, output_path):
-    ensure(not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path)
+def download(key, output_path, overwrite=False):
+    if not overwrite:
+        ensure(not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path)
     ensure(exists(key), "key %r not found in bucket %r" % (key, config.BUILDER_BUCKET))
     LOG.info("downloading key %s", key, extra={'key': key})
     builder_bucket().Object(key).download_file(output_path)

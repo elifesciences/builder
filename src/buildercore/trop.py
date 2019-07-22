@@ -11,7 +11,7 @@ it to the correct file etc."""
 
 from collections import OrderedDict
 from os.path import join
-from . import config, utils, bvars
+from . import config, utils, bvars, aws
 from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
@@ -141,19 +141,9 @@ def rds_security(context):
 #
 #
 
-def _generic_tags(context, name=True):
-    tags = {
-        'Project': context['project_name'], # "journal"
-        'Environment': context['instance_id'], # "prod"
-        # the name AWS Console uses to label an instance
-        'Cluster': context['stackname'], # "journal--prod"
-    }
-    tags['Name'] = context['stackname'] # "journal--prod"
-    return tags
-
 def instance_tags(context, node=None):
     # NOTE: RDS and Elasticache instances also call this function
-    tags = _generic_tags(context)
+    tags = aws.generic_tags(context)
     if node:
         # this instance is part of a cluster
         tags.update({
@@ -163,7 +153,7 @@ def instance_tags(context, node=None):
     return [ec2.Tag(key, str(value)) for key, value in tags.items()]
 
 def elb_tags(context):
-    tags = _generic_tags(context)
+    tags = aws.generic_tags(context)
     tags.update({
         'Name': '%s--elb' % context['stackname'], # "journal--prod--elb"
     })
@@ -219,6 +209,11 @@ echo %s > /etc/build-vars.json.b64
 
 %s""" % (buildvars_serialization, clean_server)),
     }
+
+    if lu('ec2.cpu-credits') != 'standard':
+        project_ec2["CreditSpecification"] = ec2.CreditSpecification(
+            CPUCredits=lu('ec2.cpu-credits'),
+        )
 
     # TODO: 'root' is undefined in the project definition
     # TODO: extract in private method?
@@ -305,27 +300,31 @@ def render_rds(context, template):
     ]
     lmap(template.add_output, outputs)
 
-def render_ext_volume(context, context_ext, template, node=1):
+def render_ext_volume(context, context_ext, template, actual_ec2_instances, node=1):
     vtype = context_ext.get('type', 'standard')
-    if vtype == 'ssd':
-        LOG.warn("deprecated value of 'ssd' used in aws.ext.type: %s", context['stackname'])
-        vtype = 'gp2'
+
+    if node in actual_ec2_instances:
+        availability_zone = GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone")
+    else:
+        availability_zone = context['aws']['availability-zone'] if node % 2 == 1 else context['aws']['redundant-availability-zone']
 
     args = {
         "Size": str(context_ext['size']),
-        "AvailabilityZone": GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone"),
+        # TODO: change
+        "AvailabilityZone": availability_zone,
         "VolumeType": vtype,
         "Tags": instance_tags(context, node),
     }
     ec2v = ec2.Volume(EXT_TITLE % node, **args)
+    template.add_resource(ec2v)
 
-    args = {
-        "InstanceId": Ref(EC2_TITLE_NODE % node),
-        "VolumeId": Ref(ec2v),
-        "Device": context_ext.get('device'),
-    }
-    ec2va = ec2.VolumeAttachment(EXT_MP_TITLE % node, **args)
-    lmap(template.add_resource, [ec2v, ec2va])
+    if node in actual_ec2_instances:
+        args = {
+            "InstanceId": Ref(EC2_TITLE_NODE % node),
+            "VolumeId": Ref(ec2v),
+            "Device": context_ext.get('device'),
+        }
+        template.add_resource(ec2.VolumeAttachment(EXT_MP_TITLE % node, **args))
 
 def external_dns_ec2_single(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -462,7 +461,12 @@ def render_ec2(context, template):
     for node in range(1, context['ec2']['cluster-size'] + 1):
         if node in suppressed:
             continue
-        instance = ec2instance(context, node)
+
+        overridden_context = deepcopy(context)
+        overridden_ec2 = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'], interesting=['type'])
+        overridden_context['ec2'] = overridden_ec2
+
+        instance = ec2instance(overridden_context, node)
         ec2_instances[node] = instance
         template.add_resource(instance)
 
@@ -553,7 +557,7 @@ def render_s3(context, template):
     for bucket_name in context['s3']:
         props = {
             'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize(),
-            'Tags': s3.Tags(**_generic_tags(context, name=False)),
+            'Tags': s3.Tags(**aws.generic_tags(context, name=False)),
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:
@@ -921,7 +925,7 @@ def render_elasticache(context, template):
         if cluster in suppressed:
             continue
 
-        cluster_context = overridden_component(context, 'elasticache', cluster, ['type', 'version', 'az', 'configuration'])
+        cluster_context = overridden_component(context, 'elasticache', index=cluster, allowed=['type', 'version', 'az', 'configuration'])
 
         if cluster_context['configuration'] != context['elasticache']['configuration']:
             cluster_parameter_group = elasticache_overridden_parameter_group(context, cluster_context, cluster)
@@ -942,7 +946,7 @@ def render_elasticache(context, template):
             PreferredAvailabilityZone=cluster_context['az'],
             # we only support Redis, and it only supports 1 node
             NumCacheNodes=1,
-            Tags=Tags(**_generic_tags(context)),
+            Tags=Tags(**aws.generic_tags(context)),
             VpcSecurityGroupIds=[Ref(cache_security_group)],
         ))
 
@@ -955,24 +959,25 @@ def render_elasticache(context, template):
     if default_parameter_group_use:
         template.add_resource(parameter_group)
 
-def render_ext(context, template, ec2_instances):
+def render_ext(context, template, cluster_size, actual_ec2_instances):
     if context['ext']:
         # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
         context['ec2']['ext'] = context['ext']
-        all_nodes = list(ec2_instances.keys())
-        for node in all_nodes:
+        for node in range(1, cluster_size + 1):
             overrides = context['ec2'].get('overrides', {}).get(node, {})
             overridden_context = deepcopy(context)
             overridden_context['ext'].update(overrides.get('ext', {}))
-            node_context = overridden_component(context, 'ec2', node, ['ext'])
-            render_ext_volume(overridden_context, node_context.get('ext', {}), template, node)
+            # TODO: extract `allowed` variable
+            node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
+            render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
 
 def render(context):
     template = Template()
 
     ec2_instances = render_ec2(context, template) if context['ec2'] else {}
+    cluster_size = context['ec2']['cluster-size'] if context['ec2'] else 0
     context['rds'] and render_rds(context, template)
-    render_ext(context, template, ec2_instances)
+    render_ext(context, template, cluster_size, ec2_instances.keys())
     render_sns(context, template)
     render_sqs(context, template)
     render_s3(context, template)
@@ -1032,14 +1037,19 @@ def _is_domain_2nd_level(hostname):
     "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
     return hostname.count(".") == 1
 
-def overridden_component(context, component, index, allowed):
-    "two-level merging of overrides into one of context's componenets"
+def overridden_component(context, component, index, allowed, interesting=None):
+    "two-level merging of overrides into one of context's components"
+    if not interesting:
+        interesting = allowed
     overrides = context[component].get('overrides', {}).get(index, {})
     for element in overrides:
-        ensure(element in allowed, "`%s` override is not allowed for single elasticache clusters" % element)
+        ensure(element in allowed, "`%s` override is not allowed for `%s` clusters" % (element, component))
     overridden_context = deepcopy(context)
     overridden_context[component].pop('overrides', None)
     for key, value in overrides.items():
+        if key not in interesting:
+            continue
+        assert key in overridden_context[component], "Can't override `%s` as it's not already a key in `%s`" % (key, overridden_context[component].keys())
         if isinstance(overridden_context[component][key], dict):
             overridden_context[component][key].update(value)
         else:

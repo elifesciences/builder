@@ -22,8 +22,10 @@ defaults:
     formula-dependencies:
         - https://github.com/example/builder-base-formula
     aws:
+        account-id: 512686554592
         ec2:
             cluster-size: 1
+            cpu-credits: standard
             dns-external-primary: false
             dns-internal: false
             # nodes to temporarily delete, for later recreation
@@ -40,8 +42,10 @@ defaults:
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-1d4eb46a # elife-public-subnet
         subnet-cidr: '10.0.2.0/24'
+        availability-zone: us-east-1d
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
         redundant-subnet-cidr: '10.0.2.0/24'
+        redundant-availability-zone: us-east-1e
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation
@@ -85,6 +89,18 @@ defaults:
         sns: []
         sqs: []
         s3: []
+        eks:
+            # eks defaults only used if a 'eks' section present in project
+            #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
+            version: '1.11'
+            subnet-id: subnet-a1a1a1a1
+            redundant-subnet-id: subnet-b2b2b2b2
+            worker:
+                type: t2.small
+                desired-capacity: 3
+                min-size: 1
+                max-size: 3
+            helm: False
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
@@ -441,6 +457,12 @@ project-with-ec2-custom-root:
             root:
                 size: 20 # GB
 
+project-with-ec2-t2-unlimited:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2:
+            cpu-credits: unlimited
+
 project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
@@ -485,6 +507,7 @@ project-with-cluster-overrides:
             cluster-size: 2
             overrides:
                 1: 
+                    type: t2.xlarge
                     ext: 
                         size: 20
         ext:
@@ -708,3 +731,25 @@ project-with-bigquery-remote-schemas:
                     local:
                         schema: ./src/tests/fixtures/bigquery/schemas/key-value.json
     aws-alt: {}
+
+project-with-eks:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            subnet-id: subnet-a1a1a1a1
+            redundant-subnet-id: subnet-b2b2b2b2
+            worker:
+                type: t2.small
+                desired-capacity: 3
+                min-size: 1
+                max-size: 3
+
+project-with-eks-helm:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            helm: true

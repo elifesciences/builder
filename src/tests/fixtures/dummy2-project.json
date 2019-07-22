@@ -15,6 +15,7 @@
     "aws": {
         "ec2": {
             "cluster-size": 1, 
+            "cpu-credits": "standard",
             "dns-external-primary": false,
             "dns-internal": false, 
             "suppressed": [], 
@@ -32,8 +33,11 @@
         "vpc-id": "vpc-78a2071d", 
         "subnet-id": "subnet-1d4eb46a", 
         "subnet-cidr": "10.0.2.0/24", 
+        "account-id": 512686554592,
+        "availability-zone": "us-east-1d",
         "redundant-subnet-id": "subnet-7a31dd46", 
         "redundant-subnet-cidr": "10.0.2.0/24", 
+        "redundant-availability-zone": "us-east-1e",
         "rds": {
             "name": "<defined at generation>", 
             "multi-az": false, 
@@ -70,6 +74,7 @@
         "fresh": {
             "ec2": {
                 "cluster-size": 1, 
+                "cpu-credits": "standard",
                 "dns-external-primary": false,
                 "dns-internal": false, 
                 "suppressed": [], 
@@ -87,8 +92,11 @@
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
+            "account-id": 512686554592,
+            "availability-zone": "us-east-1d",
             "redundant-subnet-id": "subnet-7a31dd46", 
             "redundant-subnet-cidr": "10.0.2.0/24", 
+            "redundant-availability-zone": "us-east-1e",
             "rds": {
                 "name": "<defined at generation>", 
                 "multi-az": false, 
@@ -125,6 +133,7 @@
         "alt-config1": {
             "ec2": {
                 "cluster-size": 1, 
+                "cpu-credits": "standard",
                 "dns-external-primary": false,
                 "dns-internal": false, 
                 "suppressed": [], 
@@ -142,8 +151,11 @@
             "vpc-id": "vpc-78a2071d", 
             "subnet-id": "subnet-1d4eb46a", 
             "subnet-cidr": "10.0.2.0/24", 
+            "account-id": 512686554592,
+            "availability-zone": "us-east-1d",
             "redundant-subnet-id": "subnet-7a31dd46", 
             "redundant-subnet-cidr": "10.0.2.0/24", 
+            "redundant-availability-zone": "us-east-1e",
             "rds": {
                 "name": "<defined at generation>", 
                 "multi-az": false, 

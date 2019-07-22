@@ -8,11 +8,12 @@ ALL_PROJECTS = [
     'just-some-sns', 'project-with-sqs', 'project-with-s3',
     'project-with-ext', 'project-with-cloudfront', 'project-with-cloudfront-minimal',
     'project-with-cloudfront-error-pages', 'project-with-cloudfront-origins', 'project-with-fastly-minimal', 'project-with-fastly-complex', 'project-with-fastly-gcs', 'project-with-fastly-bigquery', 'project-with-fastly-shield', 'project-with-fastly-shield-pop',
-    'project-with-ec2-custom-root',
+    'project-with-ec2-custom-root', 'project-with-ec2-t2-unlimited',
     'project-with-cluster', 'project-with-cluster-suppressed', 'project-with-cluster-overrides', 'project-with-cluster-empty',
     'project-with-stickiness', 'project-with-multiple-elb-listeners',
     'project-with-cluster-integration-tests', 'project-with-db-params', 'project-with-rds-only', 'project-with-rds-encryption', 'project-with-elasticache-redis', 'project-with-multiple-elasticaches', 'project-with-fully-overridden-elasticaches',
     'project-on-gcp', 'project-with-bigquery-datasets-only', 'project-with-bigquery', 'project-with-bigquery-remote-schemas',
+    'project-with-eks', 'project-with-eks-helm',
 ]
 
 class TestProject(base.BaseCase):

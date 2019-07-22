@@ -354,6 +354,7 @@ def template_info(stackname):
     utils.renkeys(data, keepers.items()) # in-place changes
 
     # replaces the standand list-of-dicts 'outputs' with a simpler dict
+    # TODO: outputs may be empty in the input `data` here
     data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
 
     return subdict(data, keepers.values())
@@ -510,8 +511,6 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             # since Vault is not running at this time, we have to do it in the formula
             if not is_master:
                 vault_addr = context['vault']['address']
-                # TODO: a master-server should depend on its own vault, not the remote one?
-                # TODO: extract constant 'master-server'
                 # TODO: reduce scope to a project if possible?
                 vault_token = vault.token_create(context['vault']['address'], vault.SALT_MASTERLESS_POLICY, display_name=context['stackname'])
                 vault_arguments = [vault_addr, vault_token]
