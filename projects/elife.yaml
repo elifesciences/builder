@@ -303,7 +303,7 @@ basebox:
                 ami: ami-9eaa1cf6 # trusty
         1604:
             ec2:
-                ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
+                ami: ami-0cfee17793b08a293 # xenial, build 20190628, amd64, hvm:ebs-ssd, us-east-1
         1804:
             ec2:
                 # should match aws-alt 'fresh'
@@ -320,16 +320,13 @@ basebox:
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
+                ami: ami-0cfee17793b08a293 # xenial, build 20190628, amd64, hvm:ebs-ssd, us-east-1
         # 18.04
-        standalone18.04:
+        standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
                 # should match aws-alt 'fresh'
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
-        pillar-vault:
-            ec2:
-                master_ip: 10.0.2.55
     vagrant: {}
 
 heavybox:
