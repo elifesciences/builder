@@ -17,6 +17,9 @@ from .context_handler import load_context
 
 LOG = logging.getLogger(__name__)
 
+class EC2Timeout(RuntimeError):
+    pass
+
 def _node_id(node):
     name = core.tags2dict(node.tags)['Name']
     nid = core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
@@ -42,12 +45,12 @@ def push(lst, rec):
     if not lst or lst[-1] != rec:
         lst.append(rec)
 
-def restart(stackname):
+def restart(stackname, initial_states='pending|running|stopping|stopped'):
     """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
     rds is started if stopped (if *exists*) but otherwise not affected"""
-    start_rds_nodes(stackname)
+    # start_rds_nodes(stackname) # something a bit buggy here
 
-    node_list = find_ec2_instances(stackname, state='pending|running|stopping|stopped')
+    node_list = find_ec2_instances(stackname, state=initial_states, allow_empty=True)
 
     history = []
 
@@ -71,10 +74,13 @@ def restart(stackname):
             call_while(
                 lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
                 interval=2,
-                update_msg="waiting for nodes to be networked",
-                done_msg="all nodes have public ips"
+                timeout=config.BUILDER_TIMEOUT,
+                update_msg="waiting for nodes to complete boot",
+                done_msg="all nodes have public ips, are reachable via SSH and have completed boot"
             )
-        update_dns(stackname)
+        if history:
+            # only update dns if we have a history of affected nodes
+            update_dns(stackname)
         return history
     except Exception:
         LOG.info("Partial restart history of %s: %s", stackname, pformat(history))
@@ -103,6 +109,7 @@ def start(stackname):
         LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
 
     ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
+    ec2_to_be_checked = ec2_to_be_started + _select_nodes_with_state('running', ec2_states)
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
     if ec2_to_be_started:
         LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
@@ -111,22 +118,36 @@ def start(stackname):
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
         [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
 
-    if ec2_to_be_started:
-        _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_started)
-        call_while(
-            lambda: _some_node_is_not_ready(stackname),
-            interval=2,
-            timeout=120,
-            update_msg="waiting for nodes to complete boot",
-            done_msg="all nodes have public ips, are reachable via SSH and have completed boot"
-        )
-    else:
+    if not ec2_to_be_started:
         LOG.info("EC2 nodes are all running")
+
+    try:
+        wait_for_ec2_steady_state(stackname, ec2_to_be_checked)
+    except EC2Timeout:
+        # in case of botched boot and/or inability to
+        # access through SSH, try once to stop and
+        # start the instances again
+        LOG.info("Boot failed (instance(s) not accessible through SSH). Attempting boot one more time: %s", ec2_to_be_checked)
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).stop()
+        _wait_ec2_all_in_state(stackname, 'stopped', ec2_to_be_checked)
+        _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_checked).start()
+        wait_for_ec2_steady_state(stackname, ec2_to_be_checked)
 
     if rds_to_be_started:
         _wait_rds_all_in_state(stackname, 'available', rds_to_be_started)
 
     update_dns(stackname)
+
+def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
+    _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_checked)
+    call_while(
+        lambda: _some_node_is_not_ready(stackname, instance_ids=ec2_to_be_checked),
+        interval=2,
+        timeout=config.BUILDER_TIMEOUT,
+        update_msg="waiting for nodes to complete boot",
+        done_msg="all nodes have public ips, are reachable via SSH and have completed boot",
+        exception_class=EC2Timeout
+    )
 
 def _some_node_is_not_ready(stackname, **kwargs):
     try:
@@ -227,6 +248,7 @@ def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_descri
     call_while(
         some_node_is_still_not_compliant,
         interval=2,
+        timeout=config.BUILDER_TIMEOUT,
         update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
         done_msg="all nodes in state %s" % state
     )

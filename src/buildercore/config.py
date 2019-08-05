@@ -113,6 +113,10 @@ def get_logger(name):
 BUILDER_BUCKET = 'elife-builder'
 BUILDER_REGION = 'us-east-1'
 BUILDER_NON_INTERACTIVE = 'BUILDER_NON_INTERACTIVE' in os.environ and os.environ['BUILDER_NON_INTERACTIVE']
+if 'BUILDER_TIMEOUT' in os.environ:
+    BUILDER_TIMEOUT = int(os.environ['BUILDER_TIMEOUT'])
+else:
+    BUILDER_TIMEOUT = 600
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 

@@ -1,6 +1,6 @@
 from fabric.api import task
 from buildercore import lifecycle
-from decorators import requires_aws_stack, timeit, debugtask
+from decorators import requires_aws_stack, timeit, debugtask, echo_output
 
 @task
 @requires_aws_stack
@@ -16,7 +16,7 @@ def stop(stackname, *services):
     """Stops the nodes of 'stackname' without losing their state.
 
     Idempotent. Default to stopping only EC2 but additional services like 'rds' can be passed in"""
-    if services == []:
+    if not services:
         services = ['ec2']
 
     lifecycle.stop(stackname, services)
@@ -24,8 +24,9 @@ def stop(stackname, *services):
 @task
 @requires_aws_stack
 @timeit
+@echo_output
 def restart(stackname):
-    lifecycle.restart(stackname)
+    return lifecycle.restart(stackname)
 
 @task
 @requires_aws_stack
