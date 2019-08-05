@@ -274,7 +274,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
 class NoPublicIps(Exception):
     pass
 
-def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, **kwargs):
+def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, **kwargs):
     """Executes work on all the EC2 nodes of stackname.
     Optionally connects with the specified username"""
     work_kwargs = {}
@@ -286,6 +286,9 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == int(node)}
+        public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+    elif instance_ids:
+        nodes = {k: v for k, v in nodes.items() if k in instance_ids}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
 
     params = _ec2_connection_params(stackname, username)
@@ -522,10 +525,11 @@ def stack_triple(aws_stack):
 # lists of aws stacks
 #
 
-@cached # disable until finished debugging
+@cached
 def _aws_stacks(region, status=None, formatter=stack_triple):
     "returns all stacks, even stacks deleted in the last 90 days, optionally filtered by status"
-    # NOTE: uses client rather than resource. resource cannot filter by stack status
+    # NOTE: uses boto3 client interface rather than resource interface
+    # resource interface cannot filter by stack status
     paginator = boto_client('cloudformation', region).get_paginator('list_stacks')
     paginator = paginator.paginate(StackStatusFilter=status or [])
     results = utils.shallow_flatten([row['StackSummaries'] for row in paginator])
