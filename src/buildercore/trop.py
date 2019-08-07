@@ -223,6 +223,8 @@ echo %s > /etc/build-vars.json.b64
             'Ebs': {
                 'VolumeSize': context['ec2']['root']['size'],
                 'VolumeType': context['ec2']['root'].get('type', 'standard'),
+                # unfortunately root volumes do not support Tags:
+                # https://blog.cloudability.com/two-solutions-for-tagging-elusive-aws-ebs-volumes/
             }
         }]
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)

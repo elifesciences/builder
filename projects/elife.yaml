@@ -1110,7 +1110,8 @@ elife-libraries:
 
 containers:
     description: run any Docker-based workload
-    subdomain: containers
+    domain: false
+    intdomain: false
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
         ec2:
@@ -1132,6 +1133,7 @@ containers:
             ec2:
                 root:
                     size: 100 # GB
+                    type: gp2
         xlarge:
             type: t2.xlarge # 4 CPUs
             ec2:
