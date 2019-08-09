@@ -153,7 +153,7 @@ def _some_node_is_not_ready(stackname, **kwargs):
     try:
         # TODO: what if there are more than 1 node?
         ip_to_ready = stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)
-        LOG.info("_daemons_ready: %s", ip_to_ready)
+        LOG.info("_some_node_is_not_ready: %s", ip_to_ready)
         return len(ip_to_ready) == 0 or False in ip_to_ready.values()
     except NoPublicIps as e:
         LOG.info("No public ips available yet: %s", e)
@@ -165,7 +165,12 @@ def _some_node_is_not_ready(stackname, **kwargs):
         LOG.info("No running instances yet: %s", e)
         return True
     except config.FabricException as e:
-        LOG.info("Generic failure of _daemons_ready execution: %s", e)
+        # no more specific exception to match for login problem
+        # remove if it is discovered to be a legitimate error for booting servers
+        if "Needed to prompt for a connection or sudo password" in e.message:
+            LOG.error("SSH access problem: %s", e)
+            raise e
+        LOG.info("Generic failure of _some_node_is_not_ready execution: %s (class %s)", e, type(e))
         return True
     return False
 

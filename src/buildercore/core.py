@@ -326,10 +326,8 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                     raise err
             except config.FabricException as err:
                 LOG.error(str(err).replace("\n", "    "))
-                # not useful to specify more, this will be printed out
-                # but we are already logging it (and printing it on stderr)
-                # which is better
-                raise SystemExit("")
+                # available as 'results' to fabric.tasks.error
+                raise err
 
     # something less stateful like a context manager?
     output['aborts'] = False
