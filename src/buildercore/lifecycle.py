@@ -165,12 +165,7 @@ def _some_node_is_not_ready(stackname, **kwargs):
         LOG.info("No running instances yet: %s", e)
         return True
     except config.FabricException as e:
-        # no more specific exception to match for login problem
-        # remove if it is discovered to be a legitimate error for booting servers
-        if "Needed to prompt for a connection or sudo password" in e.message:
-            LOG.error("SSH access problem: %s", e)
-            raise e
-        LOG.info("Generic failure of _some_node_is_not_ready execution: %s (class %s)", e, type(e))
+        LOG.info("Generic failure of _daemons_ready execution: %s", e)
         return True
     return False
 
