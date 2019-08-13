@@ -175,7 +175,7 @@ def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="
     elapsed = 0
     while True:
         result = fn()
-        if not fn():
+        if not result:
             break
         if elapsed >= timeout:
             message = "Reached timeout %d while %s" % (timeout, update_msg)
