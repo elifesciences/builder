@@ -124,7 +124,7 @@ def start(stackname):
     try:
         wait_for_ec2_steady_state(stackname, ec2_to_be_checked)
     except EC2Timeout as e:
-        # a persistent login problem won't be solved be a reboot
+        # a persistent login problem won't be solved by a reboot
         if "Needed to prompt for a connection or sudo password" in e.message:
             raise
         # in case of botched boot and/or inability to
