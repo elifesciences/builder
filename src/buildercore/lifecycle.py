@@ -151,7 +151,6 @@ def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
 
 def _some_node_is_not_ready(stackname, **kwargs):
     try:
-        # TODO: what if there are more than 1 node?
         ip_to_ready = stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)
         LOG.info("_some_node_is_not_ready: %s", ip_to_ready)
         return len(ip_to_ready) == 0 or False in ip_to_ready.values()
