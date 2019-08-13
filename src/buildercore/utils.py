@@ -165,15 +165,23 @@ def firstnn(x):
 
 # pylint: disable=too-many-arguments
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
-    "calls the given function `f` every `interval` until it returns False."
+    """calls the given function `fn` every `interval` seconds until it returns False.
+
+    An `exception_class` will be raised if `timeout` is reached.
+
+    Any truthy value will continue the polling, so might as well return an Exception from `fn` in order for his message to be propagated up."""
     if not exception_class:
         exception_class = RuntimeError
     elapsed = 0
     while True:
+        result = fn()
         if not fn():
             break
         if elapsed >= timeout:
-            raise exception_class("Reached timeout %d while %s" % (timeout, update_msg))
+            message = "Reached timeout %d while %s" % (timeout, update_msg)
+            if isinstance(result, BaseException):
+                message = message + (" (%s)" % result)
+            raise exception_class(message)
         LOG.info(update_msg)
         time.sleep(interval)
         elapsed = elapsed + interval
