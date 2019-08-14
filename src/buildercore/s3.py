@@ -19,7 +19,7 @@ def builder_bucket():
         return bucket
     except ClientError as err:
         LOG.error("unhandled error attempting to find S3 bucket %r in region %r", nom, region,
-                  extra={'bucket': nom, 'region': region, 'error': err.message})
+                  extra={'bucket': nom, 'region': region, 'error': str(err)})
         raise
 
 def exists(key):

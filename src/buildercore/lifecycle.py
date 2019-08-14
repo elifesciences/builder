@@ -125,7 +125,7 @@ def start(stackname):
         wait_for_ec2_steady_state(stackname, ec2_to_be_checked)
     except EC2Timeout as e:
         # a persistent login problem won't be solved by a reboot
-        if "Needed to prompt for a connection or sudo password" in e.message:
+        if "Needed to prompt for a connection or sudo password" in str(e):
             raise
         # in case of botched boot and/or inability to
         # access through SSH, try once to stop and
@@ -169,7 +169,7 @@ def _some_node_is_not_ready(stackname, **kwargs):
     except config.FabricException as e:
         # login problem is a legitimate error for booting servers,
         # but also a signal the SSH private key is not allowed if it persists
-        if "Needed to prompt for a connection or sudo password" in e.message:
+        if "Needed to prompt for a connection or sudo password" in str(e):
             LOG.info("SSH access problem in _some_node_is_not_ready execution: %s", e)
             return e
         LOG.info("Generic failure of _some_node_is_not_ready execution: %s (class %s)", e, type(e))
