@@ -172,9 +172,8 @@ def _some_node_is_not_ready(stackname, **kwargs):
         if "Needed to prompt for a connection or sudo password" in e.message:
             LOG.info("SSH access problem in _some_node_is_not_ready execution: %s", e)
             return e
-        else:
-            LOG.info("Generic failure of _some_node_is_not_ready execution: %s (class %s)", e, type(e))
-            return True
+        LOG.info("Generic failure of _some_node_is_not_ready execution: %s (class %s)", e, type(e))
+        return True
     return False
 
 def stop(stackname, services=None):
