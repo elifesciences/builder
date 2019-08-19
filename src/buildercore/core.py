@@ -255,7 +255,8 @@ def _ec2_connection_params(stackname, username, **kwargs):
         if os.path.exists(pem):
             params['key_filename'] = pem
         else:
-            raise RuntimeError("private key for the bootstrap user for this host does not exist. I looked here: %s" % pem)
+            LOG.error("private key for the bootstrap user for this host does not exist. I looked here: %s" % pem)
+            #raise RuntimeError("private key for the bootstrap user for this host does not exist. I looked here: %s" % pem)
     params.update(kwargs)
     return params
 
