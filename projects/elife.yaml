@@ -75,7 +75,8 @@ defaults:
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
-            version: '9.4'
+            # version: '9.4' # EOL Feb 2020
+            version: '10.6' # EOL 2022
             type: db.t2.small
             storage: 5 # GB
             # Standard for backward compatibility
@@ -395,6 +396,7 @@ lax:
     aws-alt:
         standalone1404:
             rds:
+                version: '9.4'
                 storage: 5
                 deletion-policy: Delete
         ci:
@@ -405,6 +407,7 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
+                version: '9.4'
                 storage: 5
                 backup-retention: 2 # days
             ext:
@@ -423,6 +426,7 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
+                version: '9.4'
                 storage: 5
                 multi-az: true
             ext:
@@ -710,12 +714,14 @@ elife-metrics:
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
+                version: '9.4'
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed
             ext:
                 size: 10 # GB
             rds:
+                version: '9.4'
                 multi-az: true
                 storage: 10
     vagrant:
@@ -1013,6 +1019,7 @@ elife-dashboard:
         end2end:
             description: production-like environment. backed by RDS
             rds:
+                version: '9.4'
                 storage: 5
                 backup-retention: 2 # days
             sqs:
@@ -1029,6 +1036,7 @@ elife-dashboard:
         prod:
             description: production environment. backed by RDS
             rds:
+                version: '9.4'
                 storage: 5
                 multi-az: true
             sqs:
@@ -1438,17 +1446,20 @@ observer:
     aws-alt:
         standalone1404:
             rds:
+                version: '9.4'
                 storage: 10
                 backup-retention: 2 # days
                 deletion-policy: Delete
         end2end:
             description: production-like environment. RDS backed
             rds:
+                version: '9.4'
                 storage: 10
                 backup-retention: 2 # days
         prod:
             description: production environment. RDS backed
             rds:
+                version: '9.4'
                 storage: 10
                 multi-az: true
     vagrant:
@@ -1499,6 +1510,7 @@ peerscout:
     aws-alt:
         end2end:
             rds:
+                version: '9.4'
                 storage: 5
                 backup-retention: 2 # days
             ext:
@@ -1507,6 +1519,7 @@ peerscout:
                 device: /dev/sdf
         prod:
             rds:
+                version: '9.4'
                 storage: 5
                 multi-az: true
             ext:
@@ -1756,6 +1769,7 @@ profiles:
     aws-alt:
         end2end:
             rds:
+                version: '9.4'
                 engine: postgres
                 storage: 5 # GB
                 backup-retention: 2 # days
@@ -1767,6 +1781,7 @@ profiles:
                 - 8082 # orcid-dummy https
         prod:
             rds:
+                version: '9.4'
                 engine: postgres
                 storage: 5 # GB
                 multi-az: true
@@ -1821,6 +1836,7 @@ digests:
     aws-alt:
         end2end:
             rds:
+                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
@@ -1828,6 +1844,7 @@ digests:
                 backup-retention: 2 # days
         continuumtest:
             rds:
+                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
@@ -1835,6 +1852,7 @@ digests:
                 backup-retention: 2 # days
         prod:
             rds:
+                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
@@ -1878,7 +1896,6 @@ elife-xpub:
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 engine: postgres # or 'MySQL'
-                version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 storage-type: gp2
@@ -1905,7 +1922,6 @@ elife-xpub:
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 engine: postgres # or 'MySQL'
-                version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 storage-type: gp2
@@ -1929,7 +1945,6 @@ elife-xpub:
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
-                version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 storage-type: gp2
