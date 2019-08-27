@@ -259,7 +259,7 @@ def render_fastly(context, template):
 
     if context['fastly']['ip-blacklist']:
         ip_blacklist_acl = {
-            'name': 'ip-blacklist',
+            'name': 'ip_blacklist',
         }
 
         ip_blacklist_condition = {
