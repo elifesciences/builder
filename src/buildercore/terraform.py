@@ -11,7 +11,7 @@ MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
-PROVIDER_FASTLY_VERSION = '0.4.0',
+PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
@@ -255,6 +255,40 @@ def render_fastly(context, template):
             {
                 'path': VAULT_PATH_FASTLY_GCP_LOGGING,
             }
+        )
+
+    if context['fastly']['ip-blacklist']:
+        ip_blacklist_acl = {
+            'name': 'ip-blacklist',
+        }
+
+        ip_blacklist_condition = {
+            'name': 'ip-blacklist',
+            'statement': 'client.ip ~ %s' % ip_blacklist_acl['name'],
+            'type': 'REQUEST',
+        }
+
+        ip_blacklist_response_object = {
+            'name': 'ip-blacklist',
+            'status': 403,
+            'response': 'Forbidden',
+            'request_condition': ip_blacklist_condition['name']
+        }
+
+        template.populate_resource_element(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'acl',
+            block=ip_blacklist_acl,
+        )
+
+        conditions.append(ip_blacklist_condition)
+
+        template.populate_resource_element(
+            RESOURCE_TYPE_FASTLY,
+            RESOURCE_NAME_FASTLY,
+            'response_object',
+            block=ip_blacklist_response_object,
         )
 
     if vcl_constant_snippets or vcl_templated_snippets:
