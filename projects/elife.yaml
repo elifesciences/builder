@@ -656,6 +656,7 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
+                ip-blacklist: true
                 vcl:
                     - "original-host"
                     - "ping-status"

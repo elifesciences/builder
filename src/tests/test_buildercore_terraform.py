@@ -443,6 +443,11 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'shield': 'dca-dc-us',
                                 },
                             ],
+                            'acl': [
+                                {
+                                    'name': 'ip_blacklist',
+                                },
+                            ],
                             'request_setting': [
                                 {
                                     'name': 'force-ssl',
@@ -509,9 +514,22 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'type': 'REQUEST',
                                 },
                                 {
+                                    'name': 'ip-blacklist',
+                                    'statement': 'client.ip ~ ip_blacklist',
+                                    'type': 'REQUEST',
+                                },
+                                {
                                     'name': 'condition-surrogate-article-id',
                                     'statement': 'req.url ~ "^/articles/(\\d+)/(.+)$"',
                                     'type': 'CACHE',
+                                },
+                            ],
+                            'response_object': [
+                                {
+                                    'name': 'ip-blacklist',
+                                    'request_condition': 'ip-blacklist',
+                                    'status': 403,
+                                    'response': 'Forbidden',
                                 },
                             ],
                             'vcl': [
