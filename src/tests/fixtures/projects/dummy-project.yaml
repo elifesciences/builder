@@ -128,6 +128,7 @@ defaults:
             bigquerylogging: false
             healthcheck: false
             errors: false
+            ip-blacklist: false
             vcl-templates: {}
             vcl: []
             surrogate-keys: {}
@@ -390,6 +391,7 @@ project-with-fastly-complex:
                 fallbacks:
                     5xx: "/5xx.html"
                     4xx: "/4xx.html"
+            ip-blacklist: true
             vcl-templates:
                 journal-submit:
                     percentage: 10

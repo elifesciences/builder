@@ -424,6 +424,7 @@ def build_context_fastly(pdata, context):
             'errors': pdata['aws']['fastly']['errors'],
             'gcslogging': _parameterize_gcslogging(pdata['aws']['fastly']['gcslogging']),
             'bigquerylogging': _parameterize_bigquerylogging(pdata['aws']['fastly']['bigquerylogging']),
+            'ip-blacklist': pdata['aws']['fastly']['ip-blacklist'],
             'vcl-templates': pdata['aws']['fastly']['vcl-templates'],
             'vcl': pdata['aws']['fastly']['vcl'],
             'surrogate-keys': pdata['aws']['fastly']['surrogate-keys'],

@@ -30,6 +30,7 @@ defaults:
             bigquerylogging: false
             healthcheck: false
             errors: false
+            ip-blacklist: false
             vcl-templates: {}
             vcl: []
             surrogate-keys: {}
