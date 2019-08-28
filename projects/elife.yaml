@@ -552,7 +552,7 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                ip-blacklist: true
+                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/1WzbLJKoGqzOF1IrhTNx2M/versions/19/data/acls
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -593,7 +593,7 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                ip-blacklist: true
+                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/6fX98C3dDfqypuWzfAh0bN/versions/78/data/acls
                 vcl:
                     - "original-host"
                     - "ping-status"
@@ -657,7 +657,7 @@ journal:
                     fallbacks:
                         4xx: "4xx.html"
                         5xx: "5xx.html"
-                ip-blacklist: true
+                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/7iWUGx8Bl9k3qZvJf0K0hc/versions/34/data/acls
                 vcl:
                     - "original-host"
                     - "ping-status"
