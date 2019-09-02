@@ -76,7 +76,7 @@ defaults:
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
             # version: '9.4' # EOL Feb 2020
-            version: '10.6' # EOL 2022
+            version: '10.9' # EOL 2022
             type: db.t2.small
             storage: 5 # GB
             # Standard for backward compatibility
@@ -1900,6 +1900,7 @@ elife-xpub:
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 engine: postgres # or 'MySQL'
+                version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 storage-type: gp2
@@ -1926,6 +1927,7 @@ elife-xpub:
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
             rds:
                 engine: postgres # or 'MySQL'
+                version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 storage-type: gp2
@@ -1949,6 +1951,7 @@ elife-xpub:
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
+                version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 storage-type: gp2
