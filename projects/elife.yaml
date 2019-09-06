@@ -1976,6 +1976,16 @@ task-adept:
         s3:
             "{instance}-elife-task-adept":
 
+exeter-kriya:
+    description: production data dumps from Exeter
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+        s3:
+            "{instance}-elife-kriya":
+
 fastly-logs:
     description: Fastly CDN access logs
     domain: false
