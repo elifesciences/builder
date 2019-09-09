@@ -14,29 +14,21 @@ def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
         sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
 
 @task
-@echo_output
-def cronjobs():
-    "list the cronjobs running as elife on all instances"
-    return salt_master_cmd("'crontab -l -u elife'")
-
-@task
-def daily_updates_enabled():
-    return salt_master_cmd("'crontab -l | grep daily-system-update'")
-
-@task
-@echo_output
-def syslog_conf():
-    minions = "-C 'elife-metrics-* or elife-lax-* or elife-api-*'"
-    return salt_master_cmd("'cat /etc/syslog-ng/syslog-ng.conf | grep use_fqdn'", minions=minions)
-
-@task
 def fail2ban_running():
-    # return salt_master_cmd("'ps aux | grep fail2ban-server'")
-    return salt_master_cmd(r"'salt \* state.single service.running name=fail2ban'")
+    return salt_master_cmd(module="state.single", cmd="service.running name=fail2ban")
 
 @task
-def installed_linux():
+def installed_linux_kernel():
+    "prints the list of linux kernels installed (but not necessarily running)"
+    # ii  linux-image-4.15.0-1019-aws          4.15.0-1019.19                             amd64        Linux kernel image for version 4.15.0 on 64 bit x86 SMP
+    # ii  linux-image-aws                      4.15.0.1019.19                             amd64        Linux kernel image for Amazon Web Services (AWS) systems.
     return salt_master_cmd("'dpkg -l | grep -i linux-image'")
+
+@task
+def linux_distro():
+    "returns the version of the OS"
+    # 'Description:    Ubuntu 18.04.1 LTS'
+    return salt_master_cmd("'lsb_release -d'")
 
 @task
 def update_kernel():
