@@ -21,7 +21,7 @@ def installed_linux_kernel():
     "prints the list of linux kernels installed (but not necessarily running)"
     # ii  linux-image-4.15.0-1019-aws          4.15.0-1019.19                             amd64        Linux kernel image for version 4.15.0 on 64 bit x86 SMP
     # ii  linux-image-aws                      4.15.0.1019.19                             amd64        Linux kernel image for Amazon Web Services (AWS) systems.
-    return salt_master_cmd("'dpkg -l | grep -i linux-image'")
+    return salt_master_cmd("'dpkg -l | grep -i linux-image | grep -i ii'")
 
 @task
 def linux_distro():
