@@ -1,8 +1,6 @@
 # EKS
 
-EKS is the chosen implementation of Kubernetes: AWS manages the master nodes but not the worker nodes that run containers; those should be run in an autoscaling group that uses a standard AMI.
-
-A project can be configured to create a cluster with the `eks` configuration in `elife.yaml`.
+EKS is the chosen implementation of Kubernetes on AWS's elife account.
 
 ## User guide
 
@@ -54,7 +52,13 @@ TBD
 
 ### Test a chart
 
+TBD
+
 ## Administrator guide
+
+### Create a new cluster
+
+A project can be configured to create a cluster with the `eks` configuration in `elife.yaml`.
 
 ### See the moving parts
 
