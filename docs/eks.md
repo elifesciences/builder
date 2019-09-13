@@ -4,7 +4,7 @@ EKS is the chosen implementation of Kubernetes: AWS manages the master nodes but
 
 A project can be configured to create a cluster with the `eks` configuration in `elife.yaml`.
 
-## User access
+## User guide
 
 ### Prerequisites
 
