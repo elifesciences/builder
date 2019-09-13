@@ -9,7 +9,7 @@ A project can be configured to create a cluster with the `eks` configuration in 
 ### Prerequisites
 
 - Install [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-- Install [`aws-iam-authenticator`](https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html)
+- Do not install `aws-iam-authenticator`: it's [no longer necessary](https://docs.aws.amazon.com/cli/latest/reference/eks/get-token.html) in recent versions of the `aws` CLI
 
 ### Configure kubectl
 
