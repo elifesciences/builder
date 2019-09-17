@@ -48,11 +48,18 @@ If you want to deploy an application to Kubernetes, you're going to use Helm to 
 
 ### Create a new chart
 
-TBD
+```
+helm create my-chart-name
+```
 
 ### Test a chart
 
-TBD
+```
+helm lint my-chart-name
+helm delete --purge my-release-name  # if previously created
+helm upgrade my-release-name my-chart-name -i
+helm status my-release-name
+```
 
 ## Administrator guide
 
