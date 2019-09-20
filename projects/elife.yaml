@@ -1232,32 +1232,6 @@ jats4r:
             - 80
             - 443
 
-medium:
-    description: microservice that gives access to eLife posts on Medium.com
-    domain: false
-    subdomain: medium
-    repo: https://github.com/elifesciences/medium
-    formula-repo: https://github.com/elifesciences/medium-formula
-    aws:
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        type: t2.micro
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        clustered:
-            ec2:
-                cluster-size: 2
-            elb:
-                protocol: http
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ram: 1024
-        ports:
-            1243: 80
-
 
 bus:
     description: see https://github.com/elifesciences/bus
