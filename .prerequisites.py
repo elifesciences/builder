@@ -39,7 +39,7 @@ def terraform_version_checker(_cmd):
     return str(installed_version)
 
 def vault_version_checker(_cmd):
-    installed_version = StrictVersion(re.match("Vault v([^ ]+) ", shs('vault -version')).groups()[0])
+    installed_version = StrictVersion(re.match("Vault v([^ ]+)", shs('vault -version')).groups()[0])
     if not installed_version >= MINIMUM_VERSION_VAULT:
         raise RuntimeError("Installed vault version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_VAULT))
 
