@@ -957,7 +957,7 @@ def _render_helm(context, template):
         'set': [
             {  
                 'name': 'sources',
-                'value': ['service'], 
+                'value': 'service', 
             },
             {  
                 'name': 'provider',
