@@ -765,6 +765,41 @@ def _render_eks_workers_role(context, template):
         'role': "${aws_iam_role.worker.name}",
     })
 
+    # TODO: make optional
+    template.populate_resource('aws_iam_policy', 'kubernetes_external_dns', block={
+        'name': 'AmazonRoute53KubernetesExternalDNS',
+        'path': '/',
+        'description': 'Allows management of DNS entries on Route53',
+    # TODO: serialize a dictionary to a JSON string
+        'policy': '''{
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": [
+                "arn:aws:route53:::hostedzone/*"
+            ]
+            },
+            {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "route53:ListResourceRecordSets"
+            ],
+            "Resource": [
+                "*"
+            ]
+            }
+        ]
+        }''',
+    })
+
+    # add the custom policy AmazonRoute53KubernetesExternalDNS
+    # attach that policy like the other 3
+
 def _render_eks_workers_autoscaling_group(context, template):
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
         'name': '%s--worker' % context['stackname'],
