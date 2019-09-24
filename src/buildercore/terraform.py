@@ -797,8 +797,10 @@ def _render_eks_workers_role(context, template):
         }''',
     })
 
-    # add the custom policy AmazonRoute53KubernetesExternalDNS
-    # attach that policy like the other 3
+    template.populate_resource('aws_iam_role_policy_attachment', 'worker_external_dns', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonRoute53KubernetesExternalDNS",
+        'role': "${aws_iam_role.worker.name}",
+    })
 
 def _render_eks_workers_autoscaling_group(context, template):
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
@@ -925,6 +927,11 @@ def _render_helm(context, template):
         ],
     })
 
+    #template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_STABLE, block={
+    #    'name': 'stable',
+    #    'url': 'https://kubernetes-charts.storage.googleapis.com',
+    #})
+
     template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
         'name': 'incubator',
         'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
@@ -936,6 +943,43 @@ def _render_helm(context, template):
         'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
         'chart': 'incubator/raw',
         'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+    })
+
+    template.populate_resource('helm_release', 'external_dns', block={
+        'name': 'external-dns',
+        #'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+        'chart': 'stable/external-dns',
+        'depends_on': ['helm_release.common_resources'],
+# set {
+#    name  = "cluster.enabled"
+#    value = "true"
+#  }
+        'set': [
+            {  
+                'name': 'sources',
+                'value': ['service'], 
+            },
+            {  
+                'name': 'provider',
+                'value': 'aws',
+            },
+            {  
+                'name': 'domainFilters',
+                'value': 'elifesciences.net',
+            },
+            {
+                'name': 'policy',
+                'value': 'upsert-only', # 'sync'
+            },
+            {
+                'name': 'aws.zoneType',
+                'value': 'public', # 'private',
+            },
+            {
+                'name': 'txtOwnerId',
+                'value': 'kubernetes-aws--test',
+            },
+        ],
     })
 
 def write_template(stackname, contents):
