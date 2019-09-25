@@ -2168,7 +2168,7 @@ kubernetes-aws:
                 desired-capacity: 2
             helm: true
             external-dns:
-                domain-filters: ["elifesciences.net"]
+                domain-filters: "elifesciences.net"
 
 large-repo-wrangler:
     description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.

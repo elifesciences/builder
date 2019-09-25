@@ -769,7 +769,7 @@ def _render_eks_workers_role(context, template):
 
     if context['eks']['external-dns']:
         template.populate_resource('aws_iam_policy', 'kubernetes_external_dns', block={
-            'name': 'AmazonRoute53KubernetesExternalDNS',
+            'name': '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
             'path': '/',
             'description': 'Allows management of DNS entries on Route53',
             'policy': json.dumps({
@@ -799,7 +799,7 @@ def _render_eks_workers_role(context, template):
         })
 
         template.populate_resource('aws_iam_role_policy_attachment', 'worker_external_dns', block={
-            'policy_arn': "arn:aws:iam::aws:policy/AmazonRoute53KubernetesExternalDNS",
+            'policy_arn': "${aws_iam_policy.kubernetes_external_dns.arn}",
             'role': "${aws_iam_role.worker.name}",
         })
 
@@ -963,7 +963,7 @@ def _render_helm(context, template):
                     'value': HELM_APP_VERSION_EXTERNAL_DNS,
                 },
                 {  
-                    'name': 'sources',
+                    'name': 'sources[0]',
                     'value': 'service', 
                 },
                 {  
@@ -971,7 +971,7 @@ def _render_helm(context, template):
                     'value': 'aws',
                 },
                 {  
-                    'name': 'domainFilters',
+                    'name': 'domainFilters[0]',
                     'value': context['eks']['external-dns']['domain-filters'],
                 },
                 {

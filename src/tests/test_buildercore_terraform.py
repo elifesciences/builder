@@ -1246,7 +1246,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
         self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
         self.assertEqual(
-            'AmazonRoute53KubernetesExternalDNS',
+            '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
             terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['name']
         )
         self.assertEqual(
@@ -1284,7 +1284,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('worker_external_dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
         self.assertEqual(
             {
-                'policy_arn': "arn:aws:iam::aws:policy/AmazonRoute53KubernetesExternalDNS",
+                'policy_arn': "arn:aws:iam::aws:policy/%s--AmazonRoute53KubernetesExternalDNS" % context['stackname'],
                 'role': "${aws_iam_role.worker.name}",
             },
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
@@ -1311,8 +1311,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'value': 'aws',
                     },
                     {  
-                        'name': 'domainFilters',
-                        'value': ['elifesciences.net'],
+                        'name': 'domainFilters[0]',
+                        'value': 'elifesciences.net',
                     },
                     {
                         'name': 'policy',
