@@ -944,42 +944,43 @@ def _render_helm(context, template):
         'depends_on': ['kubernetes_cluster_role_binding.tiller'],
     })
 
-    template.populate_resource('helm_release', 'external_dns', block={
-        'name': 'external-dns',
-        #'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-        'chart': 'stable/external-dns',
-        'depends_on': ['helm_release.common_resources'],
-# set {
-#    name  = "cluster.enabled"
-#    value = "true"
-#  }
-        'set': [
-            {  
-                'name': 'sources',
-                'value': 'service', 
-            },
-            {  
-                'name': 'provider',
-                'value': 'aws',
-            },
-            {  
-                'name': 'domainFilters',
-                'value': 'elifesciences.net',
-            },
-            {
-                'name': 'policy',
-                'value': 'upsert-only', # 'sync'
-            },
-            {
-                'name': 'aws.zoneType',
-                'value': 'public', # 'private',
-            },
-            {
-                'name': 'txtOwnerId',
-                'value': 'kubernetes-aws--test',
-            },
-        ],
-    })
+    if context['eks']['external-dns']:
+        template.populate_resource('helm_release', 'external_dns', block={
+            'name': 'external-dns',
+            #'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+            'chart': 'stable/external-dns',
+            'depends_on': ['helm_release.common_resources'],
+    # set {
+    #    name  = "cluster.enabled"
+    #    value = "true"
+    #  }
+            'set': [
+                {  
+                    'name': 'sources',
+                    'value': 'service', 
+                },
+                {  
+                    'name': 'provider',
+                    'value': 'aws',
+                },
+                {  
+                    'name': 'domainFilters',
+                    'value': 'elifesciences.net',
+                },
+                {
+                    'name': 'policy',
+                    'value': 'upsert-only', # 'sync'
+                },
+                {
+                    'name': 'aws.zoneType',
+                    'value': 'public', # 'private',
+                },
+                {
+                    'name': 'txtOwnerId',
+                    'value': 'kubernetes-aws--test',
+                },
+            ],
+        })
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"

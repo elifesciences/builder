@@ -145,6 +145,7 @@ defaults:
                 # (currently fixed) number of EC2 nodes
                 desired-capacity: 1
             helm: false
+            external-dns: false
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []

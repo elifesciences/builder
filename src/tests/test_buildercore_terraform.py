@@ -1290,6 +1290,42 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
         )
 
+        self.assertIn('external_dns', terraform_template['resource']['helm_release'])
+        self.assertEqual(
+            {
+                'name': 'external-dns',
+                'chart': 'stable/external-dns',
+                'depends_on': ['helm_release.common_resources'],
+                'set': [
+                    {  
+                        'name': 'sources',
+                        'value': 'service', 
+                    },
+                    {  
+                        'name': 'provider',
+                        'value': 'aws',
+                    },
+                    {  
+                        'name': 'domainFilters',
+                        'value': 'elifesciences.net',
+                    },
+                    {
+                        'name': 'policy',
+                        'value': 'upsert-only', # 'sync'
+                    },
+                    {
+                        'name': 'aws.zoneType',
+                        'value': 'public', # 'private',
+                    },
+                    {
+                        'name': 'txtOwnerId',
+                        'value': 'kubernetes-aws--test',
+                    },
+                ],
+            },
+            terraform_template['resource']['helm_release']['external_dns']
+        )
+
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
