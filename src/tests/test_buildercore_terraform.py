@@ -1281,6 +1281,15 @@ class TestBuildercoreTerraform(base.BaseCase):
             json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['policy'])
         )
 
+        self.assertIn('worker_external_dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            {
+                'policy_arn': "arn:aws:iam::aws:policy/AmazonRoute53KubernetesExternalDNS",
+                'role': "${aws_iam_role.worker.name}",
+            },
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
+        )
+
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
