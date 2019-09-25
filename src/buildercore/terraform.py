@@ -977,7 +977,7 @@ def _render_helm(context, template):
                 },
                 {
                     'name': 'txtOwnerId',
-                    'value': 'kubernetes-aws--test',
+                    'value': context['stackname'],
                 },
             ],
         })

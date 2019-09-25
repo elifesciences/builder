@@ -1319,7 +1319,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     },
                     {
                         'name': 'txtOwnerId',
-                        'value': 'kubernetes-aws--test',
+                        'value': context['stackname'],
                     },
                 ],
             },
