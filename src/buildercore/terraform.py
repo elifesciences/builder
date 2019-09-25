@@ -765,41 +765,41 @@ def _render_eks_workers_role(context, template):
         'role': "${aws_iam_role.worker.name}",
     })
 
-    # TODO: make optional
-    template.populate_resource('aws_iam_policy', 'kubernetes_external_dns', block={
-        'name': 'AmazonRoute53KubernetesExternalDNS',
-        'path': '/',
-        'description': 'Allows management of DNS entries on Route53',
-        'policy': json.dumps({
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "route53:ChangeResourceRecordSets",
-                    ],
-                    "Resource": [
-                        "arn:aws:route53:::hostedzone/*",
-                    ],
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "route53:ListHostedZones",
-                        "route53:ListResourceRecordSets",
-                    ],
-                    "Resource": [
-                        "*",
-                    ],
-                },
-            ],
-        }),
-    })
+    if context['eks']['external-dns']:
+        template.populate_resource('aws_iam_policy', 'kubernetes_external_dns', block={
+            'name': 'AmazonRoute53KubernetesExternalDNS',
+            'path': '/',
+            'description': 'Allows management of DNS entries on Route53',
+            'policy': json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ChangeResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "arn:aws:route53:::hostedzone/*",
+                        ],
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ListHostedZones",
+                            "route53:ListResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "*",
+                        ],
+                    },
+                ],
+            }),
+        })
 
-    template.populate_resource('aws_iam_role_policy_attachment', 'worker_external_dns', block={
-        'policy_arn': "arn:aws:iam::aws:policy/AmazonRoute53KubernetesExternalDNS",
-        'role': "${aws_iam_role.worker.name}",
-    })
+        template.populate_resource('aws_iam_role_policy_attachment', 'worker_external_dns', block={
+            'policy_arn': "arn:aws:iam::aws:policy/AmazonRoute53KubernetesExternalDNS",
+            'role': "${aws_iam_role.worker.name}",
+        })
 
 def _render_eks_workers_autoscaling_group(context, template):
     template.populate_resource('aws_iam_instance_profile', 'worker', block={

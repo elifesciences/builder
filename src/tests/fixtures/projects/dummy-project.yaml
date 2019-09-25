@@ -762,5 +762,5 @@ project-with-eks-external-dns:
     intdomain: False
     aws:
         eks:
-            #helm: true  # required
+            helm: true  # required
             external-dns: true

@@ -1241,6 +1241,9 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
 
+        # Helm is a dependency
+        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
+
         self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
         self.assertEqual(
             'AmazonRoute53KubernetesExternalDNS',
