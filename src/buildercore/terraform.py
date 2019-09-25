@@ -770,31 +770,30 @@ def _render_eks_workers_role(context, template):
         'name': 'AmazonRoute53KubernetesExternalDNS',
         'path': '/',
         'description': 'Allows management of DNS entries on Route53',
-    # TODO: serialize a dictionary to a JSON string
-        'policy': '''{
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-            "Effect": "Allow",
-            "Action": [
-                "route53:ChangeResourceRecordSets"
+        'policy': json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "route53:ChangeResourceRecordSets",
+                    ],
+                    "Resource": [
+                        "arn:aws:route53:::hostedzone/*",
+                    ],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "route53:ListHostedZones",
+                        "route53:ListResourceRecordSets",
+                    ],
+                    "Resource": [
+                        "*",
+                    ],
+                },
             ],
-            "Resource": [
-                "arn:aws:route53:::hostedzone/*"
-            ]
-            },
-            {
-            "Effect": "Allow",
-            "Action": [
-                "route53:ListHostedZones",
-                "route53:ListResourceRecordSets"
-            ],
-            "Resource": [
-                "*"
-            ]
-            }
-        ]
-        }''',
+        }),
     })
 
     template.populate_resource('aws_iam_role_policy_attachment', 'worker_external_dns', block={

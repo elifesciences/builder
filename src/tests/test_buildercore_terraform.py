@@ -1235,6 +1235,50 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+    def test_eks_and_external_dns(self):
+        pname = 'project-with-eks-external-dns'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
+        self.assertEqual(
+            'AmazonRoute53KubernetesExternalDNS',
+            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['name']
+        )
+        self.assertEqual(
+            '/',
+            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['path']
+        )
+        self.assertEqual(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ChangeResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "arn:aws:route53:::hostedzone/*",
+                        ],
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ListHostedZones",
+                            "route53:ListResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "*",
+                        ],
+                    },
+                ]
+            },
+            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['policy'])
+        )
+
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(
