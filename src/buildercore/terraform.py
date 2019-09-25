@@ -965,7 +965,7 @@ def _render_helm(context, template):
                 },
                 {  
                     'name': 'domainFilters',
-                    'value': 'elifesciences.net',
+                    'value': context['eks']['external-dns']['domain-filters'],
                 },
                 {
                     'name': 'policy',

@@ -763,4 +763,5 @@ project-with-eks-external-dns:
     aws:
         eks:
             helm: true  # required
-            external-dns: true
+            external-dns:
+                domain-filters: 'elifesciences.net'
