@@ -1295,8 +1295,13 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'name': 'external-dns',
                 'chart': 'stable/external-dns',
+                'version': '2.6.1',
                 'depends_on': ['helm_release.common_resources'],
                 'set': [
+                    {  
+                        'name': 'image.tag',
+                        'value': '0.5.16', 
+                    },
                     {  
                         'name': 'sources',
                         'value': 'service', 
@@ -1307,7 +1312,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     },
                     {  
                         'name': 'domainFilters',
-                        'value': 'elifesciences.net',
+                        'value': ['elifesciences.net'],
                     },
                     {
                         'name': 'policy',

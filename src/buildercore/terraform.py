@@ -13,6 +13,8 @@ only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
+HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
+HELM_APP_VERSION_EXTERNAL_DNS = '0.5.16'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -949,12 +951,17 @@ def _render_helm(context, template):
             'name': 'external-dns',
             #'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
             'chart': 'stable/external-dns',
+            'version': HELM_CHART_VERSION_EXTERNAL_DNS,
             'depends_on': ['helm_release.common_resources'],
     # set {
     #    name  = "cluster.enabled"
     #    value = "true"
     #  }
             'set': [
+                {
+                    'name': 'image.tag',
+                    'value': HELM_APP_VERSION_EXTERNAL_DNS,
+                },
                 {  
                     'name': 'sources',
                     'value': 'service', 
