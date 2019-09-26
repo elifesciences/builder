@@ -986,6 +986,10 @@ def _render_helm(context, template):
                     'name': 'txtOwnerId',
                     'value': context['stackname'],
                 },
+                {
+                    'name': 'rbac.create',
+                    'value': 'true',
+                },
             ],
         })
 
