@@ -1316,7 +1316,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     },
                     {
                         'name': 'policy',
-                        'value': 'upsert-only', # 'sync'
+                        'value': 'sync',
                     },
                     {
                         'name': 'aws.zoneType',

@@ -976,7 +976,7 @@ def _render_helm(context, template):
                 },
                 {
                     'name': 'policy',
-                    'value': 'upsert-only', # 'sync'
+                    'value': 'sync',
                 },
                 {
                     'name': 'aws.zoneType',
