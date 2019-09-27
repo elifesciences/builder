@@ -928,7 +928,7 @@ def _render_helm(context, template):
         ],
     })
 
-    #template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_STABLE, block={
+    # template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_STABLE, block={
     #    'name': 'stable',
     #    'url': 'https://kubernetes-charts.storage.googleapis.com',
     #})
@@ -953,24 +953,24 @@ def _render_helm(context, template):
             'chart': 'stable/external-dns',
             'version': HELM_CHART_VERSION_EXTERNAL_DNS,
             'depends_on': ['helm_release.common_resources'],
-    # set {
-    #    name  = "cluster.enabled"
-    #    value = "true"
-    #  }
+            # set {
+            #    name  = "cluster.enabled"
+            #    value = "true"
+            #  }
             'set': [
                 {
                     'name': 'image.tag',
                     'value': HELM_APP_VERSION_EXTERNAL_DNS,
                 },
-                {  
+                {
                     'name': 'sources[0]',
-                    'value': 'service', 
+                    'value': 'service',
                 },
-                {  
+                {
                     'name': 'provider',
                     'value': 'aws',
                 },
-                {  
+                {
                     'name': 'domainFilters[0]',
                     'value': context['eks']['external-dns']['domain-filters'],
                 },

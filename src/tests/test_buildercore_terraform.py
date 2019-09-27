@@ -1298,19 +1298,19 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'version': '2.6.1',
                 'depends_on': ['helm_release.common_resources'],
                 'set': [
-                    {  
+                    {
                         'name': 'image.tag',
-                        'value': '0.5.16', 
+                        'value': '0.5.16',
                     },
-                    {  
+                    {
                         'name': 'sources[0]',
-                        'value': 'service', 
+                        'value': 'service',
                     },
-                    {  
+                    {
                         'name': 'provider',
                         'value': 'aws',
                     },
-                    {  
+                    {
                         'name': 'domainFilters[0]',
                         'value': 'elifesciences.net',
                     },
@@ -1334,7 +1334,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             },
             terraform_template['resource']['helm_release']['external_dns']
         )
-
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
