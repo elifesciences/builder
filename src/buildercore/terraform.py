@@ -928,11 +928,6 @@ def _render_helm(context, template):
         ],
     })
 
-    # template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_STABLE, block={
-    #    'name': 'stable',
-    #    'url': 'https://kubernetes-charts.storage.googleapis.com',
-    #})
-
     template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
         'name': 'incubator',
         'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
@@ -953,10 +948,6 @@ def _render_helm(context, template):
             'chart': 'stable/external-dns',
             'version': HELM_CHART_VERSION_EXTERNAL_DNS,
             'depends_on': ['helm_release.common_resources'],
-            # set {
-            #    name  = "cluster.enabled"
-            #    value = "true"
-            #  }
             'set': [
                 {
                     'name': 'image.tag',
