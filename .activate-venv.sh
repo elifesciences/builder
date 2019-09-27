@@ -20,7 +20,7 @@ if [ ! -f .use-python-3.flag ]; then
     python=$(which python2 python2.7 | head -n 1)
 else
     # python 3.5
-    python=$(which python3.5 python3 | head -n 1)
+    python=$(which python3 python3.5 | head -n 1)
 fi
 
 py=${python##*/} # ll: python3.5
