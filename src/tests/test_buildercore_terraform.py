@@ -1284,7 +1284,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('worker_external_dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
         self.assertEqual(
             {
-                'policy_arn': "arn:aws:iam::aws:policy/%s--AmazonRoute53KubernetesExternalDNS" % context['stackname'],
+                'policy_arn': '${aws_iam_policy.kubernetes_external_dns.arn}',
                 'role': "${aws_iam_role.worker.name}",
             },
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
@@ -1303,7 +1303,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'value': '0.5.16', 
                     },
                     {  
-                        'name': 'sources',
+                        'name': 'sources[0]',
                         'value': 'service', 
                     },
                     {  
@@ -1326,6 +1326,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'name': 'txtOwnerId',
                         'value': context['stackname'],
                     },
+                    {
+                        'name': 'rbac.create',
+                        'value': 'true',
+                    }
                 ],
             },
             terraform_template['resource']['helm_release']['external_dns']
