@@ -712,7 +712,7 @@ def regenerate_stack(stackname, **more_context):
     (pname, instance_id) = core.parse_stackname(stackname)
     more_context['stackname'] = stackname # TODO: purge this crap
     # lsh@2019-09-27: usage of `instance_id` here is wrong. `instance_id` looks like "foobar" in "journal--foobar"
-    # and is only correct when an alt-config matches. We typically have alt-configs for our environments, like 
+    # and is only correct when an alt-config matches. We typically have alt-configs for our environments, like
     # ci, end2end, prod, continuumtest and has thus worked stably for a while now.
     # ad-hoc instances whose instance-id does not match an environment will have it's alt-config ignored.
     # the alt-config using during instance creation can be found in current_context but may not have always been the case.
