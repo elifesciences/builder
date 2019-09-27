@@ -624,7 +624,7 @@ def render_eks(context, template):
 
 def _render_eks_master_security_group(context, template):
     template.populate_resource('aws_security_group', 'master', block={
-        'name': '%s--master' % context['stackname'],
+        'name': 'project-with-eks--%s--master' % context['instance_id'],
         'description': 'Cluster communication with worker nodes',
         'vpc_id': context['aws']['vpc-id'],
         'egress': {
@@ -693,7 +693,7 @@ def _render_eks_workers_security_group(context, template):
     security_group_tags = aws.generic_tags(context)
     security_group_tags['kubernetes.io/cluster/%s'] = 'owned'
     template.populate_resource('aws_security_group', 'worker', block={
-        'name': '%s--worker' % context['stackname'],
+        'name': 'project-with-eks--%s--worker' % context['instance_id'],
         'description': 'Security group for all worker nodes in the cluster',
         'vpc_id': context['aws']['vpc-id'],
         'egress': {
