@@ -76,7 +76,7 @@ defaults:
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
             # version: '9.4' # EOL Feb 2020
-            version: '10.9' # EOL 2022
+            version: '11.1' # EOL Nov 2023
             allow-major-version-upgrade: False # don't alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
@@ -397,6 +397,13 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
+        rdsupgrade:
+            rds:
+                version: '9.4'
+                #version: "11.1"
+                storage: 5
+                #deletion-policy: Retain
+                #allow-major-version-upgrade: True
         standalone1404:
             rds:
                 version: '9.4'
