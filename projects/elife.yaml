@@ -145,6 +145,9 @@ defaults:
                 # (currently fixed) number of EC2 nodes
                 desired-capacity: 1
             helm: false
+            external-dns: false
+                # Route53 hosted zone to create subdomains on
+                #domain-filter: elifesciences.org
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -2138,8 +2141,10 @@ kubernetes-aws:
             worker:
                 type: t2.small    
                 max-size: 4
-                desired-capacity: 2
+                desired-capacity: 3
             helm: true
+            external-dns:
+                domain-filter: "elifesciences.net"
 
 large-repo-wrangler:
     description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.

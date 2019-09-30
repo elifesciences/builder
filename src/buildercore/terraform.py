@@ -13,6 +13,8 @@ only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
+HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
+HELM_APP_VERSION_EXTERNAL_DNS = '0.5.16'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -765,6 +767,42 @@ def _render_eks_workers_role(context, template):
         'role': "${aws_iam_role.worker.name}",
     })
 
+    if context['eks']['external-dns']:
+        template.populate_resource('aws_iam_policy', 'kubernetes_external_dns', block={
+            'name': '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
+            'path': '/',
+            'description': 'Allows management of DNS entries on Route53',
+            'policy': json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ChangeResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "arn:aws:route53:::hostedzone/*",
+                        ],
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ListHostedZones",
+                            "route53:ListResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "*",
+                        ],
+                    },
+                ],
+            }),
+        })
+
+        template.populate_resource('aws_iam_role_policy_attachment', 'worker_external_dns', block={
+            'policy_arn': "${aws_iam_policy.kubernetes_external_dns.arn}",
+            'role': "${aws_iam_role.worker.name}",
+        })
+
 def _render_eks_workers_autoscaling_group(context, template):
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
         'name': '%s--worker' % context['stackname'],
@@ -902,6 +940,49 @@ def _render_helm(context, template):
         'chart': 'incubator/raw',
         'depends_on': ['kubernetes_cluster_role_binding.tiller'],
     })
+
+    if context['eks']['external-dns']:
+        template.populate_resource('helm_release', 'external_dns', block={
+            'name': 'external-dns',
+            #'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+            'chart': 'stable/external-dns',
+            'version': HELM_CHART_VERSION_EXTERNAL_DNS,
+            'depends_on': ['helm_release.common_resources'],
+            'set': [
+                {
+                    'name': 'image.tag',
+                    'value': HELM_APP_VERSION_EXTERNAL_DNS,
+                },
+                {
+                    'name': 'sources[0]',
+                    'value': 'service',
+                },
+                {
+                    'name': 'provider',
+                    'value': 'aws',
+                },
+                {
+                    'name': 'domainFilters[0]',
+                    'value': context['eks']['external-dns']['domain-filter'],
+                },
+                {
+                    'name': 'policy',
+                    'value': 'sync',
+                },
+                {
+                    'name': 'aws.zoneType',
+                    'value': 'public', # 'private',
+                },
+                {
+                    'name': 'txtOwnerId',
+                    'value': context['stackname'],
+                },
+                {
+                    'name': 'rbac.create',
+                    'value': 'true',
+                },
+            ],
+        })
 
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"

@@ -1235,6 +1235,106 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+    def test_eks_and_external_dns(self):
+        pname = 'project-with-eks-external-dns'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        # Helm is a dependency
+        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
+
+        self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
+        self.assertEqual(
+            '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
+            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['name']
+        )
+        self.assertEqual(
+            '/',
+            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['path']
+        )
+        self.assertEqual(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ChangeResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "arn:aws:route53:::hostedzone/*",
+                        ],
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "route53:ListHostedZones",
+                            "route53:ListResourceRecordSets",
+                        ],
+                        "Resource": [
+                            "*",
+                        ],
+                    },
+                ]
+            },
+            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['policy'])
+        )
+
+        self.assertIn('worker_external_dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            {
+                'policy_arn': '${aws_iam_policy.kubernetes_external_dns.arn}',
+                'role': "${aws_iam_role.worker.name}",
+            },
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
+        )
+
+        self.assertIn('external_dns', terraform_template['resource']['helm_release'])
+        self.assertEqual(
+            {
+                'name': 'external-dns',
+                'chart': 'stable/external-dns',
+                'version': '2.6.1',
+                'depends_on': ['helm_release.common_resources'],
+                'set': [
+                    {
+                        'name': 'image.tag',
+                        'value': '0.5.16',
+                    },
+                    {
+                        'name': 'sources[0]',
+                        'value': 'service',
+                    },
+                    {
+                        'name': 'provider',
+                        'value': 'aws',
+                    },
+                    {
+                        'name': 'domainFilters[0]',
+                        'value': 'elifesciences.net',
+                    },
+                    {
+                        'name': 'policy',
+                        'value': 'sync',
+                    },
+                    {
+                        'name': 'aws.zoneType',
+                        'value': 'public', # 'private',
+                    },
+                    {
+                        'name': 'txtOwnerId',
+                        'value': context['stackname'],
+                    },
+                    {
+                        'name': 'rbac.create',
+                        'value': 'true',
+                    }
+                ],
+            },
+            terraform_template['resource']['helm_release']['external_dns']
+        )
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

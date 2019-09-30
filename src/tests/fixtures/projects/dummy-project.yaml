@@ -100,7 +100,8 @@ defaults:
                 desired-capacity: 3
                 min-size: 1
                 max-size: 3
-            helm: False
+            helm: false
+            external-dns: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
@@ -749,9 +750,19 @@ project-with-eks:
                 max-size: 3
 
 project-with-eks-helm:
-    description: project managing an EKS cluster
+    description: project managing an EKS cluster and various extensions
     domain: False
     intdomain: False
     aws:
         eks:
             helm: true
+
+project-with-eks-external-dns:
+    description: project managing an EKS cluster and various extensions
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            helm: true  # required
+            external-dns:
+                domain-filter: "elifesciences.net"
