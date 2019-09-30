@@ -963,7 +963,7 @@ def _render_helm(context, template):
                 },
                 {
                     'name': 'domainFilters[0]',
-                    'value': context['eks']['external-dns']['domain-filters'],
+                    'value': context['eks']['external-dns']['domain-filter'],
                 },
                 {
                     'name': 'policy',
