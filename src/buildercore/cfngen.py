@@ -157,7 +157,7 @@ def build_context(pname, **more_context):
     wrangler_list = [project_wrangler] + wrangler_list
 
     for wrangler in wrangler_list:
-        # deepcopy so functions can't modify the context in-place or
+        # using `deepcopy` so functions can't modify the context in-place or
         # reference a bit of project_data and then change it
         context = wrangler(deepcopy(project_data), deepcopy(context))
 
@@ -712,10 +712,10 @@ def regenerate_stack(stackname, **more_context):
     (pname, instance_id) = core.parse_stackname(stackname)
     more_context['stackname'] = stackname # TODO: purge this crap
     # lsh@2019-09-27: usage of `instance_id` here is wrong. `instance_id` looks like "foobar" in "journal--foobar"
-    # and is only correct when an alt-config matches. We typically have alt-configs for our environments, like
+    # and is only correct when an alt-config matches. We typically have alt-configs for our common environments, like
     # ci, end2end, prod, continuumtest and has thus worked stably for a while now.
     # ad-hoc instances whose instance-id does not match an environment will have it's alt-config ignored.
-    # the alt-config using during instance creation can be found in current_context but may not have always been the case.
+    # the alt-config used during instance creation is found in `current_context` (but may not have always been the case).
     more_context['alt-config'] = current_context.get('alt-config', instance_id)
     context = build_context(pname, existing_context=current_context, **more_context)
     delta = template_delta(context)

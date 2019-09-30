@@ -77,7 +77,7 @@ defaults:
             # ensure this matches the version of Postgres you install on server!
             # version: '9.4' # EOL Feb 2020
             version: '11.1' # EOL Nov 2023
-            allow-major-version-upgrade: False # don't alter unless you're doing a major version upgrade
+            allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
             # Standard for backward compatibility
