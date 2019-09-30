@@ -397,13 +397,6 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
-        rdsupgrade:
-            rds:
-                version: '9.4'
-                #version: "11.1"
-                storage: 5
-                #deletion-policy: Retain
-                #allow-major-version-upgrade: True
         standalone1404:
             rds:
                 version: '9.4'
