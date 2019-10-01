@@ -988,8 +988,8 @@ journal-cms:
             rds:
                 type: db.t2.small
                 engine: MySQL
-                version: '5.7'
-                storage: 24 # GB
+                version: '5.7.23'
+                storage: 48 # GB
                 backup-retention: 2 # days
             ext:
                 size: 60 # GB
@@ -998,9 +998,9 @@ journal-cms:
             rds:
                 type: db.t2.medium
                 engine: MySQL
-                version: '5.7'
+                version: '5.7.23'
                 multi-az: true
-                storage: 24 # GB
+                storage: 48 # GB
             ext:
                 size: 60 # GB
     vagrant:
