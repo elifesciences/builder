@@ -134,15 +134,17 @@ class SimpleCases(base.BaseCase):
         self.assertEqual(core.find_region(), "us-east-1")
 
     def test_find_region_when_more_than_one_is_available(self):
-        base.switch_in_test_settings([
-            'src/tests/fixtures/projects/dummy-project.yaml',
-            'src/tests/fixtures/additional-projects/dummy-project-eu.yaml',
-        ])
         try:
+            base.switch_in_test_settings([
+                'src/tests/fixtures/projects/dummy-project.yaml',
+                'src/tests/fixtures/additional-projects/dummy-project-eu.yaml',
+            ])
             core.find_region()
             self.fail("Shouldn't be able to choose a region")
         except core.MultipleRegionsError as e:
             self.assertCountEqual(["us-east-1", "eu-central-1"], e.regions())
+        finally:
+            base.switch_out_test_settings()
 
     def test_find_ec2_instances(self):
         self.assertEqual([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
