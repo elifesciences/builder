@@ -623,10 +623,14 @@ def template_delta(context):
     # end backward compatibility code
 
     def _title_has_been_updated(title, section):
-        # title was there before with a deprecated name, leave it alone
-        # e.g. 'EC2Instance' rather than 'EC2Instance1'
-        if not title in old_template[section]:
-            return False
+        if section in old_template:
+            # title was there before with a deprecated name, leave it alone
+            # e.g. 'EC2Instance' rather than 'EC2Instance1'
+            if not title in old_template[section]:
+                return False
+        else:
+            LOG.warn("section %r not present in old template but is present in new: %s" % (section, title))
+            return False # can we handle this better?
 
         title_in_old = dict(old_template[section][title])
         title_in_new = dict(template[section][title])
@@ -716,7 +720,9 @@ def regenerate_stack(stackname, **more_context):
     # ci, end2end, prod, continuumtest and has thus worked stably for a while now.
     # ad-hoc instances whose instance-id does not match an environment will have it's alt-config ignored.
     # the alt-config used during instance creation is found in `current_context` (but may not have always been the case).
-    more_context['alt-config'] = current_context.get('alt-config', instance_id)
+    #more_context['alt-config'] = instance_id
+    #more_context['alt-config'] = current_context.get('alt-config', instance_id)
+    more_context['alt-config'] = current_context['alt-config']
     context = build_context(pname, existing_context=current_context, **more_context)
     delta = template_delta(context)
     return context, delta, current_context
