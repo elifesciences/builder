@@ -282,7 +282,7 @@ def render_rds(context, template):
         'BackupRetentionPeriod': lu('rds.backup-retention'),
         'DeletionPolicy': lu('rds.deletion-policy'),
         "Tags": tags,
-        "AllowMajorVersionUpgrade": lu('rds.allow-major-version-upgrade', default=False),
+        "AllowMajorVersionUpgrade": lu('rds.allow-major-version-upgrade'),
         "AutoMinorVersionUpgrade": True, # default
     }
 

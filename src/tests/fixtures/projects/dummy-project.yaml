@@ -54,6 +54,7 @@ defaults:
             engine: postgres
             # ensure this matches the version of Postgres you install on server!
             version: '9.4'
+            allow-major-version-upgrade: false
             type: db.t2.small
             storage: 5 # GB
             storage-type: 'standard'
