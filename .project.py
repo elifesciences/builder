@@ -22,9 +22,12 @@ logging.disable(logging.CRITICAL)
 # import buildercore
 src_dir = os.path.abspath('src')
 sys.path.insert(0, src_dir)
-from buildercore import project, utils, bootstrap
+from buildercore import project, utils, bootstrap, config
 
 output = None
+
+config.PROJECTS_FILES += ['src/tests/fixtures/projects/dummy-project.yaml',
+                          'src/tests/fixtures/projects/dummy-projec2.yaml']
 
 # specific project, specific task
 if args.pname:
