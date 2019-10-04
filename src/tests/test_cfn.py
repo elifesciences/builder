@@ -43,8 +43,6 @@ class TestCfn(base.BaseCase):
     @patch('buildercore.core.active_stack_names')
     @patch('buildercore.core.find_ec2_instances')
     def test_altconfig_name_preserved(self, *args):
-        #import pprint
-
         # create a random instance id for the 'dummy2' project and use the 'alt-config1' alt-config
         # see: fixtures/dummy2-project.json
         instance_id = base.generate_environment_name() # "luke-20191001045227-270172"
@@ -52,33 +50,13 @@ class TestCfn(base.BaseCase):
 
         # ensure alt-config is in there and correct
         current_context = context_handler.load_context(stackname)
-
-        #print('current context')
-        # pprint.pprint(current_context)
+        self.assertEqual('alt-config1', current_context['alt-config'])
 
         # skip calling update_infrastructure, we just want to test the diff with any changes
-        more_context = {
-            # todo: not working
-            #'rds': {
-            #    'allow-major-version-upgrade': True
-            #}
-        }
-        new_context, delta, _ = cfngen.regenerate_stack(stackname, **more_context)
+        new_context = cfngen.regenerate_stack(stackname)[0]
 
         # ensure the alt-config value is correct (it was previously the instance-id)
         self.assertEqual(current_context['alt-config'], new_context['alt-config'])
-
-        # TODO: ensure the change in more_context is found in the new context and is present in the delta
-
-        #print('new context')
-        # pprint.pprint(new_context)
-
-        # print('---')
-
-        # print('delta')
-        # pprint.pprint(delta)
-
-        # self.assertTrue(False)
 
     def _dummy_instance_is_active(self, find_ec2_instances, load_context, active_stack_names):
         active_stack_names.return_value = ['dummy1--prod']
