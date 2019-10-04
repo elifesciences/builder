@@ -54,6 +54,7 @@ defaults:
             engine: postgres
             # ensure this matches the version of Postgres you install on server!
             version: '9.4'
+            allow-major-version-upgrade: false
             type: db.t2.small
             storage: 5 # GB
             storage-type: 'standard'
@@ -609,6 +610,12 @@ project-with-rds-encryption:
         rds:
             storage: 5
             encryption: arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012
+
+project-with-rds-major-version-upgrade:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        rds:
+            allow-major-version-upgrade: True
 
 project-with-elasticache-redis:
     domain: False
