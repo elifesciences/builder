@@ -723,14 +723,12 @@ elife-metrics:
         end2end:
             description: end2end environment for metrics. RDS backed
             rds:
-                version: '9.4'
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed
             ext:
                 size: 10 # GB
             rds:
-                version: '9.4'
                 multi-az: true
                 storage: 10
     vagrant:
