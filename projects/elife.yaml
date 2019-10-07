@@ -1425,20 +1425,17 @@ observer:
     aws-alt:
         standalone1404:
             rds:
-                version: '9.4'
                 storage: 10
                 backup-retention: 2 # days
                 deletion-policy: Delete
         end2end:
             description: production-like environment. RDS backed
             rds:
-                version: '9.4'
                 storage: 10
                 backup-retention: 2 # days
         prod:
             description: production environment. RDS backed
             rds:
-                version: '9.4'
                 storage: 10
                 multi-az: true
     vagrant:
