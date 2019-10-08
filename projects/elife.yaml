@@ -1026,7 +1026,6 @@ elife-dashboard:
         end2end:
             description: production-like environment. backed by RDS
             rds:
-                version: '9.4'
                 storage: 5
                 backup-retention: 2 # days
             sqs:
@@ -1043,7 +1042,6 @@ elife-dashboard:
         prod:
             description: production environment. backed by RDS
             rds:
-                version: '9.4'
                 storage: 5
                 multi-az: true
             sqs:
