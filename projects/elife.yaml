@@ -1743,6 +1743,7 @@ profiles:
     aws-alt:
         end2end:
             rds:
+                version: '9.4'
                 engine: postgres
                 storage: 5 # GB
                 backup-retention: 2 # days
@@ -1754,6 +1755,7 @@ profiles:
                 - 8082 # orcid-dummy https
         prod:
             rds:
+                version: '9.4'
                 engine: postgres
                 storage: 5 # GB
                 multi-az: true
