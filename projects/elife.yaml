@@ -730,7 +730,7 @@ elife-metrics:
                 size: 10 # GB
             rds:
                 multi-az: true
-                storage: 10
+                storage: 20
     vagrant:
         ports:
             1240: 80
