@@ -759,6 +759,7 @@ elife-bot:
                 cors: true
             "{instance}-elife-bot-sessions":
             "{instance}-elife-bot-digests-input":
+            "{instance}-elife-bot-decision-letter-input":
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
@@ -773,6 +774,8 @@ elife-bot:
                     deletion-policy: delete
                 "{instance}-elife-bot-digests-input":
                     deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
                 # commented out because buckets already exist outside of CloudFormation:
                 #"{instance}-elife-bot":
                 #    deletion-policy: delete
@@ -785,6 +788,8 @@ elife-bot:
                 "{instance}-elife-bot-sessions":
                     deletion-policy: delete
                 "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
                     deletion-policy: delete
                 # commented out because buckets already exist outside of CloudFormation:
                 #"{instance}-elife-bot":
@@ -803,6 +808,9 @@ elife-bot:
                 "{instance}-elife-bot-digests-input":
                     sqs-notifications:
                         end2end-incoming-queue: {}
+                "{instance}-elife-bot-decision-letter-input":
+                    sqs-notifications:
+                        end2end-incoming-queue: {}
                 "{instance}-elife-ejp-poa-delivery":
                     deletion-policy: delete
             #    end2end-elife-production-final:
@@ -818,6 +826,9 @@ elife-bot:
                 "{instance}-elife-bot-digests-input":
                     sqs-notifications:
                         ct-incoming-queue: {}
+                "{instance}-elife-bot-decision-letter-input":
+                    sqs-notifications:
+                        ct-incoming-queue: {}
                 "{instance}-elife-bot":
                     deletion-policy: delete
                 "{instance}-elife-ejp-poa-delivery":
@@ -830,6 +841,9 @@ elife-bot:
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-digests-input":
+                    sqs-notifications:
+                        incoming-queue: {}
+                "{instance}-elife-bot-decision-letter-input":
                     sqs-notifications:
                         incoming-queue: {}
                 # already existing bucket, do not uncomment
