@@ -81,7 +81,8 @@ defaults:
             type: db.t2.small
             storage: 5 # GB
             # Standard for backward compatibility
-            storage-type: Standard # standard|gp2|io1 https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+            # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+            storage-type: gp2 # standard|gp2|io1
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
@@ -404,6 +405,7 @@ lax:
             rds:
                 version: '9.4'
                 storage: 5
+                storage-type: Standard
                 deletion-policy: Delete
         ci:
             ec2:
@@ -415,6 +417,7 @@ lax:
             rds:
                 version: '9.4'
                 storage: 5
+                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 10 # GB
@@ -434,6 +437,7 @@ lax:
             rds:
                 version: '9.4'
                 storage: 5
+                storage-type: Standard
                 multi-az: true
             ext:
                 size: 10 # GB
@@ -724,6 +728,7 @@ elife-metrics:
             description: end2end environment for metrics. RDS backed
             rds:
                 backup-retention: 2 # days
+                storage-type: Standard
         prod:
             description: production environment for metrics. RDS backed
             ext:
@@ -731,6 +736,7 @@ elife-metrics:
             rds:
                 multi-az: true
                 storage: 20
+                storage-type: Standard
     vagrant:
         ports:
             1240: 80
@@ -980,6 +986,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
+                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 30 # GB
@@ -990,6 +997,7 @@ journal-cms:
                 engine: MySQL
                 version: '5.7.23'
                 storage: 48 # GB
+                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 60 # GB
@@ -1001,6 +1009,7 @@ journal-cms:
                 version: '5.7.23'
                 multi-az: true
                 storage: 48 # GB
+                storage-type: Standard
             ext:
                 size: 60 # GB
     vagrant:
@@ -1027,6 +1036,7 @@ elife-dashboard:
             description: production-like environment. backed by RDS
             rds:
                 storage: 5
+                storage-type: Standard
                 backup-retention: 2 # days
             sqs:
                 # legacy custom name
@@ -1043,6 +1053,7 @@ elife-dashboard:
             description: production environment. backed by RDS
             rds:
                 storage: 5
+                storage-type: Standard
                 multi-az: true
             sqs:
                 # legacy custom name
@@ -1422,17 +1433,20 @@ observer:
         standalone1404:
             rds:
                 storage: 10
+                storage-type: Standard
                 backup-retention: 2 # days
                 deletion-policy: Delete
         end2end:
             description: production-like environment. RDS backed
             rds:
                 storage: 10
+                storage-type: Standard
                 backup-retention: 2 # days
         prod:
             description: production environment. RDS backed
             rds:
                 storage: 10
+                storage-type: Standard
                 multi-az: true
     vagrant:
         ports:
@@ -1483,6 +1497,7 @@ peerscout:
         end2end:
             rds:
                 storage: 5
+                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 # external hdd
@@ -1491,6 +1506,7 @@ peerscout:
         prod:
             rds:
                 storage: 5
+                storage-type: Standard
                 multi-az: true
             ext:
                 # external hdd
@@ -1742,6 +1758,7 @@ profiles:
                 version: '9.4'
                 engine: postgres
                 storage: 5 # GB
+                storage-type: Standard
                 backup-retention: 2 # days
             ports:
                 - 22
@@ -1754,6 +1771,7 @@ profiles:
                 version: '9.4'
                 engine: postgres
                 storage: 5 # GB
+                storage-type: Standard
                 multi-az: true
     vagrant:
         box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
@@ -1810,7 +1828,6 @@ digests:
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
-                storage-type: gp2
                 backup-retention: 2 # days
         continuumtest:
             rds:
@@ -1818,7 +1835,6 @@ digests:
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
-                storage-type: gp2
                 backup-retention: 2 # days
         prod:
             rds:
@@ -1826,7 +1842,6 @@ digests:
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
-                storage-type: gp2
                 multi-az: true
     vagrant:
         box: bento/ubuntu-16.04 # 16.04, deprecated
@@ -1869,7 +1884,6 @@ elife-xpub:
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
-                storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
             ec2:
@@ -1896,7 +1910,6 @@ elife-xpub:
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
-                storage-type: gp2
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
             ec2:
@@ -1920,7 +1933,6 @@ elife-xpub:
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
-                storage-type: gp2
                 backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
                 deletion-policy: Snapshot
