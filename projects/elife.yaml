@@ -1482,7 +1482,6 @@ peerscout:
     aws-alt:
         end2end:
             rds:
-                version: '9.4'
                 storage: 5
                 backup-retention: 2 # days
             ext:
@@ -1491,7 +1490,6 @@ peerscout:
                 device: /dev/sdf
         prod:
             rds:
-                version: '9.4'
                 storage: 5
                 multi-az: true
             ext:
