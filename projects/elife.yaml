@@ -2038,6 +2038,10 @@ data-pipeline:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person_v2.bqschema.json
                     public_editor_profile:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/editors-google-spreadsheet-deposit/schema.json
+                    people_orcid_profile:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/people-and-profile-service-deposit/schema/people_orcid_profile_schema.json
+                    people_staff_profile:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/people-and-profile-service-deposit/schema/people_staff_profile_schema.json
     aws-alt:
         standalone:
             ext:
