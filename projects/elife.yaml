@@ -98,10 +98,11 @@ defaults:
             # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html
             deletion-policy: Snapshot # 'Delete', 'Retain' 'Snapshot'
 
-        # TODO: this will be moved inside aws.ec2
+        # TODO: move inside aws.ec2
         ext:
-            # external hdd
-            type: standard # magnetic, use 'gp2' for ssd
+            # EBS 'external' volume
+            # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
+            type: gp2 # standard|gp2|io1|sc1
             size: 10 # GB
             device: /dev/sdh
         elb:
@@ -345,6 +346,7 @@ heavybox:
             - 22
         ext:
             size: 10 # GB
+            type: standard
     aws-alt:
         standalone:
             # for now a copy of standalone1404
@@ -421,6 +423,7 @@ lax:
                 backup-retention: 2 # days
             ext:
                 size: 10 # GB
+                type: standard
             elb:
                 protocol:
                     - https
@@ -441,6 +444,7 @@ lax:
                 multi-az: true
             ext:
                 size: 10 # GB
+                type: standard
             elb:
                 protocol:
                     - https
@@ -733,6 +737,7 @@ elife-metrics:
             description: production environment for metrics. RDS backed
             ext:
                 size: 10 # GB
+                type: standard
             rds:
                 multi-az: true
                 storage: 20
@@ -757,6 +762,7 @@ elife-bot:
             - 80
         ext:
             size: 30 # GB
+            type: standard
         s3:
             "{instance}-elife-silent-corrections":
             "{instance}-elife-published":
@@ -975,9 +981,11 @@ journal-cms:
             description: testing environment. backed by RDS
             ext:
                 size: 10 # GB
+                type: standard
         ci:
             ext:
                 size: 5 # GB
+                type: standard
         end2end:
             description: production-like environment. backed by RDS
             rds:
@@ -989,6 +997,7 @@ journal-cms:
                 backup-retention: 2 # days
             ext:
                 size: 30 # GB
+                type: standard
         continuumtest:
             description: production-like environment.
             rds:
@@ -1000,6 +1009,7 @@ journal-cms:
                 backup-retention: 2 # days
             ext:
                 size: 60 # GB
+                type: standard
         prod:
             description: production environment. backed by RDS
             rds:
@@ -1011,6 +1021,7 @@ journal-cms:
                 storage-type: Standard
             ext:
                 size: 60 # GB
+                type: standard
     vagrant:
         # 16.04, deprecated
         box: bento/ubuntu-16.04
@@ -1105,7 +1116,6 @@ elife-libraries:
             - 22
         ext:
             size: 30 # GB
-            type: gp2
     aws-alt:
         ci:
             description: running unit tests
@@ -1118,6 +1128,7 @@ elife-libraries:
             type: t2.medium
             ext:
                 size: 10 # GB
+                type: standard
         powerful:
             description: speeding up bot-lax-adaptor tests
             type: c4.2xlarge
@@ -1146,7 +1157,6 @@ containers:
             - 22
         ext:
             size: 100 # GB
-            type: gp2
     aws-alt:
         # AMIs created from here used in
         # https://alfred.elifesciences.org/configure
@@ -1182,7 +1192,6 @@ elife-alfred:
             - 16022 # Jenkins SSH port
         ext:
             size: 100 # GB
-            type: gp2
         s3:
             "{instance}-elife-alfred":
                 deletion-policy: retain
@@ -1492,6 +1501,7 @@ peerscout:
             # external hdd
             size: 20 # GB
             device: /dev/sdf
+            type: standard
     aws-alt:
         end2end:
             rds:
@@ -1502,6 +1512,7 @@ peerscout:
                 # external hdd
                 size: 100 # GB
                 device: /dev/sdf
+                type: standard
         prod:
             rds:
                 storage: 5
@@ -1511,6 +1522,7 @@ peerscout:
                 # external hdd
                 size: 100 # GB
                 device: /dev/sdf
+                type: standard
             subdomains:
                 - peerscout
     vagrant:
@@ -1534,6 +1546,7 @@ sciencebeam-texture:
             - 443 # texture
         ext:
             size: 10 # GB
+            type: standard
     aws-alt:
         demo:
             subdomains:
@@ -1644,6 +1657,7 @@ iiif:
                 cluster-size: 4
             ext:
                 size: 30 # GB
+                type: standard
             elb:
                 protocol: 
                     - https
@@ -1660,6 +1674,7 @@ iiif:
                 #suppressed: [1]
             ext:
                 size: 30 # GB
+                type: standard
             elb:
                 protocol: 
                     - https
@@ -1692,6 +1707,7 @@ iiif:
                 cluster-size: 3
             ext:
                 size: 30 # GB
+                type: standard
             elb:
                 protocol: 
                     - https
@@ -1865,7 +1881,6 @@ elife-xpub:
             # external hdd
             size: 20 # GB
             device: /dev/sdh
-            type: gp2
     aws-alt:
         ci:
             ec2: false
@@ -2063,6 +2078,7 @@ data-pipeline:
         standalone:
             ext:
                 size: 100 # GB
+                type: standard
             ports:
                 - 22
                 - 80 # used only to upgrade to https
@@ -2072,9 +2088,11 @@ data-pipeline:
         staging:
             ext:
                 size: 100 # GB
+                type: standard
         prod:
             ext:
                 size: 100 # GB
+                type: standard
     gcp-alt:
         standalone:
             bigquery: false
@@ -2171,7 +2189,6 @@ large-repo-wrangler:
     formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
     aws:
         ext:
-            type: gp2
             size: 20 # GB
             device: /dev/sdh
         ports:
