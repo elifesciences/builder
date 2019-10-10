@@ -715,6 +715,18 @@ class TestBuildercoreTerraform(base.BaseCase):
             'schema': '${file("key-value.json")}',
         })
 
+        table = template['resource']['google_bigquery_table']['my_dataset_%s_partitioned_table' % self.environment]
+        self.assertEqual(table, {
+            'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
+            'table_id': 'partitioned_table',
+            'project': 'elife-something',
+            'schema': '${file("key-value.json")}',
+            'time_partitioning': {
+                'field': 'a_timestamp',
+                'type': 'DAY',
+            },
+        })
+
     def test_bigquery_remote_paths(self):
         "remote paths require terraform to fetch and load the files, which requires another entry in the 'data' list"
         pname = 'project-with-bigquery-remote-schemas'

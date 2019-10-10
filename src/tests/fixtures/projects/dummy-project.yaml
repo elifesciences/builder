@@ -719,6 +719,11 @@ project-with-bigquery:
                 tables:
                     widgets:
                         schema: ./src/buildercore/bigquery/schemas/key-value.json
+                    partitioned_table:
+                        schema: ./src/buildercore/bigquery/schemas/key-value.json
+                        time-partitioning:
+                            field: a_timestamp
+                            type: DAY
     aws-alt: {}
 
 project-with-bigquery-remote-schemas:

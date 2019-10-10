@@ -589,14 +589,19 @@ def render_bigquery(context, template):
             shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
             schema_ref = '${file("%s")}' % schema_file
 
-        template.populate_resource('google_bigquery_table', fqrn, block={
+        table_block = {
             # this refers to the dataset resource to express the implicit dependency
             # otherwise a table can be created before the dataset, which fails
             'dataset_id': "${google_bigquery_dataset.%s.dataset_id}" % dataset_id, # "dataset"
             'table_id': table_id, # "csv_report_380"
             'project': table_options['project'], # "elife-data-pipeline"
             'schema': schema_ref,
-        })
+        }
+        if table_options.get('time-partitioning'):
+            ensure(table_options['time-partitioning'].get('type') == 'DAY', "The only supported type of time partitioning for %s is `DAY`" % table_id)
+            table_block['time_partitioning'] = table_options['time-partitioning']
+
+        template.populate_resource('google_bigquery_table', fqrn, block=table_block)
 
     if needs_github_token:
         # TODO: extract and reuse as it's good for all data.http Github source,
