@@ -2034,6 +2034,8 @@ data-pipeline:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person.bqschema.json
                     person_v2:
                         schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person_v2.bqschema.json
+                    public_editor_profile:
+                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/editors-google-spreadsheet-deposit/schema.json
     aws-alt:
         standalone:
             ext:
