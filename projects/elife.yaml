@@ -221,13 +221,7 @@ defaults:
             ec2:
                 ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
-        # deprecated
-        1404:
-            description: uses Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # created from a 14.04 basebox instance "basebox.2016-11-03"
-                                  # possibly based on ami-9eaa1cf6 (see basebox aws-alt 14.04)
-        # 18.04
+         # 18.04
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
@@ -254,13 +248,6 @@ defaults:
                 ami: ami-14a1d06e # GENERATED created from basebox--1604
                                   # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
                 masterless: true
-        # 14.04, deprecated
-        standalone1404:
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            type: t2.small
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
         # 18.04, same as default
         standalone:
             description: isolated from the master-server and uses same AMI as default configuration
@@ -273,8 +260,6 @@ defaults:
         box: bento/ubuntu-18.04
         # 16.04, deprecated
         #box: bento/ubuntu-16.04
-        # 14.04, deprecated
-        #box: ubuntu/trusty64
         ip: 192.168.33.44
         ram: 2048
         cpus: 2
@@ -292,24 +277,12 @@ builder:
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
-        ec2:
-            ami: ami-9eaa1cf6 # Ubuntu 14.04 (correct, but older)
         ports:
             - 22
     aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
-
         # overrides to default aws-alt configurations to use non-basebox AMIs
-        
-        1404:
-            ec2:
-                ami: ami-9eaa1cf6 # trusty
+
+        # 16.04, deprecated
         1604:
             ec2:
                 ami: ami-0cfee17793b08a293 # xenial, build 20190628, amd64, hvm:ebs-ssd, us-east-1
@@ -320,11 +293,6 @@ basebox:
 
         # overrides to default aws-alt configurations to use non-basebox AMIs and run isolated from master-server
 
-        # 14.04, deprecated
-        standalone1404:
-            description: isolated from the master-server and uses Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-9eaa1cf6 # trusty
         # 16.04, deprecated
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
@@ -347,14 +315,7 @@ heavybox:
         ext:
             size: 10 # GB
             type: standard
-    aws-alt:
-        standalone:
-            # for now a copy of standalone1404
-            # required by masterless module
-            description: isolated from the master-server and uses (deprecated) Ubuntu 14.04 (Trusty)
-            ec2:
-                ami: ami-92002785 # Ubuntu 14.04, deprecated
-                masterless: true
+    aws-alt: {}
     vagrant: {}
 
 master-server:
@@ -911,13 +872,9 @@ generic-cdn:
             ec2: false
         s1604:
             ec2: false
-        1404:
-            ec2: false
         s1804:
             ec2: false
         standalone1604:
-            ec2: false
-        standalone1404:
             ec2: false
         standalone:
             ec2: false
@@ -1076,6 +1033,8 @@ elife-api:
     aws:
         # ip: 52.72.250.79 # legacy--api.elifesciences.org
         ec2:
+            # created from a 14.04 basebox instance "basebox.2016-11-03"
+            # possibly based on ami-9eaa1cf6 (see basebox aws-alt 14.04)
             ami: ami-92002785 # Ubuntu 14.04, deprecated
         ports:
             - 22
@@ -1430,12 +1389,6 @@ observer:
                     - bus-articles--{instance}
                     - bus-press-packages--{instance}
     aws-alt:
-        standalone1404:
-            rds:
-                storage: 10
-                storage-type: Standard
-                backup-retention: 2 # days
-                deletion-policy: Delete
         end2end:
             description: production-like environment. RDS backed
             rds:
