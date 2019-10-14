@@ -403,12 +403,6 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
-        standalone1404:
-            rds:
-                version: '9.4'
-                storage: 5
-                storage-type: Standard
-                deletion-policy: Delete
         ci:
             ec2:
                 cpu-credits: unlimited
@@ -417,7 +411,6 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
-                version: '9.4'
                 storage: 5
                 storage-type: Standard
                 backup-retention: 2 # days
@@ -438,7 +431,6 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
-                version: '9.4'
                 storage: 5
                 storage-type: Standard
                 multi-az: true
