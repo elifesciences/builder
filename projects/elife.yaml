@@ -1829,21 +1829,18 @@ digests:
     aws-alt:
         end2end:
             rds:
-                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
                 backup-retention: 2 # days
         continuumtest:
             rds:
-                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
                 backup-retention: 2 # days
         prod:
             rds:
-                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
