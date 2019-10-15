@@ -292,8 +292,7 @@ def _interactive_ssh(command):
 @task
 @requires_aws_stack
 def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):
-    """
-    Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
+    """Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
 
     If `allow_missing` is "True", a non-existant `path` will be skipped without errors.
 
