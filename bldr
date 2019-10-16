@@ -15,4 +15,4 @@ if [ -f .aws-credentials.env ]; then
     source ./.aws-credentials.env
 fi
 
-python src/__init__.py "$*"
+python src/taskrunner.py "$*"

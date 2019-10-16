@@ -3,7 +3,7 @@ import sys, os
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
 from buildercore.utils import splitfilter
 
-unqualified_task_list = [
+UNQUALIFIED_TASK_LIST = [
     cfn.destroy,
     cfn.ensure_destroyed,
     cfn.update,
@@ -24,7 +24,7 @@ unqualified_task_list = [
     lifecycle.update_dns,
 ]
 
-task_list = [
+TASK_LIST = [
     metrics.regenerate_results, # todo: remove
 
     tasks.create_ami,
@@ -59,13 +59,13 @@ task_list = [
     vault.token_revoke,
 ]
 
-unqualified_debug_task_list = [
+UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.highstate,
     cfn.pillar,
     cfn.aws_stack_list,
 ]
 
-debug_task_list = [
+DEBUG_TASK_LIST = [
     aws.rds_snapshots,
     aws.detailed_stack_list,
 
@@ -85,7 +85,7 @@ debug_task_list = [
     buildvars.force,
 ]
 
-def task_map(task, qualified=True):
+def mk_task_map(task, qualified=True):
     path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
     unqualified_path = task.__name__
     description = (task.__doc__ or '').replace('    ', '').replace('\n', ' ')[:60]
@@ -103,14 +103,14 @@ def generate_task_list(show_debug_tasks):
      {"name": "pathto.fn", "fn": pathto.fn2, "description": "foo bar baz"}, ...]"""
 
     def to_list(task_list, qualified=True):
-        return [task_map(task, qualified) for task in task_list]
+        return [mk_task_map(task, qualified) for task in task_list]
 
-    new_task_list = to_list(unqualified_task_list, qualified=False) + to_list(task_list)
+    new_task_list = to_list(UNQUALIFIED_TASK_LIST, qualified=False) + to_list(TASK_LIST)
     if show_debug_tasks:
-        new_task_list = to_list(unqualified_task_list, qualified=False) + \
-            to_list(unqualified_debug_task_list) + \
-            to_list(task_list) + \
-            to_list(debug_task_list)
+        new_task_list = to_list(UNQUALIFIED_TASK_LIST, qualified=False) + \
+            to_list(UNQUALIFIED_DEBUG_TASK_LIST) + \
+            to_list(TASK_LIST) + \
+            to_list(DEBUG_TASK_LIST)
 
     return new_task_list
 
