@@ -4,7 +4,7 @@ import utils
 from buildercore import core, project, config
 from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr
 from functools import wraps
-from fabric.api import env, task
+from fabric.api import task
 from pprint import pformat
 import logging
 
@@ -51,7 +51,7 @@ def requires_filtered_project(filterfn=None):
     def wrap1(func):
         @wraps(func)
         def wrap2(_pname=None, *args, **kwargs):
-            pname = os.environ.get('PROJECT', _pname)
+            pname = os.environ.get('PROJECT', _pname) # used by Vagrant ...?
             project_list = project.filtered_projects(filterfn)
             if not pname or not pname.strip() or pname not in project_list:
                 pname = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
@@ -121,12 +121,15 @@ def requires_steady_stack(func):
     return call
 
 def _sole_task(nom):
+    '''
     task_list = env.tasks
     if len(task_list) > 0:
         final_task = task_list[-1]
         final_task = final_task.split(':', 1)[0] # ignore any args
         final_task = final_task.split('.')[-1] # handles namespaced tasks like: webserver.vhost
         return final_task == nom
+    '''
+    return True
 
 def echo_output(func):
     """if the wrapped function is the sole task being run, then it's output is
