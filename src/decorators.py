@@ -45,7 +45,7 @@ def rtask(*roles):
 
 # pylint: disable=invalid-name
 debugtask = rtask('admin')
-#mastertask = rtask('master') # unused, remove
+# mastertask = rtask('master') # unused, remove
 
 def requires_filtered_project(filterfn=None):
     def wrap1(func):

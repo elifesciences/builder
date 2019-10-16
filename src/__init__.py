@@ -14,9 +14,9 @@ unqualified_task_list = [
     cfn.download_file,
     cfn.upload_file,
     cfn.cmd,
-    
+
     deploy.switch_revision_update_instance,
-    
+
     lifecycle.start,
     lifecycle.stop,
     lifecycle.restart,
@@ -68,7 +68,7 @@ unqualified_debug_task_list = [
 debug_task_list = [
     aws.rds_snapshots,
     aws.detailed_stack_list,
-    
+
     tasks.diff_builder_config,
 
     master.write_missing_keypairs_to_s3,
@@ -98,13 +98,13 @@ def task_map(task, qualified=True):
 
 def generate_task_list(show_debug_tasks):
     """returns a collated list of maps with task information.
-    
+
     [{"name": "fn", "fn": pathto.fn1, "description": "foo bar baz"}, ...]
      {"name": "pathto.fn", "fn": pathto.fn2, "description": "foo bar baz"}, ...]"""
 
     def to_list(task_list, qualified=True):
         return [task_map(task, qualified) for task in task_list]
-    
+
     new_task_list = to_list(unqualified_task_list, qualified=False) + to_list(task_list)
     if show_debug_tasks:
         new_task_list = to_list(unqualified_task_list, qualified=False) + \
@@ -124,20 +124,20 @@ def parse_kv_pairs(text, item_sep=",", value_sep="="):
     # (the lexer will use this character to separate words)
     lexer.whitespace = item_sep
 
-    # include '=' as a word character 
+    # include '=' as a word character
     # (this is done so that the lexer returns a list of key-value pairs)
     # (if your option key or value contains any unquoted special character, you will need to add it here)
     # https://docs.python.org/2/library/shlex.html#shlex.shlex.wordchars
     lexer.wordchars += value_sep
     lexer.wordchars += "-"
-    
+
     # then we separate option keys and values to build the resulting dictionary
     # (maxsplit is required to make sure that '=' in value will not be a problem)
 
     # "param" => "param", "key=val" => ["key" "val"]
     def split_word_or_not(word):
         if value_sep in word:
-            maxsplit=1
+            maxsplit = 1
             return word.split(value_sep, maxsplit)
         return word
 
@@ -151,7 +151,7 @@ def parse_task_string(task_str):
     a pair of [args, kwargs] is returned. both may be empty."""
     args = []
     kwargs = {}
-    
+
     task_arg_separator_pos = task_str.find(":")
     if task_arg_separator_pos == -1:
         return task_str, args, kwargs
@@ -160,7 +160,7 @@ def parse_task_string(task_str):
     task_args = task_str[task_arg_separator_pos + 1:] # => "foo,bar"
     args, kwargs = parse_kv_pairs(task_args)
 
-    #print('task',task_str)
+    # print('task',task_str)
     #print('task args', args)
     #print('task kwargs', kwargs)
 
@@ -169,7 +169,7 @@ def parse_task_string(task_str):
 def exec_task(task_str, task_map_list):
 
     task_name, task_args, task_kwargs = parse_task_string(task_str)
-    
+
     return_map = {
         'task': task_name,
         'task_args': task_args,
@@ -200,10 +200,10 @@ def main(arg_list):
 
     if not arg_list or arg_list[1:]:
         print("builder should be called from the 'bldr' script") # or with a single double quoted argument string
-        return 1              
+        return 1
 
     command_string = arg_list[0].strip()
-    
+
     if not command_string:
         for tm in task_map_list:
             path_len = len(tm['name'])
