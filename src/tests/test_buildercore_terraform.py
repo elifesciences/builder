@@ -1347,6 +1347,48 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['helm_release']['external_dns']
         )
 
+    def test_eks_and_efs(self):
+        pname = 'project-with-eks-efs'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('kubernetes_efs', terraform_template['resource']['aws_iam_policy'])
+        self.assertEqual(
+            '%s--AmazonEFSKubernetes' % context['stackname'],
+            terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['name']
+        )
+        self.assertEqual(
+            '/',
+            terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['path']
+        )
+        self.assertEqual(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "elasticfilesystem:*",
+                        ],
+                        "Resource": [
+                            "*",
+                        ],
+                    },
+                ]
+            },
+            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['policy'])
+        )
+
+        self.assertIn('worker_efs', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            {
+                'policy_arn': '${aws_iam_policy.kubernetes_efs.arn}',
+                'role': "${aws_iam_role.worker.name}",
+            },
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_efs']
+        )
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

@@ -2168,6 +2168,7 @@ kubernetes-aws:
             helm: true
             external-dns:
                 domain-filter: "elifesciences.org"
+            efs: true
 
 large-repo-wrangler:
     description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.

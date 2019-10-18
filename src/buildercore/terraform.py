@@ -808,6 +808,32 @@ def _render_eks_workers_role(context, template):
             'role': "${aws_iam_role.worker.name}",
         })
 
+    if context['eks']['efs']:
+        template.populate_resource('aws_iam_policy', 'kubernetes_efs', block={
+            'name': '%s--AmazonEFSKubernetes' % context['stackname'],
+            'path': '/',
+            'description': 'Allows management of EFS resources',
+            'policy': json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "elasticfilesystem:*",
+                        ],
+                        "Resource": [
+                            "*",
+                        ],
+                    },
+                ],
+            }),
+        })
+
+        template.populate_resource('aws_iam_role_policy_attachment', 'worker_efs', block={
+            'policy_arn': "${aws_iam_policy.kubernetes_efs.arn}",
+            'role': "${aws_iam_role.worker.name}",
+        })
+
 def _render_eks_workers_autoscaling_group(context, template):
     template.populate_resource('aws_iam_instance_profile', 'worker', block={
         'name': '%s--worker' % context['stackname'],
