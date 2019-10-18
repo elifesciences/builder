@@ -764,6 +764,7 @@ elife-bot:
             "{instance}-elife-bot-sessions":
             "{instance}-elife-bot-digests-input":
             "{instance}-elife-bot-decision-letter-input":
+            "{instance}-elife-bot-decision-letter-output":
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
@@ -779,6 +780,8 @@ elife-bot:
                 "{instance}-elife-bot-digests-input":
                     deletion-policy: delete
                 "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
                     deletion-policy: delete
                 # commented out because buckets already exist outside of CloudFormation:
                 #"{instance}-elife-bot":
