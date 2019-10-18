@@ -819,7 +819,10 @@ def _render_eks_workers_role(context, template):
                     {
                         "Effect": "Allow",
                         "Action": [
-                            "elasticfilesystem:*",
+                            "elasticfilesystem:DescribeFileSystems",
+                            "elasticfilesystem:DescribeMountTargets",
+                            "elasticfilesystem:DescribeMountTargetSecurityGroups",
+                            "elasticfilesystem:DescribeTags",
                         ],
                         "Resource": [
                             "*",

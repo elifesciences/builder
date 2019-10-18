@@ -1369,7 +1369,10 @@ class TestBuildercoreTerraform(base.BaseCase):
                     {
                         "Effect": "Allow",
                         "Action": [
-                            "elasticfilesystem:*",
+                            "elasticfilesystem:DescribeFileSystems",
+                            "elasticfilesystem:DescribeMountTargets",
+                            "elasticfilesystem:DescribeMountTargetSecurityGroups",
+                            "elasticfilesystem:DescribeTags",
                         ],
                         "Resource": [
                             "*",
