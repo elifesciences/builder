@@ -5,10 +5,8 @@ try:
 except ImportError:
     from io import StringIO
 import taskrunner as tr
-#from buildercore import cfngen, context_handler
-#from cfn import ssh, owner_ssh, generate_stack_from_input
-#from mock import patch
-# from contextlib import redirect_stdout # py3 only
+
+SUCCESS_RC = 0
 
 def capture_stdout(f):
     strbuffer = StringIO()
@@ -37,8 +35,7 @@ class TaskRunner(base.BaseCase):
             "", "-h", "--help", "-?"]
         for invocation in list_tasks_invocations:
             response = capture_stdout(lambda: tr.main([invocation]))
-            success = 0
-            self.assertEqual(response["result"], success)
+            self.assertEqual(response["result"], SUCCESS_RC)
 
     def test_commands_are_present(self):
         "some common commands we always use are in the list and qualified as necessary"
@@ -56,3 +53,14 @@ class TaskRunner(base.BaseCase):
                     present = True
                     break
             self.assertTrue(present, "task %r not present in task listing" % case)
+
+    def test_commands_can_be_called(self):
+        task_list = tr.generate_task_list()
+        result_map = tr.exec_task("ping", task_list)
+        expected = {
+            'task': 'ping',
+            'task_args': [],
+            'task_kwargs': {},
+            'result': 'pong',
+            'rc': SUCCESS_RC}
+        self.assertEqual(expected, result_map)

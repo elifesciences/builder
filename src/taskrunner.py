@@ -3,7 +3,12 @@ import sys, os
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
 from buildercore.utils import splitfilter
 
+def ping():
+    return "pong"
+
 UNQUALIFIED_TASK_LIST = [
+    ping,
+
     cfn.destroy,
     cfn.ensure_destroyed,
     cfn.update,
@@ -96,7 +101,7 @@ def mk_task_map(task, qualified=True):
         "fn": task,
     }
 
-def generate_task_list(show_debug_tasks):
+def generate_task_list(show_debug_tasks=False):
     """returns a collated list of maps with task information.
 
     [{"name": "fn", "fn": pathto.fn1, "description": "foo bar baz"}, ...]
@@ -184,11 +189,12 @@ def exec_task(task_str, task_map_list):
 
     try:
         task_map = task_map_list[0]
-        task_map['fn'](*task_args, **task_kwargs)
+        return_map['result'] = task_map['fn'](*task_args, **task_kwargs)
         return_map['rc'] = 0
         return return_map
 
     except BaseException as e:
+        # TODO: stderr?
         print('exception while executing task %r: %s' % (task_name, str(e)))
         # TODO: print stacktrace
         return_map['rc'] = 2 # I guess?
