@@ -88,7 +88,7 @@ DEBUG_TASK_LIST = [
 def mk_task_map(task, qualified=True):
     path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
     unqualified_path = task.__name__
-    description = (task.__doc__ or '').replace('    ', '').replace('\n', ' ')[:60]
+    description = (task.__doc__ or '').strip().replace('\n', ' ')[:60]
     return {
         "name": path if qualified else unqualified_path,
         "path": path,
@@ -204,7 +204,7 @@ def main(arg_list):
 
     command_string = arg_list[0].strip()
 
-    if not command_string:
+    if not command_string or command_string in ["-l", "--list", "-h", "--help", "-?"]:
         for tm in task_map_list:
             path_len = len(tm['name'])
             max_path_len = 35
@@ -212,7 +212,8 @@ def main(arg_list):
             print("%s%s%s" % (tm['name'], ' ' * offset, tm['description']))
         return 0
 
-    # TODO: do we have cases where we rely on running multiple tasks in one go?
+    # note: we don't seem to have any cases where we rely on running multiple tasks
+    # todo: this is a naive split, there may be quoted whitespace in the commands
     task_list = command_string.split(' ')
     task_result_list = [exec_task(task_str, task_map_list) for task_str in task_list]
 
