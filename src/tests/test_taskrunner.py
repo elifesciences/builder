@@ -1,4 +1,4 @@
-import os, sys
+import sys
 from . import base
 try:
     from StringIO import StringIO
@@ -7,8 +7,8 @@ except ImportError:
 import taskrunner as tr
 #from buildercore import cfngen, context_handler
 #from cfn import ssh, owner_ssh, generate_stack_from_input
-from mock import patch
-#from contextlib import redirect_stdout # py3 only
+#from mock import patch
+# from contextlib import redirect_stdout # py3 only
 
 def capture_stdout(f):
     strbuffer = StringIO()
@@ -33,11 +33,12 @@ class TaskRunner(base.BaseCase):
         "printing the list of commands can be invoked in many different ways"
         list_tasks_invocations = [
             "", # no args
-            "-l", "--list", 
+            "-l", "--list",
             "", "-h", "--help", "-?"]
         for invocation in list_tasks_invocations:
-            result = capture_stdout(lambda: tr.main([invocation]))
-            self.assertEqual(result["result"], 0)
+            response = capture_stdout(lambda: tr.main([invocation]))
+            success = 0
+            self.assertEqual(response["result"], success)
 
     def test_commands_are_present(self):
         "some common commands we always use are in the list and qualified as necessary"
