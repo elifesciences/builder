@@ -38,7 +38,9 @@ def load_balancer_status(stackname):
 def load_balancer_register_all(stackname):
     context = context_handler.load_context(stackname)
     elb_name = cloudformation.read_output(stackname, 'ElasticLoadBalancer')
+    LOG.info("Load balancer name: %s", elb_name)
     concurrency = BlueGreenConcurrency(context['aws']['region'])
     node_params = all_node_params(stackname)
+    LOG.info("Register all: %s", pformat(node_params))
     concurrency.register(elb_name, node_params)
     concurrency.wait_registered_all(elb_name, node_params)
