@@ -135,8 +135,10 @@ def read_template(stackname):
 
 def read_output(stackname, key):
     data = core.describe_stack(stackname).meta.data # boto3
+    ensure('Outputs' in data, "Outputs missing: %s" % data) 
     selected_outputs = [o for o in data['Outputs'] if o['OutputKey'] == key]
     ensure(len(selected_outputs) == 1, "Too many outputs selected: %s" % selected_outputs)
+    ensure('OutputValue' in selected_outputs[0], "Badly formed Output: %s" % selected_outputs[0])
     return selected_outputs[0]['OutputValue']
 
 def apply_delta(template, delta):
