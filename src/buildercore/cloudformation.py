@@ -133,6 +133,12 @@ def read_template(stackname):
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
     return json.load(open(output_fname, 'r'))
 
+def read_output(stackname, key):
+    data = core.describe_stack(stackname).meta.data # boto3
+    selected_outputs = [o for o in data['Outputs'] if o['OutputKey'] == key]
+    ensure(len(selected_outputs) == 1, "Too many outputs selected: %s" % selected_outputs)
+    return selected_outputs[0]['OutputValue']
+
 def apply_delta(template, delta):
     for component in delta.plus:
         ensure(component in ["Resources", "Outputs", "Parameters"], "Template component %s not recognized" % component)

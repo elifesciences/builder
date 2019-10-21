@@ -336,6 +336,7 @@ def master_data(region):
 def master(region, key):
     return master_data(region)[key]
 
+# TODO: move to buildercore.cloudformation?
 @core.requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
