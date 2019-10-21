@@ -7,7 +7,7 @@ TODO: make nodes_params a named tuple"""
 import logging
 from .core import boto_client, parallel_work
 from .cloudformation import read_output
-from .utils import ensure, call_while
+from .utils import call_while
 
 LOG = logging.getLogger(__name__)
 
