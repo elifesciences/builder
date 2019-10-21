@@ -21,4 +21,4 @@ def concurrency_for(stackname, concurrency_name):
     if concurrency_name is None:
         return 'parallel'
 
-    raise ValueError("Concurrency %s is not supported. Supported models: %s" % concurrency_name, concurrency_names)
+    raise ValueError("Concurrency %s is not supported. Supported models: %s" % (concurrency_name, concurrency_names))
