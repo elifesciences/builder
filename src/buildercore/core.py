@@ -282,7 +282,13 @@ class NoPublicIps(Exception):
 def all_node_params(stackname):
     data = stack_data(stackname)
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
-    nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
+    tags_dict = tags2dict(ec2['Tags'])
+    nodes = {
+        ec2['InstanceId']: int(tags_dict['Node']) \
+        if 'Node' in tags_dict \
+        else 1 \
+        for ec2 in data
+    }
 
     # TODO: default copied from stack_all_ec2_nodes, but not the most robust probably
     params = _ec2_connection_params(stackname, config.DEPLOY_USER)
