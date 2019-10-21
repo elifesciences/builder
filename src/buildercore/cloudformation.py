@@ -131,6 +131,7 @@ def _wait_until_in_progress(stackname):
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    # TODO: use a context manager to close the file afterwards
     return json.load(open(output_fname, 'r'))
 
 def read_output(stackname, key):
@@ -169,6 +170,7 @@ def _merge_delta(stackname, delta):
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    # TODO: use a context manager to close the file afterwards
     open(output_fname, 'w').write(contents)
     return output_fname
 
