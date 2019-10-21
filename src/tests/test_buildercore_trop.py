@@ -229,6 +229,8 @@ class TestBuildercoreTrop(base.BaseCase):
             resources['EC2Instance1']['Properties']['Tags']
         )
         outputs = data['Outputs']
+        self.assertIn('ElasticLoadBalancer', list(outputs.keys()))
+        self.assertEqual({'Ref': 'ElasticLoadBalancer'}, outputs['ElasticLoadBalancer']['Value'])
         self.assertIn('InstanceId1', list(outputs.keys()))
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
         self.assertEqual({'Ref': 'EC2Instance1'}, outputs['InstanceId1']['Value'])
