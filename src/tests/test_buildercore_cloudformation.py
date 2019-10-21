@@ -1,5 +1,6 @@
 from buildercore import cloudformation
 from . import base
+from mock import patch, MagicMock
 import botocore
 
 class StackCreationContextManager(base.BaseCase):
@@ -16,6 +17,26 @@ class StackCreationContextManager(base.BaseCase):
                 },
                 'CreateStack'
             )
+
+class StackInformation(base.BaseCase):
+    @patch('buildercore.cloudformation.core.describe_stack')
+    def test_read_output(self, describe_stack):
+        description = MagicMock()
+        description.meta.data = {
+            'Outputs': [
+                {
+                    'OutputKey': 'ElasticLoadBalancer',
+                    'OutputValue': 'dummy1--t-ElasticL-19CB72BN8E36S',
+                    # ...
+                }
+            ],
+        }
+        describe_stack.return_value = description
+
+        self.assertEqual(
+            cloudformation.read_output('dummy1--test', 'ElasticLoadBalancer'),
+            'dummy1--t-ElasticL-19CB72BN8E36S'
+        )
 
 class StackUpdate(base.BaseCase):
     def test_no_updates(self):

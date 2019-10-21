@@ -18,25 +18,6 @@ class Primitives(base.BaseCase):
         elb_conn_factory.return_value = self.conn
         self.concurrency = bluegreen.BlueGreenConcurrency('us-east-1')
 
-    def test_find_load_balancer(self):
-        self.conn.describe_load_balancers.return_value = {
-            'LoadBalancerDescriptions': [
-                {'LoadBalancerName': 'dummy1-ElasticL-ABCDEFGHI'}
-            ]
-        }
-        self.conn.describe_tags.return_value = {
-            'TagDescriptions': [
-                {
-                    'LoadBalancerName': 'dummy1-ElasticL-ABCDEFGHI',
-                    'Tags': [
-                        {'Key': 'Cluster', 'Value': 'dummy1--test'},
-                    ]
-                }
-            ]
-        }
-        name = self.concurrency.find_load_balancer('dummy1--test')
-        self.assertEqual(name, 'dummy1-ElasticL-ABCDEFGHI')
-
     @patch('buildercore.bluegreen.call_while', side_effect=try_only_once)
     def test_wait_all_in_service_success(self, call_while):
         self.conn.describe_instance_health.return_value = {
