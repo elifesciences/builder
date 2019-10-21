@@ -131,7 +131,16 @@ def _wait_until_in_progress(stackname):
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    # TODO: use a context manager to close the file afterwards
     return json.load(open(output_fname, 'r'))
+
+def read_output(stackname, key):
+    data = core.describe_stack(stackname).meta.data # boto3
+    ensure('Outputs' in data, "Outputs missing: %s" % data)
+    selected_outputs = [o for o in data['Outputs'] if o['OutputKey'] == key]
+    ensure(len(selected_outputs) == 1, "Too many outputs selected: %s" % selected_outputs)
+    ensure('OutputValue' in selected_outputs[0], "Badly formed Output: %s" % selected_outputs[0])
+    return selected_outputs[0]['OutputValue']
 
 def apply_delta(template, delta):
     for component in delta.plus:
@@ -161,6 +170,7 @@ def _merge_delta(stackname, delta):
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    # TODO: use a context manager to close the file afterwards
     open(output_fname, 'w').write(contents)
     return output_fname
 

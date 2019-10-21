@@ -279,6 +279,28 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
 class NoPublicIps(Exception):
     pass
 
+def all_node_params(stackname):
+    data = stack_data(stackname)
+    public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
+    nodes = {
+        ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node'])
+        if 'Node' in tags2dict(ec2['Tags'])
+        else 1
+        for ec2 in data
+    }
+
+    # TODO: default copied from stack_all_ec2_nodes, but not the most robust probably
+    params = _ec2_connection_params(stackname, config.DEPLOY_USER)
+
+    # custom for builder, these are available as fabric.api.env.public_ips inside workfn
+    params.update({
+        'stackname': stackname,
+        'public_ips': public_ips,
+        'nodes': nodes
+    })
+
+    return params
+
 def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, **kwargs):
     """Executes work on all the EC2 nodes of stackname.
     Optionally connects with the specified username"""
@@ -287,6 +309,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         workfn, work_kwargs = workfn
 
     data = stack_data(stackname)
+    # TODO: reuse all_node_params?
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:

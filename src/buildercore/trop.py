@@ -725,6 +725,12 @@ def render_elb(context, template, ec2_instances):
         Tags=elb_tags(context)
     ))
 
+    template.add_output(mkoutput(
+        "ElasticLoadBalancer",
+        "Generated name of the ELB",
+        Ref(ELB_TITLE))
+    )
+
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
         context['aws']['vpc-id'],

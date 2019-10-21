@@ -9,6 +9,8 @@ def concurrency_for(stackname, concurrency_name):
     - parallel: all together
     - blue-green: 50% at a time"""
 
+    concurrency_names = ['serial', 'parallel', 'blue-green']
+
     if concurrency_name == 'blue-green':
         context = context_handler.load_context(stackname)
         return bluegreen.BlueGreenConcurrency(context['aws']['region'])
@@ -19,4 +21,4 @@ def concurrency_for(stackname, concurrency_name):
     if concurrency_name is None:
         return 'parallel'
 
-    raise ValueError("Concurrency %s is not supported" % concurrency_name)
+    raise ValueError("Concurrency %s is not supported. Supported models: %s" % (concurrency_name, concurrency_names))
