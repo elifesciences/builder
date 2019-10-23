@@ -155,7 +155,7 @@ def parse_kv_pairs(text, item_sep=",", value_sep="="):
         return word
 
     # => ["param1" "param2"],  [["key" "val"] ["foo" "bar"]]
-    args, kwargs = splitfilter(lambda x: not isinstance(x, list), map(split_word_or_not, lexer))
+    args, kwargs = splitfilter(lambda x: not isinstance(x, list), list(map(split_word_or_not, lexer)))
     kwargs = dict(kwargs) # => {"key": "val", "foo": "bar"}
     return args, kwargs
 
