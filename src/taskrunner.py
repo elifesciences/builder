@@ -1,4 +1,4 @@
-from shlex import shlex
+import shlex
 import sys, os
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
 from buildercore.utils import splitfilter
@@ -6,8 +6,13 @@ from buildercore.utils import splitfilter
 def ping():
     return "pong"
 
+def echo(msg, *args, **kwargs):
+    if args or kwargs:
+        return "received: %s with args: %s and kwargs: %s" % (msg, args, kwargs)
+    return "received: %s" % (msg,)
+
 UNQUALIFIED_TASK_LIST = [
-    ping,
+    ping, echo,
 
     cfn.destroy,
     cfn.ensure_destroyed,
@@ -124,7 +129,7 @@ def generate_task_list(show_debug_tasks=False):
 def parse_kv_pairs(text, item_sep=",", value_sep="="):
     """Parse key-value pairs from a shell-like text."""
     # initialize a lexer, in POSIX mode (to properly handle escaping)
-    lexer = shlex(text, posix=True)
+    lexer = shlex.shlex(text, posix=True)
     # set ',' as whitespace for the lexer
     # (the lexer will use this character to separate words)
     lexer.whitespace = item_sep
@@ -134,7 +139,7 @@ def parse_kv_pairs(text, item_sep=",", value_sep="="):
     # (if your option key or value contains any unquoted special character, you will need to add it here)
     # https://docs.python.org/2/library/shlex.html#shlex.shlex.wordchars
     lexer.wordchars += value_sep
-    lexer.wordchars += "-"
+    lexer.wordchars += "!@$%^&*()-;?/"
 
     # then we separate option keys and values to build the resulting dictionary
     # (maxsplit is required to make sure that '=' in value will not be a problem)
@@ -164,10 +169,6 @@ def parse_task_string(task_str):
     task_name = task_str[:task_arg_separator_pos] # "taskname:foo,bar" => "taskname"
     task_args = task_str[task_arg_separator_pos + 1:] # => "foo,bar"
     args, kwargs = parse_kv_pairs(task_args)
-
-    # print('task',task_str)
-    #print('task args', args)
-    #print('task kwargs', kwargs)
 
     return task_name, args, kwargs
 
@@ -200,6 +201,29 @@ def exec_task(task_str, task_map_list):
         return_map['rc'] = 2 # I guess?
         return return_map
 
+def exec_many(command_string, task_map_list):
+    "splits a string up into multiple command strings and passes each to `exec_task`"
+
+    # note: I just could not get the lexer to work here,
+    # too much python convenience-magic going on
+
+    task_list = []
+    skipping = False
+    blankchar, quotechar = " ", "'"
+    new_task_string = ""
+    for char in command_string:
+        if not skipping and char == blankchar:
+            task_list.append(new_task_string)
+            new_task_string = ""
+            continue
+        if char == quotechar:
+            skipping = not skipping
+        new_task_string += char
+    task_list.append(new_task_string)
+
+    task_result_list = [exec_task(task_str, task_map_list) for task_str in task_list]
+    return task_result_list
+
 def main(arg_list):
     show_debug_tasks = os.environ.get("BLDR_ROLE") == "admin"
     task_map_list = generate_task_list(show_debug_tasks)
@@ -218,10 +242,7 @@ def main(arg_list):
             print("%s%s%s" % (tm['name'], ' ' * offset, tm['description']))
         return 0
 
-    # note: we don't seem to have any cases where we rely on running multiple tasks
-    # todo: this is a naive split, there may be quoted whitespace in the commands
-    task_list = command_string.split(' ')
-    task_result_list = [exec_task(task_str, task_map_list) for task_str in task_list]
+    task_result_list = exec_many(command_string, task_map_list)
 
     return sum([task_result['rc'] for task_result in task_result_list])
 
