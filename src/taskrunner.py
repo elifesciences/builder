@@ -84,6 +84,9 @@ DEBUG_TASK_LIST = [
 
     tasks.diff_builder_config,
 
+    deploy.load_balancer_status,
+    deploy.load_balancer_register_all,
+
     master.write_missing_keypairs_to_s3,
     master.download_keypair,
     master.server_access,

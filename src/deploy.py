@@ -1,8 +1,10 @@
 """module concerns itself with tasks involving branch deployments of projects."""
 
-from fabric.api import task
+from pprint import pformat
 from decorators import requires_aws_stack
-from buildercore import bootstrap
+from buildercore import bootstrap, cloudformation, context_handler
+from buildercore.bluegreen import BlueGreenConcurrency
+from buildercore.core import boto_client, all_node_params
 from buildercore.concurrency import concurrency_for
 import buildvars
 
@@ -15,7 +17,6 @@ def switch_revision_update_instance(stackname, revision=None, concurrency='seria
     buildvars.switch_revision(stackname, revision)
     bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency_for(stackname, concurrency))
 
-@debugtask
 @requires_aws_stack
 def load_balancer_status(stackname):
     context = context_handler.load_context(stackname)
@@ -28,7 +29,6 @@ def load_balancer_status(stackname):
     LOG.info("Load balancer name: %s", elb_name)
     LOG.info("Health: %s", pformat(health))
 
-@debugtask
 @requires_aws_stack
 def load_balancer_register_all(stackname):
     context = context_handler.load_context(stackname)
