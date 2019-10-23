@@ -197,6 +197,11 @@ def exec_task(task_str, task_map_list):
         return_map['rc'] = 0
         return return_map
 
+    except KeyboardInterrupt:
+        print('\nStopped.') # mimic fabric
+        return_map['rc'] = 1
+        return return_map
+
     except BaseException as e:
         # TODO: stderr?
         print('exception while executing task %r: %s' % (task_name, str(e)))
@@ -238,8 +243,7 @@ def main(arg_list):
     command_string = arg_list[0].strip()
 
     if not command_string or command_string in ["-l", "--list", "-h", "--help", "-?"]:
-        print("Available commands:")
-        print("")
+        print("Available commands:\n")
         indent = 4
         for tm in task_map_list:
             path_len = len(tm['name'])
