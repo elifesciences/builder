@@ -2,10 +2,13 @@ import shlex
 import sys, os
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
 from buildercore.utils import splitfilter
+from decorators import echo_output
 
+@echo_output
 def ping():
     return "pong"
 
+@echo_output
 def echo(msg, *args, **kwargs):
     if args or kwargs:
         return "received: %s with args: %s and kwargs: %s" % (msg, args, kwargs)
@@ -184,7 +187,7 @@ def exec_task(task_str, task_map_list):
 
     task_map_list = [t for t in task_map_list if t['name'] == task_name]
     if not task_map_list:
-        print("task %r not found" % task_name)
+        print("Command not found: %r" % task_name)
         return_map['rc'] = 1
         return return_map
 
@@ -235,11 +238,14 @@ def main(arg_list):
     command_string = arg_list[0].strip()
 
     if not command_string or command_string in ["-l", "--list", "-h", "--help", "-?"]:
+        print("Available commands:")
+        print("")
+        indent = 4
         for tm in task_map_list:
             path_len = len(tm['name'])
             max_path_len = 35
             offset = (max_path_len - path_len) + 2
-            print("%s%s%s" % (tm['name'], ' ' * offset, tm['description']))
+            print("%s%s%s%s" % (' ' * indent, tm['name'], ' ' * offset, tm['description']))
         return 0
 
     task_result_list = exec_many(command_string, task_map_list)

@@ -49,7 +49,7 @@ class TaskRunner(base.BaseCase):
         for case in expected:
             present = False
             for row in result["stdout"].splitlines():
-                if row.startswith(case):
+                if row.strip().startswith(case):
                     present = True
                     break
             self.assertTrue(present, "task %r not present in task listing" % case)
