@@ -40,7 +40,7 @@ class TaskRunner(base.BaseCase):
     def test_commands_are_present(self):
         "some common commands we always use are in the list and qualified as necessary"
         expected = [
-            "ssh", "master.download_keypair",
+            "ssh", # "master.download_keypair", # requires BLDR_ROLE envvar
             "launch", "masterless.launch",
             "start", "stop", "restart",
             "buildvars.switch_revision"
@@ -78,13 +78,13 @@ class TaskRunner(base.BaseCase):
 
     def test_commands_with_args_and_kwargs_can_be_called(self):
         task_list = tr.generate_task_list()
-        result_map = tr.exec_task("echo:zulu,gamma,a=b,y=z", task_list)
+        result_map = tr.exec_task("echo:zulu,gamma,a=b", task_list)
         expected = {
             'rc': 0,
-            'result': "received: zulu with args: ('gamma',) and kwargs: {'a': 'b', 'y': 'z'}",
+            'result': "received: zulu with args: ('gamma',) and kwargs: {'a': 'b'}",
             'task': 'echo',
             'task_args': ['zulu', 'gamma'],
-            'task_kwargs': {'a': 'b', 'y': 'z'}}
+            'task_kwargs': {'a': 'b'}}
         self.assertEqual(expected, result_map)
 
     def test_commands_with_special_chars_can_be_called_without_quoting(self):
