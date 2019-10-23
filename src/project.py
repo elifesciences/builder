@@ -1,10 +1,9 @@
-from fabric.api import task, local
+from fabric.api import local
 from buildercore import project, utils as core_utils, core, cfngen
 from buildercore.utils import ensure
 from decorators import requires_project, echo_output
 import utils
 
-@task
 @requires_project
 @echo_output
 def data(pname, output_format=None):
@@ -19,7 +18,6 @@ def data(pname, output_format=None):
     formatter = formatters.get(output_format)
     return formatter(project.project_data(pname))
 
-@task
 @requires_project
 @echo_output
 def context(pname, output_format=None):
@@ -33,7 +31,6 @@ def context(pname, output_format=None):
     formatter = formatters.get(output_format)
     return formatter(cfngen.build_context(pname, stackname=core.mk_stackname(pname, "test")))
 
-@task
 def new():
     "creates a new project formula"
     pname = utils.uin('project name')

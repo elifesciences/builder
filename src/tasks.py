@@ -5,16 +5,15 @@ better off in their own module. This module really is for stuff
 that has no home."""
 import os
 from buildercore import core, bootstrap, bakery, lifecycle
-from fabric.api import local, task
+from fabric.api import local
 from utils import confirm, errcho, get_input
-from decorators import requires_aws_stack, debugtask
+from decorators import requires_aws_stack
 from buildercore.core import stack_conn
 from buildercore.context_handler import load_context
 import logging
 
 LOG = logging.getLogger(__name__)
 
-@task
 @requires_aws_stack
 def create_ami(stackname, name=None):
     pname = core.project_name_from_stackname(stackname)
@@ -29,7 +28,6 @@ def create_ami(stackname, name=None):
 #
 #
 
-@debugtask
 def diff_builder_config():
     "helps keep three"
     file_sets = [
@@ -46,25 +44,21 @@ def diff_builder_config():
     for paths in file_sets:
         local("meld " + " ".join(paths))
 
-@task
 @requires_aws_stack
 def repair_cfn_info(stackname):
     with stack_conn(stackname):
         bootstrap.write_environment_info(stackname, overwrite=True)
 
-@task
 @requires_aws_stack
 def repair_context(stackname):
     # triggers the workaround of downloading it from EC2 and persisting it
     load_context(stackname)
 
-@task
 @requires_aws_stack
 def remove_minion_key(stackname):
     bootstrap.remove_minion_key(stackname)
 
 
-@task
 def restart_all_running_ec2(statefile):
     "restarts all running ec2 instances. multiple nodes are restarted serially and failures prevent the rest of the node from being restarted"
 

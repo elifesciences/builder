@@ -1,10 +1,9 @@
 from buildercore import core
 import utils
-from decorators import requires_aws_stack, debugtask, echo_output
+from decorators import requires_aws_stack, echo_output
 import logging
 LOG = logging.getLogger(__name__)
 
-@debugtask
 @requires_aws_stack
 def rds_snapshots(stackname):
     "prints all snapshots for given stack, order by creation time"
@@ -18,7 +17,6 @@ def rds_snapshots(stackname):
     for row in data:
         print(row)
 
-@debugtask
 @echo_output
 def detailed_stack_list(project=None):
     region = utils.find_region()

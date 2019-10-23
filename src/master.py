@@ -4,16 +4,15 @@ See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
 import buildvars, utils
-from fabric.api import sudo, local, task
+from fabric.api import sudo, local
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
-from decorators import debugtask, echo_output, requires_aws_stack
+from decorators import echo_output, requires_aws_stack
 from kids.cache import cache as cached
 import logging
 
 LOG = logging.getLogger(__name__)
 
-@task
 def update(master_stackname=None):
     "same as `cfn.update` but also removes any orphaned minion keys"
     master_stackname = master_stackname or core.find_master(utils.find_region())
@@ -26,7 +25,6 @@ def update(master_stackname=None):
 #
 #
 
-@debugtask
 def write_missing_keypairs_to_s3():
     "uploads any missing ec2 keys to S3 if they're present locally"
     remote_keys = keypair.all_in_s3()
@@ -45,7 +43,6 @@ def write_missing_keypairs_to_s3():
 
     lmap(write, to_upload)
 
-@debugtask
 @requires_aws_stack
 @echo_output
 def download_keypair(stackname):
@@ -58,7 +55,6 @@ def download_keypair(stackname):
 #
 #
 
-@debugtask
 @echo_output
 @cached
 def server_access():
@@ -75,7 +71,6 @@ def _cached_master_ip(master_stackname):
     "provides a small time saving when remastering many minions"
     return core.stack_data(master_stackname)[0]['PrivateIpAddress']
 
-@debugtask
 @requires_aws_stack
 def remaster(stackname, new_master_stackname):
     "tell minion who their new master is. deletes any existing master key on minion"
@@ -136,21 +131,18 @@ def remaster(stackname, new_master_stackname):
     return True
 
 # TODO: extract just the salt update part from `remaster`
-@debugtask
 @requires_aws_stack
 def update_salt(stackname):
     current_master_stack = core.find_master_for_stack(stackname)
     return remaster(stackname, current_master_stack)
 
 # TODO: extract just the salt update part from `remaster`
-@debugtask
 def update_salt_master(region=None):
     "update the version of Salt installed on the master-server."
     region = region or utils.find_region()
     current_master_stackname = core.find_master(region)
     return remaster(current_master_stackname, current_master_stackname)
 
-@debugtask
 @requires_aws_stack
 def remaster_all(new_master_stackname):
     LOG.info('new master is: %s', new_master_stackname)

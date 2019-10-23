@@ -2,12 +2,12 @@ import os
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
-from fabric.api import task, local, run, sudo, put, get, abort, settings
+from fabric.api import local, run, sudo, put, get, abort, settings
 import fabric.exceptions
 import fabric.state
 from fabric.contrib import files
 import utils, buildvars
-from decorators import requires_project, requires_aws_stack, echo_output, setdefault, debugtask, timeit
+from decorators import requires_project, requires_aws_stack, echo_output, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 # potentially remove to go through buildercore.bootstrap?
 from buildercore import cloudformation, terraform
@@ -23,7 +23,6 @@ LOG = logging.getLogger(__name__)
 def strtobool(x):
     return x if isinstance(x, bool) else bool(_strtobool(x))
 
-@task
 # TODO: move to a lower level if possible
 #@requires_steady_stack
 def destroy(stackname):
@@ -39,7 +38,6 @@ def destroy(stackname):
         exit(1)
     return bootstrap.destroy(stackname)
 
-@task
 def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
@@ -51,7 +49,6 @@ def ensure_destroyed(stackname):
             return
         raise
 
-@task()
 @requires_aws_stack
 @timeit
 def update(stackname, autostart="0", concurrency='serial'):
@@ -62,7 +59,6 @@ def update(stackname, autostart="0", concurrency='serial'):
         return
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
 
-@task
 @timeit
 def update_infrastructure(stackname, skip=None, start=['ec2']):
     """Limited update of the Cloudformation template and/or Terraform template.
@@ -156,7 +152,6 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     cfngen.generate_stack(pname, **more_context)
     return stackname
 
-@task
 @requires_project
 def launch(pname, instance_id=None, alt_config=None):
     try:
@@ -180,7 +175,6 @@ def launch(pname, instance_id=None, alt_config=None):
     bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
     setdefault('.active-stack', stackname)
 
-@debugtask
 @requires_aws_stack
 def highstate(stackname):
     "a fast update with many caveats. prefer `update` instead"
@@ -188,7 +182,6 @@ def highstate(stackname):
         bootstrap.run_script('highstate.sh')
 
 # TODO: deletion candidate
-@debugtask
 @requires_aws_stack
 def pillar(stackname):
     "returns the pillar data a minion is using"
@@ -196,7 +189,6 @@ def pillar(stackname):
         sudo('salt-call pillar.items')
 
 # TODO: deletion candidate
-@debugtask
 @echo_output
 def aws_stack_list():
     "returns a list of realized stacks. does not include deleted stacks"
@@ -262,7 +254,6 @@ def _check_want_to_be_running(stackname, autostart=False):
     # instances and that weren't there before
     return core.find_ec2_instances(stackname)
 
-@task
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
     instances = _check_want_to_be_running(stackname)
@@ -271,7 +262,6 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
     public_ip = _pick_node(instances, node).public_ip_address
     _interactive_ssh("ssh %s@%s -i %s" % (username, public_ip, USER_PRIVATE_KEY))
 
-@task
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     "maintenance ssh. uses the pem key and the bootstrap user to login."
@@ -288,8 +278,6 @@ def _interactive_ssh(command):
     except FabricException as e:
         LOG.warn(e)
 
-
-@task
 @requires_aws_stack
 def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):
     """Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
@@ -311,7 +299,6 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 
     _download(path, destination)
 
-@task
 @requires_aws_stack
 def upload_file(stackname, local_path, remote_path=None, overwrite=False, confirm=False, node=1):
     remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
@@ -334,7 +321,6 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, confir
 # these might need a better home
 #
 
-@task
 @requires_aws_stack
 # pylint: disable-msg=too-many-arguments
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
