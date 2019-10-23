@@ -6,7 +6,8 @@ nodes_params is a data structure (dictionary) .
 TODO: make nodes_params a named tuple"""
 import logging
 from .core import boto_client, parallel_work
-from .utils import ensure, call_while
+from .cloudformation import read_output
+from .utils import call_while
 
 LOG = logging.getLogger(__name__)
 
@@ -37,12 +38,9 @@ class BlueGreenConcurrency(object):
         self.wait_registered_all(elb_name, nodes_params)
 
     def find_load_balancer(self, stackname):
-        names = [lb['LoadBalancerName'] for lb in self.conn.describe_load_balancers()['LoadBalancerDescriptions']]
-        ensure(len(names) >= 1, "No load balancers found")
-        tags = self.conn.describe_tags(LoadBalancerNames=names)['TagDescriptions']
-        balancers = [lb['LoadBalancerName'] for lb in tags if {'Key': 'Cluster', 'Value': stackname} in lb['Tags']]
-        ensure(len(balancers) == 1, "Expected to find exactly 1 load balancer, but found %s" % balancers)
-        return balancers[0]
+        elb_name = read_output(stackname, 'ElasticLoadBalancer')
+        LOG.info("Found load balancer: %s", elb_name)
+        return elb_name
 
     def divide_by_color(self, nodes_params):
         is_blue = lambda node: node % 2 == 1

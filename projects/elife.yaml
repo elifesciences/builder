@@ -45,7 +45,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0f7ce9ed474f13ec2 # GENERATED created from basebox--1804
+            ami: ami-08b79d142dbdea6de # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -231,13 +231,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-0f7ce9ed474f13ec2 # GENERATED created from basebox--1804
+                ami: ami-08b79d142dbdea6de # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-0f7ce9ed474f13ec2 # GENERATED created from basebox--1804
+                ami: ami-08b79d142dbdea6de # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 16.04, deprecated
@@ -764,6 +764,7 @@ elife-bot:
             "{instance}-elife-bot-sessions":
             "{instance}-elife-bot-digests-input":
             "{instance}-elife-bot-decision-letter-input":
+            "{instance}-elife-bot-decision-letter-output":
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
@@ -779,6 +780,8 @@ elife-bot:
                 "{instance}-elife-bot-digests-input":
                     deletion-policy: delete
                 "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
                     deletion-policy: delete
                 # commented out because buckets already exist outside of CloudFormation:
                 #"{instance}-elife-bot":
@@ -1829,21 +1832,18 @@ digests:
     aws-alt:
         end2end:
             rds:
-                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
                 backup-retention: 2 # days
         continuumtest:
             rds:
-                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
                 backup-retention: 2 # days
         prod:
             rds:
-                version: '9.4'
                 engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
