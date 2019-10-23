@@ -1,5 +1,5 @@
 import shlex
-import sys, os
+import sys, os, traceback
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
 from buildercore.utils import splitfilter
 from decorators import echo_output
@@ -203,17 +203,17 @@ def exec_task(task_str, task_map_list):
         return return_map
 
     except BaseException as e:
-        # TODO: stderr?
-        print('exception while executing task %r: %s' % (task_name, str(e)))
-        # TODO: print stacktrace
-        return_map['rc'] = 2 # I guess?
+        print('exception while executing task %r: %s\n' % (task_name, str(e)))
+        print(traceback.format_exc())
+        return_map['rc'] = 2 # arbitrary
         return return_map
 
 def exec_many(command_string, task_map_list):
     "splits a string up into multiple command strings and passes each to `exec_task`"
 
     # note: I just could not get the lexer to work here,
-    # too much python convenience-magic going on
+    # too much python convenience-magic going on.
+    # this section tokenises the whole input by whitespace, preserving singly quoted values
 
     task_list = []
     skipping = False
@@ -237,7 +237,7 @@ def main(arg_list):
     task_map_list = generate_task_list(show_debug_tasks)
 
     if not arg_list or arg_list[1:]:
-        print("builder should be called from the 'bldr' script") # or with a single double quoted argument string
+        print("`taskrunner.main` must be called from the ./bldr script")
         return 1
 
     command_string = arg_list[0].strip()

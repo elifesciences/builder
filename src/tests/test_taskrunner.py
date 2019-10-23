@@ -32,7 +32,7 @@ class TaskRunner(base.BaseCase):
         list_tasks_invocations = [
             "", # no args
             "-l", "--list",
-            "", "-h", "--help", "-?"]
+            "-h", "--help", "-?"]
         for invocation in list_tasks_invocations:
             response = capture_stdout(lambda: tr.main([invocation]))
             self.assertEqual(response["result"], SUCCESS_RC)
@@ -98,7 +98,7 @@ class TaskRunner(base.BaseCase):
             'task_kwargs': {}}
         self.assertEqual(expected, result_map)
 
-    def test_commend_short_circuited_by_comment(self):
+    def test_command_short_circuited_by_comment(self):
         task_list = tr.generate_task_list()
         result_map = tr.exec_task("echo:hell#o-world", task_list)
         expected = {
