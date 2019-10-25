@@ -87,9 +87,21 @@ class TaskRunner(base.BaseCase):
             'task_kwargs': {'a': 'b'}}
         self.assertEqual(expected, result_map)
 
+    def test_commands_with_whitespace_can_be_called(self):
+        task_list = tr.generate_task_list()
+        # result_map = tr.exec_task("echo:msg,'echo hello world'", task_list) # this is what we give bash
+        result_map = tr.exec_task("echo:msg,echo hello world", task_list) # this is what we see after bash
+        expected = {
+            'task': 'echo',
+            'task_args': ['msg', 'echo hello world'],
+            'task_kwargs': {},
+            'result': "received: msg with args: ('echo hello world',) and kwargs: {}",
+            'rc': SUCCESS_RC}
+        self.assertEqual(expected, result_map)
+
     def test_commands_with_special_chars_can_be_called_without_quoting(self):
         task_list = tr.generate_task_list()
-        result_map = tr.exec_task("echo:hello-world!@$%^&*()-;?/", task_list)
+        result_map = tr.exec_task("echo:hello-world!@$%^&*()-;?/", task_list) # '!@' makes bash cry and doesn't work without quoting
         expected = {
             'rc': 0,
             'result': 'received: hello-world!@$%^&*()-;?/',
@@ -98,20 +110,10 @@ class TaskRunner(base.BaseCase):
             'task_kwargs': {}}
         self.assertEqual(expected, result_map)
 
-    def test_command_short_circuited_by_comment(self):
-        task_list = tr.generate_task_list()
-        result_map = tr.exec_task("echo:hell#o-world", task_list)
-        expected = {
-            'rc': 0,
-            'result': 'received: hell',
-            'task': 'echo',
-            'task_args': ['hell'],
-            'task_kwargs': {}}
-        self.assertEqual(expected, result_map)
-
     def test_quoted_commands_can_be_called(self):
         task_list = tr.generate_task_list()
-        result_map = tr.exec_task("echo:'hello, world'", task_list)
+        # result_map = tr.exec_task("echo:'hello\, world'", task_list) # this is what we give bash
+        result_map = tr.exec_task("echo:hello\\, world", task_list) # this is what we see after bash
         expected = {
             'rc': 0,
             'result': 'received: hello, world',
@@ -119,51 +121,3 @@ class TaskRunner(base.BaseCase):
             'task_args': ['hello, world'],
             'task_kwargs': {}}
         self.assertEqual(expected, result_map)
-
-    def test_multiple_commands_can_be_called(self):
-        task_list = tr.generate_task_list()
-        result_map_list = tr.exec_many("echo:hello echo:world", task_list)
-        expected = [
-            {'rc': 0,
-             'result': 'received: hello',
-             'task': 'echo',
-             'task_args': ['hello'],
-             'task_kwargs': {}},
-            {'rc': 0,
-             'result': 'received: world',
-             'task': 'echo',
-             'task_args': ['world'],
-             'task_kwargs': {}}]
-        self.assertEqual(expected, result_map_list)
-
-    def test_multiple_commands_can_be_called_with_different_sets_of_params(self):
-        task_list = tr.generate_task_list()
-        result_map_list = tr.exec_many("echo:hello echo:world,world=round", task_list)
-        expected = [
-            {'rc': 0,
-             'result': 'received: hello',
-             'task': 'echo',
-             'task_args': ['hello'],
-             'task_kwargs': {}},
-            {'rc': 0,
-             'result': "received: world with args: () and kwargs: {'world': 'round'}",
-             'task': 'echo',
-             'task_args': ['world'],
-             'task_kwargs': {'world': 'round'}}]
-        self.assertEqual(expected, result_map_list)
-
-    def test_multiple_quoted_commands_can_be_called(self):
-        task_list = tr.generate_task_list()
-        result_map_list = tr.exec_many("echo:'hello, world' echo:'fine, thank you',also,response='how are you?'", task_list)
-        expected = [
-            {'rc': 0,
-             'result': 'received: hello, world',
-             'task': 'echo',
-             'task_args': ['hello, world'],
-             'task_kwargs': {}},
-            {'rc': 0,
-             'result': "received: fine, thank you with args: ('also',) and kwargs: {'response': 'how are you?'}",
-             'task': 'echo',
-             'task_args': ['fine, thank you', 'also'],
-             'task_kwargs': {'response': 'how are you?'}}]
-        self.assertEqual(expected, result_map_list)

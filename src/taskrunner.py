@@ -1,7 +1,5 @@
-import shlex
 import sys, os, traceback
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
-from buildercore.utils import splitfilter
 from decorators import echo_output
 
 @echo_output
@@ -130,57 +128,61 @@ def generate_task_list(show_debug_tasks=False):
 
     return new_task_list
 
-# taken from:
-# https://stackoverflow.com/questions/38737250/extracting-key-value-pairs-from-string-with-quotes#answer-38738997
-def parse_kv_pairs(text, item_sep=",", value_sep="="):
-    """Parse key-value pairs from a shell-like text."""
-    # initialize a lexer, in POSIX mode (to properly handle escaping)
-    lexer = shlex.shlex(text, posix=True)
-    # set ',' as whitespace for the lexer
-    # (the lexer will use this character to separate words)
-    lexer.whitespace = item_sep
+# --- taken from Fabric3 (fork of Fabric 1, BSD Licenced)
+# --- https://github.com/mathiasertl/fabric/blob/1.13.1/fabric/main.py#L499-L564
+def _escape_split(sep, argstr):
+    """
+    Allows for escaping of the separator: e.g. task:arg='foo\, bar'
 
-    # include '=' as a word character
-    # (this is done so that the lexer returns a list of key-value pairs)
-    # (if your option key or value contains any unquoted special character, you will need to add it here)
-    # https://docs.python.org/2/library/shlex.html#shlex.shlex.wordchars
-    lexer.wordchars += value_sep
-    lexer.wordchars += "!@$%^&*()-;?/"
+    It should be noted that the way bash et. al. do command line parsing, those
+    single quotes are required.
+    """
+    escaped_sep = r'\%s' % sep
 
-    # then we separate option keys and values to build the resulting dictionary
-    # (maxsplit is required to make sure that '=' in value will not be a problem)
+    if escaped_sep not in argstr:
+        return argstr.split(sep)
 
-    # "param" => "param", "key=val" => ["key" "val"]
-    def split_word_or_not(word):
-        if value_sep in word:
-            maxsplit = 1
-            return word.split(value_sep, maxsplit)
-        return word
+    before, _, after = argstr.partition(escaped_sep)
+    startlist = before.split(sep)  # a regular split is fine here
+    unfinished = startlist[-1]
+    startlist = startlist[:-1]
 
-    # => ["param1" "param2"],  [["key" "val"] ["foo" "bar"]]
-    args, kwargs = splitfilter(lambda x: not isinstance(x, list), list(map(split_word_or_not, lexer)))
-    kwargs = dict(kwargs) # => {"key": "val", "foo": "bar"}
-    return args, kwargs
+    # recurse because there may be more escaped separators
+    endlist = _escape_split(sep, after)
 
-def parse_task_string(task_str):
-    """given task will look like 'taskname' or 'taskname:param1,param2' and each parameter may be either 'value' or 'key=value'
-    a pair of [args, kwargs] is returned. both may be empty."""
-    args = []
-    kwargs = {}
+    # finish building the escaped value. we use endlist[0] becaue the first
+    # part of the string sent in recursion is the rest of the escaped value.
+    unfinished += sep + endlist[0]
 
-    task_arg_separator_pos = task_str.find(":")
-    if task_arg_separator_pos == -1:
-        return task_str, args, kwargs
+    return startlist + [unfinished] + endlist[1:]  # put together all the parts
 
-    task_name = task_str[:task_arg_separator_pos] # "taskname:foo,bar" => "taskname"
-    task_args = task_str[task_arg_separator_pos + 1:] # => "foo,bar"
-    args, kwargs = parse_kv_pairs(task_args)
+def parse_arguments(arguments):
+    """
+    Parse string list into list of tuples: command, args, kwargs, hosts, roles.
 
-    return task_name, args, kwargs
+    See sites/docs/usage/fab.rst, section on "per-task arguments" for details.
+    """
+    cmds = []
+    for cmd in arguments:
+        args = []
+        kwargs = {}
+        if ':' in cmd:
+            cmd, argstr = cmd.split(':', 1)
+            for pair in _escape_split(',', argstr):
+                result = _escape_split('=', pair)
+                if len(result) > 1:
+                    k, v = result
+                    kwargs[k] = v
+                else:
+                    args.append(result[0])
+        cmds.append((cmd, args, kwargs))
+    return cmds
+
+# --- end
 
 def exec_task(task_str, task_map_list):
 
-    task_name, task_args, task_kwargs = parse_task_string(task_str)
+    task_name, task_args, task_kwargs = parse_arguments([task_str])[0]
 
     return_map = {
         'task': task_name,
@@ -211,30 +213,6 @@ def exec_task(task_str, task_map_list):
         return_map['rc'] = 2 # arbitrary
         return return_map
 
-def exec_many(command_string, task_map_list):
-    "splits a string up into multiple command strings and passes each to `exec_task`"
-
-    # note: I just could not get the lexer to work here,
-    # too much python convenience-magic going on.
-    # this section tokenises the whole input by whitespace, preserving singly quoted values
-
-    task_list = []
-    skipping = False
-    blankchar, quotechar = " ", "'"
-    new_task_string = ""
-    for char in command_string:
-        if not skipping and char == blankchar:
-            task_list.append(new_task_string)
-            new_task_string = ""
-            continue
-        if char == quotechar:
-            skipping = not skipping
-        new_task_string += char
-    task_list.append(new_task_string)
-
-    task_result_list = [exec_task(task_str, task_map_list) for task_str in task_list]
-    return task_result_list
-
 def main(arg_list):
     show_debug_tasks = os.environ.get("BLDR_ROLE") == "admin"
     task_map_list = generate_task_list(show_debug_tasks)
@@ -243,6 +221,7 @@ def main(arg_list):
         print("`taskrunner.main` must be called from the ./bldr script")
         return 1
 
+    # bash hands us an escaped string value via ./bldr
     command_string = arg_list[0].strip()
 
     if not command_string or command_string in ["-l", "--list", "-h", "--help", "-?"]:
@@ -255,9 +234,8 @@ def main(arg_list):
             print("%s%s%s%s" % (' ' * indent, tm['name'], ' ' * offset, tm['description']))
         return 0
 
-    task_result_list = exec_many(command_string, task_map_list)
-
-    return sum([task_result['rc'] for task_result in task_result_list])
+    task_result = exec_task(command_string, task_map_list)
+    return task_result['rc']
 
 if __name__ == '__main__':
     exit(main(sys.argv[1:]))
