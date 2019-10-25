@@ -3,8 +3,9 @@
 # from buildercore import utils # don't do this, utils depends on command.py
 import sys
 import fabric.api as fab_api
-import fabric.contrib as fab_contrib
-#from fabric.api import env
+import fabric.contrib.files as fab_files
+
+env = fab_api.env
 
 local = fab_api.local
 execute = fab_api.execute
@@ -34,7 +35,7 @@ def download(*args, **kwargs):
     return fab_api.get(*args, **kwargs)
 
 def remote_file_exists(*args, **kwargs):
-    return fab_contrib.files.exists(*args, **kwargs)
+    return fab_files.exists(*args, **kwargs)
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/utils.py#L30-L63
 def abort(msg):

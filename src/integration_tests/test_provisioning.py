@@ -1,5 +1,5 @@
 import os
-from fabric.api import settings
+from buildercore.command import settings
 from tests import base
 from buildercore import bootstrap, cfngen, lifecycle
 from buildercore.config import BOOTSTRAP_USER

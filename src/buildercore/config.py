@@ -12,7 +12,7 @@ from the interface logic in the fabfile.
 """
 import os
 from os.path import join
-from fabric.api import env
+from buildercore.command import env
 from buildercore import utils
 from buildercore.utils import lmap, lfilter
 from kids.cache import cache

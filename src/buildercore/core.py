@@ -11,8 +11,7 @@ from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
 from contextlib import contextmanager
-from .command import settings, execute, parallel, serial
-from fabric.api import env
+from .command import settings, execute, parallel, serial, env
 from fabric.exceptions import NetworkError
 from fabric.state import output
 from slugify import slugify
