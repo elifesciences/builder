@@ -89,7 +89,7 @@ class TaskRunner(base.BaseCase):
 
     def test_commands_with_whitespace_can_be_called(self):
         task_list = tr.generate_task_list()
-        #result_map = tr.exec_task("echo:msg,'echo hello world'", task_list) # this is what we give bash
+        # result_map = tr.exec_task("echo:msg,'echo hello world'", task_list) # this is what we give bash
         result_map = tr.exec_task("echo:msg,echo hello world", task_list) # this is what we see after bash
         expected = {
             'task': 'echo',
@@ -112,7 +112,7 @@ class TaskRunner(base.BaseCase):
 
     def test_quoted_commands_can_be_called(self):
         task_list = tr.generate_task_list()
-        #result_map = tr.exec_task("echo:'hello\, world'", task_list) # this is what we give bash
+        # result_map = tr.exec_task("echo:'hello\, world'", task_list) # this is what we give bash
         result_map = tr.exec_task("echo:hello\\, world", task_list) # this is what we see after bash
         expected = {
             'rc': 0,
