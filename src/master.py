@@ -4,7 +4,7 @@ See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
 import buildvars, utils
-from fabric.api import sudo, local
+from buildercore.command import sudo, local
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
 from decorators import echo_output, requires_aws_stack

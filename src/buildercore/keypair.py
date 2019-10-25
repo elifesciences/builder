@@ -5,7 +5,7 @@ from os.path import join
 from . import core, utils, config, s3
 from .core import stack_pem
 from .utils import lfilter
-from fabric.api import local
+from .command import local
 
 import logging
 LOG = logging.getLogger(__name__)

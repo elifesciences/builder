@@ -2,10 +2,9 @@ import os
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
-from fabric.api import local, run, sudo, put, get, abort, settings
+from buildercore.command import local, run, sudo, put, get, abort, settings, remote_file_exists
 import fabric.exceptions
 import fabric.state
-from fabric.contrib import files
 import utils, buildvars
 from decorators import requires_project, requires_aws_stack, echo_output, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
@@ -293,7 +292,7 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     @backoff.on_exception(backoff.expo, fabric.exceptions.NetworkError, max_time=60)
     def _download(path, destination):
         with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
-            if allow_missing and not files.exists(path):
+            if allow_missing and not remote_file_exists(path):
                 return # skip download
             get(path, destination, use_sudo=True)
 
@@ -312,7 +311,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, confir
         print('overwrite:', overwrite)
         if not confirm:
             utils.get_input('continue?')
-        if files.exists(remote_path) and not overwrite:
+        if remote_file_exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
             exit(1)
         put(local_path, remote_path)

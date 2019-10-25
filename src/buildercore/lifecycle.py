@@ -7,7 +7,7 @@ import logging
 from pprint import pformat
 import re
 import backoff
-from fabric.contrib import files
+from .command import remote_file_exists
 import fabric.exceptions as fabric_exceptions
 import boto # route53 boto2 > route53 boto3
 from . import config, core
@@ -272,7 +272,7 @@ def _daemons_ready():
     path = '/var/lib/cloud/instance/boot-finished'
 
     try:
-        return files.exists(path)
+        return remote_file_exists(path)
     except fabric_exceptions.NetworkError:
         LOG.debug("failed to connect to %s...", node_id)
         return False

@@ -1,4 +1,4 @@
-from fabric.api import local
+from buildercore.command import local
 from buildercore import project, utils as core_utils, core, cfngen
 from buildercore.utils import ensure
 from decorators import requires_project, echo_output

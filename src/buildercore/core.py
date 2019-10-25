@@ -11,7 +11,8 @@ from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
 from contextlib import contextmanager
-from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
+from .command import settings, execute, parallel, serial
+from fabric.api import env
 from fabric.exceptions import NetworkError
 from fabric.state import output
 from slugify import slugify
@@ -730,14 +731,3 @@ def project_data_for_stackname(stackname):
     if 'gcp-alt' in project_data and instance_id in project_data['gcp-alt']:
         project_data = project.set_project_alt(project_data, 'gcp', instance_id)
     return project_data
-
-def listfiles_remote(path=None, use_sudo=False):
-    """returns a list of files in a directory at `path` as absolute paths"""
-    ensure(path, "path to remote directory required")
-    with hide('output'):
-        runfn = sudo if use_sudo else run
-        path = "%s/*" % path.rstrip("/")
-        stdout = runfn("for i in %s; do echo $i; done" % path)
-        if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
-            return []
-        return stdout.splitlines()

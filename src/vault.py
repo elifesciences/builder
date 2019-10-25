@@ -1,4 +1,4 @@
-from fabric.api import local
+from buildercore.command import local
 from buildercore import project
 import utils
 import sys

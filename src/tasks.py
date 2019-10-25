@@ -5,7 +5,7 @@ better off in their own module. This module really is for stuff
 that has no home."""
 import os
 from buildercore import core, bootstrap, bakery, lifecycle
-from fabric.api import local
+from buildercore.command import local
 from utils import confirm, errcho, get_input
 from decorators import requires_aws_stack
 from buildercore.core import stack_conn

@@ -7,7 +7,7 @@ from random import randint
 from subprocess import check_output
 # pylint: disable-msg=import-error
 from unittest2 import TestCase
-from fabric.api import settings
+from buildercore.command import settings
 from buildercore import config, project
 from buildercore import bootstrap, cfngen, lifecycle, core
 import cfn

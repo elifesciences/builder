@@ -10,7 +10,7 @@ from os.path import join
 from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
-from fabric.operations import get, put
+from .command import get, put
 import tempfile, shutil, copy
 
 LOG = logging.getLogger(__name__)

@@ -1,4 +1,4 @@
-from fabric.api import cd, run
+from buildercore.command import cd, run
 from buildercore.core import stack_conn
 from decorators import requires_aws_project_stack
 

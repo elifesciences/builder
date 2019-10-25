@@ -14,9 +14,8 @@ from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
-from fabric.api import sudo, show
 import fabric.exceptions as fabric_exceptions
-from fabric.contrib import files
+from .command import sudo, remote_file_exists, remote_listfiles
 import backoff
 import botocore
 from kids.cache import cache as cached
@@ -96,8 +95,8 @@ def setup_ec2(stackname, context):
                 # - cloud-init has finished running
                 #       otherwise we may be missing /etc/apt/source.list, which is generated on boot
                 #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running
-                return not files.exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) \
-                    or not files.exists('/var/lib/cloud/instance/boot-finished')
+                return not remote_file_exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) \
+                    or not remote_file_exists('/var/lib/cloud/instance/boot-finished')
             except fabric_exceptions.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
@@ -367,7 +366,7 @@ def write_environment_info(stackname, overwrite=False):
     This gives Salt the outputs available at stack creation, but that were not
     available at template compilation time.
     """
-    if not files.exists("/etc/cfn-info.json") or overwrite:
+    if not remote_file_exists("/etc/cfn-info.json") or overwrite:
         LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
         infr_config = utils.json_dumps(template_info(stackname))
         return fab_put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
@@ -415,8 +414,9 @@ def download_master_builder_key(stackname):
     master_stack = core.find_master(region)
     private_key = "/root/.ssh/id_rsa"
     with stack_conn(master_stack):
-        with show('exceptions'): # I actually get better exceptions with this disabled
-            return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
+        # with fabric.api.show('exceptions'): # I actually get better exceptions with this disabled
+        #    return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
+        return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
 
 def download_master_configuration(master_stack):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
@@ -563,7 +563,7 @@ def master_minion_keys(master_stackname, group_by_stackname=True):
     "returns a list of paths to minion keys on given master stack, optionally grouped by stackname"
     # all paths
     with stack_conn(master_stackname):
-        master_stack_key_paths = core.listfiles_remote("/etc/salt/pki/master/minions/", use_sudo=True)
+        master_stack_key_paths = remote_listfiles("/etc/salt/pki/master/minions/", use_sudo=True)
     if not group_by_stackname:
         return master_stack_key_paths
     # group by stackname. stackname is created by stripping node information off the end.
