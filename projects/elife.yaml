@@ -1481,50 +1481,6 @@ figure-viewer:
                 website-configuration:
                     index-document: index.html
 
-peerscout:
-    description: PeerScout
-    subdomain: peerscout
-    repo: https://github.com/elifesciences/peerscout
-    formula-repo: https://github.com/elifesciences/peerscout-formula
-    aws:
-        type: t2.xlarge # explicitly 16GB RAM for heavy background processing
-        ports:
-            - 22
-            - 80
-            - 443
-        ext:
-            # external hdd
-            size: 20 # GB
-            device: /dev/sdf
-            type: standard
-    aws-alt:
-        end2end:
-            rds:
-                storage: 5
-                storage-type: Standard
-                backup-retention: 2 # days
-            ext:
-                # external hdd
-                size: 100 # GB
-                device: /dev/sdf
-                type: standard
-        prod:
-            rds:
-                storage: 5
-                storage-type: Standard
-                multi-az: true
-            ext:
-                # external hdd
-                size: 100 # GB
-                device: /dev/sdf
-                type: standard
-            subdomains:
-                - peerscout
-    vagrant:
-        ports:
-            1241: 80
-        ram: 4096
-
 sciencebeam-texture:
     description: Sciencebeam and Texture proof of concept
     subdomain: sciencebeam-texture
