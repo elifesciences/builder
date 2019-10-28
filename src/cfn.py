@@ -2,8 +2,7 @@ import os
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
-from buildercore.command import local, run, sudo, put, get, abort, settings, remote_file_exists, FabricException
-import fabric.exceptions
+from buildercore.command import local, run, sudo, put, get, abort, settings, remote_file_exists, FabricException, NetworkError
 import fabric.state
 import utils, buildvars
 from decorators import requires_project, requires_aws_stack, echo_output, setdefault, timeit
@@ -289,7 +288,7 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     """
     allow_missing, use_bootstrap_user = lmap(strtobool, [allow_missing, use_bootstrap_user])
 
-    @backoff.on_exception(backoff.expo, fabric.exceptions.NetworkError, max_time=60)
+    @backoff.on_exception(backoff.expo, NetworkError, max_time=60)
     def _download(path, destination):
         with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
             if allow_missing and not remote_file_exists(path):

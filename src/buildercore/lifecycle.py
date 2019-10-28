@@ -8,7 +8,6 @@ from pprint import pformat
 import re
 import backoff
 from .command import remote_file_exists
-import fabric.exceptions as fabric_exceptions
 import boto # route53 boto2 > route53 boto3
 from . import config, core, command
 from .core import boto_conn, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
@@ -273,7 +272,7 @@ def _daemons_ready():
 
     try:
         return remote_file_exists(path)
-    except fabric_exceptions.NetworkError:
+    except command.NetworkError:
         LOG.debug("failed to connect to %s...", node_id)
         return False
 

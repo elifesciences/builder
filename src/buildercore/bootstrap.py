@@ -8,13 +8,12 @@ import os, json, re
 from os.path import join
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, vault, sns as snsmod
+from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, vault, sns as snsmod, command
 from .context_handler import only_if as updates
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
-import fabric.exceptions as fabric_exceptions
 from .command import sudo, remote_file_exists, remote_listfiles, fab_get, fab_put, fab_put_data
 import backoff
 import botocore
@@ -40,7 +39,7 @@ def put_script(script_filename, remote_script):
     temporary_script = _put_temporary_script(script_filename)
     sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
 
-@backoff.on_exception(backoff.expo, fabric_exceptions.NetworkError, max_time=60)
+@backoff.on_exception(backoff.expo, command.NetworkError, max_time=60)
 def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
     WARN: assumes you are connected to a stack"""
@@ -97,7 +96,7 @@ def setup_ec2(stackname, context):
                 #       https://www.digitalocean.com/community/questions/how-to-make-sure-that-cloud-init-finished-running
                 return not remote_file_exists(join('/home', BOOTSTRAP_USER, ".ssh/authorized_keys")) \
                     or not remote_file_exists('/var/lib/cloud/instance/boot-finished')
-            except fabric_exceptions.NetworkError:
+            except command.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
         utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')

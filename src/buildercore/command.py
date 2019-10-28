@@ -3,6 +3,7 @@
 import sys
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
+import fabric.exceptions as fab_exceptions
 import logging
 from io import BytesIO
 from . import utils
@@ -35,6 +36,8 @@ class FabricException(CommandException):
 
 # no un-catchable errors from Fabric
 env.abort_exception = FabricException
+
+NetworkError = fab_exceptions.NetworkError
 
 
 #
