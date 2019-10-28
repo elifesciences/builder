@@ -1,9 +1,14 @@
 # Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
 
-# from buildercore import utils # don't do this, utils depends on command.py
 import sys
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
+import logging
+from io import BytesIO
+from . import utils
+
+LOG = logging.getLogger(__name__)
+
 
 env = fab_api.env
 
@@ -70,3 +75,32 @@ def remote_listfiles(path=None, use_sudo=False):
         if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
             return []
         return stdout.splitlines()
+
+def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
+    "wrapper around fabric.operations.get"
+    label = label or remote_path
+    msg = "downloading %s" % label
+    LOG.info(msg)
+    local_path = local_path or BytesIO()
+    download(remote_path, local_path, use_sudo=use_sudo)
+    if isinstance(local_path, BytesIO):
+        if return_stream:
+            local_path.seek(0) # reset stream's internal pointer
+            return local_path
+        return local_path.getvalue().decode() # return a string
+    return local_path
+
+def fab_put(local_path, remote_path, use_sudo=False, label=None):
+    "wrapper around fabric.operations.put"
+    label = label or local_path
+    msg = "uploading %s to %s" % (label, remote_path)
+    LOG.info(msg)
+    upload(local_path=local_path, remote_path=remote_path, use_sudo=use_sudo)
+    return remote_path
+
+def fab_put_data(data, remote_path, use_sudo=False):
+    utils.ensure(isinstance(data, bytes) or utils.isstr(data), "data must be bytes or a string that can be encoded to bytes")
+    data = data if isinstance(data, bytes) else data.encode()
+    bytestream = BytesIO(data)
+    label = "%s bytes" % bytestream.getbuffer().nbytes if utils.gtpy2() else "? bytes"
+    return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)

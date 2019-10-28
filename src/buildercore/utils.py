@@ -1,7 +1,6 @@
 from pprint import pformat
 import pytz
 import os, sys, json, time, random, string
-from io import BytesIO
 from functools import wraps
 from datetime import datetime
 import yaml
@@ -10,7 +9,6 @@ from os.path import join
 from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
-from .command import get, put
 import tempfile, shutil, copy
 
 LOG = logging.getLogger(__name__)
@@ -353,35 +351,6 @@ def renkeys(ddict, pair_list):
     "mutator"
     for oldkey, newkey in pair_list:
         renkey(ddict, oldkey, newkey)
-
-def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
-    "wrapper around fabric.operations.get"
-    label = label or remote_path
-    msg = "downloading %s" % label
-    LOG.info(msg)
-    local_path = local_path or BytesIO()
-    get(remote_path, local_path, use_sudo=use_sudo)
-    if isinstance(local_path, BytesIO):
-        if return_stream:
-            local_path.seek(0) # reset stream's internal pointer
-            return local_path
-        return local_path.getvalue().decode() # return a string
-    return local_path
-
-def fab_put(local_path, remote_path, use_sudo=False, label=None):
-    "wrapper around fabric.operations.put"
-    label = label or local_path
-    msg = "uploading %s to %s" % (label, remote_path)
-    LOG.info(msg)
-    put(local_path=local_path, remote_path=remote_path, use_sudo=use_sudo)
-    return remote_path
-
-def fab_put_data(data, remote_path, use_sudo=False):
-    ensure(isinstance(data, bytes) or isstr(data), "data must be bytes or a string that can be encoded to bytes")
-    data = data if isinstance(data, bytes) else data.encode()
-    bytestream = BytesIO(data)
-    label = "%s bytes" % bytestream.getbuffer().nbytes if gtpy2() else "? bytes"
-    return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)
 
 def tempdir():
     # usage: tempdir, killer = tempdir(); killer()

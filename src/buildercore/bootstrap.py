@@ -11,11 +11,11 @@ from datetime import datetime
 from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, vault, sns as snsmod
 from .context_handler import only_if as updates
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, ensure, subdict, yaml_dumps, lmap, fab_get, fab_put, fab_put_data
+from .utils import first, ensure, subdict, yaml_dumps, lmap
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
 import fabric.exceptions as fabric_exceptions
-from .command import sudo, remote_file_exists, remote_listfiles
+from .command import sudo, remote_file_exists, remote_listfiles, fab_get, fab_put, fab_put_data
 import backoff
 import botocore
 from kids.cache import cache as cached
