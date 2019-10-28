@@ -2,7 +2,7 @@ import os
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
-from buildercore.command import local, run, sudo, put, get, abort, settings, remote_file_exists
+from buildercore.command import local, run, sudo, put, get, abort, settings, remote_file_exists, FabricException
 import fabric.exceptions
 import fabric.state
 import utils, buildvars
@@ -13,7 +13,7 @@ from buildercore import cloudformation, terraform
 from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
 from buildercore.decorators import PredicateException
-from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY, FabricException
+from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY
 from buildercore.utils import lmap, ensure
 
 import logging

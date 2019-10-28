@@ -5,7 +5,7 @@ suggestions for a better name than 'core' welcome."""
 
 import os, glob, json, re
 from os.path import join
-from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
+from . import utils, config, project, decorators, command # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
@@ -352,7 +352,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                     continue
                 else:
                     raise err
-            except config.FabricException as err:
+            except command.FabricException as err:
                 LOG.error(str(err).replace("\n", "    "))
                 # available as 'results' to fabric.tasks.error
                 raise err

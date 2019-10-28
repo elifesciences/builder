@@ -9,7 +9,6 @@ from . import utils
 
 LOG = logging.getLogger(__name__)
 
-
 env = fab_api.env
 
 local = fab_api.local
@@ -22,6 +21,21 @@ hide = fab_api.hide
 settings = fab_api.settings
 cd = fab_api.cd
 lcd = fab_api.lcd
+
+#
+# exceptions
+#
+
+class CommandException(Exception):
+    pass
+
+# lsh@2019-10: deprecated in favour of CommandException
+class FabricException(CommandException):
+    pass
+
+# no un-catchable errors from Fabric
+env.abort_exception = FabricException
+
 
 #
 # replacements
