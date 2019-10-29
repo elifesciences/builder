@@ -12,17 +12,6 @@ LOG = logging.getLogger(__name__)
 
 env = fab_api.env
 
-local = fab_api.local
-execute = fab_api.execute
-parallel = fab_api.parallel
-serial = fab_api.serial
-hide = fab_api.hide
-
-# https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
-settings = fab_api.settings
-cd = fab_api.cd
-lcd = fab_api.lcd
-
 #
 # exceptions
 #
@@ -39,25 +28,27 @@ env.abort_exception = FabricException
 
 NetworkError = fab_exceptions.NetworkError
 
-
 #
-# replacements
+# api
 #
 
-def remote(*args, **kwargs):
-    return fab_api.run(*args, **kwargs)
+local = fab_api.local
+execute = fab_api.execute
+parallel = fab_api.parallel
+serial = fab_api.serial
+hide = fab_api.hide
 
-def remote_sudo(*args, **kwargs):
-    return fab_api.sudo(*args, **kwargs)
+# https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
+settings = fab_api.settings
 
-def upload(*args, **kwargs):
-    return fab_api.put(*args, **kwargs)
+lcd = fab_api.lcd # local change dir
+rcd = fab_api.cd # remote change dir
 
-def download(*args, **kwargs):
-    return fab_api.get(*args, **kwargs)
-
-def remote_file_exists(*args, **kwargs):
-    return fab_files.exists(*args, **kwargs)
+remote = fab_api.run
+remote_sudo = fab_api.sudo
+upload = fab_api.put
+download = fab_api.get
+remote_file_exists = fab_files.exists
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/utils.py#L30-L63
 def abort(msg):
@@ -67,11 +58,12 @@ def abort(msg):
     exit(1)
 
 #
-# aliases and deprecated
+# aliases/deprecated api
 #
 
-put = upload # see also: buildercore.utils.fab_put and fab_put_data
-get = download # see also: buildercore.utils.fab_get
+cd = rcd
+put = upload
+get = download
 run = remote
 sudo = remote_sudo
 
