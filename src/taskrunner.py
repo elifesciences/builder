@@ -12,6 +12,9 @@ def echo(msg, *args, **kwargs):
         return "received: %s with args: %s and kwargs: %s" % (msg, args, kwargs)
     return "received: %s" % (msg,)
 
+
+# 'unqualified' tasks are those that can be called just by their function name.
+# for example: './bldr start' is the unqualified function 'lifecycle.start'
 UNQUALIFIED_TASK_LIST = [
     ping, echo,
 
@@ -35,6 +38,8 @@ UNQUALIFIED_TASK_LIST = [
     lifecycle.update_dns,
 ]
 
+# these are 'qualified' tasks where the full path to the function must be used
+# for example: './bldr buildvars.switch_revision'
 TASK_LIST = [
     metrics.regenerate_results, # todo: remove
 
@@ -70,12 +75,17 @@ TASK_LIST = [
     vault.token_revoke,
 ]
 
+# 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
+# this list of debug tasks don't require the full path to be used
+# for example: 'BLDR_ROLE=admin ./bldr highstate' will execute the 'highstate'
 UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.highstate,
     cfn.pillar,
     cfn.aws_stack_list,
 ]
 
+# same as above, but the task name must be fully written out
+# for example: 'BLDR_ROLE=admin ./bldr master.download_keypair'
 DEBUG_TASK_LIST = [
     aws.rds_snapshots,
     aws.detailed_stack_list,
@@ -100,6 +110,8 @@ DEBUG_TASK_LIST = [
 ]
 
 def mk_task_map(task, qualified=True):
+    """returns a map of information about the given task function.
+    when `qualified` is `False`, the path to the task is truncated to just the task name"""
     path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
     unqualified_path = task.__name__
     description = (task.__doc__ or '').strip().replace('\n', ' ')[:60]
