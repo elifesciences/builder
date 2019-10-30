@@ -1,6 +1,7 @@
 import sys, os, traceback
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
 from decorators import echo_output
+from functools import reduce
 
 @echo_output
 def ping():
@@ -114,7 +115,7 @@ def mk_task_map(task, qualified=True):
     when `qualified` is `False`, the path to the task is truncated to just the task name"""
     path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
     unqualified_path = task.__name__
-    description = (task.__doc__ or '').strip().replace('\n', ' ')[:60]
+    description = (task.__doc__ or '').strip().replace('\n', ' ')
     return {
         "name": path if qualified else unqualified_path,
         "path": path,
@@ -239,11 +240,17 @@ def main(arg_list):
     if not command_string or command_string in ["-l", "--list", "-h", "--help", "-?"]:
         print("Available commands:\n")
         indent = 4
+        max_path_len = reduce(max, [len(tm['name']) for tm in task_map_list])
+        task_description_gap = 2
+        max_description_len = 60
         for tm in task_map_list:
             path_len = len(tm['name'])
-            max_path_len = 35
-            offset = (max_path_len - path_len) + 2
-            print("%s%s%s%s" % (' ' * indent, tm['name'], ' ' * offset, tm['description']))
+            offset = (max_path_len - path_len) + task_description_gap
+            offset = ' ' * offset
+            task_name = tm['name']
+            description = tm['description'][:max_description_len]
+            leading_indent = ' ' * indent
+            print(leading_indent + task_name + offset + description)
         return 0
 
     task_result = exec_task(command_string, task_map_list)
