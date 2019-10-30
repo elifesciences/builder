@@ -12,7 +12,6 @@ import boto3
 import botocore
 from contextlib import contextmanager
 from .command import settings, execute, parallel, serial, env, NetworkError
-from fabric.state import output
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
@@ -357,7 +356,11 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 raise err
 
     # something less stateful like a context manager?
-    output['aborts'] = False
+    # lsh@2019-10: these params are passed to the settings context manager but are
+    # still (deliberately) quite stateful.
+    params['fabric.state.output'] = {
+        'aborts': False
+    }
 
     # TODO: extract in buildercore.concurrency
     if not concurrency:

@@ -4,6 +4,7 @@ import sys
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
 import fabric.exceptions as fab_exceptions
+import fabric.state
 import logging
 from io import BytesIO
 from . import utils
@@ -39,7 +40,15 @@ serial = fab_api.serial
 hide = fab_api.hide
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
-settings = fab_api.settings
+def settings(*args, **kwargs):
+
+    # these values were set with `fabric.state.output[key] = val`
+    # they would be persistant until the program exited
+    # - https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L448-L474
+    for key, val in kwargs.pop('fabric.state.output', {}).items():
+        fabric.state.output[key] = val
+
+    return fab_api.settings(*args, **kwargs)
 
 lcd = fab_api.lcd # local change dir
 rcd = fab_api.cd # remote change dir

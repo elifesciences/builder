@@ -3,7 +3,6 @@ from distutils.util import strtobool as _strtobool  # pylint: disable=import-err
 from pprint import pformat
 import backoff
 from buildercore.command import local, run, sudo, put, get, abort, settings, remote_file_exists, FabricException, NetworkError
-import fabric.state
 import utils, buildvars
 from decorators import requires_project, requires_aws_stack, echo_output, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
@@ -334,8 +333,10 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
     # of a remote command
     custom_settings = {}
     if clean_output:
-        fabric.state.output['status'] = False
-        fabric.state.output['running'] = False
+        custom_settings['fabric.state.output'] = {
+            'status': False,
+            'running': False
+        }
         custom_settings['output_prefix'] = False
 
     try:
