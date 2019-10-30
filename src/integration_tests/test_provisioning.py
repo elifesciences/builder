@@ -2,10 +2,9 @@ import os
 from buildercore.command import settings
 from tests import base
 from buildercore import bootstrap, cfngen, lifecycle
-from buildercore.config import BOOTSTRAP_USER
+from buildercore.config import BOOTSTRAP_USER, PROJECT_PATH
 import buildvars
 import cfn
-from fabfile import PROJECT_DIR
 import logging
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
@@ -26,7 +25,7 @@ class TestProvisioning(base.BaseIntegrationCase):
             'subfolder',
         ]
         for tf in tempfiles:
-            path = os.path.join(PROJECT_DIR, tf)
+            path = os.path.join(PROJECT_PATH, tf)
             if os.path.isfile(path):
                 os.unlink(path)
             elif os.path.isdir(path):

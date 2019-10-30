@@ -3,6 +3,5 @@ set -e
 
 source venv/bin/activate
 
-# this skips the fabfile.py file, which pyflakes complains about endlessly
-# also skips complains about 'raw_input' and 'file' not being defined in python3
-if pyflakes src/ | grep -v -E "src/fabfile.py|'raw_input'|'file'"; then exit 1; fi
+# skips complaints about 'raw_input' and 'file' not being defined in python3
+if pyflakes src/ | grep -v -E "'raw_input'|'file'"; then exit 1; fi
