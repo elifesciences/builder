@@ -103,6 +103,7 @@ defaults:
                 max-size: 3
             helm: false
             external-dns: false
+            efs: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains-without-dns: []
@@ -762,7 +763,7 @@ project-with-eks:
                 max-size: 3
 
 project-with-eks-helm:
-    description: project managing an EKS cluster and various extensions
+    description: project managing an EKS cluster with Helm for chart installation
     domain: False
     intdomain: False
     aws:
@@ -770,7 +771,7 @@ project-with-eks-helm:
             helm: true
 
 project-with-eks-external-dns:
-    description: project managing an EKS cluster and various extensions
+    description: project managing an EKS cluster with external-dns for Route53 entries creation
     domain: False
     intdomain: False
     aws:
@@ -778,3 +779,11 @@ project-with-eks-external-dns:
             helm: true  # required
             external-dns:
                 domain-filter: "elifesciences.net"
+
+project-with-eks-efs:
+    description: project managing an EKS cluster with EFS support
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            efs: true
