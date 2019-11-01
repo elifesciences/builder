@@ -113,8 +113,8 @@ def mk_task_map(task, qualified=True):
 def generate_task_list(show_debug_tasks=False):
     """returns a collated list of maps with task information.
 
-    [{"name": "fn", "fn": pathto.fn1, "description": "foo bar baz"}, ...]
-     {"name": "pathto.fn", "fn": pathto.fn2, "description": "foo bar baz"}, ...]"""
+    [{"name": "ssh", "fn": cfn.ssh, "description": "foobar baz"}, ...]
+     {"name": "cfn.deploy", "fn": cfn.deploy, "description": "bar barbar"}, ...]"""
 
     def to_list(task_list, qualified=True):
         return [mk_task_map(task, qualified) for task in task_list]
