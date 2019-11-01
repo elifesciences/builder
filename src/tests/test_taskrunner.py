@@ -30,12 +30,13 @@ class TaskRunner(base.BaseCase):
     def test_list_tasks(self):
         "printing the list of commands can be invoked in many different ways"
         list_tasks_invocations = [
-            "", # no args
-            "-l", "--list",
-            "-h", "--help", "-?"]
-        for invocation in list_tasks_invocations:
+            ("", 1), # no args
+            ("-l", 0),
+            ("--list", 0),
+        ]
+        for invocation, expected_return_code in list_tasks_invocations:
             response = capture_stdout(lambda: tr.main([invocation]))
-            self.assertEqual(response["result"], SUCCESS_RC)
+            self.assertEqual(response["result"], expected_return_code)
 
     def test_commands_are_present(self):
         "some common commands we always use are in the list and qualified as necessary"
@@ -78,13 +79,13 @@ class TaskRunner(base.BaseCase):
 
     def test_commands_with_args_and_kwargs_can_be_called(self):
         task_list = tr.generate_task_list()
-        result_map = tr.exec_task("echo:zulu,gamma,a=b", task_list)
+        result_map = tr.exec_task("echo:msg,arg,key=val", task_list)
         expected = {
             'rc': 0,
-            'result': "received: zulu with args: ('gamma',) and kwargs: {'a': 'b'}",
+            'result': "received: msg with args: ('arg',) and kwargs: {'key': 'val'}",
             'task': 'echo',
-            'task_args': ['zulu', 'gamma'],
-            'task_kwargs': {'a': 'b'}}
+            'task_args': ['msg', 'arg'],
+            'task_kwargs': {'key': 'val'}}
         self.assertEqual(expected, result_map)
 
     def test_commands_with_whitespace_can_be_called(self):
@@ -101,7 +102,12 @@ class TaskRunner(base.BaseCase):
 
     def test_commands_with_special_chars_can_be_called_without_quoting(self):
         task_list = tr.generate_task_list()
-        result_map = tr.exec_task("echo:hello-world!@$%^&*()-;?/", task_list) # '!@' makes bash cry and doesn't work without quoting
+        # result_map = tr.exec_task("echo:'hello-world!@$%^&*()-;?/'", task_list) # this is what we give bash
+        result_map = tr.exec_task("echo:hello-world!@$%^&*()-;?/", task_list) # this is what we see after bash
+
+        # result_map = tr.exec_task('echo:"hello-world\!@$%^&*()-;?/"', task_list) # double quotes must escape certain shell characters
+        # result_map = tr.exec_task('echo:hello-world\\!@$%^&*()-;?/', task_list) # this is what we see after bash with double quotes
+
         expected = {
             'rc': 0,
             'result': 'received: hello-world!@$%^&*()-;?/',
@@ -113,7 +119,7 @@ class TaskRunner(base.BaseCase):
     def test_quoted_commands_can_be_called(self):
         task_list = tr.generate_task_list()
         # result_map = tr.exec_task("echo:'hello\, world'", task_list) # this is what we give bash
-        result_map = tr.exec_task("echo:hello\\, world", task_list) # this is what we see after bash
+        result_map = tr.exec_task("echo:hello\, world", task_list) # this is what we see after bash
         expected = {
             'rc': 0,
             'result': 'received: hello, world',

@@ -224,7 +224,10 @@ def main(arg_list):
     # bash hands us an escaped string value via ./bldr
     command_string = arg_list[0].strip()
 
-    if not command_string or command_string in ["-l", "--list", "-h", "--help", "-?"]:
+    # print('this is what we see after bash:')
+    # print(command_string)
+
+    if not command_string or command_string in ["-l", "--list"]:
         print("Available commands:\n")
         indent = 4
         for tm in task_map_list:
@@ -232,7 +235,9 @@ def main(arg_list):
             max_path_len = 35
             offset = (max_path_len - path_len) + 2
             print("%s%s%s%s" % (' ' * indent, tm['name'], ' ' * offset, tm['description']))
-        return 0
+
+        # no explicit invocation of help gets you an error code
+        return 0 if command_string else 1
 
     task_result = exec_task(command_string, task_map_list)
     return task_result['rc']
