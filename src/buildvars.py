@@ -1,7 +1,7 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
-from fabric.api import sudo, put, task
+from fabric.api import sudo, put
 from io import StringIO
-from decorators import requires_aws_stack, debugtask
+from decorators import requires_aws_stack
 from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
@@ -14,7 +14,6 @@ LOG = logging.getLogger(__name__)
 
 OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
 
-@task
 @requires_aws_stack
 def switch_revision(stackname, revision=None, concurrency=None):
     if revision is None:
@@ -33,13 +32,11 @@ def switch_revision(stackname, revision=None, concurrency=None):
 
     stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
-@debugtask
 @requires_aws_stack
 def read(stackname):
     "returns the unencoded build variables found on given instance"
     return stack_all_ec2_nodes(stackname, lambda: pprint(read_from_current_host()), username=BOOTSTRAP_USER)
 
-@debugtask
 @requires_aws_stack
 def valid(stackname):
     return stack_all_ec2_nodes(stackname, lambda: pprint(_retrieve_build_vars()), username=BOOTSTRAP_USER)
@@ -67,7 +64,6 @@ def _retrieve_build_vars():
         LOG.exception(ex)
         raise
 
-@debugtask
 @requires_aws_stack
 def fix(stackname):
     def _fix_single_ec2_node(stackname):
@@ -87,7 +83,6 @@ def fix(stackname):
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
 # TODO: deletion candidate. can only ever do a shallow update
-@debugtask
 @requires_aws_stack
 def force(stackname, field, value):
     "replace a specific key with a new value in the buildvars for all ec2 instances in stack"

@@ -4,7 +4,6 @@ import utils
 from buildercore import core, project, config
 from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr
 from functools import wraps
-from fabric.api import env, task
 from pprint import pformat
 import logging
 
@@ -32,33 +31,17 @@ def setdefault(fname, value):
     "writes the given value to the given default file"
     open(deffile(fname), 'w').write(value)
 
-def rtask(*roles):
-    "role task. this task is only available for certain roles specified in the BLDR_ROLE env var"
-    def wrapper(func):
-        role_env = os.getenv('BLDR_ROLE')
-        if role_env in roles:
-            # a role has been set
-            return task(func)
-        return func
-    return wrapper
-
-
-# pylint: disable=invalid-name
-debugtask = rtask('admin')
-mastertask = rtask('master')
-
 def requires_filtered_project(filterfn=None):
     def wrap1(func):
         @wraps(func)
         def wrap2(_pname=None, *args, **kwargs):
-            pname = os.environ.get('PROJECT', _pname)
+            pname = os.environ.get('PROJECT', _pname) # used by Vagrant ...?
             project_list = project.filtered_projects(filterfn)
             if not pname or not pname.strip() or pname not in project_list:
                 pname = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
             return func(pname, *args, **kwargs)
         return wrap2
     return wrap1
-
 
 # pylint: disable=invalid-name
 requires_project = requires_filtered_project(None)
@@ -120,28 +103,15 @@ def requires_steady_stack(func):
         return func(stackname, *args[1:], **kwargs)
     return call
 
-def _sole_task(nom):
-    task_list = env.tasks
-    if len(task_list) > 0:
-        final_task = task_list[-1]
-        final_task = final_task.split(':', 1)[0] # ignore any args
-        final_task = final_task.split('.')[-1] # handles namespaced tasks like: webserver.vhost
-        return final_task == nom
-
 def echo_output(func):
-    """if the wrapped function is the sole task being run, then it's output is
-    printed to stdout. this wrapper first attempts to pass the keyword
-    'verbose' to the function and, if it fails, calls it without.
-    """
+    "pretty-prints the return value of the task(s) being run to stdout"
     @wraps(func)
     def _wrapper(*args, **kwargs):
-        if _sole_task(func.__name__):
-            res = func(*args, **kwargs)
-            errcho('output:') # printing to stderr avoids corrupting structured data
-            if isstr(res):
-                print(res)
-            else:
-                print(pformat(remove_ordereddict(res)))
-            return res
-        return func(*args, **kwargs)
+        res = func(*args, **kwargs)
+        errcho('output:') # printing to stderr avoids corrupting structured data
+        if isstr(res):
+            print(res)
+        else:
+            print(pformat(remove_ordereddict(res)))
+        return res
     return _wrapper

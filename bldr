@@ -9,12 +9,10 @@ fi
 
 source ./venv/bin/activate
 
+# TODO: remove
 # ad-hoc permissions if they exist
 if [ -f .aws-credentials.env ]; then
     source ./.aws-credentials.env
 fi
 
-# a wrapper around fabric that activates the elife-builder virtualenv
-
-fabric=$(which fab)
-exec $fabric "$*" -f src/fabfile.py
+python src/taskrunner.py "$*"

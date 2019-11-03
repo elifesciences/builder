@@ -1,15 +1,12 @@
-from fabric.api import task
 from buildercore import lifecycle
-from decorators import requires_aws_stack, timeit, debugtask, echo_output
+from decorators import requires_aws_stack, timeit, echo_output
 
-@task
 @requires_aws_stack
 @timeit
 def start(stackname):
     "Starts the nodes of 'stackname'. Idempotent"
     lifecycle.start(stackname)
 
-@task
 @requires_aws_stack
 @timeit
 def stop(stackname, *services):
@@ -21,14 +18,12 @@ def stop(stackname, *services):
 
     lifecycle.stop(stackname, services)
 
-@task
 @requires_aws_stack
 @timeit
 @echo_output
 def restart(stackname):
     return lifecycle.restart(stackname)
 
-@task
 @requires_aws_stack
 @timeit
 def stop_if_running_for(stackname, minimum_minutes='30'):
@@ -37,7 +32,6 @@ def stop_if_running_for(stackname, minimum_minutes='30'):
     The assumption is that stacks where this command is used are not needed for long parts of the day/week, and that who needs them will call the start task first."""
     return lifecycle.stop_if_running_for(stackname, int(minimum_minutes))
 
-@debugtask
 @requires_aws_stack
 def update_dns(stackname):
     """Updates the public DNS entry of the EC2 nodes.

@@ -2,13 +2,12 @@ import os
 from os.path import join
 from collections import OrderedDict
 from pprint import pformat
-from fabric.api import task, lcd, settings
+from fabric.api import lcd, settings
 from fabric.operations import local
 from decorators import requires_project
 from buildercore import bootstrap, checks, core, context_handler, config
 from buildercore.utils import ensure, subdict
 import logging
-# TODO: import only what's needed from cfn, to avoid masterless.cfn.* tasks showing up in  ./bldr -l
 import cfn
 from functools import wraps
 
@@ -79,7 +78,6 @@ def parse_validate_repolist(fdata, *repolist):
 #
 #
 
-@task
 @requires_project
 @requires_master_server_access
 def launch(pname, instance_id=None, alt_config='standalone', *repolist):
@@ -110,7 +108,6 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
 #
 #
 
-@task
 @requires_master_server_access
 @requires_masterless
 def set_versions(stackname, *repolist):

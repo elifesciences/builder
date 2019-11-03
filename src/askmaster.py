@@ -3,7 +3,7 @@
 Requires access to the master server."""
 
 from buildercore import core
-from fabric.api import sudo, task
+from fabric.api import sudo
 from buildercore.core import stack_conn
 import utils
 
@@ -12,24 +12,20 @@ def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     with stack_conn(core.find_master(utils.find_region())):
         sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
 
-@task
 def fail2ban_running():
     return salt_master_cmd(module="state.single", cmd="service.running name=fail2ban")
 
-@task
 def installed_linux_kernel():
     "prints the list of linux kernels installed (but not necessarily running)"
     # ii  linux-image-4.15.0-1019-aws          4.15.0-1019.19                             amd64        Linux kernel image for version 4.15.0 on 64 bit x86 SMP
     # ii  linux-image-aws                      4.15.0.1019.19                             amd64        Linux kernel image for Amazon Web Services (AWS) systems.
     return salt_master_cmd("'dpkg -l | grep -i linux-image | grep -i ii'")
 
-@task
 def linux_distro():
     "returns the version of the OS"
     # 'Description:    Ubuntu 18.04.1 LTS'
     return salt_master_cmd("'lsb_release -d'")
 
-@task
 def update_kernel():
     cmd = "'apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install linux-image-aws -y'"
     # 16.04+ minions only
