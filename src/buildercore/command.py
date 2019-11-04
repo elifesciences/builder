@@ -41,6 +41,7 @@ hide = fab_api.hide
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
 def settings(*args, **kwargs):
+    "a context manager that alters mutable application state for functions called within it's scope"
 
     # these values were set with `fabric.state.output[key] = val`
     # they would be persistant until the program exited

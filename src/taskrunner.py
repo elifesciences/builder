@@ -78,7 +78,7 @@ TASK_LIST = [
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
 # this list of debug tasks don't require the full path to be used
-# for example: 'BLDR_ROLE=admin ./bldr highstate' will execute the 'highstate'
+# for example: 'BLDR_ROLE=admin ./bldr highstate' will execute the 'highstate' task
 UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.highstate,
     cfn.pillar,

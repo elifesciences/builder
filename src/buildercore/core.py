@@ -356,8 +356,8 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 raise err
 
     # something less stateful like a context manager?
-    # lsh@2019-10: these params are passed to the settings context manager but are
-    # still (deliberately) quite stateful.
+    # lsh@2019-10: unlike other parameters (eventually) passed to the `settings` context manager, these values are not reverted until program exit
+    # this is to preserve existing behaviour
     params['fabric.state.output'] = {
         'aborts': False
     }
