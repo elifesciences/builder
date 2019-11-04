@@ -45,7 +45,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-08b79d142dbdea6de # GENERATED created from basebox--1804
+            ami: ami-0f9d9845b9493b5dd # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -231,13 +231,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-08b79d142dbdea6de # GENERATED created from basebox--1804
+                ami: ami-0f9d9845b9493b5dd # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-08b79d142dbdea6de # GENERATED created from basebox--1804
+                ami: ami-0f9d9845b9493b5dd # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 16.04, deprecated
@@ -1481,50 +1481,6 @@ figure-viewer:
                 website-configuration:
                     index-document: index.html
 
-peerscout:
-    description: PeerScout
-    subdomain: peerscout
-    repo: https://github.com/elifesciences/peerscout
-    formula-repo: https://github.com/elifesciences/peerscout-formula
-    aws:
-        type: t2.xlarge # explicitly 16GB RAM for heavy background processing
-        ports:
-            - 22
-            - 80
-            - 443
-        ext:
-            # external hdd
-            size: 20 # GB
-            device: /dev/sdf
-            type: standard
-    aws-alt:
-        end2end:
-            rds:
-                storage: 5
-                storage-type: Standard
-                backup-retention: 2 # days
-            ext:
-                # external hdd
-                size: 100 # GB
-                device: /dev/sdf
-                type: standard
-        prod:
-            rds:
-                storage: 5
-                storage-type: Standard
-                multi-az: true
-            ext:
-                # external hdd
-                size: 100 # GB
-                device: /dev/sdf
-                type: standard
-            subdomains:
-                - peerscout
-    vagrant:
-        ports:
-            1241: 80
-        ram: 4096
-
 sciencebeam-texture:
     description: Sciencebeam and Texture proof of concept
     subdomain: sciencebeam-texture
@@ -2171,6 +2127,7 @@ kubernetes-aws:
             helm: true
             external-dns:
                 domain-filter: "elifesciences.org"
+            efs: true
 
 large-repo-wrangler:
     description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.

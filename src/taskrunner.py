@@ -126,8 +126,8 @@ def mk_task_map(task, qualified=True):
 def generate_task_list(show_debug_tasks=False):
     """returns a collated list of maps with task information.
 
-    [{"name": "fn", "fn": pathto.fn1, "description": "foo bar baz"}, ...]
-     {"name": "pathto.fn", "fn": pathto.fn2, "description": "foo bar baz"}, ...]"""
+    [{"name": "ssh", "fn": cfn.ssh, "description": "foobar baz"}, ...]
+     {"name": "cfn.deploy", "fn": cfn.deploy, "description": "bar barbar"}, ...]"""
 
     def to_list(task_list, qualified=True):
         return [mk_task_map(task, qualified) for task in task_list]
@@ -237,7 +237,10 @@ def main(arg_list):
     # bash hands us an escaped string value via ./bldr
     command_string = arg_list[0].strip()
 
-    if not command_string or command_string in ["-l", "--list", "-h", "--help", "-?"]:
+    # print('this is what we see after bash:')
+    # print(command_string)
+
+    if not command_string or command_string in ["-l", "--list"]:
         print("Available commands:\n")
         indent = 4
         max_path_len = reduce(max, [len(tm['name']) for tm in task_map_list])
@@ -251,7 +254,9 @@ def main(arg_list):
             description = tm['description'][:max_description_len]
             leading_indent = ' ' * indent
             print(leading_indent + task_name + offset + description)
-        return 0
+
+        # no explicit invocation of help gets you an error code
+        return 0 if command_string else 1
 
     task_result = exec_task(command_string, task_map_list)
     return task_result['rc']

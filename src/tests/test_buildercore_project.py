@@ -14,7 +14,7 @@ ALL_PROJECTS = [
     'project-with-cluster-integration-tests', 'project-with-db-params', 'project-with-rds-only', 'project-with-rds-encryption', 'project-with-rds-major-version-upgrade',
     'project-with-elasticache-redis', 'project-with-multiple-elasticaches', 'project-with-fully-overridden-elasticaches',
     'project-on-gcp', 'project-with-bigquery-datasets-only', 'project-with-bigquery', 'project-with-bigquery-remote-schemas',
-    'project-with-eks', 'project-with-eks-helm', 'project-with-eks-external-dns',
+    'project-with-eks', 'project-with-eks-helm', 'project-with-eks-external-dns', 'project-with-eks-efs',
 ]
 
 class TestProject(base.BaseCase):
