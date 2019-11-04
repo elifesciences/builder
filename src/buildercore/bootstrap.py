@@ -413,6 +413,7 @@ def download_master_builder_key(stackname):
     master_stack = core.find_master(region)
     private_key = "/root/.ssh/id_rsa"
     with stack_conn(master_stack):
+        # lsh@2019-11: disabled. we do actually get better exceptions with this disabled
         # with fabric.api.show('exceptions'): # I actually get better exceptions with this disabled
         #    return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
         return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
