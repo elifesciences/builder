@@ -1,6 +1,5 @@
 # Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
 
-import sys
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
 import fabric.exceptions as fab_exceptions
