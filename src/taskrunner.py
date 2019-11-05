@@ -2,6 +2,7 @@ import sys, os, traceback
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
 import fabric.network
 from decorators import echo_output
+from functools import reduce
 
 @echo_output
 def ping():
@@ -13,6 +14,9 @@ def echo(msg, *args, **kwargs):
         return "received: %s with args: %s and kwargs: %s" % (msg, args, kwargs)
     return "received: %s" % (msg,)
 
+
+# 'unqualified' tasks are those that can be called just by their function name.
+# for example: './bldr start' is the unqualified function 'lifecycle.start'
 UNQUALIFIED_TASK_LIST = [
     ping, echo,
 
@@ -36,6 +40,8 @@ UNQUALIFIED_TASK_LIST = [
     lifecycle.update_dns,
 ]
 
+# these are 'qualified' tasks where the full path to the function must be used
+# for example: './bldr buildvars.switch_revision'
 TASK_LIST = [
     metrics.regenerate_results, # todo: remove
 
@@ -71,12 +77,17 @@ TASK_LIST = [
     vault.token_revoke,
 ]
 
+# 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
+# this list of debug tasks don't require the full path to be used
+# for example: 'BLDR_ROLE=admin ./bldr highstate' will execute the 'highstate' task
 UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.highstate,
     cfn.pillar,
     cfn.aws_stack_list,
 ]
 
+# same as above, but the task name must be fully written out
+# for example: 'BLDR_ROLE=admin ./bldr master.download_keypair'
 DEBUG_TASK_LIST = [
     aws.rds_snapshots,
     aws.detailed_stack_list,
@@ -101,9 +112,11 @@ DEBUG_TASK_LIST = [
 ]
 
 def mk_task_map(task, qualified=True):
+    """returns a map of information about the given task function.
+    when `qualified` is `False`, the path to the task is truncated to just the task name"""
     path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
     unqualified_path = task.__name__
-    description = (task.__doc__ or '').strip().replace('\n', ' ')[:60]
+    description = (task.__doc__ or '').strip().replace('\n', ' ')
     return {
         "name": path if qualified else unqualified_path,
         "path": path,
@@ -236,11 +249,17 @@ def main(arg_list):
     if not command_string or command_string in ["-l", "--list"]:
         print("Available commands:\n")
         indent = 4
+        max_path_len = reduce(max, [len(tm['name']) for tm in task_map_list])
+        task_description_gap = 2
+        max_description_len = 60
         for tm in task_map_list:
             path_len = len(tm['name'])
-            max_path_len = 35
-            offset = (max_path_len - path_len) + 2
-            print("%s%s%s%s" % (' ' * indent, tm['name'], ' ' * offset, tm['description']))
+            offset = (max_path_len - path_len) + task_description_gap
+            offset = ' ' * offset
+            task_name = tm['name']
+            description = tm['description'][:max_description_len]
+            leading_indent = ' ' * indent
+            print(leading_indent + task_name + offset + description)
 
         # no explicit invocation of help gets you an error code
         return 0 if command_string else 1

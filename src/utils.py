@@ -2,7 +2,7 @@ import logging
 import os, sys
 from buildercore import config
 from buildercore.utils import second, last, gtpy2
-from fabric.api import local
+from buildercore.command import local
 from buildercore import core
 
 LOG = logging.getLogger(__name__)

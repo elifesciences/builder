@@ -1,6 +1,6 @@
 from io import BytesIO
 import json, base64
-from fabric.api import get
+from .command import get
 import logging
 
 LOG = logging.getLogger(__name__)

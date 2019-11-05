@@ -1,5 +1,5 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
-from fabric.api import sudo, put
+from buildercore.command import sudo, put
 from io import StringIO
 from decorators import requires_aws_stack
 from buildercore.config import BOOTSTRAP_USER

@@ -1,6 +1,6 @@
 import logging
 from tests import base
-from buildercore import bootstrap, cloudformation, utils, core
+from buildercore import bootstrap, cloudformation, utils, core, command
 from buildercore.config import BOOTSTRAP_USER
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
@@ -78,6 +78,6 @@ class TestWithInstance(base.BaseIntegrationCase):
 
     def test_core_listfiles_remote(self):
         with core.stack_conn(self.stackname, username=BOOTSTRAP_USER):
-            results = core.listfiles_remote('/')
+            results = command.remote_listfiles('/')
             sublist = ['/tmp', '/bin', '/boot', '/var'] # /etc
             self.assertTrue(set(results) >= set(sublist))

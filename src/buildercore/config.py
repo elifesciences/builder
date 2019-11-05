@@ -1,30 +1,17 @@
 """Configuration file for `buildercore`.
 
-`buildercore.config` is a place to record assumptions really.
-Settings that the users are encouraged to tweak should go into the
-`settings.yml` file at the root of the project and incorporated here.
-
-buildercore was originally part of the builder, then separated out
-into it's own project 'builder-core' but has now been re-integrated.
+buildercore was originally part of builder, then separated out
+into it's own project 'builder-core' but was eventually re-integrated.
 This transition meant that `src/buildercore/` is still neatly separated
-from the interface logic in the fabfile.
+from the interface logic in `./src/taskrunner.py`.
 
 """
 import os
 from os.path import join
-from fabric.api import env
 from buildercore import utils
 from buildercore.utils import lmap, lfilter
 from kids.cache import cache
 import logging
-
-
-# no un-catchable errors from Fabric
-
-class FabricException(Exception):
-    pass
-
-env.abort_exception = FabricException
 
 class ConfigurationError(Exception):
     pass
@@ -34,9 +21,6 @@ class ConfigurationError(Exception):
 # a file is an absolute path to a file
 # filenames are names of files without any other context
 
-
-# these users should probably be specified in the project/org config file
-# as 'defaults'. deploy user especially
 ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
@@ -138,6 +122,7 @@ CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'cloudfront', 'e
 PROJECTS_FILES = ['projects/elife.yaml']
 
 USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
+
 #
 # testing
 #

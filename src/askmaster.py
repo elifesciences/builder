@@ -3,7 +3,7 @@
 Requires access to the master server."""
 
 from buildercore import core
-from fabric.api import sudo
+from buildercore.command import sudo
 from buildercore.core import stack_conn
 import utils
 

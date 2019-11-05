@@ -7,10 +7,9 @@ import logging
 from pprint import pformat
 import re
 import backoff
-from fabric.contrib import files
-import fabric.exceptions as fabric_exceptions
+from .command import remote_file_exists
 import boto # route53 boto2 > route53 boto3
-from . import config, core
+from . import config, core, command
 from .core import boto_conn, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure, lmap
 from .context_handler import load_context
@@ -166,7 +165,7 @@ def _some_node_is_not_ready(stackname, **kwargs):
         # even if their state is `running` according to the latest API call
         LOG.info("No running instances yet: %s", e)
         return True
-    except config.FabricException as e:
+    except command.FabricException as e:
         # login problem is a legitimate error for booting servers,
         # but also a signal the SSH private key is not allowed if it persists
         if "Needed to prompt for a connection or sudo password" in str(e):
@@ -272,8 +271,8 @@ def _daemons_ready():
     path = '/var/lib/cloud/instance/boot-finished'
 
     try:
-        return files.exists(path)
-    except fabric_exceptions.NetworkError:
+        return remote_file_exists(path)
+    except command.NetworkError:
         LOG.debug("failed to connect to %s...", node_id)
         return False
 

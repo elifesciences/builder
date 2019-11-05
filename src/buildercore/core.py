@@ -5,15 +5,13 @@ suggestions for a better name than 'core' welcome."""
 
 import os, glob, json, re
 from os.path import join
-from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
+from . import utils, config, project, decorators, command # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
 from contextlib import contextmanager
-from fabric.api import settings, execute, env, parallel, serial, hide, run, sudo
-from fabric.exceptions import NetworkError
-from fabric.state import output
+from .command import settings, execute, parallel, serial, env, NetworkError
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
@@ -352,13 +350,17 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                     continue
                 else:
                     raise err
-            except config.FabricException as err:
+            except command.FabricException as err:
                 LOG.error(str(err).replace("\n", "    "))
                 # available as 'results' to fabric.tasks.error
                 raise err
 
     # something less stateful like a context manager?
-    output['aborts'] = False
+    # lsh@2019-10: unlike other parameters passed to the `settings` context manager, these values are not reverted until program exit
+    # this is to preserve existing behaviour
+    params['fabric.state.output'] = {
+        'aborts': False
+    }
 
     # TODO: extract in buildercore.concurrency
     if not concurrency:
@@ -730,14 +732,3 @@ def project_data_for_stackname(stackname):
     if 'gcp-alt' in project_data and instance_id in project_data['gcp-alt']:
         project_data = project.set_project_alt(project_data, 'gcp', instance_id)
     return project_data
-
-def listfiles_remote(path=None, use_sudo=False):
-    """returns a list of files in a directory at `path` as absolute paths"""
-    ensure(path, "path to remote directory required")
-    with hide('output'):
-        runfn = sudo if use_sudo else run
-        path = "%s/*" % path.rstrip("/")
-        stdout = runfn("for i in %s; do echo $i; done" % path)
-        if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
-            return []
-        return stdout.splitlines()

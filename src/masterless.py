@@ -2,8 +2,7 @@ import os
 from os.path import join
 from collections import OrderedDict
 from pprint import pformat
-from fabric.api import lcd, settings
-from fabric.operations import local
+from buildercore.command import lcd, settings, local
 from decorators import requires_project
 from buildercore import bootstrap, checks, core, context_handler, config
 from buildercore.utils import ensure, subdict
