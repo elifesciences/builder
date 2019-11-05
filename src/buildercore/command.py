@@ -1,10 +1,10 @@
 # Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
 
-import sys
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
 import fabric.exceptions as fab_exceptions
 import fabric.state
+import fabric.network
 import logging
 from io import BytesIO
 from . import utils
@@ -20,12 +20,8 @@ env = fab_api.env
 class CommandException(Exception):
     pass
 
-# lsh@2019-10: deprecated in favour of CommandException
-class FabricException(CommandException):
-    pass
-
 # no un-catchable errors from Fabric
-env.abort_exception = FabricException
+env.abort_exception = CommandException
 
 NetworkError = fab_exceptions.NetworkError
 
@@ -59,23 +55,18 @@ remote_sudo = fab_api.sudo
 upload = fab_api.put
 download = fab_api.get
 remote_file_exists = fab_files.exists
-
-# https://github.com/mathiasertl/fabric/blob/master/fabric/utils.py#L30-L63
-def abort(msg):
-    msg = "\nFatal error: %s\nAborting" % msg
-    sys.stderr.write(msg)
-    sys.stderr.flush()
-    exit(1)
+network_disconnect_all = fabric.network.disconnect_all
 
 #
-# aliases/deprecated api
+# deprecated api
+# left commented out for reference
 #
 
-cd = rcd
-put = upload
-get = download
-run = remote
-sudo = remote_sudo
+#cd = rcd
+#put = upload
+#get = download
+#run = remote
+#sudo = remote_sudo
 
 #
 # moved
@@ -88,7 +79,7 @@ def remote_listfiles(path=None, use_sudo=False):
     if not path:
         raise AssertionError("path to remote directory required")
     with fab_api.hide('output'):
-        runfn = sudo if use_sudo else run
+        runfn = remote_sudo if use_sudo else remote
         path = "%s/*" % path.rstrip("/")
         stdout = runfn("for i in %s; do echo $i; done" % path)
         if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches

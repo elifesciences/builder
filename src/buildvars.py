@@ -1,12 +1,12 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
-from buildercore.command import sudo, put
+from buildercore.command import remote_sudo, upload
 from io import StringIO
 from decorators import requires_aws_stack
 from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
 from buildercore import utils as core_utils, trop, keypair
-from buildercore.utils import ensure, lmap
+from buildercore.utils import ensure
 from pprint import pprint
 import utils
 import logging
@@ -103,12 +103,9 @@ def _update_remote_bvars(stackname, buildvars):
 
     encoded = encode_bvars(buildvars)
     fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
-    cmds = [
-        # make a backup
-        'if [ -f /etc/build-vars.json.b64 ]; then cp /etc/build-vars.json.b64 /tmp/build-vars.json.b64.%s; fi;' % fid,
-    ]
-    lmap(sudo, cmds)
-    put(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
+    # make a backup
+    remote_sudo('if [ -f /etc/build-vars.json.b64 ]; then cp /etc/build-vars.json.b64 /tmp/build-vars.json.b64.%s; fi;' % fid)
+    upload(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
     LOG.info("%r updated", stackname)
 
 #

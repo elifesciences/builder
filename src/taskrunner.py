@@ -1,6 +1,6 @@
 import sys, os, traceback
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
-import fabric.network
+from buildercore import command
 from decorators import echo_output
 from functools import reduce
 
@@ -229,8 +229,7 @@ def exec_task(task_str, task_map_list):
 
     finally:
         # close any outstanding network connections
-        # note: this reference to Fabric won't last very long
-        fabric.network.disconnect_all()
+        command.network_disconnect_all()
 
 def main(arg_list):
     show_debug_tasks = os.environ.get("BLDR_ROLE") == "admin"

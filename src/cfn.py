@@ -2,7 +2,7 @@ import os
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
-from buildercore.command import local, run, sudo, put, get, abort, settings, remote_file_exists, FabricException, NetworkError
+from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
 import utils, buildvars
 from decorators import requires_project, requires_aws_stack, echo_output, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
@@ -183,7 +183,7 @@ def highstate(stackname):
 def pillar(stackname):
     "returns the pillar data a minion is using"
     with stack_conn(stackname, username=BOOTSTRAP_USER):
-        sudo('salt-call pillar.items')
+        remote_sudo('salt-call pillar.items')
 
 # TODO: deletion candidate
 @echo_output
@@ -272,7 +272,7 @@ def owner_ssh(stackname, node=None):
 def _interactive_ssh(command):
     try:
         local(command)
-    except FabricException as e:
+    except CommandException as e:
         LOG.warn(e)
 
 @requires_aws_stack
@@ -292,7 +292,7 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
         with stack_conn(stackname, username=BOOTSTRAP_USER if use_bootstrap_user else DEPLOY_USER, node=node):
             if allow_missing and not remote_file_exists(path):
                 return # skip download
-            get(path, destination, use_sudo=True)
+            download(path, destination, use_sudo=True)
 
     _download(path, destination)
 
@@ -312,7 +312,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, confir
         if remote_file_exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
             exit(1)
-        put(local_path, remote_path)
+        upload(local_path, remote_path)
 
 #
 # these might need a better home
@@ -322,7 +322,8 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, confir
 # pylint: disable-msg=too-many-arguments
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
     if command is None:
-        abort("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
+        utils.errcho("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
+        exit(1)
     LOG.info("Connecting to: %s", stackname)
 
     instances = _check_want_to_be_running(stackname)
@@ -343,12 +344,12 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
         with settings(**custom_settings):
             return stack_all_ec2_nodes(
                 stackname,
-                (run, {'command': command}),
+                (remote, {'command': command}),
                 username=username,
                 abort_on_prompts=True,
                 concurrency=concurrency_for(stackname, concurrency),
                 node=int(node) if node else None
             )
-    except FabricException as e:
+    except CommandException as e:
         LOG.error(e)
         exit(2)

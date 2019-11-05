@@ -14,7 +14,7 @@ from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER
-from .command import sudo, remote_file_exists, remote_listfiles, fab_get, fab_put, fab_put_data
+from .command import remote_sudo, remote_file_exists, remote_listfiles, fab_get, fab_put, fab_put_data
 import backoff
 import botocore
 from kids.cache import cache as cached
@@ -37,7 +37,7 @@ def put_script(script_filename, remote_script):
     """uploads a script for SCRIPTS_PATH in remote_script location, making it executable
     WARN: assumes you are connected to a stack"""
     temporary_script = _put_temporary_script(script_filename)
-    sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
+    remote_sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
 
 @backoff.on_exception(backoff.expo, command.NetworkError, max_time=60)
 def run_script(script_filename, *script_params, **environment_variables):
@@ -51,8 +51,8 @@ def run_script(script_filename, *script_params, **environment_variables):
 
     env_string = ['%s=%s' % (k, v) for k, v in environment_variables.items()]
     cmd = ["/bin/bash", remote_script] + lmap(escape_string_parameter, list(script_params))
-    retval = sudo(" ".join(env_string + cmd))
-    sudo("rm " + remote_script) # remove the script after executing it
+    retval = remote_sudo(" ".join(env_string + cmd))
+    remote_sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
     LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
     return retval
@@ -403,7 +403,7 @@ def upload_master_builder_key(key):
     try:
         # NOTE: overwrites any existing master key on machine being updated
         fab_put(local_path=key, remote_path=private_key, use_sudo=True)
-        sudo("rm -f %s && chown root:root %s && chmod 600 %s" % (old_public_key, private_key, private_key))
+        remote_sudo("rm -f %s && chown root:root %s && chmod 600 %s" % (old_public_key, private_key, private_key))
     finally:
         key.close()
 
@@ -556,7 +556,7 @@ def remove_minion_key(stackname):
     region = pdata['aws']['region']
     master_stack = core.find_master(region)
     with stack_conn(master_stack):
-        sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
+        remote_sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
 
 # TODO: bootstrap.py may not be best place for this
 def master_minion_keys(master_stackname, group_by_stackname=True):
@@ -587,7 +587,7 @@ def remove_all_orphaned_keys(master_stackname):
     with stack_conn(master_stackname):
         for path in orphaned_keys(master_stackname):
             fname = os.path.basename(path) # prevent accidental deletion of anything not a key
-            sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
+            remote_sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
 def destroy(stackname):
     # TODO: if context does not exist anymore on S3,

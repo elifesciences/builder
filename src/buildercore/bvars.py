@@ -1,6 +1,6 @@
 from io import BytesIO
 import json, base64
-from .command import get
+from .command import download
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -24,5 +24,5 @@ def encode_bvars(data):
 def read_from_current_host():
     "returns the buildvars from the CURRENTLY CONNECTED host"
     strbuffer = BytesIO()
-    get('/etc/build-vars.json.b64', strbuffer)
+    download('/etc/build-vars.json.b64', strbuffer)
     return decode_bvars(strbuffer.getvalue())
