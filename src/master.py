@@ -4,7 +4,7 @@ See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
 import buildvars, utils
-from buildercore.command import sudo, local
+from buildercore.command import remote_sudo, local
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
 from decorators import echo_output, requires_aws_stack
@@ -121,7 +121,7 @@ def remaster(stackname, new_master_stackname):
 
     # remove knowledge of old master
     def work():
-        sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
+        remote_sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
     LOG.info("removing old master key from minion")
     core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
 

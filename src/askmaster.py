@@ -3,14 +3,14 @@
 Requires access to the master server."""
 
 from buildercore import core
-from buildercore.command import sudo
+from buildercore.command import remote_sudo
 from buildercore.core import stack_conn
 import utils
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     "runs the given command on all aws instances. given command must escape double quotes"
     with stack_conn(core.find_master(utils.find_region())):
-        sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
+        remote_sudo("salt %(minions)s %(module)s %(cmd)s --timeout=30" % locals())
 
 def fail2ban_running():
     return salt_master_cmd(module="state.single", cmd="service.running name=fail2ban")
