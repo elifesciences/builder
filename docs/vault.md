@@ -116,7 +116,7 @@ Non-`master-server` stacks can pull secrets from Vault through the Salt master, 
 | --------------- | ------------------ | -------------- | ------------- |
 | Vagrant         | Masterless         | No             | -             |
 | EC2             | Masterful          | Yes            | master-server |
-| EC2             | Masterless         | Yes            | master-server |
+| EC2             | Masterless         | No             | -             |
 
 `master-server` stacks cannot depend on themselves during bootstrap, and hence can't use Vault:
 
