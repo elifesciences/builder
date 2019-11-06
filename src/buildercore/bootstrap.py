@@ -8,7 +8,7 @@ import os, json, re
 from os.path import join
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, vault, sns as snsmod, command
+from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod, command
 from .context_handler import only_if as updates
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
