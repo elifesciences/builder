@@ -975,7 +975,7 @@ def _render_helm(context, template):
         'version': '0.2.3',
         'depends_on': ['kubernetes_cluster_role_binding.tiller'],
         'values': [
-            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n  stringData:\n    hello: world",
+            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
         ],
     })
 
