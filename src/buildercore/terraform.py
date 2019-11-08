@@ -14,6 +14,7 @@ EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
 HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
+HELM_CHART_VERSION_RAW = '0.2.3',
 HELM_APP_VERSION_EXTERNAL_DNS = '0.5.16'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
@@ -973,6 +974,9 @@ def _render_helm(context, template):
         'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
         'chart': 'incubator/raw',
         'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+        'values': [
+            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
+        ],
     })
 
     if context['eks']['external-dns']:
