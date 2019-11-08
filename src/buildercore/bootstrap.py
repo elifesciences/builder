@@ -8,7 +8,7 @@ import os, json, re
 from os.path import join
 from collections import OrderedDict
 from datetime import datetime
-from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, vault, sns as snsmod, command
+from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod, command
 from .context_handler import only_if as updates
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
@@ -507,16 +507,6 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             envvars = {
                 'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', ''),
             }
-            # TODO: only do this if is_master is False, and then leave the self-connection of the masterless master-server to itself to the formula?
-            # or do it here through the scripts for consistency?
-            # since Vault is not running at this time, we have to do it in the formula
-            if not is_master:
-                vault_addr = context['vault']['address']
-                # TODO: reduce scope to a project if possible?
-                vault_token = vault.token_create(context['vault']['address'], vault.SALT_MASTERLESS_POLICY, display_name=context['stackname'])
-                vault_arguments = [vault_addr, vault_token]
-            else:
-                vault_arguments = []
 
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
             run_script(
@@ -524,7 +514,6 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
                 formula_list,
                 fdata['private-repo'],
                 fdata['configuration-repo'],
-                *vault_arguments,
                 **envvars
             )
 
