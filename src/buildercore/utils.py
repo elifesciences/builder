@@ -294,7 +294,7 @@ def json_dumps(obj, dangerous=False, **kwargs):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
         elif dangerous:
-            return '[unserializable]'
+            return '[unserializable: %s]' % (str(obj))
         else:
             raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
     return json.dumps(obj, default=json_handler, **kwargs)

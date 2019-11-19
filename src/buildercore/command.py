@@ -1,5 +1,6 @@
 # Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
 
+import time
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
 import fabric.exceptions as fab_exceptions
@@ -8,6 +9,31 @@ import fabric.network
 import logging
 from io import BytesIO
 from . import utils
+import threadbare
+
+COMMAND_LOG = []
+
+_default_env = {}
+_default_env.update(fab_api.env)
+
+def envdiff():
+    "returns only the elements that are different between the default Fabric env and the env as it is right now"
+    return {k: v for k, v in fab_api.env.items() if _default_env.get(k) != v}
+
+def spy(fn):
+    def _wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+
+        timestamp = time.time()
+        funcname = fn.__name__
+        
+        COMMAND_LOG.append([timestamp, funcname, args, kwargs])
+        with open('/tmp/command-log.jsonl', 'a') as fh:
+            msg = utils.json_dumps({"ts": timestamp, "fn": funcname, "args":args, "kwargs":kwargs, 'env': envdiff()}, dangerous=True)
+            fh.write(msg + "\n")
+
+        return result
+    return _wrapper
 
 LOG = logging.getLogger(__name__)
 
@@ -21,7 +47,8 @@ class CommandException(Exception):
     pass
 
 # no un-catchable errors from Fabric
-env.abort_exception = CommandException
+#env.abort_exception = CommandException
+env['abort_exception'] = CommandException # env is just a dictionary with attribute access
 
 NetworkError = fab_exceptions.NetworkError
 
@@ -29,11 +56,11 @@ NetworkError = fab_exceptions.NetworkError
 # api
 #
 
-local = fab_api.local
-execute = fab_api.execute
-parallel = fab_api.parallel
-serial = fab_api.serial
-hide = fab_api.hide
+local = spy(fab_api.local)
+execute = spy(fab_api.execute)
+parallel = spy(fab_api.parallel)
+serial = spy(fab_api.serial)
+hide = spy(fab_api.hide)
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
 def settings(*args, **kwargs):
@@ -45,17 +72,17 @@ def settings(*args, **kwargs):
     for key, val in kwargs.pop('fabric.state.output', {}).items():
         fabric.state.output[key] = val
 
-    return fab_api.settings(*args, **kwargs)
+    return spy(fab_api.settings)(*args, **kwargs)
 
-lcd = fab_api.lcd # local change dir
-rcd = fab_api.cd # remote change dir
+lcd = spy(fab_api.lcd) # local change dir
+rcd = spy(fab_api.cd) # remote change dir
 
-remote = fab_api.run
-remote_sudo = fab_api.sudo
-upload = fab_api.put
-download = fab_api.get
-remote_file_exists = fab_files.exists
-network_disconnect_all = fabric.network.disconnect_all
+remote = spy(fab_api.run)
+remote_sudo = spy(fab_api.sudo)
+upload = spy(fab_api.put)
+download = spy(fab_api.get)
+remote_file_exists = spy(fab_files.exists)
+network_disconnect_all = spy(fabric.network.disconnect_all)
 
 #
 # deprecated api
@@ -78,7 +105,7 @@ def remote_listfiles(path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     if not path:
         raise AssertionError("path to remote directory required")
-    with fab_api.hide('output'):
+    with spy(fab_api.hide)('output'):
         runfn = remote_sudo if use_sudo else remote
         path = "%s/*" % path.rstrip("/")
         stdout = runfn("for i in %s; do echo $i; done" % path)
