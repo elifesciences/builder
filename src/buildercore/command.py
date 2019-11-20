@@ -59,7 +59,8 @@ NetworkError = fab_exceptions.NetworkError
 # api
 #
 
-local = spy(fab_api.local)
+#local = spy(fab_api.local)
+local = spy(threadbare.operations.local)
 #execute = spy(fab_api.execute)
 execute = partial(spy(threadbare.execute.execute_with_hosts), env)
 
