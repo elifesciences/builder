@@ -11,7 +11,7 @@ from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
 from contextlib import contextmanager
-from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
+from .command import settings, execute, parallel, serial, env, CommandException, NetworkError, spy
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
@@ -247,6 +247,8 @@ def _ec2_connection_params(stackname, username, **kwargs):
     # http://docs.fabfile.org/en/1.14/usage/env.html
     params = {'user': username}
     pem = stack_pem(stackname)
+    # todo: handle other non-rsa private keys
+    params['key_filename'] = os.path.expanduser("~/.ssh/id_rsa")
     # handles cases where we want to establish a connection to run a task
     # when machine has failed to provision correctly.
     if username == config.BOOTSTRAP_USER:

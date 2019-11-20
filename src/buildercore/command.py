@@ -9,35 +9,38 @@ import fabric.network
 import logging
 from io import BytesIO
 from . import utils
-import threadbare
-
+import threadbare.operations
+import threadbare.state
+import threadbare.execute
+from functools import partial
 COMMAND_LOG = []
 
 _default_env = {}
 _default_env.update(fab_api.env)
 
 def envdiff():
-    "returns only the elements that are different between the default Fabric env and the env as it is right now"
+    "temporary. returns only the elements that are different between the default Fabric env and the env as it is right now"
     return {k: v for k, v in fab_api.env.items() if _default_env.get(k) != v}
 
 def spy(fn):
+    "temporary. wrapper to inspect inputs to commands"
     def _wrapper(*args, **kwargs):
-        result = fn(*args, **kwargs)
-
         timestamp = time.time()
-        funcname = fn.__name__
-        
-        COMMAND_LOG.append([timestamp, funcname, args, kwargs])
+        funcname = getattr(fn, '__name__', '???')
+        lst = [timestamp, funcname, args, kwargs]
+        print(lst)
+        COMMAND_LOG.append(lst)
         with open('/tmp/command-log.jsonl', 'a') as fh:
             msg = utils.json_dumps({"ts": timestamp, "fn": funcname, "args":args, "kwargs":kwargs, 'env': envdiff()}, dangerous=True)
             fh.write(msg + "\n")
-
+        result = fn(*args, **kwargs)
         return result
     return _wrapper
 
 LOG = logging.getLogger(__name__)
 
-env = fab_api.env
+#env = fab_api.env
+env = threadbare.state.ENV
 
 #
 # exceptions
@@ -57,12 +60,17 @@ NetworkError = fab_exceptions.NetworkError
 #
 
 local = spy(fab_api.local)
-execute = spy(fab_api.execute)
-parallel = spy(fab_api.parallel)
-serial = spy(fab_api.serial)
+#execute = spy(fab_api.execute)
+execute = partial(spy(threadbare.execute.execute_with_hosts), env)
+
+#parallel = spy(fab_api.parallel)
+parallel = spy(threadbare.execute.parallel)
+#serial = spy(fab_api.serial)
+serial = spy(threadbare.execute.serial)
 hide = spy(fab_api.hide)
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
+'''
 def settings(*args, **kwargs):
     "a context manager that alters mutable application state for functions called within it's scope"
 
@@ -73,12 +81,16 @@ def settings(*args, **kwargs):
         fabric.state.output[key] = val
 
     return spy(fab_api.settings)(*args, **kwargs)
+'''
+settings = spy(threadbare.state.settings)
 
 lcd = spy(fab_api.lcd) # local change dir
 rcd = spy(fab_api.cd) # remote change dir
 
-remote = spy(fab_api.run)
-remote_sudo = spy(fab_api.sudo)
+#remote = spy(fab_api.run)
+remote = spy(threadbare.operations.remote)
+#remote_sudo = spy(fab_api.sudo)
+remote_sudo = spy(threadbare.operations.remote_sudo)
 upload = spy(fab_api.put)
 download = spy(fab_api.get)
 remote_file_exists = spy(fab_files.exists)
