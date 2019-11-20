@@ -94,7 +94,8 @@ remote = spy(threadbare.operations.remote)
 remote_sudo = spy(threadbare.operations.remote_sudo)
 upload = spy(fab_api.put)
 download = spy(fab_api.get)
-remote_file_exists = spy(fab_files.exists)
+#remote_file_exists = spy(fab_files.exists)
+remote_file_exists = spy(threadbare.operations.remote_file_exists)
 network_disconnect_all = spy(fabric.network.disconnect_all)
 
 #
