@@ -951,7 +951,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'Environment': self.environment,
                     'Name': 'project-with-eks--%s' % self.environment,
                     'Cluster': 'project-with-eks--%s' % self.environment,
-                    'kubernetes.io/cluster/%s': 'owned',
+                    'kubernetes.io/cluster/project-with-eks--%s' % self.environment: 'owned',
                 }
             }
         )

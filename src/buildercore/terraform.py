@@ -697,7 +697,7 @@ def _render_eks_workers_security_group(context, template):
     })
 
     security_group_tags = aws.generic_tags(context)
-    security_group_tags['kubernetes.io/cluster/%s'] = 'owned'
+    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
     template.populate_resource('aws_security_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'description': 'Security group for all worker nodes in the cluster',
