@@ -50,8 +50,11 @@ class CommandException(Exception):
     pass
 
 # no un-catchable errors from Fabric
-#env.abort_exception = CommandException
-env['abort_exception'] = CommandException # env is just a dictionary with attribute access
+#env.abort_exception = CommandException # env is just a dictionary with attribute access
+
+# TODO: how to handle this ...
+# with initial_settings() ... ? we could explicitly go from an empty environment to default settings
+#env['abort_exception'] = CommandException
 
 NetworkError = fab_exceptions.NetworkError
 
