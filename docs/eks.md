@@ -67,6 +67,17 @@ helm status my-release-name
 
 A project can be configured to create a cluster with the `eks` configuration in `elife.yaml`.
 
+### Delete a cluster
+
+A cluster cannot be deleted as-is as its operations create cloud resources that become dependent upon the cluster resources, or would become leftovers if not deleted at the right level of abstraction.
+
+Checklist to go through before destruction:
+
+- delete all Helm releases (should take care of DNS entries from `Service` instances)
+- scale worker nodes down to 0 (untested but should take care of ENI dependent on security groups)
+- delete ELBs that haven't been deleted yet (not sure if necessary)
+- delete security groups that haven't been deleted yet (not sure if necessary)
+
 ### See the moving parts
 
 builder generates Terraform templates that describe the set of EKS, EC2 and even some Helm-managed Kubernetes resources that are created inside an `eks`-enabling stack.
