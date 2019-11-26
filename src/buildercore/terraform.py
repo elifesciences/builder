@@ -629,6 +629,8 @@ def render_eks(context, template):
         _render_helm(context, template)
 
 def _render_eks_master_security_group(context, template):
+    security_group_tags = aws.generic_tags(context)
+    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
     template.populate_resource('aws_security_group', 'master', block={
         'name': '%s--master' % context['stackname'],
         'description': 'Cluster communication with worker nodes',
@@ -639,7 +641,7 @@ def _render_eks_master_security_group(context, template):
             'protocol': '-1',
             'cidr_blocks': ['0.0.0.0/0'],
         },
-        'tags': aws.generic_tags(context),
+        'tags': security_group_tags,
     })
 
 def _render_eks_master_role(context, template):
@@ -697,7 +699,7 @@ def _render_eks_workers_security_group(context, template):
     })
 
     security_group_tags = aws.generic_tags(context)
-    security_group_tags['kubernetes.io/cluster/%s'] = 'owned'
+    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
     template.populate_resource('aws_security_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'description': 'Security group for all worker nodes in the cluster',
