@@ -2121,9 +2121,9 @@ kubernetes-aws:
         ec2: false
         eks:
             worker:
-                type: t2.small    
+                type: t2.medium    
                 max-size: 4
-                desired-capacity: 3
+                desired-capacity: 2
             helm: true
             external-dns:
                 domain-filter: "elifesciences.org"
