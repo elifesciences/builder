@@ -43,7 +43,7 @@ def spy(fn):
         print(lst)
         COMMAND_LOG.append(lst)
         with open('/tmp/command-log.jsonl', 'a') as fh:
-            msg = utils.json_dumps({"ts": timestamp, "fn": funcname, "args":args, "kwargs":kwargs, 'env': envdiff()}, dangerous=True)
+            msg = utils.json_dumps({"ts": timestamp, "fn": funcname, "args": args, "kwargs": kwargs, 'env': envdiff()}, dangerous=True)
             fh.write(msg + "\n")
         result = fn(*args, **kwargs)
         return result
@@ -66,7 +66,7 @@ class CommandException(Exception):
     pass
 
 # no un-catchable errors from Fabric
-#env.abort_exception = CommandException # env is just a dictionary with attribute access
+# env.abort_exception = CommandException # env is just a dictionary with attribute access
 
 # TODO: how to handle this ...
 # with initial_settings() ... ? we could explicitly go from an empty environment to default settings
@@ -109,7 +109,7 @@ upload = api(fab_api.put, threadbare.operations.upload)
 download = api(fab_api.get, threadbare.operations.download)
 remote_file_exists = api(fab_files.exists, threadbare.operations.remote_file_exists)
 
-network_disconnect_all = api(fabric.network.disconnect_all, \
+network_disconnect_all = api(fabric.network.disconnect_all,
                              no_match("threadbare automatically closes ssh closes connections"))
 
 #

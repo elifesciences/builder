@@ -11,7 +11,7 @@ from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
 from contextlib import contextmanager
-from .command import settings, execute, parallel, serial, env, CommandException, NetworkError, spy
+from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
