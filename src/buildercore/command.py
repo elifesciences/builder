@@ -1,5 +1,4 @@
-# Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
-
+import os
 import time
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
@@ -13,6 +12,18 @@ import threadbare.operations
 import threadbare.state
 import threadbare.execute
 from functools import partial
+
+THREADBARE = 'threadbare'
+FABRIC = 'fabric'
+
+DEFAULT_BACKEND = FABRIC
+
+BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
+assert BACKEND in [FABRIC, THREADBARE]
+
+def api(fabric_fn, threadbare_fn):
+    return fabric_fn if BACKEND == FABRIC else threadbare_fn
+
 COMMAND_LOG = []
 
 _default_env = {}
@@ -24,6 +35,7 @@ def envdiff():
 
 def spy(fn):
     "temporary. wrapper to inspect inputs to commands"
+    # Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
     def _wrapper(*args, **kwargs):
         timestamp = time.time()
         funcname = getattr(fn, '__name__', '???')
@@ -37,10 +49,14 @@ def spy(fn):
         return result
     return _wrapper
 
+def no_match(msg):
+    def fn(*args, **kwargs):
+        return None
+    return fn
+
 LOG = logging.getLogger(__name__)
 
-#env = fab_api.env
-env = threadbare.state.ENV
+env = api(fab_api.env, threadbare.state.ENV)
 
 #
 # exceptions
@@ -62,20 +78,16 @@ NetworkError = fab_exceptions.NetworkError
 # api
 #
 
-#local = spy(fab_api.local)
-local = spy(threadbare.operations.local)
-#execute = spy(fab_api.execute)
-execute = partial(spy(threadbare.execute.execute_with_hosts), env)
+local = api(fab_api.local, threadbare.operations.local)
+execute = api(fab_api.execute, partial(threadbare.execute.execute_with_hosts, env))
+parallel = api(fab_api.parallel, threadbare.execute.parallel)
+serial = api(fab_api.serial, threadbare.execute.serial)
 
-#parallel = spy(fab_api.parallel)
-parallel = spy(threadbare.execute.parallel)
-#serial = spy(fab_api.serial)
-serial = spy(threadbare.execute.serial)
-hide = spy(fab_api.hide)
+hide = api(fab_api.hide, threadbare.operations.hide)
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
-'''
-def settings(*args, **kwargs):
+
+def fab_api_settings_wrapper(*args, **kwargs):
     "a context manager that alters mutable application state for functions called within it's scope"
 
     # these values were set with `fabric.state.output[key] = val`
@@ -84,22 +96,21 @@ def settings(*args, **kwargs):
     for key, val in kwargs.pop('fabric.state.output', {}).items():
         fabric.state.output[key] = val
 
-    return spy(fab_api.settings)(*args, **kwargs)
-'''
-settings = spy(threadbare.state.settings)
+    return fab_api.settings(*args, **kwargs)
 
-lcd = spy(fab_api.lcd) # local change dir
-rcd = spy(fab_api.cd) # remote change dir
+settings = api(fab_api_settings_wrapper, threadbare.state.settings)
 
-#remote = spy(fab_api.run)
-remote = spy(threadbare.operations.remote)
-#remote_sudo = spy(fab_api.sudo)
-remote_sudo = spy(threadbare.operations.remote_sudo)
-upload = spy(fab_api.put)
-download = spy(fab_api.get)
-#remote_file_exists = spy(fab_files.exists)
-remote_file_exists = spy(threadbare.operations.remote_file_exists)
-network_disconnect_all = spy(fabric.network.disconnect_all)
+lcd = api(fab_api.lcd, threadbare.operations.lcd) # local change dir
+rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir
+
+remote = api(fab_api.run, threadbare.operations.remote)
+remote_sudo = api(fab_api.sudo, threadbare.operations.remote_sudo)
+upload = api(fab_api.put, threadbare.operations.upload)
+download = api(fab_api.get, threadbare.operations.download)
+remote_file_exists = api(fab_files.exists, threadbare.operations.remote_file_exists)
+
+network_disconnect_all = api(fabric.network.disconnect_all, \
+                             no_match("threadbare automatically closes ssh closes connections"))
 
 #
 # deprecated api
@@ -122,7 +133,7 @@ def remote_listfiles(path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     if not path:
         raise AssertionError("path to remote directory required")
-    with spy(fab_api.hide)('output'):
+    with fab_api.hide('output'):
         runfn = remote_sudo if use_sudo else remote
         path = "%s/*" % path.rstrip("/")
         stdout = runfn("for i in %s; do echo $i; done" % path)
