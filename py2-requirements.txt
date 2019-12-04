@@ -24,3 +24,4 @@ PyYAML==4.2b2
 requests==2.20.0
 troposphere==2.3.3
 unittest2==1.1.0
+-e git+ssh://git@github.com/elifesciences/threadbare@develop#egg=threadbare
