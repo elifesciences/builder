@@ -16,6 +16,9 @@ if [ "$envname" = "py27" ]; then
 else
     coverage_options=
 fi
+
+pip install -U execnet==1.1
+
 pytest \
     $coverage_options \
     -n 4 \
