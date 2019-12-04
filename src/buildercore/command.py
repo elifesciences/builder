@@ -7,10 +7,7 @@ import fabric.state
 import fabric.network
 import logging
 from io import BytesIO
-from . import utils
-import threadbare.operations
-import threadbare.state
-import threadbare.execute
+from . import utils, threadbare
 from functools import partial
 
 THREADBARE = 'threadbare'
