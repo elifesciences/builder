@@ -1,9 +1,13 @@
 FROM python:3.5-alpine3.8
 
+# cmake + zlib-dev for parallel-ssh dependencies
+# paramiko is pure python and never needed it
 RUN apk add --no-cache \
     libressl-dev \
     musl-dev \
-    libffi-dev
+    libffi-dev \
+    cmake \
+    zlib-dev
 
 COPY requirements.txt /requirements.txt
 
@@ -17,6 +21,7 @@ RUN apk add --no-cache --virtual build-deps \
     pip install virtualenv && \
     mkdir /venv && \
     virtualenv --python=python3 /venv && \
+    /venv/bin/pip install parallel-ssh && \
     /venv/bin/pip install -r /requirements.txt && \
     apk del build-deps
 
