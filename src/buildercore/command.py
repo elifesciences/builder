@@ -143,10 +143,11 @@ def remote_listfiles(path=None, use_sudo=False):
     with fab_api.hide('output'):
         runfn = remote_sudo if use_sudo else remote
         path = "%s/*" % path.rstrip("/")
-        stdout = runfn("for i in %s; do echo $i; done" % path)
-        if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
+        result = runfn("for i in %s; do echo $i; done" % path)
+        stdout = result['stdout']
+        if stdout and stdout[0] == path: # some kind of bash artifact where it returns `/path/*` when no matches
             return []
-        return stdout.splitlines()
+        return stdout
 
 def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
     "wrapper around fabric.operations.get"
