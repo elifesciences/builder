@@ -17,13 +17,9 @@ else
     coverage_options=
 fi
 
-pip install -U execnet==1.1
-
 pytest \
     $coverage_options \
-    -n 4 \
-    --dist=loadscope \
-    -s \
+    --capture=no \
     --junitxml="build/pytest-$envname.xml" \
     src/tests src/integration_tests
 

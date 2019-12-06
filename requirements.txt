@@ -16,7 +16,6 @@ pylint==1.8.2
 pytest==3.5.0
 pytest-cov==2.5.1
 pytest-forked==0.2
-pytest-xdist==1.22.2
 python-dateutil==2.7.0
 python-slugify==1.2.4
 python-terraform==0.10.0

@@ -119,7 +119,7 @@ CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'cloudfront', 'e
 # believe it or not but buildercore.config is NOT the place for user config
 #
 
-PROJECTS_FILES = ['projects/elife.yaml']
+PROJECTS_FILES = ['projects/elife.yaml']  # , 'src/tests/fixtures/projects/']
 
 USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 

@@ -35,7 +35,7 @@ fi
 if [ ! -f .use-python-3.flag ]; then
     virtualenv --python=$python venv
 else
-    python3 -m venv venv
+    "$python" -m venv venv
 fi
 source venv/bin/activate
 
