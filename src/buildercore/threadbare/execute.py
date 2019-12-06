@@ -193,16 +193,17 @@ def execute(env, func, param_key=None, param_values=None):
 
 
 def execute_with_hosts(env, func, hosts=None):
-    "convenience wrapper around `execute`. calls `execute` on given `func` but uses `all_hosts`  "
-    with state.settings(env):
-        host_list = hosts or env.get("hosts") or []
-        # Fabric may know about many hosts ('all_hosts') but only be acting upon a subset of them ('hosts')
-        # - https://github.com/mathiasertl/fabric/blob/master/sites/docs/usage/env.rst#all_hosts
-        # set here:
-        # - https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L352
-        # in elife/builder we use a map of host information:
-        # - https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L326-L327
-        # - https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L386
-        # it says 'for informational purposes only' and nothing we use depends on it, so I'm disabling for now
-        # env['all_hosts'] = env['hosts']
-        return execute(env, func, param_key="host_string", param_values=host_list)
+    "convenience wrapper around `execute` to match. calls `execute` on given `func` but uses `all_hosts`  "
+    host_list = hosts or env.get("hosts") or []
+    assert isinstance(host_list, list), "hosts must be a list"
+    # Fabric may know about many hosts ('all_hosts') but only be acting upon a subset of them ('hosts')
+    # - https://github.com/mathiasertl/fabric/blob/master/sites/docs/usage/env.rst#all_hosts
+    # set here:
+    # - https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L352
+    # in elife/builder we use a map of host information:
+    # - https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L326-L327
+    # - https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L386
+    # it says 'for informational purposes only' and nothing we use depends on it, so I'm disabling for now
+    # env['all_hosts'] = env['hosts']
+    results = execute(env, func, param_key="host_string", param_values=host_list)
+    return dict(zip(host_list, results)) # {'192.168.0.1': [], '192.169.0.3': []}
