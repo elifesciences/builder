@@ -75,7 +75,17 @@ NetworkError = fab_exceptions.NetworkError
 # api
 #
 
-local = api(fab_api.local, threadbare.operations.local)
+def fab_api_local_wrapper(*args, **kwargs):
+    """Fabric returns the stdout of the command when capture=True, with stderr and some values also available as attributes.
+    This modifies the behaviour of Fabric's `local` to return a dictionary of results."""
+    fab_result = fab_api.local(*args, **kwargs)
+    # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1251
+    result = fab_result.__dict__
+    result['stdout'] = (fab_result or b"").splitlines()
+    result['stderr'] = (fab_result.stderr or b"").splitlines() 
+    return result
+
+local = api(fab_api_local_wrapper, threadbare.operations.local)
 execute = api(fab_api.execute, partial(threadbare.execute.execute_with_hosts, env))
 parallel = api(fab_api.parallel, threadbare.execute.parallel)
 serial = api(fab_api.serial, threadbare.execute.serial)
