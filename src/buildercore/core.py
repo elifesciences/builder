@@ -243,7 +243,7 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     return expected_key
 
 def _ec2_connection_params(stackname, username, **kwargs):
-    "returns a dictionary of settings to be used with Fabric's api.settings context manager"
+    "returns a dictionary of settings to be used with `command.settings` context manager"
     # http://docs.fabfile.org/en/1.14/usage/env.html
     params = {'user': username}
     pem = stack_pem(stackname)
@@ -292,7 +292,7 @@ def all_node_params(stackname):
     # TODO: default copied from stack_all_ec2_nodes, but not the most robust probably
     params = _ec2_connection_params(stackname, config.DEPLOY_USER)
 
-    # custom for builder, these are available as fabric.api.env.public_ips inside workfn
+    # custom for builder, these are available inside workfn as `command.env['public_ips']`
     params.update({
         'stackname': stackname,
         'public_ips': public_ips,
@@ -322,7 +322,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
-    # custom for builder, these are available as fabric.api.env.public_ips inside workfn
+    # custom for builder, these are available inside workfn as `command.env['public_ips']`
     params.update({
         'stackname': stackname,
         'public_ips': public_ips,
@@ -394,11 +394,11 @@ def current_ec2_node_id():
 
     Sample value: 'i-0553487b4b6916bc9'"""
 
-    ensure(env.host is not None, "This is supposed to be called with settings for connecting to an EC2 instance")
-    current_public_ip = env.host
+    ensure(env['host'] is not None, "This is supposed to be called with settings for connecting to an EC2 instance")
+    current_public_ip = env['host']
 
     ensure('public_ips' in env, "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration")
-    matching_instance_ids = [instance_id for (instance_id, public_ip) in env.public_ips.items() if current_public_ip == public_ip]
+    matching_instance_ids = [instance_id for (instance_id, public_ip) in env['public_ips'].items() if current_public_ip == public_ip]
 
     ensure(len(matching_instance_ids) == 1, "Too many instance ids (%s) pointing to this ip (%s)" % (matching_instance_ids, current_public_ip))
     return matching_instance_ids[0]
@@ -408,20 +408,20 @@ def current_node_id():
 
     Returns a number from 1 to N (usually a small number, like 2) indicating how the current node has been numbered on creation to distinguish it from the others"""
     ec2_id = current_ec2_node_id()
-    ensure(ec2_id in env.nodes, "Can't find %s in %s node map" % (ec2_id, env.nodes))
-    return env.nodes[ec2_id]
+    ensure(ec2_id in env['nodes'], "Can't find %s in %s node map" % (ec2_id, env['nodes']))
+    return env['nodes'][ec2_id]
 
 def current_ip():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
 
     Returns the ip address used to access the current host, e.g. '54.243.19.153'"""
-    return env.host
+    return env['host']
 
 def current_stackname():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
 
     Returns the name of the stack the task is working on, e.g. 'journal--end2end'"""
-    return env.stackname
+    return env['stackname']
 
 #
 # stackname wrangling

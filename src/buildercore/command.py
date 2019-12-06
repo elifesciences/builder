@@ -82,7 +82,7 @@ def fab_api_local_wrapper(*args, **kwargs):
     # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1251
     result = fab_result.__dict__
     result['stdout'] = (fab_result or b"").splitlines()
-    result['stderr'] = (fab_result.stderr or b"").splitlines() 
+    result['stderr'] = (fab_result.stderr or b"").splitlines()
     return result
 
 local = api(fab_api_local_wrapper, threadbare.operations.local)
