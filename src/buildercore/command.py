@@ -75,25 +75,28 @@ NetworkError = fab_exceptions.NetworkError
 # api
 #
 
-def fab_api_local_wrapper(*args, **kwargs):
+def fab_api_local_remote_wrapper(fab_result):
     """Fabric returns the stdout of the command when capture=True, with stderr and some values also available as attributes.
     This modifies the behaviour of Fabric's `local` to return a dictionary of results."""
-    fab_result = fab_api.local(*args, **kwargs)
-    # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1251
+    # local:
+    # - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1251
+    # run/sudo:
+    # - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L898-L971
     result = fab_result.__dict__
     result['stdout'] = (fab_result or b"").splitlines()
     result['stderr'] = (fab_result.stderr or b"").splitlines()
     return result
 
-local = api(fab_api_local_wrapper, threadbare.operations.local)
-execute = api(fab_api.execute, partial(threadbare.execute.execute_with_hosts, env))
-parallel = api(fab_api.parallel, threadbare.execute.parallel)
-serial = api(fab_api.serial, threadbare.execute.serial)
+def fab_api_local_wrapper(*args, **kwargs):
+    return fab_api_local_remote_wrapper(fab_api.local(*args, **kwargs))
 
-hide = api(fab_api.hide, threadbare.operations.hide)
+def fab_api_run_wrapper(*args, **kwargs):
+    return fab_api_local_remote_wrapper(fab_api.run(*args, **kwargs))
+
+def fab_api_sudo_wrapper(*args, **kwargs):
+    return fab_api_local_remote_wrapper(fab_api.sudo(*args, **kwargs))
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
-
 def fab_api_settings_wrapper(*args, **kwargs):
     "a context manager that alters mutable application state for functions called within it's scope"
 
@@ -105,13 +108,22 @@ def fab_api_settings_wrapper(*args, **kwargs):
 
     return fab_api.settings(*args, **kwargs)
 
+#
+
+local = api(fab_api_local_wrapper, threadbare.operations.local)
+execute = api(fab_api.execute, partial(threadbare.execute.execute_with_hosts, env))
+parallel = api(fab_api.parallel, threadbare.execute.parallel)
+serial = api(fab_api.serial, threadbare.execute.serial)
+
+hide = api(fab_api.hide, threadbare.operations.hide)
+
 settings = api(fab_api_settings_wrapper, threadbare.state.settings)
 
 lcd = api(fab_api.lcd, threadbare.operations.lcd) # local change dir
 rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir
 
-remote = api(fab_api.run, threadbare.operations.remote)
-remote_sudo = api(fab_api.sudo, threadbare.operations.remote_sudo)
+remote = api(fab_api_run_wrapper, threadbare.operations.remote)
+remote_sudo = api(fab_api_sudo_wrapper, threadbare.operations.remote_sudo)
 upload = api(fab_api.put, threadbare.operations.upload)
 download = api(fab_api.get, threadbare.operations.download)
 remote_file_exists = api(fab_files.exists, threadbare.operations.remote_file_exists)

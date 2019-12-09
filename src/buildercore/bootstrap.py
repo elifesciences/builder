@@ -51,7 +51,8 @@ def run_script(script_filename, *script_params, **environment_variables):
 
     env_string = ['%s=%s' % (k, v) for k, v in environment_variables.items()]
     cmd = ["/bin/bash", remote_script] + lmap(escape_string_parameter, list(script_params))
-    retval = remote_sudo(" ".join(env_string + cmd))
+    result = remote_sudo(" ".join(env_string + cmd))
+    retval = result['return_code']
     remote_sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
     LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
