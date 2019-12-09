@@ -510,12 +510,13 @@ def upload(local_path, remote_path, use_sudo=False, **kwargs):
     "uploads file at `local_path` to the given `remote_path`, overwriting anything that may be at that path"
     with state.settings(quiet=True):
 
-        if os.path.isdir(local_path):
-            raise ValueError("folders cannot be uploaded")
-
+        # bytes handling
         local_path, cleanup_fn = _write_bytes_to_temporary_file(local_path)
         if cleanup_fn:
             state.add_cleanup(cleanup_fn)
+
+        if os.path.isdir(local_path):
+            raise ValueError("folders cannot be uploaded")
 
         if use_sudo:
             return _upload_as_root_hack(local_path, remote_path, **kwargs)
