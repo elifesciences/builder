@@ -422,6 +422,9 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
     """downloads file at `remote_path` to `local_path`, overwriting the local path if it exists.
     avoid `use_sudo` if at all possible"""
 
+    if remote_path.endswith('/'):
+        raise ValueError("directory downloads are not supported")
+
     with state.settings(quiet=True):
         temp_file, bytes_buffer = None, None
         if hasattr(local_path, "read"):
@@ -436,8 +439,10 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
         if not os.path.isabs(local_path):
             local_path = os.path.abspath(local_path)
 
+        if os.path.isdir(local_path):
+            local_path = os.path.join(local_path, os.path.basename(remote_path))
+
         if use_sudo:
-            # return _download_as_root_hack(remote_path, local_path, **kwargs)
             local_path = _download_as_root_hack(remote_path, local_path, **kwargs)
 
         else:
