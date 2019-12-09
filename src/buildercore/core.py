@@ -394,8 +394,8 @@ def current_ec2_node_id():
 
     Sample value: 'i-0553487b4b6916bc9'"""
 
-    ensure(env['host'] is not None, "This is supposed to be called with settings for connecting to an EC2 instance")
-    current_public_ip = env['host']
+    ensure(env['host_string'] is not None, "This is supposed to be called with settings for connecting to an EC2 instance")
+    current_public_ip = env['host_string']
 
     ensure('public_ips' in env, "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration")
     matching_instance_ids = [instance_id for (instance_id, public_ip) in env['public_ips'].items() if current_public_ip == public_ip]
@@ -415,7 +415,7 @@ def current_ip():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
 
     Returns the ip address used to access the current host, e.g. '54.243.19.153'"""
-    return env['host']
+    return env['host_string']
 
 def current_stackname():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
