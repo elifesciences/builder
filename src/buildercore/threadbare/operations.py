@@ -422,10 +422,17 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
     """downloads file at `remote_path` to `local_path`, overwriting the local path if it exists.
     avoid `use_sudo` if at all possible"""
 
-    if remote_path.endswith('/'):
-        raise ValueError("directory downloads are not supported")
+    # TODO: support an 'overwrite?' option?
 
     with state.settings(quiet=True):
+        if remote_path.endswith("/"):
+            raise ValueError("directory downloads are not supported")
+
+        result = remote('test -d "%s"' % remote_path, use_sudo=use_sudo)
+        remote_path_is_dir = result["succeeded"]
+        if remote_path_is_dir:
+            raise ValueError("directory downloads are not supported")
+
         temp_file, bytes_buffer = None, None
         if hasattr(local_path, "read"):
             # given a file-like object to download file into.
@@ -502,6 +509,9 @@ def _write_bytes_to_temporary_file(local_path):
 def upload(local_path, remote_path, use_sudo=False, **kwargs):
     "uploads file at `local_path` to the given `remote_path`, overwriting anything that may be at that path"
     with state.settings(quiet=True):
+
+        if os.path.isdir(local_path):
+            raise ValueError("folders cannot be uploaded")
 
         local_path, cleanup_fn = _write_bytes_to_temporary_file(local_path)
         if cleanup_fn:
