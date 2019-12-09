@@ -433,6 +433,9 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
             bytes_buffer = local_path
             temp_file, local_path = tempfile.mkstemp(suffix="-threadbare")
 
+        if not os.path.isabs(local_path):
+            local_path = os.path.abspath(local_path)
+
         if use_sudo:
             # return _download_as_root_hack(remote_path, local_path, **kwargs)
             local_path = _download_as_root_hack(remote_path, local_path, **kwargs)
