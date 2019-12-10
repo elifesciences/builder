@@ -13,7 +13,7 @@ from functools import partial
 THREADBARE = 'threadbare'
 FABRIC = 'fabric'
 
-DEFAULT_BACKEND = THREADBARE
+DEFAULT_BACKEND = FABRIC
 
 BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
 assert BACKEND in [FABRIC, THREADBARE]
