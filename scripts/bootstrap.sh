@@ -1,5 +1,6 @@
 #!/bin/bash
 # *ALL INSTANCES*
+# run as root
 # copied into the virtual machine and executed. DO NOT run on your host machine.
 
 set -e # everything must pass
@@ -73,6 +74,7 @@ else
 fi
 
 if ! dpkg -l git; then
+    # git not found
     install_git=true
 fi
 
@@ -102,12 +104,13 @@ if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
     wget -O salt_bootstrap.sh https://bootstrap.saltstack.com --no-verbose
 
+    # -x  Changes the Python version used to install Salt.
     # -P  Allow pip based installations.
     # -F  Allow copied files to overwrite existing(config, init.d, etc)
     # -c  Temporary configuration directory
     # -M  Also install master
     # https://github.com/saltstack/salt-bootstrap/blob/develop/bootstrap-salt.sh
-    sh salt_bootstrap.sh -P -F -c /tmp stable "$version"
+    sh salt_bootstrap.sh -x python3 -P -F -c /tmp stable "$version"
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
@@ -118,7 +121,7 @@ if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
     if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
-        sh salt_bootstrap.sh -P -F -M -c /tmp stable "$version"
+        sh salt_bootstrap.sh -x python3 -P -F -M -c /tmp stable "$version"
     else
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
@@ -126,8 +129,8 @@ fi
 
 
 # record some basic provisioning info after the above successfully completes
-if $installing; then echo "$(date -I) -- installed $version" >> /root/events.log; fi
-if $upgrading; then echo "$(date -I) -- upgraded to $version" >> /root/events.log; fi
+if $installing; then echo "$(date -I) -- installed salt $version" >> /root/events.log; fi
+if $upgrading; then echo "$(date -I) -- upgraded salt to $version" >> /root/events.log; fi
 
 
 # BUG: during a minion's re-mastering the `master: ...` value may get reset if the instance is 
@@ -146,7 +149,7 @@ done < <(env | grep '^grain_.*')
 echo "$grains" > /etc/salt/grains
 
 # restart salt-minion. necessary as we may have changed minion's configuration
-systemctl restart salt-minion 2> /dev/null || service salt-minion restart
+systemctl restart salt-minion 2> /dev/null
 
 # generate a key for the root user
 # in AWS this is uploaded to the server and moved into place prior to calling 
