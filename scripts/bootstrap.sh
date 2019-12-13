@@ -82,15 +82,33 @@ if ($upgrade_python || $install_git); then
     apt-get update -y
 fi
 
+
+# flag we can toggle to disable installation of python2 and python2 libs
+# set to `false` once all formulas and formula code has been updated
+elife_depends_on_python2=true
+
 if $upgrade_python; then
-    apt-get install python2.7 python2.7-dev -y
+
+    if $elife_depends_on_python2; then
+        echo "eLife still has formulas that depend on Python2!"
+        apt-get install python2.7 python2.7-dev -y
+    fi
+
+    apt-get install python3 python3-dev -y
+
     # virtual envs have to be recreated
     find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
 
     # install/upgrade pip+setuptools
-    apt-get install python-pip python-setuptools --no-install-recommends -y
-    python2.7 -m pip install pip setuptools --upgrade
+    if $elife_depends_on_python2; then
+        apt-get install python-pip python-setuptools --no-install-recommends -y
+        python2.7 -m pip install pip setuptools --upgrade
+    fi
 
+    apt-get install python3-pip python3-setuptools --no-install-recommends -y
+    python3 -m pip install pip setuptools --upgrade
+
+    # remove flag, if it exists
     rm -f /root/upgrade-python.flag
 fi
 
