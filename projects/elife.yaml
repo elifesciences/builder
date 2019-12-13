@@ -1071,25 +1071,6 @@ elife-dashboard:
             8080: 8080 # scheduler (blocked on AWS)
 
 
-# legacy API, do not use nor upgrade
-elife-api:
-    subdomain: api # api.elifesciences.org
-    repo: https://github.com/elifesciences/elife-api
-    formula-repo: https://github.com/elifesciences/elife-api-formula
-    aws:
-        # ip: 52.72.250.79 # legacy--api.elifesciences.org
-        ec2:
-            ami: ami-92002785 # Ubuntu 14.04, deprecated
-        ports:
-            - 22
-            - 80
-            - 443
-    aws-alt: {}
-    vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
-        ports:
-            1233: 80
-
 elife-reporting:
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
