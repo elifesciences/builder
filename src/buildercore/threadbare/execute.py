@@ -39,6 +39,8 @@ def _parallel_execution_worker_wrapper(env, worker_func, name, queue):
         state.ENV = state.init_state()
         state.read_write(state.ENV)
         state.ENV.update(env or {})
+        # note: not possible to service stdin when multiprocessing
+        state.ENV["abort_on_prompts"] = True
         result = worker_func()
         queue.put({"name": name, "result": result})
     except BaseException as unhandled_exception:
@@ -129,25 +131,23 @@ def _parallel_execution(env, func, param_key, param_values, return_process_pool=
     return [b for a, b in sorted(result_map.items(), key=first)]
 
 
-def _serial_execution(env, func, param_key, param_values):
+def _serial_execution(func, param_key, param_values):
     "executes the given function serially"
     result_list = []
     if param_key and param_values:
         for x in param_values:
             # TODO: this prevent ssh clients from being shared
-            with state.settings(env, **{param_key: x}):
+            with state.settings(**{param_key: x}):
                 result_list.append(func())
     else:
         # pretty boring :(
-        # I could set '_idx' or something in `env` I suppose ..
+        # I could set '_idx' or something in `state.ENV` I suppose ..
         for _ in range(0, getattr(func, "pool_size", 1)):
-            # TODO: this prevent ssh clients from being shared
-            with state.settings(env):
-                result_list.append(func())
+            result_list.append(func())
     return result_list
 
 
-def execute(env, func, param_key=None, param_values=None):
+def execute(func, param_key=None, param_values=None):
     """inspects a given function and then executes it either serially or in another process using Python's `multiprocessing` module.
     `param` and `param_list` control the number of processes spawned and the name of the parameter passed to the function.
 
@@ -187,15 +187,15 @@ def execute(env, func, param_key=None, param_values=None):
         )
 
     if hasattr(func, "parallel") and func.parallel:
-        result_list = _parallel_execution(env, func, param_key, param_values)
+        result_list = _parallel_execution(state.ENV, func, param_key, param_values)
         return [result["result"] for result in result_list]
-    return _serial_execution(env, func, param_key, param_values)
+    return _serial_execution(func, param_key, param_values)
 
 
-def execute_with_hosts(env, func, hosts=None):
+def execute_with_hosts(func, hosts=None):
     """convenience wrapper around `execute`. calls `execute` on given `func` for each host in `hosts`.
     The host is available within the worker function's `env` as `host_string`."""
-    host_list = hosts or env.get("hosts") or []
+    host_list = hosts or state.ENV.get("hosts") or []
     assert isinstance(host_list, list), "hosts must be a list"
     # Fabric may know about many hosts ('all_hosts') but only be acting upon a subset of them ('hosts')
     # - https://github.com/mathiasertl/fabric/blob/master/sites/docs/usage/env.rst#all_hosts
@@ -206,6 +206,6 @@ def execute_with_hosts(env, func, hosts=None):
     # - https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L386
     # it says 'for informational purposes only' and nothing we use depends on it, so I'm disabling for now
     # env['all_hosts'] = env['hosts']
-    results = execute(env, func, param_key="host_string", param_values=host_list)
+    results = execute(func, param_key="host_string", param_values=host_list)
     # results are ordered so we can do this
     return dict(zip(host_list, results))  # {'192.168.0.1': [], '192.169.0.3': []}

@@ -2,6 +2,10 @@ import os
 from functools import reduce
 
 
+class PromptedException(BaseException):
+    pass
+
+
 def first(x):
     "returns the first element in an collection of things"
     if x is None:
