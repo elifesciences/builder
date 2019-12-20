@@ -1,5 +1,4 @@
 import os
-import time
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
 import fabric.exceptions as fab_exceptions
@@ -8,7 +7,6 @@ import fabric.network
 import logging
 from io import BytesIO
 from . import utils, threadbare
-from functools import partial
 
 THREADBARE = 'threadbare'
 FABRIC = 'fabric'
@@ -22,29 +20,6 @@ def api(fabric_fn, threadbare_fn):
     return fabric_fn if BACKEND == FABRIC else threadbare_fn
 
 COMMAND_LOG = []
-
-_default_env = {}
-_default_env.update(fab_api.env)
-
-def envdiff():
-    "temporary. returns only the elements that are different between the default Fabric env and the env as it is right now"
-    return {k: v for k, v in fab_api.env.items() if _default_env.get(k) != v}
-
-def spy(fn):
-    "temporary. wrapper to inspect inputs to commands"
-    # Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
-    def _wrapper(*args, **kwargs):
-        timestamp = time.time()
-        funcname = getattr(fn, '__name__', '???')
-        lst = [timestamp, funcname, args, kwargs]
-        print(lst)
-        COMMAND_LOG.append(lst)
-        with open('/tmp/command-log.jsonl', 'a') as fh:
-            msg = utils.json_dumps({"ts": timestamp, "fn": funcname, "args": args, "kwargs": kwargs, 'env': envdiff()}, dangerous=True)
-            fh.write(msg + "\n")
-        result = fn(*args, **kwargs)
-        return result
-    return _wrapper
 
 def no_match(msg):
     def fn(*args, **kwargs):
@@ -111,7 +86,7 @@ def fab_api_settings_wrapper(*args, **kwargs):
 #
 
 local = api(fab_api_local_wrapper, threadbare.operations.local)
-execute = api(fab_api.execute, partial(threadbare.execute.execute_with_hosts, env))
+execute = api(fab_api.execute, threadbare.execute.execute_with_hosts)
 parallel = api(fab_api.parallel, threadbare.execute.parallel)
 serial = api(fab_api.serial, threadbare.execute.serial)
 
