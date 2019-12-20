@@ -7,6 +7,7 @@ from pssh import exceptions as pssh_exceptions
 import os, sys
 from . import state
 from .common import (
+    PromptedException,
     merge,
     subdict,
     rename,
@@ -16,6 +17,9 @@ from .common import (
     shell_wrap_command,
 )
 from pssh.clients.native import SSHClient as PSSHClient
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 class SSHClient(PSSHClient):
@@ -80,7 +84,6 @@ def lcd(local_dir):
 @contextlib.contextmanager
 def rcd(remote_working_dir):
     "ensures all commands run are done from the given remote directory. if remote directory doesn't exist, command will not be run"
-    # TODO: this will cause a new ssh connection to be created
     with state.settings(remote_working_dir=remote_working_dir):
         yield
 
@@ -88,7 +91,6 @@ def rcd(remote_working_dir):
 @contextlib.contextmanager
 def hide(what=None):
     "hides *all* output, regardless of `what` type of output is to be hidden."
-    # TODO: this will cause a new ssh connection to be created
     with state.settings(quiet=True):
         yield
 
@@ -175,9 +177,8 @@ def _execute(command, user, key_filename, host_string, port, use_pty, timeout):
 
 def _print_line(output_pipe, quiet, discard_output, line):
     """writes the given `line` (string) to the given `output_pipe` (file-like object)
-    if `quiet` is False, `line` is not written.
-    if `discard_output` is False, `line` is not returned.
-    `discard_output` should be set to `True` when you're expecting very large responses."""
+    if `quiet` is True, `line` is *not* written to `output_pipe`.
+    if `discard_output` is True, `line` is not returned and output is not accumulated in memory"""
     if not quiet:
         output_pipe.write(line + "\n")
     if not discard_output:
@@ -211,10 +212,10 @@ def remote(command, **kwargs):
     # pty=True   # mutually exclusive with combine_stderr. not sure what Fabric/Paramiko is doing here
     # combine_stderr=None # mutually exclusive with use_pty. 'True' in global env.
     # quiet=False, # done
-    # warn_only=False # ignore
+    # warn_only=False # done
     # stdout=None # done, stdout/stderr always available unless explicitly discarded. 'see discard_output'
     # stderr=None # done, stderr not available when combine_stderr is `True`
-    # timeout=None # todo
+    # timeout=None # done
     # shell_escape=None # ignored. shell commands are always escaped
     # capture_buffer_size=None # correlates to `ssh2.channel.read` and the `size` parameter. Ignored.
 
@@ -232,6 +233,8 @@ def remote(command, **kwargs):
         "discard_output": False,
         "remote_working_dir": None,
         "timeout": None,
+        "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
+        "abort_exception": RuntimeError,
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
@@ -285,7 +288,24 @@ def remote(command, **kwargs):
             "succeeded": return_code == 0,
         }
     )
-    return result
+
+    if result["succeeded"]:
+        return result
+
+    err_msg = "remote() encountered an error (return code %s) while executing %r" % (
+        result["return_code"],
+        command,
+    )
+
+    if final_kwargs["warn_only"]:
+        LOG.warning(err_msg)
+        return result
+
+    abort_exc_klass = final_kwargs["abort_exception"]
+    exc = abort_exc_klass(err_msg)
+    setattr(exc, "result", result)
+
+    raise exc
 
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1100
@@ -319,9 +339,13 @@ def remote_file_exists(path, **kwargs):
         "use_sudo": False,
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    # do not raise an exception if remote file doesn't exist
+    final_kwargs["warn_only"] = True
+
     remote_fn = remote_sudo if final_kwargs["use_sudo"] else remote
     command = "test -e %s" % path
-    return remote_fn(command, **kwargs)["return_code"] == 0
+    return remote_fn(command, **final_kwargs)["return_code"] == 0
 
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1157
@@ -331,8 +355,19 @@ def local(command, **kwargs):
         "combine_stderr": True,
         "capture": False,
         "timeout": None,
+        "quiet": False,
+        "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
+        "abort_exception": RuntimeError,
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    # TODO: once py2 support has been dropped, move this back to file head
+    devnull_opened = False
+    try:
+        from subprocess import DEVNULL  # py3
+    except ImportError:
+        devnull_opened = True
+        DEVNULL = open(os.devnull, "wb")
 
     if final_kwargs["capture"]:
         if final_kwargs["combine_stderr"]:
@@ -342,8 +377,14 @@ def local(command, **kwargs):
             out_stream = subprocess.PIPE
             err_stream = subprocess.PIPE
     else:
-        out_stream = None
-        err_stream = None
+        if final_kwargs["quiet"]:
+            # we're not capturing and we've been told to be quiet
+            # send everything to /dev/null
+            out_stream = DEVNULL
+            err_stream = DEVNULL
+        else:
+            out_stream = None
+            err_stream = None
 
     if not final_kwargs["use_shell"] and not isinstance(command, list):
         raise ValueError("when shell=False, given command *must* be a list")
@@ -365,7 +406,7 @@ def local(command, **kwargs):
         stdout, stderr = proc.communicate()
 
     # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1244
-    return {
+    result = {
         "return_code": proc.returncode,
         "failed": proc.returncode != 0,
         "succeeded": proc.returncode == 0,
@@ -374,6 +415,27 @@ def local(command, **kwargs):
         "stderr": (stderr or b"").decode("utf-8").splitlines(),
     }
 
+    if devnull_opened:
+        DEVNULL.close()
+
+    if result["succeeded"]:
+        return result
+
+    err_msg = "local() encountered an error (return code %s) while executing %r" % (
+        result["return_code"],
+        command,
+    )
+
+    if final_kwargs["warn_only"]:
+        LOG.warning(err_msg)
+        return result
+
+    abort_exc_klass = final_kwargs["abort_exception"]
+    exc = abort_exc_klass(err_msg)
+    setattr(exc, "result", result)
+
+    raise exc
+
 
 def single_command(cmd_list):
     """given a list of commands to run, returns a single command
@@ -381,6 +443,21 @@ def single_command(cmd_list):
     if cmd_list in [None, []]:
         return None
     return " && ".join(map(str, cmd_list))
+
+
+def prompt(msg):
+    """issues a prompt for input.
+    raises a PromptedException if `abort_on_prompts` in `state.ENV` is `True` or executing within
+    another process using `execute.parallel` where input can't be supplied.
+    if `abort_exception` is set in `state.ENV`, then that exception is raised instead"""
+    if state.ENV.get("abort_on_prompts", False):
+        abort_ex = state.ENV.get("abort_exception", PromptedException)
+        raise abort_ex("prompted with: %s" % (msg,))
+    print(msg)
+    try:
+        return raw_input("> ")
+    except NameError:
+        return input("> ")
 
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L419
@@ -428,7 +505,8 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
         if remote_path.endswith("/"):
             raise ValueError("directory downloads are not supported")
 
-        result = remote('test -d "%s"' % remote_path, use_sudo=use_sudo)
+        # do not raise an exception if remote file doesn't exist
+        result = remote('test -d "%s"' % remote_path, use_sudo=use_sudo, warn_only=True)
         remote_path_is_dir = result["succeeded"]
         if remote_path_is_dir:
             raise ValueError("directory downloads are not supported")

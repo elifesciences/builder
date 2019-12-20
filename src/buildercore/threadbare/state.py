@@ -68,11 +68,10 @@ def add_cleanup(fn):
 
 
 @contextlib.contextmanager
-def settings(state=None, **kwargs):
+def settings(**kwargs):
     global DEPTH
 
-    if state is None:
-        state = ENV
+    state = ENV
     if not isinstance(state, dict):
         raise TypeError(
             "state map must be a dictionary-like object, not %r" % type(state)
