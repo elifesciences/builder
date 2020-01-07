@@ -1,10 +1,13 @@
 #!/bin/bash
 # *ALL INSTANCES*
-# copied into the virtual machine and executed. DO NOT run on your host machine.
+# copied/uploaded onto the virtual machine and executed. DO NOT run on your host machine.
+# run as root
 
 set -e # everything must pass
 set -u # no unbound variables
 set -xv  # output the scripts and interpolated steps
+
+export DEBIAN_FRONTEND=noninteractive
 
 echo "-----------------------------"
 
