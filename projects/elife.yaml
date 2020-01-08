@@ -1,7 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    #salt: '2017.7.8' # the version of salt these project use
-    salt: '2018.3.4'
+    salt: '2018.3.4' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
