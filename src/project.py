@@ -1,5 +1,5 @@
 import os
-from buildercore.command import local, CommandException
+from buildercore.command import local, CommandException, settings
 from buildercore import project, utils as core_utils, core, cfngen, config
 from buildercore.utils import ensure
 from decorators import requires_project, echo_output
@@ -34,7 +34,7 @@ def context(pname, output_format=None):
 
 @requires_project
 def clone_project_formulas(pname):
-    """clones a project's list of formulas to `cloned-projects/$formulaname` if it doesn't already exist. 
+    """clones a project's list of formulas to `cloned-projects/$formulaname`, if it doesn't already exist. 
     if it does exist, it attempts to update it with a `git pull`."""
     destination = config.PROJECT_FORMULAS
     pdata = project.project_data(pname)
@@ -50,10 +50,8 @@ def clone_project_formulas(pname):
         else:
             cmd = "cd %s; git clone %s" % (destination, furl)
 
-        try:
-            result = local(cmd)
-        except CommandException:
-            pass # any error is printed to stdout/stderr
+        with settings(warn_only=True):
+            local(cmd)
 
 def clone_all_formulas():
     "clones the formulas and formula dependencies of all known projects"
