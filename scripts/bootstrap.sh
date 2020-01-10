@@ -7,6 +7,8 @@ set -e # everything must pass
 set -u # no unbound variables
 set -xv  # output the scripts and interpolated steps
 
+export DEBIAN_FRONTEND=noninteractive # no ncurses prompts
+
 echo "-----------------------------"
 
 if [ ! "$#" -ge 3 ]; then
@@ -96,7 +98,7 @@ if $upgrade_python; then
 
     apt-get install python3 python3-dev -y
 
-    # virtual envs have to be recreated
+    # virtualenvs have to be recreated
     find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
 
     # install/upgrade pip+setuptools
