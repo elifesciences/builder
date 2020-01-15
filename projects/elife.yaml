@@ -2054,7 +2054,7 @@ kubernetes-aws:
             worker:
                 type: t2.medium    
                 max-size: 4
-                desired-capacity: 3
+                desired-capacity: 4
             helm: true
             external-dns:
                 domain-filter: "elifesciences.org"
