@@ -1,7 +1,7 @@
 #!/bin/bash
 # *ALL INSTANCES*
 # run as root
-# copied into the virtual machine and executed. DO NOT run on your host machine.
+# copied/uploaded onto the virtual machine and executed. DO NOT run on your host machine.
 
 set -e # everything must pass
 set -u # no unbound variables
