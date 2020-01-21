@@ -154,8 +154,7 @@ if ($installing || $upgrading); then
     # -c  Temporary configuration directory
     # -M  Also install master
     # https://github.com/saltstack/salt-bootstrap/blob/develop/bootstrap-salt.sh
-    #sh salt_bootstrap.sh -x python3 -P -F -c /tmp stable "$version"
-    sh salt_bootstrap.sh -P -F -c /tmp stable "$version"
+    sh salt_bootstrap.sh -x python3 -P -F -c /tmp stable "$version"
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
@@ -166,8 +165,7 @@ if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
     if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
-        #sh salt_bootstrap.sh -x python3 -P -F -M -c /tmp stable "$version"
-        sh salt_bootstrap.sh -P -F -M -c /tmp stable "$version"
+        sh salt_bootstrap.sh -x python3 -P -F -M -c /tmp stable "$version"
     else
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
