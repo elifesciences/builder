@@ -123,9 +123,6 @@ if $upgrade_python3; then
     apt-get install python3 python3-dev python3-pip python3-setuptools -y --no-install-recommends
     python3 -m pip install pip setuptools --upgrade
 
-    # virtualenvs have to be recreated
-    find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
-
     # some libraries need to be installed *before* calling Salt
     python3 -m pip install "docker[tls]==4.1.0"
 

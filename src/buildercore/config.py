@@ -121,7 +121,7 @@ CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'cloudfront', 'e
 
 PROJECTS_FILES = ['projects/elife.yaml']
 
-PROJECT_FORMULAS = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
+CLONED_PROJECT_FORMULA_DIR = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
 
 USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 

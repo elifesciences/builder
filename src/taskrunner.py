@@ -110,7 +110,8 @@ DEBUG_TASK_LIST = [
     buildvars.fix,
     buildvars.force,
 
-    project.clone_all_formulas,
+    project.clone_project_formulas,
+    project.clone_all_project_formulas,
 ]
 
 def mk_task_map(task, qualified=True):
