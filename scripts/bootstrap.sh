@@ -154,7 +154,8 @@ if ($installing || $upgrading); then
     # -c  Temporary configuration directory
     # -M  Also install master
     # https://github.com/saltstack/salt-bootstrap/blob/develop/bootstrap-salt.sh
-    sh salt_bootstrap.sh -x python3 -P -F -c /tmp stable "$version"
+    #sh salt_bootstrap.sh -x python3 -P -F -c /tmp stable "$version"
+    sh salt_bootstrap.sh -P -F -c /tmp stable "$version"
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
