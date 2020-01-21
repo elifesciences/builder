@@ -166,7 +166,8 @@ if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
     if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
-        sh salt_bootstrap.sh -x python3 -P -F -M -c /tmp stable "$version"
+        #sh salt_bootstrap.sh -x python3 -P -F -M -c /tmp stable "$version"
+        sh salt_bootstrap.sh -P -F -M -c /tmp stable "$version"
     else
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
