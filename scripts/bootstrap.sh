@@ -108,7 +108,8 @@ if $upgrade_python2; then
         apt-get install python2.7 python2.7-dev -y
 
         # virtualenvs have to be recreated
-        find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
+        # lsh@2020-01-23: disabled as no longer necessary. re-enable if anything breaks
+        #find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
 
         # install/upgrade pip+setuptools
         apt-get install python-pip python-setuptools --no-install-recommends -y
