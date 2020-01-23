@@ -116,10 +116,12 @@ CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'cloudfront', 'e
 
 #
 # settings
-# believe it or not but buildercore.config is NOT the place for user config
+# buildercore.config is NOT the place for user config
 #
 
 PROJECTS_FILES = ['projects/elife.yaml']
+
+CLONED_PROJECT_FORMULA_DIR = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
 
 USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 

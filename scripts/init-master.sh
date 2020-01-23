@@ -9,6 +9,10 @@ set -e # everything must pass
 set -u # no unbound variables
 set -xv  # output the scripts and interpolated steps
 
+export DEBIAN_FRONTEND=noninteractive # no ncurses prompts
+
+echo "-----------------------------"
+
 stackname=$1 # who am I? ll: master-server--2016-01-01
 pillar_repo=$2 # what secrets do I know?
 configuration_repo=$3 # what configuration do I know?
@@ -123,9 +127,9 @@ done
 # install/update builder
 # the master server will need to install project formulas. 
 
-# install builder dependencies for Ubuntu
-apt-get install python-dev python-pip libffi-dev libssl-dev -y
-pip install virtualenv
+# install builder dependencies for Ubuntu not covered by bootstrap.sh
+apt-get install libffi-dev libssl-dev -y
+python3 -m pip install virtualenv
 
 rm -rf /opt/builder
 
