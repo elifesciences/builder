@@ -2,9 +2,7 @@
 from buildercore import utils, config
 from kids.cache import cache
 from . import files
-
 import copy
-
 import logging
 from functools import reduce
 LOG = logging.getLogger(__name__)
@@ -94,19 +92,15 @@ def ec2_projects(*args, **kwargs):
 #
 #
 
-def transformed_projects(mapfn, *args, **kwargs):
-    return utils.dictmap(mapfn, project_map(*args, **kwargs))
-
 def project_formulas():
-    return transformed_projects(lambda _, pdata: [pdata.get('formula-repo')] + pdata.get('formula-dependencies', []))
+    def fn(pname, pdata):
+        return [pdata.get('formula-repo')] + pdata.get('formula-dependencies', [])
+    return utils.dictmap(fn, project_map())
 
 #
 #
 #
 
 def known_formulas():
-    "a simple list of all known project formulas (excluding the private-repo)"
-    lst = utils.unique(utils.shallow_flatten(project_formulas().values()))
-    if None in lst:
-        lst.remove(None)
-    return lst
+    "a simple list of all known project formulas"
+    return utils.lfilter(None, utils.unique(utils.shallow_flatten(project_formulas().values())))

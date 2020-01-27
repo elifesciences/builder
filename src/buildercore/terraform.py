@@ -14,6 +14,7 @@ EMPTY_TEMPLATE = '{}'
 PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
 HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
+HELM_CHART_VERSION_RAW = '0.2.3',
 HELM_APP_VERSION_EXTERNAL_DNS = '0.5.16'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
@@ -628,8 +629,10 @@ def render_eks(context, template):
         _render_helm(context, template)
 
 def _render_eks_master_security_group(context, template):
+    security_group_tags = aws.generic_tags(context)
+    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
     template.populate_resource('aws_security_group', 'master', block={
-        'name': 'project-with-eks--%s--master' % context['instance_id'],
+        'name': '%s--master' % context['stackname'],
         'description': 'Cluster communication with worker nodes',
         'vpc_id': context['aws']['vpc-id'],
         'egress': {
@@ -638,7 +641,7 @@ def _render_eks_master_security_group(context, template):
             'protocol': '-1',
             'cidr_blocks': ['0.0.0.0/0'],
         },
-        'tags': aws.generic_tags(context),
+        'tags': security_group_tags,
     })
 
 def _render_eks_master_role(context, template):
@@ -696,9 +699,9 @@ def _render_eks_workers_security_group(context, template):
     })
 
     security_group_tags = aws.generic_tags(context)
-    security_group_tags['kubernetes.io/cluster/%s'] = 'owned'
+    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
     template.populate_resource('aws_security_group', 'worker', block={
-        'name': 'project-with-eks--%s--worker' % context['instance_id'],
+        'name': '%s--worker' % context['stackname'],
         'description': 'Security group for all worker nodes in the cluster',
         'vpc_id': context['aws']['vpc-id'],
         'egress': {
@@ -973,6 +976,9 @@ def _render_helm(context, template):
         'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
         'chart': 'incubator/raw',
         'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+        'values': [
+            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
+        ],
     })
 
     if context['eks']['external-dns']:

@@ -11,8 +11,6 @@ set -x
 formula_list=$1
 pillar_repo=$2 # what secrets do I know?
 configuration_repo=$3 # what configuration do I know?
-vault_addr="${4:-}" # where is Vault?
-vault_token="${5:-}" # how do I authenticate with Vault?
 
 # clone the private repo (whatever it's name is) into /opt/builder-private/
 # REQUIRES CREDENTIALS!
@@ -82,16 +80,6 @@ echo "pillar_roots:
 # this won't do anything but put the two top.sls files closer to each other
 cd /srv/salt/pillar
 ln -sfT /opt/builder-private/pillar/top.sls top.sls
-
-if [ ! -z "$vault_addr" ]; then
-    # sets up connection to Vault
-    echo "vault:
-        url: $vault_addr
-        auth:
-            method: token
-            token: $vault_token
-    "> /etc/salt/minion.d/vault.conf
-fi
 
 clone_update() {
     repo=$1
