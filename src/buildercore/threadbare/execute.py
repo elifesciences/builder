@@ -28,7 +28,11 @@ def parallel(func, pool_size=None):
 
 
 def _parallel_execution_worker_wrapper(env, worker_func, name, queue):
+    """this function is executed in another process. it wraps the given `worker_func`, initialising the `state.ENV` of 
+    the new process and adds its results to the given `queue`"""
     try:
+        assert isinstance(env, dict), "given environment must be a dictionary"
+
         # Fabric is nuking the child process's env dictionary
         # https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L229-L237
 
@@ -36,14 +40,23 @@ def _parallel_execution_worker_wrapper(env, worker_func, name, queue):
         # implicit `settings() as env` invocation rather than `settings(env)` as we have
         # no reference to `env` unless the worker function accepts it as a parameter.
         # and we can't rely on that.
-        state.ENV = state.init_state()
-        state.read_write(state.ENV)
-        state.ENV.update(env or {})
+
         # note: not possible to service stdin when multiprocessing
-        state.ENV["abort_on_prompts"] = True
+        env["abort_on_prompts"] = True
+
+        # we don't care what the parent process had when Python copied across it's state
+        # to execute this worker_func in parallel. reset it now. the process is destroyed upon leaving.
+
+        state.DEPTH = 0
+        state.set_defaults(env)
+
         result = worker_func()
         queue.put({"name": name, "result": result})
     except BaseException as unhandled_exception:
+        # kept for debugging
+        # import traceback
+        # traceback.print_exc()
+
         # "Note that exit handlers and finally clauses, etc., will not be executed."
         # - https://docs.python.org/2/library/multiprocessing.html#multiprocessing.Process.terminate
         queue.put({"name": name, "result": unhandled_exception})
@@ -87,7 +100,9 @@ def _parallel_execution(env, func, param_key, param_values, return_process_pool=
         if "ssh_client" in new_env:
             del new_env["ssh_client"]
 
-        new_env[param_key] = nth_val
+        if param_key:
+            new_env[param_key] = nth_val
+
         new_env["parallel"] = True
         # https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L223-L227
         # new_env['linewise'] = True # not set until needed

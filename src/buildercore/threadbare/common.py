@@ -104,3 +104,11 @@ def pwd_wrap_command(command, working_dir):
     prefix = 'cd "%s" &&' % working_dir
     space = " "
     return prefix + space + command
+
+
+def isint(x):
+    try:
+        int(x)
+        return True
+    except:
+        return False
