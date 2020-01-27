@@ -446,8 +446,8 @@ def single_command(cmd_list):
 
 
 def prompt(msg):
-    """issues a prompt for input. 
-    raises a PromptedException if `abort_on_prompts` in `state.ENV` is `True` or executing within 
+    """issues a prompt for input.
+    raises a PromptedException if `abort_on_prompts` in `state.ENV` is `True` or executing within
     another process using `execute.parallel` where input can't be supplied.
     if `abort_exception` is set in `state.ENV`, then that exception is raised instead"""
     if state.ENV.get("abort_on_prompts", False):

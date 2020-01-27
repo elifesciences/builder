@@ -110,5 +110,5 @@ def isint(x):
     try:
         int(x)
         return True
-    except:
+    except BaseException:
         return False

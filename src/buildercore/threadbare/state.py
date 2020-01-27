@@ -40,7 +40,7 @@ def read_write(d):
 
 def initial_state():
     """returns a new, empty, locked, LockableDict instance that is used as the initial `state.ENV` value.
-    
+
     if you are thinking "it would be really convenient if 'some_setting' was 'some_value' by default",
     see `set_defaults`."""
     new_env = LockableDict()

@@ -28,7 +28,7 @@ def parallel(func, pool_size=None):
 
 
 def _parallel_execution_worker_wrapper(env, worker_func, name, queue):
-    """this function is executed in another process. it wraps the given `worker_func`, initialising the `state.ENV` of 
+    """this function is executed in another process. it wraps the given `worker_func`, initialising the `state.ENV` of
     the new process and adds its results to the given `queue`"""
     try:
         assert isinstance(env, dict), "given environment must be a dictionary"
