@@ -120,7 +120,15 @@ if $upgrade_python2; then
 fi
 
 if $upgrade_python3; then
-    apt-get install python3 python3-dev python3-pip python3-setuptools -y --no-install-recommends
+
+    # confdef: If conf file modified and the version in the package changed, choose the default action without 
+    # prompting. If there is no default action, stop to ask the user unless '--force-confnew' or '--force-confold' given
+    # confold: If conf file modified and the version in the package changed, keep the old version without prompting
+    apt-get install \
+        python3 python3-dev python3-pip python3-setuptools \
+        -y --no-install-recommends \
+        -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+
     python3 -m pip install pip setuptools --upgrade
 
     # some libraries need to be installed *before* calling Salt
