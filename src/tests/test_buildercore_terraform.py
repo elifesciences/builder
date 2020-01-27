@@ -915,6 +915,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'Environment': self.environment,
                     'Name': 'project-with-eks--%s' % self.environment,
                     'Cluster': 'project-with-eks--%s' % self.environment,
+                    'kubernetes.io/cluster/project-with-eks--%s' % self.environment: 'owned',
                 }
             }
         )
@@ -951,7 +952,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'Environment': self.environment,
                     'Name': 'project-with-eks--%s' % self.environment,
                     'Cluster': 'project-with-eks--%s' % self.environment,
-                    'kubernetes.io/cluster/%s': 'owned',
+                    'kubernetes.io/cluster/project-with-eks--%s' % self.environment: 'owned',
                 }
             }
         )
@@ -1244,6 +1245,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'repository': "${data.helm_repository.incubator.metadata.0.name}",
                 'chart': 'incubator/raw',
                 'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+                'values': [
+                    "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
+                ],
             }
         )
 
