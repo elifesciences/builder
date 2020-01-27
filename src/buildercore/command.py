@@ -17,18 +17,16 @@ BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
 assert BACKEND in [FABRIC, THREADBARE]
 
 def api(fabric_fn, threadbare_fn):
+    "accepts two functions and returns the one matching the currently set BACKEND"
     return fabric_fn if BACKEND == FABRIC else threadbare_fn
 
-COMMAND_LOG = []
-
 def no_match(msg):
+    "used in rare circumstances when either a function in Fabric or Threadbare doesn't have a corollary in the other"
     def fn(*args, **kwargs):
         return None
     return fn
 
 LOG = logging.getLogger(__name__)
-
-env = api(fab_api.env, threadbare.state.ENV)
 
 #
 # exceptions
@@ -37,12 +35,11 @@ env = api(fab_api.env, threadbare.state.ENV)
 class CommandException(Exception):
     pass
 
-# no un-catchable errors from Fabric
-# env.abort_exception = CommandException # env is just a dictionary with attribute access
-
-# TODO: how to handle this ...
-# with initial_settings() ... ? we could explicitly go from an empty environment to default settings
-#env['abort_exception'] = CommandException
+if BACKEND == FABRIC:
+    # no un-catchable errors from Fabric
+    fab_api.env['abort_exception'] = CommandException
+else:
+    threadbare.state.set_defaults({"abort_exception": CommandException})
 
 NetworkError = fab_exceptions.NetworkError
 
@@ -84,6 +81,8 @@ def fab_api_settings_wrapper(*args, **kwargs):
     return fab_api.settings(*args, **kwargs)
 
 #
+
+env = api(fab_api.env, threadbare.state.ENV)
 
 local = api(fab_api_local_wrapper, threadbare.operations.local)
 execute = api(fab_api.execute, threadbare.execute.execute_with_hosts)

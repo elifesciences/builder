@@ -124,7 +124,7 @@ def settings(**kwargs):
 
         DEPTH -= 1
 
-        # we're leaving the top-most context decorator
-        # ensure state dictionary is marked as read-only
         if DEPTH == 0:
+            # we're leaving the top-most context decorator
+            # ensure state dictionary is marked as read-only
             read_only(state)
