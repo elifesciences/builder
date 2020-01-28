@@ -216,8 +216,8 @@ defaults:
 
         next-salt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
+            salt: '2018.3.4'
             ec2:
-                salt: '2018.3.4'
                 masterless: True
 
         1804:
