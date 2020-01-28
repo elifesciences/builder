@@ -39,7 +39,7 @@ if BACKEND == FABRIC:
     # no un-catchable errors from Fabric
     fab_api.env['abort_exception'] = CommandException
 else:
-    threadbare.state.set_defaults({"abort_exception": CommandException
+    threadbare.state.set_defaults({"abort_exception": CommandException,
                                    "key_filename": os.path.expanduser("~/.ssh/id_rsa")})
 
 NetworkError = fab_exceptions.NetworkError

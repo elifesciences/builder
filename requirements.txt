@@ -23,4 +23,4 @@ PyYAML==4.2b2
 requests==2.20.0
 troposphere==2.3.3
 unittest2==1.1.0
-parallel-ssh
+parallel-ssh==1.9.1
