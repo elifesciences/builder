@@ -766,12 +766,15 @@ elife-bot:
                     sqs-notifications:
                         end2end-incoming-queue: {}
                 "{instance}-elife-ejp-poa-delivery":
+                    sqs-notifications:
+                        end2end-poa-incoming-queue: {}
                     deletion-policy: delete
             #    end2end-elife-production-final:
             #        sqs-notifications:
             #            end2end-incoming-queue: {}
             #               #prefix: null
             #               #suffix: null
+            #
         continuumtest:
             s3:
                 "{instance}-elife-silent-corrections":
@@ -786,6 +789,8 @@ elife-bot:
                 "{instance}-elife-bot":
                     deletion-policy: delete
                 "{instance}-elife-ejp-poa-delivery":
+                    sqs-notifications:
+                        ct-poa-incoming-queue: {}
                     deletion-policy: delete
         prod:
             # don't change type through CloudFormation because the template is too old to be modified successfully
@@ -802,6 +807,8 @@ elife-bot:
                         incoming-queue: {}
                 # already existing bucket, do not uncomment
                 #"{instance}-elife-ejp-poa-delivery":
+                #    sqs-notifications:
+                #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
     vagrant:
         box: bento/ubuntu-16.04 # 16.04, deprecated
