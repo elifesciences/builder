@@ -727,6 +727,8 @@ elife-bot:
             "{instance}-elife-bot-digests-input":
             "{instance}-elife-bot-decision-letter-input":
             "{instance}-elife-bot-decision-letter-output":
+        sqs:
+            "{instance}-poa-incoming-queue":
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
