@@ -267,7 +267,7 @@ def _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region):
     else:
         policy = {
             "Version": "2012-10-17",
-            "Id": queue.arn + "/SQSDefaultPolicy",
+            "Id": queue.attributes['QueueArn'] + "/SQSDefaultPolicy",
             "Statement": []
         }
 
