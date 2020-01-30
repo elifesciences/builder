@@ -17,18 +17,16 @@ BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
 assert BACKEND in [FABRIC, THREADBARE]
 
 def api(fabric_fn, threadbare_fn):
+    "accepts two functions and returns the one matching the currently set BACKEND"
     return fabric_fn if BACKEND == FABRIC else threadbare_fn
 
-COMMAND_LOG = []
-
-def no_match(msg):
+def no_op(msg):
+    "used in rare circumstances when either a function in Fabric or Threadbare doesn't have a corollary in the other"
     def fn(*args, **kwargs):
         return None
     return fn
 
 LOG = logging.getLogger(__name__)
-
-env = api(fab_api.env, threadbare.state.ENV)
 
 #
 # exceptions
@@ -37,12 +35,12 @@ env = api(fab_api.env, threadbare.state.ENV)
 class CommandException(Exception):
     pass
 
-# no un-catchable errors from Fabric
-# env.abort_exception = CommandException # env is just a dictionary with attribute access
-
-# TODO: how to handle this ...
-# with initial_settings() ... ? we could explicitly go from an empty environment to default settings
-#env['abort_exception'] = CommandException
+if BACKEND == FABRIC:
+    # no un-catchable errors from Fabric
+    fab_api.env['abort_exception'] = CommandException
+else:
+    threadbare.state.set_defaults({"abort_exception": CommandException,
+                                   "key_filename": os.path.expanduser("~/.ssh/id_rsa")})
 
 NetworkError = fab_exceptions.NetworkError
 
@@ -50,28 +48,23 @@ NetworkError = fab_exceptions.NetworkError
 # api
 #
 
-def fab_api_local_remote_wrapper(fab_result):
+# local:
+# - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1251
+# run/sudo:
+# - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L898-L971
+def fab_api_results_wrapper(fab_fn):
     """Fabric returns the stdout of the command when capture=True, with stderr and some values also available as attributes.
-    This modifies the behaviour of Fabric's `local` to return a dictionary of results."""
-    # local:
-    # - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1251
-    # run/sudo:
-    # - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L898-L971
-    result = fab_result.__dict__
-    result['stdout'] = (fab_result or b"").splitlines()
-    result['stderr'] = (fab_result.stderr or b"").splitlines()
-    return result
+    This modifies the behaviour of Fabric's `local`, `run` and `sudo` commands to return a dictionary of results."""
+    def wrapper(*args, **kwargs):
+        fab_result = fab_fn(*args, **kwargs)
+        result = fab_result.__dict__
+        result['stdout'] = (fab_result or b"").splitlines()
+        result['stderr'] = (fab_result.stderr or b"").splitlines()
+        return result
+    return wrapper
 
-def fab_api_local_wrapper(*args, **kwargs):
-    return fab_api_local_remote_wrapper(fab_api.local(*args, **kwargs))
-
-def fab_api_run_wrapper(*args, **kwargs):
-    return fab_api_local_remote_wrapper(fab_api.run(*args, **kwargs))
-
-def fab_api_sudo_wrapper(*args, **kwargs):
-    return fab_api_local_remote_wrapper(fab_api.sudo(*args, **kwargs))
-
-# https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
+# settings:
+# - https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
 def fab_api_settings_wrapper(*args, **kwargs):
     "a context manager that alters mutable application state for functions called within it's scope"
 
@@ -85,7 +78,9 @@ def fab_api_settings_wrapper(*args, **kwargs):
 
 #
 
-local = api(fab_api_local_wrapper, threadbare.operations.local)
+env = api(fab_api.env, threadbare.state.ENV)
+
+local = api(fab_api_results_wrapper(fab_api.local), threadbare.operations.local)
 execute = api(fab_api.execute, threadbare.execute.execute_with_hosts)
 parallel = api(fab_api.parallel, threadbare.execute.parallel)
 serial = api(fab_api.serial, threadbare.execute.serial)
@@ -97,14 +92,14 @@ settings = api(fab_api_settings_wrapper, threadbare.state.settings)
 lcd = api(fab_api.lcd, threadbare.operations.lcd) # local change dir
 rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir
 
-remote = api(fab_api_run_wrapper, threadbare.operations.remote)
-remote_sudo = api(fab_api_sudo_wrapper, threadbare.operations.remote_sudo)
+remote = api(fab_api_results_wrapper(fab_api.run), threadbare.operations.remote)
+remote_sudo = api(fab_api_results_wrapper(fab_api.sudo), threadbare.operations.remote_sudo)
 upload = api(fab_api.put, threadbare.operations.upload)
 download = api(fab_api.get, threadbare.operations.download)
 remote_file_exists = api(fab_files.exists, threadbare.operations.remote_file_exists)
 
 network_disconnect_all = api(fabric.network.disconnect_all,
-                             no_match("threadbare automatically closes ssh closes connections"))
+                             no_op("threadbare automatically closes ssh closes connections"))
 
 #
 # deprecated api

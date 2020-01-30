@@ -247,8 +247,6 @@ def _ec2_connection_params(stackname, username, **kwargs):
     # http://docs.fabfile.org/en/1.14/usage/env.html
     params = {'user': username}
     pem = stack_pem(stackname)
-    # todo: handle other non-rsa private keys
-    params['key_filename'] = os.path.expanduser("~/.ssh/id_rsa")
     # handles cases where we want to establish a connection to run a task
     # when machine has failed to provision correctly.
     if username == config.BOOTSTRAP_USER:

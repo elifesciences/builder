@@ -21,7 +21,6 @@ RUN apk add --no-cache --virtual build-deps \
     pip install virtualenv && \
     mkdir /venv && \
     virtualenv --python=python3 /venv && \
-    /venv/bin/pip install parallel-ssh && \
     /venv/bin/pip install -r /requirements.txt && \
     apk del build-deps
 

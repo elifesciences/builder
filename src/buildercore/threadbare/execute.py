@@ -5,6 +5,7 @@ from .common import first
 from . import state
 
 
+# https://github.com/mathiasertl/fabric/blob/master/fabric/decorators.py#L148-L161
 def serial(func, pool_size=None):
     """Forces the given function to run `pool_size` times.
     when pool_size is None (default), executor decides how many instances of `func` to execute (1, probably).
@@ -17,10 +18,9 @@ def serial(func, pool_size=None):
     return inner
 
 
+# https://github.com/mathiasertl/fabric/blob/master/fabric/decorators.py#L164-L194
 def parallel(func, pool_size=None):
-    """Forces the wrapped function to run in parallel, instead of sequentially.
-    This is an opportunity for pre/post process work prior to calling a function in parallel."""
-    # https://github.com/mathiasertl/fabric/blob/master/fabric/decorators.py#L164-L194
+    """Forces the wrapped function to run in parallel, instead of sequentially."""
     wrapped_func = serial(func, pool_size)
     # `func` *must* be forced to run in parallel to main process
     wrapped_func.parallel = True
@@ -151,7 +151,6 @@ def _serial_execution(func, param_key, param_values):
     result_list = []
     if param_key and param_values:
         for x in param_values:
-            # TODO: this prevent ssh clients from being shared
             with state.settings(**{param_key: x}):
                 result_list.append(func())
     else:
@@ -177,12 +176,12 @@ def execute(func, param_key=None, param_values=None):
     parent process blocks until all child processes have completed.
     returns a map of execution data with the return values of the individual executions available under 'result'"""
 
-    # in Fabric, `execute` is a guard-type function that ensures the function and the function's environment is correct
-    # before passing it to `_execute` that does the actual magic.
+    # in Fabric, `execute` is a guard-type function that ensures the function and the function's environment is
+    # correct before passing it to `_execute` that does the actual magic.
     # `execute`: https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L372-L401
     # `_execute`: https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L213-L277
 
-    # the custom 'JobQueue' adds complexity but can be avoided (I hope):
+    # Fabric's custom 'JobQueue' adds complexity but can be avoided:
     # https://github.com/mathiasertl/fabric/blob/master/fabric/job_queue.py
 
     if (param_key and param_values is None) or (param_key is None and param_values):
