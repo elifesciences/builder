@@ -1,3 +1,4 @@
+import six
 import os
 from functools import reduce
 
@@ -8,8 +9,11 @@ class PromptedException(BaseException):
 
 def has_type(x, t, msg=None):
     "raises TypeError if given `x` is not of type `t`"
+    msg = msg or "%r is not of expected type %r" % (x, t)
+    if t == str and not isinstance(x, six.string_types):
+        raise TypeError(msg)
+
     if not isinstance(x, t):
-        msg = msg or "%r is not of expected type %r" % (x, t)
         raise TypeError(msg)
 
 
