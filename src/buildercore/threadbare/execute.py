@@ -33,19 +33,14 @@ def _parallel_execution_worker_wrapper(env, worker_func, name, queue):
     try:
         assert isinstance(env, dict), "given environment must be a dictionary"
 
-        # Fabric is nuking the child process's env dictionary
-        # https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L229-L237
-
-        # what we can do is say that worker functions executed in parallel must use the
-        # implicit `settings() as env` invocation rather than `settings(env)` as we have
-        # no reference to `env` unless the worker function accepts it as a parameter.
-        # and we can't rely on that.
+        # Fabric nukes the child process's `env` dictionary
+        # - https://github.com/mathiasertl/fabric/blob/master/fabric/tasks.py#L229-L237
 
         # note: not possible to service stdin when multiprocessing
         env["abort_on_prompts"] = True
 
-        # we don't care what the parent process had when Python copied across it's state
-        # to execute this worker_func in parallel. reset it now. the process is destroyed upon leaving.
+        # we don't care what the parent process had when Python copied across it's state to
+        # execute this `worker_func` in parallel. reset it now. the process is destroyed upon leaving.
 
         state.DEPTH = 0
         state.set_defaults(env)
@@ -130,6 +125,7 @@ def _parallel_execution(env, func, param_key, param_values, return_process_pool=
             if not result["alive"]:
                 result_map[result["name"]] = result
                 del pool[idx]
+        # introduces the slightest of delays so that we're not manically polling every microsecond
         time.sleep(0.1)
 
     # all processes are complete
