@@ -794,7 +794,7 @@ elife-bot:
                     deletion-policy: delete
                 "{instance}-elife-ejp-poa-delivery":
                     sqs-notifications:
-                        ct-poa-incoming-queue: {}
+                        continuumtest-poa-incoming-queue: {}
                     deletion-policy: delete
         prod:
             # don't change type through CloudFormation because the template is too old to be modified successfully
