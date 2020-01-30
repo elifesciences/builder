@@ -4,7 +4,7 @@ import contextlib
 CLEANUP_KEY = "_cleanup"
 
 
-class LockableDict(dict):
+class FreezeableDict(dict):
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         self.read_only = False
@@ -39,11 +39,11 @@ def read_write(d):
 
 
 def initial_state():
-    """returns a new, empty, locked, LockableDict instance that is used as the initial `state.ENV` value.
+    """returns a new, empty, locked, FreezeableDict instance that is used as the initial `state.ENV` value.
 
     if you are thinking "it would be really convenient if 'some_setting' was 'some_value' by default",
     see `set_defaults`."""
-    new_env = LockableDict()
+    new_env = FreezeableDict()
     read_only(new_env)
     return new_env
 
@@ -55,7 +55,7 @@ DEPTH = 0  # used to determine how deeply nested we are
 
 def set_defaults(defaults_dict=None):
     """re-initialises the `state.ENV` dictionary with the given defaults.
-    with no arguments, the global state will be reverted to it's initial state (an empty LockableDict).
+    with no arguments, the global state will be reverted to it's initial state (an empty FreezeableDict).
 
     use `state.set_defaults` BEFORE using ANY other `state.*` functions are called."""
     global ENV, DEPTH
@@ -63,7 +63,7 @@ def set_defaults(defaults_dict=None):
         msg = "refusing to set initial `threadbare.state.ENV` state within a `threadbare.state.settings` context manager."
         raise EnvironmentError(msg)
 
-    new_env = LockableDict()
+    new_env = FreezeableDict()
     new_env.update(defaults_dict or {})
     read_only(new_env)
     ENV = new_env
@@ -103,7 +103,7 @@ def settings(**kwargs):
     # another approach would be to relax guarantees that the environment is completely reverted
 
     # call `read_write` here as `deepcopy` copies across attributes (like `read_only`) and
-    # then values using `__setitem__`, causing errors in LockableDict when 'set_defaults' used
+    # then values using `__setitem__`, causing errors in FreezeableDict when 'set_defaults' used
     read_write(state)
 
     original_values = copy.deepcopy(state)

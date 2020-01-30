@@ -6,16 +6,30 @@ class PromptedException(BaseException):
     pass
 
 
+def has_type(x, t, msg=None):
+    "raises TypeError if given `x` is not of type `t`"
+    if not isinstance(x, t):
+        msg = msg or "%r is not of expected type %r" % (x, t)
+        raise TypeError(msg)
+
+
+def all_have_type(pair_list, msg=None):
+    "raises TypeError if any x in pair (x, t) in `pair_list` is not of type `t`"
+    has_type(pair_list, list)
+    for x, t in pair_list:
+        has_type(x, t, msg)
+
+
 def first(x):
     "returns the first element in an collection of things"
     if x is None:
         return x
     try:
-        if isinstance(x, dict):
-            return list(x.items())[0]
         return x[0]
-    except (ValueError, IndexError):
+    except IndexError:
         return None
+    except (ValueError, KeyError):
+        raise
 
 
 def merge(*dict_list):
@@ -63,6 +77,9 @@ def _shell_escape(string):
         >>> _shell_escape('"')
         '\\\\"'
     """
+
+    has_type(string, str)
+
     for char in ('"', "$", "`"):
         string = string.replace(char, r"\%s" % char)
     return string
@@ -73,6 +90,8 @@ def shell_wrap_command(command):
     """wraps the given command in a shell invocation.
     default shell is /bin/bash (like Fabric)
     no support for configurable shell at present"""
+
+    has_type(command, str)
 
     # '-l' is 'login' shell
     # '-c' is 'run command'
@@ -94,13 +113,19 @@ def sudo_wrap_command(command):
     # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L374-L376
     # note: differs from Fabric. they support interactive input of password, users and groups
     # we use it exclusively to run commands as root
+
+    has_type(command, str)
+
     sudo_prefix = "sudo --non-interactive"
     space = " "
     return sudo_prefix + space + command
 
 
-def pwd_wrap_command(command, working_dir):
+def cwd_wrap_command(command, working_dir):
     "adds a 'cd' prefix to command"
+
+    all_have_type([(command, str), (working_dir, str)])
+
     prefix = 'cd "%s" &&' % working_dir
     space = " "
     return prefix + space + command
