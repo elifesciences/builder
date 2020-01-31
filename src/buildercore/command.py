@@ -1,5 +1,4 @@
-# Fabric 1.14 documentation: https://docs.fabfile.org/en/1.14/
-
+import os
 import fabric.api as fab_api
 import fabric.contrib.files as fab_files
 import fabric.exceptions as fab_exceptions
@@ -7,11 +6,27 @@ import fabric.state
 import fabric.network
 import logging
 from io import BytesIO
-from . import utils
+from . import utils, threadbare
+
+THREADBARE = 'threadbare'
+FABRIC = 'fabric'
+
+DEFAULT_BACKEND = FABRIC
+
+BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
+assert BACKEND in [FABRIC, THREADBARE]
+
+def api(fabric_fn, threadbare_fn):
+    "accepts two functions and returns the one matching the currently set BACKEND"
+    return fabric_fn if BACKEND == FABRIC else threadbare_fn
+
+def no_op(msg):
+    "used in rare circumstances when either a function in Fabric or Threadbare doesn't have a corollary in the other"
+    def fn(*args, **kwargs):
+        return None
+    return fn
 
 LOG = logging.getLogger(__name__)
-
-env = fab_api.env
 
 #
 # exceptions
@@ -20,8 +35,12 @@ env = fab_api.env
 class CommandException(Exception):
     pass
 
-# no un-catchable errors from Fabric
-env.abort_exception = CommandException
+if BACKEND == FABRIC:
+    # no un-catchable errors from Fabric
+    fab_api.env['abort_exception'] = CommandException
+else:
+    threadbare.state.set_defaults({"abort_exception": CommandException,
+                                   "key_filename": os.path.expanduser("~/.ssh/id_rsa")})
 
 NetworkError = fab_exceptions.NetworkError
 
@@ -29,14 +48,24 @@ NetworkError = fab_exceptions.NetworkError
 # api
 #
 
-local = fab_api.local
-execute = fab_api.execute
-parallel = fab_api.parallel
-serial = fab_api.serial
-hide = fab_api.hide
+# local:
+# - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1240-L1251
+# run/sudo:
+# - https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L898-L971
+def fab_api_results_wrapper(fab_fn):
+    """Fabric returns the stdout of the command when capture=True, with stderr and some values also available as attributes.
+    This modifies the behaviour of Fabric's `local`, `run` and `sudo` commands to return a dictionary of results."""
+    def wrapper(*args, **kwargs):
+        fab_result = fab_fn(*args, **kwargs)
+        result = fab_result.__dict__
+        result['stdout'] = (fab_result or b"").splitlines()
+        result['stderr'] = (fab_result.stderr or b"").splitlines()
+        return result
+    return wrapper
 
-# https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
-def settings(*args, **kwargs):
+# settings:
+# - https://github.com/mathiasertl/fabric/blob/master/fabric/context_managers.py#L158-L241
+def fab_api_settings_wrapper(*args, **kwargs):
     "a context manager that alters mutable application state for functions called within it's scope"
 
     # these values were set with `fabric.state.output[key] = val`
@@ -47,15 +76,30 @@ def settings(*args, **kwargs):
 
     return fab_api.settings(*args, **kwargs)
 
-lcd = fab_api.lcd # local change dir
-rcd = fab_api.cd # remote change dir
+#
 
-remote = fab_api.run
-remote_sudo = fab_api.sudo
-upload = fab_api.put
-download = fab_api.get
-remote_file_exists = fab_files.exists
-network_disconnect_all = fabric.network.disconnect_all
+env = api(fab_api.env, threadbare.state.ENV)
+
+local = api(fab_api_results_wrapper(fab_api.local), threadbare.operations.local)
+execute = api(fab_api.execute, threadbare.execute.execute_with_hosts)
+parallel = api(fab_api.parallel, threadbare.execute.parallel)
+serial = api(fab_api.serial, threadbare.execute.serial)
+
+hide = api(fab_api.hide, threadbare.operations.hide)
+
+settings = api(fab_api_settings_wrapper, threadbare.state.settings)
+
+lcd = api(fab_api.lcd, threadbare.operations.lcd) # local change dir
+rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir
+
+remote = api(fab_api_results_wrapper(fab_api.run), threadbare.operations.remote)
+remote_sudo = api(fab_api_results_wrapper(fab_api.sudo), threadbare.operations.remote_sudo)
+upload = api(fab_api.put, threadbare.operations.upload)
+download = api(fab_api.get, threadbare.operations.download)
+remote_file_exists = api(fab_files.exists, threadbare.operations.remote_file_exists)
+
+network_disconnect_all = api(fabric.network.disconnect_all,
+                             no_op("threadbare automatically closes ssh closes connections"))
 
 #
 # deprecated api
@@ -81,10 +125,11 @@ def remote_listfiles(path=None, use_sudo=False):
     with fab_api.hide('output'):
         runfn = remote_sudo if use_sudo else remote
         path = "%s/*" % path.rstrip("/")
-        stdout = runfn("for i in %s; do echo $i; done" % path)
-        if stdout == path: # some kind of bash artifact where it returns `/path/*` when no matches
+        result = runfn("for i in %s; do echo $i; done" % path)
+        stdout = result['stdout']
+        if stdout and stdout[0] == path: # some kind of bash artifact where it returns `/path/*` when no matches
             return []
-        return stdout.splitlines()
+        return stdout
 
 def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
     "wrapper around fabric.operations.get"

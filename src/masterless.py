@@ -69,8 +69,8 @@ def parse_validate_repolist(fdata, *repolist):
             continue
 
         with lcd(path), settings(warn_only=True):
-            ensure(local("git fetch --quiet").succeeded, "failed to fetch remote refs for %s" % path)
-            ensure(local("git cat-file -e %s^{commit}" % revision).succeeded, "failed to find ref %r in %s" % (revision, name))
+            ensure(local("git fetch --quiet")['succeeded'], "failed to fetch remote refs for %s" % path)
+            ensure(local("git cat-file -e %s^{commit}" % revision)['succeeded'], "failed to find ref %r in %s" % (revision, name))
 
     return arglist
 

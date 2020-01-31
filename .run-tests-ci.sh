@@ -16,11 +16,10 @@ if [ "$envname" = "py27" ]; then
 else
     coverage_options=
 fi
+
 pytest \
     $coverage_options \
-    -n 4 \
-    --dist=loadscope \
-    -s \
+    --capture=no \
     --junitxml="build/pytest-$envname.xml" \
     src/tests src/integration_tests
 

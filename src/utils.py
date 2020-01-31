@@ -31,8 +31,8 @@ def git_remote_branches(url):
 
 def _git_remote_refs(url):
     cmd = "git ls-remote --heads %s" % url
-    output = local(cmd, capture=True)
-    return [line.split() for line in output.splitlines()]
+    output = local(cmd, capture=True)['stdout']
+    return [line.split() for line in output]
 
 def errcho(x):
     sys.stderr.write(x)
