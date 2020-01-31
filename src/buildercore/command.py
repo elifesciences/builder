@@ -11,7 +11,7 @@ from . import utils, threadbare
 THREADBARE = 'threadbare'
 FABRIC = 'fabric'
 
-DEFAULT_BACKEND = FABRIC
+DEFAULT_BACKEND = THREADBARE
 
 BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
 assert BACKEND in [FABRIC, THREADBARE]
