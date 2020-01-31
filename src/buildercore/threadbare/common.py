@@ -1,4 +1,4 @@
-import os, sys
+import os
 from functools import reduce
 
 
@@ -6,29 +6,11 @@ class PromptedException(BaseException):
     pass
 
 
-def has_type(x, t, msg=None):
-    "raises TypeError if given `x` is not of type `t`"
-
-    PY2 = sys.version_info[0] == 2
-
-    if PY2:
-        string_types = basestring
-    else:
-        string_types = str
-
-    msg = msg or "%r is not of expected type %r" % (x, t)
-    if t == str and not isinstance(x, string_types):
-        raise TypeError(msg)
-
-    if not isinstance(x, t):
-        raise TypeError(msg)
-
-
-def all_have_type(pair_list, msg=None):
-    "raises TypeError if any x in pair (x, t) in `pair_list` is not of type `t`"
-    has_type(pair_list, list)
-    for x, t in pair_list:
-        has_type(x, t, msg)
+def ensure(assertion, msg, exception_class=AssertionError):
+    """intended as a convenient replacement for `assert` statements that
+    get compiled away with -O flags"""
+    if not assertion:
+        raise exception_class(msg)
 
 
 def first(x):
@@ -89,7 +71,7 @@ def _shell_escape(string):
         '\\\\"'
     """
 
-    has_type(string, str)
+    ensure(string is not None, "a string is required", TypeError)
 
     for char in ('"', "$", "`"):
         string = string.replace(char, r"\%s" % char)
@@ -102,8 +84,6 @@ def shell_wrap_command(command):
     default shell is /bin/bash (like Fabric)
     no support for configurable shell at present"""
 
-    has_type(command, str)
-
     # '-l' is 'login' shell
     # '-c' is 'run command'
     shell_prefix = "/bin/bash -l -c"
@@ -111,10 +91,7 @@ def shell_wrap_command(command):
     escaped_command = _shell_escape(command)
     escaped_wrapped_command = '"%s"' % escaped_command
 
-    space = " "
-    final_command = shell_prefix + space + escaped_wrapped_command
-
-    return final_command
+    return "%s %s" % (shell_prefix, escaped_wrapped_command)
 
 
 def sudo_wrap_command(command):
@@ -125,21 +102,15 @@ def sudo_wrap_command(command):
     # note: differs from Fabric. they support interactive input of password, users and groups
     # we use it exclusively to run commands as root
 
-    has_type(command, str)
-
     sudo_prefix = "sudo --non-interactive"
-    space = " "
-    return sudo_prefix + space + command
+    return "%s %s" % (sudo_prefix, command)
 
 
 def cwd_wrap_command(command, working_dir):
     "adds a 'cd' prefix to command"
 
-    all_have_type([(command, str), (working_dir, str)])
-
     prefix = 'cd "%s" &&' % working_dir
-    space = " "
-    return prefix + space + command
+    return "%s %s" % (prefix, command)
 
 
 def isint(x):
