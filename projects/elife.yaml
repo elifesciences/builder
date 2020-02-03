@@ -1345,31 +1345,6 @@ personalised-covers:
             1246: 80
             1247: 8080
 
-schematron-validator:
-    subdomain: schematron-validator
-    default-branch: master
-    repo: https://github.com/elifesciences/schematron-validator
-    formula-repo: https://github.com/elifesciences/schematron-validator-formula
-    formula-dependencies:
-        - https://github.com/elifesciences/builder-base-formula
-    aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215`
-        ports:
-            - 22
-            - 80
-            - 443
-    aws-alt:
-        prod:
-            subdomains:
-                - schematron
-    vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
-        ports:
-            1246: 80
-            1247: 8080
-
 observer:
     description: article-level reporting
     subdomain: observer # observer.elifesciences.org
