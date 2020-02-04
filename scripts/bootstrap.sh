@@ -110,13 +110,18 @@ if $upgrade_python2; then
         # virtualenvs have to be recreated
         #find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
 
-        # install/upgrade pip+setuptools
+        # install pip+setuptools
         apt-get install python-pip python-setuptools --no-install-recommends -y -q
-        python2.7 -m pip install pip setuptools --upgrade --progress-bar off
     fi
 
     # remove flag, if it exists
     rm -f /root/upgrade-python.flag
+fi
+
+if $elife_depends_on_python2; then
+    # upgrade pip setuptools, install dockerlib
+    python2.7 -m pip install pip setuptools --upgrade --progress-bar off
+    python2.7 -m pip install "docker[tls]==4.1.0" --progress-bar off
 fi
 
 if $upgrade_python3; then
