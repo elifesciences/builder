@@ -120,8 +120,8 @@ fi
 
 if $elife_depends_on_python2; then
     # upgrade pip setuptools, install dockerlib
-    python2.7 -m pip install pip setuptools --upgrade --progress-bar off
-    python2.7 -m pip install "docker[tls]==4.1.0" --progress-bar off
+    python2.7 -m pip install pip setuptools --upgrade
+    python2.7 -m pip install "docker[tls]==4.1.0"
 fi
 
 if $upgrade_python3; then
