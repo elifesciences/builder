@@ -64,7 +64,7 @@ def server_access():
     stackname = core.find_master(core.find_region())
     public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['PublicIpAddress']
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
-    return result.return_code == 0
+    return result['succeeded']
 
 @cached
 def _cached_master_ip(master_stackname):

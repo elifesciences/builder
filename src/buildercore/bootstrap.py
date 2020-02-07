@@ -51,7 +51,8 @@ def run_script(script_filename, *script_params, **environment_variables):
 
     env_string = ['%s=%s' % (k, v) for k, v in environment_variables.items()]
     cmd = ["/bin/bash", remote_script] + lmap(escape_string_parameter, list(script_params))
-    retval = remote_sudo(" ".join(env_string + cmd))
+    result = remote_sudo(" ".join(env_string + cmd))
+    retval = result['return_code']
     remote_sudo("rm " + remote_script) # remove the script after executing it
     end = datetime.now()
     LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
@@ -267,7 +268,7 @@ def _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region):
     else:
         policy = {
             "Version": "2012-10-17",
-            "Id": queue.arn + "/SQSDefaultPolicy",
+            "Id": queue.attributes['QueueArn'] + "/SQSDefaultPolicy",
             "Statement": []
         }
 
@@ -486,7 +487,15 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)
 
+        # bit of a hack, but project config merging doesn't apply to top-level values
+        # in this case we look for an alternate salt version under a project's 'ec2' section
         salt_version = context['project']['salt']
+        alt_salt_version = context['ec2'].get('salt')
+
+        # and we only use it if we're going masterless
+        if alt_salt_version and is_masterless:
+            salt_version = alt_salt_version
+
         install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
 
         build_vars = bvars.read_from_current_host()
