@@ -50,7 +50,7 @@ install_git=false
 # Salt to avoid changing it while it is running
 
 # TODO: remove this block once our python2 dependency is gone
-if ! command -v python2.7; then
+if ! command -v python2.7 || ! python2.7 -m pip; then
     # python2 not found
     upgrade_python2=true
 else
@@ -120,7 +120,7 @@ fi
 
 if $elife_depends_on_python2; then
     # upgrade pip setuptools, install dockerlib
-    python2.7 -m pip install pip setuptools --upgrade
+    python2.7 -m pip install pip "setuptools==44.0.0" --upgrade
     python2.7 -m pip install "docker[tls]==4.1.0"
 fi
 
