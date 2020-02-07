@@ -333,10 +333,6 @@ master-server:
     # see: https://github.com/elifesciences/builder-private
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
-        ec2:
-            # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 4506: # salt publish port
@@ -351,8 +347,6 @@ master-server:
             subdomains:
                 - master-server
     vagrant:
-        # 16.04, deprecated
-        box: bento/ubuntu-16.04
         ports:
             8200: 8200 # Vault GUI
 
