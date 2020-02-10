@@ -1056,13 +1056,10 @@ elife-reporting:
 
 elife-libraries:
     domain: false
+    intdomain: false
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        ec2:
-            # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
         ext:
@@ -1080,17 +1077,10 @@ elife-libraries:
             ext:
                 size: 10 # GB
                 type: standard
-        powerful:
-            description: speeding up bot-lax-adaptor tests
-            type: c4.2xlarge
-        powerful2:
-            description: speeding up bot-lax-adaptor tests even more
-            type: c4.4xlarge
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 containers:
