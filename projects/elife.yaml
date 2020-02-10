@@ -1056,7 +1056,6 @@ elife-reporting:
 
 elife-libraries:
     domain: false
-    intdomain: false
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
