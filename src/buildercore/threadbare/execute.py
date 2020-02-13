@@ -163,7 +163,7 @@ def execute(func, param_key=None, param_values=None):
 
     For example:
 
-        execute({}, somefunc, param_key='host', param_values=['127.0.0.1', '127.0.1.1', 'localhost'])
+        execute(somefunc, param_key='host', param_values=['127.0.0.1', '127.0.1.1', 'localhost'])
 
     will ensure that `somefunc` has the (local) state property 'host' with a value of one of the above when executed.
 
@@ -202,7 +202,7 @@ def execute(func, param_key=None, param_values=None):
     return _serial_execution(func, param_key, param_values)
 
 
-def execute_with_hosts(func, hosts=None):
+def execute_with_hosts(func, hosts=None, line_template=None):
     """convenience wrapper around `execute`. calls `execute` on given `func` for each host in `hosts`.
     The host is available within the worker function's `env` as `host_string`."""
     host_list = hosts or state.ENV.get("hosts") or []
@@ -216,6 +216,9 @@ def execute_with_hosts(func, hosts=None):
     # - https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L386
     # it says 'for informational purposes only' and nothing we use depends on it, so I'm disabling for now
     # env['all_hosts'] = env['hosts']
-    results = execute(func, param_key="host_string", param_values=host_list)
+    default = "{host:15} {pipe}: {line}\n"
+    line_template = line_template or state.ENV.get("line_template") or default
+    with state.settings(line_template=line_template):
+        results = execute(func, param_key="host_string", param_values=host_list)
     # results are ordered so we can do this
     return dict(zip(host_list, results))  # {'192.168.0.1': [], '192.169.0.3': []}
