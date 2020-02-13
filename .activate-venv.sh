@@ -14,15 +14,13 @@ else
     echo "* the no-delete-venv flag is set. preserving venv"
 fi
 
-# prefer python2 over python3
-if [ ! -f .use-python-3.flag ]; then
-    # highest installed version of py2
-    python=$(which python2 python2.7 | head -n 1)
-else
-    # python 3.5, 16.04
-    # python 3.6, 18.04
-    python=$(which python3 python3.6 python3.5 | head -n 1)
-fi
+# TODO: legacy, remove once flag is removed from all environments
+rm -f .use-python-3.flag
+
+# "python3", typically points to the latest version of python3 installed. varies by distribution
+# "python3.5", Ubuntu 16.04
+# "python3.6", Ubuntu 18.04
+python=$(which python3 python3.6 python3.5 | head -n 1)
 
 py=${python##*/} # ll: python3.6
 echo "using $py"
@@ -33,16 +31,7 @@ if [ ! -e "venv/bin/$py" ]; then
 fi
 
 # create+activate venv
-if [ ! -f .use-python-3.flag ]; then
-    virtualenv --python=$python venv
-else
-    "$python" -m venv venv
-fi
+"$python" -m venv venv
 source venv/bin/activate
 
-if [ ! -f .use-python-3.flag ]; then
-    # on Python2, sticking to Fabric rather than Fabric3
-    pip install -r py2-requirements.txt
-else
-    pip install -r requirements.txt
-fi
+pip install -r requirements.txt
