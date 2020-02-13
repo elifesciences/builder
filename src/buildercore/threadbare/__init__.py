@@ -7,11 +7,11 @@ from gevent import monkey
 monkey.patch_all()
 
 
-from . import state, operations, execute
+from . import state, operations, execute  # nopep8
 
 assert state and operations and execute  # quieten pyflakes
 
-import logging
+import logging  # nopep8
 
 disable_these_handlers = ["pssh.host_logger", "pssh.clients.native.single"]
 for unwanted_logger in disable_these_handlers:

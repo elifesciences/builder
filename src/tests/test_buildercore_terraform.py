@@ -367,7 +367,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'template': '${file("journal-submit.vcl.tpl")}',
                             'vars': {
                                 'percentage': 10,
-                                'referer': '^https://xpub\.example\.com/',
+                                'referer': r'^https://xpub\.example\.com/',
                                 'xpub_uri': 'https://xpub.example.com/login',
                             },
                         },
@@ -635,7 +635,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         log_format = service['gcslogging'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
-        self.assertRegex(log_format, "\{.*\}")
+        self.assertRegex(log_format, r"\{.*\}")
 
         data = template['data']['vault_generic_secret']['fastly-gcs-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
@@ -659,7 +659,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         log_format = service['bigquerylogging'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
-        self.assertRegex(log_format, "\{.*\}")
+        self.assertRegex(log_format, r"\{.*\}")
 
         data = template['data']['vault_generic_secret']['fastly-gcp-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcp-logging'})

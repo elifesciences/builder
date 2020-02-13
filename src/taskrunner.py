@@ -149,7 +149,7 @@ def generate_task_list(show_debug_tasks=False):
 # --- https://github.com/mathiasertl/fabric/blob/1.13.1/fabric/main.py#L499-L564
 def _escape_split(sep, argstr):
     """
-    Allows for escaping of the separator: e.g. task:arg='foo\, bar'
+    Allows for escaping of the separator: e.g. task:arg=r'foo\, bar'
 
     It should be noted that the way bash et. al. do command line parsing, those
     single quotes are required.

@@ -1,3 +1,4 @@
+from time import time
 import os
 from os.path import join
 import utils
@@ -9,7 +10,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-from time import time
 
 # http://stackoverflow.com/questions/1622943/timeit-versus-timing-decorator
 def timeit(fn):

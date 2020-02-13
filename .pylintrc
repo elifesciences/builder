@@ -3,3 +3,7 @@
 # when in a virtual env distutils is replaced by "black-magic":
 # https://github.com/PyCQA/pylint/issues/223
 ignored-modules=distutils
+
+# remove once this issue is resolved:
+# https://github.com/PyCQA/pylint/issues/3134
+generated-members=.*
