@@ -19,11 +19,12 @@ if [ ! -f .use-python-3.flag ]; then
     # highest installed version of py2
     python=$(which python2 python2.7 | head -n 1)
 else
-    # python 3.5
-    python=$(which python3 python3.5 | head -n 1)
+    # python 3.5, 16.04
+    # python 3.6, 18.04
+    python=$(which python3 python3.6 python3.5 | head -n 1)
 fi
 
-py=${python##*/} # ll: python3.5
+py=${python##*/} # ll: python3.6
 echo "using $py"
 
 if [ ! -e "venv/bin/$py" ]; then

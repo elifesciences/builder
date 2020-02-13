@@ -50,7 +50,7 @@ install_git=false
 # Salt to avoid changing it while it is running
 
 # TODO: remove this block once our python2 dependency is gone
-if ! command -v python2.7; then
+if ! command -v python2.7 || ! python2.7 -m pip; then
     # python2 not found
     upgrade_python2=true
 else
@@ -93,7 +93,7 @@ if ! dpkg -l git; then
 fi
 
 if ($upgrade_python2 || $upgrade_python3 || $install_git); then
-    apt-get update -y
+    apt-get update -y -q
 fi
 
 
@@ -105,18 +105,23 @@ if $upgrade_python2; then
 
     if $elife_depends_on_python2; then
         echo "eLife still has formulas that depend on Python2!"
-        apt-get install python2.7 python2.7-dev -y
+        apt-get install python2.7 python2.7-dev -y -q
 
         # virtualenvs have to be recreated
         #find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
 
-        # install/upgrade pip+setuptools
-        apt-get install python-pip python-setuptools --no-install-recommends -y
-        python2.7 -m pip install pip setuptools --upgrade
+        # install pip+setuptools
+        apt-get install python-pip python-setuptools --no-install-recommends -y -q
     fi
 
     # remove flag, if it exists
     rm -f /root/upgrade-python.flag
+fi
+
+if $elife_depends_on_python2; then
+    # upgrade pip setuptools, install dockerlib
+    python2.7 -m pip install pip "setuptools==44.0.0" --upgrade
+    python2.7 -m pip install "docker[tls]==4.1.0"
 fi
 
 if $upgrade_python3; then
@@ -126,13 +131,14 @@ if $upgrade_python3; then
     # confold: If conf file modified and the version in the package changed, keep the old version without prompting
     apt-get install \
         python3 python3-dev python3-pip python3-setuptools \
-        -y --no-install-recommends \
+        -y -q --no-install-recommends \
         -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
+    # --progress-bar off -- this option only available since pip 10.0. 16.04 has pip 8 by default
     python3 -m pip install pip setuptools --upgrade
 
-    # some libraries need to be installed *before* calling Salt
-    python3 -m pip install "docker[tls]==4.1.0"
+    # some Salt states require libraries to be installed before calling highstate
+    python3 -m pip install "docker[tls]==4.1.0" --progress-bar off
 
     # record an entry about when python3 was installed/upgraded
     # presence of this entry is used to skip this section in future, unless forced with a flag
@@ -147,7 +153,7 @@ if $upgrade_python3; then
 fi
 
 if $install_git; then
-    apt-get install git -y
+    apt-get install git -y -q
 fi
 
 

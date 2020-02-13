@@ -487,7 +487,15 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
         write_environment_info(stackname, overwrite=True)
 
+        # bit of a hack, but project config merging doesn't apply to top-level values
+        # in this case we look for an alternate salt version under a project's 'ec2' section
         salt_version = context['project']['salt']
+        alt_salt_version = context['ec2'].get('salt')
+
+        # and we only use it if we're going masterless
+        if alt_salt_version and is_masterless:
+            salt_version = alt_salt_version
+
         install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
 
         build_vars = bvars.read_from_current_host()

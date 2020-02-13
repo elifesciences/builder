@@ -46,7 +46,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-00f6fb4aeb9a97e3e # GENERATED created from basebox--1804
+            ami: ami-0f719d1033ca8b8f3 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -213,6 +213,13 @@ defaults:
             ec2:
                 # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+
+        standalone-next-salt:
+            description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
+            ec2:
+                salt: '2018.3.4'
+                masterless: True
+
         1804:
             description: Ubuntu 18.04 (Bionic)
             ec2: true # explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
@@ -226,13 +233,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-00f6fb4aeb9a97e3e # GENERATED created from basebox--1804
+                ami: ami-0f719d1033ca8b8f3 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-00f6fb4aeb9a97e3e # GENERATED created from basebox--1804
+                ami: ami-0f719d1033ca8b8f3 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 16.04, deprecated
@@ -1052,10 +1059,6 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        ec2:
-            # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
         ext:
@@ -1073,17 +1076,10 @@ elife-libraries:
             ext:
                 size: 10 # GB
                 type: standard
-        powerful:
-            description: speeding up bot-lax-adaptor tests
-            type: c4.2xlarge
-        powerful2:
-            description: speeding up bot-lax-adaptor tests even more
-            type: c4.4xlarge
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 containers:
@@ -1334,31 +1330,6 @@ personalised-covers:
                 - covers
     vagrant:
         ram: 1024
-        ports:
-            1246: 80
-            1247: 8080
-
-schematron-validator:
-    subdomain: schematron-validator
-    default-branch: master
-    repo: https://github.com/elifesciences/schematron-validator
-    formula-repo: https://github.com/elifesciences/schematron-validator-formula
-    formula-dependencies:
-        - https://github.com/elifesciences/builder-base-formula
-    aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215`
-        ports:
-            - 22
-            - 80
-            - 443
-    aws-alt:
-        prod:
-            subdomains:
-                - schematron
-    vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1246: 80
             1247: 8080
@@ -2065,8 +2036,8 @@ kubernetes-aws:
         eks:
             worker:
                 type: t2.large    
-                max-size: 2
-                desired-capacity: 2
+                max-size: 3
+                desired-capacity: 3
             helm: true
             external-dns:
                 domain-filter: "elifesciences.org"

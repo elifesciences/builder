@@ -1,3 +1,4 @@
+from datetime import datetime
 import tempfile
 import contextlib
 import subprocess
@@ -5,6 +6,8 @@ from threading import Timer
 import getpass
 from pssh import exceptions as pssh_exceptions
 import os, sys
+from pssh.clients.native import SSHClient as PSSHClient
+import logging
 from . import state
 from .common import (
     PromptedException,
@@ -16,8 +19,7 @@ from .common import (
     cwd_wrap_command,
     shell_wrap_command,
 )
-from pssh.clients.native import SSHClient as PSSHClient
-import logging
+
 
 LOG = logging.getLogger(__name__)
 
@@ -205,29 +207,49 @@ def _execute(command, user, key_filename, host_string, port, use_pty, timeout):
         raise NetworkError(ex)
 
 
-def _print_line(output_pipe, quiet, discard_output, line):
+def _print_line(output_pipe, line, **kwargs):
     """writes the given `line` (string) to the given `output_pipe` (file-like object)
     if `quiet` is True, `line` is *not* written to `output_pipe`.
     if `discard_output` is True, `line` is not returned and output is not accumulated in memory"""
-    if not quiet:
-        output_pipe.write(line + "\n")
-    if not discard_output:
-        return line
+
+    base_kwargs = {"discard_output": False, "quiet": False, "line_template": "{line}\n"}
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    if not final_kwargs["quiet"]:
+        # useful values that can be part of the template
+        pipe_type = "err" if output_pipe == sys.stderr else "out"
+        dt = datetime.now()
+        template_kwargs = {
+            "line": line,
+            "year": dt.year,
+            "month": dt.month,
+            "day": dt.day,
+            "hour": dt.hour,
+            "minute": dt.minute,
+            "second": dt.second,
+            "ms": dt.microsecond,
+            "host": state.ENV.get("host_string", ""),
+            "pipe": pipe_type,
+        }
+
+        # render template and write to given pipe
+        template = final_kwargs["line_template"]
+        output_pipe.write(template.format(**template_kwargs))
+
+    if not final_kwargs["discard_output"]:
+        return line  # free of any formatting
 
 
-def _process_output(output_pipe, result_list, quiet, discard_output):
+def _process_output(output_pipe, result_list, **kwargs):
     "calls `_print_line` on each result in `result_list`."
-    kwargs = subdict(locals(), ["quiet", "discard_output"])
 
     # always process the results as soon as we have them
-    # use `quiet` to hide the printing of output to stdout/stderr
-    # use `discard_output` to discard the results as soon as they are read
-    # stderr may be empty if `combine_stderr` in `remote` was `True`
-    new_results = [
-        _print_line(output_pipe, line=line, **kwargs) for line in result_list
-    ]
+    # use `quiet=True` to hide the printing of output to stdout/stderr
+    # use `discard_output=True` to discard the results as soon as they are read.
+    # `stderr` results may be empty if `combine_stderr` in call to `remote` was `True`
+    new_results = [_print_line(output_pipe, line, **kwargs) for line in result_list]
     output_pipe.flush()
-    if not kwargs["discard_output"]:
+    if "discard_output" in kwargs and not kwargs["discard_output"]:
         return new_results
 
 
@@ -261,6 +283,8 @@ def remote(command, **kwargs):
         "combine_stderr": True,
         "quiet": False,
         "discard_output": False,
+        # todo: duplicated content. this needs to defer to deeply nested `_print_line`
+        "line_template": "{line}\n",
         "remote_working_dir": None,
         "timeout": None,
         "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
