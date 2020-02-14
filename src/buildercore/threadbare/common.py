@@ -1,5 +1,8 @@
+import sys
 import os
 from functools import reduce
+
+PY3 = sys.version_info[0] == 3
 
 
 class PromptedException(BaseException):
