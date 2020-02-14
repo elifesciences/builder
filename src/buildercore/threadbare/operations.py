@@ -8,7 +8,7 @@ from pssh import exceptions as pssh_exceptions
 import os, sys
 from pssh.clients.native import SSHClient as PSSHClient
 import logging
-from . import state
+from . import state, common
 from .common import (
     PromptedException,
     merge,
@@ -211,6 +211,11 @@ def _print_line(output_pipe, line, **kwargs):
     """writes the given `line` (string) to the given `output_pipe` (file-like object)
     if `quiet` is True, `line` is *not* written to `output_pipe`.
     if `discard_output` is True, `line` is not returned and output is not accumulated in memory"""
+
+    if not common.PY3:
+        # in python2, assume the data we're reading is utf-8 otherwise the call to `.format`
+        # below will attempt to encode the string as ascii and fail with an `UnicodeEncodeError`
+        line = line.encode("utf-8")
 
     base_kwargs = {"discard_output": False, "quiet": False, "line_template": "{line}\n"}
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
