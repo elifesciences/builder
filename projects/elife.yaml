@@ -51,7 +51,7 @@ defaults:
             # use a master server or go ronin?
             masterless: false
             # optional: pin a master server for all new instances of a project
-            master_ip: 10.0.2.198
+            master_ip: 10.0.2.135
             # optional: specify `ports` to be opened
             security-group: {}
         region: us-east-1
