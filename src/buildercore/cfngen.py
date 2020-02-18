@@ -498,6 +498,11 @@ def more_validation(json_template_str):
         if dbid:
             ensure('--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid)
 
+        # case: s3 bucket names must be between 3 and 63 chars
+        # - https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+        import pprint
+        pprint.pprint(data)
+
         return True
     except BaseException:
         LOG.exception("uncaught error attempting to validate cloudformation template")
@@ -513,6 +518,7 @@ def validate_project(pname, **extra):
 
     cloudformation.validate_template(pname, template)
     more_validation(template)
+    LOG.info("more_validation passed")
     # validate all alternative configurations
     for altconfig in pdata.get('aws-alt', {}).keys():
         LOG.info('validating %s, %s', pname, altconfig)
@@ -521,6 +527,7 @@ def validate_project(pname, **extra):
         }
         template = quick_render(pname, **extra)
         cloudformation.validate_template(pname, template)
+        LOG.info("cloudformation validation passed")
 
 #
 # create new template
