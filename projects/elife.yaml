@@ -214,7 +214,14 @@ defaults:
                 # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
 
+        # deprecated, use `sNextSalt` instead
         standalone-next-salt:
+            description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
+            ec2:
+                salt: '2018.3.4'
+                masterless: True
+
+        sNextSalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
             ec2:
                 salt: '2018.3.4'
