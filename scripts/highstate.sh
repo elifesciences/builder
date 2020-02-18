@@ -17,3 +17,4 @@ else
         logger "Salt highstate failure: $log_file on $(hostname)"
         exit $status
     }
+fi
