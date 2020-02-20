@@ -192,8 +192,9 @@ def build_context_s3(pdata, context):
     }
     if pdata['aws'].get('s3'):
         for bucket_template_name in pdata['aws']['s3']:
-            bucket_name = parameterize(context)(bucket_template_name)
             configuration = pdata['aws']['s3'][bucket_template_name]
+            bucket_name = parameterize(context)(bucket_template_name)
+            bucket_name = bucket_name.lower() # bucket names must not contain uppercase characters
             context['s3'][bucket_name] = default_bucket_configuration.copy()
             context['s3'][bucket_name].update(configuration if configuration else {})
     return context
@@ -499,9 +500,16 @@ def more_validation(json_template_str):
             ensure('--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid)
 
         # case: s3 bucket names must be between 3 and 63 chars
+        # case: s3 bucket names must not contain uppercase characters
         # - https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-        import pprint
-        pprint.pprint(data)
+        bucket_map = utils.dictfilter(lambda key, val: val.get('Type') == "AWS::S3::Bucket", data.get('Resources'))
+        for bucket_map in bucket_map.values():
+            bucket_name = bucket_map['Properties']['BucketName']
+            length = len(bucket_name)
+            # occasionally true with particularly long alt-config names and instance ids
+            ensure(length >= 3 and length <= 63, "s3 bucket names must be between 3 and 63 characters: %s" % bucket_name)
+            # this shouldn't ever be true as the bucket name is normalised after the template is rendered
+            ensure(not any(char.isupper() for char in bucket_name), "s3 bucket name must not contain uppercase characters: %s" % bucket_name)
 
         return True
     except BaseException:

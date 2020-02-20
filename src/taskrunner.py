@@ -30,7 +30,6 @@ UNQUALIFIED_TASK_LIST = [
     cfn.download_file,
     cfn.upload_file,
     cfn.cmd,
-    cfn.validate,
 
     deploy.switch_revision_update_instance,
 

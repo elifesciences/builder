@@ -759,6 +759,28 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['WidgetsEncryptedProdBucket']
         )
 
+        self.assertEqual(
+            {
+                'Type': 'AWS::S3::BucketPolicy',
+                'Properties': {
+                    'Bucket': 'widgets-MixedCase-prod',
+                    'PolicyDocument': {
+                        "Version": "2012-10-17",
+                        "Statement": [{
+                            "Sid": "AddPerm",
+                            "Effect": "Allow",
+                            "Principal": "*",
+                            "Action": ["s3:GetObject"],
+                            "Resource":[
+                                "arn:aws:s3:::widgets-mixedcase-prod/*",
+                            ]
+                        }]
+                    }
+                },
+            },
+            data['Resources']['WidgetsMixedCaseProdBucketPolicy']
+        )
+
     def test_cdn_template(self):
         extra = {
             'stackname': 'project-with-cloudfront--prod',

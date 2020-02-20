@@ -111,13 +111,6 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 @requires_project
-def validate(pname, instance_id='dummy', alt_config=None):
-    more_context = {"stackname": core.mk_stackname(pname, instance_id)}
-    if alt_config:
-        more_context["alt-config"] = alt_config
-    print(cfngen.validate_project(pname, **more_context))
-        
-@requires_project
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     """creates a new CloudFormation file for the given project."""
     instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
@@ -178,7 +171,7 @@ def launch(pname, instance_id=None, alt_config=None):
     # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
     bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
     setdefault('.active-stack', stackname)
-    
+
 @requires_aws_stack
 def highstate(stackname):
     "a fast update with many caveats. prefer `update` instead"
