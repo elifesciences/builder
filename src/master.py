@@ -3,7 +3,7 @@
 See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
-import buildvars, utils
+import cfn, buildvars, utils
 from buildercore.command import remote_sudo, local
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
@@ -72,13 +72,46 @@ def _cached_master_ip(master_stackname):
     return core.stack_data(master_stackname)[0]['PrivateIpAddress']
 
 @requires_aws_stack
-def remaster(stackname, new_master_stackname="master-server--2018-04-09-2"):
-    "tell minion who their new master is. deletes any existing master key on minion"
-    # TODO: turn this into a decorator
-    import cfn
+def update_salt(stackname):
     # start the machine if it's stopped
     # you might also want to acquire a lock so alfred doesn't stop things
-    cfn._check_want_to_be_running(stackname, 1)
+    cfn._check_want_to_be_running(stackname, autostart=True)
+
+    context = context_handler.load_context(stackname)
+
+    if not context.get('ec2'):
+        LOG.info("no ec2 context, skipping %s", stackname)
+        return
+
+    pdata = core.project_data_for_stackname(stackname)
+
+    LOG.info("upgrading salt client")
+    context['project']['salt'] = pdata['salt']
+
+    # update context
+    LOG.info("updating context")
+    context_handler.write_context(stackname, context)
+
+    # update buildvars
+    LOG.info("updating buildvars")
+    buildvars.refresh(stackname, context)
+
+    # update ec2 nodes
+    LOG.info("updating nodes")
+    bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
+    return True
+
+def update_salt_master(region=None):
+    "convenience. update the version of Salt installed on the master-server."
+    current_master_stackname = core.find_master(region)
+    return update_salt(current_master_stackname)
+
+@requires_aws_stack
+def remaster(stackname, new_master_stackname="master-server--2018-04-09-2"):
+    "tell minion who their new master is. deletes any existing master key on minion"
+    # start the machine if it's stopped
+    # you might also want to acquire a lock so alfred doesn't stop things
+    cfn._check_want_to_be_running(stackname, autostart=True)
 
     master_ip = _cached_master_ip(new_master_stackname)
     LOG.info('re-mastering %s to %s', stackname, master_ip)
@@ -117,20 +150,6 @@ def remaster(stackname, new_master_stackname="master-server--2018-04-09-2"):
     bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
     return True
 
-# TODO: extract just the salt update part from `remaster`
-@requires_aws_stack
-def update_salt(stackname):
-    current_master_stack = core.find_master_for_stack(stackname)
-    return remaster(stackname, current_master_stack)
-
-# TODO: extract just the salt update part from `remaster`
-def update_salt_master(region=None):
-    "update the version of Salt installed on the master-server."
-    region = region or utils.find_region()
-    current_master_stackname = core.find_master(region)
-    return remaster(current_master_stackname, current_master_stackname)
-
-#@requires_aws_stack
 def remaster_all(*pname_list):
     # same as the old master
     new_master_stackname = "master-server--2018-04-09-2"
