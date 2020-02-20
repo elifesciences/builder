@@ -763,7 +763,7 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'Type': 'AWS::S3::BucketPolicy',
                 'Properties': {
-                    'Bucket': 'widgets-MixedCase-prod',
+                    'Bucket': 'widgets-mixedcase-prod',
                     'PolicyDocument': {
                         "Version": "2012-10-17",
                         "Statement": [{
@@ -778,7 +778,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     }
                 },
             },
-            data['Resources']['WidgetsMixedCaseProdBucketPolicy']
+            data['Resources']['WidgetsMixedcaseProdBucketPolicy']
         )
 
     def test_cdn_template(self):
