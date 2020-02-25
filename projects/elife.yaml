@@ -1950,6 +1950,7 @@ data-pipeline:
                 size: 100 # GB
                 type: standard
         prod:
+            type: t2.large
             ext:
                 size: 100 # GB
                 type: standard
