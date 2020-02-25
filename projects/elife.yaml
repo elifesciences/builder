@@ -1871,7 +1871,6 @@ fastly-logs:
 data-pipeline:
     description: Data consolidation project
     subdomain: pipeline
-    domain: False
     formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
         ec2:
