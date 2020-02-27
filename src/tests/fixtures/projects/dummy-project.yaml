@@ -266,10 +266,6 @@ project-with-s3:
                 public: true
             widgets-encrypted-{instance}:
                 encryption: arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012
-            # not recommended, however 'instance' here may be derived from an alt-config name
-            # that may in turn contain MixedCase alphanumeric
-            widgets-MixedCase-{instance}:
-                public: true
 
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
