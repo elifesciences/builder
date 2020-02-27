@@ -103,6 +103,7 @@ def update_salt(stackname):
 
 def update_salt_master(region=None):
     "convenience. update the version of Salt installed on the master-server."
+    region = region or utils.find_region()
     current_master_stackname = core.find_master(region)
     return update_salt(current_master_stackname)
 
