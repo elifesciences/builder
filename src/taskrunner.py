@@ -1,5 +1,5 @@
 import sys, os, traceback
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
 from buildercore import command
 from decorators import echo_output
 from functools import reduce
@@ -75,6 +75,12 @@ TASK_LIST = [
     vault.token_lookup_accessor,
     vault.token_create,
     vault.token_revoke,
+
+    report.all_projects,
+    report.all_ec2_projects,
+    report.all_ec2_instances,
+    report.all_formulas,
+
 ]
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'

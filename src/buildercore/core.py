@@ -129,6 +129,20 @@ def tags2dict(tags):
         return {}
     return dict((el['Key'], el['Value']) for el in tags)
 
+def ec2_instances(state='running'):
+    """returns a list of all ec2 instances in given state.
+    possible states are 'running' (default), 'stopped', 'terminated', ..."""
+    conn = boto_resource('ec2', find_region())
+    
+    filters = [
+        {'Name': 'instance-state-name', 'Values': [state]}
+    ]
+    qs = conn.instances.filter(Filters=filters)
+    result = list(ec2.meta.data for ec2 in qs) # paginated?
+    for ec2 in result:
+        ec2['TagsDict'] = tags2dict(ec2['Tags'])
+    return result
+
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname. Ordered by node index (1 to N)"
     # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
@@ -584,8 +598,8 @@ def active_aws_project_stacks(pname):
             return project_name_from_stackname(stackname) == pname
     return lfilter(fn, active_aws_stacks(region))
 
-# TODO: consider removing `only_parseable` parameter.
 def stack_names(stack_list, only_parseable=True):
+    "set `only_parseable` to `False` to include non-builder managed"
     results = sorted(map(first, stack_list))
     if only_parseable:
         return lfilter(stackname_parseable, results)
