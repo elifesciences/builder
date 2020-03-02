@@ -133,10 +133,12 @@ def ec2_instances(state='running'):
     """returns a list of all ec2 instances in given state.
     possible states are 'running' (default), 'stopped', 'terminated', ..."""
     conn = boto_resource('ec2', find_region())
-    
-    filters = [
-        {'Name': 'instance-state-name', 'Values': [state]}
-    ]
+
+    filters = []
+    if state:
+        filters = [
+            {'Name': 'instance-state-name', 'Values': [state]}
+        ]
     qs = conn.instances.filter(Filters=filters)
     result = list(ec2.meta.data for ec2 in qs) # paginated?
     for ec2 in result:
