@@ -74,7 +74,7 @@ def _cached_master_ip(master_stackname):
 @requires_aws_stack
 def update_salt(stackname):
     # start the machine if it's stopped
-    # you might also want to acquire a lock so alfred doesn't stop things
+    # you might also want to acquire a lock or turn off automatic shutdowns so alfred doesn't stop things
     cfn._check_want_to_be_running(stackname, autostart=True)
 
     context = context_handler.load_context(stackname)
