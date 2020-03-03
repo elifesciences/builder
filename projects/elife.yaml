@@ -455,6 +455,8 @@ api-gateway:
             fastly: false
         s1804:
             fastly: false
+        snsalt:
+            fastly: false
         end2end: {}
         continuumtest:
             fastly:
@@ -1497,6 +1499,8 @@ iiif:
         s1604:
             fastly: false
         s1804:
+            fastly: false
+        snsalt:
             fastly: false
         # for testing new versions
         ci:
