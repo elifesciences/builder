@@ -2055,23 +2055,6 @@ large-repo-wrangler:
             - 22
     vagrant: {}
 
-
-microsimulation-demo:
-    subdomain: ijm  # demo--ijm.elifesciences.org
-    repo: https://github.com/microsimulation/demo
-    formula-repo: https://github.com/elifesciences/microsimulation-demo-formula
-    aws:
-        type: t2.medium # 4 GB of RAM, same as search for now.
-        ports:
-            - 22
-            - 80
-            - 443
-    aws-alt: {}
-    vagrant:
-        ports:
-            1280: 80
-            1281: 8081
-
 bioprotocol:
     subdomain: bp # ci--bp.elifesciences.org
     repo: https://github.com/elifesciences/bioprotocol-service
