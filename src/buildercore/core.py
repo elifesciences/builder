@@ -63,6 +63,16 @@ STEADY_CFN_STATUS = [
     'UPDATE_ROLLBACK_COMPLETE',
 ]
 
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
+ALL_EC2_STATES = [
+    "pending",
+    "running",
+    "stopping",
+    "stopped",
+    "shutting-down",
+    "terminated"
+]
+
 #
 # sns
 #
@@ -131,7 +141,9 @@ def tags2dict(tags):
 
 def ec2_instances(state='running'):
     """returns a list of all ec2 instances in given state.
-    possible states are 'running' (default), 'stopped', 'terminated', ..."""
+    default state is 'running'. `None` is considered 'any state'"""
+    ensure(state is None or state in ALL_EC2_STATES, "unknown ec2 state %r" % state)
+
     conn = boto_resource('ec2', find_region())
 
     filters = []
@@ -140,7 +152,7 @@ def ec2_instances(state='running'):
             {'Name': 'instance-state-name', 'Values': [state]}
         ]
     qs = conn.instances.filter(Filters=filters)
-    result = list(ec2.meta.data for ec2 in qs) # paginated?
+    result = list(ec2.meta.data for ec2 in qs) # todo: is this paginated?
     for ec2 in result:
         ec2['TagsDict'] = tags2dict(ec2['Tags'])
     return result
@@ -601,7 +613,8 @@ def active_aws_project_stacks(pname):
     return lfilter(fn, active_aws_stacks(region))
 
 def stack_names(stack_list, only_parseable=True):
-    "set `only_parseable` to `False` to include non-builder managed"
+    """returns the names of all CloudFormation stacks.
+    set `only_parseable` to `False` to include stacks not managed by builder"""
     results = sorted(map(first, stack_list))
     if only_parseable:
         return lfilter(stackname_parseable, results)
