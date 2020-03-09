@@ -142,7 +142,9 @@ def tags2dict(tags):
 def ec2_instances(state='running'):
     """returns a list of all ec2 instances in given state.
     default state is 'running'. `None` is considered 'any state'"""
-    ensure(state is None or state in ALL_EC2_STATES, "unknown ec2 state %r" % state)
+    known_states_str = ", ".join(ALL_EC2_STATES)
+    err_msg = "unknown ec2 state %r; known states: %s and None (all states)" % (state, known_states_str)
+    ensure(state is None or state in ALL_EC2_STATES, err_msg)
 
     conn = boto_resource('ec2', find_region())
 
@@ -627,6 +629,13 @@ def active_stack_names(region):
 def steady_stack_names(region):
     "convenience. returns names of all stacks in a non-transitory state"
     return stack_names(steady_aws_stacks(region))
+
+def adhoc_stack_names(region):
+    "returns the names of all active stacks whose instance name doesn't match any defined environment"
+    active_stack_names(region)
+    raw_project_data = project.files.read_project_file(config.app()['project-locations'][0])
+    print(raw_project_data)
+    # ...
 
 class MultipleRegionsError(EnvironmentError):
     def __init__(self, regions):
