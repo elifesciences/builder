@@ -1,5 +1,4 @@
 import os
-from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from pprint import pformat
 import backoff
 from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
@@ -16,9 +15,6 @@ from buildercore.utils import lmap, ensure
 
 import logging
 LOG = logging.getLogger(__name__)
-
-def strtobool(x):
-    return x if isinstance(x, bool) else bool(_strtobool(x))
 
 # TODO: move to a lower level if possible
 #@requires_steady_stack
@@ -51,7 +47,7 @@ def ensure_destroyed(stackname):
 def update(stackname, autostart="0", concurrency='serial'):
     """Updates the environment within the stack's ec2 instance.
     does *not* call Cloudformation's `update` command on the stack"""
-    instances = _check_want_to_be_running(stackname, strtobool(autostart))
+    instances = _check_want_to_be_running(stackname, utils.strtobool(autostart))
     if not instances:
         return
     return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
@@ -285,7 +281,7 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 
     Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
     """
-    allow_missing, use_bootstrap_user = lmap(strtobool, [allow_missing, use_bootstrap_user])
+    allow_missing, use_bootstrap_user = lmap(utils.strtobool, [allow_missing, use_bootstrap_user])
 
     @backoff.on_exception(backoff.expo, NetworkError, max_time=60)
     def _download(path, destination):

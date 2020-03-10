@@ -139,7 +139,7 @@ def tags2dict(tags):
         return {}
     return dict((el['Key'], el['Value']) for el in tags)
 
-def ec2_instances(state='running'):
+def ec2_instance_list(state='running'):
     """returns a list of all ec2 instances in given state.
     default state is 'running'. `None` is considered 'any state'"""
     known_states_str = ", ".join(ALL_EC2_STATES)
