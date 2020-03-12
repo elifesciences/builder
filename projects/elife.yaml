@@ -1057,7 +1057,6 @@ elife-dashboard:
 elife-reporting:
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04, deprecated
         ram: 1024
         ports:
             1333: 80
