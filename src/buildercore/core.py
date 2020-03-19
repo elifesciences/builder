@@ -140,8 +140,8 @@ def tags2dict(tags):
     return dict((el['Key'], el['Value']) for el in tags)
 
 def ec2_instance_list(state='running'):
-    """returns a list of all ec2 instances in given state.
-    default state is 'running'. `None` is considered 'any state'"""
+    """returns a list of all ec2 instances in given `state`.
+    default state is `running`. `None` is considered 'any state'."""
     known_states_str = ", ".join(ALL_EC2_STATES)
     err_msg = "unknown ec2 state %r; known states: %s and None (all states)" % (state, known_states_str)
     ensure(state is None or state in ALL_EC2_STATES, err_msg)
@@ -153,8 +153,10 @@ def ec2_instance_list(state='running'):
         filters = [
             {'Name': 'instance-state-name', 'Values': [state]}
         ]
-    qs = conn.instances.filter(Filters=filters)
-    result = list(ec2.meta.data for ec2 in qs) # todo: is this paginated?
+    # probably not paginated, but we can specify 1000 results at once:
+    # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.ServiceResource.instances
+    qs = conn.instances.filter(Filters=filters, MaxResults=1000)
+    result = list(ec2.meta.data for ec2 in qs)
     for ec2 in result:
         ec2['TagsDict'] = tags2dict(ec2['Tags'])
     return result
@@ -616,7 +618,7 @@ def active_aws_project_stacks(pname):
 
 def stack_names(stack_list, only_parseable=True):
     """returns the names of all CloudFormation stacks.
-    set `only_parseable` to `False` to include stacks not managed by builder"""
+    set `only_parseable` to `False` to include stacks not managed by builder."""
     results = sorted(map(first, stack_list))
     if only_parseable:
         return lfilter(stackname_parseable, results)
@@ -629,13 +631,6 @@ def active_stack_names(region):
 def steady_stack_names(region):
     "convenience. returns names of all stacks in a non-transitory state"
     return stack_names(steady_aws_stacks(region))
-
-def adhoc_stack_names(region):
-    "returns the names of all active stacks whose instance name doesn't match any defined environment"
-    active_stack_names(region)
-    raw_project_data = project.files.read_project_file(config.app()['project-locations'][0])
-    print(raw_project_data)
-    # ...
 
 class MultipleRegionsError(EnvironmentError):
     def __init__(self, regions):

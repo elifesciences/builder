@@ -8,7 +8,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 def read_project_file(project_file):
-    "reads the contents of the YAML project file"
+    "reads the contents of the YAML project file (`/path/to/builder/projects/elife.yaml`)."
     return utils.ordered_load(open(project_file, 'r'))
 
 @cached
