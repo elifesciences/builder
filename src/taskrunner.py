@@ -49,7 +49,6 @@ TASK_LIST = [
     tasks.repair_cfn_info,
     tasks.repair_context,
     tasks.remove_minion_key,
-    tasks.restart_all_running_ec2,
 
     master.update,
 
@@ -98,8 +97,6 @@ UNQUALIFIED_DEBUG_TASK_LIST = [
 DEBUG_TASK_LIST = [
     aws.rds_snapshots,
     aws.detailed_stack_list,
-
-    tasks.diff_builder_config,
 
     deploy.load_balancer_status,
     deploy.load_balancer_register_all,

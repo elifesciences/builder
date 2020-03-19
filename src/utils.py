@@ -11,7 +11,7 @@ LOG = logging.getLogger(__name__)
 def strtobool(x):
     """wraps `distutils.util.strtobool` that casts 'yes', 'no', '1', '0', 'true', 'false', etc to
     boolean values, but only if the given value isn't already a boolean"""
-    return x if isinstance(x, bool) else bool(_strtobool(x))
+    return x if isinstance(x, bool) else bool(_strtobool(str(x)))
 
 def rmval(lst, *vals):
     """removes each val in `vals` from `lst`, if it exists.
