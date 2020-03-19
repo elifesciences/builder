@@ -173,9 +173,9 @@ def launch(pname, instance_id=None, alt_config=None):
     setdefault('.active-stack', stackname)
 
 @requires_aws_stack
-def highstate(stackname):
+def highstate(stackname, node=1):
     "a fast update with many caveats. prefer `update` instead"
-    with stack_conn(stackname, username=BOOTSTRAP_USER):
+    with stack_conn(stackname, node=node, username=BOOTSTRAP_USER):
         bootstrap.run_script('highstate.sh')
 
 # TODO: deletion candidate
