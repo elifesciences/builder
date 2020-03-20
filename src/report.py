@@ -17,6 +17,7 @@ def sort_by_env(name):
     adhoc = 0 # adhoc/unrecognised names first
     order = {
         'continuumtest': 1,
+        'staging': 1,
         'ci': 2,
         'end2end': 3,
         'prod': 4, # prod last
@@ -63,7 +64,7 @@ def all_formulas():
     # remove any empty values, probably from reading the `defaults` section
     formula_list = filter(None, formula_list)
     # extract just the name from the formula url
-    formula_list = map(lambda url: os.path.basename(url), formula_list)
+    formula_list = map(os.path.basename, formula_list)
     return formula_list
 
 @report
@@ -103,7 +104,7 @@ def all_adhoc_ec2_instances(state='running'):
 
     # extract the names of ec2 instances that are not part of any known environment
     def adhoc_instance(stackname):
-        "predicate, returns True if stackname is in a known environment"
+        "predicate, returns True if stackname is *not* in a known environment"
         try:
             iid = core.parse_stackname(stackname, all_bits=True, idx=True)['instance_id']
             return iid not in env_list
