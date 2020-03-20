@@ -1,25 +1,19 @@
 import os, copy
 from os.path import join
 from collections import OrderedDict
-
-# from . import core # DONT import core. this module should be relatively independent
 from buildercore import utils
-from buildercore.decorators import testme
 from buildercore.config import CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT
 from kids.cache import cache as cached
-
 import logging
 LOG = logging.getLogger(__name__)
 
-
-@testme
-def update_project_file(path, value, pdata, project_file):
-    utils.updatein(pdata, path, value, create=True)
-    return pdata
+def read_project_file(project_file):
+    "reads the contents of the YAML project file (`/path/to/builder/projects/elife.yaml`)."
+    return utils.ordered_load(open(project_file, 'r'))
 
 @cached
 def all_projects(project_file):
-    allp = utils.ordered_load(open(project_file))
+    allp = read_project_file(project_file)
     if allp is None:
         return ({}, [])
     assert "defaults" in allp, ("Project file %s is missing a `default` section" % project_file)
@@ -60,7 +54,6 @@ def project_data(pname, project_file):
 
     return pdata
 
-# TODO: make less AWS-specific
 def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
     cloud_alt = OrderedDict()
 

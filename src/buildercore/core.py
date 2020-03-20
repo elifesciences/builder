@@ -63,6 +63,16 @@ STEADY_CFN_STATUS = [
     'UPDATE_ROLLBACK_COMPLETE',
 ]
 
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
+ALL_EC2_STATES = [
+    "pending",
+    "running",
+    "stopping",
+    "stopped",
+    "shutting-down",
+    "terminated"
+]
+
 #
 # sns
 #
@@ -128,6 +138,28 @@ def tags2dict(tags):
     if tags is None:
         return {}
     return dict((el['Key'], el['Value']) for el in tags)
+
+def ec2_instance_list(state='running'):
+    """returns a list of all ec2 instances in given `state`.
+    default state is `running`. `None` is considered 'any state'."""
+    known_states_str = ", ".join(ALL_EC2_STATES)
+    err_msg = "unknown ec2 state %r; known states: %s and None (all states)" % (state, known_states_str)
+    ensure(state is None or state in ALL_EC2_STATES, err_msg)
+
+    conn = boto_resource('ec2', find_region())
+
+    filters = []
+    if state:
+        filters = [
+            {'Name': 'instance-state-name', 'Values': [state]}
+        ]
+    # probably not paginated, but we can specify 1000 results at once:
+    # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.ServiceResource.instances
+    qs = conn.instances.filter(Filters=filters, MaxResults=1000)
+    result = list(ec2.meta.data for ec2 in qs)
+    for ec2 in result:
+        ec2['TagsDict'] = tags2dict(ec2['Tags'])
+    return result
 
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname. Ordered by node index (1 to N)"
@@ -584,8 +616,9 @@ def active_aws_project_stacks(pname):
             return project_name_from_stackname(stackname) == pname
     return lfilter(fn, active_aws_stacks(region))
 
-# TODO: consider removing `only_parseable` parameter.
 def stack_names(stack_list, only_parseable=True):
+    """returns the names of all CloudFormation stacks.
+    set `only_parseable` to `False` to include stacks not managed by builder."""
     results = sorted(map(first, stack_list))
     if only_parseable:
         return lfilter(stackname_parseable, results)

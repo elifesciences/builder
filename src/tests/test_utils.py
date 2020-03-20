@@ -70,3 +70,24 @@ class TestUtils(base.BaseCase):
         rows = [AnObject('lax', 'ci'), AnObject('bot', 'end2end')]
         keys = ['project', 'instance_id']
         self.assertEqual("lax, ci\nbot, end2end", utils.table(rows, keys))
+
+    def test_strtobool(self):
+        true_case_list = [
+            True,
+            1, "1",
+            "y", "yes", "Yes", "YES",
+            "t", "true", "True", "TRUE",
+        ]
+        for true_case in true_case_list:
+            self.assertEqual(True, utils.strtobool(true_case))
+
+        false_case_list = [
+            False,
+            0, "0",
+            "n", "no", "No", "NO",
+            "f", "false", "False", "FALSE"
+        ]
+        for false_case in false_case_list:
+            self.assertEqual(False, utils.strtobool(false_case))
+
+        self.assertRaises(ValueError, utils.strtobool, "this value is neither true nor false")

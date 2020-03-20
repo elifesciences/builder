@@ -1,5 +1,6 @@
 import logging
 import os, sys
+from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from buildercore import config
 from buildercore.utils import second, last, gtpy2
 from buildercore.command import local
@@ -7,9 +8,10 @@ from buildercore import core
 
 LOG = logging.getLogger(__name__)
 
-# totally is assigned :(
-# pylint: disable=global-variable-not-assigned
-CACHE = {}
+def strtobool(x):
+    """wraps `distutils.util.strtobool` that casts 'yes', 'no', '1', '0', 'true', 'false', etc to
+    boolean values, but only if the given value isn't already a boolean"""
+    return x if isinstance(x, bool) else bool(_strtobool(str(x)))
 
 def rmval(lst, *vals):
     """removes each val in `vals` from `lst`, if it exists.

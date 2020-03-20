@@ -1,5 +1,5 @@
 import sys, os, traceback
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
 from buildercore import command
 from decorators import echo_output
 from functools import reduce
@@ -49,7 +49,6 @@ TASK_LIST = [
     tasks.repair_cfn_info,
     tasks.repair_context,
     tasks.remove_minion_key,
-    tasks.restart_all_running_ec2,
 
     master.update,
 
@@ -75,6 +74,13 @@ TASK_LIST = [
     vault.token_lookup_accessor,
     vault.token_create,
     vault.token_revoke,
+
+    report.all_projects,
+    report.all_ec2_projects,
+    report.all_ec2_instances,
+    report.all_formulas,
+    report.all_adhoc_ec2_instances,
+
 ]
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
@@ -91,8 +97,6 @@ UNQUALIFIED_DEBUG_TASK_LIST = [
 DEBUG_TASK_LIST = [
     aws.rds_snapshots,
     aws.detailed_stack_list,
-
-    tasks.diff_builder_config,
 
     deploy.load_balancer_status,
     deploy.load_balancer_register_all,
