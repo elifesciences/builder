@@ -3,7 +3,7 @@
 See `askmaster.py` for tasks that are run on minions."""
 
 import os, time
-import buildvars, utils
+import cfn, buildvars, utils
 from buildercore.command import remote_sudo, local
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx
@@ -72,79 +72,90 @@ def _cached_master_ip(master_stackname):
     return core.stack_data(master_stackname)[0]['PrivateIpAddress']
 
 @requires_aws_stack
-def remaster(stackname, new_master_stackname):
-    "tell minion who their new master is. deletes any existing master key on minion"
-    # TODO: turn this into a decorator
-    import cfn
-    # start the machine if it's stopped
-    # you might also want to acquire a lock so alfred doesn't stop things
-    cfn._check_want_to_be_running(stackname, 1)
+def update_salt(stackname):
+    "updates the Salt version installed on the instances for the given stack"
 
-    master_ip = _cached_master_ip(new_master_stackname)
-    LOG.info('re-mastering %s to %s', stackname, master_ip)
+    # start instance if it is stopped
+    # acquire a lock from Alfred (if possible) so instance isn't shutdown while being updated
+    cfn._check_want_to_be_running(stackname, autostart=True)
 
     context = context_handler.load_context(stackname)
 
-    # remove if no longer an issue
-    # if context.get('ec2') == True:
-    #    # TODO: duplicates bad ec2 data wrangling in cfngen.build_context
-    #    # ec2 == True for some reason, which is completely useless
-    #    LOG.warn("bad context for stack: %s", stackname)
-    #    context['ec2'] = {}
-    #    context['project']['aws']['ec2'] = {}
+    if not context.get('ec2'):
+        LOG.info("no ec2 context. skipping: %s", stackname)
+        return
+
+    pdata = core.project_data_for_stackname(stackname)
+
+    LOG.info("upgrading salt minion")
+    context['project']['salt'] = pdata['salt']
+
+    LOG.info("updating context")
+    context_handler.write_context(stackname, context)
+
+    LOG.info("updating buildvars")
+    buildvars.refresh(stackname, context)
+
+    LOG.info("updating nodes")
+    bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
+    return True
+
+def update_salt_master(region=None):
+    "convenience. update the version of Salt installed on the master-server."
+    region = region or utils.find_region()
+    current_master_stackname = core.find_master(region)
+    return update_salt(current_master_stackname)
+
+@requires_aws_stack
+def remaster(stackname, new_master_stackname="master-server--2018-04-09-2"):
+    "tell minion who their new master is. deletes any existing master key on minion"
+
+    # start instance if it is stopped
+    # acquire a lock from Alfred (if possible) so instance isn't shutdown while being updated
+    cfn._check_want_to_be_running(stackname, autostart=True)
+
+    master_ip = _cached_master_ip(new_master_stackname)
+    LOG.info('re-mastering %r to %r', stackname, master_ip)
+
+    context = context_handler.load_context(stackname)
+
     if not context.get('ec2'):
         LOG.info("no ec2 context, skipping %s", stackname)
         return
 
     if context['ec2'].get('master_ip') == master_ip:
         LOG.info("already remastered: %s", stackname)
-        try:
-            utils.confirm("Skip?")
-            return
-        except KeyboardInterrupt:
-            LOG.info("not skipping")
+        return
 
-    LOG.info("upgrading salt client")
     pdata = core.project_data_for_stackname(stackname)
-    context['project']['salt'] = pdata['salt']
 
     LOG.info("setting new master address")
     cfngen.set_master_address(pdata, context, master_ip) # mutates context
 
-    # update context
     LOG.info("updating context")
     context_handler.write_context(stackname, context)
 
-    # update buildvars
     LOG.info("updating buildvars")
     buildvars.refresh(stackname, context)
 
-    # remove knowledge of old master
-    def work():
-        remote_sudo("rm -f /etc/salt/pki/minion/minion_master.pub")  # destroy the old master key we have
+    # remove knowledge of old master by destroying the minion's master pubkey
+    def workerfn():
+        remote_sudo("rm -f /etc/salt/pki/minion/minion_master.pub")
     LOG.info("removing old master key from minion")
-    core.stack_all_ec2_nodes(stackname, work, username=config.BOOTSTRAP_USER)
+    core.stack_all_ec2_nodes(stackname, workerfn, username=config.BOOTSTRAP_USER)
 
-    # update ec2 nodes
     LOG.info("updating nodes")
+
+    # todo: how to pass in --dry-run to highstate.sh ?
     bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
     return True
 
-# TODO: extract just the salt update part from `remaster`
-@requires_aws_stack
-def update_salt(stackname):
-    current_master_stack = core.find_master_for_stack(stackname)
-    return remaster(stackname, current_master_stack)
+def remaster_all(*pname_list):
+    "calls `remaster` on *all* projects or just a subset of projects"
 
-# TODO: extract just the salt update part from `remaster`
-def update_salt_master(region=None):
-    "update the version of Salt installed on the master-server."
-    region = region or utils.find_region()
-    current_master_stackname = core.find_master(region)
-    return remaster(current_master_stackname, current_master_stackname)
-
-@requires_aws_stack
-def remaster_all(new_master_stackname):
+    # there should only be one master-server instance at a time.
+    # multiple masters is bad news. assumptions break and it gets complicated quickly.
+    new_master_stackname = "master-server--2018-04-09-2"
     LOG.info('new master is: %s', new_master_stackname)
     ec2stacks = project.ec2_projects()
     ignore = [
@@ -153,21 +164,16 @@ def remaster_all(new_master_stackname):
     ]
     ec2stacks = exsubdict(ec2stacks, ignore)
 
-    def sortbypname(n):
-        unknown = 9
-        porder = {
-            #'observer': 1,
-            'elife-metrics': 2,
-            'lax': 3,
-            'basebox': 4,
-            'containers': 5,
-            'elife-dashboard': 6,
-            'elife-ink': 7
-        }
-        return porder.get(n, unknown)
+    # we can optionally pass in a list of projects to target
+    # this allows us to partition up the projects and have many of these
+    # remastering efforts happening concurrently
+    if pname_list:
+        more_ignore = [p for p in ec2stacks if p not in pname_list]
+        ec2stacks = exsubdict(ec2stacks, more_ignore)
 
-    # pname_list = sorted(ec2stacks.keys(), key=sortbypname) # lets do this alphabetically
     pname_list = sorted(ec2stacks.keys()) # lets do this alphabetically
+
+    # TODO: skip any stacks without ec2 instances
 
     # only update ec2 instances in the same region as the new master
     region = utils.find_region(new_master_stackname)
@@ -188,8 +194,12 @@ def remaster_all(new_master_stackname):
     remastered_list = open('remastered.txt', 'r').read().splitlines() if os.path.exists('remastered.txt') else []
 
     for pname in pname_list:
+        # when would this ever be the case?
+        # `core.active_stack_names` doesn't discriminate against any list of projects
+        # it returns *all* steady stack names.
         if pname not in stack_idx:
             continue
+
         project_stack_list = sorted(stack_idx[pname], key=sortbyenv)
         LOG.info("%r instances: %s" % (pname, ", ".join(project_stack_list)))
         try:
@@ -197,7 +207,6 @@ def remaster_all(new_master_stackname):
                 try:
                     if stackname in remastered_list:
                         LOG.info("already updated, skipping stack: %s", stackname)
-                        open('remastered.txt', 'a').write("%s\n" % stackname)
                         continue
                     LOG.info("*" * 80)
                     LOG.info("updating: %s" % stackname)
@@ -205,10 +214,13 @@ def remaster_all(new_master_stackname):
                     if not remaster(stackname, new_master_stackname):
                         LOG.warn("failed to remaster %s, stopping further remasters to project %r", stackname, pname)
                         break
+                    # print a reminder of which stack was just updated
+                    print("\n(%s)\n" % stackname)
                     open('remastered.txt', 'a').write("%s\n" % stackname)
                 except KeyboardInterrupt:
                     LOG.warn("ctrl-c, skipping stack: %s", stackname)
-                    time.sleep(1)
+                    LOG.info("ctrl-c again to exit process entirely")
+                    time.sleep(2)
                 except BaseException:
                     LOG.exception("unhandled exception updating stack: %s", stackname)
         except KeyboardInterrupt:
