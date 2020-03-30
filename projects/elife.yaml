@@ -1235,7 +1235,6 @@ search:
                 subscriptions:
                     - bus-articles--{instance}
                     - bus-podcast-episodes--{instance}
-                    - bus-subjects--{instance}
                     - bus-collections--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
