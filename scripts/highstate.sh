@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e # everything must pass
-set -u # no unbound variables
 
 arg1=$1 # --dry-run
 
