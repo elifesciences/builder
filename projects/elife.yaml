@@ -418,9 +418,6 @@ api-gateway:
     subdomain: gateway # "gateway.elifesciences.org"
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             # only internal traffic has access to port 80 and http
@@ -470,7 +467,6 @@ api-gateway:
                     - "{instance}--cdn-gateway"
                     - api
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1323: 80
 
