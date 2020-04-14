@@ -1395,9 +1395,6 @@ sciencebeam-texture:
     repo: https://github.com/elifesciences/sciencebeam-texture
     formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4 GB RAM
         ports:
             - 22
@@ -1411,7 +1408,6 @@ sciencebeam-texture:
             subdomains:
                 - sciencebeam-texture
     vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
         ports:
             1222: 80
 
