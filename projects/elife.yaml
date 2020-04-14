@@ -1617,9 +1617,6 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80
@@ -1644,7 +1641,6 @@ profiles:
                 storage-type: Standard
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
         ram: 1024
         ports:
             1265: 80
