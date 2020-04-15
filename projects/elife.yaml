@@ -1953,16 +1953,12 @@ bastion:
     subdomain: bastion
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.nano # 500 MB
         ports:
             - 22
         subdomains:
             - bastion
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 512
 
 reproducible-document-stack:
