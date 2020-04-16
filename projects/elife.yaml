@@ -152,6 +152,7 @@ defaults:
             external-dns: false
                 # Route53 hosted zone to create subdomains on
                 #domain-filter: elifesciences.org
+            efs: false
         cloudfront: 
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -2015,15 +2016,24 @@ kubernetes-aws:
     intdomain: False
     aws:
         ec2: false
-        eks:
-            worker:
-                type: t2.large    
-                max-size: 3
-                desired-capacity: 3
-            helm: true
-            external-dns:
-                domain-filter: "elifesciences.org"
-            efs: true
+    aws-alt:
+        test:
+            eks:
+                worker:
+                    type: t2.large    
+                    max-size: 3
+                    desired-capacity: 3
+                helm: true
+                external-dns:
+                    domain-filter: "elifesciences.org"
+                efs: true
+        flux-test:
+            ec2: false
+            eks:
+                worker:
+                    type: t2.large    
+                    max-size: 3
+                    desired-capacity: 3
 
 large-repo-wrangler:
     description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.
