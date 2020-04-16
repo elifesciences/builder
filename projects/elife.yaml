@@ -1714,9 +1714,6 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1803,7 +1800,6 @@ elife-xpub:
                 protocol:
                     - 443
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1201: 80
 
