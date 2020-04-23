@@ -1706,9 +1706,6 @@ digests:
     repo: https://github.com/elifesciences/digests
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1733,7 +1730,6 @@ digests:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
         ports:
             1290: 80
