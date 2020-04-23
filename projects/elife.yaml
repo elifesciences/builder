@@ -739,6 +739,40 @@ elife-bot:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
     aws-alt:
+        snsalt:
+            s3:
+                "{instance}-elife-silent-corrections":
+                    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: delete
+                "{instance}-elife-bot-sessions":
+                    deletion-policy: delete
+                "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
+                    deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
+        s1804:
+            s3:
+                "{instance}-elife-silent-corrections":
+                    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: delete
+                "{instance}-elife-bot-sessions":
+                    deletion-policy: delete
+                "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
+                    deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
         standalone:
             s3:
                 "{instance}-elife-silent-corrections":
@@ -1132,6 +1166,10 @@ elife-alfred:
             "{instance}-elife-alfred":
                 deletion-policy: retain
     aws-alt:
+        s1804:
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: delete
         standalone:
             s3:
                 "{instance}-elife-alfred":
@@ -1304,7 +1342,7 @@ personalised-covers:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.micro # 1 GB of RAM: Unsure memory stats for PDF generation.
+        type: t2.micro # 1 GB of RAM; unsure of memory stats for PDF generation.
         ports:
             - 22
             - 80
@@ -1314,8 +1352,6 @@ personalised-covers:
                 deletion-policy: retain
     aws-alt:
         standalone:
-            s3: false
-        s1804:
             s3: false
         ci:
             ec2:
@@ -1490,10 +1526,6 @@ iiif:
                             expected: "digest/39984"
     aws-alt:
         standalone:
-            fastly: false
-        s1604:
-            fastly: false
-        s1804:
             fastly: false
         snsalt:
             fastly: false
