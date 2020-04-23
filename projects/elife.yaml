@@ -710,9 +710,6 @@ elife-bot:
     subdomain: bot
     # ip: 54.164.145.166 # bot.elifesciences.org must be available at this IP
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium
         ports:
             - 22
@@ -852,8 +849,7 @@ elife-bot:
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
-    vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
+    vagrant: {}
 
 generic-cdn:
     description: generic CDN for content like PDF, images
