@@ -218,7 +218,7 @@ defaults:
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
             ec2:
-                salt: '2018.3.4'
+                salt: '2019.2.4'
                 masterless: True
 
         1804:
