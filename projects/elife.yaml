@@ -1941,6 +1941,10 @@ data-pipeline:
                             field: imported_timestamp
                             type: DAY
     aws-alt:
+        snsalt:
+            ext:
+                size: 30 # GB
+            s3: false
         standalone:
             ext:
                 size: 100 # GB
@@ -1961,6 +1965,8 @@ data-pipeline:
                 size: 100 # GB
                 type: standard
     gcp-alt:
+        snsalt:
+            bigquery: false
         standalone:
             bigquery: false
     vagrant:
