@@ -7,6 +7,7 @@ import fabric.network
 import logging
 from io import BytesIO
 from . import utils, threadbare
+from functools import partial
 
 THREADBARE = 'threadbare'
 FABRIC = 'fabric'
@@ -96,7 +97,7 @@ rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir
 remote = api(fab_api_results_wrapper(fab_api.run), threadbare.operations.remote)
 remote_sudo = api(fab_api_results_wrapper(fab_api.sudo), threadbare.operations.remote_sudo)
 upload = api(fab_api.put, threadbare.operations.upload)
-download = api(fab_api.get, threadbare.operations.download)
+download = api(fab_api.get, partial(threadbare.operations.download, transfer_protocol="sftp"))
 remote_file_exists = api(fab_files.exists, threadbare.operations.remote_file_exists)
 
 network_disconnect_all = api(fabric.network.disconnect_all,
