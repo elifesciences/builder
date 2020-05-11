@@ -69,7 +69,7 @@ def all_formulas():
 
 @report
 def all_ec2_projects():
-    "return a list of all project names whose projects have a truthy ec2 section (eg, not {}, None or False)"
+    "returns a list of all project names whose projects have a truthy ec2 section (eg, not {}, None or False)"
     def has_ec2(pname, pdata):
         if pdata.get('aws') and pdata['aws'].get('ec2'):
             return pname
