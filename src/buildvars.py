@@ -113,8 +113,10 @@ def _update_remote_bvars(stackname, buildvars):
 #
 
 @requires_aws_stack
-def refresh(stackname, context):
+def refresh(stackname, context=None):
     "(safely) replaces the buildvars file on the ec2 instance(s)"
+
+    context = context or load_context(stackname)
 
     def _refresh_buildvars():
         old_buildvars = _retrieve_build_vars()
