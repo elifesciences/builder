@@ -5,6 +5,8 @@ boto3==1.6.8
 botocore==1.9.8
 coverage==4.3.4
 Fabric==1.13.2
+# 2020-05-15, latest gevent is causing problems
+gevent==1.4.0
 kids.cache==0.0.4
 mock==2.0.0
 more-itertools==4.1.0
