@@ -558,7 +558,10 @@ def _transfer_fn(client, direction, **kwargs):
         # sftp is *exceptionally* slow so SCP is used by default.
         # paramiko's own Python implementation is faster than native SFTP but slower than SCP:
         # - https://github.com/ParallelSSH/parallel-ssh/issues/177
-        "transfer_protocol": "scp",
+        # however, SCP is buggy and may randomly hang or complete without uploading anything.
+        # take slow and reliable over fast and buggy
+        # "transfer_protocol": "scp",
+        "transfer_protocol": "sftp",
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
