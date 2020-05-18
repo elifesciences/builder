@@ -17,7 +17,7 @@ else
     coverage_options=
 fi
 
-pytest \
+./patched_pytest \
     $coverage_options \
     --capture=no \
     --junitxml="build/pytest-$envname.xml" \
