@@ -1204,19 +1204,6 @@ api-dummy:
         ports:
             1242: 80
 
-# used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
-# this is a free form instance jats4r can do what they like with
-# hosts http://jatswiki.org at the moment
-jats4r:
-    aws:
-        ec2:
-            ami: ami-c60b90d1 # us-east-1 xenial 16.04 LTS amd64 hvm:ebs-ssd 20160815 hvm
-        type: t2.micro
-        ports:
-            - 22
-            - 80
-            - 443
-
 
 bus:
     description: see https://github.com/elifesciences/bus
