@@ -555,13 +555,12 @@ def _transfer_fn(client, direction, **kwargs):
     Also accepts the `transfer_protocol` keyword parameter that is either 'scp' (default) or 'sftp'."""
     base_kwargs = {
         "overwrite": True,
-        # sftp is *exceptionally* slow so SCP is used by default.
-        # paramiko's own Python implementation is faster than native SFTP but slower than SCP:
+        # sftp is *exceptionally* slow.
+        # Paramiko's implementation is faster than native SFTP but slower than SCP:
         # - https://github.com/ParallelSSH/parallel-ssh/issues/177
         # however, SCP is buggy and may randomly hang or complete without uploading anything.
-        # take slow and reliable over fast and buggy
-        # "transfer_protocol": "scp",
-        "transfer_protocol": "sftp",
+        # take slow and reliable over fast and buggy.
+        "transfer_protocol": "sftp", # "scp"
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
