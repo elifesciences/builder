@@ -118,6 +118,7 @@ DEBUG_TASK_LIST = [
     buildvars.valid,
     buildvars.fix,
     buildvars.force,
+    buildvars.refresh,
 
     project.clone_project_formulas,
     project.clone_all_project_formulas,
