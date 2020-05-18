@@ -504,8 +504,12 @@ def render_ec2_dns(context, template):
         template.add_resource(internal_dns_ec2_single(context))
 
     # ec2 nodes in a cluster may get a different internal hostname each
+    suppressed = context['ec2'].get('suppressed', [])
     if context['ec2']['dns-internal']:
         for node in range(1, context['ec2']['cluster-size'] + 1):
+            if node in suppressed:
+                continue
+
             hostedzone = context['int_domain'] + "."
             dns_record = route53.RecordSetType(
                 R53_INT_TITLE_NODE % node,

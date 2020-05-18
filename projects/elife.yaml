@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2018.3.4' # the version of salt these project use
+    salt: '2019.2.4' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -45,7 +45,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-08acace502a189091 # GENERATED created from basebox--1804
+            ami: ami-0083002c023446992 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -218,7 +218,7 @@ defaults:
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
             ec2:
-                salt: '2018.3.4'
+                salt: '2019.2.4'
                 masterless: True
 
         1804:
@@ -234,13 +234,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-08acace502a189091 # GENERATED created from basebox--1804
+                ami: ami-0083002c023446992 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-08acace502a189091 # GENERATED created from basebox--1804
+                ami: ami-0083002c023446992 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 16.04, deprecated
@@ -1145,10 +1145,6 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
-        ec2:
-            # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1175,7 +1171,6 @@ elife-alfred:
                 - alfred
                 - ci--alfred # backward compatibility
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 4096
         ports:
             1433: 80
@@ -1739,9 +1734,6 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1828,7 +1820,6 @@ elife-xpub:
                 protocol:
                     - 443
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1201: 80
 
@@ -1945,6 +1936,10 @@ data-pipeline:
                             field: imported_timestamp
                             type: DAY
     aws-alt:
+        snsalt:
+            ext:
+                size: 30 # GB
+            s3: false
         standalone:
             ext:
                 size: 100 # GB
@@ -1965,6 +1960,8 @@ data-pipeline:
                 size: 100 # GB
                 type: standard
     gcp-alt:
+        snsalt:
+            bigquery: false
         standalone:
             bigquery: false
     vagrant:
