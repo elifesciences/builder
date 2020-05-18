@@ -93,6 +93,17 @@ def update_salt(stackname):
     LOG.info("updating context")
     context_handler.write_context(stackname, context)
 
+    # "buildvars are essentially a full copy of the context; if there is an update of infrastructure pending,
+    # we are propagating the new context to the instance without necessarily having created/updated/destroyed
+    # that infrastructure. Since the formulas extensively refer to buildvars to decide what to do,
+    # I see this optimization as unsafe."
+    # - Giorgio, 2019-03-22
+    # - https://github.com/elifesciences/builder/pull/489/files#r268079733
+
+    # this change managed to slip around review and should be 
+    # revisited before next Salt upgrade.
+    # todo: update just the salt version in the stack's *current context*
+    
     LOG.info("updating buildvars")
     buildvars.refresh(stackname, context)
 
