@@ -160,7 +160,6 @@ def remaster_all(*pname_list):
     ec2stacks = project.ec2_projects()
     ignore = [
         'master-server',
-        'jats4r',
     ]
     ec2stacks = exsubdict(ec2stacks, ignore)
 
