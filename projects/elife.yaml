@@ -2058,6 +2058,11 @@ large-repo-wrangler:
             device: /dev/sdh
         ports:
             - 22
+    aws-alt:
+        quite-large:
+            type: t2.large
+            ext:
+                size: 50
     vagrant: {}
 
 bioprotocol:
