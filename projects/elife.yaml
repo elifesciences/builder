@@ -1158,6 +1158,10 @@ elife-alfred:
             "{instance}-elife-alfred":
                 deletion-policy: retain
     aws-alt:
+        snsalt:
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: delete
         s1804:
             s3:
                 "{instance}-elife-alfred":
@@ -1329,6 +1333,8 @@ personalised-covers:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
     aws-alt:
+        snsalt:
+            s3: false
         standalone:
             s3: false
         ci:
