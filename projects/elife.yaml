@@ -2044,6 +2044,7 @@ kubernetes-aws:
         flux-test:
             ec2: false
             eks:
+                version: 1.15
                 worker:
                     type: t2.large    
                     max-size: 6
