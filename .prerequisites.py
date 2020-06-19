@@ -73,7 +73,7 @@ both_checks = [
 
     ('ssh-agent',
      {'all': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc"},
-     lambda x: sh('ps aux | grep ssh-agent$ > /dev/null'),
+     lambda x: sh("ps aux | grep 'ssh-agent$' > /dev/null"),
      None),
 
     ('aws-credentials',
