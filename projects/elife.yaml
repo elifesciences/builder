@@ -1513,6 +1513,16 @@ iiif:
             fastly: false
         snsalt:
             fastly: false
+        checker:
+            description: image deviation testing, checks for regressions and errors in article images.
+            fastly: false
+            type: m5.2xlarge # 8 cores, 32GB ram, $0.384 per Hour
+            ports:
+                - 22
+            ext:
+                size: 30 # GB
+                type: standard
+
         # for testing new versions
         ci:
             ports:
