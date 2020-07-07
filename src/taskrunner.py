@@ -2,6 +2,10 @@
 from buildercore import threadbare
 assert threadbare
 
+# import config early so logging can be set properly
+from buildercore import config
+assert config
+
 import sys, os, traceback
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
 from buildercore import command

@@ -249,6 +249,7 @@ def _check_want_to_be_running(stackname, autostart=False):
 
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
+    LOG.info("looking for running instances ...")
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return

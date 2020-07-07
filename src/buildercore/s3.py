@@ -37,7 +37,7 @@ def write(key, something, overwrite=False):
     if exists(key) and not overwrite:
         raise KeyError("key %r exists and overwrite==False. refusing to overwrite." % key)
     k = builder_bucket().Object(key)
-    LOG.info("writing key %r", key, extra={'key': key})
+    LOG.debug("writing key %r", key, extra={'key': key})
 
     # http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Object.put
     if isstr(something):
@@ -63,7 +63,7 @@ def delete(key):
         raise ValueError(msg)
     if not exists(key):
         return True
-    LOG.info("deleting key %s", key, extra={'key': key})
+    LOG.debug("deleting key %s", key, extra={'key': key})
     k = builder_bucket().Object(key)
     k.delete()
     # http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Object.wait_until_not_exists
@@ -83,7 +83,7 @@ def delete_contents(prefix):
     validate_prefix(prefix)
     # TODO: optimisation here: http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Bucket.delete_objects
     for key in builder_bucket().objects.filter(Prefix=prefix):
-        LOG.info("deleting key %s", key, extra={'key': key})
+        LOG.debug("deleting key %s", key, extra={'key': key})
         key.delete() # not delete(key) ?
 
 def listing(prefix):
@@ -98,6 +98,6 @@ def download(key, output_path, overwrite=False):
     if not overwrite:
         ensure(not os.path.exists(output_path), "given output path exists, will not overwrite: %r" % output_path)
     ensure(exists(key), "key %r not found in bucket %r" % (key, config.BUILDER_BUCKET))
-    LOG.info("downloading key %s", key, extra={'key': key})
+    LOG.debug("downloading key %s", key, extra={'key': key})
     builder_bucket().Object(key).download_file(output_path)
     return output_path

@@ -13,6 +13,10 @@ from buildercore.utils import lmap, lfilter
 from kids.cache import cache
 import logging
 
+# import required to set logging properly
+import boto, boto3, botocore
+assert boto and boto3 and botocore
+
 class ConfigurationError(Exception):
     pass
 
@@ -69,7 +73,6 @@ CONSOLE_HANDLER = logging.StreamHandler()
 CONSOLE_HANDLER.setLevel(logging.INFO) # output level for *this handler*
 CONSOLE_HANDLER.setFormatter(CONSOLE_FORMAT)
 
-
 # FileHandler sends to a named file
 FILE_HANDLER = logging.FileHandler(LOG_FILE)
 _log_level = os.environ.get('LOG_LEVEL_FILE', 'INFO')
@@ -80,10 +83,21 @@ ROOTLOG.addHandler(CONSOLE_HANDLER)
 ROOTLOG.addHandler(FILE_HANDLER)
 
 LOG = logging.getLogger(__name__)
-logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
+
 # TODO: leave on for FILE_HANDLER but not for CONSOLE_HANDLER
 # logging.getLogger('botocore.vendored').setLevel(logging.ERROR)
+LOGGER_LEVELS = {
+    logging.ERROR: ['paramiko.transport'],
+    logging.WARNING: ['boto3', 'botocore', 's3transfer', 'urllib3']
+}
 
+for name in logging.Logger.manager.loggerDict.keys():
+    for error_level, klass_list in LOGGER_LEVELS.items():
+        for klass in klass_list:
+            if klass in name:
+                logging.getLogger(name).setLevel(error_level)
+
+# todo: review this. only used in conftest.py
 def get_logger(name):
     "ensures logging is setup before handing out a Logger object to use"
     return logging.getLogger(name)
