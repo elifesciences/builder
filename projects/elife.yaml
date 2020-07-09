@@ -1516,7 +1516,7 @@ iiif:
         checker:
             description: image deviation testing, checks for regressions and errors in article images.
             fastly: false
-            type: m5.2xlarge # 8 cores, 32GB ram, $0.384 per Hour
+            type: c5.2xlarge # 8 cores, 16GB ram, $0.34 per Hour
             ports:
                 - 22
             ext:
