@@ -228,8 +228,7 @@ defaults:
         1604:
             description: uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
          # 18.04
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
@@ -247,15 +246,13 @@ defaults:
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
                 masterless: true
         # 16.04, deprecated
         s1604:
             description: alias for standalone1604 short enough to fit into hostnames
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
                 masterless: true
         # 18.04, same as default
         standalone:
@@ -420,8 +417,7 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+            ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
         ports:
             - 22
             # only internal traffic has access to port 80 and http
@@ -960,8 +956,7 @@ journal-cms:
     aws:
         # deprecated
         ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+            ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
         ports:
             - 22
             - 443
@@ -1116,8 +1111,7 @@ containers:
     aws:
         ec2:
             # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+            ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
         type: t2.medium # 4GB of RAM
         ports:
             - 22
