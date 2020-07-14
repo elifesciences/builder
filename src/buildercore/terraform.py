@@ -11,6 +11,7 @@ MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
+PROVIDER_AWS_VERSION = '2.3.0',
 PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
 HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
@@ -1169,27 +1170,35 @@ def init(stackname, context):
         # simplify the .cfn/terraform/$stackname/ files
         # TODO: use TerraformTemplate?
         providers = {
-            'provider': {
-                'fastly': {
-                    # exact version constraint
-                    'version': "= %s" % PROVIDER_FASTLY_VERSION,
-                    'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
+            'provider': [
+                {
+                    'fastly': {
+                        # exact version constraint
+                        'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                        'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
+                    },
                 },
-                'aws': {
-                    'version': "= %s" % '2.3.0',
-                    'region': context['aws']['region'],
+                {
+                    'aws': {
+                        'version': "= %s" % PROVIDER_AWS_VERSION,
+                        'region': context['aws']['region'],
+                    },
                 },
-                'google': {
-                    'version': "= %s" % '1.20.0',
-                    'region': 'us-east4',
-                    'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
+                {
+                    'google': {
+                        'version': "= %s" % '1.20.0',
+                        'region': 'us-east4',
+                        'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
+                    },
                 },
-                'vault': {
-                    'address': context['vault']['address'],
-                    # exact version constraint
-                    'version': "= %s" % PROVIDER_VAULT_VERSION,
+                {
+                    'vault': {
+                        'address': context['vault']['address'],
+                        # exact version constraint
+                        'version': "= %s" % PROVIDER_VAULT_VERSION,
+                    },
                 },
-            },
+            ],
             'data': {
                 DATA_TYPE_VAULT_GENERIC_SECRET: {
                     # TODO: this should not be used unless Fastly is involved
@@ -1204,25 +1213,37 @@ def init(stackname, context):
             },
         }
         if context.get('eks'):
-            providers['provider']['kubernetes'] = {
+            providers['provider'].append({'kubernetes': {
                 'version': "= %s" % '1.5.2',
                 'host': '${data.aws_eks_cluster.main.endpoint}',
                 'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
                 'token': '${data.aws_eks_cluster_auth.main.token}',
                 'load_config_file': False,
-            }
+            }})
             providers['data']['aws_eks_cluster'] = {
                 'main': {
                     'name': '${aws_eks_cluster.main.name}',
                 },
             }
+            # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
+            providers['provider'].append({
+                'aws': {
+                    'region': context['aws']['region'],
+                    'version': '= %s' % PROVIDER_AWS_VERSION,
+                    'alias': 'eks_assume_role',
+                    'assume_role': {
+                        'role_arn': '${aws_iam_role.user.arn}'
+                    }
+                }
+            })
             providers['data']['aws_eks_cluster_auth'] = {
                 'main': {
+                    'provider': 'aws.eks_assume_role',
                     'name': '${aws_eks_cluster.main.name}',
                 },
             }
             if context['eks']['helm']:
-                providers['provider']['helm'] = {
+                providers['provider'].append({'helm': {
                     'version': '= 0.9.0',
                     'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
                     'kubernetes': {
@@ -1231,8 +1252,8 @@ def init(stackname, context):
                         'token': '${data.aws_eks_cluster_auth.main.token}',
                         'load_config_file': False,
                     },
-                }
-        fp.write(json.dumps(providers))
+                }})
+        fp.write(json.dumps(providers, indent = 2))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
