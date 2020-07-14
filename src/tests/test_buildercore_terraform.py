@@ -210,10 +210,13 @@ class TestBuildercoreTerraform(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
-    def _getProvider(self, providers_file, provider_name):
+    def _getProvider(self, providers_file, provider_name, provider_alias = None):
         providers_list = providers_file['provider']
         matching_providers = [p for p in providers_list if p.keys()[0] == provider_name]
-        self.assertEqual(len(matching_providers), 1, "%s not found in %s" % (provider_name, providers_list))
+        if provider_alias:
+            matching_providers = [p for p in matching_providers if p[provider_name].get('alias') == provider_alias]
+        self.assertLessEqual(len(matching_providers), 1, "Too many providers %s found in %s" % (provider_name, providers_list))
+        self.assertGreater(len(matching_providers), 0, "%s not found in %s" % (provider_name, providers_list))
         return matching_providers[0][provider_name]
 
     @patch('buildercore.terraform.Terraform')
@@ -807,6 +810,13 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'load_config_file': False,
             },
             self._getProvider(providers, 'kubernetes')
+        )
+
+        self.assertEqual(
+            {
+                'role_arn': '${aws_iam_role.user.arn}',
+            },
+            self._getProvider(providers, 'aws', 'eks_assume_role').get('assume_role')
         )
         self.assertIn('aws_eks_cluster', providers['data'])
         self.assertEqual(
