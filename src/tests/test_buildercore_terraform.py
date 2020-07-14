@@ -210,6 +210,12 @@ class TestBuildercoreTerraform(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
+    def _getProvider(self, providers_file, provider_name):
+        providers_list = providers_file['provider']
+        matching_providers = [p for p in providers_list if p.keys()[0] == provider_name]
+        self.assertEqual(len(matching_providers), 1, "%s not found in %s" % (provider_name, providers_list))
+        return matching_providers[0][provider_name]
+
     @patch('buildercore.terraform.Terraform')
     def test_init_providers(self, Terraform):
         terraform_binary = MagicMock()
@@ -218,8 +224,8 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
         terraform_binary.init.assert_called_once()
-        for _, configuration in self._load_terraform_file(stackname, 'providers').get('provider').items():
-            self.assertIn('version', configuration)
+        for configuration in self._load_terraform_file(stackname, 'providers').get('provider'):
+            self.assertIn('version', configuration.values()[0])
 
     @patch('buildercore.terraform.Terraform')
     def test_fastly_provider_reads_api_key_from_vault(self, Terraform):
@@ -230,7 +236,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform.init(stackname, context)
         providers_file = self._load_terraform_file(stackname, 'providers')
         self.assertEqual(
-            providers_file.get('provider').get('fastly').get('api_key'),
+            self._getProvider(providers_file, 'fastly').get('api_key'),
             '${data.vault_generic_secret.fastly.data["api_key"]}'
         )
         self.assertEqual(
@@ -792,7 +798,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-eks', stackname=stackname)
         terraform.init(stackname, context)
         providers = self._load_terraform_file(stackname, 'providers')
-        self.assertIn('kubernetes', providers['provider'].keys())
         self.assertEqual(
             {
                 'version': "= %s" % '1.5.2',
@@ -801,7 +806,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'token': '${data.aws_eks_cluster_auth.main.token}',
                 'load_config_file': False,
             },
-            providers['provider']['kubernetes']
+            self._getProvider(providers, 'kubernetes')
         )
         self.assertIn('aws_eks_cluster', providers['data'])
         self.assertEqual(
@@ -817,6 +822,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             {
                 'main': {
                     'name': '${aws_eks_cluster.main.name}',
+                    'provider': 'aws.eks_assume_role',
                 },
             },
             providers['data']['aws_eks_cluster_auth']
@@ -1174,7 +1180,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-eks-helm', stackname=stackname)
         terraform.init(stackname, context)
         providers = self._load_terraform_file(stackname, 'providers')
-        self.assertIn('helm', providers['provider'].keys())
         self.assertEqual(
             {
                 'version': "= %s" % '0.9.0',
@@ -1186,7 +1191,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 },
                 'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
             },
-            providers['provider']['helm']
+            self._getProvider(providers, 'helm')
         )
 
     def test_eks_and_helm(self):
