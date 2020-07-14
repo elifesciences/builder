@@ -210,7 +210,7 @@ class TestBuildercoreTerraform(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
-    def _getProvider(self, providers_file, provider_name, provider_alias = None):
+    def _getProvider(self, providers_file, provider_name, provider_alias=None):
         providers_list = providers_file['provider']
         matching_providers = [p for p in providers_list if p.keys()[0] == provider_name]
         if provider_alias:

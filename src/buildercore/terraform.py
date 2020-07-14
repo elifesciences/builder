@@ -1253,7 +1253,7 @@ def init(stackname, context):
                         'load_config_file': False,
                     },
                 }})
-        fp.write(json.dumps(providers, indent = 2))
+        fp.write(json.dumps(providers, indent=2))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
