@@ -212,7 +212,7 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def _getProvider(self, providers_file, provider_name, provider_alias=None):
         providers_list = providers_file['provider']
-        matching_providers = [p for p in providers_list if p.keys()[0] == provider_name]
+        matching_providers = [p for p in providers_list if list(p.keys())[0] == provider_name]
         if provider_alias:
             matching_providers = [p for p in matching_providers if p[provider_name].get('alias') == provider_alias]
         self.assertLessEqual(len(matching_providers), 1, "Too many providers %s found in %s" % (provider_name, providers_list))
@@ -228,7 +228,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform.init(stackname, context)
         terraform_binary.init.assert_called_once()
         for configuration in self._load_terraform_file(stackname, 'providers').get('provider'):
-            self.assertIn('version', configuration.values()[0])
+            self.assertIn('version', list(configuration.values())[0])
 
     @patch('buildercore.terraform.Terraform')
     def test_fastly_provider_reads_api_key_from_vault(self, Terraform):
