@@ -117,7 +117,7 @@ defaults:
                 protocol: http
                 port: 80
                 path: /ping
-                timeout: 4 
+                timeout: 4
                 interval: 5
                 unhealthy_threshold: 2
                 healthy_threshold: 2
@@ -153,7 +153,7 @@ defaults:
                 # Route53 hosted zone to create subdomains on
                 #domain-filter: elifesciences.org
             efs: false
-        cloudfront: 
+        cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
             subdomains-without-dns: []
@@ -907,7 +907,7 @@ generic-cdn:
                 dataset: "{instance}"
                 table: "generic_cdn"
     aws-alt:
-        # have to specify this because otherwise configuration such as `fresh` inherited from defaults 
+        # have to specify this because otherwise configuration such as `fresh` inherited from defaults
         # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
             ec2: false
@@ -1185,7 +1185,7 @@ elife-alfred-nodes:
             security-group:
                 ports:
                     - 22
-            
+
 
 api-dummy:
     subdomain: api-dummy
@@ -1267,8 +1267,8 @@ search:
             ec2:
                 cluster-size: 2
                 dns-internal: true
-            elb: 
-                protocol: 
+            elb:
+                protocol:
                     - http
         prod:
             ports:
@@ -1282,8 +1282,8 @@ search:
             ec2:
                 cluster-size: 2
                 dns-internal: true
-            elb: 
-                protocol: 
+            elb:
+                protocol:
                     - http
     vagrant:
         ports:
@@ -1505,7 +1505,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1522,7 +1522,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1535,7 +1535,7 @@ iiif:
             ec2:
                 cluster-size: 2
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1555,7 +1555,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1713,20 +1713,20 @@ elife-xpub:
             ec2: false
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
                 "{instance}-elife-xpub-styleguide":
                     public: true
         end2end:
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             ec2:
                 cluster-size: 2
                 dns-external-primary: true
@@ -1745,14 +1745,14 @@ elife-xpub:
         staging:
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             ec2:
                 cluster-size: 2
                 dns-external-primary: true
@@ -1767,7 +1767,7 @@ elife-xpub:
             s3:
                 "{instance}-elife-xpub":
                     deletion-policy: retain
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
@@ -1775,7 +1775,7 @@ elife-xpub:
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 28 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
             ec2:
                 cluster-size: 2
@@ -1951,7 +1951,7 @@ bastion:
 reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
-    aws: 
+    aws:
         ec2: false
         s3:
             "{instance}-elife-reproducible-document-stack":
@@ -2006,9 +2006,9 @@ kubernetes-aws:
         test:
             eks:
                 worker:
-                    type: t2.large    
-                    max-size: 3
-                    desired-capacity: 3
+                    type: t2.xlarge
+                    max-size: 2
+                    desired-capacity: 2
                 helm: true
                 external-dns:
                     domain-filter: "elifesciences.org"
@@ -2018,7 +2018,7 @@ kubernetes-aws:
             eks:
                 version: 1.15
                 worker:
-                    type: t2.large    
+                    type: t2.large
                     max-size: 7
                     desired-capacity: 7
                 # since helm: is not installed, this will only add AWS resources
