@@ -734,8 +734,14 @@ def regenerate_stack(stackname, **more_context):
     # ci, end2end, prod, continuumtest and has thus worked stably for a while now.
     # ad-hoc instances whose instance-id does not match an environment will have it's alt-config ignored.
     # the alt-config used during instance creation is found in `current_context` (but may not have always been the case).
-    #more_context['alt-config'] = instance_id
+    # in fact, kubernetes-aws--test requires this fallback and will until alt-config is included in its context
+    # however this fallback doesn't work as alt-config is `None`
     #more_context['alt-config'] = current_context.get('alt-config', instance_id)
+    # if you run into this problem:
+    # 1. $ aws s3 cp s3://elife-builder/contexts/kubernetes-aws--test.json kubernetes-aws--test.json
+    # 2. edit the `alt-config` key
+    # 3. $ aws s3 cp kubernetes-aws--test.json s3://elife-builder/contexts/kubernetes-aws--test.json
+
     more_context['alt-config'] = current_context['alt-config']
     context = build_context(pname, existing_context=current_context, **more_context)
     delta = template_delta(context)
