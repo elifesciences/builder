@@ -1517,10 +1517,12 @@ iiif:
             description: image deviation testing, checks for regressions and errors in article images.
             fastly: false
             type: c5.2xlarge # 8 cores, 16GB ram, $0.34 per Hour
+            ec2:
+                masterless: True
             ports:
                 - 22
             ext:
-                size: 30 # GB
+                size: 100 # GB
                 type: standard
 
         # for testing new versions
