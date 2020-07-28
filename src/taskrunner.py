@@ -1,8 +1,13 @@
+# import early so gevent.monkey_patch can patch everything
+from buildercore import threadbare
+assert threadbare
+
 import sys, os, traceback
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
 from buildercore import command
 from decorators import echo_output
 from functools import reduce
+
 
 @echo_output
 def ping():
@@ -113,6 +118,7 @@ DEBUG_TASK_LIST = [
     buildvars.valid,
     buildvars.fix,
     buildvars.force,
+    buildvars.refresh,
 
     project.clone_project_formulas,
     project.clone_all_project_formulas,

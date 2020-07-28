@@ -327,7 +327,7 @@ def delete_dns(stackname):
 
 def _update_dns_a_record(zone_name, name, value):
     zone = _r53_connection().get_zone(zone_name)
-    if zone.get_a(name).resource_records == [value]:
+    if zone.get_a(name) and zone.get_a(name).resource_records == [value]:
         LOG.info("No need to update DNS record %s (already %s)", name, value)
     else:
         LOG.info("Updating DNS record %s to %s", name, value)

@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2018.3.4' # the version of salt these project use
+    salt: '2019.2.4' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -45,7 +45,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0205007175a9b7998 # GENERATED created from basebox--1804
+            ami: ami-0076b508a1b9259d1 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -117,7 +117,7 @@ defaults:
                 protocol: http
                 port: 80
                 path: /ping
-                timeout: 4 
+                timeout: 4
                 interval: 5
                 unhealthy_threshold: 2
                 healthy_threshold: 2
@@ -152,7 +152,8 @@ defaults:
             external-dns: false
                 # Route53 hosted zone to create subdomains on
                 #domain-filter: elifesciences.org
-        cloudfront: 
+            efs: false
+        cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
             subdomains-without-dns: []
@@ -217,7 +218,7 @@ defaults:
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
             ec2:
-                salt: '2018.3.4'
+                salt: '2019.2.4'
                 masterless: True
 
         1804:
@@ -227,34 +228,31 @@ defaults:
         1604:
             description: uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
          # 18.04
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-0205007175a9b7998 # GENERATED created from basebox--1804
+                ami: ami-0076b508a1b9259d1 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-0205007175a9b7998 # GENERATED created from basebox--1804
+                ami: ami-0076b508a1b9259d1 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 16.04, deprecated
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
                 masterless: true
         # 16.04, deprecated
         s1604:
             description: alias for standalone1604 short enough to fit into hostnames
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
                 masterless: true
         # 18.04, same as default
         standalone:
@@ -705,9 +703,6 @@ elife-bot:
     subdomain: bot
     # ip: 54.164.145.166 # bot.elifesciences.org must be available at this IP
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium
         ports:
             - 22
@@ -734,6 +729,40 @@ elife-bot:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
     aws-alt:
+        snsalt:
+            s3:
+                "{instance}-elife-silent-corrections":
+                    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: delete
+                "{instance}-elife-bot-sessions":
+                    deletion-policy: delete
+                "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
+                    deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
+        s1804:
+            s3:
+                "{instance}-elife-silent-corrections":
+                    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: delete
+                "{instance}-elife-bot-sessions":
+                    deletion-policy: delete
+                "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
+                    deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
         standalone:
             s3:
                 "{instance}-elife-silent-corrections":
@@ -813,8 +842,7 @@ elife-bot:
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
-    vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
+    vagrant: {}
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -876,7 +904,7 @@ generic-cdn:
                 dataset: "{instance}"
                 table: "generic_cdn"
     aws-alt:
-        # have to specify this because otherwise configuration such as `fresh` inherited from defaults 
+        # have to specify this because otherwise configuration such as `fresh` inherited from defaults
         # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
             ec2: false
@@ -925,8 +953,7 @@ journal-cms:
     aws:
         # deprecated
         ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+            ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
         ports:
             - 22
             - 443
@@ -1081,8 +1108,7 @@ containers:
     aws:
         ec2:
             # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+            ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
         type: t2.medium # 4GB of RAM
         ports:
             - 22
@@ -1110,10 +1136,6 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
-        ec2:
-            # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1127,6 +1149,14 @@ elife-alfred:
             "{instance}-elife-alfred":
                 deletion-policy: retain
     aws-alt:
+        snsalt:
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: delete
+        s1804:
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: delete
         standalone:
             s3:
                 "{instance}-elife-alfred":
@@ -1136,7 +1166,6 @@ elife-alfred:
                 - alfred
                 - ci--alfred # backward compatibility
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 4096
         ports:
             1433: 80
@@ -1153,7 +1182,7 @@ elife-alfred-nodes:
             security-group:
                 ports:
                     - 22
-            
+
 
 api-dummy:
     subdomain: api-dummy
@@ -1169,19 +1198,6 @@ api-dummy:
     vagrant:
         ports:
             1242: 80
-
-# used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
-# this is a free form instance jats4r can do what they like with
-# hosts http://jatswiki.org at the moment
-jats4r:
-    aws:
-        ec2:
-            ami: ami-c60b90d1 # us-east-1 xenial 16.04 LTS amd64 hvm:ebs-ssd 20160815 hvm
-        type: t2.micro
-        ports:
-            - 22
-            - 80
-            - 443
 
 
 bus:
@@ -1248,8 +1264,8 @@ search:
             ec2:
                 cluster-size: 2
                 dns-internal: true
-            elb: 
-                protocol: 
+            elb:
+                protocol:
                     - http
         prod:
             ports:
@@ -1263,8 +1279,8 @@ search:
             ec2:
                 cluster-size: 2
                 dns-internal: true
-            elb: 
-                protocol: 
+            elb:
+                protocol:
                     - http
     vagrant:
         ports:
@@ -1299,7 +1315,7 @@ personalised-covers:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.micro # 1 GB of RAM: Unsure memory stats for PDF generation.
+        type: t2.small # 1 GB of RAM; unsure of memory stats for PDF generation.
         ports:
             - 22
             - 80
@@ -1308,18 +1324,19 @@ personalised-covers:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
     aws-alt:
+        snsalt:
+            s3: false
         standalone:
             s3: false
-        s1804:
-            s3: false
         ci:
+            type: t2.micro
             ec2:
                 cpu-credits: unlimited
         prod:
+            type: t2.micro
             subdomains:
                 - covers
     vagrant:
-        ram: 1024
         ports:
             1246: 80
             1247: 8080
@@ -1384,32 +1401,6 @@ figure-viewer:
             "{instance}-elife-figure-viewer":
                 website-configuration:
                     index-document: index.html
-
-sciencebeam-texture:
-    description: Sciencebeam and Texture proof of concept
-    subdomain: sciencebeam-texture
-    repo: https://github.com/elifesciences/sciencebeam-texture
-    formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
-    aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
-        type: t2.medium # 4 GB RAM
-        ports:
-            - 22
-            - 80 # texture
-            - 443 # texture
-        ext:
-            size: 10 # GB
-            type: standard
-    aws-alt:
-        demo:
-            subdomains:
-                - sciencebeam-texture
-    vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
-        ports:
-            1222: 80
 
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
@@ -1490,10 +1481,6 @@ iiif:
     aws-alt:
         standalone:
             fastly: false
-        s1604:
-            fastly: false
-        s1804:
-            fastly: false
         snsalt:
             fastly: false
         # for testing new versions
@@ -1516,7 +1503,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1533,7 +1520,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1546,7 +1533,7 @@ iiif:
             ec2:
                 cluster-size: 2
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1566,7 +1553,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1617,9 +1604,6 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80
@@ -1644,7 +1628,6 @@ profiles:
                 storage-type: Standard
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-16.04 # Ubuntu 16.04, deprecated
         ram: 1024
         ports:
             1265: 80
@@ -1656,9 +1639,6 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1671,9 +1651,9 @@ annotations:
         prod:
             s3:
                 "{instance}-elife-annotations-hypothesis-emails":
-                    # bucket policy http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3 has been added
+                    # bucket policy has been added:
+                    # http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
         ports:
             1248: 80
@@ -1684,9 +1664,6 @@ digests:
     repo: https://github.com/elifesciences/digests
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 80:
@@ -1711,7 +1688,6 @@ digests:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
         ports:
             1290: 80
@@ -1721,9 +1697,6 @@ elife-xpub:
     repo: https://github.com/elifesciences/elife-xpub
     formula-repo: git@github.com:elifesciences/elife-xpub-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.large
         ports:
             - 22
@@ -1738,20 +1711,20 @@ elife-xpub:
             ec2: false
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
                 "{instance}-elife-xpub-styleguide":
                     public: true
         end2end:
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             ec2:
                 cluster-size: 2
                 dns-external-primary: true
@@ -1770,14 +1743,14 @@ elife-xpub:
         staging:
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             ec2:
                 cluster-size: 2
                 dns-external-primary: true
@@ -1792,7 +1765,7 @@ elife-xpub:
             s3:
                 "{instance}-elife-xpub":
                     deletion-policy: retain
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
@@ -1800,7 +1773,7 @@ elife-xpub:
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 28 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
             ec2:
                 cluster-size: 2
@@ -1810,7 +1783,6 @@ elife-xpub:
                 protocol:
                     - 443
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1201: 80
 
@@ -1927,6 +1899,10 @@ data-pipeline:
                             field: imported_timestamp
                             type: DAY
     aws-alt:
+        snsalt:
+            ext:
+                size: 30 # GB
+            s3: false
         standalone:
             ext:
                 size: 100 # GB
@@ -1947,6 +1923,8 @@ data-pipeline:
                 size: 100 # GB
                 type: standard
     gcp-alt:
+        snsalt:
+            bigquery: false
         standalone:
             bigquery: false
     vagrant:
@@ -1960,22 +1938,18 @@ bastion:
     subdomain: bastion
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604, deprecated
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.nano # 500 MB
         ports:
             - 22
         subdomains:
             - bastion
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 512
 
 reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
-    aws: 
+    aws:
         ec2: false
         s3:
             "{instance}-elife-reproducible-document-stack":
@@ -2026,15 +2000,29 @@ kubernetes-aws:
     intdomain: False
     aws:
         ec2: false
-        eks:
-            worker:
-                type: t2.large    
-                max-size: 3
-                desired-capacity: 3
-            helm: true
-            external-dns:
-                domain-filter: "elifesciences.org"
-            efs: true
+    aws-alt:
+        test:
+            eks:
+                worker:
+                    type: t2.xlarge
+                    max-size: 2
+                    desired-capacity: 2
+                helm: true
+                external-dns:
+                    domain-filter: "elifesciences.org"
+                efs: true
+        flux-test:
+            ec2: false
+            eks:
+                version: 1.16
+                worker:
+                    type: t2.large
+                    max-size: 6
+                    desired-capacity: 6
+                # since helm: is not installed, this will only add AWS resources
+                # but not the ExternalDNS chart release
+                external-dns:
+                    domain-filter: "elifesciences.org"
 
 large-repo-wrangler:
     description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.
@@ -2047,6 +2035,11 @@ large-repo-wrangler:
             device: /dev/sdh
         ports:
             - 22
+    aws-alt:
+        quite-large:
+            type: t2.large
+            ext:
+                size: 50
     vagrant: {}
 
 bioprotocol:
