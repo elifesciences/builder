@@ -1318,7 +1318,6 @@ personalised-covers:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.small # 1 GB of RAM; unsure of memory stats for PDF generation.
         ports:
             - 22
             - 80
@@ -1332,11 +1331,9 @@ personalised-covers:
         standalone:
             s3: false
         ci:
-            type: t2.micro
             ec2:
                 cpu-credits: unlimited
         prod:
-            type: t2.micro
             subdomains:
                 - covers
     vagrant:
