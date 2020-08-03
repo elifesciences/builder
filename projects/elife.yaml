@@ -277,8 +277,7 @@ defaults:
 
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
-    vagrant:
-        box: bento/ubuntu-16.04
+    vagrant: {}
 
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
@@ -1104,9 +1103,6 @@ containers:
     intdomain: false
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
-        ec2:
-            # 16.04, deprecated
-            ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
         type: t2.medium # 4GB of RAM
         ports:
             - 22
@@ -1127,7 +1123,6 @@ containers:
             ec2:
                 cpu-credits: unlimited
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 elife-alfred:
