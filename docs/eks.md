@@ -67,6 +67,33 @@ helm status my-release-name
 
 A project can be configured to create a cluster with the `eks` configuration in `elife.yaml`.
 
+```
+kubernetes-aws:
+    description: project managing an EKS cluster
+    domain: False
+    intdomain: False
+    aws:
+        ec2: false
+    aws-alt:
+        flux-prod:
+            ec2: false
+            eks:
+                version: 1.16
+                worker:
+                    type: t2.large
+                    max-size: 2
+                    desired-capacity: 2
+                # since helm: is not installed, this will only add AWS resources
+                # but not the ExternalDNS chart release
+                external-dns:
+                    domain-filter: "elifesciences.org"
+```
+
+```
+bldr launch:kubernetes-aws,flux-prod  # to create, note issue #
+bldr update_infrastructure:kubernetes-aws--flux-prod  # to update/change
+```
+
 ### Delete a cluster
 
 A cluster cannot be deleted as-is as its operations create cloud resources that become dependent upon the cluster resources, or would become leftovers if not deleted at the right level of abstraction.
