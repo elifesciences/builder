@@ -90,7 +90,7 @@ kubernetes-aws:
 ```
 
 ```
-bldr launch:kubernetes-aws,flux-prod  # to create, note issue #
+bldr launch:kubernetes-aws,flux-prod  # to create, note elife issue #5928
 bldr update_infrastructure:kubernetes-aws--flux-prod  # to update/change
 ```
 
