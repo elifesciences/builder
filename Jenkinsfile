@@ -22,7 +22,8 @@ elifePipeline {
     }
 
     lock('builder') {
-        def pythons = ['py27', 'py3']
+        //def pythons = ['py27', 'py3']
+        def pythons = ['py27']
         def majorVersions = [2, 3]
         def actions = [:]
         for (int i = 0; i < pythons.size(); i++) {
