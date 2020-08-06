@@ -27,6 +27,10 @@ defaults:
         account-id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
+            # root partition properties, undefined by default, results in a ~7.7GiB EBS root volume
+            #root:
+            #    size:
+            #    type: gpt|ebs
             # how many EC2 instance per stack instance
             cluster-size: 1
             # turn on T2 `unlimited` if necessary
@@ -416,7 +420,9 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
-            ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
+            root:
+                size: 30 # GB
+                type: gp2
         ports:
             - 22
             # only internal traffic has access to port 80 and http
@@ -466,7 +472,6 @@ api-gateway:
                     - "{instance}--cdn-gateway"
                     - api
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1323: 80
 
