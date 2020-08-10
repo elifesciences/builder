@@ -2012,8 +2012,8 @@ kubernetes-aws:
                 version: 1.16
                 worker:
                     type: t2.large
-                    max-size: 3
-                    desired-capacity: 3
+                    max-size: 2
+                    desired-capacity: 2
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:
