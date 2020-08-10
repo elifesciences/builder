@@ -1687,6 +1687,24 @@ digests:
         ports:
             1290: 80
 
+
+elife-libero-reviewer:
+    description: replacement for xpub
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+    aws-alt:
+        staging:
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.6'
+                type: db.t2.small
+                storage: 5 # GB
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
+
 elife-xpub:
     subdomain: xpub
     repo: https://github.com/elifesciences/elife-xpub
