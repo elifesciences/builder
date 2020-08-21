@@ -18,7 +18,7 @@ class TestCfn(base.BaseCase):
     def test_ssh_task(self, find_ec2_instances, load_context, active_stack_names, local):
         self._dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
         ssh('dummy1--prod')
-        local.assert_called_with('ssh elife@54.54.54.54 -i ~/.ssh/id_rsa')
+        local.assert_called_with('ssh -o "ConnectionAttempts 3" elife@54.54.54.54 -i ~/.ssh/id_rsa')
 
     @patch('cfn.local')
     @patch('buildercore.core.active_stack_names')
@@ -28,7 +28,7 @@ class TestCfn(base.BaseCase):
         self._dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
         owner_ssh('dummy1--prod')
         (args, _) = local.call_args
-        self.assertRegex(args[0], 'ssh ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem')
+        self.assertRegex(args[0], 'ssh -o "ConnectionAttempts 3" ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem')
 
     # all non-interactive cases
     def test_generate_stack_from_input(self):
