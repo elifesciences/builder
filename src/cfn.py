@@ -249,7 +249,7 @@ def _check_want_to_be_running(stackname, autostart=False):
 
 def _interactive_ssh(username, public_ip, private_key):
     try:
-        command = "ssh -o \"ConnectionAttempts 3\" %s@%s -i %s" % (username, public_ip, USER_PRIVATE_KEY)
+        command = "ssh -o \"ConnectionAttempts 3\" %s@%s -i %s" % (username, public_ip, private_key)
         return local(command)
     except CommandException as e:
         LOG.warn(e)
