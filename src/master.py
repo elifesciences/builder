@@ -82,32 +82,18 @@ def update_salt(stackname):
     context = context_handler.load_context(stackname)
 
     if not context.get('ec2'):
-        LOG.info("no ec2 context. skipping: %s", stackname)
+        LOG.info("no ec2 context. skipping stack: %s", stackname)
         return
 
-    pdata = core.project_data_for_stackname(stackname)
+    LOG.info("upgrading stack's salt minion")
 
-    LOG.info("upgrading salt minion")
+    pdata = core.project_data_for_stackname(stackname)
     context['project']['salt'] = pdata['salt']
 
-    LOG.info("updating context")
+    LOG.info("updating stack's context")
     context_handler.write_context(stackname, context)
 
-    # "buildvars are essentially a full copy of the context; if there is an update of infrastructure pending,
-    # we are propagating the new context to the instance without necessarily having created/updated/destroyed
-    # that infrastructure. Since the formulas extensively refer to buildvars to decide what to do,
-    # I see this optimization as unsafe."
-    # - Giorgio, 2019-03-22
-    # - https://github.com/elifesciences/builder/pull/489/files#r268079733
-
-    # this change managed to slip around review and should be
-    # revisited before next Salt upgrade.
-    # todo: update just the salt version in the stack's *current context*
-
-    LOG.info("updating buildvars")
-    buildvars.refresh(stackname, context)
-
-    LOG.info("updating nodes")
+    LOG.info("updating stack's nodes (sequentially)")
     bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
     return True
 
