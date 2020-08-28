@@ -82,21 +82,18 @@ def update_salt(stackname):
     context = context_handler.load_context(stackname)
 
     if not context.get('ec2'):
-        LOG.info("no ec2 context. skipping: %s", stackname)
+        LOG.info("no ec2 context. skipping stack: %s", stackname)
         return
 
-    pdata = core.project_data_for_stackname(stackname)
+    LOG.info("upgrading stack's salt minion")
 
-    LOG.info("upgrading salt minion")
+    pdata = core.project_data_for_stackname(stackname)
     context['project']['salt'] = pdata['salt']
 
-    LOG.info("updating context")
+    LOG.info("updating stack's context")
     context_handler.write_context(stackname, context)
 
-    LOG.info("updating buildvars")
-    buildvars.refresh(stackname, context)
-
-    LOG.info("updating nodes")
+    LOG.info("updating stack's nodes (sequentially)")
     bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
     return True
 
