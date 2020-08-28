@@ -12,10 +12,10 @@ find src/ -regex "\(.*__pycache__.*\|*.py[co]\)" -delete
 # E0602=undefined-variable, temporary while python2 is still supported
 pylint -E *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py src/tests/*.py src/integration_tests/*.py \
     --disable=E1129 \
-    --disable=E0602 2> /dev/null
+    --disable=E0602
 # specific warnings we're interested in, comma separated with no spaces
 # presence of these warnings are a failure
 # TODO: re-add 'redefined-builtin' after python2 support dropped
 pylint *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py \
     --disable=all --reports=n --score=n \
-    --enable=pointless-string-statement,no-else-return,redefined-outer-name 2> /dev/null
+    --enable=pointless-string-statement,no-else-return,redefined-outer-name
