@@ -100,10 +100,10 @@ def update_salt(stackname):
     # - Giorgio, 2019-03-22
     # - https://github.com/elifesciences/builder/pull/489/files#r268079733
 
-    # this change managed to slip around review and should be 
+    # this change managed to slip around review and should be
     # revisited before next Salt upgrade.
     # todo: update just the salt version in the stack's *current context*
-    
+
     LOG.info("updating buildvars")
     buildvars.refresh(stackname, context)
 
