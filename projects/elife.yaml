@@ -27,6 +27,10 @@ defaults:
         account-id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
+            # root partition properties, undefined by default, results in a ~7.7GiB EBS root volume
+            #root:
+            #    size:
+            #    type: gpt|ebs
             # how many EC2 instance per stack instance
             cluster-size: 1
             # turn on T2 `unlimited` if necessary
@@ -45,7 +49,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0f49eda120587211a # GENERATED created from basebox--1804
+            ami: ami-0b316c92886f49182 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -117,7 +121,7 @@ defaults:
                 protocol: http
                 port: 80
                 path: /ping
-                timeout: 4 
+                timeout: 4
                 interval: 5
                 unhealthy_threshold: 2
                 healthy_threshold: 2
@@ -136,7 +140,7 @@ defaults:
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
-            version: '1.14'
+            version: '1.17'
             # two subnets in two different availability zones, both used in master nodes and in worker nodes
             subnet-id: subnet-0c60bc3cb24a2816b
             redundant-subnet-id: subnet-009a04cbefc8e3661
@@ -153,7 +157,7 @@ defaults:
                 # Route53 hosted zone to create subdomains on
                 #domain-filter: elifesciences.org
             efs: false
-        cloudfront: 
+        cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
             subdomains-without-dns: []
@@ -228,34 +232,31 @@ defaults:
         1604:
             description: uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
          # 18.04
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-0f49eda120587211a # GENERATED created from basebox--1804
+                ami: ami-0b316c92886f49182 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-0f49eda120587211a # GENERATED created from basebox--1804
+                ami: ami-0b316c92886f49182 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 16.04, deprecated
         standalone1604:
             description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
                 masterless: true
         # 16.04, deprecated
         s1604:
             description: alias for standalone1604 short enough to fit into hostnames
             ec2:
-                ami: ami-14a1d06e # GENERATED created from basebox--1604
-                                  # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
                 masterless: true
         # 18.04, same as default
         standalone:
@@ -280,8 +281,7 @@ defaults:
 
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
-    vagrant:
-        box: bento/ubuntu-16.04
+    vagrant: {}
 
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
@@ -420,8 +420,9 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
+            root:
+                size: 30 # GB
+                type: gp2
         ports:
             - 22
             # only internal traffic has access to port 80 and http
@@ -471,7 +472,6 @@ api-gateway:
                     - "{instance}--cdn-gateway"
                     - api
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ports:
             1323: 80
 
@@ -911,7 +911,7 @@ generic-cdn:
                 dataset: "{instance}"
                 table: "generic_cdn"
     aws-alt:
-        # have to specify this because otherwise configuration such as `fresh` inherited from defaults 
+        # have to specify this because otherwise configuration such as `fresh` inherited from defaults
         # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
         fresh:
             ec2: false
@@ -958,10 +958,6 @@ journal-cms:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        # deprecated
-        ec2:
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         ports:
             - 22
             - 443
@@ -1021,8 +1017,6 @@ journal-cms:
                 size: 60 # GB
                 type: standard
     vagrant:
-        # 16.04, deprecated
-        box: bento/ubuntu-16.04
         ports:
             1241: 80
 
@@ -1114,10 +1108,6 @@ containers:
     intdomain: false
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
-        ec2:
-            # 16.04, deprecated
-            ami: ami-14a1d06e # GENERATED created from basebox--1604
-                              # us-east-1, build date 20170811, hvm:ebs-ssd, AMI built on 20171215
         type: t2.medium # 4GB of RAM
         ports:
             - 22
@@ -1138,7 +1128,6 @@ containers:
             ec2:
                 cpu-credits: unlimited
     vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
         ram: 1024
 
 elife-alfred:
@@ -1158,6 +1147,10 @@ elife-alfred:
             "{instance}-elife-alfred":
                 deletion-policy: retain
     aws-alt:
+        snsalt:
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: delete
         s1804:
             s3:
                 "{instance}-elife-alfred":
@@ -1187,7 +1180,7 @@ elife-alfred-nodes:
             security-group:
                 ports:
                     - 22
-            
+
 
 api-dummy:
     subdomain: api-dummy
@@ -1203,19 +1196,6 @@ api-dummy:
     vagrant:
         ports:
             1242: 80
-
-# used by "Maloney, Christopher (NIH/NLM/NCBI) [C]" <maloneyc@ncbi.nlm.nih.gov>
-# this is a free form instance jats4r can do what they like with
-# hosts http://jatswiki.org at the moment
-jats4r:
-    aws:
-        ec2:
-            ami: ami-c60b90d1 # us-east-1 xenial 16.04 LTS amd64 hvm:ebs-ssd 20160815 hvm
-        type: t2.micro
-        ports:
-            - 22
-            - 80
-            - 443
 
 
 bus:
@@ -1282,8 +1262,8 @@ search:
             ec2:
                 cluster-size: 2
                 dns-internal: true
-            elb: 
-                protocol: 
+            elb:
+                protocol:
                     - http
         prod:
             ports:
@@ -1297,8 +1277,8 @@ search:
             ec2:
                 cluster-size: 2
                 dns-internal: true
-            elb: 
-                protocol: 
+            elb:
+                protocol:
                     - http
     vagrant:
         ports:
@@ -1333,7 +1313,6 @@ personalised-covers:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.micro # 1 GB of RAM; unsure of memory stats for PDF generation.
         ports:
             - 22
             - 80
@@ -1342,6 +1321,8 @@ personalised-covers:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
     aws-alt:
+        snsalt:
+            s3: false
         standalone:
             s3: false
         ci:
@@ -1351,7 +1332,6 @@ personalised-covers:
             subdomains:
                 - covers
     vagrant:
-        ram: 1024
         ports:
             1246: 80
             1247: 8080
@@ -1416,28 +1396,6 @@ figure-viewer:
             "{instance}-elife-figure-viewer":
                 website-configuration:
                     index-document: index.html
-
-sciencebeam-texture:
-    description: Sciencebeam and Texture proof of concept
-    subdomain: sciencebeam-texture
-    repo: https://github.com/elifesciences/sciencebeam-texture
-    formula-repo: https://github.com/elifesciences/sciencebeam-texture-formula
-    aws:
-        type: t2.medium # 4 GB RAM
-        ports:
-            - 22
-            - 80 # texture
-            - 443 # texture
-        ext:
-            size: 10 # GB
-            type: standard
-    aws-alt:
-        demo:
-            subdomains:
-                - sciencebeam-texture
-    vagrant:
-        ports:
-            1222: 80
 
 iiif:
     description: IIIF, image server for resizing/tiling/zooming
@@ -1540,7 +1498,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1557,7 +1515,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1570,7 +1528,7 @@ iiif:
             ec2:
                 cluster-size: 2
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1590,7 +1548,7 @@ iiif:
                 size: 30 # GB
                 type: standard
             elb:
-                protocol: 
+                protocol:
                     - https
                 healthcheck:
                     path: /
@@ -1729,6 +1687,24 @@ digests:
         ports:
             1290: 80
 
+
+elife-libero-reviewer:
+    description: replacement for xpub
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+    aws-alt:
+        staging:
+            rds:
+                engine: postgres # or 'MySQL'
+                version: '10.6'
+                type: db.t2.small
+                storage: 5 # GB
+                backup-retention: 2 # days
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
+
 elife-xpub:
     subdomain: xpub
     repo: https://github.com/elifesciences/elife-xpub
@@ -1748,20 +1724,20 @@ elife-xpub:
             ec2: false
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
                 "{instance}-elife-xpub-styleguide":
                     public: true
         end2end:
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             ec2:
                 cluster-size: 2
                 dns-external-primary: true
@@ -1780,14 +1756,14 @@ elife-xpub:
         staging:
             s3:
                 "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 engine: postgres # or 'MySQL'
                 version: '10.6'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             ec2:
                 cluster-size: 2
                 dns-external-primary: true
@@ -1802,7 +1778,7 @@ elife-xpub:
             s3:
                 "{instance}-elife-xpub":
                     deletion-policy: retain
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20 
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
@@ -1810,7 +1786,7 @@ elife-xpub:
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 28 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072 
+                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
             ec2:
                 cluster-size: 2
@@ -1986,7 +1962,7 @@ bastion:
 reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
-    aws: 
+    aws:
         ec2: false
         s3:
             "{instance}-elife-reproducible-document-stack":
@@ -2040,21 +2016,33 @@ kubernetes-aws:
     aws-alt:
         test:
             eks:
+                version: 1.14
                 worker:
-                    type: t2.large    
-                    max-size: 3
-                    desired-capacity: 3
+                    type: t2.xlarge
+                    max-size: 2
+                    desired-capacity: 2
                 helm: true
                 external-dns:
                     domain-filter: "elifesciences.org"
                 efs: true
+        flux-prod:
+            ec2: false
+            eks:
+                worker:
+                    type: t2.large
+                    max-size: 3
+                    desired-capacity: 3
+                # since helm: is not installed, this will only add AWS resources
+                # but not the ExternalDNS chart release
+                external-dns:
+                    domain-filter: "elifesciences.org"
         flux-test:
             ec2: false
             eks:
                 worker:
-                    type: t2.large    
-                    max-size: 3
-                    desired-capacity: 3
+                    type: t2.large
+                    max-size: 6
+                    desired-capacity: 6
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:
@@ -2071,6 +2059,11 @@ large-repo-wrangler:
             device: /dev/sdh
         ports:
             - 22
+    aws-alt:
+        quite-large:
+            type: t2.large
+            ext:
+                size: 50
     vagrant: {}
 
 bioprotocol:
