@@ -87,7 +87,7 @@ def build_context(pname, **more_context):
 
     defaults = {
         'project_name': pname,
-        #'project': project_data,
+        # 'project': project_data,
 
         'author': os.environ.get("LOGNAME") or 'unknown',
         'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
@@ -119,10 +119,10 @@ def build_context(pname, **more_context):
         'cloudfront': False,
         'elasticache': False,
         # future use: decide at context generation time how many infrastructure tools are we going to use for this stackname
-        #'infrastructure': {
+        # 'infrastructure': {
         #    'cloudformation': False,
         #    'terraform': False,
-        #}
+        # }
     }
 
     context = deepcopy(defaults)
@@ -465,7 +465,7 @@ def complete_domain(host, default_main):
     is_complete = host.count(".") > 0
     if is_main:
         return default_main
-    elif is_complete:
+    if is_complete:
         return host
     return host + '.' + default_main # something + '.' + elifesciences.org
 

@@ -17,7 +17,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 # TODO: move to a lower level if possible
-#@requires_steady_stack
+# @requires_steady_stack
 def destroy(stackname):
     "Delete a stack of resources."
     print('this is a BIG DEAL. you cannot recover from this.')

@@ -18,7 +18,7 @@ def create_ami(stackname, name=None):
     kwargs = {
         'Name': name or ami_name(stackname),
         'NoReboot': True,
-        #'DryRun': True
+        # 'DryRun': True
     }
     # http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.Instance.create_image
     ami = ec2.create_image(**kwargs)

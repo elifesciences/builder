@@ -750,10 +750,9 @@ def render_elb(context, template, ec2_instances):
 def _elb_healthcheck_target(context):
     if context['elb']['healthcheck']['protocol'] == 'tcp':
         return 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
-    elif context['elb']['healthcheck']['protocol'] == 'http':
+    if context['elb']['healthcheck']['protocol'] == 'http':
         return 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
-    else:
-        raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
+    raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_cloudfront(context, template, origin_hostname):
     if not context['cloudfront']['origins']:
