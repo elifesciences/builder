@@ -1,4 +1,5 @@
 #!/bin/bash
-set -e # everything must pass
-. .upgrade-deps.sh # upgrade all deps to latest version
-. .run-tests.sh # run the tests
+# updates dependencies then runs the tests
+set -e
+. update-dependencies.sh 
+. .run-tests.sh
