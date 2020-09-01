@@ -36,11 +36,14 @@ fi
 if [ ! -f .use-python-3.flag ]; then
     # Python2, use virtualenv
     virtualenv --python=$python venv
-    source venv/bin/activate
+else
+    "$python" -m venv venv
+fi
+source venv/bin/activate
+
+if [ ! -f .use-python-3.flag ]; then
     # on Python2, sticking to Fabric rather than Fabric3
     pip install -r py2-requirements.txt
 else
-    # on Python3, use Pipenv
-    PIPENV_VENV_IN_PROJECT="enabled" pipenv install --dev #--python="$python"
-    ln -sfT .venv venv
+    pip install -r requirements.txt
 fi
