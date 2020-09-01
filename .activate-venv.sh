@@ -33,11 +33,11 @@ if [ ! -e "venv/bin/$py" ]; then
 fi
 
 # create+activate venv
-if [ ! -f .use-python-3.flag ]; then
-    # Python2, use virtualenv
-    virtualenv --python=$python venv
-else
+if [ -f .use-python-3.flag ]; then
     "$python" -m venv venv
+else
+    # Python2
+    virtualenv --python=$python venv
 fi
 source venv/bin/activate
 

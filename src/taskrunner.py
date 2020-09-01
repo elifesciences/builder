@@ -6,6 +6,7 @@ from buildercore import command
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
 import sys, os, traceback
 
+# threadbare module is otherwise not used is flagged for linting
 assert threadbare
 
 @echo_output
@@ -158,7 +159,7 @@ def generate_task_list(show_debug_tasks=False):
 # --- https://github.com/mathiasertl/fabric/blob/1.13.1/fabric/main.py#L499-L564
 def _escape_split(sep, argstr):
     """
-    Allows for escaping of the separator: e.g. task:arg=r'foo\, bar'
+    Allows for escaping of the separator: e.g. task:arg=r'foo\, bar' (ignore leading 'r')
 
     It should be noted that the way bash et. al. do command line parsing, those
     single quotes are required.
