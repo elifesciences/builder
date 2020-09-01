@@ -1,4 +1,4 @@
-FROM python:3.5-alpine3.12
+FROM python:3.6-alpine3.12
 
 # cmake + zlib-dev for parallel-ssh dependencies
 # paramiko is pure python and never needed it
