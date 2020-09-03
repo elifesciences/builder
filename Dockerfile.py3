@@ -15,7 +15,7 @@ RUN apk add --no-cache --virtual build-deps \
     make
 
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python get-pip.py pip==9.0.2 && \
+    python get-pip.py pip && \
     pip install virtualenv && \
     virtualenv --python=python3 /venv 
     
