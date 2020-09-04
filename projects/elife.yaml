@@ -1192,7 +1192,9 @@ api-dummy:
             - 22
             - 443
             - 80
-    aws-alt: {}
+    aws-alt:
+        snsalt:
+            type: t2.small
     vagrant:
         ports:
             1242: 80
