@@ -22,7 +22,7 @@ pytz = "*"
 pyyaml = ">=4.1"
 requests = "~=2.20"
 troposphere = "==2.3.3"
-parallel-ssh = "~=1.9"
+parallel-ssh = "==1.9.*"
 
 [dev-packages]
 autopep8 = "~=1.3"
