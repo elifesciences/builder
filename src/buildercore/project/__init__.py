@@ -27,10 +27,10 @@ def find_project(project_location_triple):
     assert len(project_location_triple) == 3, "triple must contain three values. got: %r" % project_location_triple
     protocol, hostname, path = plt
     fnmap = {
-        #'file': OrgFileProjects,
+        # 'file': OrgFileProjects,
         'file': files.projects_from_file,
-        #'ssh': RemoteBuilderProjects,
-        #'https': RemoteBuilderProjects,
+        # 'ssh': RemoteBuilderProjects,
+        # 'https': RemoteBuilderProjects,
     }
     if not protocol in fnmap.keys():
         LOG.info("unhandled protocol %r for %r" % (protocol, plt))
