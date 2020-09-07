@@ -1849,18 +1849,8 @@ fastly-logs:
 
 data-pipeline:
     description: Data consolidation project
-    subdomain: pipeline
-    formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
-        ec2:
-            # Ubuntu 16.04 (non-basebox), deprecated
-            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-        type: t2.medium
-        ports:
-            - 22
-            - 80 # used only to upgrade to https
-            - 443
-            - 18443
+        ec2: false
         s3:
             "{instance}-elife-data-pipeline":
                  deletion-policy: delete
@@ -1871,82 +1861,6 @@ data-pipeline:
             "{instance}": # dataset
                 # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
                 project: elife-data-pipeline
-                tables:
-                    # bit of repetition here
-                    380_datascience_early_career_researchers:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/380_datascience_early_career_researchers.json
-                    455_datascience_editors:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/455_datascience_editors.json
-                    489_datascience_editor_keywords:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/489_datascience_editor_keywords.json
-                    705_datascience_reviewer_identity_revealed_last_week:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/705_datascience_reviewer_identity_revealed_last_week.json
-                    767_datascience_person_roles:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/767_datascience_person_roles.json
-                    779_datascience_reviewer_info_all:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/779_datascience_reviewer_info_all.json
-                    795_datascience_person_merge_info_all:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/795_datascience_person_merge_info_all.json
-                    annotations:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/annotations-deposit/schema.json
-                    extract_history:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/extract_history.bqschema.json
-                    manuscript:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript.bqschema.json
-                    manuscript_full:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript_full.bqschema.json
-                    manuscript_version:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript_version.bqschema.json
-                    person:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person.bqschema.json
-                    person_v2:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person_v2.bqschema.json
-                    public_editor_profile:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/editors-google-spreadsheet-deposit/schema.json
-                    people_orcid_profile:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/people-and-profile-service-deposit/schema/people_orcid_profile_schema.json
-                        time-partitioning:
-                            field: imported_timestamp
-                            type: DAY
-                    people_staff_profile:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/people-and-profile-service-deposit/schema/people_staff_profile_schema.json
-                        time-partitioning:
-                            field: imported_timestamp
-                            type: DAY
-    aws-alt:
-        snsalt:
-            ext:
-                size: 30 # GB
-            s3: false
-        standalone:
-            ext:
-                size: 100 # GB
-                type: standard
-            ports:
-                - 22
-                - 80 # used only to upgrade to https
-                - 443
-                - 18443
-            s3: false
-        staging:
-            ext:
-                size: 100 # GB
-                type: standard
-        prod:
-            type: t2.large
-            ext:
-                size: 100 # GB
-                type: standard
-    gcp-alt:
-        snsalt:
-            bigquery: false
-        standalone:
-            bigquery: false
-    vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
-        ports:
-            1222: 8080 # bypass nginx for development, it's glitchy
-            1223: 18080 # nifi-registry service
 
 bastion:
     description: intermediate server that gives access to the inside of the VPC
