@@ -228,12 +228,7 @@ defaults:
         1804:
             description: Ubuntu 18.04 (Bionic)
             ec2: true # explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
-        # deprecated
-        1604:
-            description: uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
-         # 18.04
+         # 18.04, deprecated, use s1804
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
@@ -246,18 +241,6 @@ defaults:
                 ami: ami-04635cd3ac578309c # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
-        # 16.04, deprecated
-        standalone1604:
-            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
-                masterless: true
-        # 16.04, deprecated
-        s1604:
-            description: alias for standalone1604 short enough to fit into hostnames
-            ec2:
-                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
-                masterless: true
         # 18.04, same as default
         standalone:
             description: isolated from the master-server and uses same AMI as default configuration
@@ -266,10 +249,8 @@ defaults:
     gcp:
         bigquery: false
     vagrant:
-        # why 'bento' and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
+        # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-18.04
-        # 16.04, deprecated
-        #box: bento/ubuntu-16.04
         ip: 192.168.33.44
         ram: 2048
         cpus: 2
@@ -290,23 +271,13 @@ basebox:
             - 22
     aws-alt:
         # overrides to default aws-alt configurations to use non-basebox AMIs
-
-        # 16.04, deprecated
-        1604:
-            ec2:
-                ami: ami-0cfee17793b08a293 # xenial, build 20190628, amd64, hvm:ebs-ssd, us-east-1
         1804:
             ec2:
                 # should match aws-alt 'fresh'
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
 
-        # overrides to default aws-alt configurations to use non-basebox AMIs and run isolated from master-server
+        # overrides to default aws-alt configurations to use non-basebox AMIs *and* run isolated from master-server
 
-        # 16.04, deprecated
-        standalone1604:
-            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-0cfee17793b08a293 # xenial, build 20190628, amd64, hvm:ebs-ssd, us-east-1
         # 18.04
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
@@ -452,8 +423,6 @@ api-gateway:
                 table: "api_gateway"
     aws-alt:
         standalone:
-            fastly: false
-        s1604:
             fastly: false
         s1804:
             fastly: false
@@ -917,13 +886,7 @@ generic-cdn:
             ec2: false
         1804:
             ec2: false
-        1604:
-            ec2: false
-        s1604:
-            ec2: false
         s1804:
-            ec2: false
-        standalone1604:
             ec2: false
         standalone:
             ec2: false
@@ -1983,7 +1946,7 @@ large-repo-wrangler:
     vagrant: {}
 
 bioprotocol:
-    subdomain: bp # ci--bp.elifesciences.org
+    subdomain: bp # end2end--bp.elifesciences.org
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:

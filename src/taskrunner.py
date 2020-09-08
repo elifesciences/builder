@@ -60,7 +60,7 @@ TASK_LIST = [
     askmaster.fail2ban_running,
     askmaster.installed_linux_kernel,
     askmaster.linux_distro,
-    askmaster.update_kernel,
+    askmaster.installed_salt_version,
 
     buildvars.switch_revision,
 
