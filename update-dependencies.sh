@@ -5,7 +5,7 @@ set -e
 # create/update existing venv
 rm -rf venv/
 
-# whatever your preferred version of python is, builder needs to support python3.6 (Ubuntu 18.04)
+# whatever your preferred version of python is, eLife needs to support python3.6 (Ubuntu 18.04)
 python3.6 -m venv venv
 
 # updates the Pipfile.lock file and then installs the newly updated dependencies.
@@ -14,4 +14,4 @@ VIRTUAL_ENV="venv" pipenv update --dev
 
 datestamp=$(date -I)
 echo "# file generated $datestamp - see update-dependencies.sh" > requirements.txt
-pipenv run pip freeze >> requirements.txt
+VIRTUAL_ENV="venv" pipenv run pip freeze >> requirements.txt
