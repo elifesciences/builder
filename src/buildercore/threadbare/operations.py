@@ -549,6 +549,98 @@ def prompt(msg):
 #
 
 
+def execute_rsync_command(cmd):
+    cmd = " ".join(cmd)
+    try:
+        return local(cmd)
+    except Exception as uncaught_exc:
+        if hasattr(uncaught_exc, "result"):
+            # this is one of our errors, we may be able to improve it
+            result = uncaught_exc.result
+            # taken straight from the `man` page, authored "28 Jan 2018"
+            error_map = {
+                1: "Syntax or usage error",
+                2: "Protocol incompatibility",
+                3: "Errors selecting input/output files, dirs",
+                4: "Requested  action  not supported: an attempt was made to manipulate 64-bit files on a platform that cannot support them; or an option was specified that is supported by the client and not by the server.",
+                5: "Error starting client-server protocol",
+                6: "Daemon unable to append to log-file",
+                10: "Error in socket I/O",
+                11: "Error in file I/O",
+                12: "Error in rsync protocol data stream",
+                13: "Errors with program diagnostics",
+                14: "Error in IPC code",
+                20: "Received SIGUSR1 or SIGINT",
+                21: "Some error returned by waitpid()",
+                22: "Error allocating core memory buffers",
+                23: "Partial transfer due to error",
+                24: "Partial transfer due to vanished source files",
+                25: "The --max-delete limit stopped deletions",
+                30: "Timeout in data send/receive",
+                35: "Timeout waiting for daemon connection",
+            }
+            if result["return_code"] in error_map:
+                raise NetworkError(
+                    "rsync returned error %s: %s"
+                    % (result["return_code"], error_map[result["return_code"]])
+                )
+        raise uncaught_exc
+
+
+def _rsync_upload(local_path, remote_path, **kwargs):
+    base_kwargs = {
+        "user": getpass.getuser(),
+        "host_string": None,
+        "key_filename": os.path.expanduser("~/.ssh/id_rsa"),
+        "port": 22,
+        "quiet": False,
+        "warn_only": False,
+    }
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    cmd = [
+        "rsync",
+        # '-i' is 'identity file'
+        # without 'StrictHostKeyChecking' we'll be given a prompt during testing. solvable?
+        "--rsh='ssh -i %s -p %s -o StrictHostKeyChecking=no'"
+        % (final_kwargs["key_filename"], final_kwargs["port"]),
+        local_path,
+        "%s@%s:%s" % (final_kwargs["user"], final_kwargs["host_string"], remote_path),
+    ]
+    return cmd
+
+
+def rsync_upload(local_path, remote_path, **kwargs):
+    return execute_rsync_command(_rsync_upload(local_path, remote_path, **kwargs))
+
+
+def _rsync_download(remote_path, local_path, **kwargs):
+    base_kwargs = {
+        "user": getpass.getuser(),
+        "host_string": None,
+        "key_filename": os.path.expanduser("~/.ssh/id_rsa"),
+        "port": 22,
+        "quiet": False,
+        "warn_only": False,
+    }
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    cmd = [
+        "rsync",
+        # '-i' is 'identity file'
+        # without 'StrictHostKeyChecking' we'll be given a prompt during testing.
+        "--rsh='ssh -i %s -p %s -o StrictHostKeyChecking=no'"
+        % (final_kwargs["key_filename"], final_kwargs["port"]),
+        "%s@%s:%s" % (final_kwargs["user"], final_kwargs["host_string"], remote_path),
+        local_path,
+    ]
+    return cmd
+
+
+def rsync_download(remote_path, local_path, **kwargs):
+    return execute_rsync_command(_rsync_download(remote_path, local_path, **kwargs))
+
+
 def _transfer_fn(client, direction, **kwargs):
     """returns the `client` object's appropriate transfer *method* given a `direction`.
     `direction` is either 'upload' or 'download'.
@@ -560,7 +652,7 @@ def _transfer_fn(client, direction, **kwargs):
         # - https://github.com/ParallelSSH/parallel-ssh/issues/177
         # however, SCP is buggy and may randomly hang or complete without uploading anything.
         # take slow and reliable over fast and buggy.
-        "transfer_protocol": "sftp", # "scp"
+        "transfer_protocol": "sftp",  # "scp"
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
@@ -572,8 +664,12 @@ def _transfer_fn(client, direction, **kwargs):
                     "Remote file exists and 'overwrite' is set to 'False'. Refusing to write: %s"
                     % (remote_file,)
                 )
-            # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L524
-            gevent.joinall(fn(local_file, remote_file), raise_error=True)
+
+            if final_kwargs["transfer_protocol"] == "rsync":
+                fn(local_file, remote_file)
+            else:
+                # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L524
+                gevent.joinall(fn(local_file, remote_file), raise_error=True)
 
             # lsh@2020-04, local testing didn't reveal anything but small files uploaded via SCP SCP during CI
             # were either missing or had empty bodies. SFTP seemed to be fine.
@@ -595,20 +691,24 @@ def _transfer_fn(client, direction, **kwargs):
                     "Local file exists and 'overwrite' is set to 'False'. Refusing to write: %s"
                     % (local_file,)
                 )
-            # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L560
-            gevent.joinall(fn(remote_file, local_file), raise_error=True)
+            if final_kwargs["transfer_protocol"] == "rsync":
+                fn(remote_file, local_file)
+            else:
+                # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L560
+                gevent.joinall(fn(remote_file, local_file), raise_error=True)
 
         return wrapper
 
     upload_backends = {
-        # rsync? pigeon?
         "sftp": client.copy_file,
         "scp": client.scp_send,
+        "rsync": rsync_upload,
     }
 
     download_backends = {
         "sftp": client.copy_remote_file,
         "scp": client.scp_recv,
+        "rsync": rsync_download,
     }
 
     direction_map = {"upload": upload_backends, "download": download_backends}
