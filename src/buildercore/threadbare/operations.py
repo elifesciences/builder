@@ -611,6 +611,9 @@ def _rsync_upload(local_path, remote_path, **kwargs):
 
 
 def rsync_upload(local_path, remote_path, **kwargs):
+    remote_dir = os.path.dirname(remote_path)
+    if not remote_file_exists(remote_dir):
+        remote("mkdir -p %r" % remote_dir)
     return execute_rsync_command(_rsync_upload(local_path, remote_path, **kwargs))
 
 
@@ -638,6 +641,11 @@ def _rsync_download(remote_path, local_path, **kwargs):
 
 
 def rsync_download(remote_path, local_path, **kwargs):
+    abs_local_path = os.path.abspath(os.path.expanduser(local_path))
+    abs_local_dir = os.path.dirname(abs_local_path)
+    if not os.path.exists(abs_local_dir):
+        # replicates behaviour of downloading via scp and sftp (via parallel-ssh)
+        local("mkdir -p %r" % (abs_local_dir,))
     return execute_rsync_command(_rsync_download(remote_path, local_path, **kwargs))
 
 
@@ -652,7 +660,7 @@ def _transfer_fn(client, direction, **kwargs):
         # - https://github.com/ParallelSSH/parallel-ssh/issues/177
         # however, SCP is buggy and may randomly hang or complete without uploading anything.
         # take slow and reliable over fast and buggy.
-        "transfer_protocol": "rsync", # "sftp",  # "scp"
+        "transfer_protocol": "sftp",  # "scp"
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
@@ -686,6 +694,7 @@ def _transfer_fn(client, direction, **kwargs):
     def download_fn(fn):
         @wraps(fn)
         def wrapper(remote_file, local_file):
+
             if not final_kwargs["overwrite"] and os.path.exists(local_file):
                 raise NetworkError(
                     "Local file exists and 'overwrite' is set to 'False'. Refusing to write: %s"
