@@ -133,13 +133,9 @@ def hide(what=None):
         yield
 
 
-def _ssh_client(**kwargs):
-    """returns an instance of pssh.clients.native.SSHClient
-    if within a state context, looks for a client already in use and returns that if found.
-    if not found, creates a new one and stores it for later use."""
-
-    # parameters we're interested in and their default values
-    base_kwargs = {
+def _ssh_default_settings():
+    "default settings for dealing with ssh."
+    return {
         # current user. sensible default but probably not what you want
         "user": getpass.getuser(),
         "host_string": None,
@@ -147,7 +143,29 @@ def _ssh_client(**kwargs):
         # uses the first one it finds or the most common if none found.
         "key_filename": pem_key(),
         "port": 22,
+        "use_shell": True,
+        "use_sudo": False,
+        "combine_stderr": True,
+        "quiet": False,
+        "discard_output": False,
+        # todo: duplicated content. this needs to defer to deeply nested `_print_line`
+        "line_template": "{line}\n",
+        "remote_working_dir": None,
+        "timeout": None,
+        "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
+        "abort_exception": RuntimeError,
     }
+
+
+def _ssh_client(**kwargs):
+    """returns an instance of pssh.clients.native.SSHClient
+    if within a state context, looks for a client already in use and returns that if found.
+    if not found, creates a new one and stores it for later use."""
+
+    # parameters we're interested in and their default values
+    base_kwargs = subdict(
+        _ssh_default_settings(), ["user", "host_string", "key_filename", "port"]
+    )
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
     final_kwargs["password"] = None  # always private keys
     rename(final_kwargs, [("key_filename", "pkey"), ("host_string", "host")])
@@ -285,24 +303,7 @@ def remote(command, **kwargs):
     # capture_buffer_size=None # correlates to `ssh2.channel.read` and the `size` parameter. Ignored.
 
     # parameters we're interested in and their default values
-    base_kwargs = {
-        # current user. sensible default but probably not what you want
-        "user": getpass.getuser(),
-        "host_string": None,
-        "key_filename": os.path.expanduser("~/.ssh/id_rsa"),
-        "port": 22,
-        "use_shell": True,
-        "use_sudo": False,
-        "combine_stderr": True,
-        "quiet": False,
-        "discard_output": False,
-        # todo: duplicated content. this needs to defer to deeply nested `_print_line`
-        "line_template": "{line}\n",
-        "remote_working_dir": None,
-        "timeout": None,
-        "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
-        "abort_exception": RuntimeError,
-    }
+    base_kwargs = _ssh_default_settings()
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
     # wrap the command up
@@ -549,6 +550,104 @@ def prompt(msg):
 #
 
 
+def execute_rsync_command(cmd):
+    """executes given rsync `cmd`, catching rsync errors and improving any errors raised.
+    rsync commands can be generated with `_rsync_upload` and `_rsync_download` functions.
+    """
+    try:
+        return local(cmd)
+    except Exception as uncaught_exc:
+        if hasattr(uncaught_exc, "result"):
+            # this is a threadbare error and we may be able to improve it
+            result = uncaught_exc.result
+            # taken straight from the `man` page, authored "28 Jan 2018"
+            error_map = {
+                1: "Syntax or usage error",
+                2: "Protocol incompatibility",
+                3: "Errors selecting input/output files, dirs",
+                4: "Requested  action  not supported: an attempt was made to manipulate 64-bit files on a platform that cannot support them; or an option was specified that is supported by the client and not by the server.",
+                5: "Error starting client-server protocol",
+                6: "Daemon unable to append to log-file",
+                10: "Error in socket I/O",
+                11: "Error in file I/O",
+                12: "Error in rsync protocol data stream",
+                13: "Errors with program diagnostics",
+                14: "Error in IPC code",
+                20: "Received SIGUSR1 or SIGINT",
+                21: "Some error returned by waitpid()",
+                22: "Error allocating core memory buffers",
+                23: "Partial transfer due to error",
+                24: "Partial transfer due to vanished source files",
+                25: "The --max-delete limit stopped deletions",
+                30: "Timeout in data send/receive",
+                35: "Timeout waiting for daemon connection",
+            }
+            if result["return_code"] in error_map:
+                raise NetworkError(
+                    "rsync returned error %s: %s"
+                    % (result["return_code"], error_map[result["return_code"]])
+                )
+        raise uncaught_exc
+
+
+def _rsync_upload(local_path, remote_path, **kwargs):
+    """generates an rsync command to copy `local_path` to `remote_path` using values in the current `state.ENV`.
+    does *not* execute command. see `rsync_upload` and `execute_rsync_command`."""
+
+    base_kwargs = subdict(
+        _ssh_default_settings(), ["user", "host_string", "key_filename", "port"]
+    )
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    cmd = [
+        "rsync",
+        # '-i' is 'identity file'
+        # note: without 'StrictHostKeyChecking' we'll be given a prompt during testing. is this solvable?
+        "--rsh='ssh -i %s -p %s -o StrictHostKeyChecking=no'"
+        % (final_kwargs["key_filename"], final_kwargs["port"]),
+        local_path,
+        "%s@%s:%s" % (final_kwargs["user"], final_kwargs["host_string"], remote_path),
+    ]
+    return " ".join(cmd)
+
+
+def rsync_upload(local_path, remote_path, **kwargs):
+    "copies `local_path` to `remote_path` using values in the current `state.ENV`."
+    remote_dir = os.path.dirname(remote_path)
+    if not remote_file_exists(remote_dir):
+        remote("mkdir -p %r" % remote_dir)
+    return execute_rsync_command(_rsync_upload(local_path, remote_path, **kwargs))
+
+
+def _rsync_download(remote_path, local_path, **kwargs):
+    """generates an rsync command to copy `remote_path` to `local_path` using values in the current `state.ENV`.
+    does *not* execute command. see `rsync_download` and `execute_rsync_command`."""
+    base_kwargs = subdict(
+        _ssh_default_settings(), ["user", "host_string", "key_filename", "port"]
+    )
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+    cmd = [
+        "rsync",
+        # '-i' is 'identity file'
+        # without 'StrictHostKeyChecking' we'll be given a prompt during testing.
+        "--rsh='ssh -i %s -p %s -o StrictHostKeyChecking=no'"
+        % (final_kwargs["key_filename"], final_kwargs["port"]),
+        "%s@%s:%s" % (final_kwargs["user"], final_kwargs["host_string"], remote_path),
+        local_path,
+    ]
+    return " ".join(cmd)
+
+
+def rsync_download(remote_path, local_path, **kwargs):
+    "copies `remote_path` to `local_path` using values in the current `state.ENV`."
+    abs_local_path = os.path.abspath(os.path.expanduser(local_path))
+    abs_local_dir = os.path.dirname(abs_local_path)
+    if not os.path.exists(abs_local_dir):
+        # replicates behaviour of downloading via scp and sftp (via parallel-ssh)
+        local("mkdir -p %r" % (abs_local_dir,))
+    return execute_rsync_command(_rsync_download(remote_path, local_path, **kwargs))
+
+
 def _transfer_fn(client, direction, **kwargs):
     """returns the `client` object's appropriate transfer *method* given a `direction`.
     `direction` is either 'upload' or 'download'.
@@ -560,7 +659,7 @@ def _transfer_fn(client, direction, **kwargs):
         # - https://github.com/ParallelSSH/parallel-ssh/issues/177
         # however, SCP is buggy and may randomly hang or complete without uploading anything.
         # take slow and reliable over fast and buggy.
-        "transfer_protocol": "sftp", # "scp"
+        "transfer_protocol": "sftp",  # "scp"
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
@@ -572,8 +671,12 @@ def _transfer_fn(client, direction, **kwargs):
                     "Remote file exists and 'overwrite' is set to 'False'. Refusing to write: %s"
                     % (remote_file,)
                 )
-            # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L524
-            gevent.joinall(fn(local_file, remote_file), raise_error=True)
+
+            if final_kwargs["transfer_protocol"] == "rsync":
+                fn(local_file, remote_file)
+            else:
+                # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L524
+                gevent.joinall(fn(local_file, remote_file), raise_error=True)
 
             # lsh@2020-04, local testing didn't reveal anything but small files uploaded via SCP SCP during CI
             # were either missing or had empty bodies. SFTP seemed to be fine.
@@ -590,25 +693,30 @@ def _transfer_fn(client, direction, **kwargs):
     def download_fn(fn):
         @wraps(fn)
         def wrapper(remote_file, local_file):
+
             if not final_kwargs["overwrite"] and os.path.exists(local_file):
                 raise NetworkError(
                     "Local file exists and 'overwrite' is set to 'False'. Refusing to write: %s"
                     % (local_file,)
                 )
-            # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L560
-            gevent.joinall(fn(remote_file, local_file), raise_error=True)
+            if final_kwargs["transfer_protocol"] == "rsync":
+                fn(remote_file, local_file)
+            else:
+                # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L560
+                gevent.joinall(fn(remote_file, local_file), raise_error=True)
 
         return wrapper
 
     upload_backends = {
-        # rsync? pigeon?
         "sftp": client.copy_file,
         "scp": client.scp_send,
+        "rsync": rsync_upload,
     }
 
     download_backends = {
         "sftp": client.copy_remote_file,
         "scp": client.scp_recv,
+        "rsync": rsync_download,
     }
 
     direction_map = {"upload": upload_backends, "download": download_backends}
