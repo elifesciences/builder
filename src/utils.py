@@ -112,7 +112,7 @@ def walk_nested_struct(val, fn):
     "walks a potentially nested structure, calling `fn` on each value it encounters"
     if isinstance(val, dict):
         return {key: walk_nested_struct(i, fn) for key, i in val.items()}
-    elif isinstance(val, list):
+    if isinstance(val, list):
         return [walk_nested_struct(i, fn) for i in val]
     return fn(val)
 

@@ -59,7 +59,7 @@ class Simple(base.BaseCase):
         vals = [
             ('a', 1),
             ([], 1),
-            #({}, 'a'), # now raises a TypeError
+            # ({}, 'a'), # now raises a TypeError
         ]
         expected = None
         for data, n in vals:

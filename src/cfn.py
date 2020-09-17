@@ -17,7 +17,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 # TODO: move to a lower level if possible
-#@requires_steady_stack
+# @requires_steady_stack
 def destroy(stackname):
     "Delete a stack of resources."
     print('this is a BIG DEAL. you cannot recover from this.')
@@ -34,7 +34,7 @@ def destroy(stackname):
 def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
-    except context_handler.MissingContextFile as e:
+    except context_handler.MissingContextFile:
         LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
@@ -247,29 +247,31 @@ def _check_want_to_be_running(stackname, autostart=False):
     # instances and that weren't there before
     return core.find_ec2_instances(stackname)
 
+def _interactive_ssh(username, public_ip, private_key):
+    try:
+        command = "ssh -o \"ConnectionAttempts 3\" %s@%s -i %s" % (username, public_ip, private_key)
+        return local(command)
+    except CommandException as e:
+        LOG.warn(e)
+
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
+    "connect to a instance over SSH using the deploy user ('elife') and *your* private key."
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
     public_ip = _pick_node(instances, node).public_ip_address
-    _interactive_ssh("ssh %s@%s -i %s" % (username, public_ip, USER_PRIVATE_KEY))
+    _interactive_ssh(username, public_ip, USER_PRIVATE_KEY)
 
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
-    "maintenance ssh. uses the pem key and the bootstrap user to login."
+    """maintenance ssh.
+    connects to an instance over SSH using the bootstrap user ('ubuntu') and the instance's private key"""
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
     public_ip = _pick_node(instances, node).public_ip_address
-    # -i identify file
-    _interactive_ssh("ssh %s@%s -i %s" % (BOOTSTRAP_USER, public_ip, stack_pem(stackname)))
-
-def _interactive_ssh(command):
-    try:
-        local(command)
-    except CommandException as e:
-        LOG.warn(e)
+    _interactive_ssh(BOOTSTRAP_USER, public_ip, stack_pem(stackname))
 
 @requires_aws_stack
 def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):

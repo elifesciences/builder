@@ -87,7 +87,7 @@ def build_context(pname, **more_context):
 
     defaults = {
         'project_name': pname,
-        #'project': project_data,
+        # 'project': project_data,
 
         'author': os.environ.get("LOGNAME") or 'unknown',
         'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
@@ -119,10 +119,10 @@ def build_context(pname, **more_context):
         'cloudfront': False,
         'elasticache': False,
         # future use: decide at context generation time how many infrastructure tools are we going to use for this stackname
-        #'infrastructure': {
+        # 'infrastructure': {
         #    'cloudformation': False,
         #    'terraform': False,
-        #}
+        # }
     }
 
     context = deepcopy(defaults)
@@ -465,7 +465,7 @@ def complete_domain(host, default_main):
     is_complete = host.count(".") > 0
     if is_main:
         return default_main
-    elif is_complete:
+    if is_complete:
         return host
     return host + '.' + default_main # something + '.' + elifesciences.org
 
@@ -734,8 +734,14 @@ def regenerate_stack(stackname, **more_context):
     # ci, end2end, prod, continuumtest and has thus worked stably for a while now.
     # ad-hoc instances whose instance-id does not match an environment will have it's alt-config ignored.
     # the alt-config used during instance creation is found in `current_context` (but may not have always been the case).
-    #more_context['alt-config'] = instance_id
+    # in fact, kubernetes-aws--test requires this fallback and will until alt-config is included in its context
+    # however this fallback doesn't work as alt-config is `None`
     #more_context['alt-config'] = current_context.get('alt-config', instance_id)
+    # if you run into this problem:
+    # 1. $ aws s3 cp s3://elife-builder/contexts/kubernetes-aws--test.json kubernetes-aws--test.json
+    # 2. edit the `alt-config` key
+    # 3. $ aws s3 cp kubernetes-aws--test.json s3://elife-builder/contexts/kubernetes-aws--test.json
+
     more_context['alt-config'] = current_context['alt-config']
     context = build_context(pname, existing_context=current_context, **more_context)
     delta = template_delta(context)

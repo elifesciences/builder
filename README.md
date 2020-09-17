@@ -1,8 +1,8 @@
 # builder
 
-An attempt to centralize the configuration and building of application environments at [eLife](https://elifesciences.org), locally (Vagrant) and remotely (AWS).
+Centralised configuration and building of [eLife](https://elifesciences.org) applications locally (Vagrant) and remotely (AWS, GCS).
 
-# first
+# installation
 
 Download:
 
@@ -12,26 +12,40 @@ Install:
 
     ./update.sh
 
-Fix any missing pre-requisites and call `./update.sh` again until you see the happy
+Fix any missing pre-requisites and call `./update.sh` again until you see the 'all done' message. 
 
-> all done
+Exclude any pre-requisite checks with `--exclude` for example:
 
-message. Updating in the future is as simple as:
+    ./update.sh --exclude virtualbox vault
+
+Updating:
 
     git pull
     ./update.sh
 
-## Next
+## configuration
 
-Your project file is located at `./projects/elife.yaml`. This file describes all eLife projects that can be built and their environments. [See here](docs/projects.md) for more project file documentation.
+The project file `./projects/elife.yaml` describes all eLife projects that can be built and their environments. 
+[See here](docs/projects.md) for more project file documentation.
 
-> 'configuration' also exists in `./src/buildercore/config.py` if you're a `builder` dev.
+After successfully installing and configuring `builder`, try launching a Vagrant machine to test all is working correctly:
 
-After successfully installing and configuring `builder`, launching a Vagrant instance is a good test that all is working correctly.
+    PROJECT=basebox vagrant up
+
+## development
+
+`builder` is a Python project and it's dependencies are captured in the `Pipfile`. 
+
+To update a dependency, modify the `Pipfile` and run `./update-dependencies.sh` to update the `Pipfile.lock` and 
+`requirements.txt` files. You will need `pipenv` installed.
 
 ### Vagrant
 
-The `Vagrantfile` can build any project, you just need to tell it which one:
+The `Vagrantfile` can build any project, just tell it which one:
+
+    $ PROJECT=journal vagrant up
+
+or use the menu:
 
     $ vagrant up
     You must select a project:
@@ -41,17 +55,13 @@ The `Vagrantfile` can build any project, you just need to tell it which one:
     3 - ...
     >
 
-... or it can be done with environment variables:
-
-    $ PROJECT=journal vagrant up
-
 To execute the Python part of the Vagrantfile with Docker, create this flag:
 
 ```
 touch .use-docker.flag
 ```
 
-Note: if you with to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
+Note: if you wish to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
 
 Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin
 to rebuild the ubuntu/trusty64 box for your own hypervisor.  See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
@@ -74,9 +84,9 @@ The other half of the `builder` project is the ability to create and manage AWS 
 
     $ ./bldr -l
 
-Will list all builder tasks found in `src/`. These tasks are just Python functions.
+Will list all `builder` tasks found in `src/`. These tasks are just Python functions.
 
-builder relies on a `~/.aws/credentials` file containing [configuration for accessing your AWS account](https://aws.amazon.com/blogs/security/a-new-and-standardized-way-to-manage-credentials-in-the-aws-sdks/).
+`builder` relies on a `~/.aws/credentials` file containing [configuration for accessing your AWS account](https://aws.amazon.com/blogs/security/a-new-and-standardized-way-to-manage-credentials-in-the-aws-sdks/).
 
 A `master-server` instance must exist before project instances can be brought up. [See here](docs/master-server.md) for a walkthrough.
 
@@ -95,7 +105,7 @@ To ssh into one of these machines:
 
     $ ./bldr ssh:journal--prod
 
-## More!
+## More
 
 General:
 * [project files](docs/projects.md)
@@ -111,7 +121,7 @@ Troubleshooting:
 * [ssh-agent](docs/ssh-agent.md)
 * [vault](docs/vault.md)
 
-Development
+Development:
 
 * [adding projects](docs/adding-projects.md)
 * [technology](docs/tech.md)
@@ -121,5 +131,3 @@ Development
 ## Copyright & Licence
 
 The `builder` project is [MIT licenced](LICENCE.txt).
-
-The `builder` project was GPL3 licensed until [this commit](https://github.com/elifesciences/builder/commit/2fd91c1cc86efad92a4f40caa93837960baa4855) on 2016-07-13.

@@ -1,13 +1,13 @@
-# import early so gevent.monkey_patch can patch everything
+# import threadbare early so gevent.monkey_patch can patch everything
 from buildercore import threadbare
-assert threadbare
-
-import sys, os, traceback
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
-from buildercore import command
-from decorators import echo_output
 from functools import reduce
+from decorators import echo_output
+from buildercore import command
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
+import sys, os, traceback
 
+# threadbare module is otherwise not used is flagged for linting
+assert threadbare
 
 @echo_output
 def ping():
@@ -60,7 +60,7 @@ TASK_LIST = [
     askmaster.fail2ban_running,
     askmaster.installed_linux_kernel,
     askmaster.linux_distro,
-    askmaster.update_kernel,
+    askmaster.installed_salt_version,
 
     buildvars.switch_revision,
 
@@ -83,6 +83,7 @@ TASK_LIST = [
     report.all_projects,
     report.all_ec2_projects,
     report.all_ec2_instances,
+    report.all_ec2_instances_for_salt_upgrade,
     report.all_formulas,
     report.all_adhoc_ec2_instances,
 
@@ -118,6 +119,7 @@ DEBUG_TASK_LIST = [
     buildvars.valid,
     buildvars.fix,
     buildvars.force,
+    buildvars.refresh,
 
     project.clone_project_formulas,
     project.clone_all_project_formulas,
@@ -158,7 +160,7 @@ def generate_task_list(show_debug_tasks=False):
 # --- https://github.com/mathiasertl/fabric/blob/1.13.1/fabric/main.py#L499-L564
 def _escape_split(sep, argstr):
     """
-    Allows for escaping of the separator: e.g. task:arg='foo\, bar'
+    Allows for escaping of the separator: e.g. task:arg=r'foo\, bar' (ignore leading 'r')
 
     It should be noted that the way bash et. al. do command line parsing, those
     single quotes are required.
