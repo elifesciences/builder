@@ -659,7 +659,7 @@ def _transfer_fn(client, direction, **kwargs):
         # - https://github.com/ParallelSSH/parallel-ssh/issues/177
         # however, SCP is buggy and may randomly hang or complete without uploading anything.
         # take slow and reliable over fast and buggy.
-        "transfer_protocol": "sftp",  # "scp"
+        "transfer_protocol": "rsync", # "sftp",  # "scp"
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
