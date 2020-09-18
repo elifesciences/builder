@@ -1669,6 +1669,9 @@ elife-libero-reviewer:
                 storage: 5 # GB
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
+            s3:
+                "{instance}-elife-libero-reviewer":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
         prod:
             rds:
                 engine: postgres # or 'MySQL'
@@ -1677,6 +1680,9 @@ elife-libero-reviewer:
                 storage: 5 # GB
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
+            s3:
+                "{instance}-elife-libero-reviewer":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
 
 elife-xpub:
     subdomain: xpub
