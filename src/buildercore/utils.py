@@ -4,12 +4,19 @@ import os, sys, json, time, random, string
 from functools import wraps
 from datetime import datetime
 import yaml
-from collections import OrderedDict, Iterable
+from collections import OrderedDict
 from os.path import join
 from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
+
+# Iterable has moved and is being removed from collections in Python 3.8
+try:
+    from collections.abc import Iterable
+except ImportError:
+
+    from collections import Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -293,10 +300,9 @@ def json_dumps(obj, dangerous=False, **kwargs):
     def json_handler(obj):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
-        elif dangerous:
+        if dangerous:
             return '[unserializable: %s]' % (str(obj))
-        else:
-            raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
+        raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
     return json.dumps(obj, default=json_handler, **kwargs)
 
 def lookup(data, path, default=0xDEADBEEF):

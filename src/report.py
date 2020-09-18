@@ -82,10 +82,27 @@ def all_ec2_projects():
     return results
 
 
+def _all_ec2_instances(state):
+    return [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state)]
+
 @report
 def all_ec2_instances(state=None):
     "returns a list of all ec2 instance names. set `state` to `running` to see all running ec2 instances."
-    return [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state)]
+    return _all_ec2_instances(state)
+
+@report
+def all_ec2_instances_for_salt_upgrade():
+    "returns a list of all ec2 instance names suitable for the Salt upgrade"
+    ignore_these = [
+        "Elife ALM (alm.svr.*)", # so very dead
+        "basebox--1804--1", # ami creation, periodically destroyed and recreated
+        "master-server--2018-04-09-2--1", # updated in separate step
+        "containers-jenkins-plugin", # there are three of these
+        "kubernetes-aws--flux-prod",
+        "kubernetes-aws--flux-test",
+        "kubernetes-aws--test",
+    ]
+    return [i for i in _all_ec2_instances(state=None) if i not in ignore_these]
 
 @report
 def all_adhoc_ec2_instances(state='running'):

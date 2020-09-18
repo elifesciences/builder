@@ -15,4 +15,8 @@ if [ -f .aws-credentials.env ]; then
     source ./.aws-credentials.env
 fi
 
+if [ -f .use-threadbare.flag ]; then
+    export BLDR_BACKEND=threadbare
+fi
+
 python src/taskrunner.py "$*"

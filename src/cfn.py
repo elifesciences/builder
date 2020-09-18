@@ -17,7 +17,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 # TODO: move to a lower level if possible
-#@requires_steady_stack
+# @requires_steady_stack
 def destroy(stackname):
     "Delete a stack of resources."
     print('this is a BIG DEAL. you cannot recover from this.')
@@ -34,7 +34,7 @@ def destroy(stackname):
 def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
-    except context_handler.MissingContextFile as e:
+    except context_handler.MissingContextFile:
         LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):

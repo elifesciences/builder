@@ -80,9 +80,9 @@ def _parallel_execution(env, func, param_key, param_values, return_process_pool=
     "executes the given function in parallel to main process. blocks until processes are complete"
     results_q = Queue()
     kwargs = {
-        #'env': ..., # each process will get a new state dictionary
+        # 'env': ..., # each process will get a new state dictionary
         "worker_func": func,
-        #'name': ..., # a name is assigned on process start
+        # 'name': ..., # a name is assigned on process start
         "queue": results_q,
     }
     pool_size = getattr(func, "pool_size", None)
