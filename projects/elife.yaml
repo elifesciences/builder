@@ -1150,14 +1150,14 @@ api-dummy:
     repo: https://github.com/elifesciences/api-dummy
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.micro
         ports:
             - 22
             - 443
             - 80
     aws-alt:
-        snsalt:
-            type: t2.small
+        # 2020-09-21: todo, remove when api-dummy--demo is removed
+        demo:
+            type: t2.micro
     vagrant:
         ports:
             1242: 80
