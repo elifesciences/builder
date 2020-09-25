@@ -1664,7 +1664,7 @@ elife-libero-reviewer:
         staging:
             rds:
                 engine: postgres # or 'MySQL'
-                version: '10.6'
+                version: '12.3'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
@@ -1675,10 +1675,10 @@ elife-libero-reviewer:
         prod:
             rds:
                 engine: postgres # or 'MySQL'
-                version: '10.6'
+                version: '12.3'
                 type: db.t2.small
                 storage: 5 # GB
-                backup-retention: 2 # days
+                backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             s3:
                 "{instance}-elife-libero-reviewer":
