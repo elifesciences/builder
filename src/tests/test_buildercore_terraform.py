@@ -539,10 +539,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '${file("gzip-by-content-type-suffix.vcl")}',
                                 },
                                 {
-                                    'name': 'journal-submit',
-                                    'content': '${data.template_file.journal-submit.rendered}',
-                                },
-                                {
                                     'name': 'error-page-vcl-503',
                                     'content': '${data.template_file.error-page-vcl-503.rendered}',
                                 },
