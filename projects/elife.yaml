@@ -1654,7 +1654,6 @@ digests:
 
 
 elife-libero-reviewer:
-    description: replacement for xpub
     default-branch: null
     domain: null
     intdomain: null
@@ -1685,100 +1684,6 @@ elife-libero-reviewer:
             s3:
                 "{instance}-elife-libero-reviewer":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-
-elife-xpub:
-    subdomain: xpub
-    repo: https://github.com/elifesciences/elife-xpub
-    formula-repo: git@github.com:elifesciences/elife-xpub-formula
-    aws:
-        type: t2.large
-        ports:
-            - 22
-            - 80
-            - 443
-        ext:
-            # external hdd
-            size: 20 # GB
-            device: /dev/sdh
-    aws-alt:
-        ci:
-            ec2: false
-            s3:
-                "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-                "{instance}-elife-xpub-styleguide":
-                    public: true
-        end2end:
-            s3:
-                "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-            rds:
-                engine: postgres # or 'MySQL'
-                version: '10.6'
-                type: db.t2.small
-                storage: 5 # GB
-                backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
-            ec2:
-                cluster-size: 2
-                dns-external-primary: true
-                dns-internal: true
-            ports:
-                - 22
-                - 80
-                - 443
-                - 2222:
-                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-                - 8020 # nginx-public-folders via HTTP
-                - 8021 # nginx-public-folders via HTTPS
-            elb:
-                protocol:
-                    - 443
-        staging:
-            s3:
-                "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-            rds:
-                engine: postgres # or 'MySQL'
-                version: '10.6'
-                type: db.t2.small
-                storage: 5 # GB
-                backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
-            ec2:
-                cluster-size: 2
-                dns-external-primary: true
-                dns-internal: true
-            elb:
-                protocol:
-                    - 443
-        prod:
-            subdomains:
-                - reviewer
-                - xpub
-            s3:
-                "{instance}-elife-xpub":
-                    deletion-policy: retain
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-            rds:
-                multi-az: true
-                engine: postgres # or 'MySQL'
-                version: '10.6'
-                type: db.t2.small
-                storage: 5 # GB
-                backup-retention: 28 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
-                deletion-policy: Snapshot
-            ec2:
-                cluster-size: 2
-                dns-external-primary: true
-                dns-internal: true
-            elb:
-                protocol:
-                    - 443
-    vagrant:
-        ports:
-            1201: 80
 
 task-adept:
     description: production data dumps from TaskAdept

@@ -371,15 +371,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'test': 'obj.status >= 500 && obj.status <= 599',
                                 'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
-                        },
-                        'journal-submit': {
-                            'template': '${file("journal-submit.vcl.tpl")}',
-                            'vars': {
-                                'percentage': 10,
-                                'referer': r'^https://xpub\.example\.com/',
-                                'xpub_uri': 'https://xpub.example.com/login',
-                            },
-                        },
+                        }
                     },
                 },
                 'resource': {
