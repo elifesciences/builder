@@ -40,9 +40,7 @@ else
     virtualenv --python=$python venv
 fi
 source venv/bin/activate
-
-# solves "error: invalid command 'bdist_wheel'" issue
-pip install wheel==0.35.1
+pip install wheel pip --upgrade
 
 if [ ! -f .use-python-3.flag ]; then
     # on Python2, sticking to Fabric rather than Fabric3
