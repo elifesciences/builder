@@ -167,7 +167,7 @@ def _serial_execution(func, param_key, param_values):
     return result_list
 
 
-def execute(func, param_key=None, param_values=None):
+def execute(func, param_key=None, param_values=None, raise_unhandled_errors=True):
     """inspects a given function and then executes it either serially or in another process using Python's `multiprocessing` module.
     `param` and `param_list` control the number of processes spawned and the name of the parameter passed to the function.
 
@@ -180,7 +180,9 @@ def execute(func, param_key=None, param_values=None):
     `param` and `param_list` are optional, but if one is specified then so must the other.
 
     parent process blocks until all child processes have completed.
-    returns a map of execution data with the return values of the individual executions available under 'result'"""
+    returns a map of execution data with the return values of the individual executions available under 'result'.
+
+    when `raise_unhandled_errors` is `True` (default), the first result that is an exception will be re-raised."""
 
     # in Fabric, `execute` is a guard-type function that ensures the function and the function's environment is
     # correct before passing it to `_execute` that does the actual magic.
@@ -207,12 +209,25 @@ def execute(func, param_key=None, param_values=None):
         )
 
     if hasattr(func, "parallel") and func.parallel:
-        result_list = _parallel_execution(state.ENV, func, param_key, param_values)
-        return [result["result"] for result in result_list]
+        result_payload_list = _parallel_execution(
+            state.ENV, func, param_key, param_values
+        )
+        response = []
+        for result_payload in result_payload_list:
+            if (
+                isinstance(result_payload["result"], BaseException)
+                and raise_unhandled_errors
+            ):
+                unhandled_error = result_payload["result"]
+                raise unhandled_error
+            response.append(result_payload["result"])
+        return response
     return _serial_execution(func, param_key, param_values)
 
 
-def execute_with_hosts(func, hosts=None, line_template=None):
+def execute_with_hosts(
+    func, hosts=None, line_template=None, raise_unhandled_errors=True
+):
     """convenience wrapper around `execute`. calls `execute` on given `func` for each host in `hosts`.
     The host is available within the worker function's `env` as `host_string`."""
     host_list = hosts or state.ENV.get("hosts") or []
@@ -229,6 +244,11 @@ def execute_with_hosts(func, hosts=None, line_template=None):
     default = "{host:15} {pipe}: {line}\n"
     line_template = line_template or state.ENV.get("line_template") or default
     with state.settings(line_template=line_template):
-        results = execute(func, param_key="host_string", param_values=host_list)
+        results = execute(
+            func,
+            param_key="host_string",
+            param_values=host_list,
+            raise_unhandled_errors=raise_unhandled_errors,
+        )
     # results are ordered so we can do this
     return dict(zip(host_list, results))  # {'192.168.0.1': [], '192.169.0.3': []}
