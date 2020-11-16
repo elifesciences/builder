@@ -49,7 +49,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-06f24f494a0cf0c49 # GENERATED created from basebox--1804
+            ami: ami-028cef7fd5e9da19e # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -232,13 +232,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-06f24f494a0cf0c49 # GENERATED created from basebox--1804
+                ami: ami-028cef7fd5e9da19e # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-06f24f494a0cf0c49 # GENERATED created from basebox--1804
+                ami: ami-028cef7fd5e9da19e # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 18.04, same as default
