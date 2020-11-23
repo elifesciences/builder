@@ -364,7 +364,7 @@ lax:
         prod:
             description: RDS backed
             ec2:
-                cluster-size: 2
+                cluster-size: 3
             rds:
                 storage: 5
                 storage-type: Standard
