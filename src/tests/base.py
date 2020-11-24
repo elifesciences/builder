@@ -12,7 +12,7 @@ from buildercore import config, project
 from buildercore import bootstrap, cfngen, lifecycle, core
 import cfn
 import imp
-#import pytest # see ../conftest.py
+# import pytest # see ../conftest.py
 
 LOG = logging.getLogger(__name__)
 

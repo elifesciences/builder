@@ -7,4 +7,4 @@ set -e
 
 # `patched_pytest` is a copy of 'pytest' but with gevent monkey patching.
 # see `venv/bin/pytest` and `src/buildercore/threadbare/__init__.py`
-./patched_pytest src/tests/ -vv "$@"
+./patched_pytest -vv "$@"
