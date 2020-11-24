@@ -20,7 +20,7 @@ python-terraform==0.10.0
 pytz==2016.10
 PyYAML==4.2b2
 requests==2.20.0
-troposphere==2.3.3
+troposphere==2.6.3
 unittest2==1.1.0
 parallel-ssh==1.9.1
 setuptools==44.0.0
