@@ -3,8 +3,8 @@
 """
 Marshalls a collection of project information together in to a dictionary called the `context`.
 
-When an instance of a project is launched on AWS, we need to tweak things a bit
-with no manual steps in some cases, or as few as possible in other cases.
+When an instance of a project is launched on AWS, we need to tweak things a bit with no
+manual steps in some cases or with as few as possible in other cases.
 
 Case 1: New, standardized environment
 We launch journal--ci, a testing instance for the journal project within the `ci` environment.
@@ -16,6 +16,7 @@ Case 3: Stack updates
 We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
+
 import logging
 import os, json
 import re
@@ -50,19 +51,21 @@ FASTLY_AWS_REGION_SHIELDS = {
 }
 
 def parameterize(context):
+    """certain property values in the project file are placeholders and are replaced with
+    actual values from the *project instance context* at render time.
+    These placeholders use standard Python string interpolation.
+    For example: "{placeholder}" becomes "{placeholder}".format(placeholder=context['placeholder'])"""
     def wrapper(string):
-        return string.format(**{'instance': context['instance_id']})
+        placeholders = {
+            'instance': context['instance_id']
+        }
+        return string.format(**placeholders)
     return wrapper
 
-def shuffle(lst):
-    import random
-    lst = list(lst)
-    random.shuffle(lst)
-    return lst
-
 def build_context(pname, **more_context):
-    """wrangles parameters into a dictionary (context) that can be given to
-    whatever renders the final template"""
+    """builds a dictionary called the `context` that is used when rendering the final template.
+    `more_context` is used to provide additional runtime data can change tweak the final dictionary.
+    For example, we can specify an alternative AWS configuration or the context from a previous build."""
 
     supported_projects = project.project_list()
     ensure(pname in supported_projects, "Unknown project %r. Known projects: %s" % (pname, supported_projects))
@@ -72,7 +75,7 @@ def build_context(pname, **more_context):
     # regenerating templates (like random passwords)
     existing_context = more_context.pop('existing_context', {})
 
-    # order is important. always use the alt-config in more_context (explicit) also when regenerating
+    # order is important. always use the `alt-config` in more_context (explicit) also when regenerating
     alt_config = more_context.get('alt-config')
 
     project_data = project.project_data(pname)
@@ -118,11 +121,7 @@ def build_context(pname, **more_context):
         'ext': False,
         'cloudfront': False,
         'elasticache': False,
-        # future use: decide at context generation time how many infrastructure tools are we going to use for this stackname
-        # 'infrastructure': {
-        #    'cloudformation': False,
-        #    'terraform': False,
-        # }
+        'docdb': False,
     }
 
     context = deepcopy(defaults)
@@ -130,11 +129,7 @@ def build_context(pname, **more_context):
 
     ensure('stackname' in context, "'stackname' not provided") # this still sucks
 
-    # proceed with wrangling
-
-    # why shuffle? so we don't have a context builder depending
-    # on another context builder mutating the context in a specific way
-    # wrangler_list = shuffle([
+    # order is *not* important, one wrangler shouldn't depend on another...
     wrangler_list = [
         partial(build_context_rds, existing_context=existing_context),
         build_context_aws,
@@ -151,15 +146,57 @@ def build_context(pname, **more_context):
         build_context_subdomains,
         build_context_elasticache,
         build_context_vault,
+        build_context_docdb,
     ]
 
-    # exceptions to the rule ...
+    # ... exceptions to the rule ...
     wrangler_list = [project_wrangler] + wrangler_list
 
     for wrangler in wrangler_list:
-        # using `deepcopy` so functions can't modify the context in-place or
+        # `deepcopy` here so functions can't modify the context in-place or
         # reference a bit of project_data and then change it
         context = wrangler(deepcopy(project_data), deepcopy(context))
+
+    return context
+
+#
+# wranglers.
+# these should accept the project data `pdata` and the `context` and
+# then modify and return their copy of the `context`.
+#
+# the `pdata` they receive has already had any alt-configs merged in.
+#
+# the final context is used to render CloudFormation and Terraform templates.
+# the logic in `buildercore/cloudformation.py` and `buildercore/terraform.py` should *not*
+# be creating default values or filling in blanks or doing any guessing at all.
+# Do that here.
+#
+
+def build_context_docdb(pdata, context):
+    "DocumentDB (docdb) configuration"
+    if 'docdb' not in pdata['aws'] or not pdata['aws']['docdb']:
+        # handles absences as well as `docdb: {}` and `docdb: None`
+        return context
+
+    config = {
+        'cluster': False,
+        # `None` => elide value from final template (no backup)
+        'backup-retention-period': None,
+        'deletion-protection': False,
+        # aws docdb describe-db-engine-versions --engine docdb
+        'engine-version': "4.0.0"
+    }
+
+    keepers = [
+        'cluster',
+        'backup-retention-period',
+        'deletion-protection',
+        'engine-version'
+    ]
+    project_config = subdict(pdata['aws']['docdb'], keepers)
+
+    config.update(project_config)
+    context['docdb'] = config
 
     return context
 
