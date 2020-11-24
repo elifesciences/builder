@@ -12,6 +12,7 @@ from buildercore import config, project
 from buildercore import bootstrap, cfngen, lifecycle, core
 import cfn
 import imp
+#import pytest # see ../conftest.py
 
 LOG = logging.getLogger(__name__)
 
@@ -37,11 +38,11 @@ def switch_out_test_settings():
     project.project_map.cache_clear()
     imp.reload(config)
 
-def test_projects():
+def test_project_list():
     switch_in_test_settings()
     return project.aws_projects().keys()
 
-def elife_projects():
+def elife_project_list():
     switch_out_test_settings()
     return project.aws_projects().keys()
 

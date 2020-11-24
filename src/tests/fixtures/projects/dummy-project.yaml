@@ -136,7 +136,7 @@ defaults:
                 # autoscaling group will never have more than these EC2 nodes
                 max-size: 3
                 # (currently fixed) number of EC2 nodes
-                desired-capacity: 1
+                desired-capacity: 3
             helm: false
             external-dns: false
             efs: false
@@ -841,7 +841,7 @@ project-with-eks-efs:
 project-with-docdb:
     description: project managing a single DocumentDB instance
     aws:
-        docdb: {}
+        docdb: {} # use default config
 
 project-with-docdb-cluster:
     description: project managing a single DocumentDB instance

@@ -5,9 +5,6 @@ from os.path import join
 import unittest
 from . import base
 from buildercore import cfngen, trop
-import pytest
-
-use = pytest.mark.usefixtures
 
 def _parse_json(dump):
     """Parses `dump` into a dictionary, using strings rather than unicode strings.
@@ -21,39 +18,6 @@ def _parse_json(dump):
     that hides the true comparison problem in `self.assertEquals()`."""
     # return yaml.safe_load(dump) # slightly improved in python3?
     return json.loads(dump)
-
-@pytest.yield_fixture
-def test_projects():
-    try:
-        base.switch_in_test_settings()
-        yield
-    finally:
-        base.switch_out_test_settings()
-
-@use("test_projects")
-def test_docdb_config():
-    context = cfngen.build_context('project-with-docdb', stackname='project-with-docdb--foo')
-    expected = {
-        'backup-retention-period': None,
-        'cluster': False,
-        'deletion-protection': False,
-        'engine-version': '4.0.0'
-    }
-    assert expected == context['docdb']
-
-@use("test_projects")
-def test_docdb_config_cluster():
-    more_context = {
-        'stackname': 'project-with-docdb-cluster--foo'
-    }
-    context = cfngen.build_context('project-with-docdb-cluster', **more_context)
-    expected = {
-        'backup-retention-period': 14,
-        'cluster': True,
-        'deletion-protection': True,
-        'engine-version': '4.0.0'
-    }
-    assert expected == context['docdb']
 
 #
 #

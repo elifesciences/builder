@@ -1,14 +1,37 @@
 import pytest
 from . import base
 from buildercore import core, cfngen, context_handler, cloudformation
-
 import logging
+
 LOG = logging.getLogger(__name__)
+
+def test_docdb_config(test_projects):
+    context = cfngen.build_context('project-with-docdb', stackname='project-with-docdb--foo')
+    expected = {
+        'backup-retention-period': None,
+        'cluster': False,
+        'deletion-protection': False,
+        'engine-version': '4.0.0'
+    }
+    assert expected == context['docdb']
+
+def test_docdb_config_cluster(test_projects):
+    more_context = {
+        'stackname': 'project-with-docdb-cluster--foo'
+    }
+    context = cfngen.build_context('project-with-docdb-cluster', **more_context)
+    expected = {
+        'backup-retention-period': 14,
+        'cluster': True,
+        'deletion-protection': True,
+        'engine-version': '4.0.0'
+    }
+    assert expected == context['docdb']
 
 class TestBuildercoreCfngen():
     # note: this requires pytest, but provides great introspection
     # on which project_name is failing
-    @pytest.mark.parametrize("project_name", base.test_projects())
+    @pytest.mark.parametrize("project_name", base.test_project_list())
     def test_quick_rendering(self, project_name):
         cfngen.quick_render(project_name)
 

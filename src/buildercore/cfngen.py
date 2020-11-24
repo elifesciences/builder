@@ -174,30 +174,8 @@ def build_context(pname, **more_context):
 
 def build_context_docdb(pdata, context):
     "DocumentDB (docdb) configuration"
-    if 'docdb' not in pdata['aws'] or not pdata['aws']['docdb']:
-        # handles absences as well as `docdb: {}` and `docdb: None`
-        return context
-
-    config = {
-        'cluster': False,
-        # `None` => elide value from final template (no backup)
-        'backup-retention-period': None,
-        'deletion-protection': False,
-        # aws docdb describe-db-engine-versions --engine docdb
-        'engine-version': "4.0.0"
-    }
-
-    keepers = [
-        'cluster',
-        'backup-retention-period',
-        'deletion-protection',
-        'engine-version'
-    ]
-    project_config = subdict(pdata['aws']['docdb'], keepers)
-
-    config.update(project_config)
-    context['docdb'] = config
-
+    if pdata['aws'].get('docdb'):
+        context['docdb'] = pdata['aws']['docdb']
     return context
 
 def build_context_aws(pdata, context):
