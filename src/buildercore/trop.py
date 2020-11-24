@@ -775,7 +775,7 @@ def render_cloudfront(context, template, origin_hostname):
             cloudfront.Origin(
                 DomainName=o['hostname'],
                 Id=o_id,
-                CustomOriginConfig=cloudfront.CustomOrigin(
+                CustomOriginConfig=cloudfront.CustomOriginConfig(
                     HTTPSPort=443,
                     OriginProtocolPolicy='https-only'
                 )
@@ -789,7 +789,7 @@ def render_cloudfront(context, template, origin_hostname):
             cloudfront.Origin(
                 DomainName=origin_hostname,
                 Id=origin,
-                CustomOriginConfig=cloudfront.CustomOrigin(
+                CustomOriginConfig=cloudfront.CustomOriginConfig(
                     HTTPSPort=443,
                     OriginProtocolPolicy='https-only'
                 )
@@ -839,7 +839,7 @@ def render_cloudfront(context, template, origin_hostname):
             # TODO: constant
             Id=CLOUDFRONT_ERROR_ORIGIN_ID,
             # no advantage in using cloudfront.S3Origin for public buckets
-            CustomOriginConfig=cloudfront.CustomOrigin(
+            CustomOriginConfig=cloudfront.CustomOriginConfig(
                 HTTPSPort=443,
                 OriginProtocolPolicy='https-only' if context['cloudfront']['errors']['protocol'] == 'https' else 'http-only'
             )
