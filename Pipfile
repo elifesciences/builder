@@ -21,7 +21,7 @@ python-terraform = "~=0.10"
 pytz = "*"
 pyyaml = ">=4.1"
 requests = "~=2.20"
-troposphere = "==2.3.3"
+troposphere = "~=2.6"
 parallel-ssh = "==1.9.*"
 
 [dev-packages]
