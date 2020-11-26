@@ -205,6 +205,16 @@ defaults:
             clusters: 1
         vault:
             address: https://master-server.elifesciences.org:8200
+        docdb:
+            cluster-size: 1
+            backup-retention-period: null # no backups
+            deletion-protection: False
+            # https://aws.amazon.com/documentdb/pricing/
+            type: db.t3.medium
+            engine-version: 4.0.0
+            subnets:
+                - subnet-0590f9e8ead4bbd9a # elife-docdb-subnet-1
+                - subnet-02dc8ba012ee359ae # elife-docdb-subnet-2
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -1977,3 +1987,8 @@ bioprotocol:
     vagrant:
         ports:
             1280: 80
+
+docdb:
+    aws:
+        ec2: false
+        docdb: {}

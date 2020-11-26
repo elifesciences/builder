@@ -146,7 +146,7 @@ def build_context(pname, **more_context):
         build_context_subdomains,
         build_context_elasticache,
         build_context_vault,
-        build_context_docdb,
+        partial(build_context_docdb, existing_context=existing_context),
     ]
 
     # ... exceptions to the rule ...
@@ -172,10 +172,25 @@ def build_context(pname, **more_context):
 # Do that here.
 #
 
-def build_context_docdb(pdata, context):
+def build_context_docdb(pdata, context, existing_context=None):
     "DocumentDB (docdb) configuration"
-    if pdata['aws'].get('docdb'):
-        context['docdb'] = pdata['aws']['docdb']
+    if not pdata['aws'].get('docdb'):
+        return context
+
+    existing_context = existing_context.get('docdb', {})
+
+    generated_password = utils.random_alphanumeric(length=64)
+    current_master_password = existing_context.get('master-user-password')
+
+    context['docdb'] = pdata['aws']['docdb']
+    # non-configurable (for now) options
+    context['docdb'].update({
+        'instance-id': core.rds_iid(context['stackname']),
+        'minor-version-upgrades': True,
+        'master-username': 'root',
+        'master-user-password': current_master_password or generated_password,
+        'storage-encrypted': False
+    })
     return context
 
 def build_context_aws(pdata, context):
@@ -582,7 +597,7 @@ def generate_stack(pname, **more_context):
 
 
 # can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^AZ.+$', '^InstanceId.+$', '^PrivateIP.+$', '^DomainName$', '^IntDomainName$', '^RDSHost$', '^RDSPort$']
+UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^AZ.+$', '^InstanceId.+$', '^PrivateIP.+$', '^DomainName$', '^IntDomainName$', '^RDSHost$', '^RDSPort$', '^DocumentDB.*$']
 
 REMOVABLE_TITLE_PATTERNS = ['^CloudFront.*', '^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtDNS1$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$', '^AttachedDB$', '^AttachedDBSubnet$', '^VPCSecurityGroup$', '^KeyName$']
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']

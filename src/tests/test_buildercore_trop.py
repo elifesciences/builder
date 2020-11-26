@@ -1197,6 +1197,20 @@ class TestBuildercoreTrop(base.BaseCase):
         data = _parse_json(cfn_template)
         self.assertNotIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
 
+    def test_docdb(self):
+        import pprint
+        extra = {'stackname': 'project-with-docdb--prod'}
+        context = cfngen.build_context('project-with-docdb', **extra)
+        cfn_template = trop.render(context)
+        data = _parse_json(cfn_template)
+
+        pprint.pprint(data)
+        self.assertTrue(False)
+
+#
+#
+#
+
 class TestOverriddenComponent(unittest.TestCase):
     def test_overrides_scalar(self):
         context = {
@@ -1284,6 +1298,10 @@ class TestOverriddenComponent(unittest.TestCase):
         data = _parse_json(trop.render(context))
         self.assertEqual(context['rds']['deletion-policy'], "Delete")
         self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Delete')
+
+#
+#
+#
 
 class TestIngress(base.BaseCase):
     def _dump_to_list_of_rules(self, ingress):

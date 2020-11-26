@@ -9,7 +9,7 @@ from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
 from .config import ConfigurationError
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, Tag, docdb
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
@@ -45,6 +45,11 @@ ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
+
+def _remove_if_none(data, key_list):
+    for key in key_list:
+        if data[key] is None:
+            del data[key]
 
 def _convert_ports_to_dictionary(ports):
     if isinstance(ports, list):
@@ -125,12 +130,7 @@ def rds_security(context):
                           ingress_ports,
                           "RDS DB security group")
 
-#
-#
-#
-
-def instance_tags(context, node=None):
-    # NOTE: RDS and Elasticache instances also call this function
+def _instance_tags(context, node=None):
     tags = aws.generic_tags(context)
     if node:
         # this instance is part of a cluster
@@ -138,7 +138,14 @@ def instance_tags(context, node=None):
             'Name': '%s--%d' % (context['stackname'], node), # "journal--prod--1"
             'Node': node, # "1"
         })
-    return [ec2.Tag(key, str(value)) for key, value in tags.items()]
+    return tags
+
+def instance_tags(context, node=None, single_tag_obj=False):
+    data = _instance_tags(context, node)
+    if single_tag_obj:
+        # newer troposphere resources use `troposphere.Tags` to model a collection of `Tag` objects.
+        return Tags(data)
+    return [ec2.Tag(key, str(value)) for key, value in data.items()]
 
 def elb_tags(context):
     tags = aws.generic_tags(context)
@@ -1029,6 +1036,41 @@ def overridden_component(context, component, index, allowed, interesting=None):
             overridden_context[component][key] = value
     return overridden_context[component]
 
+def render_docdb(context, template):
+    # https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.docdb
+
+    # create cluster
+    subnet_group = docdb.DBSubnetGroup('DocumentDBSubnet', **{
+        "DBSubnetGroupDescription": "a group of subnets for this DocumentDB cluster.",
+        "SubnetIds": context['docdb']['subnets']
+    })
+
+    cluster = {
+        'title': 'DocumentDBCluster', # resource name
+        'BackupRetentionPeriod': context['docdb']['backup-retention-period'],
+        'MasterUserPassword': context['docdb']['master-user-password'],
+        'MasterUsername': context['docdb']['master-username'],
+        'Tags': instance_tags(context, single_tag_obj=True),
+        'StorageEncrypted': context['docdb']['storage-encrypted'],
+        'DBSubnetGroupName': Ref(subnet_group),
+        'EngineVersion': context['docdb']['engine-version'],
+    }
+    _remove_if_none(cluster, ['BackupRetentionPeriod'])
+    cluster = docdb.DBCluster(**cluster)
+    [template.add_resource(r) for r in [subnet_group, cluster]]
+
+    # create nodes
+    def docdb_node(node):
+        return docdb.DBInstance(**{
+            'title': 'DocumentDBInst%d' % node,
+            'DBClusterIdentifier': Ref(cluster),
+            'AutoMinorVersionUpgrade': context['docdb']['minor-version-upgrades'],
+            'DBInstanceClass': context['docdb']['type'],
+            'Tags': instance_tags(context, node, single_tag_obj=True),
+        })
+    for i in range(1, context['docdb']['cluster-size'] + 1):
+        template.add_resource(docdb_node(i))
+
 #
 #
 #
@@ -1042,7 +1084,7 @@ def render(context):
     # order is probably important.
     # each render function is modifying the state of a single Template object.
     renderer_list = [
-        #('ec2', render_ec2), # called above. other renderers depend on it's result
+        # ('ec2', render_ec2), # called above. other renderers depend on it's result
         ('rds', render_rds),
         ('ext', render_ext, {'cluster_size': cluster_size, 'actual_ec2_instances': ec2_instances.keys()}),
         ('sns', render_sns),
@@ -1055,7 +1097,8 @@ def render(context):
         ('ec2', render_ec2_dns),
         ('cloudfront', render_cloudfront, {'origin_hostname': context['full_hostname']}),
         ('fastly', render_fastly),
-        ('elasticache', render_elasticache)
+        ('elasticache', render_elasticache),
+        ('docdb', render_docdb),
     ]
 
     for value in renderer_list:

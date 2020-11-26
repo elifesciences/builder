@@ -25,13 +25,13 @@ def _log_backoff(event):
     LOG.warn("Backing off in validating project %s", event['args'][0])
 
 @backoff.on_exception(backoff.expo, botocore.exceptions.ClientError, on_backoff=_log_backoff, giveup=_give_up_backoff, max_time=30)
-def validate_template(pname, rendered_template):
+def validate_template(pname_or_stackname, rendered_template):
     "remote cloudformation template checks."
     if json.loads(rendered_template) == EMPTY_TEMPLATE:
         # empty templates are technically invalid, but they don't interact with CloudFormation at all
         return
 
-    conn = core.boto_conn(pname, 'cloudformation', client=True)
+    conn = core.boto_conn(pname_or_stackname, 'cloudformation', client=True)
     return conn.validate_template(TemplateBody=rendered_template)
 
 class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
@@ -95,6 +95,7 @@ def bootstrap(stackname, context):
 
     stack_body = core.stack_json(stackname)
     if json.loads(stack_body) == EMPTY_TEMPLATE:
+        LOG.warn("empty template: %s" % (core.stack_path(stackname),))
         return
 
     if core.stack_is_active(stackname):
