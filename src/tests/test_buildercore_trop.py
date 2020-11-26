@@ -89,7 +89,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('AttachedDB', cfn_template['Resources'])
         db = cfn_template['Resources']['AttachedDB']['Properties']
         self.assertTrue(db['StorageEncrypted'])
-        self.assertEquals(db['KmsKeyId'], 'arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012')
+        self.assertEqual(db['KmsKeyId'], 'arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012')
 
     def test_rds_allow_major_version_upgrade(self):
         extra = {
