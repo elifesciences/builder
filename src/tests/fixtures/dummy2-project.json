@@ -130,7 +130,7 @@
                     }
                 }
             ], 
-            "description": "uses a plain Ubuntu basebox instead of an ami"
+            "description": "uses a public Ubuntu AMI instead of an elife generated basebox."
         }, 
         "alt-config1": {
             "ec2": {

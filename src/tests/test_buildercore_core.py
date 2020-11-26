@@ -197,8 +197,8 @@ class TestCoreNewProjectData(base.BaseCase):
     def test_configurations(self):
         expected = [
             ('dummy1', self.dummy1_config),
-            #('dummy2', self.dummy2_config),
-            #('dummy3', self.dummy3_config),
+            ('dummy2', self.dummy2_config),
+            ('dummy3', self.dummy3_config),
         ]
         for pname, expected_path in expected:
             expected_data = json.load(open(expected_path, 'r'))
