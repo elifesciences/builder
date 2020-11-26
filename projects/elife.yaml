@@ -26,7 +26,7 @@ defaults:
         account-id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
-            # root partition properties, undefined by default, results in a ~7.7GiB EBS root volume
+            # root partition properties, left undefined, results in a ~7.7GiB EBS root volume
             #root:
             #    size:
             #    type: gpt|ebs
