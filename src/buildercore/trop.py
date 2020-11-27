@@ -9,7 +9,7 @@ from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
 from .config import ConfigurationError
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, Tag, docdb
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
@@ -133,7 +133,7 @@ def rds_security(context):
                           "RDS DB security group")
 
 def _instance_tags(context, node=None):
-    """returns a dictionary of common tags for an instance. 
+    """returns a dictionary of common tags for an instance.
     Passing in the node's number will include node-specific tags."""
     tags = aws.generic_tags(context)
     if node:
@@ -146,7 +146,7 @@ def _instance_tags(context, node=None):
 
 def instance_tags(context, node=None, single_tag_obj=False):
     """same as `_instance_tags`, but returns a list of `Tag` objects.
-    When `single_tag_obj` is `True`, a single `Tags` (plural) object is returned as ewer 
+    When `single_tag_obj` is `True`, a single `Tags` (plural) object is returned as ewer
     troposphere resources use `troposphere.Tags` to model a collection of `Tag` objects."""
     data = _instance_tags(context, node)
     if single_tag_obj:

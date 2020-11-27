@@ -853,7 +853,7 @@ project-with-docdb-cluster:
     description: project managing a single DocumentDB instance
     aws:
         docdb:
-            cluster: True
+            cluster-size: 3
             backup-retention-period: 14 # days
             deletion-protection: True
             engine-version: 4.0.0

@@ -3,6 +3,7 @@ import json  # , yaml
 import os
 from os.path import join
 import unittest
+from mock import patch
 from . import base
 from buildercore import cfngen, trop
 
@@ -1198,14 +1199,70 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertNotIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
 
     def test_docdb(self):
-        import pprint
-        extra = {'stackname': 'project-with-docdb--prod'}
-        context = cfngen.build_context('project-with-docdb', **extra)
-        cfn_template = trop.render(context)
-        data = _parse_json(cfn_template)
+        expected = {'Resources':
+                    {'DocumentDBCluster':
+                     {'Properties':
+                      {'DBSubnetGroupName':
+                       {'Ref': 'DocumentDBSubnet'},
+                       'DeletionProtection': 'false',
+                       'EngineVersion': '4.0.0',
+                       'MasterUserPassword': '$random-password',
+                       'MasterUsername': 'root',
+                       'StorageEncrypted': 'false',
+                       'Tags': [{'Key': 'Cluster',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Environment',
+                                 'Value': 'prod'},
+                                {'Key': 'Name',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Project',
+                                 'Value': 'project-with-docdb'}]},
+                      'Type': 'AWS::DocDB::DBCluster'},
+                     'DocumentDBInst1':
+                     {'Properties':
+                      {'AutoMinorVersionUpgrade': 'true',
+                       'DBClusterIdentifier': {'Ref': 'DocumentDBCluster'},
+                       'DBInstanceClass': 'db.t3.medium',
+                       'Tags': [{'Key': 'Cluster',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Environment',
+                                 'Value': 'prod'},
+                                {'Key': 'Name',
+                                 'Value': 'project-with-docdb--prod--1'},
+                                {'Key': 'Node',
+                                 'Value': 1},
+                                {'Key': 'Project',
+                                 'Value': 'project-with-docdb'}]},
+                      'Type': 'AWS::DocDB::DBInstance'},
+                     'DocumentDBInst2':
+                     {'Properties':
+                      {'AutoMinorVersionUpgrade': 'true',
+                       'DBClusterIdentifier': {'Ref': 'DocumentDBCluster'},
+                       'DBInstanceClass': 'db.t3.medium',
+                       'Tags': [{'Key': 'Cluster',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Environment',
+                                 'Value': 'prod'},
+                                {'Key': 'Name',
+                                 'Value': 'project-with-docdb--prod--2'},
+                                {'Key': 'Node',
+                                 'Value': 2},
+                                {'Key': 'Project',
+                                 'Value': 'project-with-docdb'}]},
+                      'Type': 'AWS::DocDB::DBInstance'},
+                     'DocumentDBSubnet':
+                     {'Properties':
+                      {'DBSubnetGroupDescription': 'a group of subnets for this DocumentDB cluster.',
+                       'SubnetIds': ['subnet-foo',
+                                     'subnet-bar']},
+                      'Type': 'AWS::DocDB::DBSubnetGroup'}}}
 
-        pprint.pprint(data)
-        self.assertTrue(False)
+        with patch('buildercore.utils.random_alphanumeric', return_value='$random-password'):
+            extra = {'stackname': 'project-with-docdb--prod'}
+            context = cfngen.build_context('project-with-docdb', **extra)
+            cfn_template = trop.render(context)
+            cfn_template = _parse_json(cfn_template)
+            self.assertEqual(expected, cfn_template)
 
 #
 #

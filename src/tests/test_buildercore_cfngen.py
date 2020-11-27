@@ -6,13 +6,20 @@ import logging
 LOG = logging.getLogger(__name__)
 
 def test_docdb_config(test_projects):
-    context = cfngen.build_context('project-with-docdb', stackname='project-with-docdb--foo')
+    context = cfngen.build_context('project-with-docdb', stackname='project-with-docdb--test')
     expected = {
         'backup-retention-period': None,
-        'cluster': False,
         'deletion-protection': False,
-        'engine-version': '4.0.0'
+        'cluster-size': 2,
+        'deletion-protection': False,
+        'engine-version': '4.0.0',
+        'type': 'db.t3.medium',
+        'subnets': ['subnet-foo', 'subnet-bar'],
+        'minor-version-upgrades': True,
+        'master-username': 'root',
+        'storage-encrypted': False
     }
+    del context['docdb']['master-user-password']
     assert expected == context['docdb']
 
 def test_docdb_config_cluster(test_projects):
@@ -22,10 +29,17 @@ def test_docdb_config_cluster(test_projects):
     context = cfngen.build_context('project-with-docdb-cluster', **more_context)
     expected = {
         'backup-retention-period': 14,
-        'cluster': True,
         'deletion-protection': True,
-        'engine-version': '4.0.0'
+        'cluster-size': 3,
+        'deletion-protection': True,
+        'engine-version': '4.0.0',
+        'type': 'db.t3.medium',
+        'subnets': ['subnet-foo', 'subnet-bar'],
+        'minor-version-upgrades': True,
+        'master-username': 'root',
+        'storage-encrypted': False
     }
+    del context['docdb']['master-user-password']
     assert expected == context['docdb']
 
 class TestBuildercoreCfngen():

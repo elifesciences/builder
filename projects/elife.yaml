@@ -1988,11 +1988,3 @@ bioprotocol:
     vagrant:
         ports:
             1280: 80
-
-docdb:
-    aws:
-        ec2: false
-        docdb:
-            type: db.r5.xlarge
-            cluster-size: 2
-            backup-retention-period: 1
