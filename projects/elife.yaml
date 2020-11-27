@@ -15,19 +15,18 @@ defaults:
     # repo containing project pillar data (credentials typically)
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
-    # TODO: hunt down ssh:// remotes
     private-repo: git@github.com:elifesciences/builder-private
     configuration-repo: git@github.com:elifesciences/builder-configuration
     # default branch to use when creating new instances
     default-branch: master
-    # in rare cases we have formulas requiring the states of other formulas
+    # in some cases we have formulas requiring the states of other formulas
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         account-id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
-            # root partition properties, undefined by default, results in a ~7.7GiB EBS root volume
+            # root partition properties, left undefined, results in a ~7.7GiB EBS root volume
             #root:
             #    size:
             #    type: gpt|ebs
@@ -44,8 +43,7 @@ defaults:
             # override 'ext' (only supported key)
             # for some EC2 instances
             overrides: {}
-            # destroy some EC2 instances in the cluster,
-            # for future re-creation
+            # destroy some EC2 instances in the cluster for future re-creation
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
@@ -74,8 +72,6 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         # ports: {}
         rds:
-            # rds defaults only used if an `rds` section present in project
-            # explicit database name overrides the one generated at template creation
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
@@ -101,7 +97,6 @@ defaults:
                 - subnet-dbc471f0 # elife-dbsubnet-2
             # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html
             deletion-policy: Snapshot # 'Delete', 'Retain' 'Snapshot'
-
         # TODO: move inside aws.ec2
         ext:
             # EBS 'external' volume
@@ -136,7 +131,7 @@ defaults:
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
         #       encryption: false
-        s3: {}
+        s3: []
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
@@ -198,7 +193,7 @@ defaults:
             # elasticache defaults only used if an `rds` section present in project
             type: cache.t2.small # 1.55 GB of memory, ~$25/mo
             engine: redis
-            az: us-east-1d # alternative: us-east-1e to match EC2 instances
+            az: "us-east-1d" # alternative: us-east-1e to match EC2 instances
             subnets:
                 - subnet-20275c68 # elife-cache-subnet-1
                 - subnet-c4033af8 # elife-cache-subnet-2
@@ -208,6 +203,19 @@ defaults:
             clusters: 1
         vault:
             address: https://master-server.elifesciences.org:8200
+        docdb:
+            # one primary, one replica
+            cluster-size: 2
+            backup-retention-period: null # days, null for 'no backups'
+            # if true, cluster will require this value changed to 'true' to be deleted.
+            deletion-protection: False
+            # https://aws.amazon.com/documentdb/pricing/
+            # "DocumentDB 4.0 supports r5 and t3.medium instance types"
+            type: db.t3.medium
+            engine-version: 4.0.0
+            subnets:
+                - subnet-0590f9e8ead4bbd9a # elife-docdb-subnet-1
+                - subnet-02dc8ba012ee359ae # elife-docdb-subnet-2
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.

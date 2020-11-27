@@ -15,6 +15,7 @@ ALL_PROJECTS = [
     'project-with-elasticache-redis', 'project-with-multiple-elasticaches', 'project-with-fully-overridden-elasticaches',
     'project-on-gcp', 'project-with-bigquery-datasets-only', 'project-with-bigquery', 'project-with-bigquery-remote-schemas',
     'project-with-eks', 'project-with-eks-helm', 'project-with-eks-external-dns', 'project-with-eks-efs',
+    'project-with-docdb', 'project-with-docdb-cluster',
 ]
 
 class TestProject(base.BaseCase):

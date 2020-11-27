@@ -21,7 +21,7 @@ python-terraform = "~=0.10"
 pytz = "*"
 pyyaml = ">=4.1"
 requests = "~=2.20"
-troposphere = "==2.3.3"
+troposphere = "~=2.6"
 parallel-ssh = "==1.9.*"
 
 [dev-packages]
@@ -33,5 +33,6 @@ pytest-cov = "==2.5.*"
 pytest-forked = "~=0.2"
 ipython = "~=5.5"
 coverage = "~=4.5"
+# remove along with python2
 mock = "~=2.0"
 unittest2 = "~=1.1"

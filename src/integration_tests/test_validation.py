@@ -13,7 +13,7 @@ class TestValidationFixtures():
     def setup_class(cls):
         base.switch_in_test_settings()
 
-    @pytest.mark.parametrize("project_name", base.test_projects())
+    @pytest.mark.parametrize("project_name", base.test_project_list())
     def test_validation(self, project_name):
         "dummy projects and their alternative configurations pass validation"
         cfngen.validate_project(project_name)
@@ -27,7 +27,7 @@ class TestValidationElife():
     def teardown_class(cls):
         base.switch_in_test_settings()
 
-    @pytest.mark.parametrize("project_name", base.elife_projects())
+    @pytest.mark.parametrize("project_name", base.elife_project_list())
     def test_validation_elife_projects(self, project_name, filter_project_name):
         "elife projects (and their alternative configurations) that come with the builder pass validation"
         if filter_project_name:

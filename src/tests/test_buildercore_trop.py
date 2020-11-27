@@ -3,8 +3,26 @@ import json  # , yaml
 import os
 from os.path import join
 import unittest
+from mock import patch
 from . import base
 from buildercore import cfngen, trop
+
+def _parse_json(dump):
+    """Parses `dump` into a dictionary, using strings rather than unicode strings.
+
+    Ridiculously, the yaml module is more helpful in parsing JSON than the json module.
+    Using `json.loads()` will result in unhelpful error messages like:
+
+    -  'Type': 'AWS::Route53::RecordSet'}
+    +  u'Type': u'AWS::Route53::RecordSet'}
+
+    that hides the true comparison problem in `self.assertEquals()`."""
+    # return yaml.safe_load(dump) # slightly improved in python3?
+    return json.loads(dump)
+
+#
+#
+#
 
 class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
@@ -72,7 +90,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertIn('AttachedDB', cfn_template['Resources'])
         db = cfn_template['Resources']['AttachedDB']['Properties']
         self.assertTrue(db['StorageEncrypted'])
-        self.assertEquals(db['KmsKeyId'], 'arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012')
+        self.assertEqual(db['KmsKeyId'], 'arn:aws:kms:us-east-1:1234:key/12345678-1234-1234-1234-123456789012')
 
     def test_rds_allow_major_version_upgrade(self):
         extra = {
@@ -1180,6 +1198,76 @@ class TestBuildercoreTrop(base.BaseCase):
         data = _parse_json(cfn_template)
         self.assertNotIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
 
+    def test_docdb(self):
+        expected = {'Resources':
+                    {'DocumentDBCluster':
+                     {'Properties':
+                      {'DBSubnetGroupName':
+                       {'Ref': 'DocumentDBSubnet'},
+                       'DeletionProtection': 'false',
+                       'EngineVersion': '4.0.0',
+                       'MasterUserPassword': '$random-password',
+                       'MasterUsername': 'root',
+                       'StorageEncrypted': 'false',
+                       'Tags': [{'Key': 'Cluster',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Environment',
+                                 'Value': 'prod'},
+                                {'Key': 'Name',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Project',
+                                 'Value': 'project-with-docdb'}]},
+                      'Type': 'AWS::DocDB::DBCluster'},
+                     'DocumentDBInst1':
+                     {'Properties':
+                      {'AutoMinorVersionUpgrade': 'true',
+                       'DBClusterIdentifier': {'Ref': 'DocumentDBCluster'},
+                       'DBInstanceClass': 'db.t3.medium',
+                       'Tags': [{'Key': 'Cluster',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Environment',
+                                 'Value': 'prod'},
+                                {'Key': 'Name',
+                                 'Value': 'project-with-docdb--prod--1'},
+                                {'Key': 'Node',
+                                 'Value': 1},
+                                {'Key': 'Project',
+                                 'Value': 'project-with-docdb'}]},
+                      'Type': 'AWS::DocDB::DBInstance'},
+                     'DocumentDBInst2':
+                     {'Properties':
+                      {'AutoMinorVersionUpgrade': 'true',
+                       'DBClusterIdentifier': {'Ref': 'DocumentDBCluster'},
+                       'DBInstanceClass': 'db.t3.medium',
+                       'Tags': [{'Key': 'Cluster',
+                                 'Value': 'project-with-docdb--prod'},
+                                {'Key': 'Environment',
+                                 'Value': 'prod'},
+                                {'Key': 'Name',
+                                 'Value': 'project-with-docdb--prod--2'},
+                                {'Key': 'Node',
+                                 'Value': 2},
+                                {'Key': 'Project',
+                                 'Value': 'project-with-docdb'}]},
+                      'Type': 'AWS::DocDB::DBInstance'},
+                     'DocumentDBSubnet':
+                     {'Properties':
+                      {'DBSubnetGroupDescription': 'a group of subnets for this DocumentDB cluster.',
+                       'SubnetIds': ['subnet-foo',
+                                     'subnet-bar']},
+                      'Type': 'AWS::DocDB::DBSubnetGroup'}}}
+
+        with patch('buildercore.utils.random_alphanumeric', return_value='$random-password'):
+            extra = {'stackname': 'project-with-docdb--prod'}
+            context = cfngen.build_context('project-with-docdb', **extra)
+            cfn_template = trop.render(context)
+            cfn_template = _parse_json(cfn_template)
+            self.assertEqual(expected, cfn_template)
+
+#
+#
+#
+
 class TestOverriddenComponent(unittest.TestCase):
     def test_overrides_scalar(self):
         context = {
@@ -1268,7 +1356,14 @@ class TestOverriddenComponent(unittest.TestCase):
         self.assertEqual(context['rds']['deletion-policy'], "Delete")
         self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Delete')
 
+#
+#
+#
+
 class TestIngress(base.BaseCase):
+    def _dump_to_list_of_rules(self, ingress):
+        return [r.to_dict() for r in trop.convert_ports_dict_to_troposphere(ingress)]
+
     def test_accepts_a_list_of_ports(self):
         simple_ingress = trop._convert_ports_to_dictionary([22, 80])
         self.assertEqual(
@@ -1387,17 +1482,3 @@ class TestIngress(base.BaseCase):
                 },
             ]
         )
-
-    def _dump_to_list_of_rules(self, ingress):
-        return [r.to_dict() for r in trop.convert_ports_dict_to_troposphere(ingress)]
-
-def _parse_json(dump):
-    """Parses dump into a dictionary, using strings rather than unicode strings
-
-    Ridiculously, the yaml module is more helpful in parsing JSON than the json module. Using json.loads() will result in unhelpful error messages like
-    -  'Type': 'AWS::Route53::RecordSet'}
-    +  u'Type': u'AWS::Route53::RecordSet'}
-    that hide the true comparison problem in self.assertEquals().
-    """
-    # return yaml.safe_load(dump) # slightly improved in python3?
-    return json.loads(dump)
