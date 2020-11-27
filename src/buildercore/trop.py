@@ -47,6 +47,8 @@ ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 KEYPAIR = "KeyName"
 
 def _remove_if_none(data, key_list):
+    """deletes a list of keys from given `data` if keyed value is `None`.
+    Cloudformation may not accept `null` for a value but will accept the absence of it's key."""
     for key in key_list:
         if data[key] is None:
             del data[key]
@@ -131,6 +133,8 @@ def rds_security(context):
                           "RDS DB security group")
 
 def _instance_tags(context, node=None):
+    """returns a dictionary of common tags for an instance. 
+    Passing in the node's number will include node-specific tags."""
     tags = aws.generic_tags(context)
     if node:
         # this instance is part of a cluster
@@ -141,9 +145,11 @@ def _instance_tags(context, node=None):
     return tags
 
 def instance_tags(context, node=None, single_tag_obj=False):
+    """same as `_instance_tags`, but returns a list of `Tag` objects.
+    When `single_tag_obj` is `True`, a single `Tags` (plural) object is returned as ewer 
+    troposphere resources use `troposphere.Tags` to model a collection of `Tag` objects."""
     data = _instance_tags(context, node)
     if single_tag_obj:
-        # newer troposphere resources use `troposphere.Tags` to model a collection of `Tag` objects.
         return Tags(data)
     return [ec2.Tag(key, str(value)) for key, value in data.items()]
 
@@ -1037,17 +1043,15 @@ def overridden_component(context, component, index, allowed, interesting=None):
     return overridden_context[component]
 
 def render_docdb(context, template):
-    # https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.docdb
-
     # create cluster
     subnet_group = docdb.DBSubnetGroup('DocumentDBSubnet', **{
         "DBSubnetGroupDescription": "a group of subnets for this DocumentDB cluster.",
         "SubnetIds": context['docdb']['subnets']
     })
-
     cluster = {
         'title': 'DocumentDBCluster', # resource name
         'BackupRetentionPeriod': context['docdb']['backup-retention-period'],
+        'DeletionProtection': context['docdb']['deletion-protection'],
         'MasterUserPassword': context['docdb']['master-user-password'],
         'MasterUsername': context['docdb']['master-username'],
         'Tags': instance_tags(context, single_tag_obj=True),
@@ -1104,9 +1108,10 @@ def render(context):
     for value in renderer_list:
         context_key, render_fn = value[0], value[1]
         kwargs = value[2] if len(value) == 3 else {}
-        if context[context_key]:
+        if context[context_key]: # "if 's3' in context, then render_s3(...)"
             render_fn(context, template, **kwargs)
 
+    # todo: needs some attention.
     add_outputs(context, template)
 
     return template.to_json()

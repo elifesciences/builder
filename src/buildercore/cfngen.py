@@ -63,8 +63,8 @@ def parameterize(context):
     return wrapper
 
 def build_context(pname, **more_context):
-    """builds a dictionary called the `context` that is used when rendering the final template.
-    `more_context` is used to provide additional runtime data can change tweak the final dictionary.
+    """builds a dictionary called the `context` that is used when rendering the final cloudformation/terraform template.
+    `more_context` is used to provide additional runtime data that can tweak the final dictionary.
     For example, we can specify an alternative AWS configuration or the context from a previous build."""
 
     supported_projects = project.project_list()
@@ -75,7 +75,7 @@ def build_context(pname, **more_context):
     # regenerating templates (like random passwords)
     existing_context = more_context.pop('existing_context', {})
 
-    # order is important. always use the `alt-config` in more_context (explicit) also when regenerating
+    # order is important. always use `alt-config` in `more_context` (explicit) when regenerating
     alt_config = more_context.get('alt-config')
 
     project_data = project.project_data(pname)
@@ -129,7 +129,7 @@ def build_context(pname, **more_context):
 
     ensure('stackname' in context, "'stackname' not provided") # this still sucks
 
-    # order is *not* important, one wrangler shouldn't depend on another...
+    # order is *not* important, one wrangler shouldn't depend on another
     wrangler_list = [
         partial(build_context_rds, existing_context=existing_context),
         build_context_aws,
@@ -149,11 +149,11 @@ def build_context(pname, **more_context):
         partial(build_context_docdb, existing_context=existing_context),
     ]
 
-    # ... exceptions to the rule ...
+    # ... exceptions to the rule
     wrangler_list = [project_wrangler] + wrangler_list
 
     for wrangler in wrangler_list:
-        # `deepcopy` here so functions can't modify the context in-place or
+        # `deepcopy` here so functions can't modify the `context` in-place or
         # reference a bit of project_data and then change it
         context = wrangler(deepcopy(project_data), deepcopy(context))
 
@@ -162,7 +162,7 @@ def build_context(pname, **more_context):
 #
 # wranglers.
 # these should accept the project data `pdata` and the `context` and
-# then modify and return their copy of the `context`.
+# then modify and return their local copy of the `context`.
 #
 # the `pdata` they receive has already had any alt-configs merged in.
 #
@@ -185,7 +185,6 @@ def build_context_docdb(pdata, context, existing_context=None):
     context['docdb'] = pdata['aws']['docdb']
     # non-configurable (for now) options
     context['docdb'].update({
-        'instance-id': core.rds_iid(context['stackname']),
         'minor-version-upgrades': True,
         'master-username': 'root',
         'master-user-password': current_master_password or generated_password,

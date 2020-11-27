@@ -72,8 +72,6 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         # ports: {}
         rds:
-            # rds defaults only used if an `rds` section present in project
-            # explicit database name overrides the one generated at template creation
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
@@ -133,7 +131,7 @@ defaults:
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
         #       encryption: false
-        s3: {} # todo: shouldn't this be an empty list?
+        s3: []
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
@@ -206,10 +204,13 @@ defaults:
         vault:
             address: https://master-server.elifesciences.org:8200
         docdb:
-            cluster-size: 1
-            backup-retention-period: null # no backups
+            # one primary, one replica
+            cluster-size: 2
+            backup-retention-period: null # days, null for 'no backups'
+            # if true, cluster will require this value changed to 'true' to be deleted.
             deletion-protection: False
             # https://aws.amazon.com/documentdb/pricing/
+            # "DocumentDB 4.0 supports r5 and t3.medium instance types"
             type: db.t3.medium
             engine-version: 4.0.0
             subnets:
@@ -1991,4 +1992,7 @@ bioprotocol:
 docdb:
     aws:
         ec2: false
-        docdb: {}
+        docdb:
+            type: db.r5.xlarge
+            cluster-size: 2
+            backup-retention-period: 1

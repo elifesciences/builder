@@ -61,9 +61,6 @@ defaults:
         redundant-availability-zone: us-east-1e
         type: t2.small
         rds:
-            # rds defaults only used if an `rds` section present in project
-            # explicit database name overrides the one generated at template creation
-            name: <defined at generation> # todo, disable
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
@@ -189,10 +186,13 @@ defaults:
         vault:
             address: https://vault.example.org:8200
         docdb:
+            # one primary, one replica
             cluster-size: 2
-            backup-retention-period: null # no backups
+            backup-retention-period: null # days, null for 'no backups'
+            # if true, cluster will require this value changed to 'true' to be deleted.
             deletion-protection: False
             # https://aws.amazon.com/documentdb/pricing/
+            # "DocumentDB 4.0 supports r5 and t3.medium instance types"
             type: db.t3.medium
             engine-version: 4.0.0
             subnets:
