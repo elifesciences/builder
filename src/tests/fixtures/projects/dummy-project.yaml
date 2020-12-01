@@ -450,11 +450,6 @@ project-with-fastly-complex:
                     5xx: "/5xx.html"
                     4xx: "/4xx.html"
             ip-blacklist: true
-            vcl-templates:
-                journal-submit:
-                    percentage: 10
-                    referer: ^https://xpub\.example\.com/
-                    xpub_uri: https://xpub.example.com/login
             vcl:
                 - "gzip-by-content-type-suffix"
             surrogate-keys:
