@@ -1693,6 +1693,20 @@ elife-libero-reviewer:
                 "{instance}-elife-libero-reviewer":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
 
+elife-libero-editor:
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+    aws-alt:
+        staging:
+            s3:
+                "{instance}-elife-libero-editor":
+        prod:
+            s3:
+                "{instance}-elife-libero-editor":
+
 task-adept:
     description: production data dumps from TaskAdept
     default-branch: null
