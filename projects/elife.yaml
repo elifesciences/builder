@@ -1703,9 +1703,21 @@ elife-libero-editor:
         staging:
             s3:
                 "{instance}-elife-libero-editor":
+            sqs:
+                # Monitor the production process bucket for new deposits from Exeter.
+                elife-libero-editor-import--{instance}:
+                    subscriptions:
+                        - "elife-production-processes"
+            docdb: {}
         prod:
             s3:
                 "{instance}-elife-libero-editor":
+            sqs:
+                # Monitor the production process bucket for new deposits from Exeter.
+                elife-libero-editor-import--{instance}:
+                    subscriptions:
+                        - "elife-production-processes"
+            docdb: {}
 
 task-adept:
     description: production data dumps from TaskAdept
