@@ -1694,30 +1694,21 @@ elife-libero-reviewer:
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
 
 elife-libero-editor:
-    default-branch: null
-    domain: null
-    intdomain: null
     aws:
         ec2: false
-    aws-alt:
-        staging:
+        s3:
+            "{instance}-elife-libero-editor": {}
+        sqs:
+            # Monitor the production process bucket for new deposits from Exeter.
+            elife-libero-editor-import--{instance}:
+                subscriptions:
+                    - "elife-production-processes"
+        docdb: {}
+    aws-alt: 
+        prod: 
             s3:
                 "{instance}-elife-libero-editor":
-            sqs:
-                # Monitor the production process bucket for new deposits from Exeter.
-                elife-libero-editor-import--{instance}:
-                    subscriptions:
-                        - "elife-production-processes"
-            docdb: {}
-        prod:
-            s3:
-                "{instance}-elife-libero-editor":
-            sqs:
-                # Monitor the production process bucket for new deposits from Exeter.
-                elife-libero-editor-import--{instance}:
-                    subscriptions:
-                        - "elife-production-processes"
-            docdb: {}
+                    deletion-policy: delete
 
 task-adept:
     description: production data dumps from TaskAdept
