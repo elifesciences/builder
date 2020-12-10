@@ -79,7 +79,14 @@ def fab_api_settings_wrapper(*args, **kwargs):
 
 #
 
-env = api(fab_api.env, threadbare.state.ENV)
+# lsh@2020-12-10: last minute change to how `env` is accessed.
+# worker processes during multiprocessing seem to hang on to old imported references of `env`.
+# this means `buildercore.command.env` is missing values, but `buildercore.threadbare.state.ENV` is fine.
+# force proper reference by enclosing in a function.
+#env = api(fab_api.env, threadbare.state.ENV)
+def env(key=None):
+    _env = api(fab_api.env, threadbare.state.ENV)
+    return _env[key] if key is not None else _env
 
 local = api(fab_api_results_wrapper(fab_api.local), threadbare.operations.local)
 execute = api(fab_api.execute, threadbare.execute.execute_with_hosts)

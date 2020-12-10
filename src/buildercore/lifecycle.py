@@ -86,7 +86,7 @@ def restart(stackname, initial_states='pending|running|stopping|stopped'):
         raise
 
 def start(stackname):
-    "Puts all EC2 nodes of stackname into the 'started' state. Idempotent"
+    "Puts all EC2 nodes and RDS instances of given `stackname` into the 'started' state. Idempotent"
 
     context = load_context(stackname)
 
@@ -345,7 +345,7 @@ def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.items() if state == interesting_state]
 
 def _ec2_nodes_states(stackname, node_ids=None):
-    """dictionary from instance id to a string state.
+    """returns a dictionary of instance-id to a string state.
     e.g. {'i-6f727961': 'stopped'}"""
 
     def _by_node_name(ec2_data):
