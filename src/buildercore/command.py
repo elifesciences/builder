@@ -85,6 +85,8 @@ def fab_api_settings_wrapper(*args, **kwargs):
 # force proper reference by enclosing in a function.
 #env = api(fab_api.env, threadbare.state.ENV)
 def env(key=None):
+    """function for accessing the globally shared and mutable 'env' dictionary.
+    When called without a `key` it returns the whole dictionary."""
     _env = api(fab_api.env, threadbare.state.ENV)
     return _env[key] if key is not None else _env
 

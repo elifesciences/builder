@@ -1,3 +1,4 @@
+import traceback
 import copy
 from multiprocessing import Process, Queue
 import time
@@ -51,7 +52,6 @@ def _parallel_execution_worker_wrapper(env, worker_func, name, queue):
         result = worker_func()
         queue.put({"name": name, "result": result})
     except BaseException as unhandled_exception:
-        import traceback
         traceback.print_exc()
 
         # "Note that exit handlers and finally clauses, etc., will not be executed."
