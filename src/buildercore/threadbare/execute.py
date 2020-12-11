@@ -1,3 +1,4 @@
+import traceback
 import copy
 from multiprocessing import Process, Queue
 import time
@@ -51,9 +52,7 @@ def _parallel_execution_worker_wrapper(env, worker_func, name, queue):
         result = worker_func()
         queue.put({"name": name, "result": result})
     except BaseException as unhandled_exception:
-        # kept for debugging
-        # import traceback
-        # traceback.print_exc()
+        traceback.print_exc()
 
         # "Note that exit handlers and finally clauses, etc., will not be executed."
         # - https://docs.python.org/2/library/multiprocessing.html#multiprocessing.Process.terminate
@@ -231,7 +230,7 @@ def execute_with_hosts(
     """convenience wrapper around `execute`. calls `execute` on given `func` for each host in `hosts`.
     The host is available within the worker function's `env` as `host_string`."""
     host_list = hosts or state.ENV.get("hosts") or []
-    assert isinstance(host_list, list), "hosts must be a list"
+    assert isinstance(host_list, list) and host_list, "'hosts' must be a non-empty list"
     # Fabric may know about many hosts ('all_hosts') but only be acting upon a subset of them ('hosts')
     # - https://github.com/mathiasertl/fabric/blob/master/sites/docs/usage/env.rst#all_hosts
     # set here:
