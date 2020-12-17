@@ -1238,6 +1238,9 @@ search:
             elb:
                 protocol:
                     - http
+        continuumtest:
+            ext:
+                size: 30 # GB
         prod:
             ports:
                 - 22
