@@ -303,7 +303,7 @@ def render_rds(context, template):
     lmap(template.add_output, outputs)
 
 def render_ext_volume(context, context_ext, template, actual_ec2_instances, node=1):
-    vtype = context_ext.get('type', 'standard')
+    vtype = context_ext.get('type', 'standard') # todo: no default values here, push this into cfngen.py
 
     if node in actual_ec2_instances:
         availability_zone = GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone")
@@ -312,7 +312,6 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
 
     args = {
         "Size": str(context_ext['size']),
-        # TODO: change
         "AvailabilityZone": availability_zone,
         "VolumeType": vtype,
         "Tags": instance_tags(context, node),
@@ -970,16 +969,15 @@ def render_elasticache(context, template):
         template.add_resource(parameter_group)
 
 def render_ext(context, template, cluster_size, actual_ec2_instances):
-    if context['ext']:
-        # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
-        context['ec2']['ext'] = context['ext']
-        for node in range(1, cluster_size + 1):
-            overrides = context['ec2'].get('overrides', {}).get(node, {})
-            overridden_context = deepcopy(context)
-            overridden_context['ext'].update(overrides.get('ext', {}))
-            # TODO: extract `allowed` variable
-            node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
-            render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
+    # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
+    context['ec2']['ext'] = context['ext']
+    for node in range(1, cluster_size + 1):
+        overrides = context['ec2'].get('overrides', {}).get(node, {})
+        overridden_context = deepcopy(context)
+        overridden_context['ext'].update(overrides.get('ext', {}))
+        # TODO: extract `allowed` variable
+        node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
+        render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
 
 def add_outputs(context, template):
     if R53_EXT_TITLE in template.resources.keys():
