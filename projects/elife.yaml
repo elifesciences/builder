@@ -1238,6 +1238,10 @@ search:
             elb:
                 protocol:
                     - http
+        continuumtest:
+            ec2:
+                root:
+                    size: 15 # GB
         prod:
             ports:
                 - 22
@@ -1248,6 +1252,8 @@ search:
                 - 9200: # ElasticSearch
                     cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
+                root:
+                    size: 30 # GB
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1257,7 +1263,7 @@ search:
         ports:
             1244: 80
             1245: 8080
-            9920: 9200
+            9920: 9200 # elasticsearch
 
 recommendations:
     domain: false
