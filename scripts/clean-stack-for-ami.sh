@@ -21,7 +21,8 @@ rm -rf \
     /home/ubuntu/.ssh/id_rsa* \
     /etc/certificates/* \
     /root/events.log \
-    /var/cache/salt/minion
+    /var/cache/salt/minion \
+    /etc/apt/sources.list.d/saltstack.list
 
 # commit memory buffers to disk to avoid partly written files
 # since AMIs are essentially snapshots of the root volume
