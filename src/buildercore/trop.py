@@ -1047,7 +1047,7 @@ def render_docdb(context, template):
         "DBSubnetGroupDescription": "a group of subnets for this DocumentDB cluster.",
         "SubnetIds": context['docdb']['subnets']
     })
-    
+
     # docdb security group. uses the ec2 security group
     vpcdbsg = rds_security(context)
 
