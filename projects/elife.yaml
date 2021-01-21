@@ -1719,7 +1719,6 @@ elife-libero-editor:
                 "{instance}-elife-libero-editor":
                     deletion-policy: delete
 
-
 task-adept:
     description: production data dumps from TaskAdept
     default-branch: null
