@@ -123,8 +123,7 @@ def rds_security(context):
     this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
     engine_ports = {
         'postgres': 5432,
-        'mysql': 3306,
-        'docdb': 27017
+        'mysql': 3306
     }
     ingress_data = [engine_ports[context['rds']['engine'].lower()]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
@@ -132,6 +131,16 @@ def rds_security(context):
                           context['aws']['vpc-id'],
                           ingress_ports,
                           "RDS DB security group")
+
+def docdb_security(context):
+    """returns a security group for the docdb instance.
+    this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
+    ingress_data = [27017]
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
+    return security_group("VPCSecurityGroup",
+                          context['aws']['vpc-id'],
+                          ingress_ports,
+                          "Document DB security group")
 
 def _instance_tags(context, node=None):
     """returns a dictionary of common tags for an instance.
@@ -1049,7 +1058,7 @@ def render_docdb(context, template):
     })
 
     # docdb security group. uses the ec2 security group
-    vpcdbsg = rds_security(context)
+    vpcdbsg = docdb_security(context)
 
     cluster = {
         'title': 'DocumentDBCluster', # resource name
