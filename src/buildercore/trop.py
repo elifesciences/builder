@@ -1047,6 +1047,10 @@ def render_docdb(context, template):
         "DBSubnetGroupDescription": "a group of subnets for this DocumentDB cluster.",
         "SubnetIds": context['docdb']['subnets']
     })
+    
+    # docdb security group. uses the ec2 security group
+    vpcdbsg = rds_security(context)
+
     cluster = {
         'title': 'DocumentDBCluster', # resource name
         'BackupRetentionPeriod': context['docdb']['backup-retention-period'],
@@ -1055,12 +1059,13 @@ def render_docdb(context, template):
         'MasterUsername': context['docdb']['master-username'],
         'Tags': instance_tags(context, single_tag_obj=True),
         'StorageEncrypted': context['docdb']['storage-encrypted'],
+        'VPCSecurityGroups': [Ref(vpcdbsg)],
         'DBSubnetGroupName': Ref(subnet_group),
         'EngineVersion': context['docdb']['engine-version'],
     }
     _remove_if_none(cluster, ['BackupRetentionPeriod'])
     cluster = docdb.DBCluster(**cluster)
-    [template.add_resource(r) for r in [subnet_group, cluster]]
+    [template.add_resource(r) for r in [subnet_group, vpcdbsg, cluster]]
 
     # create nodes
     def docdb_node(node):
