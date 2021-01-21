@@ -1704,6 +1704,9 @@ elife-libero-editor:
         ec2: false
         s3:
             "{instance}-elife-libero-editor": {}
+            "elife-production-processes":
+                sqs-notifications:
+                    elife-production-processes: {}
         sqs:
             # Monitor the production process bucket for new deposits from Exeter.
             elife-libero-editor-import--{instance}:
@@ -1715,6 +1718,7 @@ elife-libero-editor:
             s3:
                 "{instance}-elife-libero-editor":
                     deletion-policy: delete
+
 
 task-adept:
     description: production data dumps from TaskAdept
