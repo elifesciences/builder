@@ -1217,6 +1217,11 @@ class TestBuildercoreTrop(base.BaseCase):
                                  'Value': 'project-with-docdb--prod'},
                                 {'Key': 'Project',
                                  'Value': 'project-with-docdb'}]},
+                      'VPCSecurityGroups': {
+                          'GroupDescription': 'Document DB security group',
+                          'VpcId': 'NOT SURE WHAT I SHOULD BE',
+                          'SecurityGroupIngress': 27017
+                      },
                       'Type': 'AWS::DocDB::DBCluster'},
                      'DocumentDBInst1':
                      {'Properties':
