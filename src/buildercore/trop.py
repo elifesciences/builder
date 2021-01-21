@@ -137,7 +137,7 @@ def docdb_security(context):
     this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
     ingress_data = [27017]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    return security_group("VPCSecurityGroup",
+    return security_group("DocumentDBSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
                           "Document DB security group")
