@@ -123,7 +123,8 @@ def rds_security(context):
     this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
     engine_ports = {
         'postgres': 5432,
-        'mysql': 3306
+        'mysql': 3306,
+        'docdb': 27017
     }
     ingress_data = [engine_ports[context['rds']['engine'].lower()]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
