@@ -119,8 +119,9 @@ def ec2_security(context):
     )
 
 def rds_security(context):
-    """returns a security group for the rds instance.
-    this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
+    """returns a security group for an RDS instance.
+    This security group only allows access within the subnet, not because of the ip address range but
+    because this is dealt with in the subnet configuration"""
     engine_ports = {
         'postgres': 5432,
         'mysql': 3306
@@ -133,14 +134,15 @@ def rds_security(context):
                           "RDS DB security group")
 
 def docdb_security(context):
-    """returns a security group for the docdb instance.
-    this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
-    ingress_data = [27017]
+    """returns a security group for a DocumentDB instance.
+    This security group only allows access within the subnet, not because of the ip address range but
+    because this is dealt with in the subnet configuration"""
+    ingress_data = [27017] # default MongoDB port
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
     return security_group("DocumentDBSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
-                          "Document DB security group")
+                          "DocumentDB security group")
 
 def _instance_tags(context, node=None):
     """returns a dictionary of common tags for an instance.
@@ -1057,8 +1059,7 @@ def render_docdb(context, template):
         "SubnetIds": context['docdb']['subnets']
     })
 
-    # docdb security group. uses the ec2 security group
-    vpcdbsg = docdb_security(context)
+    docdb_security_group = docdb_security(context)
 
     cluster = {
         'title': 'DocumentDBCluster', # resource name
@@ -1068,13 +1069,13 @@ def render_docdb(context, template):
         'MasterUsername': context['docdb']['master-username'],
         'Tags': instance_tags(context, single_tag_obj=True),
         'StorageEncrypted': context['docdb']['storage-encrypted'],
-        'VPCSecurityGroups': [Ref(vpcdbsg)],
+        'VpcSecurityGroupIds': [Ref(docdb_security_group)],
         'DBSubnetGroupName': Ref(subnet_group),
         'EngineVersion': context['docdb']['engine-version'],
     }
     _remove_if_none(cluster, ['BackupRetentionPeriod'])
     cluster = docdb.DBCluster(**cluster)
-    [template.add_resource(r) for r in [subnet_group, vpcdbsg, cluster]]
+    [template.add_resource(r) for r in [subnet_group, docdb_security_group, cluster]]
 
     # create nodes
     def docdb_node(node):
