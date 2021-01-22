@@ -1200,6 +1200,7 @@ class TestBuildercoreTrop(base.BaseCase):
 
     def test_docdb(self):
         expected = {'Resources':
+
                     {'DocumentDBCluster':
                      {'Properties':
                       {'DBSubnetGroupName':
@@ -1216,8 +1217,10 @@ class TestBuildercoreTrop(base.BaseCase):
                                 {'Key': 'Name',
                                  'Value': 'project-with-docdb--prod'},
                                 {'Key': 'Project',
-                                 'Value': 'project-with-docdb'}]},
+                                 'Value': 'project-with-docdb'}],
+                       'VpcSecurityGroupIds': [{'Ref': 'DocumentDBSecurityGroup'}]},
                       'Type': 'AWS::DocDB::DBCluster'},
+
                      'DocumentDBInst1':
                      {'Properties':
                       {'AutoMinorVersionUpgrade': 'true',
@@ -1234,6 +1237,7 @@ class TestBuildercoreTrop(base.BaseCase):
                                 {'Key': 'Project',
                                  'Value': 'project-with-docdb'}]},
                       'Type': 'AWS::DocDB::DBInstance'},
+
                      'DocumentDBInst2':
                      {'Properties':
                       {'AutoMinorVersionUpgrade': 'true',
@@ -1250,6 +1254,17 @@ class TestBuildercoreTrop(base.BaseCase):
                                 {'Key': 'Project',
                                  'Value': 'project-with-docdb'}]},
                       'Type': 'AWS::DocDB::DBInstance'},
+
+                     'DocumentDBSecurityGroup':
+                     {'Properties':
+                      {'GroupDescription': 'DocumentDB security group',
+                       'SecurityGroupIngress': [{'CidrIp': '0.0.0.0/0',
+                                                 'FromPort': 27017,
+                                                 'ToPort': 27017,
+                                                 'IpProtocol': 'tcp'}],
+                       'VpcId': 'vpc-78a2071d'},
+                      'Type': 'AWS::EC2::SecurityGroup'},
+
                      'DocumentDBSubnet':
                      {'Properties':
                       {'DBSubnetGroupDescription': 'a group of subnets for this DocumentDB cluster.',
