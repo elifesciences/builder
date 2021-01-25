@@ -1711,9 +1711,7 @@ elife-libero-editor:
             #         elife-production-processes: {}
         sqs:
             # Monitor the production process bucket for new deposits from Exeter.
-            elife-libero-editor-import--{instance}:
-                subscriptions:
-                    - "elife-production-processes"
+            elife-libero-editor-import--{instance}: {}
         docdb: {}
     aws-alt: 
         prod: 
