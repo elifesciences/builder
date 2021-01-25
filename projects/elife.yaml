@@ -1708,12 +1708,12 @@ elife-libero-editor:
             # It should also notify the bus-elife-libero-editor on Put events
             # "elife-production-processes":
         sns:
-            - "bus-elife-libero-editor"
+            - "elife-production-processes-events"
         sqs:
             # Monitor the production process bucket for new deposits from Exeter.
             elife-libero-editor-import--{instance}:
                 subscriptions:
-                    - bus-elife-libero-editor
+                    - elife-production-processes-events
         docdb: {}
     aws-alt: 
         prod: 
