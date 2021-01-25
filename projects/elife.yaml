@@ -1259,6 +1259,24 @@ search:
             elb:
                 protocol:
                     - http
+
+        boostings:
+            ports:
+                - 22
+            ec2:
+                root:
+                    size: 30 # GB
+            sqs:
+                # search--prod, search--end2end, etc.
+                search--{instance}:
+                    subscriptions:
+                        - bus-articles--prod
+                        - bus-podcast-episodes--prod
+                        - bus-collections--prod
+                        - bus-interviews--prod
+                        - bus-blog-articles--prod
+                        - bus-labs-posts--prod
+
     vagrant:
         ports:
             1244: 80
