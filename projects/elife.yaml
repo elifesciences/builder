@@ -1711,7 +1711,7 @@ elife-libero-editor:
                     - elife-production-processes-events
         docdb: {}
     aws-alt: 
-        production-processes:
+        staging:
             # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
             # It should also notify the bus-elife-libero-editor on Put events
             # s3:
