@@ -1704,11 +1704,6 @@ elife-libero-editor:
         ec2: false
         s3:
             "{instance}-elife-libero-editor": {}
-            # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
-            # It should also notify the bus-elife-libero-editor on Put events
-            # "elife-production-processes":
-        sns:
-            - "elife-production-processes-events"
         sqs:
             # Monitor the production process bucket for new deposits from Exeter.
             elife-libero-editor-import--{instance}:
@@ -1716,6 +1711,13 @@ elife-libero-editor:
                     - elife-production-processes-events
         docdb: {}
     aws-alt: 
+        production-processes:
+            # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
+            # It should also notify the bus-elife-libero-editor on Put events
+            # s3:
+            #   "elife-production-processes":
+            sns:
+                - "elife-production-processes-events"
         prod: 
             s3:
                 "{instance}-elife-libero-editor":
