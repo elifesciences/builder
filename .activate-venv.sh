@@ -19,9 +19,9 @@ if [ ! -f .use-python-3.flag ]; then
     # highest installed version of py2
     python=$(which python2 python2.7 | head -n 1)
 else
-    # python 3.5, 16.04
     # python 3.6, 18.04
-    python=$(which python3 python3.6 python3.5 | head -n 1)
+    # python 3.8, 20.04
+    python=$(which python3.8 python3.6 python3 | head -n 1)
 fi
 
 py=${python##*/} # ll: python3.6
@@ -40,7 +40,8 @@ else
     virtualenv --python=$python venv
 fi
 source venv/bin/activate
-pip install wheel pip --upgrade
+# pip 20.3.4 is the last version of pip to support python2
+pip install wheel "pip==20.3.4" --upgrade
 
 if [ ! -f .use-python-3.flag ]; then
     # on Python2, sticking to Fabric rather than Fabric3
