@@ -1261,8 +1261,11 @@ search:
                     - http
 
         boostings:
+            domain: elifesciences.org
             ports:
                 - 22
+                - 80
+                - 443
             ec2:
                 root:
                     size: 30 # GB
