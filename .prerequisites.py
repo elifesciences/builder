@@ -109,7 +109,7 @@ mac_checks = [
      None),
 
     ('keychain',
-     {'Mac OS': "echo 'Host *\n\tUseKeychain yes\n\tAddKeysToAgent yes\n' >> ~/.ssh/config"},
+     {'Mac OS': "echo 'Host *\n\tUseKeychain yes\n\tAddKeysToAgent yes\n' >> ~/.ssh/config && ssh-add -K %s" % ssh_key},
      lambda x: sh("cat ~/.ssh/config | grep -e AddKeysToAgent -e UseKeychain &> /dev/null"),
      None),
 
