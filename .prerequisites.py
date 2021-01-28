@@ -164,7 +164,7 @@ def main():
         print('Mac OS detected')
         checks = mac_checks + checks
     else:
-        print('Unsupported platform')
+        print('Unsupported platform %s' % platform)
         exit(1)
 
     import argparse
