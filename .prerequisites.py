@@ -59,12 +59,12 @@ both_checks = [
      lambda x: shs('make -v').splitlines()[0]),
 
     ('virtualbox',
-     {'osx': 'brew cask install virtualbox'},
+     {'osx': 'brew install --cask virtualbox'},
      dumb_install_check,
      lambda x: shs('vboxmanage --version')),
 
     ('vagrant',
-     {'osx': 'brew cask install vagrant'}),
+     {'osx': 'brew install --cask vagrant'}),
 
     ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
@@ -94,12 +94,7 @@ both_checks = [
 
 mac_checks = [
     ('brew',
-     {'osx': 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'}),
-
-    ('brew cask',
-     {'osx': 'brew tap caskroom/cask'},
-     lambda x: sh('brew cask help')
-     ),
+     {'osx': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'}),
 ]
 
 def run_checks(check_list, exclusions=[]):
