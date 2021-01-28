@@ -94,7 +94,14 @@ both_checks = [
 
 mac_checks = [
     ('brew',
-     {'osx': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'}),
+     {'osx': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'},
+     dumb_version_check,
+     None),
+
+    ('brew cask',
+     {'osx': 'brew tap caskroom/cask'},
+     lambda x: sh('brew tap | grep homebrew/cask &> /dev/null'),
+     None),
 ]
 
 def run_checks(check_list, exclusions=[]):
