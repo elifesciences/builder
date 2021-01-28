@@ -26,9 +26,6 @@ def dumb_install_check(cmd):
 def dumb_version_check(cmd):
     return shs(cmd + ' --version')
 
-def osx():
-    return sh('[ "$(uname)" = "Darwin" ]')
-
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
 def terraform_version_checker(_cmd):
@@ -45,16 +42,20 @@ def vault_version_checker(_cmd):
 
     return str(installed_version)
 
+# Checks that need to be run on all operating systems.
 both_checks = [
     ('git',
-     {'osx': 'brew install git'}),
+     {'Linux': 'apt-get install build-essential',
+      'Mac OS': 'xcode-select --install'}),
 
     ('virtualenv',
-     {'all': 'sudo pip install virtualenv'}),
+     {'Linux': 'sudo pip install virtualenv',
+      'Mac OS': 'brew install python@2'}),
 
     # needed for installing pynacl, which is a transitive dependency of Paramiko which is a dependency of Fabric
     ('make',
-     {'all': 'which make'},
+     {'Linux': 'apt-get install build-essential',
+      'Mac OS': 'xcode-select --install'},
      dumb_install_check,
      lambda x: shs('make -v').splitlines()[0]),
 
@@ -70,11 +71,6 @@ both_checks = [
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f %s && test -f %s.pub' % (ssh_key, ssh_key)),
      None), # do not check version
-
-    ('ssh-agent',
-     {'all': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc"},
-     lambda x: sh("ps aux | grep 'ssh-agent$' > /dev/null"),
-     None),
 
     ('aws-credentials',
      {'all': 'do `aws configure` after installing builder'},
@@ -92,16 +88,36 @@ both_checks = [
      vault_version_checker),
 ]
 
+# Checks that ONLY need to be run on Linux.
+linux_checks = [
+    ('ssh-agent',
+     {'Linux': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc"},
+     lambda x: sh("ps aux | grep 'ssh-agent$' > /dev/null"),
+     None)
+]
+
+# Checks that ONLY need to be run on Mac OS.
 mac_checks = [
     ('brew',
-     {'osx': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'},
+     {'Mac OS': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'},
      dumb_version_check,
      None),
 
     ('brew cask',
-     {'osx': 'brew tap caskroom/cask'},
+     {'Mac OS': 'brew tap caskroom/cask'},
      lambda x: sh('brew tap | grep homebrew/cask &> /dev/null'),
      None),
+
+    ('keychain',
+     {'Mac OS': "echo 'Host *\n\tUseKeychain yes\n\tAddKeysToAgent yes\n' >> ~/.ssh/config"},
+     lambda x: sh("cat ~/.ssh/config | grep -e AddKeysToAgent -e UseKeychain &> /dev/null"),
+     None),
+
+    # Needed to build ssh2-python
+    ('cmake',
+     {'Mac OS': "brew install cmake"},
+     dumb_install_check,
+     None)
 ]
 
 def run_checks(check_list, exclusions=[]):
@@ -140,9 +156,16 @@ def run_checks(check_list, exclusions=[]):
 
 def main():
     checks = both_checks
-    if osx():
-        print('OSX detected')
+    platform = sys.platform
+    if platform == 'linux':
+        print('Linux detected')
+        checks = linux_checks + checks
+    elif platform == 'darwin': 
+        print('Mac OS detected')
         checks = mac_checks + checks
+    else:
+        print('Unsupported platform')
+        exit(1)
 
     import argparse
     parser = argparse.ArgumentParser()
