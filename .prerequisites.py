@@ -157,7 +157,7 @@ def run_checks(check_list, exclusions=[]):
 def main():
     checks = both_checks
     platform = sys.platform
-    if platform == 'linux':
+    if platform.startswith('linux'):
         print('Linux detected')
         checks = linux_checks + checks
     elif platform == 'darwin': 
