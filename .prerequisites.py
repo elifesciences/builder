@@ -155,16 +155,16 @@ def run_checks(check_list, exclusions=[]):
     exit(failed_checks)
 
 def main():
-    checks = []
+    checks = both_checks
     platform = sys.platform
     if platform.startswith('linux'):
         print('Linux detected')
-        checks = linux_checks + both_checks
+        checks = linux_checks + checks
     elif platform == 'darwin': 
         print('Mac OS detected')
-        checks = mac_checks + both_checks
+        checks = mac_checks + checks
     else:
-        print('Unsupported platform %s' % platform)
+        print('Unsupported platform \'%s\'' % platform)
 
     import argparse
     parser = argparse.ArgumentParser()
