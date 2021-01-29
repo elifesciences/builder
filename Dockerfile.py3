@@ -16,7 +16,7 @@ RUN apk add --no-cache --virtual build-deps \
 
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python get-pip.py pip && \
-    pip install virtualenv && \
+    pip install virtualenv wheel && \
     virtualenv --python=python3 /venv 
     
 COPY requirements.txt /requirements.txt
