@@ -60,12 +60,12 @@ both_checks = [
      lambda x: shs('make -v').splitlines()[0]),
 
     ('virtualbox',
-     {'osx': 'brew install --cask virtualbox'},
+     {'Mac OS': 'brew install --cask virtualbox'},
      dumb_install_check,
      lambda x: shs('vboxmanage --version')),
 
     ('vagrant',
-     {'osx': 'brew install --cask vagrant'}),
+     {'Mac OS': 'brew install --cask vagrant'}),
 
     ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
@@ -155,17 +155,16 @@ def run_checks(check_list, exclusions=[]):
     exit(failed_checks)
 
 def main():
-    checks = both_checks
+    checks = []
     platform = sys.platform
     if platform.startswith('linux'):
         print('Linux detected')
-        checks = linux_checks + checks
+        checks = linux_checks + both_checks
     elif platform == 'darwin': 
         print('Mac OS detected')
-        checks = mac_checks + checks
+        checks = mac_checks + both_checks
     else:
         print('Unsupported platform %s' % platform)
-        exit(1)
 
     import argparse
     parser = argparse.ArgumentParser()
