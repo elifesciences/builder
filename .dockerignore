@@ -1,4 +1,5 @@
 builder-private/
+builder-configuration/
 cloned-projects/
 .cfn/
 .git
