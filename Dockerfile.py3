@@ -12,12 +12,14 @@ RUN apk add --no-cache \
 RUN apk add --no-cache --virtual build-deps \
     curl \
     gcc \
+    g++ \
     make
 
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python get-pip.py pip && \
-    pip install virtualenv wheel && \
-    virtualenv --python=python3 /venv 
+    pip install virtualenv && \
+    virtualenv --python=python3 /venv && \
+    /venv/bin/pip install wheel pip --upgrade
     
 COPY requirements.txt /requirements.txt
 
