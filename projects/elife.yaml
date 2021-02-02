@@ -1923,3 +1923,16 @@ bioprotocol:
     vagrant:
         ports:
             1280: 80
+
+accepted-submission-cleaning:
+    description: see https://github.com/elifesciences/bus
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+        s3:
+            elife-accepted-submission-cleaning:
+                deletion-policy: retain
+        sns:
+            - elife-accepted-submission-cleaning-s3-events
