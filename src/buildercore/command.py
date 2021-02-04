@@ -77,6 +77,13 @@ def fab_api_settings_wrapper(*args, **kwargs):
 
     return fab_api.settings(*args, **kwargs)
 
+def threadbare_state_settings_wrapper(*args, **kwargs):
+    utils.ensure(not args, "threadbare doesn't support non-keyword arguments.")
+    for key, val in kwargs.pop('fabric.state.output', {}).items():
+        opt = f"display_{key}" # display_running, display_prefix, display_aborts, etc
+        kwargs[opt] = val
+    return threadbare.state.settings(*args, **kwargs)
+
 #
 
 # lsh@2020-12-10: last minute change to how `env` is accessed.
@@ -97,7 +104,7 @@ serial = api(fab_api.serial, threadbare.execute.serial)
 
 hide = api(fab_api.hide, threadbare.operations.hide)
 
-settings = api(fab_api_settings_wrapper, threadbare.state.settings)
+settings = api(fab_api_settings_wrapper, threadbare_state_settings_wrapper)
 
 lcd = api(fab_api.lcd, threadbare.operations.lcd) # local change dir
 rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir
