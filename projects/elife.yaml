@@ -240,13 +240,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-0a8632ef79ea29a59 # GENERATED created from basebox--1804
+                ami: ami-0d65d77807d45828c # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-0a8632ef79ea29a59 # GENERATED created from basebox--1804
+                ami: ami-0d65d77807d45828c # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 18.04, same as default
@@ -709,9 +709,6 @@ elife-bot:
             "{instance}-poa-incoming-queue":
                 # no subscriptions to SNS
                 subscriptions: []
-            "{instance}-elife-accepted-submission-cleaning-s3-events":
-                subscriptions:
-                    - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
@@ -829,6 +826,10 @@ elife-bot:
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
+            sqs:
+                "{instance}-elife-accepted-submission-cleaning-s3-events":
+                    subscriptions:
+                        - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
     vagrant: {}
 
 generic-cdn:
