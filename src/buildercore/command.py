@@ -82,8 +82,10 @@ def threadbare_state_settings_wrapper(*args, **kwargs):
     Not necessary for threadbare but there are some outlier Fabric settings that need coercing."""
     utils.ensure(not args, "threadbare doesn't support non-keyword arguments.")
     for key, val in kwargs.pop('fabric.state.output', {}).items():
-        opt = "display_" + key # display_running, display_prefix, display_aborts, etc
+        opt = "display_" + key # display_running, display_aborts, etc
         kwargs[opt] = val
+    if 'output_prefix' in kwargs:
+        kwargs['display_prefix'] = kwargs.pop('output_prefix')
     return threadbare.state.settings(*args, **kwargs)
 
 #
