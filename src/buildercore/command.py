@@ -78,9 +78,11 @@ def fab_api_settings_wrapper(*args, **kwargs):
     return fab_api.settings(*args, **kwargs)
 
 def threadbare_state_settings_wrapper(*args, **kwargs):
+    """a context manager that alters mutable application state for functions called within it's scope.
+    Not necessary for threadbare but there are some outlier Fabric settings that need coercing."""
     utils.ensure(not args, "threadbare doesn't support non-keyword arguments.")
     for key, val in kwargs.pop('fabric.state.output', {}).items():
-        opt = f"display_{key}" # display_running, display_prefix, display_aborts, etc
+        opt = "display_" + key # display_running, display_prefix, display_aborts, etc
         kwargs[opt] = val
     return threadbare.state.settings(*args, **kwargs)
 
