@@ -9,6 +9,7 @@ from pssh import exceptions as pssh_exceptions
 import os, sys
 from pssh.clients.native import SSHClient as PSSHClient
 import gevent
+import io
 import logging
 from . import state, common
 from .common import (
@@ -854,14 +855,14 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
         if remote_path_is_dir:
             raise ValueError("directory downloads are not supported")
 
-        temp_file, bytes_buffer = None, None
+        temp_file, data_buffer = None, None
         if hasattr(local_path, "read"):
             # given a file-like object to download file into.
             # 1. write the remote file to local temporary file
             # 2. read temporary file into the given buffer
             # 3. delete the temporary file
 
-            bytes_buffer = local_path
+            data_buffer = local_path
             temp_file, local_path = tempfile.mkstemp(suffix="-threadbare")
 
         if not os.path.isabs(local_path):
@@ -888,9 +889,12 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
                 raise NetworkError(exc)
 
         if temp_file:
-            bytes_buffer.write(open(local_path, "rb").read())
+            flags = "r" if isinstance(data_buffer, io.StringIO) else "rb"
+            data = open(local_path, flags).read()
+            data_buffer.write(data)
+            # deletes the *temporary file*. `temp_file` is a file descriptor
             os.unlink(local_path)
-            return bytes_buffer
+            return data_buffer
 
         return local_path
 
@@ -940,7 +944,12 @@ def _write_bytes_to_temporary_file(local_path):
         local_bytes.seek(0)  # reset internal pointer
         temp_file, local_path = tempfile.mkstemp(suffix="-threadbare")
         with os.fdopen(temp_file, "wb") as fh:
-            fh.write(local_bytes.getvalue())
+            data = local_bytes.getvalue()
+            # data may be a string or it may be bytes.
+            # if it's a string we assume it's a UTF-8 string.
+            if isinstance(data, str):
+                data = bytes(data, "utf-8")
+            fh.write(data)
         cleanup = lambda: os.unlink(local_path)
         return local_path, cleanup
     return local_path, None
@@ -948,6 +957,7 @@ def _write_bytes_to_temporary_file(local_path):
 
 def upload(local_path, remote_path, use_sudo=False, **kwargs):
     "uploads file at `local_path` to the given `remote_path`, overwriting anything that may be at that path"
+    # todo: this setting is dubious, don't count on it hanging around
     with state.settings(quiet=True):
 
         # bytes handling
