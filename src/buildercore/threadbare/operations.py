@@ -147,9 +147,6 @@ def _ssh_default_settings():
         "use_sudo": False,
         "combine_stderr": True,
         "quiet": False,
-        "discard_output": False,
-        # todo: duplicated content. this needs to defer to deeply nested `_print_line`
-        "line_template": "{line}\n",
         "remote_working_dir": None,
         "timeout": None,
         "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
@@ -246,7 +243,7 @@ def _print_line(output_pipe, line, **kwargs):
     base_kwargs = {
         "discard_output": False,
         "quiet": False,
-        "line_template": "{host} {pipe}: {line}\n",  # "1.2.3.4  err: Foo not found\n"
+        "line_template": "[{host}] {pipe}: {line}\n",  # "1.2.3.4  err: Foo not found\n"
         "display_prefix": True,  # strips everything in `line_template` before "{line}"
         "custom_pipe": None,
     }
@@ -370,7 +367,7 @@ def remote(command, **kwargs):
 
     # parameters we're interested in and their default values
     base_kwargs = _ssh_default_settings()
-    base_kwargs.update({"display_running": True})
+    base_kwargs.update({"display_running": True, "discard_output": False})
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
     # wrap the command up
