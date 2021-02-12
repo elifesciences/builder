@@ -16,6 +16,7 @@ fi
 # skips building image each time
 #if ! docker inspect --type=image "elifesciences/builder:$image" > /dev/null; then
     time docker build \
+        --no-cache \
         -f "Dockerfile.${image}" \
         -t "elifesciences/builder:${image}" \
         . \
