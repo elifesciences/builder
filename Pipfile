@@ -23,6 +23,10 @@ pyyaml = ">=4.1"
 requests = "~=2.20"
 troposphere = "~=2.6"
 parallel-ssh = "==1.9.*"
+# cryptography doesn't use semantic versioning
+# cryptography removed Py2 support in 3.4
+# cryptography has a build-time dependency on Rust in 3.5
+cryptography = ">=3.3.2,<3.4"
 
 [dev-packages]
 autopep8 = "~=1.3"
