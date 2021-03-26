@@ -18,7 +18,7 @@ python-dateutil==2.6.0
 python-slugify==1.2.1
 python-terraform==0.10.0
 pytz==2016.10
-PyYAML==4.2b2
+PyYAML==5.4
 requests==2.20.0
 troposphere==2.6.3
 unittest2==1.1.0
