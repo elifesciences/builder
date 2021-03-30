@@ -35,7 +35,6 @@ pylint = "~=2.0"
 pytest = "~=3.5"
 pytest-cov = "==2.5.*"
 pytest-forked = "~=0.2"
-ipython = "~=5.5"
 coverage = "~=4.5"
 # remove along with python2
 mock = "~=2.0"
