@@ -1228,6 +1228,17 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
+        opendistro:
+            sqs:
+                # search--prod, search--end2end, etc.
+                search--{instance}:
+                    subscriptions:
+                        - bus-articles--prod
+                        - bus-podcast-episodes--prod
+                        - bus-collections--prod
+                        - bus-interviews--prod
+                        - bus-blog-articles--prod
+                        - bus-labs-posts--prod
         end2end:
             ports:
                 - 22
