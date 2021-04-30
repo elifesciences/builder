@@ -57,7 +57,7 @@ STEADY_CFN_STATUS = [
     'ROLLBACK_FAILED',
     'ROLLBACK_COMPLETE',
     'DELETE_FAILED',
-    #'DELETE_COMPLETE', # technically true, but we can't do anything with them
+    # 'DELETE_COMPLETE', # technically true, but we can't do anything with them
     'UPDATE_COMPLETE',
     'UPDATE_ROLLBACK_FAILED',
     'UPDATE_ROLLBACK_COMPLETE',
@@ -202,7 +202,7 @@ def _all_nodes_filter(stackname, node_ids):
         # tag-key+tag-value is misleading here:
         # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
         #     tag-key - The key of a tag assigned to the resource. This filter is independent of the tag-value filter. For example, if you use both the filter "tag-key=Purpose" and the filter "tag-value=X", you get any resources assigned both the tag key Purpose (regardless of what the tag's value is), and the tag value X (regardless of what the tag's key is). If you want to list only resources where Purpose is X, see the tag:key=value filter.
-        #'tag-key': ['Cluster', 'Name'],
+        # 'tag-key': ['Cluster', 'Name'],
         # we cannot use 'tag-Cluster' and 'tag-name', because:
         # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Filtering.html
         #     In many cases, you can granulate the results by using complementary search terms on different key fields, where the AND rule is automatically applied instead. If you search for tag: Name:=All values and tag:Instance State=running, you get search results that contain both those criteria.
@@ -321,7 +321,7 @@ def all_node_params(stackname):
     # TODO: default copied from stack_all_ec2_nodes, but not the most robust probably
     params = _ec2_connection_params(stackname, config.DEPLOY_USER)
 
-    # custom for builder, these are available inside workfn as `command.env['public_ips']`
+    # custom for builder, these are available inside workfn as `command.env('public_ips')`
     params.update({
         'stackname': stackname,
         'public_ips': public_ips,
@@ -351,7 +351,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
-    # custom for builder, these are available inside workfn as `command.env['public_ips']`
+    # custom for builder, these are available inside workfn as `command.env('public_ips')`
     params.update({
         'stackname': stackname,
         'public_ips': public_ips,
@@ -400,10 +400,10 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     if concurrency == 'serial':
         return serial_work(single_node_work, params)
 
-    elif concurrency == 'parallel':
+    if concurrency == 'parallel':
         return parallel_work(single_node_work, params)
 
-    elif callable(concurrency):
+    if callable(concurrency):
         return concurrency(single_node_work, params)
 
     raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
@@ -423,11 +423,11 @@ def current_ec2_node_id():
 
     Sample value: 'i-0553487b4b6916bc9'"""
 
-    ensure(env['host_string'] is not None, "This is supposed to be called with settings for connecting to an EC2 instance")
-    current_public_ip = env['host_string']
+    ensure('host_string' in env() and env('host_string') is not None, "This is supposed to be called with settings for connecting to an EC2 instance")
+    current_public_ip = env('host_string')
 
-    ensure('public_ips' in env, "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration")
-    matching_instance_ids = [instance_id for (instance_id, public_ip) in env['public_ips'].items() if current_public_ip == public_ip]
+    ensure('public_ips' in env(), "This is supposed to be called by stack_all_ec2_nodes, which provides the correct configuration")
+    matching_instance_ids = [instance_id for (instance_id, public_ip) in env('public_ips').items() if current_public_ip == public_ip]
 
     ensure(len(matching_instance_ids) == 1, "Too many instance ids (%s) pointing to this ip (%s)" % (matching_instance_ids, current_public_ip))
     return matching_instance_ids[0]
@@ -437,20 +437,20 @@ def current_node_id():
 
     Returns a number from 1 to N (usually a small number, like 2) indicating how the current node has been numbered on creation to distinguish it from the others"""
     ec2_id = current_ec2_node_id()
-    ensure(ec2_id in env['nodes'], "Can't find %s in %s node map" % (ec2_id, env['nodes']))
-    return env['nodes'][ec2_id]
+    ensure(ec2_id in env('nodes'), "Can't find %s in %s node map" % (ec2_id, env('nodes')))
+    return env('nodes')[ec2_id]
 
 def current_ip():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
 
     Returns the ip address used to access the current host, e.g. '54.243.19.153'"""
-    return env['host_string']
+    return env('host_string')
 
 def current_stackname():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
 
     Returns the name of the stack the task is working on, e.g. 'journal--end2end'"""
-    return env['stackname']
+    return env('stackname')
 
 #
 # stackname wrangling

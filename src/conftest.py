@@ -1,6 +1,25 @@
+"""Test fixtures made available via decorators during the test run.
+
+The `conftest.py` file is a barely documented pytest-ism.
+pytest will look for this file and execute it's contents automatically.
+
+In this file we're defining globally available test fixtures that are injected magically using parameter
+name matching alone. For example:
+
+    def test_foo(bar, baz):
+        ...
+
+will have the results of calling the `bar` fixture passed as the first parameter and the
+results of calling the `baz` fixture passed as the second parameter.
+
+https://stackoverflow.com/questions/34466027/in-pytest-what-is-the-use-of-conftest-py-files
+https://docs.pytest.org/en/latest/writing_plugins.html#conftest-py-plugins
+https://docs.pytest.org/en/stable/fixture.html#factories-as-fixtures"""
+
 import logging
 import pytest
 from buildercore.config import get_logger, CONSOLE_HANDLER
+from tests import base
 
 CONSOLE_HANDLER.setLevel(logging.CRITICAL)
 
@@ -21,3 +40,11 @@ def pytest_runtest_setup(item):
 
 def pytest_runtest_teardown(item, nextitem):
     LOG.info("Tearing down up %s::%s", item.cls, item.name)
+
+@pytest.yield_fixture(scope='session')
+def test_projects():
+    try:
+        base.switch_in_test_settings()
+        yield
+    finally:
+        base.switch_out_test_settings()

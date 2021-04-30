@@ -9,6 +9,7 @@ from pssh import exceptions as pssh_exceptions
 import os, sys
 from pssh.clients.native import SSHClient as PSSHClient
 import gevent
+import io
 import logging
 from . import state, common
 from .common import (
@@ -133,13 +134,9 @@ def hide(what=None):
         yield
 
 
-def _ssh_client(**kwargs):
-    """returns an instance of pssh.clients.native.SSHClient
-    if within a state context, looks for a client already in use and returns that if found.
-    if not found, creates a new one and stores it for later use."""
-
-    # parameters we're interested in and their default values
-    base_kwargs = {
+def _ssh_default_settings():
+    "default settings for dealing with ssh."
+    return {
         # current user. sensible default but probably not what you want
         "user": getpass.getuser(),
         "host_string": None,
@@ -147,7 +144,26 @@ def _ssh_client(**kwargs):
         # uses the first one it finds or the most common if none found.
         "key_filename": pem_key(),
         "port": 22,
+        "use_shell": True,
+        "use_sudo": False,
+        "combine_stderr": True,
+        "quiet": False,
+        "remote_working_dir": None,
+        "timeout": None,
+        "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
+        "abort_exception": RuntimeError,
     }
+
+
+def _ssh_client(**kwargs):
+    """returns an instance of pssh.clients.native.SSHClient
+    if within a state context, looks for a client already in use and returns that if found.
+    if not found, creates a new one and stores it for later use."""
+
+    # parameters we're interested in and their default values
+    base_kwargs = subdict(
+        _ssh_default_settings(), ["user", "host_string", "key_filename", "port"]
+    )
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
     final_kwargs["password"] = None  # always private keys
     rename(final_kwargs, [("key_filename", "pkey"), ("host_string", "host")])
@@ -218,19 +234,28 @@ def _execute(command, user, key_filename, host_string, port, use_pty, timeout):
 def _print_line(output_pipe, line, **kwargs):
     """writes the given `line` (string) to the given `output_pipe` (file-like object)
     if `quiet` is True, `line` is *not* written to `output_pipe`.
-    if `discard_output` is True, `line` is not returned and output is not accumulated in memory"""
+    if `discard_output` is True, `line` is *not* returned and output does *not* accumulate in memory."""
 
     if not common.PY3:
         # in python2, assume the data we're reading is utf-8 otherwise the call to `.format`
         # below will attempt to encode the string as ascii and fail with an `UnicodeEncodeError`
         line = line.encode("utf-8")
 
-    base_kwargs = {"discard_output": False, "quiet": False, "line_template": "{line}\n"}
+    base_kwargs = {
+        "discard_output": False,
+        "quiet": False,
+        "line_template": "[{host}] {pipe}: {line}\n",  # "1.2.3.4  err: Foo not found\n"
+        "display_prefix": True,  # strips everything in `line_template` before "{line}"
+        "custom_pipe": None,
+    }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
     if not final_kwargs["quiet"]:
         # useful values that can be part of the template
         pipe_type = "err" if output_pipe == sys.stderr else "out"
+        if final_kwargs["custom_pipe"]:
+            pipe_type = final_kwargs["custom_pipe"]  # like "run"
+
         dt = datetime.now()
         template_kwargs = {
             "line": line,
@@ -247,6 +272,15 @@ def _print_line(output_pipe, line, **kwargs):
 
         # render template and write to given pipe
         template = final_kwargs["line_template"]
+
+        if not final_kwargs["display_prefix"]:
+            try:
+                template = template[template.index("{line}"):]
+            except ValueError:  # "substring not found"
+                msg = "'display_prefix' option ignored: '{line}' not found in 'line_template' setting"
+                LOG.warn(msg)
+                pass
+
         output_pipe.write(template.format(**template_kwargs))
 
     if not final_kwargs["discard_output"]:
@@ -264,6 +298,54 @@ def _process_output(output_pipe, result_list, **kwargs):
     output_pipe.flush()
     if "discard_output" in kwargs and not kwargs["discard_output"]:
         return new_results
+
+
+def _print_running(command, output_pipe, **kwargs):
+    """Prints the command to be run on a line of output prior to executing a command.
+    Obeys the formatting and rules of the context in which the command is being exected.
+    Deprecated. This is to mimic Fabric's command output until we're sure nothing depends on it.
+    It will be replaced with a standard LOG.info output eventually."""
+    keepers = ["display_running", "quiet", "discard_output", "line_template"]
+    kwargs = subdict(kwargs, keepers)
+    if kwargs["display_running"]:
+        if not isinstance(command, list):
+            command = [command]
+        command = " ".join(command)
+        return _print_line(output_pipe, command, custom_pipe="run", **kwargs)
+
+
+def abort(result, err_msg, **kwargs):
+    """raises a `RuntimeError` with the given `err_msg` and the given `result` attached to it's `.result` property.
+    issues a warning and returns the given `result` if `settings.warn_only` is `True`.
+    raises a SystemExit with a return code of `1` if `settings.abort_exception` is set to None."""
+    base_kwargs = {
+        "quiet": False,
+        "warn_only": False,
+        "display_aborts": True,
+        "abort_exception": RuntimeError,
+    }
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    if final_kwargs["warn_only"]:
+        if not final_kwargs["quiet"]:
+            LOG.warning(err_msg)
+        return result
+
+    if final_kwargs["display_aborts"]:
+        if not final_kwargs["quiet"]:
+            LOG.error("Fatal error: %s" % err_msg)
+
+    abort_exc_klass = final_kwargs["abort_exception"]
+    if abort_exc_klass:
+        exc = abort_exc_klass(err_msg)
+        setattr(exc, "result", result)
+        raise exc
+
+    # https://docs.python.org/3/library/exceptions.html#SystemExit
+    # # https://github.com/mathiasertl/fabric/blob/master/fabric/utils.py#L30-L63
+    exc = SystemExit(1)
+    exc.message = err_msg
+    raise exc
 
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L338
@@ -285,24 +367,8 @@ def remote(command, **kwargs):
     # capture_buffer_size=None # correlates to `ssh2.channel.read` and the `size` parameter. Ignored.
 
     # parameters we're interested in and their default values
-    base_kwargs = {
-        # current user. sensible default but probably not what you want
-        "user": getpass.getuser(),
-        "host_string": None,
-        "key_filename": os.path.expanduser("~/.ssh/id_rsa"),
-        "port": 22,
-        "use_shell": True,
-        "use_sudo": False,
-        "combine_stderr": True,
-        "quiet": False,
-        "discard_output": False,
-        # todo: duplicated content. this needs to defer to deeply nested `_print_line`
-        "line_template": "{line}\n",
-        "remote_working_dir": None,
-        "timeout": None,
-        "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
-        "abort_exception": RuntimeError,
-    }
+    base_kwargs = _ssh_default_settings()
+    base_kwargs.update({"display_running": True, "discard_output": False})
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
     # wrap the command up
@@ -337,6 +403,7 @@ def remote(command, **kwargs):
     # TODO: validate `_execute`s args. `host_string` can't be None for example
 
     # run command
+    _print_running(command, sys.stdout, **final_kwargs)
     result = _execute(**execute_kwargs)
 
     # handle stdout/stderr streams
@@ -364,16 +431,8 @@ def remote(command, **kwargs):
         command,
     )
 
-    if final_kwargs["warn_only"]:
-        if not final_kwargs["quiet"]:
-            LOG.warning(err_msg)
-        return result
-
-    abort_exc_klass = final_kwargs["abort_exception"]
-    exc = abort_exc_klass(err_msg)
-    setattr(exc, "result", result)
-
-    raise exc
+    # if `warn_only` is True this function may still return a result
+    return abort(result, err_msg, **final_kwargs)
 
 
 # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L1100
@@ -433,6 +492,7 @@ def local(command, **kwargs):
         "capture": False,
         "timeout": None,
         "quiet": False,
+        "display_running": True,
         "warn_only": False,  # https://github.com/mathiasertl/fabric/blob/master/fabric/state.py#L301-L305
         "abort_exception": RuntimeError,
     }
@@ -473,12 +533,14 @@ def local(command, **kwargs):
         if final_kwargs["use_shell"]:
             command = sudo_wrap_command(command)
         else:
-            # lsh@2020-04: is this good enough? nothing uses local+noshell+sudo
+            # lsh@2020-04: is this a good enough sudo command?
+            # nothing uses local+noshell+sudo (at time of writing)
             command = ["sudo", "--non-interactive"] + command
 
     proc = subprocess.Popen(
         command, shell=final_kwargs["use_shell"], stdout=out_stream, stderr=err_stream
     )
+    _print_running(command, sys.stdout, **final_kwargs)
     if final_kwargs["timeout"]:
         timer = Timer(final_kwargs["timeout"], proc.kill)
         try:
@@ -510,15 +572,8 @@ def local(command, **kwargs):
         command,
     )
 
-    if final_kwargs["warn_only"]:
-        LOG.warning(err_msg)
-        return result
-
-    abort_exc_klass = final_kwargs["abort_exception"]
-    exc = abort_exc_klass(err_msg)
-    setattr(exc, "result", result)
-
-    raise exc
+    # if `warn_only` is True this function may still return a result
+    return abort(result, err_msg, **final_kwargs)
 
 
 def single_command(cmd_list):
@@ -549,6 +604,104 @@ def prompt(msg):
 #
 
 
+def execute_rsync_command(cmd):
+    """executes given rsync `cmd`, catching rsync errors and improving any errors raised.
+    rsync commands can be generated with `_rsync_upload` and `_rsync_download` functions.
+    """
+    try:
+        return local(cmd)
+    except Exception as uncaught_exc:
+        if hasattr(uncaught_exc, "result"):
+            # this is a threadbare error and we may be able to improve it
+            result = uncaught_exc.result
+            # taken straight from the `man` page, authored "28 Jan 2018"
+            error_map = {
+                1: "Syntax or usage error",
+                2: "Protocol incompatibility",
+                3: "Errors selecting input/output files, dirs",
+                4: "Requested  action  not supported: an attempt was made to manipulate 64-bit files on a platform that cannot support them; or an option was specified that is supported by the client and not by the server.",
+                5: "Error starting client-server protocol",
+                6: "Daemon unable to append to log-file",
+                10: "Error in socket I/O",
+                11: "Error in file I/O",
+                12: "Error in rsync protocol data stream",
+                13: "Errors with program diagnostics",
+                14: "Error in IPC code",
+                20: "Received SIGUSR1 or SIGINT",
+                21: "Some error returned by waitpid()",
+                22: "Error allocating core memory buffers",
+                23: "Partial transfer due to error",
+                24: "Partial transfer due to vanished source files",
+                25: "The --max-delete limit stopped deletions",
+                30: "Timeout in data send/receive",
+                35: "Timeout waiting for daemon connection",
+            }
+            if result["return_code"] in error_map:
+                raise NetworkError(
+                    "rsync returned error %s: %s"
+                    % (result["return_code"], error_map[result["return_code"]])
+                )
+        raise uncaught_exc
+
+
+def _rsync_upload(local_path, remote_path, **kwargs):
+    """generates an rsync command to copy `local_path` to `remote_path` using values in the current `state.ENV`.
+    does *not* execute command. see `rsync_upload` and `execute_rsync_command`."""
+
+    base_kwargs = subdict(
+        _ssh_default_settings(), ["user", "host_string", "key_filename", "port"]
+    )
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+
+    cmd = [
+        "rsync",
+        # '-i' is 'identity file'
+        # note: without 'StrictHostKeyChecking' we'll be given a prompt during testing. is this solvable?
+        "--rsh='ssh -i %s -p %s -o StrictHostKeyChecking=no'"
+        % (final_kwargs["key_filename"], final_kwargs["port"]),
+        local_path,
+        "%s@%s:%s" % (final_kwargs["user"], final_kwargs["host_string"], remote_path),
+    ]
+    return " ".join(cmd)
+
+
+def rsync_upload(local_path, remote_path, **kwargs):
+    "copies `local_path` to `remote_path` using values in the current `state.ENV`."
+    remote_dir = os.path.dirname(remote_path)
+    if not remote_file_exists(remote_dir):
+        remote("mkdir -p %r" % remote_dir)
+    return execute_rsync_command(_rsync_upload(local_path, remote_path, **kwargs))
+
+
+def _rsync_download(remote_path, local_path, **kwargs):
+    """generates an rsync command to copy `remote_path` to `local_path` using values in the current `state.ENV`.
+    does *not* execute command. see `rsync_download` and `execute_rsync_command`."""
+    base_kwargs = subdict(
+        _ssh_default_settings(), ["user", "host_string", "key_filename", "port"]
+    )
+    global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
+    cmd = [
+        "rsync",
+        # '-i' is 'identity file'
+        # without 'StrictHostKeyChecking' we'll be given a prompt during testing.
+        "--rsh='ssh -i %s -p %s -o StrictHostKeyChecking=no'"
+        % (final_kwargs["key_filename"], final_kwargs["port"]),
+        "%s@%s:%s" % (final_kwargs["user"], final_kwargs["host_string"], remote_path),
+        local_path,
+    ]
+    return " ".join(cmd)
+
+
+def rsync_download(remote_path, local_path, **kwargs):
+    "copies `remote_path` to `local_path` using values in the current `state.ENV`."
+    abs_local_path = os.path.abspath(os.path.expanduser(local_path))
+    abs_local_dir = os.path.dirname(abs_local_path)
+    if not os.path.exists(abs_local_dir):
+        # replicates behaviour of downloading via scp and sftp (via parallel-ssh)
+        local("mkdir -p %r" % (abs_local_dir,))
+    return execute_rsync_command(_rsync_download(remote_path, local_path, **kwargs))
+
+
 def _transfer_fn(client, direction, **kwargs):
     """returns the `client` object's appropriate transfer *method* given a `direction`.
     `direction` is either 'upload' or 'download'.
@@ -560,7 +713,7 @@ def _transfer_fn(client, direction, **kwargs):
         # - https://github.com/ParallelSSH/parallel-ssh/issues/177
         # however, SCP is buggy and may randomly hang or complete without uploading anything.
         # take slow and reliable over fast and buggy.
-        "transfer_protocol": "sftp", # "scp"
+        "transfer_protocol": "rsync",  # "sftp",  # "scp"
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
@@ -572,8 +725,12 @@ def _transfer_fn(client, direction, **kwargs):
                     "Remote file exists and 'overwrite' is set to 'False'. Refusing to write: %s"
                     % (remote_file,)
                 )
-            # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L524
-            gevent.joinall(fn(local_file, remote_file), raise_error=True)
+
+            if final_kwargs["transfer_protocol"] == "rsync":
+                fn(local_file, remote_file)
+            else:
+                # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L524
+                gevent.joinall(fn(local_file, remote_file), raise_error=True)
 
             # lsh@2020-04, local testing didn't reveal anything but small files uploaded via SCP SCP during CI
             # were either missing or had empty bodies. SFTP seemed to be fine.
@@ -590,25 +747,30 @@ def _transfer_fn(client, direction, **kwargs):
     def download_fn(fn):
         @wraps(fn)
         def wrapper(remote_file, local_file):
+
             if not final_kwargs["overwrite"] and os.path.exists(local_file):
                 raise NetworkError(
                     "Local file exists and 'overwrite' is set to 'False'. Refusing to write: %s"
                     % (local_file,)
                 )
-            # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L560
-            gevent.joinall(fn(remote_file, local_file), raise_error=True)
+            if final_kwargs["transfer_protocol"] == "rsync":
+                fn(remote_file, local_file)
+            else:
+                # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L560
+                gevent.joinall(fn(remote_file, local_file), raise_error=True)
 
         return wrapper
 
     upload_backends = {
-        # rsync? pigeon?
         "sftp": client.copy_file,
         "scp": client.scp_send,
+        "rsync": rsync_upload,
     }
 
     download_backends = {
         "sftp": client.copy_remote_file,
         "scp": client.scp_recv,
+        "rsync": rsync_download,
     }
 
     direction_map = {"upload": upload_backends, "download": download_backends}
@@ -693,14 +855,14 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
         if remote_path_is_dir:
             raise ValueError("directory downloads are not supported")
 
-        temp_file, bytes_buffer = None, None
+        temp_file, data_buffer = None, None
         if hasattr(local_path, "read"):
             # given a file-like object to download file into.
             # 1. write the remote file to local temporary file
             # 2. read temporary file into the given buffer
             # 3. delete the temporary file
 
-            bytes_buffer = local_path
+            data_buffer = local_path
             temp_file, local_path = tempfile.mkstemp(suffix="-threadbare")
 
         if not os.path.isabs(local_path):
@@ -727,9 +889,12 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
                 raise NetworkError(exc)
 
         if temp_file:
-            bytes_buffer.write(open(local_path, "rb").read())
+            flags = "r" if isinstance(data_buffer, io.StringIO) else "rb"
+            data = open(local_path, flags).read()
+            data_buffer.write(data)
+            # deletes the *temporary file*. `temp_file` is a file descriptor
             os.unlink(local_path)
-            return bytes_buffer
+            return data_buffer
 
         return local_path
 
@@ -779,7 +944,12 @@ def _write_bytes_to_temporary_file(local_path):
         local_bytes.seek(0)  # reset internal pointer
         temp_file, local_path = tempfile.mkstemp(suffix="-threadbare")
         with os.fdopen(temp_file, "wb") as fh:
-            fh.write(local_bytes.getvalue())
+            data = local_bytes.getvalue()
+            # data may be a string or it may be bytes.
+            # if it's a string we assume it's a UTF-8 string.
+            if isinstance(data, str):
+                data = bytes(data, "utf-8")
+            fh.write(data)
         cleanup = lambda: os.unlink(local_path)
         return local_path, cleanup
     return local_path, None
@@ -787,6 +957,7 @@ def _write_bytes_to_temporary_file(local_path):
 
 def upload(local_path, remote_path, use_sudo=False, **kwargs):
     "uploads file at `local_path` to the given `remote_path`, overwriting anything that may be at that path"
+    # todo: this setting is dubious, don't count on it hanging around
     with state.settings(quiet=True):
 
         # bytes handling

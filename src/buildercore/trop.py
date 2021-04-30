@@ -1,27 +1,21 @@
-"""
-trop.py is a module that uses the Troposphere library to build up
-a AWS Cloudformation (CFN) template dynamically, using values from
+"""trop.py is a module that uses the Troposphere library to build up
+a AWS CloudFormation (CFN) template dynamically, using values from
 the projects file and a bunch of sensible defaults.
 
-It's job is to return the correct CFN JSON given a dictionary of
-data called a `context`.
-
-`cfngen.py` is in charge of constructing this data struct and writing
-it to the correct file etc."""
+It's job is to return correct CloudFormation JSON given a dictionary of
+data called a `context`. The `context` is built in `cfngen.py`."""
 
 from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
 from .config import ConfigurationError
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
 from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
 import logging
 
 LOG = logging.getLogger(__name__)
-
-# TODO: embarassing code. some of these constants should be pulled form project config or given better names.
 
 SECURITY_GROUP_TITLE = "StackSecurityGroup"
 SECURITY_GROUP_ELB_TITLE = "ELBSecurityGroup"
@@ -52,10 +46,12 @@ ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
 
-def _read_script(script_filename):
-    path = join(config.SCRIPTS_PATH, script_filename)
-    with open(path, 'r') as fp:
-        return fp.read()
+def _remove_if_none(data, key_list):
+    """deletes a list of keys from given `data` if keyed value is `None`.
+    Cloudformation may not accept `null` for a value but will accept the absence of it's key."""
+    for key in key_list:
+        if data[key] is None:
+            del data[key]
 
 def _convert_ports_to_dictionary(ports):
     if isinstance(ports, list):
@@ -123,9 +119,9 @@ def ec2_security(context):
     )
 
 def rds_security(context):
-    """returns a security group for the rds instance.
-
-    this security group only allows access within the subnet, not because of the ip address range but because this is dealt with in the subnet configuration"""
+    """returns a security group for an RDS instance.
+    This security group only allows access within the subnet, not because of the ip address range but
+    because this is dealt with in the subnet configuration"""
     engine_ports = {
         'postgres': 5432,
         'mysql': 3306
@@ -137,12 +133,20 @@ def rds_security(context):
                           ingress_ports,
                           "RDS DB security group")
 
-#
-#
-#
+def docdb_security(context):
+    """returns a security group for a DocumentDB instance.
+    This security group only allows access within the subnet, not because of the ip address range but
+    because this is dealt with in the subnet configuration"""
+    ingress_data = [27017] # default MongoDB port
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
+    return security_group("DocumentDBSecurityGroup",
+                          context['aws']['vpc-id'],
+                          ingress_ports,
+                          "DocumentDB security group")
 
-def instance_tags(context, node=None):
-    # NOTE: RDS and Elasticache instances also call this function
+def _instance_tags(context, node=None):
+    """returns a dictionary of common tags for an instance.
+    Passing in the node's number will include node-specific tags."""
     tags = aws.generic_tags(context)
     if node:
         # this instance is part of a cluster
@@ -150,7 +154,16 @@ def instance_tags(context, node=None):
             'Name': '%s--%d' % (context['stackname'], node), # "journal--prod--1"
             'Node': node, # "1"
         })
-    return [ec2.Tag(key, str(value)) for key, value in tags.items()]
+    return tags
+
+def instance_tags(context, node=None, single_tag_obj=False):
+    """same as `_instance_tags`, but returns a list of `Tag` objects.
+    When `single_tag_obj` is `True`, a single `Tags` (plural) object is returned as ewer
+    troposphere resources use `troposphere.Tags` to model a collection of `Tag` objects."""
+    data = _instance_tags(context, node)
+    if single_tag_obj:
+        return Tags(data)
+    return [ec2.Tag(key, str(value)) for key, value in data.items()]
 
 def elb_tags(context):
     tags = aws.generic_tags(context)
@@ -192,7 +205,7 @@ def ec2instance(context, node):
 
     odd = node % 2 == 1
     subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
-    clean_server = _read_script('.clean-server.sh.fragment')
+    clean_server_script = open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment'), 'r').read()
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
         "InstanceType": lu('ec2.type'), # "t2.small", "m1.medium", etc
@@ -201,13 +214,14 @@ def ec2instance(context, node):
         "SubnetId": subnet_id, # "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
 
-        # https://alestic.com/2010/12/ec2-user-data-output/
+        # send script output to AWS EC2 console, syslog and /var/log/user-data.log
+        # - https://alestic.com/2010/12/ec2-user-data-output/
         "UserData": Base64("""#!/bin/bash
 set -x
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 echo %s > /etc/build-vars.json.b64
 
-%s""" % (buildvars_serialization, clean_server)),
+%s""" % (buildvars_serialization, clean_server_script)),
     }
 
     if lu('ec2.cpu-credits') != 'standard':
@@ -215,8 +229,6 @@ echo %s > /etc/build-vars.json.b64
             CPUCredits=lu('ec2.cpu-credits'),
         )
 
-    # TODO: 'root' is undefined in the project definition
-    # TODO: extract in private method?
     if context['ec2'].get('root'):
         project_ec2['BlockDeviceMappings'] = [{
             'DeviceName': '/dev/sda1',
@@ -303,7 +315,7 @@ def render_rds(context, template):
     lmap(template.add_output, outputs)
 
 def render_ext_volume(context, context_ext, template, actual_ec2_instances, node=1):
-    vtype = context_ext.get('type', 'standard')
+    vtype = context_ext.get('type', 'standard') # todo: no default values here, push this into cfngen.py
 
     if node in actual_ec2_instances:
         availability_zone = GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone")
@@ -312,7 +324,6 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
 
     args = {
         "Size": str(context_ext['size']),
-        # TODO: change
         "AvailabilityZone": availability_zone,
         "VolumeType": vtype,
         "Tags": instance_tags(context, node),
@@ -356,7 +367,6 @@ def internal_dns_ec2_single(context):
     )
     return dns_record
 
-# TODO: remove duplication, but also unify with PR #46
 def external_dns_elb(context):
     # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -750,10 +760,9 @@ def render_elb(context, template, ec2_instances):
 def _elb_healthcheck_target(context):
     if context['elb']['healthcheck']['protocol'] == 'tcp':
         return 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
-    elif context['elb']['healthcheck']['protocol'] == 'http':
+    if context['elb']['healthcheck']['protocol'] == 'http':
         return 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
-    else:
-        raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
+    raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_cloudfront(context, template, origin_hostname):
     if not context['cloudfront']['origins']:
@@ -776,7 +785,7 @@ def render_cloudfront(context, template, origin_hostname):
             cloudfront.Origin(
                 DomainName=o['hostname'],
                 Id=o_id,
-                CustomOriginConfig=cloudfront.CustomOrigin(
+                CustomOriginConfig=cloudfront.CustomOriginConfig(
                     HTTPSPort=443,
                     OriginProtocolPolicy='https-only'
                 )
@@ -790,7 +799,7 @@ def render_cloudfront(context, template, origin_hostname):
             cloudfront.Origin(
                 DomainName=origin_hostname,
                 Id=origin,
-                CustomOriginConfig=cloudfront.CustomOrigin(
+                CustomOriginConfig=cloudfront.CustomOriginConfig(
                     HTTPSPort=443,
                     OriginProtocolPolicy='https-only'
                 )
@@ -840,7 +849,7 @@ def render_cloudfront(context, template, origin_hostname):
             # TODO: constant
             Id=CLOUDFRONT_ERROR_ORIGIN_ID,
             # no advantage in using cloudfront.S3Origin for public buckets
-            CustomOriginConfig=cloudfront.CustomOrigin(
+            CustomOriginConfig=cloudfront.CustomOriginConfig(
                 HTTPSPort=443,
                 OriginProtocolPolicy='https-only' if context['cloudfront']['errors']['protocol'] == 'https' else 'http-only'
             )
@@ -972,40 +981,15 @@ def render_elasticache(context, template):
         template.add_resource(parameter_group)
 
 def render_ext(context, template, cluster_size, actual_ec2_instances):
-    if context['ext']:
-        # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
-        context['ec2']['ext'] = context['ext']
-        for node in range(1, cluster_size + 1):
-            overrides = context['ec2'].get('overrides', {}).get(node, {})
-            overridden_context = deepcopy(context)
-            overridden_context['ext'].update(overrides.get('ext', {}))
-            # TODO: extract `allowed` variable
-            node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
-            render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
-
-def render(context):
-    template = Template()
-
-    ec2_instances = render_ec2(context, template) if context['ec2'] else {}
-    cluster_size = context['ec2']['cluster-size'] if context['ec2'] else 0
-    context['rds'] and render_rds(context, template)
-    render_ext(context, template, cluster_size, ec2_instances.keys())
-    render_sns(context, template)
-    render_sqs(context, template)
-    render_s3(context, template)
-
-    # hostname is assigned to an ELB, which has priority over
-    # N>=1 EC2 instances
-    context['elb'] and render_elb(context, template, ec2_instances)
-    context['ec2'] and render_ec2_dns(context, template)
-
-    add_outputs(context, template)
-
-    context['cloudfront'] and render_cloudfront(context, template, origin_hostname=context['full_hostname'])
-    context['fastly'] and render_fastly(context, template)
-    context['elasticache'] and render_elasticache(context, template)
-
-    return template.to_json()
+    # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
+    context['ec2']['ext'] = context['ext']
+    for node in range(1, cluster_size + 1):
+        overrides = context['ec2'].get('overrides', {}).get(node, {})
+        overridden_context = deepcopy(context)
+        overridden_context['ext'].update(overrides.get('ext', {}))
+        # TODO: extract `allowed` variable
+        node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
+        render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
 
 def add_outputs(context, template):
     if R53_EXT_TITLE in template.resources.keys():
@@ -1067,3 +1051,81 @@ def overridden_component(context, component, index, allowed, interesting=None):
         else:
             overridden_context[component][key] = value
     return overridden_context[component]
+
+def render_docdb(context, template):
+    # create cluster
+    subnet_group = docdb.DBSubnetGroup('DocumentDBSubnet', **{
+        "DBSubnetGroupDescription": "a group of subnets for this DocumentDB cluster.",
+        "SubnetIds": context['docdb']['subnets']
+    })
+
+    docdb_security_group = docdb_security(context)
+
+    cluster = {
+        'title': 'DocumentDBCluster', # resource name
+        'BackupRetentionPeriod': context['docdb']['backup-retention-period'],
+        'DeletionProtection': context['docdb']['deletion-protection'],
+        'MasterUserPassword': context['docdb']['master-user-password'],
+        'MasterUsername': context['docdb']['master-username'],
+        'Tags': instance_tags(context, single_tag_obj=True),
+        'StorageEncrypted': context['docdb']['storage-encrypted'],
+        'VpcSecurityGroupIds': [Ref(docdb_security_group)],
+        'DBSubnetGroupName': Ref(subnet_group),
+        'EngineVersion': context['docdb']['engine-version'],
+    }
+    _remove_if_none(cluster, ['BackupRetentionPeriod'])
+    cluster = docdb.DBCluster(**cluster)
+    [template.add_resource(r) for r in [subnet_group, docdb_security_group, cluster]]
+
+    # create nodes
+    def docdb_node(node):
+        return docdb.DBInstance(**{
+            'title': 'DocumentDBInst%d' % node,
+            'DBClusterIdentifier': Ref(cluster),
+            'AutoMinorVersionUpgrade': context['docdb']['minor-version-upgrades'],
+            'DBInstanceClass': context['docdb']['type'],
+            'Tags': instance_tags(context, node, single_tag_obj=True),
+        })
+    for i in range(1, context['docdb']['cluster-size'] + 1):
+        template.add_resource(docdb_node(i))
+
+#
+#
+#
+
+def render(context):
+    template = Template()
+
+    ec2_instances = render_ec2(context, template) if context['ec2'] else {}
+    cluster_size = context['ec2']['cluster-size'] if context['ec2'] else 0
+
+    # order is probably important.
+    # each render function is modifying the state of a single Template object.
+    renderer_list = [
+        # ('ec2', render_ec2), # called above. other renderers depend on it's result
+        ('rds', render_rds),
+        ('ext', render_ext, {'cluster_size': cluster_size, 'actual_ec2_instances': ec2_instances.keys()}),
+        ('sns', render_sns),
+        ('sqs', render_sqs),
+        ('s3', render_s3),
+
+        # hostname is assigned to an ELB, which has priority over
+        # N>=1 EC2 instances
+        ('elb', render_elb, {'ec2_instances': ec2_instances}),
+        ('ec2', render_ec2_dns),
+        ('cloudfront', render_cloudfront, {'origin_hostname': context['full_hostname']}),
+        ('fastly', render_fastly),
+        ('elasticache', render_elasticache),
+        ('docdb', render_docdb),
+    ]
+
+    for value in renderer_list:
+        context_key, render_fn = value[0], value[1]
+        kwargs = value[2] if len(value) == 3 else {}
+        if context[context_key]: # "if 's3' in context, then render_s3(...)"
+            render_fn(context, template, **kwargs)
+
+    # todo: needs some attention.
+    add_outputs(context, template)
+
+    return template.to_json()

@@ -223,7 +223,7 @@ def render_fastly(context, template):
                 'period': gcslogging.get('period', 3600),
                 'format': FASTLY_LOG_FORMAT,
                 # not supported yet
-                #'format_version': FASTLY_LOG_FORMAT_VERSION,
+                # 'format_version': FASTLY_LOG_FORMAT_VERSION,
                 'message_type': FASTLY_LOG_LINE_PREFIX,
                 'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
                 'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
@@ -985,7 +985,7 @@ def _render_helm(context, template):
     if context['eks']['external-dns']:
         template.populate_resource('helm_release', 'external_dns', block={
             'name': 'external-dns',
-            #'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+            # 'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
             'chart': 'stable/external-dns',
             'version': HELM_CHART_VERSION_EXTERNAL_DNS,
             'depends_on': ['helm_release.common_resources'],

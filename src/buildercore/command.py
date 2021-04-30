@@ -77,9 +77,29 @@ def fab_api_settings_wrapper(*args, **kwargs):
 
     return fab_api.settings(*args, **kwargs)
 
+def threadbare_state_settings_wrapper(*args, **kwargs):
+    """a context manager that alters mutable application state for functions called within it's scope.
+    Not necessary for threadbare but there are some outlier Fabric settings that need coercing."""
+    utils.ensure(not args, "threadbare doesn't support non-keyword arguments.")
+    for key, val in kwargs.pop('fabric.state.output', {}).items():
+        opt = "display_" + key # display_running, display_aborts, etc
+        kwargs[opt] = val
+    if 'output_prefix' in kwargs:
+        kwargs['display_prefix'] = kwargs.pop('output_prefix')
+    return threadbare.state.settings(*args, **kwargs)
+
 #
 
-env = api(fab_api.env, threadbare.state.ENV)
+# lsh@2020-12-10: last minute change to how `env` is accessed.
+# worker processes during multiprocessing seem to hang on to old imported references of `env`.
+# this means `buildercore.command.env` is missing values, but `buildercore.threadbare.state.ENV` is fine.
+# force proper reference by enclosing in a function.
+#env = api(fab_api.env, threadbare.state.ENV)
+def env(key=None):
+    """function for accessing the globally shared and mutable 'env' dictionary.
+    When called without a `key` it returns the whole dictionary."""
+    _env = api(fab_api.env, threadbare.state.ENV)
+    return _env[key] if key is not None else _env
 
 local = api(fab_api_results_wrapper(fab_api.local), threadbare.operations.local)
 execute = api(fab_api.execute, threadbare.execute.execute_with_hosts)
@@ -88,7 +108,7 @@ serial = api(fab_api.serial, threadbare.execute.serial)
 
 hide = api(fab_api.hide, threadbare.operations.hide)
 
-settings = api(fab_api_settings_wrapper, threadbare.state.settings)
+settings = api(fab_api_settings_wrapper, threadbare_state_settings_wrapper)
 
 lcd = api(fab_api.lcd, threadbare.operations.lcd) # local change dir
 rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir

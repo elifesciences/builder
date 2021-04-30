@@ -15,19 +15,18 @@ defaults:
     # repo containing project pillar data (credentials typically)
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
-    # TODO: hunt down ssh:// remotes
     private-repo: git@github.com:elifesciences/builder-private
     configuration-repo: git@github.com:elifesciences/builder-configuration
     # default branch to use when creating new instances
     default-branch: master
-    # in rare cases we have formulas requiring the states of other formulas
+    # in some cases we have formulas requiring the states of other formulas
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         account-id: 512686554592
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
-            # root partition properties, undefined by default, results in a ~7.7GiB EBS root volume
+            # root partition properties, left undefined, results in a ~7.7GiB EBS root volume
             #root:
             #    size:
             #    type: gpt|ebs
@@ -44,12 +43,11 @@ defaults:
             # override 'ext' (only supported key)
             # for some EC2 instances
             overrides: {}
-            # destroy some EC2 instances in the cluster,
-            # for future re-creation
+            # destroy some EC2 instances in the cluster for future re-creation
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0a5f78a738ebebed7 # GENERATED created from basebox--1804
+            ami: ami-099aee3560f7eb1b6 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -74,8 +72,6 @@ defaults:
         # TODO: this will be moved inside aws.ec2
         # ports: {}
         rds:
-            # rds defaults only used if an `rds` section present in project
-            # explicit database name overrides the one generated at template creation
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
@@ -101,7 +97,6 @@ defaults:
                 - subnet-dbc471f0 # elife-dbsubnet-2
             # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html
             deletion-policy: Snapshot # 'Delete', 'Retain' 'Snapshot'
-
         # TODO: move inside aws.ec2
         ext:
             # EBS 'external' volume
@@ -116,7 +111,7 @@ defaults:
             additional_listeners: {}
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2019.wildcard.elifesciences.org
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
             healthcheck:
                 protocol: http
                 port: 80
@@ -136,7 +131,7 @@ defaults:
         #               suffix: '.xml'
         #       deletion-policy: delete|retain
         #       encryption: false
-        s3: {}
+        s3: []
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
@@ -164,7 +159,8 @@ defaults:
             domains: []
             origins: {}
             # maintained through `aws iam upload-server-certificate`
-            certificate_id: ASCAJG6DKII7DCOTNDHNC
+            # arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
+            certificate_id: ASCAXOXT77XQNRYWRB7BT
             cookies: []
             compress: true
             headers: []
@@ -198,7 +194,7 @@ defaults:
             # elasticache defaults only used if an `rds` section present in project
             type: cache.t2.small # 1.55 GB of memory, ~$25/mo
             engine: redis
-            az: us-east-1d # alternative: us-east-1e to match EC2 instances
+            az: "us-east-1d" # alternative: us-east-1e to match EC2 instances
             subnets:
                 - subnet-20275c68 # elife-cache-subnet-1
                 - subnet-c4033af8 # elife-cache-subnet-2
@@ -208,6 +204,19 @@ defaults:
             clusters: 1
         vault:
             address: https://master-server.elifesciences.org:8200
+        docdb:
+            # one primary, one replica
+            cluster-size: 2
+            backup-retention-period: null # days, null for 'no backups'
+            # if true, cluster will require this value changed to 'true' to be deleted.
+            deletion-protection: False
+            # https://aws.amazon.com/documentdb/pricing/
+            # "DocumentDB 4.0 supports r5 and t3.medium instance types"
+            type: db.t3.medium
+            engine-version: 4.0.0
+            subnets:
+                - subnet-0590f9e8ead4bbd9a # elife-docdb-subnet-1
+                - subnet-02dc8ba012ee359ae # elife-docdb-subnet-2
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -222,41 +231,24 @@ defaults:
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
             ec2:
-                salt: '3000.3'
+                salt: '3002.6'
                 masterless: True
 
         1804:
             description: Ubuntu 18.04 (Bionic)
             ec2: true # explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
-        # deprecated
-        1604:
-            description: uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
-         # 18.04
+         # 18.04, deprecated, use s1804
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-0a5f78a738ebebed7 # GENERATED created from basebox--1804
+                ami: ami-099aee3560f7eb1b6 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-0a5f78a738ebebed7 # GENERATED created from basebox--1804
+                ami: ami-099aee3560f7eb1b6 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-                masterless: true
-        # 16.04, deprecated
-        standalone1604:
-            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
-                masterless: true
-        # 16.04, deprecated
-        s1604:
-            description: alias for standalone1604 short enough to fit into hostnames
-            ec2:
-                ami: ami-0e1292c981acbe199 # GENERATED created from basebox--1604, us-east-1
                 masterless: true
         # 18.04, same as default
         standalone:
@@ -266,10 +258,8 @@ defaults:
     gcp:
         bigquery: false
     vagrant:
-        # why 'bento' and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
+        # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-18.04
-        # 16.04, deprecated
-        #box: bento/ubuntu-16.04
         ip: 192.168.33.44
         ram: 2048
         cpus: 2
@@ -290,23 +280,13 @@ basebox:
             - 22
     aws-alt:
         # overrides to default aws-alt configurations to use non-basebox AMIs
-
-        # 16.04, deprecated
-        1604:
-            ec2:
-                ami: ami-0cfee17793b08a293 # xenial, build 20190628, amd64, hvm:ebs-ssd, us-east-1
         1804:
             ec2:
                 # should match aws-alt 'fresh'
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
 
-        # overrides to default aws-alt configurations to use non-basebox AMIs and run isolated from master-server
+        # overrides to default aws-alt configurations to use non-basebox AMIs *and* run isolated from master-server
 
-        # 16.04, deprecated
-        standalone1604:
-            description: isolated from the master-server and uses Ubuntu 16.04 (Xenial)
-            ec2:
-                ami: ami-0cfee17793b08a293 # xenial, build 20190628, amd64, hvm:ebs-ssd, us-east-1
         # 18.04
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
@@ -393,7 +373,7 @@ lax:
         prod:
             description: RDS backed
             ec2:
-                cluster-size: 2
+                cluster-size: 3
             rds:
                 storage: 5
                 storage-type: Standard
@@ -452,8 +432,6 @@ api-gateway:
                 table: "api_gateway"
     aws-alt:
         standalone:
-            fastly: false
-        s1604:
             fastly: false
         s1804:
             fastly: false
@@ -849,6 +827,10 @@ elife-bot:
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
+            sqs:
+                "{instance}-elife-accepted-submission-cleaning-s3-events":
+                    subscriptions:
+                        - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
     vagrant: {}
 
 generic-cdn:
@@ -917,13 +899,7 @@ generic-cdn:
             ec2: false
         1804:
             ec2: false
-        1604:
-            ec2: false
-        s1604:
-            ec2: false
         s1804:
-            ec2: false
-        standalone1604:
             ec2: false
         standalone:
             ec2: false
@@ -1187,14 +1163,14 @@ api-dummy:
     repo: https://github.com/elifesciences/api-dummy
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.micro
         ports:
             - 22
             - 443
             - 80
     aws-alt:
-        snsalt:
-            type: t2.small
+        # 2020-09-21: todo, remove when api-dummy--demo is removed
+        demo:
+            type: t2.micro
     vagrant:
         ports:
             1242: 80
@@ -1252,6 +1228,19 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
+        opendistro:
+            ec2:
+                masterless: true
+            sqs:
+                # search--prod, search--end2end, etc.
+                search--{instance}:
+                    subscriptions:
+                        - bus-articles--prod
+                        - bus-podcast-episodes--prod
+                        - bus-collections--prod
+                        - bus-interviews--prod
+                        - bus-blog-articles--prod
+                        - bus-labs-posts--prod
         end2end:
             ports:
                 - 22
@@ -1267,6 +1256,10 @@ search:
             elb:
                 protocol:
                     - http
+        continuumtest:
+            ec2:
+                root:
+                    size: 15 # GB
         prod:
             ports:
                 - 22
@@ -1277,6 +1270,8 @@ search:
                 - 9200: # ElasticSearch
                     cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
+                root:
+                    size: 30 # GB
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1286,7 +1281,7 @@ search:
         ports:
             1244: 80
             1245: 8080
-            9920: 9200
+            9920: 9200 # elasticsearch
 
 recommendations:
     domain: false
@@ -1703,7 +1698,6 @@ digests:
 
 
 elife-libero-reviewer:
-    description: replacement for xpub
     default-branch: null
     domain: null
     intdomain: null
@@ -1713,105 +1707,51 @@ elife-libero-reviewer:
         staging:
             rds:
                 engine: postgres # or 'MySQL'
-                version: '10.6'
+                version: '12.3'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
-
-elife-xpub:
-    subdomain: xpub
-    repo: https://github.com/elifesciences/elife-xpub
-    formula-repo: git@github.com:elifesciences/elife-xpub-formula
-    aws:
-        type: t2.large
-        ports:
-            - 22
-            - 80
-            - 443
-        ext:
-            # external hdd
-            size: 20 # GB
-            device: /dev/sdh
-    aws-alt:
-        ci:
-            ec2: false
             s3:
-                "{instance}-elife-xpub":
+                "{instance}-elife-libero-reviewer":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-                "{instance}-elife-xpub-styleguide":
-                    public: true
-        end2end:
-            s3:
-                "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-            rds:
-                engine: postgres # or 'MySQL'
-                version: '10.6'
-                type: db.t2.small
-                storage: 5 # GB
-                backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
-            ec2:
-                cluster-size: 2
-                dns-external-primary: true
-                dns-internal: true
-            ports:
-                - 22
-                - 80
-                - 443
-                - 2222:
-                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-                - 8020 # nginx-public-folders via HTTP
-                - 8021 # nginx-public-folders via HTTPS
-            elb:
-                protocol:
-                    - 443
-        staging:
-            s3:
-                "{instance}-elife-xpub":
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-            rds:
-                engine: postgres # or 'MySQL'
-                version: '10.6'
-                type: db.t2.small
-                storage: 5 # GB
-                backup-retention: 2 # days
-                encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
-            ec2:
-                cluster-size: 2
-                dns-external-primary: true
-                dns-internal: true
-            elb:
-                protocol:
-                    - 443
         prod:
-            subdomains:
-                - reviewer
-                - xpub
-            s3:
-                "{instance}-elife-xpub":
-                    deletion-policy: retain
-                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
             rds:
                 multi-az: true
                 engine: postgres # or 'MySQL'
-                version: '10.6'
+                version: '12.3'
                 type: db.t2.small
                 storage: 5 # GB
                 backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
-            ec2:
-                cluster-size: 2
-                dns-external-primary: true
-                dns-internal: true
-            elb:
-                protocol:
-                    - 443
-    vagrant:
-        ports:
-            1201: 80
+            s3:
+                "{instance}-elife-libero-reviewer":
+                    encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
+
+elife-libero-editor:
+    aws:
+        ec2: false
+        s3:
+            "{instance}-elife-libero-editor": {}
+        sqs:
+            # Monitor the production process bucket for new deposits from Exeter.
+            elife-libero-editor-import--{instance}:
+                subscriptions:
+                    - elife-production-processes-events
+        docdb: {}
+    aws-alt: 
+        staging:
+            # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
+            # It should also notify the bus-elife-libero-editor on Put events
+            # s3:
+            #   "elife-production-processes":
+            sns:
+                - "elife-production-processes-events"
+        prod: 
+            s3:
+                "{instance}-elife-libero-editor":
+                    deletion-policy: delete
 
 task-adept:
     description: production data dumps from TaskAdept
@@ -1861,18 +1801,8 @@ fastly-logs:
 
 data-pipeline:
     description: Data consolidation project
-    subdomain: pipeline
-    formula-repo: https://github.com/elifesciences/data-pipeline-formula
     aws:
-        ec2:
-            # Ubuntu 16.04 (non-basebox), deprecated
-            ami: ami-1d4e7a66 # xenial, build 20170811, hvm:ebs-ssd
-        type: t2.medium
-        ports:
-            - 22
-            - 80 # used only to upgrade to https
-            - 443
-            - 18443
+        ec2: false
         s3:
             "{instance}-elife-data-pipeline":
                  deletion-policy: delete
@@ -1883,82 +1813,6 @@ data-pipeline:
             "{instance}": # dataset
                 # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
                 project: elife-data-pipeline
-                tables:
-                    # bit of repetition here
-                    380_datascience_early_career_researchers:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/380_datascience_early_career_researchers.json
-                    455_datascience_editors:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/455_datascience_editors.json
-                    489_datascience_editor_keywords:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/489_datascience_editor_keywords.json
-                    705_datascience_reviewer_identity_revealed_last_week:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/705_datascience_reviewer_identity_revealed_last_week.json
-                    767_datascience_person_roles:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/767_datascience_person_roles.json
-                    779_datascience_reviewer_info_all:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/779_datascience_reviewer_info_all.json
-                    795_datascience_person_merge_info_all:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/ejp-csv-deposit/schemas/795_datascience_person_merge_info_all.json
-                    annotations:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/annotations-deposit/schema.json
-                    extract_history:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/extract_history.bqschema.json
-                    manuscript:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript.bqschema.json
-                    manuscript_full:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript_full.bqschema.json
-                    manuscript_version:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/manuscript_version.bqschema.json
-                    person:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person.bqschema.json
-                    person_v2:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-ejp-to-json-converter/develop/schemas/person_v2.bqschema.json
-                    public_editor_profile:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/editors-google-spreadsheet-deposit/schema.json
-                    people_orcid_profile:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/people-and-profile-service-deposit/schema/people_orcid_profile_schema.json
-                        time-partitioning:
-                            field: imported_timestamp
-                            type: DAY
-                    people_staff_profile:
-                        schema: https://raw.githubusercontent.com/elifesciences/data-pipeline-flow-support/master/flows/people-and-profile-service-deposit/schema/people_staff_profile_schema.json
-                        time-partitioning:
-                            field: imported_timestamp
-                            type: DAY
-    aws-alt:
-        snsalt:
-            ext:
-                size: 30 # GB
-            s3: false
-        standalone:
-            ext:
-                size: 100 # GB
-                type: standard
-            ports:
-                - 22
-                - 80 # used only to upgrade to https
-                - 443
-                - 18443
-            s3: false
-        staging:
-            ext:
-                size: 100 # GB
-                type: standard
-        prod:
-            type: t2.large
-            ext:
-                size: 100 # GB
-                type: standard
-    gcp-alt:
-        snsalt:
-            bigquery: false
-        standalone:
-            bigquery: false
-    vagrant:
-        box: bento/ubuntu-16.04 # 16.04, deprecated
-        ports:
-            1222: 8080 # bypass nginx for development, it's glitchy
-            1223: 18080 # nifi-registry service
 
 bastion:
     description: intermediate server that gives access to the inside of the VPC
@@ -2081,7 +1935,7 @@ large-repo-wrangler:
     vagrant: {}
 
 bioprotocol:
-    subdomain: bp # ci--bp.elifesciences.org
+    subdomain: bp # end2end--bp.elifesciences.org
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
@@ -2099,3 +1953,16 @@ bioprotocol:
     vagrant:
         ports:
             1280: 80
+
+accepted-submission-cleaning:
+    description: see https://github.com/elifesciences/bus
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        ec2: false
+        s3:
+            elife-accepted-submission-cleaning:
+                deletion-policy: retain
+        sns:
+            - elife-accepted-submission-cleaning-s3-events

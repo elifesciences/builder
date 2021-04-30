@@ -39,7 +39,6 @@
         "redundant-subnet-cidr": "10.0.2.0/24", 
         "redundant-availability-zone": "us-east-1e",
         "rds": {
-            "name": "<defined at generation>", 
             "multi-az": false, 
             "engine": "postgres", 
             "version": "9.4", 
@@ -99,7 +98,6 @@
             "redundant-subnet-cidr": "10.0.2.0/24", 
             "redundant-availability-zone": "us-east-1e",
             "rds": {
-                "name": "<defined at generation>", 
                 "multi-az": false, 
                 "engine": "postgres", 
                 "version": "9.4", 
@@ -130,7 +128,7 @@
                     }
                 }
             ], 
-            "description": "uses a plain Ubuntu basebox instead of an ami"
+            "description": "uses a public Ubuntu AMI instead of an elife generated basebox."
         }, 
         "alt-config1": {
             "ec2": {
@@ -159,7 +157,6 @@
             "redundant-subnet-cidr": "10.0.2.0/24", 
             "redundant-availability-zone": "us-east-1e",
             "rds": {
-                "name": "<defined at generation>", 
                 "multi-az": false, 
                 "engine": "postgres", 
                 "version": "9.4", 

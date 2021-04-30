@@ -1,6 +1,7 @@
 defaults:
     description: defaults for all projects in this file
     salt: '2016.3' # the version of salt these project use
+    # use false with a subdomain to assign internal addresses only
     domain: example.org
     # addressing within VPC
     intdomain: example.internal
@@ -18,7 +19,7 @@ defaults:
     configuration-repo: ssh://github.com/exampleorg/builder-configuration-example
     # default branch to use when creating new instances
     default-branch: master
-    # 
+    # in some cases we have formulas requiring the states of other formulas
     formula-dependencies:
         - https://github.com/example/builder-base-formula
     aws:
@@ -26,50 +27,68 @@ defaults:
         ec2:
             cluster-size: 1
             cpu-credits: standard
+            # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
+            # only makes sense if cluster-size > 1
             dns-external-primary: false
+            # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
+            # only makes sense if cluster-size > 1
             dns-internal: false
-            # nodes to temporarily delete, for later recreation
-            # https://martinfowler.com/bliki/PhoenixServer.html
-            suppressed: []
+            # override 'ext' (only supported key)
+            # for some EC2 instances
             overrides: {}
+            # destroy some EC2 instances in the cluster for future re-creation
+            suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
-            ami: ami-9eaa1cf6  # Ubuntu 14.04
-            master_ip: 10.0.2.42
-            security-group: {}
+            # Ubuntu 14.04
+            ami: ami-9eaa1cf6
+            # use a master server or go ronin?
             masterless: false
-        type: t2.small
+            # optional: pin a master server for all new instances of a project
+            master_ip: 10.0.2.42
+            # optional: specify `ports` to be opened
+            security-group: {}
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
-        subnet-id: subnet-1d4eb46a # elife-public-subnet
+        subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
         subnet-cidr: '10.0.2.0/24'
         availability-zone: us-east-1d
+        ## additional value in case of capacity problems: elife-public-subnet-3, us-east-1a
+        # subnet-id: subnet-2116727b
+        # subnet-cidr: '10.0.10.0/24'
+        # necessary for multiple-node EC2 and for ELB
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
         redundant-subnet-cidr: '10.0.2.0/24'
         redundant-availability-zone: us-east-1e
+        type: t2.small
         rds:
-            # rds defaults only used if an `rds` section present in project
-            # explicit database name overrides the one generated at template creation
-            name: <defined at generation>
             multi-az: false
-            engine: postgres
+            engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
             version: '9.4'
-            allow-major-version-upgrade: false
+            allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
-            storage-type: 'standard'
+            # Standard for backward compatibility
+            # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+            storage-type: 'standard' # standard|gp2|io1
             backup-retention: 28 # days
-            # two subnets are required in two different availability zones
-            # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
+            # if rds.params are specified, a custom db parameter group is created
             params: []
             encryption: false
+            # two subnets are required in two different availability zones
+            # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
                 # two are required
+                # NOTE! the 'dbsubnet-' prefix is important to *builder*
+                # it tells us which subnets we can provision RDS within
                 - subnet-foo
                 - subnet-bar
+            # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html
+            #deletion-policy: Snapshot # 'Delete', 'Retain' 'Snapshot' # todo: enable
         ext:
-            # ext defaults only used if an `ext` section present in project
-            # external hdd
+            # EBS 'external' volume
+            # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
+            #type: gp2 # standard|gp2|io1|sc1 # todo: enable
             size: 10 # GB
             device: /dev/sdh
         elb:
@@ -78,36 +97,53 @@ defaults:
             protocol: http
             additional_listeners: {}
             idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::...:...
             healthcheck:
                 protocol: http
                 port: 80
                 path: /ping
-                timeout: 4 
+                timeout: 4
                 interval: 5
                 unhealthy_threshold: 2
                 healthy_threshold: 2
-        sns: []
         sqs: []
+        sns: []
+        # e.g.
+        # s3:
+        #    bucket-name-{instance}:
+        #       sqs-notifications: # not implemented
+        #           queue-name:
+        #               prefix: 'elife-'
+        #               suffix: '.xml'
+        #       deletion-policy: delete|retain
+        #       encryption: false
         s3: []
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
             version: '1.11'
+            # two subnets in two different availability zones, both used in master nodes and in worker nodes
             subnet-id: subnet-a1a1a1a1
             redundant-subnet-id: subnet-b2b2b2b2
             worker:
                 type: t2.small
-                desired-capacity: 3
+                # autoscaling group will never have fewer than these EC2 nodes
                 min-size: 1
+                # autoscaling group will never have more than these EC2 nodes
                 max-size: 3
+                # (currently fixed) number of EC2 nodes
+                desired-capacity: 3
             helm: false
             external-dns: false
             efs: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
+            #subdomains: [] # todo: enable
             subdomains-without-dns: []
+            #domains: [] # todo: enable
             origins: {}
+            # maintained through `aws iam upload-server-certificate`
             certificate_id: 'dummy...'
             cookies: []
             compress: true
@@ -115,18 +151,17 @@ defaults:
             errors: null
             default-ttl: 300 # seconds
             logging: false
-        # TODO: maybe move this into a 'terraform'/'terraform-alt' key separate from 'aws' and 'aws-alt'
         fastly:
             # fastly defaults only used if a 'fastly' section present in project
             subdomains: []
             subdomains-without-dns: []
+            default-ttl: 3600 # seconds
+            shield: false
             dns:
                 cname: something.fastly.net
                 a:
                     - 127.0.0.1
                     - 127.0.0.2
-            default-ttl: 3600 # seconds
-            shield: false
             gcslogging: false
             bigquerylogging: false
             healthcheck: false
@@ -138,33 +173,53 @@ defaults:
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
-            type: cache.t2.small
+            type: cache.t2.small # 1.55 GB of memory, ~$25/mo
             engine: redis
-            az: us-east-1a
+            az: "us-east-1a" # alternative: us-east-1e to match EC2 instances
             subnets:
-                # TODO: are two required?
                 - subnet-foo
                 - subnet-bar
-            version: "2.8.24"
+            version: "2.8.24" # closest to builder-base-formula redis.sls
             configuration:
                 maxmemory-policy: volatile-ttl
             clusters: 1
         vault:
             address: https://vault.example.org:8200
+        docdb:
+            # one primary, one replica
+            cluster-size: 2
+            backup-retention-period: null # days, null for 'no backups'
+            # if true, cluster will require this value changed to 'true' to be deleted.
+            deletion-protection: False
+            # https://aws.amazon.com/documentdb/pricing/
+            # "DocumentDB 4.0 supports r5 and t3.medium instance types"
+            type: db.t3.medium
+            engine-version: 4.0.0
+            subnets:
+                - subnet-foo
+                - subnet-bar
     aws-alt:
+
+        # note! all aws-alt configurations below will be inherited by *all* projects.
+        # note! only use lowercase and hyphens for alt-config names.
+
         fresh:
-            description: uses a plain Ubuntu basebox instead of an ami
+            description: uses a public Ubuntu AMI instead of an elife generated basebox.
             ec2:
                 ami: ami-9eaa1cf6 # Ubuntu 14.04
     gcp:
         bigquery: false
     vagrant:
         box: ubuntu/trusty64 # Ubuntu 14.04
-        box-url: null # not needed for boxes hosted on Atlas 
+        box-url: null # not needed for boxes hosted on Atlas
         ip: 192.168.33.44
         ram: 1024
         cpus: 2
         cpucap: 100 # percent (vagrant default)
+        # port mapping from host => guest
+        #ports:
+        #    1239: 80
+        #    1240: 8001
 
 # basic vagrant and aws, no alternative config
 dummy1:
@@ -395,11 +450,6 @@ project-with-fastly-complex:
                     5xx: "/5xx.html"
                     4xx: "/4xx.html"
             ip-blacklist: true
-            vcl-templates:
-                journal-submit:
-                    percentage: 10
-                    referer: ^https://xpub\.example\.com/
-                    xpub_uri: https://xpub.example.com/login
             vcl:
                 - "gzip-by-content-type-suffix"
             surrogate-keys:
@@ -787,3 +837,18 @@ project-with-eks-efs:
     aws:
         eks:
             efs: true
+
+project-with-docdb:
+    description: project managing a single DocumentDB instance
+    aws:
+        ec2: false
+        docdb: {} # use default config
+
+project-with-docdb-cluster:
+    description: project managing a single DocumentDB instance
+    aws:
+        docdb:
+            cluster-size: 3
+            backup-retention-period: 14 # days
+            deletion-protection: True
+            engine-version: 4.0.0

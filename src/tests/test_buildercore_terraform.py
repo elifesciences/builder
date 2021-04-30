@@ -371,15 +371,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'test': 'obj.status >= 500 && obj.status <= 599',
                                 'synthetic_response': '${data.http.error-page-5xx.body}',
                             },
-                        },
-                        'journal-submit': {
-                            'template': '${file("journal-submit.vcl.tpl")}',
-                            'vars': {
-                                'percentage': 10,
-                                'referer': '^https://xpub\.example\.com/',
-                                'xpub_uri': 'https://xpub.example.com/login',
-                            },
-                        },
+                        }
                     },
                 },
                 'resource': {
@@ -547,10 +539,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'content': '${file("gzip-by-content-type-suffix.vcl")}',
                                 },
                                 {
-                                    'name': 'journal-submit',
-                                    'content': '${data.template_file.journal-submit.rendered}',
-                                },
-                                {
                                     'name': 'error-page-vcl-503',
                                     'content': '${data.template_file.error-page-vcl-503.rendered}',
                                 },
@@ -644,7 +632,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         log_format = service['gcslogging'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
-        self.assertRegex(log_format, "\{.*\}")
+        self.assertRegex(log_format, r"\{.*\}")
 
         data = template['data']['vault_generic_secret']['fastly-gcs-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcs-logging'})
@@ -668,7 +656,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         log_format = service['bigquerylogging'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
-        self.assertRegex(log_format, "\{.*\}")
+        self.assertRegex(log_format, r"\{.*\}")
 
         data = template['data']['vault_generic_secret']['fastly-gcp-logging']
         self.assertEqual(data, {'path': 'secret/builder/apikey/fastly-gcp-logging'})

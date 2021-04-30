@@ -34,5 +34,5 @@ Multiple nodes in a cluster usually do not have individual DNS entries as they a
 
 These settings enable additional DNS entries:
 
-- `ec2.dns-internal` allows the creation of internal DNS entries that can be used to make nodes in a cluster collaborate e.g. `prod--xpub--1.elife.internal`
-- `ec2.dns-external-primary` allows the creation of a single external DNS entry for the [primary node](../docs/lingo.md) e.g. `end2end--xpub--1.elifesciences.org`
+- `ec2.dns-internal` allows the creation of internal DNS entries that can be used to make nodes in a cluster collaborate e.g. `prod--search--1.elife.internal`
+- `ec2.dns-external-primary` allows the creation of a single external DNS entry for the [primary node](../docs/lingo.md) e.g. `end2end--search--1.elifesciences.org`
