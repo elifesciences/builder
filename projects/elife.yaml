@@ -1229,6 +1229,8 @@ search:
                     - bus-labs-posts--{instance}
     aws-alt:
         opendistro:
+            ec2:
+                masterless: true
             sqs:
                 # search--prod, search--end2end, etc.
                 search--{instance}:
