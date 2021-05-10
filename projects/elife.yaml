@@ -1229,8 +1229,15 @@ search:
                     - bus-labs-posts--{instance}
     aws-alt:
         opendistro:
+            # domain: elifesciences.org # search--opendistro requires an external domain name.
+            #         this can't be set in an alt-config unfortunately
             ec2:
                 masterless: true
+            ports:
+                - 22
+                - 443
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
             sqs:
                 # search--prod, search--end2end, etc.
                 search--{instance}:
