@@ -1481,6 +1481,9 @@ iiif:
             type: c5.2xlarge # 8 cores, 16GB ram, $0.34 per Hour
             ec2:
                 masterless: True
+                root:
+                    size: 100 # GB # this could be 30GB-ish
+                    type: gp2 # makes such a difference!
             ports:
                 - 22
             ext:
