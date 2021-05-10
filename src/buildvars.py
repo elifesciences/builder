@@ -10,6 +10,7 @@ from buildercore.utils import ensure
 from pprint import pprint
 import utils
 import logging
+import json
 LOG = logging.getLogger(__name__)
 
 OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
@@ -33,7 +34,7 @@ def _retrieve_build_vars():
 
         return buildvars
 
-    except (ValueError, AssertionError) as ex:
+    except (ValueError, AssertionError, json.decoder.JSONDecodeError) as ex:
         LOG.exception(ex)
         raise
 
@@ -82,7 +83,7 @@ def fix(stackname):
         try:
             buildvars = _retrieve_build_vars()
             LOG.info("valid bvars found, no fix necessary: %s", buildvars)
-        except AssertionError:
+        except (AssertionError, json.decoder.JSONDecodeError):
             LOG.info("invalid build vars found, regenerating from context")
             context = load_context(stackname)
             # some contexts are missing stackname
