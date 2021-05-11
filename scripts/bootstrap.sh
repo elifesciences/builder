@@ -125,6 +125,11 @@ if $elife_depends_on_python2; then
     python2.7 -m pip install "docker[tls]==4.1.0"
 fi
 
+if $upgrading; then
+    # old versions of this file interfere with the salt upgrade process as they 404 software as soon as it falls out of support.
+    rm /etc/apt/sources.list.d/saltstack.list
+fi
+
 if $upgrade_python3; then
 
     # confdef: If conf file modified and the version in the package changed, choose the default action without 
