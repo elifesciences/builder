@@ -127,7 +127,7 @@ fi
 
 if $upgrading; then
     # old versions of this file interfere with the salt upgrade process as they 404 software as soon as it falls out of support.
-    rm /etc/apt/sources.list.d/saltstack.list
+    rm -f /etc/apt/sources.list.d/saltstack.list
 fi
 
 if $upgrade_python3; then
