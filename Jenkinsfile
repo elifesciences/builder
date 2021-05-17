@@ -55,6 +55,8 @@ elifePipeline {
     }
 
     stage 'Downstream', {
-        build job: '/release/release-builder-jenkins', wait: false
+        elifeMainlineOnly {
+            build job: '/release/release-builder-jenkins', wait: false
+        }
     }
 }
