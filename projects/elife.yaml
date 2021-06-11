@@ -1574,7 +1574,7 @@ redirects:
         prod:
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
-                certificate_id: ASCAXOXT77XQJYKX6YHQ5
+                certificate_id: ASCAXOXT77XQCNEIRLCUH
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
