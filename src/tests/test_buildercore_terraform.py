@@ -497,6 +497,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'path': '/ping-fastly',
                                 'check_interval': 30000,
                                 'timeout': 10000,
+                                'initial': 2,
+                                'threshold': 2,
                             },
                             'condition': [
                                 {
