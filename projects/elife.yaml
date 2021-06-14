@@ -116,8 +116,8 @@ defaults:
                 protocol: http
                 port: 80
                 path: /ping
-                timeout: 4
-                interval: 5
+                timeout: 2000 # ms
+                check-interval: 10000 # ms
                 unhealthy_threshold: 2
                 healthy_threshold: 2
         sqs: []
@@ -189,6 +189,15 @@ defaults:
             vcl:
                 - "original-host"
             surrogate-keys: {}
+            # if no backend specified then a Fastly 'shield' is used.
+            # the Fastly shield PoP to use is mapped to the 'aws.region' value.
+            #backends:
+            #    # first is default
+            #    default:
+            #        hostname: some-bucket.s3.amazonaws.com
+            #    articles:
+            #        hostname: "{instance}-some-bucket.s3.amazonaws.com"
+            #        condition: req.url ~ "^/some-prefix/"
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
