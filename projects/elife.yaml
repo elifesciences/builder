@@ -189,6 +189,15 @@ defaults:
             vcl:
                 - "original-host"
             surrogate-keys: {}
+            # if no backend specified then a Fastly 'shield' is used.
+            # the Fastly shield PoP to use is mapped to the 'aws.region' value.
+            #backends:
+            #    # first is default
+            #    default:
+            #        hostname: some-bucket.s3.amazonaws.com
+            #    articles:
+            #        hostname: "{instance}-some-bucket.s3.amazonaws.com"
+            #        condition: req.url ~ "^/some-prefix/"
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project

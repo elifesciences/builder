@@ -190,6 +190,7 @@ def render_fastly(context, template):
         }
     )
 
+    # https://registry.terraform.io/providers/fastly/fastly/latest/docs/resources/service_v1#nested-schema-for-healthcheck
     if context['fastly']['healthcheck']:
         template.populate_resource(
             RESOURCE_TYPE_FASTLY,
@@ -201,6 +202,12 @@ def render_fastly(context, template):
                 'path': context['fastly']['healthcheck']['path'],
                 'check_interval': context['fastly']['healthcheck']['check-interval'],
                 'timeout': context['fastly']['healthcheck']['timeout'],
+                # lsh@2021-06-14: while debugging 503 errors from end2end and continuumtest CDNs, Fastly support offered:
+                # > "I would suggest to change your healthcheck configuration .initial value shouldn't be lower than threshold.
+                # > If .initial < .threshold, the backend will be initialized as Unhealthy state until (.threshold - .initial)
+                # > number of healthchecks have happened and they all are pass."
+                'initial': 2, # default is 2
+                'threshold': 2, # default is 3
             }
         )
         for b in template.resource[RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
