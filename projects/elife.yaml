@@ -116,8 +116,8 @@ defaults:
                 protocol: http
                 port: 80
                 path: /ping
-                timeout: 2000 # ms
-                check-interval: 10000 # ms
+                timeout: 4
+                interval: 5
                 unhealthy_threshold: 2
                 healthy_threshold: 2
         sqs: []
