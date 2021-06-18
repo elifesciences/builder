@@ -490,17 +490,26 @@ def build_context_eks(pdata, context):
     return context
 
 def complete_domain(host, default_main):
+    """converts a partial domain name into a complete one.
+    an empty `host` will return `default_main` (typically 'elifesciences.org')
+    a simple `host` like 'foo' will be expanded to 'foo.elifesciences.org'
+    a complete `host` like 'foo.elifesciences.org' will be returned as-is."""
+    # "" means "elifesciences.org" (top-level). see 'journal--prod' configuration.
     is_main = host == ''
-    is_complete = host.count(".") > 0
     if is_main:
         return default_main
+    # for cases like 'e-lifejournal.com'. see 'redirects' project.
+    is_complete = host.count(".") > 0
     if is_complete:
         return host
-    return host + '.' + default_main # something + '.' + elifesciences.org
+    return host + '.' + default_main
 
 def build_context_subdomains(pdata, context):
     # note! a distinction is being made between 'subdomain' and 'subdomains'
-    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', []) if pdata['domain']]
+    context['subdomains'] = []
+    if pdata['domain'] and 'subdomains' in pdata['aws']:
+        for subdomain in pdata['aws']['subdomains']:
+            context['subdomains'].append(complete_domain(subdomain, pdata['domain']))
     return context
 
 def build_context_elasticache(pdata, context):
