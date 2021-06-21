@@ -296,7 +296,7 @@ def build_context_ec2(pdata, context):
     # but now I need to store master ip info there.
     context['ec2'] = pdata['aws'].get('ec2')
     if context['ec2'] == True:
-        LOG.warn("stack needs it's context refreshed: %s", context['stackname'])
+        LOG.warning("stack needs it's context refreshed: %s", context['stackname'])
 
     elif context['ec2'] == False:
         return context
@@ -681,7 +681,7 @@ def template_delta(context):
             if not title in old_template[section]:
                 return False
         else:
-            LOG.warn("section %r not present in old template but is present in new: %s" % (section, title))
+            LOG.warning("section %r not present in old template but is present in new: %s" % (section, title))
             return False # can we handle this better?
 
         title_in_old = dict(old_template[section][title])

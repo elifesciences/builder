@@ -65,7 +65,7 @@ def parse_validate_repolist(fdata, *repolist):
     for name, _, revision in arglist:
         path = join(config.PROJECT_PATH, "cloned-projects", name)
         if not os.path.exists(path):
-            LOG.warn("couldn't find formula %r locally, revision check skipped", path)
+            LOG.warning("couldn't find formula %r locally, revision check skipped", path)
             continue
 
         with lcd(path), settings(warn_only=True):

@@ -278,7 +278,7 @@ def _print_line(output_pipe, line, **kwargs):
                 template = template[template.index("{line}"):]
             except ValueError:  # "substring not found"
                 msg = "'display_prefix' option ignored: '{line}' not found in 'line_template' setting"
-                LOG.warn(msg)
+                LOG.warning(msg)
                 pass
 
         output_pipe.write(template.format(**template_kwargs))

@@ -47,7 +47,7 @@ def delete_keypair_from_fs(stackname):
     "returns True if the expected keypair for the given stackname can't be found on the filesystem"
     expected_key = stack_pem(stackname)
     if not os.path.exists(expected_key):
-        LOG.warn("private key %r not deleted: found %r", stackname, expected_key)
+        LOG.warning("private key %r not deleted: found %r", stackname, expected_key)
         return True
     try:
         delete_path = join(config.KEYPAIR_PATH, "deleted")

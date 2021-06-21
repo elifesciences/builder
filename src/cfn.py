@@ -35,10 +35,10 @@ def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
     except context_handler.MissingContextFile:
-        LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
+        LOG.warning("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
-            LOG.warn("Not even the CloudFormation template exists anymore, exiting idempotently")
+            LOG.warning("Not even the CloudFormation template exists anymore, exiting idempotently")
             return
         raise
 
@@ -230,7 +230,7 @@ def _check_want_to_be_running(stackname, autostart=False):
             return False
 
     except context_handler.MissingContextFile as e:
-        LOG.warn(e)
+        LOG.warning(e)
 
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
     num_instances = len(instance_list)
@@ -252,7 +252,7 @@ def _interactive_ssh(username, public_ip, private_key):
         command = "ssh -o \"ConnectionAttempts 3\" %s@%s -i %s" % (username, public_ip, private_key)
         return local(command)
     except CommandException as e:
-        LOG.warn(e)
+        LOG.warning(e)
 
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):

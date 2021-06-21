@@ -292,7 +292,7 @@ def _ec2_connection_params(stackname, username, **kwargs):
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     if 'user' in kwargs:
-        LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
+        LOG.warning("found key 'user' in given kwargs - did you mean 'username' ??")
 
     data = stack_data(stackname, ensure_single_instance=False)
     ensure(len(data) == 1 or node, "stack is clustered with %s nodes and no specific node provided" % len(data))
@@ -668,7 +668,7 @@ def find_master_servers(stacks):
     msl = lfilter(lambda triple: is_master_server_stack(first(triple)), stacks)
     msl = lmap(first, msl) # just stack names
     if len(msl) > 1:
-        LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
+        LOG.warning("more than one master server found: %s. this state should only ever be temporary.", msl)
     return sorted(msl, key=parse_stackname) # oldest to newest
 
 def find_master(region):

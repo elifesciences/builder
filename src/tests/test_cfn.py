@@ -4,6 +4,21 @@ from buildercore import cfngen, context_handler
 from cfn import ssh, owner_ssh, generate_stack_from_input
 from mock import patch, MagicMock
 
+def _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names):
+    active_stack_names.return_value = ['dummy1--prod']
+    load_context.return_value = {
+        'ec2': {
+            'cluster-size': 1,
+        },
+    }
+    instance = MagicMock()
+    instance.public_ip_address = '54.54.54.54'
+    instance.tags = [{'Key': 'Name', 'Value': 'dummy1--test--1'}]
+    find_ec2_instances.return_value = [
+        instance
+    ]
+
+
 class TestCfn(base.BaseCase):
     def setUp(self):
         os.environ['LOGNAME'] = 'my_user'
@@ -16,7 +31,7 @@ class TestCfn(base.BaseCase):
     @patch('buildercore.context_handler.load_context')
     @patch('buildercore.core.find_ec2_instances')
     def test_ssh_task(self, find_ec2_instances, load_context, active_stack_names, local):
-        self._dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
+        _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
         ssh('dummy1--prod')
         local.assert_called_with('ssh -o "ConnectionAttempts 3" elife@54.54.54.54 -i ~/.ssh/id_rsa')
 
@@ -25,7 +40,7 @@ class TestCfn(base.BaseCase):
     @patch('buildercore.context_handler.load_context')
     @patch('buildercore.core.find_ec2_instances')
     def test_owner_ssh_task(self, find_ec2_instances, load_context, active_stack_names, local):
-        self._dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
+        _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
         owner_ssh('dummy1--prod')
         (args, _) = local.call_args
         self.assertRegex(args[0], 'ssh -o "ConnectionAttempts 3" ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem')
@@ -57,17 +72,3 @@ class TestCfn(base.BaseCase):
 
         # ensure the alt-config value is correct (it was previously the instance-id)
         self.assertEqual(current_context['alt-config'], new_context['alt-config'])
-
-    def _dummy_instance_is_active(self, find_ec2_instances, load_context, active_stack_names):
-        active_stack_names.return_value = ['dummy1--prod']
-        load_context.return_value = {
-            'ec2': {
-                'cluster-size': 1,
-            },
-        }
-        instance = MagicMock()
-        instance.public_ip_address = '54.54.54.54'
-        instance.tags = [{'Key': 'Name', 'Value': 'dummy1--test--1'}]
-        find_ec2_instances.return_value = [
-            instance
-        ]
