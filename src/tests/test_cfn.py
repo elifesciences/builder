@@ -1,10 +1,15 @@
+import re
 import os
 from . import base
 from buildercore import cfngen, context_handler
 from cfn import ssh, owner_ssh, generate_stack_from_input
 from mock import patch, MagicMock
 
+# warn: this module uses fixtures implicitly loaded from `./src/conftest.py`
+
 def _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names):
+    """populates mock objects with dummy values.
+    simulates a 'prod' instance of the 'dummy1' project."""
     active_stack_names.return_value = ['dummy1--prod']
     load_context.return_value = {
         'ec2': {
@@ -18,6 +23,25 @@ def _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_nam
         instance
     ]
 
+@patch('cfn.local')
+@patch('buildercore.core.active_stack_names')
+@patch('buildercore.context_handler.load_context')
+@patch('buildercore.core.find_ec2_instances')
+def test_ssh_task(find_ec2_instances, load_context, active_stack_names, local, test_projects):
+    _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
+    ssh('dummy1--prod')
+    local.assert_called_with('ssh -o "ConnectionAttempts 3" elife@54.54.54.54 -i ~/.ssh/id_rsa')
+
+@patch('cfn.local')
+@patch('buildercore.core.active_stack_names')
+@patch('buildercore.context_handler.load_context')
+@patch('buildercore.core.find_ec2_instances')
+def test_owner_ssh_task(find_ec2_instances, load_context, active_stack_names, local, test_projects):
+    _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
+    owner_ssh('dummy1--prod')
+    (args, _) = local.call_args
+    regex = 'ssh -o "ConnectionAttempts 3" ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem'
+    assert re.search(regex, args[0])
 
 class TestCfn(base.BaseCase):
     def setUp(self):
@@ -26,25 +50,7 @@ class TestCfn(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
-    @patch('cfn.local')
-    @patch('buildercore.core.active_stack_names')
-    @patch('buildercore.context_handler.load_context')
-    @patch('buildercore.core.find_ec2_instances')
-    def test_ssh_task(self, find_ec2_instances, load_context, active_stack_names, local):
-        _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
-        ssh('dummy1--prod')
-        local.assert_called_with('ssh -o "ConnectionAttempts 3" elife@54.54.54.54 -i ~/.ssh/id_rsa')
-
-    @patch('cfn.local')
-    @patch('buildercore.core.active_stack_names')
-    @patch('buildercore.context_handler.load_context')
-    @patch('buildercore.core.find_ec2_instances')
-    def test_owner_ssh_task(self, find_ec2_instances, load_context, active_stack_names, local):
-        _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_names)
-        owner_ssh('dummy1--prod')
-        (args, _) = local.call_args
-        self.assertRegex(args[0], 'ssh -o "ConnectionAttempts 3" ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem')
-
+    # lsh@2021-06-21, todo: very long test (8s), fix.
     # all non-interactive cases
     def test_generate_stack_from_input(self):
         prod = base.generate_environment_name()
@@ -54,6 +60,7 @@ class TestCfn(base.BaseCase):
         end2end = base.generate_environment_name()
         self.assertEqual(generate_stack_from_input('dummy2', end2end, alt_config='alt-config1'), 'dummy2--%s' % end2end)
 
+    # lsh@2021-06-21, todo: very long test (7s), fix.
     @patch('cfn.local')
     @patch('buildercore.core.active_stack_names')
     @patch('buildercore.core.find_ec2_instances')
