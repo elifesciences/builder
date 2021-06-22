@@ -255,7 +255,8 @@ defaults:
 
         1804:
             description: Ubuntu 18.04 (Bionic)
-            ec2: true # explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
+            # todo: explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
+            ec2: {} # means 'use defaults'. don't use 'true'
          # 18.04, deprecated, use s1804
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)

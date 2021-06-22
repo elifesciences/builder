@@ -28,3 +28,5 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
     - default resource blocks
         - so an ec2 instance is only present if an ec2 block is included
     - project config speccing
+    - rip out caching
+        - parsing/merging/validating little yaml/json files should be *quick*

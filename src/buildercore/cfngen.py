@@ -294,11 +294,18 @@ def build_context_ec2(pdata, context):
     # TODO: this is a problem. using the default 'True' preserves the behaviour of
     # when 'ec2: True' meant, 'use defaults with nothing changed'
     # but now I need to store master ip info there.
+
+    # lsh@2021-06-22: `True` should not be valid for 'ec2'
+    # I've replaced the alt-config '1804' with `ec2: {}` so config merging happens properly.
+    # I suspect the project_data caching oversight was allowing this to pass.
+
     context['ec2'] = pdata['aws'].get('ec2')
     if context['ec2'] == True:
-        LOG.warning("stack needs it's context refreshed: %s", context['stackname'])
+        msg = "stack needs it's context refreshed: %s" % context['stackname']
+        LOG.warning(msg)
+        raise ValueError(msg)
 
-    elif context['ec2'] == False:
+    if context['ec2'] == False:
         return context
 
     # we can now assume this will always be a dict
