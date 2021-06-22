@@ -1,7 +1,7 @@
 import re
 import os
 from . import base
-from buildercore import cfngen, context_handler
+from buildercore import cfngen, context_handler, project
 from cfn import ssh, owner_ssh, generate_stack_from_input
 from mock import patch, MagicMock
 
@@ -43,6 +43,10 @@ def test_owner_ssh_task(find_ec2_instances, load_context, active_stack_names, lo
     regex = 'ssh -o "ConnectionAttempts 3" ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem'
     assert re.search(regex, args[0])
 
+def test_launch_project_with_unique_configuration():
+    "calling the `launch` task with a unique alt-config should fail"
+    pass
+
 class TestCfn(base.BaseCase):
     def setUp(self):
         os.environ['LOGNAME'] = 'my_user'
@@ -50,18 +54,20 @@ class TestCfn(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
-    # lsh@2021-06-21, todo: very long test (8s), fix.
     # all non-interactive cases
-    def test_generate_stack_from_input(self):
+    @patch('buildercore.core.describe_stack')
+    @patch('buildercore.context_handler.load_context', context_handler._load_context_from_disk)
+    def test_generate_stack_from_input(self, *args):
         prod = base.generate_environment_name()
         self.assertEqual(generate_stack_from_input('dummy1', prod, 'prod'), 'dummy1--%s' % prod)
         alt_config = base.generate_environment_name()
-        self.assertEqual(generate_stack_from_input('dummy2', alt_config, 'alt-config1'), 'dummy2--%s' % alt_config)
+        self.assertEqual(generate_stack_from_input('dummy2', alt_config, alt_config='alt-config1'), 'dummy2--%s' % alt_config)
         end2end = base.generate_environment_name()
         self.assertEqual(generate_stack_from_input('dummy2', end2end, alt_config='alt-config1'), 'dummy2--%s' % end2end)
 
-    # lsh@2021-06-21, todo: very long test (7s), fix.
-    @patch('cfn.local')
+    # lsh@2021-06-22, todo: very long test (4s), fix.
+    @patch('buildercore.core.describe_stack')
+    @patch('buildercore.context_handler.load_context', context_handler._load_context_from_disk)
     @patch('buildercore.core.active_stack_names')
     @patch('buildercore.core.find_ec2_instances')
     def test_altconfig_name_preserved(self, *args):

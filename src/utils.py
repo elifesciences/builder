@@ -8,6 +8,10 @@ from buildercore import core
 
 LOG = logging.getLogger(__name__)
 
+class TaskExit(BaseException):
+    "raise to quit a task early"
+    pass
+
 def strtobool(x):
     """wraps `distutils.util.strtobool` that casts 'yes', 'no', '1', '0', 'true', 'false', etc to
     boolean values, but only if the given value isn't already a boolean"""

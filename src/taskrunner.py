@@ -5,6 +5,7 @@ from decorators import echo_output
 from buildercore import command
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
 import sys, os, traceback
+import utils
 
 # threadbare module is otherwise not used is flagged for linting
 assert threadbare
@@ -230,6 +231,12 @@ def exec_task(task_str, task_map_list):
         task_map = task_map_list[0]
         return_map['result'] = task_map['fn'](*task_args, **task_kwargs)
         return_map['rc'] = 0
+        return return_map
+
+    except utils.TaskExit as te:
+        print(te)
+        print('\nQuit.')
+        return_map['rc'] = 1
         return return_map
 
     except KeyboardInterrupt:

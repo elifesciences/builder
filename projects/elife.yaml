@@ -26,7 +26,7 @@ defaults:
         account-id: 512686554592
         # can this configuration be reused or is it unique? 
         # typically it can be reused, but some configurations embed values that are unique to a named instance.
-        # for example: the 'prod' configuration for 'journal' *is* unique and cannot be reused.
+        # for example: the 'prod' configuration for 'journal' is unique to `journal--prod` and cannot be reused.
         unique: false
         # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
