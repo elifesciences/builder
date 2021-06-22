@@ -1,7 +1,7 @@
 import re
 import os
 from . import base
-from buildercore import cfngen, context_handler, project
+from buildercore import cfngen, context_handler
 from cfn import ssh, owner_ssh, generate_stack_from_input
 from mock import patch, MagicMock
 
