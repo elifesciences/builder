@@ -719,6 +719,9 @@ elife-bot:
             "{instance}-poa-incoming-queue":
                 # no subscriptions to SNS
                 subscriptions: []
+            "{instance}-era-incoming-queue":
+                # no subscriptions to SNS
+                subscriptions: []
         sns:
             # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
