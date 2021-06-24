@@ -853,3 +853,12 @@ project-with-docdb-cluster:
             backup-retention-period: 14 # days
             deletion-protection: True
             engine-version: 4.0.0
+
+project-with-unique-alt-config:
+    description: project has a unique configuration
+    aws:
+        ec2: false
+    aws-alt:
+        prod:
+            unique: true
+

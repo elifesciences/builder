@@ -1,5 +1,7 @@
+import pytest
 import re
 import os
+import utils
 from . import base
 from buildercore import cfngen, context_handler
 from cfn import ssh, owner_ssh, generate_stack_from_input
@@ -43,9 +45,16 @@ def test_owner_ssh_task(find_ec2_instances, load_context, active_stack_names, lo
     regex = 'ssh -o "ConnectionAttempts 3" ubuntu@54.54.54.54 -i .+/.cfn/keypairs/dummy1--prod.pem'
     assert re.search(regex, args[0])
 
-def test_launch_project_with_unique_configuration():
+def test_launch_project_with_unique_altconfig(test_projects):
     "calling the `launch` task with a unique alt-config should fail"
-    pass
+    pname = 'project-with-unique-alt-config'
+    instance_id = base.generate_environment_name()
+    alt_config = 'prod'
+    with patch('buildercore.core.stack_is_active', return_value=True):
+        with pytest.raises(utils.TaskExit) as exc:
+            expected_msg = "stack 'project-with-unique-alt-config--prod' exists, cannot re-use unique configuration 'prod'."
+            generate_stack_from_input(pname, instance_id, alt_config)
+        assert str(exc.value) == expected_msg
 
 class TestCfn(base.BaseCase):
     def setUp(self):
