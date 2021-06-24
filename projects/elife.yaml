@@ -188,8 +188,10 @@ defaults:
             # gcslogging:
             #   bucket: 
             #   path: 
+            #   period: 
             bigquerylogging: false
             # bigquerylogging:
+            #   project:
             #   dataset: 
             #   table:
             healthcheck: false
@@ -256,7 +258,7 @@ defaults:
         1804:
             description: Ubuntu 18.04 (Bionic)
             # todo: explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
-            ec2: {} # means 'use defaults'. don't use 'true'
+            ec2: {} # means 'use defaults'. don't use 'true'.
          # 18.04, deprecated, use s1804
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
@@ -345,7 +347,7 @@ master-server:
             - 8200 # Vault, secrets management
     aws-alt:
         '2018-04-09-2':
-            # unique because: 'subdomains' contains static values
+            # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - master-server
@@ -462,8 +464,7 @@ api-gateway:
         end2end: {}
         continuumtest:
             # unique because: 
-            # - 'fastly.bigquerylogging.dataset' is static
-            # - 'fastly.gcslogging.bucket' is static. log data would be commingled.
+            # - 'fastly.bigquerylogging.dataset' is static.
             unique: true
             fastly:
                 bigquerylogging:
@@ -471,7 +472,7 @@ api-gateway:
                 gcslogging:
                     bucket: staging-elife-fastly
         prod:
-            # unique because: 'fastly.subdomains' contains static values
+            # unique because: 'fastly.subdomains' contains static values.
             unique: true
             fastly:
                 subdomains:
@@ -549,7 +550,7 @@ journal:
                     dataset: "{instance}"
                     table: "journal"
         continuumtest:
-            # unique because: 'fastly.bigquerylogging.dataset' is static
+            # unique because: 'fastly.bigquerylogging.*' values are static.
             unique: true
             elasticache:
                 engine: redis
@@ -594,8 +595,8 @@ journal:
         prod:
             description: production environment for journal. An ELB on top of multiple EC2 instances fronted by Fastly.
             # unique because:
-            # - 'fastly.subdomains' contains static values
-            # - 'cloudfront.subdomains' contains static values
+            # - 'fastly.subdomains' contains static values.
+            # - 'cloudfront.subdomains' contains static values.
             unique: true
             ec2:
                 cluster-size: 3
@@ -680,7 +681,7 @@ pattern-library:
                 "{instance}-pattern-library":
                     public: true
         prod:
-            # unique because: 'subdomains' contains static values
+            # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - ui-patterns
@@ -931,7 +932,7 @@ generic-cdn:
                 table: "generic_cdn"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults
-        # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
+        # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them.
         fresh:
             ec2: false
         1804:
@@ -960,10 +961,9 @@ generic-cdn:
                     period: 600
                 bigquerylogging:
                     dataset: "staging"
-                    # todo: missing 'table' name. what is the default?
         prod:
             # unique because: 
-            # - 'fastly.subdomains' contains static values
+            # - 'fastly.subdomains' contains static values.
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
             fastly:
@@ -1059,7 +1059,7 @@ elife-dashboard:
             - 8082 # dashboard_2
     aws-alt:
         end2end:
-            # unique because: 'sqs' contains static values
+            # unique because: 'sqs' contains static values.
             unique: true
             description: production-like environment.
             rds:
@@ -1072,7 +1072,7 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--end2end
         continuumtest:
-            # unique because: 'sqs' contains static values
+            # unique because: 'sqs' contains static values.
             unique: true
             sqs:
                 # legacy custom name
@@ -1080,7 +1080,7 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--continuumtest
         prod:
-            # unique because: static value in 'sqs'
+            # unique because: static value in 'sqs'.
             unique: true
             description: production environment. backed by RDS
             rds:
@@ -1191,7 +1191,7 @@ elife-alfred:
                 "{instance}-elife-alfred":
                     deletion-policy: delete
         prod:
-            # unique because: 'subdomains' contains static values
+            # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - alfred
@@ -1383,7 +1383,7 @@ personalised-covers:
             ec2:
                 cpu-credits: unlimited
         prod:
-            # unique because: 'subdomains' contains static values
+            # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - covers
@@ -1576,8 +1576,7 @@ iiif:
         # manual tests
         continuumtest:
             # unique because: 
-            # - 'fastly.bigquerylogging.dataset' is using a static value
-            # - 'gcslogging.bucket' is using a static value. log data would be commingled.
+            # - 'fastly.bigquerylogging.dataset' is using a static value.
             unique: true
             ports:
                 - 22
@@ -1596,7 +1595,7 @@ iiif:
                 gcslogging:
                     bucket: staging-elife-fastly
         prod:
-            # unique because: 'fastly.subdomains' contains static values
+            # unique because: 'fastly.subdomains' contains static values.
             unique: true
             ports:
                 - 22
@@ -1635,7 +1634,7 @@ redirects:
         s1804:
             type: t2.small
         prod:
-            # unique because: 'cloudfront.subdomains' contains static values
+            # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
@@ -1795,7 +1794,7 @@ elife-libero-editor:
         docdb: {}
     aws-alt: 
         staging:
-            # unique because: 'sns' contains static values
+            # unique because: 'sns' contains static values.
             unique: true
             # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
             # It should also notify the bus-elife-libero-editor on Put events
@@ -1834,8 +1833,8 @@ fastly-logs:
     intdomain: false
     aws:
         # unique because: 
-        # - 'gcp.bigquery.{instance}.project' is static
-        # - 'gcp.bigquery.{instance}.tables' contains static values
+        # - 'gcp.bigquery.{instance}.project' is static.
+        # - 'gcp.bigquery.{instance}.tables' contains static values.
         unique: true
         ec2: false
         gcs:
@@ -1861,7 +1860,7 @@ fastly-logs:
 data-pipeline:
     description: Data consolidation project
     aws:
-        # unique because: 'gcp.bigquery.{instance}.project' is static
+        # unique because: 'gcp.bigquery.{instance}.project' is static.
         unique: true
         ec2: false
         s3:
@@ -1884,7 +1883,7 @@ bastion:
             - 22
     aws-alt:
         prod:
-            # unique because: 'subdomains' contains static values
+            # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - bastion
@@ -1938,7 +1937,7 @@ reproducible-document-stack:
         prod:
             # unique because: 
             # - 'fastly.bigquerylogging.table' contains a static value.
-            # - 'fastly.subdomains' contains a static value
+            # - 'fastly.subdomains' contains a static value.
             unique: true
             fastly:
                 subdomains:
@@ -2031,7 +2030,7 @@ accepted-submission-cleaning:
     domain: null
     intdomain: null
     aws:
-        # unique because: 'sns' contains static values
+        # unique because: 'sns' contains static values.
         unique: true
         ec2: false
         s3:
