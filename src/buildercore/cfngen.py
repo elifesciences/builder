@@ -294,11 +294,18 @@ def build_context_ec2(pdata, context):
     # TODO: this is a problem. using the default 'True' preserves the behaviour of
     # when 'ec2: True' meant, 'use defaults with nothing changed'
     # but now I need to store master ip info there.
+
+    # lsh@2021-06-22: `True` should not be valid for 'ec2'
+    # I've replaced the alt-config '1804' with `ec2: {}` so config merging happens properly.
+    # I suspect the project_data caching oversight was allowing this to pass.
+
     context['ec2'] = pdata['aws'].get('ec2')
     if context['ec2'] == True:
-        LOG.warn("stack needs it's context refreshed: %s", context['stackname'])
+        msg = "stack needs it's context refreshed: %s" % context['stackname']
+        LOG.warning(msg)
+        raise ValueError(msg)
 
-    elif context['ec2'] == False:
+    if context['ec2'] == False:
         return context
 
     # we can now assume this will always be a dict
@@ -490,17 +497,26 @@ def build_context_eks(pdata, context):
     return context
 
 def complete_domain(host, default_main):
+    """converts a partial domain name into a complete one.
+    an empty `host` will return `default_main` (typically 'elifesciences.org')
+    a simple `host` like 'foo' will be expanded to 'foo.elifesciences.org'
+    a complete `host` like 'foo.elifesciences.org' will be returned as-is."""
+    # "" means "elifesciences.org" (top-level). see 'journal--prod' configuration.
     is_main = host == ''
-    is_complete = host.count(".") > 0
     if is_main:
         return default_main
+    # for cases like 'e-lifejournal.com'. see 'redirects' project.
+    is_complete = host.count(".") > 0
     if is_complete:
         return host
-    return host + '.' + default_main # something + '.' + elifesciences.org
+    return host + '.' + default_main
 
 def build_context_subdomains(pdata, context):
     # note! a distinction is being made between 'subdomain' and 'subdomains'
-    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', []) if pdata['domain']]
+    context['subdomains'] = []
+    if pdata['domain'] and 'subdomains' in pdata['aws']:
+        for subdomain in pdata['aws']['subdomains']:
+            context['subdomains'].append(complete_domain(subdomain, pdata['domain']))
     return context
 
 def build_context_elasticache(pdata, context):
@@ -672,7 +688,7 @@ def template_delta(context):
             if not title in old_template[section]:
                 return False
         else:
-            LOG.warn("section %r not present in old template but is present in new: %s" % (section, title))
+            LOG.warning("section %r not present in old template but is present in new: %s" % (section, title))
             return False # can we handle this better?
 
         title_in_old = dict(old_template[section][title])

@@ -5,6 +5,7 @@ from decorators import echo_output
 from buildercore import command
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
 import sys, os, traceback
+import utils
 
 # threadbare module is otherwise not used is flagged for linting
 assert threadbare
@@ -159,6 +160,8 @@ def generate_task_list(show_debug_tasks=False):
 # --- taken from Fabric3 (fork of Fabric 1, BSD Licenced)
 # --- https://github.com/mathiasertl/fabric/blob/1.13.1/fabric/main.py#L499-L564
 def _escape_split(sep, argstr):
+    # autopep8 wants to format "r'foo\" to "r'foo\\"
+    # fmt: off
     """
     Allows for escaping of the separator: e.g. task:arg=r'foo\, bar' (ignore leading 'r')
 
@@ -228,6 +231,12 @@ def exec_task(task_str, task_map_list):
         task_map = task_map_list[0]
         return_map['result'] = task_map['fn'](*task_args, **task_kwargs)
         return_map['rc'] = 0
+        return return_map
+
+    except utils.TaskExit as te:
+        print(te)
+        print('\nQuit.')
+        return_map['rc'] = 1
         return return_map
 
     except KeyboardInterrupt:

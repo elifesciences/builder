@@ -208,19 +208,19 @@ def remaster_all(*pname_list):
                     LOG.info("updating: %s" % stackname)
                     utils.get_input('continue? ctrl-c to quit')
                     if not remaster(stackname, new_master_stackname):
-                        LOG.warn("failed to remaster %s, stopping further remasters to project %r", stackname, pname)
+                        LOG.warning("failed to remaster %s, stopping further remasters to project %r", stackname, pname)
                         break
                     # print a reminder of which stack was just updated
                     print("\n(%s)\n" % stackname)
                     open('remastered.txt', 'a').write("%s\n" % stackname)
                 except KeyboardInterrupt:
-                    LOG.warn("ctrl-c, skipping stack: %s", stackname)
+                    LOG.warning("ctrl-c, skipping stack: %s", stackname)
                     LOG.info("ctrl-c again to exit process entirely")
                     time.sleep(2)
                 except BaseException:
                     LOG.exception("unhandled exception updating stack: %s", stackname)
         except KeyboardInterrupt:
-            LOG.warn("quitting")
+            LOG.warning("quitting")
             break
 
     LOG.info("wrote 'remastered.txt'")

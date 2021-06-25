@@ -4,10 +4,10 @@
 /.pytest_cache/
 settings.yml
 *~
-
+builder-private/
 cloned-projects/
 custom-vagrant/
-
+builder-configuration/
 .vagrant/
 .vagrant-error
 *.orig

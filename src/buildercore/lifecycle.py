@@ -283,7 +283,7 @@ def update_dns(stackname):
         return
 
     def _log_backoff(event):
-        LOG.warn("Backing off in waiting for running nodes on %s to map them onto a DNS entry", event['args'][0])
+        LOG.warning("Backing off in waiting for running nodes on %s to map them onto a DNS entry", event['args'][0])
 
     @backoff.on_exception(backoff.expo, core.NoRunningInstances, on_backoff=_log_backoff, max_time=30)
     def _wait_for_running_nodes(stackname):

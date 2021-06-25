@@ -22,7 +22,7 @@ def _give_up_backoff(e):
     return e.response['Error']['Code'] != 'Throttling'
 
 def _log_backoff(event):
-    LOG.warn("Backing off in validating project %s", event['args'][0])
+    LOG.warning("Backing off in validating project %s", event['args'][0])
 
 @backoff.on_exception(backoff.expo, botocore.exceptions.ClientError, on_backoff=_log_backoff, giveup=_give_up_backoff, max_time=30)
 def validate_template(pname_or_stackname, rendered_template):
@@ -95,7 +95,7 @@ def bootstrap(stackname, context):
 
     stack_body = core.stack_json(stackname)
     if json.loads(stack_body) == EMPTY_TEMPLATE:
-        LOG.warn("empty template: %s" % (core.stack_path(stackname),))
+        LOG.warning("empty template: %s" % (core.stack_path(stackname),))
         return
 
     if core.stack_is_active(stackname):
