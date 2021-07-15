@@ -171,8 +171,8 @@ def _merge_delta(stackname, delta):
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    # TODO: use a context manager to close the file afterwards
-    open(output_fname, 'w').write(contents)
+    with open(output_fname, 'w') as fp:
+        fp.write(contents)
     return output_fname
 
 def update_template(stackname, delta):

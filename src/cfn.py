@@ -1,4 +1,4 @@
-import os
+import os, json
 from pprint import pformat
 import backoff
 from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
@@ -107,9 +107,9 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     if context.get('s3', {}) and not 's3' in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
-def generate_stack_from_input(pname, instance_id=None, alt_config=None):
-    """creates a new CloudFormation/Terraform file for the given project `pname` with
-    the identifier `instance_id` using the specific project configuratino `alt_config`."""
+def check_user_input(pname, instance_id=None, alt_config=None):
+    """gathers and checks user input for suitability in create a new project instance.
+    doesn't create anything."""
     instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
     stackname = core.mk_stackname(pname, instance_id)
     pdata = project.project_data(pname)
@@ -159,6 +159,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
     # check that the instance we want to create doesn't exist
     try:
+        print("checking %r doesn't exist." % stackname)
         checks.ensure_stack_does_not_exist(stackname)
     except checks.StackAlreadyExistsProblem as e:
         msg = 'stack %r already exists.' % e.stackname
@@ -168,15 +169,45 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     if alt_config:
         more_context['alt-config'] = alt_config
 
-    # TODO: return the templates used here, so that they can be passed down to
-    # bootstrap.create_stack() without relying on them implicitly existing
-    # on the filesystem
-    cfngen.generate_stack(pname, **more_context)
+    return more_context
+
+def generate_stack_from_input(pname, instance_id=None, alt_config=None, confirm=True):
+    """creates a new CloudFormation/Terraform file for the given project `pname` with
+    the identifier `instance_id` using the specific project configuration `alt_config`."""
+    more_context = check_user_input(pname, instance_id, alt_config)
+    stackname = more_context['stackname']
+
+    # ~TODO: return the templates used here, so that they can be passed down to~
+    # ~bootstrap.create_stack() without relying on them implicitly existing~
+    # ~on the filesystem~
+    # lsh@2021-07: having the files on the filesystem with predictable names seems more
+    # robust than carrying it around as a parameter through complex software.
+    _, cloudformation_file, terraform_file = cfngen.generate_stack(pname, **more_context)
+
+    if cloudformation_file:
+        print('cloudformation template:')
+        print(json.dumps(json.load(open(cloudformation_file, 'r')), indent=4))
+
+    if terraform_file:
+        print()
+        print('terraform template:')
+        print(json.dumps(json.load(open(terraform_file, 'r')), indent=4))
+
+    if cloudformation_file:
+        LOG.info('wrote: %s' % os.path.abspath(cloudformation_file))
+
+    if terraform_file:
+        LOG.info('wrote: %s' % os.path.abspath(terraform_file))
+
+    if confirm:
+        print()
+        utils.confirm('the above resources will be created')
+
     return stackname
 
 @requires_project
-def launch(pname, instance_id=None, alt_config=None):
-    stackname = generate_stack_from_input(pname, instance_id, alt_config)
+def launch(pname, instance_id=None, alt_config=None, confirm=False):
+    stackname = generate_stack_from_input(pname, instance_id, alt_config, confirm)
     pdata = core.project_data_for_stackname(stackname)
 
     LOG.info('attempting to create %s (AWS region %s)', stackname, pdata['aws']['region'])

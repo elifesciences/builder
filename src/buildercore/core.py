@@ -756,6 +756,9 @@ def hostname_struct(stackname):
 #
 #
 
+# TODO: docstr
+# note: only modifies the project data if the instance-id matches an alt-config.
+# does nothing for ad-hoc instances using an alt-config.
 def project_data_for_stackname(stackname):
     (pname, instance_id) = parse_stackname(stackname)
     project_data = project.project_data(pname)
