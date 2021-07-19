@@ -77,7 +77,7 @@ TASK_LIST = [
     askmaster.linux_distro,
     askmaster.installed_salt_version,
 
-    # see: `elife-jenkins-workflow-libs/vars/builderRunAll.groovy`
+    # see: elife-jenkins-workflow-libs/vars/builderRunAll.groovy
     buildvars.switch_revision,
 
     project.data,

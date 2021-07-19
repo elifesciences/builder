@@ -25,11 +25,7 @@ def destroy(stackname):
     print('type the name of the stack to continue or anything else to quit')
     uin = utils.get_input('> ')
     if not uin or not uin.strip().lower() == stackname.lower():
-        # todo: remove this, it's not necessary
-        import difflib
         print('you needed to type "%s" to continue.' % stackname)
-        print('got:')
-        print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
     return bootstrap.destroy(stackname)
 
@@ -111,8 +107,7 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 def check_user_input(pname, instance_id=None, alt_config=None):
-    """gathers and checks user input for suitability in create a new project instance.
-    doesn't create anything."""
+    "marshals user input and checks it for correctness"
     instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
     stackname = core.mk_stackname(pname, instance_id)
     pdata = project.project_data(pname)
@@ -176,7 +171,7 @@ def check_user_input(pname, instance_id=None, alt_config=None):
 
 def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     """creates a new CloudFormation/Terraform file for the given project `pname` with
-    the identifier `instance_id` using the specific project configuration `alt_config`."""
+    the identifier `instance_id` using the (optional) project configuration `alt_config`."""
     more_context = check_user_input(pname, instance_id, alt_config)
     stackname = more_context['stackname']
 
@@ -184,7 +179,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     # ~bootstrap.create_stack() without relying on them implicitly existing~
     # ~on the filesystem~
     # lsh@2021-07: having the files on the filesystem with predictable names seems more
-    # robust than carrying it around as a parameter through complex software.
+    # robust than carrying it around as a parameter through complex logic.
     _, cloudformation_file, terraform_file = cfngen.generate_stack(pname, **more_context)
 
     if cloudformation_file:
