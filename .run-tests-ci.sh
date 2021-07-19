@@ -17,6 +17,9 @@ else
     coverage_options=
 fi
 
+# skip utils.confirm() prompts during testing
+export BUILDER_NON_INTERACTIVE=1
+
 # `patched_pytest` is a copy of 'pytest' but with gevent monkey patching.
 # see `venv/bin/pytest` and `src/buildercore/threadbare/__init__.py`
 ./patched_pytest \
