@@ -171,7 +171,7 @@ def check_user_input(pname, instance_id=None, alt_config=None):
 
     return more_context
 
-def generate_stack_from_input(pname, instance_id=None, alt_config=None, confirm=True):
+def generate_stack_from_input(pname, instance_id=None, alt_config=None, confirm=False):
     """creates a new CloudFormation/Terraform file for the given project `pname` with
     the identifier `instance_id` using the specific project configuration `alt_config`."""
     more_context = check_user_input(pname, instance_id, alt_config)
