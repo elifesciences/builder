@@ -21,41 +21,55 @@ def echo(msg, *args, **kwargs):
     return "received: %s" % (msg,)
 
 
-# 'unqualified' tasks are those that can be called just by their function name.
-# for example: './bldr start' is the unqualified function 'lifecycle.start'
+# NOTE: 'unqualified' tasks are those that can be called just by their function name.
+# for example: `./bldr start` is the unqualified function `lifecycle.start`
+# NOTE: a task's function signature constitutes it's API, check twice before changing it.
+# the 'see: ...' references below are *not* comprehensive.
 UNQUALIFIED_TASK_LIST = [
     ping, echo,
 
     cfn.destroy,
+    # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.clean-journal-environments
     cfn.ensure_destroyed,
+    # see: elife-jenkins-workflow-libs/vars/builderUpdate.groovy, elifeFormula.groovy
     cfn.update,
     cfn.update_infrastructure,
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.update-journal-pr
     cfn.launch,
     cfn.ssh,
     cfn.owner_ssh,
+    # see: elife-jenkins-workflow-libs/vars/builderTestArtifact.groovy
     cfn.download_file,
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.journal-cms-restore-continuumtest
     cfn.upload_file,
+    # see: elife-jenkins-workflow-libs/vars/builderCmd*.groovy
     cfn.cmd,
-
+    # see: elife-jenkins-workflow-libs/vars/builderDeployRevision.groovy
     deploy.switch_revision_update_instance,
-
+    # see: elife-jenkins-workflow-libs/vars/builderStart.groovy
     lifecycle.start,
+    # see: elife-jenkins-workflow-libs/vars/builderStop.groovy
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     lifecycle.stop,
     lifecycle.restart,
+    # see: elife-jenkins-workflow-libs/vars/builderStopIfRunningFor.groovy
     lifecycle.stop_if_running_for,
     lifecycle.update_dns,
 ]
 
-# these are 'qualified' tasks where the full path to the function must be used
-# for example: './bldr buildvars.switch_revision'
+# NOTE: these are 'qualified' tasks where the full path to the function must be used.
+# for example: `./bldr buildvars.switch_revision`
 TASK_LIST = [
     metrics.regenerate_results, # todo: remove
 
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     tasks.create_ami,
     tasks.repair_cfn_info,
     tasks.repair_context,
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     tasks.remove_minion_key,
-
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.master-server
     master.update,
 
     askmaster.fail2ban_running,
@@ -63,13 +77,16 @@ TASK_LIST = [
     askmaster.linux_distro,
     askmaster.installed_salt_version,
 
+    # see: `elife-jenkins-workflow-libs/vars/builderRunAll.groovy`
     buildvars.switch_revision,
 
     project.data,
     project.context,
     project.new,
 
+    # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.launch,
+    # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.set_versions,
 
     vault.login,
