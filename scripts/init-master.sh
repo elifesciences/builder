@@ -47,7 +47,7 @@ if [ ! -f "/etc/salt/pki/master/minions/$stackname" ]; then
 fi
 
 
-# clone the private repo (whatever it's name is) into /opt/builder-private/
+# clone the private repo (whatever its name is) into /opt/builder-private/
 # REQUIRES CREDENTIALS!
 if [ ! -d /opt/builder-private ]; then
     cd /opt

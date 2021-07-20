@@ -1,4 +1,4 @@
-import os
+import os, json
 from pprint import pformat
 import backoff
 from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
@@ -25,10 +25,7 @@ def destroy(stackname):
     print('type the name of the stack to continue or anything else to quit')
     uin = utils.get_input('> ')
     if not uin or not uin.strip().lower() == stackname.lower():
-        import difflib
         print('you needed to type "%s" to continue.' % stackname)
-        print('got:')
-        print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
     return bootstrap.destroy(stackname)
 
@@ -85,6 +82,8 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
     LOG.info("Terraform delta: %s", delta.terraform)
+
+    # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
     utils.confirm('Confirming changes to CloudFormation and Terraform templates?')
 
     context_handler.write_context(stackname, context)
@@ -107,9 +106,8 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     if context.get('s3', {}) and not 's3' in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
-def generate_stack_from_input(pname, instance_id=None, alt_config=None):
-    """creates a new CloudFormation/Terraform file for the given project `pname` with
-    the identifier `instance_id` using the specific project configuratino `alt_config`."""
+def check_user_input(pname, instance_id=None, alt_config=None):
+    "marshals user input and checks it for correctness"
     instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
     stackname = core.mk_stackname(pname, instance_id)
     pdata = project.project_data(pname)
@@ -159,6 +157,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
     # check that the instance we want to create doesn't exist
     try:
+        print("checking %r doesn't exist." % stackname)
         checks.ensure_stack_does_not_exist(stackname)
     except checks.StackAlreadyExistsProblem as e:
         msg = 'stack %r already exists.' % e.stackname
@@ -168,10 +167,40 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
     if alt_config:
         more_context['alt-config'] = alt_config
 
-    # TODO: return the templates used here, so that they can be passed down to
-    # bootstrap.create_stack() without relying on them implicitly existing
-    # on the filesystem
-    cfngen.generate_stack(pname, **more_context)
+    return more_context
+
+def generate_stack_from_input(pname, instance_id=None, alt_config=None):
+    """creates a new CloudFormation/Terraform file for the given project `pname` with
+    the identifier `instance_id` using the (optional) project configuration `alt_config`."""
+    more_context = check_user_input(pname, instance_id, alt_config)
+    stackname = more_context['stackname']
+
+    # ~TODO: return the templates used here, so that they can be passed down to~
+    # ~bootstrap.create_stack() without relying on them implicitly existing~
+    # ~on the filesystem~
+    # lsh@2021-07: having the files on the filesystem with predictable names seems more
+    # robust than carrying it around as a parameter through complex logic.
+    _, cloudformation_file, terraform_file = cfngen.generate_stack(pname, **more_context)
+
+    if cloudformation_file:
+        print('cloudformation template:')
+        print(json.dumps(json.load(open(cloudformation_file, 'r')), indent=4))
+        print()
+
+    if terraform_file:
+        print('terraform template:')
+        print(json.dumps(json.load(open(terraform_file, 'r')), indent=4))
+        print()
+
+    if cloudformation_file:
+        LOG.info('wrote: %s' % os.path.abspath(cloudformation_file))
+
+    if terraform_file:
+        LOG.info('wrote: %s' % os.path.abspath(terraform_file))
+
+    # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
+    utils.confirm('the above resources will be created')
+
     return stackname
 
 @requires_project
@@ -321,6 +350,7 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 @requires_aws_stack
 def upload_file(stackname, local_path, remote_path=None, overwrite=False, confirm=False, node=1):
     remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
+    # todo: use utils.strtobool
     overwrite = str(overwrite).lower() == "true"
     confirm = str(confirm).lower() == "true"
     node = int(node)
@@ -329,6 +359,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, confir
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
+        # todo: switch to utils.confirm and remove `confirm` kwarg
         if not confirm:
             utils.get_input('continue?')
         if remote_file_exists(remote_path) and not overwrite:

@@ -1,9 +1,9 @@
 """Performs blue-green actions over a load-balanced stack.
 
-The nodes inside a stack are divided into two groups: blue and green. Actions are performed separately on the two groups while they are detached from the load balancer. Obviously, requires a load balancer.
+The nodes inside a stack are divided into two groups: blue and green.
+Actions are performed separately on the two groups while they are detached from the load balancer.
+Obviously requires a load balancer."""
 
-nodes_params is a data structure (dictionary) .
-TODO: make nodes_params a named tuple"""
 import logging
 from .core import boto_client, parallel_work
 from .cloudformation import read_output
@@ -16,6 +16,19 @@ class BlueGreenConcurrency(object):
         self.conn = boto_client('elb', region)
 
     def __call__(self, single_node_work, nodes_params):
+        """`nodes_params` is a dictionary:
+        {'stackname': ...,
+         'nodes': {
+            node-id: 0,
+            node-id: 1,
+            ...,
+         },
+         'public_ips': {
+            node-id: ip,
+            node-id: ip,
+            ...
+        }
+        """
         elb_name = self.find_load_balancer(nodes_params['stackname'])
         self.wait_all_in_service(elb_name)
         blue, green = self.divide_by_color(nodes_params)

@@ -103,7 +103,9 @@ def build_context(pname, **more_context):
         'alt-config': None,
 
         'branch': project_data.get('default-branch'),
-        'revision': None, # may be used in future to checkout a specific revision of project
+        # used to checkout a specific revision of a project or a container.
+        # value may be modified in-place on the created instance by Jenkins.
+        'revision': None,
 
         # TODO: shift these rds_ values under the 'rds' key
         'rds_dbname': None, # generated from the instance_id when present

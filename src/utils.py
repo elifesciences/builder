@@ -8,6 +8,8 @@ from buildercore import core
 
 LOG = logging.getLogger(__name__)
 
+# added 2021-06
+# see `taskrunner.exec_task` for handling of tasks that raise this.
 class TaskExit(BaseException):
     "raise to quit a task early"
     pass

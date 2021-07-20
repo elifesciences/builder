@@ -76,19 +76,25 @@ def parse_validate_repolist(fdata, *repolist):
 
 #
 #
+#
 
 @requires_project
 @requires_master_server_access
 def launch(pname, instance_id=None, alt_config='standalone', *repolist):
     stackname = cfn.generate_stack_from_input(pname, instance_id, alt_config)
     pdata = core.project_data_for_stackname(stackname)
+
     # ensure given alt config has masterless=True
+    # todo: can the choices presented to the user remove non-masterless alt-configs?
     ensure(pdata['aws-alt'], "project has no alternate configurations")
     ensure(alt_config in pdata['aws-alt'], "unknown alt-config %r" % alt_config)
     ensure(pdata['aws-alt'][alt_config]['ec2']['masterless'], "alternative configuration %r has masterless=False" % alt_config)
 
     formula_revisions = parse_validate_repolist(pdata, *repolist)
 
+    # todo: this is good UX but was simply debug output that got left in.
+    # a better summary of what is to be created could be printed out,
+    # preferably after the templates are printed out but before confirmation.
     LOG.info('attempting to create masterless stack:')
     LOG.info('stackname:\t' + stackname)
     LOG.info('region:\t' + pdata['aws']['region'])
