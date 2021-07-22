@@ -1228,7 +1228,6 @@ api-dummy:
             - 443
             - 80
     aws-alt:
-        # 2020-09-21: todo, remove when api-dummy--demo is removed
         demo:
             type: t2.micro
     vagrant:
