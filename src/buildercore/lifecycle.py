@@ -326,12 +326,22 @@ def delete_dns(stackname):
         LOG.info("No internal full hostname to delete")
 
 def _update_dns_a_record(zone_name, name, value):
+    # "zone_name" => "elifesciences.org"
+    # "name" => "foo--journal.elifesciences.org"
+    # "value" => "1.2.3.4"
     zone = _r53_connection().get_zone(zone_name)
-    if zone.get_a(name) and zone.get_a(name).resource_records == [value]:
-        LOG.info("No need to update DNS record %s (already %s)", name, value)
+    a_record = zone.get_a(name)
+    if a_record:
+        if a_record.resource_records == [value]:
+            LOG.info("No need to update DNS record %s (already %s)", name, value)
+            return
+        else:
+            LOG.info("Updating DNS record %s to %s", name, value)
+            zone.update_a(name, value)
     else:
-        LOG.info("Updating DNS record %s to %s", name, value)
-        zone.update_a(name, value)
+        LOG.warning("DNS record %s does not exist! Creating.", name)
+        LOG.info("(this is new behaviour as of 2021-08-02)")
+        zone.add_a(name, value)
 
 def _delete_dns_a_record(zone_name, name):
     zone = _r53_connection().get_zone(zone_name)
@@ -386,6 +396,12 @@ def _rds_connection(stackname):
     return boto_conn(stackname, 'rds', client=True)
 
 def _r53_connection():
-    """returns a boto2 route53 connection.
-    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided"""
+    """returns a *boto2* route53 connection.
+    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided.
+
+    http://boto.cloudhackers.com/en/latest/ref/route53.html
+
+    lsh@2021-08: boto3 still hasn't got it's higher level 'resource' interface yet, but
+    it's 'client' interface looks more fleshed out now than it did when boto3 was first
+    introduced. Consider upgrading."""
     return boto.connect_route53() # no region necessary
