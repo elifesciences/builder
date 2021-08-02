@@ -386,6 +386,12 @@ def _rds_connection(stackname):
     return boto_conn(stackname, 'rds', client=True)
 
 def _r53_connection():
-    """returns a boto2 route53 connection.
-    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided"""
+    """returns a *boto2* route53 connection.
+    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided.
+
+    http://boto.cloudhackers.com/en/latest/ref/route53.html
+
+    lsh@2021-08: boto3 still hasn't got it's higher level 'resource' interface yet, but 
+    it's 'client' interface looks more fleshed out now than it did when boto3 was first 
+    introduced. Consider upgrading."""
     return boto.connect_route53() # no region necessary

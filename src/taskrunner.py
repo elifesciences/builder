@@ -35,6 +35,7 @@ UNQUALIFIED_TASK_LIST = [
     # see: elife-jenkins-workflow-libs/vars/builderUpdate.groovy, elifeFormula.groovy
     cfn.update,
     cfn.update_infrastructure,
+    cfn.fix_infrastructure,
     # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.update-journal-pr
     cfn.launch,
     cfn.ssh,

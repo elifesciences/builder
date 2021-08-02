@@ -73,8 +73,12 @@ defaults:
         redundant-availability-zone: us-east-1e
         # TODO: this will be moved inside aws.ec2
         type: t2.small  # ~ $20/mo
-        # TODO: this will be moved inside aws.ec2
-        # ports: {}
+        # TODO: move inside aws.ec2
+        # ports: {} # no open ports
+        # ports:
+        #    - 22 # open ssh to world
+        #    - 4506: # open 4506 to VPC ip range only
+        #        cidr-ip: 10.0.0.0/16
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -2041,3 +2045,11 @@ accepted-submission-cleaning:
                 deletion-policy: retain
         sns:
             - elife-accepted-submission-cleaning-s3-events
+
+drift-demo:
+    description: do not merge, this exists only to test and fix drift detection
+    subdomain: dd # {instance}--dd.elifesciences.org
+    aws:
+        ports:
+            - 22
+    aws-alt: {}

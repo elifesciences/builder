@@ -172,9 +172,9 @@ def firstnn(x):
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
     """calls the given function `fn` every `interval` seconds until it returns False.
 
-    An `exception_class` will be raised if `timeout` is reached.
+    An `exception_class` will be raised if `timeout` is reached (default `RuntimeError`).
 
-    Any truthy value will continue the polling, so might as well return an Exception from `fn` in order for his message to be propagated up."""
+    Any exception objects returned from `fn` will be raised."""
     if not exception_class:
         exception_class = RuntimeError
     elapsed = 0
