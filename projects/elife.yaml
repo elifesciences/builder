@@ -1233,6 +1233,8 @@ search:
             #         this can't be set in an alt-config unfortunately
             ec2:
                 masterless: true
+                root:
+                    size: 30 # GB
             ports:
                 - 22
                 - 443
