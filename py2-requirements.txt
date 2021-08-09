@@ -24,3 +24,4 @@ troposphere==2.6.3
 unittest2==1.1.0
 parallel-ssh==1.9.1
 setuptools==44.0.0
+gevent==21.1.2
