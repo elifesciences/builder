@@ -106,33 +106,6 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     if context.get('s3', {}) and not 's3' in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
-@requires_aws_stack
-def fix_infrastructure(stackname):
-    """like `update_infrastructure`, but the emphasis is not on changing/upgrading
-    infrastructure but correcting any infrastructure drift and *hopefully* fixing and
-    problems. Fix is not guaranteed.
-
-    Some actions are a given and cannot be skipped.
-
-    This drift may go undetected by `update_infrastructure`."""
-
-    warning_msg = "\nthere is no guarantee this will actually fix anything.\n"
-    print(warning_msg)
-    utils.confirm('proceed?')
-
-    # aws first
-
-    # todo: fix buildvars if exist
-
-    drift_result = core.drift_check(stackname)
-    if not drift_result:
-        LOG.info("no drift detected for stack: %s", stackname)
-    else:
-        print(drift_result)
-
-    if _are_there_existing_servers(current_context) and 'ec2' in start:
-        core_lifecycle.start(stackname)
-
 def check_user_input(pname, instance_id=None, alt_config=None):
     "marshals user input and checks it for correctness"
     instance_id = instance_id or utils.uin("instance id", core_utils.ymd())

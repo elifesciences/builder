@@ -179,6 +179,7 @@ def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="
         exception_class = RuntimeError
     elapsed = 0
     while True:
+        LOG.info(update_msg)
         result = fn()
         if not result:
             break
@@ -187,7 +188,6 @@ def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="
             if isinstance(result, BaseException):
                 message = message + (" (%s)" % result)
             raise exception_class(message)
-        LOG.info(update_msg)
         time.sleep(interval)
         elapsed = elapsed + interval
     LOG.info(done_msg)
