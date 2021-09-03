@@ -1867,7 +1867,7 @@ fastly-logs:
 data-pipeline:
     description: Data consolidation project
     aws:
-        # unique because: 'gcp.bigquery.{instance}.project' is static.
+        # unique because: 'gcp.bigquery.{instance}.project' value is static.
         unique: true
         ec2: false
         s3:
