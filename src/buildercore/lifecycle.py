@@ -110,9 +110,11 @@ def start(stackname):
     ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
     ec2_to_be_checked = ec2_to_be_started + _select_nodes_with_state('running', ec2_states)
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
+
     if ec2_to_be_started:
         LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
         _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_started).start()
+
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
         [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
@@ -391,7 +393,7 @@ def _r53_connection():
 
     http://boto.cloudhackers.com/en/latest/ref/route53.html
 
-    lsh@2021-08: boto3 still hasn't got it's higher level 'resource' interface yet, but 
-    it's 'client' interface looks more fleshed out now than it did when boto3 was first 
+    lsh@2021-08: boto3 still hasn't got it's higher level 'resource' interface yet, but
+    it's 'client' interface looks more fleshed out now than it did when boto3 was first
     introduced. Consider upgrading."""
     return boto.connect_route53() # no region necessary
