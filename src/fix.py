@@ -1,30 +1,32 @@
 from pprint import pformat
 import utils
-from utils import TaskExit
-from buildercore import core, cfngen, checks, context_handler
-from buildercore.utils import ensure, json_dumps, subdict, lu, shallow_flatten
-
+from decorators import requires_aws_stack
+from buildercore import core, cfngen, context_handler
+from buildercore.utils import json_dumps, subdict, lu, shallow_flatten
 import logging
 LOG = logging.getLogger(__name__)
 
+def success(msg=None):
+    if msg:
+        print(msg)
+    return True
+
+def problem(description, solution, details=None):
+    return (description, solution, details)
+
+def title(t):
+    print("## %s\n" % t)
+
+#
+
 
 SEP = "%s\n" % ("-" * 20,)
-
-def _print_diff(stackname):
-    print('looking for differences')
-    context, delta, current_context = cfngen.regenerate_stack(stackname)
-    LOG.info("Create: %s", pformat(delta.plus))
-    LOG.info("Update: %s", pformat(delta.edit))
-    LOG.info("Delete: %s", pformat(delta.minus))
-    LOG.info("Terraform delta: %s", delta.terraform)
-    print(SEP)
 
 
 def _has_nodes(context):
     if not 'ec2' in context:
         # very old stack, canned response
         return True
-
     if isinstance(context['ec2'], bool):
         # no ec2 instances or an instance whose buildvars haven't been updated.
         # either way, the value here can be used as-is
@@ -51,49 +53,41 @@ def ec2_node_summary(ec2):
 
 # ---
 
-
 def _disclaimer():
-    disclaimer = SEP + """this task attempts some basic fixes.
+    title("fix_infrastructure")
+    disclaimer = """this task performs checks and suggests fixes.
 
-it cannot guarantee anything will actually be fixed.
+it does *not* modify infrastructure.
 
-*checks* will be made and then *fixes* attempted.
-
-each fix is preceeded by an explanation and a prompt.
-
-ctrl-c at any of these prompts will safely quit this task.
-
-ctrl-c *during* a fix may cause new problems.\n""" + SEP
+ctrl-c will safely quit this task."""
 
     # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
     utils.confirm(disclaimer)
-    print(SEP)
+    return success()
 
-def _check_stack_exists(stackname):
-    print('checking %r even exists' % stackname)
-    ensure(checks.stack_exists(stackname), "stack not found, cannot continue", TaskExit)
-    print('stack found.')
-    print(SEP)
+def _stack_diff(stackname):
+    title("builder drift check")
+    context, delta, current_context = cfngen.regenerate_stack(stackname)
+    if any([delta.plus['Outputs'], delta.plus['Parameters'], delta.plus['Resources'],
+            delta.edit['Outputs'], delta.edit['Resources'],
+            delta.minus['Outputs'], delta.minus['Parameters'], delta.minus['Resources']]):
+        description = "builder has found a difference between what was once generated and what is being generated now."
+        solution = "./bldr update_infrastructure:%s" % (stackname,)
+        return problem(description, solution)
+    return success()
 
-def _drift_check(stackname):
-    print('using AWS drift checking feature')
+def _aws_drift(stackname):
+    title('AWS drift check')
     drift_result = core.drift_check(stackname)
-    if not drift_result:
-        print("no drift detected for stack")
-    else:
-        print('AWS thinks this stack has drifted:')
-        print(json_dumps(drift_result, dangerous=True, indent=4))
-    print(SEP)
-
-def _node_check(stackname):
-    print('checking EC2 nodes')
-    instance_list = core.find_ec2_instances(stackname, allow_empty=True)
-    print('%s nodes found, fetching their details' % len(instance_list))
-    [print(pformat(ec2_node_summary(ec2))) for ec2 in instance_list]
-    print(SEP)
+    if drift_result:
+        description = 'AWS thinks this stack has drifted.'
+        details = json_dumps(drift_result, dangerous=True, indent=4)
+        solution = "./bldr update_infrastructure:%s" % stackname
+        return problem(description, solution, details)
+    return success()
 
 def _dns_check(stackname, context):
-    print('checking ec2 DNS')
+    title('ec2 DNS')
     keys = [
         'ext_node_hostname', # "prod--lax--%s.elifesciences.org"
         'full_hostname', # "prod--lax.elifesciences.org", "prod--journal.elifesciences.org"
@@ -109,30 +103,16 @@ def _dns_check(stackname, context):
     if context['instance_id'] != 'prod':
         del domain_map['project_hostname']
 
-    # {'cloudfront': ['placeholder2-prod-journal.elifesciences.org',
-    #                'www.elifesciences.org',
-    #                'elife.elifesciences.org',
-    #                'prod.elifesciences.org'],
-    # 'ext_node_hostname': 'prod--journal--%s.elifesciences.org',
-    # 'fastly': ['prod--cdn-journal.elifesciences.org',
-    #            'placeholder-prod-journal.elifesciences.org',
-    #            'elifesciences.org'],
-    # 'full_hostname': 'prod--journal.elifesciences.org',
-    # 'project_hostname': 'journal.elifesciences.org'}
-    # print(pformat(domain_map))
-
-    #paginator = core.boto_client('route53', region).get_paginator('list_hosted_zones')
     conn = core.boto_conn(stackname, 'route53', client=True)
     paginator = conn.get_paginator('list_hosted_zones')
     hosted_zone_list = shallow_flatten([page['HostedZones'] for page in paginator.paginate()])
     hosted_zone_map = {z['Name']: z['Id'] for z in hosted_zone_list}
 
     num_nodes = lu(context, 'project.aws.ec2.cluster-size', default=1)
-    if num_nodes > 1:
-        domain_map.update({"node-%s" % i: domain_map['ext_node_hostname'] % i for i in range(1, num_nodes + 1)})
-    del domain_map['ext_node_hostname']
-
-    # print(pformat(hosted_zone_map))
+    if 'ext_node_hostname' in domain_map:
+        if num_nodes > 1:
+            domain_map.update({"node-%s" % i: domain_map['ext_node_hostname'] % i for i in range(1, num_nodes + 1)})
+        del domain_map['ext_node_hostname']
 
     def hosted_zone_id(dns):
         bits = dns.split('.')
@@ -148,7 +128,6 @@ def _dns_check(stackname, context):
         zone_id = hosted_zone_id(dns)
         if zone_id in record_map:
             return record_map[zone_id]
-        #results = conn.list_resource_record_sets(HostedZoneId=zone_id)['ResourceRecordSets']
         paginator = conn.get_paginator('list_resource_record_sets')
         results = shallow_flatten([page['ResourceRecordSets'] for page in paginator.paginate(HostedZoneId=zone_id)])
         record_map[zone_id] = results
@@ -160,29 +139,44 @@ def _dns_check(stackname, context):
         type_list = ['A', 'CNAME']
         return [r for r in records if r['Name'] == dnsd and r['Type'] in type_list]
 
-    def print_record(label, dns):
-        if not dns: # empty list
-            return
-        if isinstance(dns, str):
-            records = find_records(dns)
-            if not records:
-                print('record %r (%r) NOT found in Route53' % (dns, label))
-                print(pformat(records))
-            else:
-                print('record %r (%r) FOUND in Route53' % (dns, label))
-        if isinstance(dns, list):
-            [print_record(label, subdns) for subdns in dns]
+    def check_record(label, dns):
+        print('* checking %r' % dns)
+        records = find_records(dns)
+        if not records:
+            description = 'record %r (%r) not found in Route53' % (dns, label)
+            details = "records found: %s" % (pformat(records),)
+            solution = './bldr update_dns:%s' % (stackname,)
+            return problem(description, solution, details)
 
+    results = []
     for label, dns in domain_map.items():
-        print_record(label, dns)
+        if isinstance(dns, str):
+            _results = check_record(label, dns)
+            if _results:
+                results.append(_results)
 
-    # subdomain
-    # intdomain
-    # fastly.subdomains
-    # cloudfront.subdomains
-    #
-    print(SEP)
+        elif isinstance(dns, list):
+            for subdns in dns:
+                _results = check_record(label, subdns)
+                if _results:
+                    results.append(_results)
 
+    return success() if not results else results
+
+# ---
+
+def format_problem(problem_triple):
+    description, solution, details = problem_triple
+    if details:
+        return "problem:  %s\n   solution: %s\n   details:  %s" % (description, solution, details)
+    return "problem:  %s\n   solution: %s" % (description, solution)
+
+def print_problem_list(problem_list):
+    title("report")
+    formatted_problem_list = ["%s. %s" % (i + 1, format_problem(problem)) for i, problem in enumerate(problem_list)]
+    print("\n\n".join(formatted_problem_list))
+
+@requires_aws_stack
 def fix_infrastructure(stackname):
     """like `update_infrastructure`, but the emphasis is not on changing/upgrading
     infrastructure but correcting any infrastructure drift and *hopefully* fixing and
@@ -192,26 +186,41 @@ def fix_infrastructure(stackname):
 
     This drift may go undetected by `update_infrastructure`."""
 
-    _disclaimer()
+    problems = []
 
-    _check_stack_exists(stackname)
+    def check(result):
+        "a check returns True on success, False on skip and a string or list of strings for problems."
+        if result is False:
+            pass # skipped
+        if result is True:
+            pass # successful
+        if isinstance(result, tuple):
+            problems.append(result) # single error
+        if isinstance(result, list):
+            problems.extend(result) # many errors
+        print(SEP)
 
-    _print_diff(stackname)
+    check(_disclaimer())
 
-    _drift_check(stackname)
+    check(_stack_diff(stackname))
+
+    check(_aws_drift(stackname))
 
     # context should be available from disk after diff check
     context = context_handler._load_context_from_disk(stackname)
     has_ec2 = _has_nodes(context)
     #has_elb = _has_elb(context)
 
-    has_ec2 and _node_check(stackname)
-
     # the original problem was that another instance had 'stolen' the DNS records of the journal--prod instance.
     # update_infrastructure failed because nothing looked out of place.
     # so we check the *expected* DNS records against the actual ones.
-    has_ec2 and _dns_check(stackname, context)
+    check(has_ec2 and _dns_check(stackname, context))
 
-    # todo: fix buildvars if exist
-    #print('checking ec2 buildvars')
-    # print('...')
+    #check(has_ec2 and _nodes_running(stackname, context))
+
+    # todo: buildvars, ...
+
+    if problems:
+        print_problem_list(problems)
+    else:
+        print('no problems detected')
