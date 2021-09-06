@@ -1,7 +1,4 @@
-"""this module appears to be where I collect functionality
-that is built upon by the more specialised parts of builder.
-
-suggestions for a better name than 'core' welcome."""
+"general logic for the `buildercore` module."
 
 import os, glob, json, re
 from os.path import join
@@ -107,9 +104,8 @@ def boto_resource(service, region):
     return boto3.resource(service, region_name=region)
 
 def boto_client(service, region=None):
-    """the boto3 service client is a lower-level construct compared to the boto3 resource client.
-    it excludes some convenient functionality, like automatic pagination.
-    prefer the service resource over the client"""
+    """the boto3 'service' client is a lower-level construct compared to the boto3 'resource' client.
+    it excludes some convenient functionality, like automatic pagination."""
     exceptions = ['route53']
     if service not in exceptions:
         ensure(region, "'region' is a required parameter for all services except: %s" % (', '.join(exceptions),))
@@ -767,3 +763,24 @@ def project_data_for_stackname(stackname):
     if 'gcp-alt' in project_data and instance_id in project_data['gcp-alt']:
         project_data = project.set_project_alt(project_data, 'gcp', instance_id)
     return project_data
+
+
+#
+# AWS configuration drift
+#
+
+def drift_check(stackname):
+    "returns a list of resources that have drifted for the given `stackname`"
+    conn = boto_conn(stackname, 'cloudformation', client=True)
+
+    handle = conn.detect_stack_drift(StackName=stackname)
+    handle = handle['StackDriftDetectionId']
+
+    def is_detecting_drift():
+        job = conn.describe_stack_drift_detection_status(StackDriftDetectionId=handle)
+        return job.get('DetectionStatus') == 'DETECTION_IN_PROGRESS'
+    utils.call_while(is_detecting_drift, interval=2, update_msg='Waiting for drift results ...')
+
+    result = conn.describe_stack_resource_drifts(StackName=stackname)
+    drifted = [resource for resource in result["StackResourceDrifts"] if resource["StackResourceDriftStatus"] != "IN_SYNC"]
+    return drifted or None

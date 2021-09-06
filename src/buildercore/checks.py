@@ -1,6 +1,6 @@
 """a collection of predicates that return either True or False
 
-these should compliment not replicate any project configuration validation."""
+these should complement not replicate any project configuration validation."""
 
 from . import core, project
 from .project import repo

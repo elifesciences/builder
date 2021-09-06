@@ -1157,7 +1157,7 @@ def _clean_stdout(stdout):
     return stdout
 
 def init(stackname, context):
-    working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
+    working_dir = join(TERRAFORM_DIR, stackname) # "./.cfn/terraform/project--prod/"
     terraform = Terraform(working_dir=working_dir)
     with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
@@ -1280,17 +1280,20 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
-def _file_path_for_generation(stackname, name, extension='tf.json'):
-    "builds a path for a file to be placed in conf.TERRAFORM_DIR"
-    return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
-
 def _open(stackname, name, extension='tf.json', mode='r'):
-    "`open`s a file in the conf.TERRAFORM_DIR belonging to given `stackname` (./.cfn/terraform/$stackname/)"
+    "`open`s a file in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
+    # "./.cfn/journal--prod/generated.tf"
+    # "./.cfn/journal--prod/backend.tf"
+    # "./.cfn/journal--prod/providers.tf"
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
     if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
 
-    return open(_file_path_for_generation(stackname, name, extension), mode)
+    # "./.cfn/journal--prod/generated.tf.json"
+    # "./.cfn/journal--prod/backend.tf.json"
+    # "./.cfn/journal--prod/providers.tf.json"
+    path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
+    return open(path, mode)

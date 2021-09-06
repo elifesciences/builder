@@ -100,7 +100,7 @@ BUILDER_NON_INTERACTIVE = 'BUILDER_NON_INTERACTIVE' in os.environ and os.environ
 if 'BUILDER_TIMEOUT' in os.environ:
     BUILDER_TIMEOUT = int(os.environ['BUILDER_TIMEOUT'])
 else:
-    BUILDER_TIMEOUT = 600
+    BUILDER_TIMEOUT = 600 # seconds/10 minutes
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 

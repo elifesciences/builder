@@ -66,8 +66,9 @@ def load_context(stackname):
     # lsh@2021-06-22: broke the above logic into two parts so I can swap out s3 during testing
     contents = _load_context_from_s3(stackname)
 
-    # fallback: if no `aws` key is there, copy from legacy `project.aws` key
+    # fallback: if legacy 'project.aws' key exists, use that for 'aws'
     if contents.get('project', {}).get('aws'):
+        LOG.warn("stack context is using legacy 'project.aws' instead of just 'aws': %s" % stackname)
         contents['aws'] = contents['project']['aws']
     # end of fallback
 

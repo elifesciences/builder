@@ -110,9 +110,11 @@ def start(stackname):
     ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
     ec2_to_be_checked = ec2_to_be_started + _select_nodes_with_state('running', ec2_states)
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
+
     if ec2_to_be_started:
         LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
         _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_started).start()
+
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
         [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
@@ -334,13 +336,16 @@ def _update_dns_a_record(zone_name, name, value):
     if a_record:
         if a_record.resource_records == [value]:
             LOG.info("No need to update DNS record %s (already %s)", name, value)
-            return
         else:
             LOG.info("Updating DNS record %s to %s", name, value)
             zone.update_a(name, value)
     else:
-        LOG.warning("DNS record %s does not exist! Creating.", name)
-        LOG.info("(this is new behaviour as of 2021-08-02)")
+        # lsh@2021-08-02: record doesn't exist. This case almost never happens.
+        # It *did* happen when a journal instance was brought up using the `prod` config.
+        # It overwrote the DNS entries for `journal--prod` and then destroyed them when it rolled back.
+        # `lifecycle.update_dns` is now the recommended way to fix broken DNS.
+        LOG.warning("DNS record %s does not exist!", name)
+        LOG.info("Creating DNS record %s with %s", name, value)
         zone.add_a(name, value)
 
 def _delete_dns_a_record(zone_name, name):

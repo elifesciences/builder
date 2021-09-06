@@ -3,7 +3,7 @@ from buildercore import threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix
 import sys, os, traceback
 import utils
 
@@ -35,6 +35,7 @@ UNQUALIFIED_TASK_LIST = [
     # see: elife-jenkins-workflow-libs/vars/builderUpdate.groovy, elifeFormula.groovy
     cfn.update,
     cfn.update_infrastructure,
+    fix.fix_infrastructure,
     # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.update-journal-pr
     cfn.launch,
     cfn.ssh,

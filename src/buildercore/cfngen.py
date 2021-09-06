@@ -376,6 +376,7 @@ def build_context_cloudfront(pdata, context):
     _parameterize = parameterize(context)
 
     def build_subdomain(x):
+        # "{instance}--cdn", "elifesciences.org" => "foo--cdn.elifesciences.org"
         return complete_domain(_parameterize(x), context['domain'])
 
     context['cloudfront'] = False
@@ -511,6 +512,7 @@ def complete_domain(host, default_main):
     is_complete = host.count(".") > 0
     if is_complete:
         return host
+    # "foo--cdn" + "." + "elifesciences.org" => "foo--cdn.elifesciences.org"
     return host + '.' + default_main
 
 def build_context_subdomains(pdata, context):
@@ -613,10 +615,51 @@ def generate_stack(pname, **more_context):
 #
 
 
-# can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^AZ.+$', '^InstanceId.+$', '^PrivateIP.+$', '^DomainName$', '^IntDomainName$', '^RDSHost$', '^RDSPort$', '^DocumentDB.*$']
+# note: can't add ExtDNS as it changes dynamically when we start/stop instances and should not be touched after creation.
+UPDATABLE_TITLE_PATTERNS = [
+    '^CloudFront.*',
+    '^ElasticLoadBalancer.*',
+    '^EC2Instance.*',
+    '.*Bucket$',
+    '.*BucketPolicy',
+    '^StackSecurityGroup$',
+    '^ELBSecurityGroup$',
+    '^CnameDNS.+$',
+    'FastlyDNS\\d+$',
+    '^AttachedDB$',
+    '^AttachedDBSubnet$',
+    '^ExtraStorage.+$',
+    '^MountPoint.+$',
+    '^IntDNS.*$',
+    '^ElastiCache.*$',
+    '^AZ.+$',
+    '^InstanceId.+$',
+    '^PrivateIP.+$',
+    '^DomainName$',
+    '^IntDomainName$',
+    '^RDSHost$',
+    '^RDSPort$',
+    '^DocumentDB.*$'
+]
 
-REMOVABLE_TITLE_PATTERNS = ['^CloudFront.*', '^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtDNS1$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$', '^AttachedDB$', '^AttachedDBSubnet$', '^VPCSecurityGroup$', '^KeyName$']
+REMOVABLE_TITLE_PATTERNS = [
+    '^CloudFront.*',
+    '^CnameDNS\\d+$',
+    'FastlyDNS\\d+$',
+    '^ExtDNS$',
+    '^ExtDNS1$',
+    '^ExtraStorage.+$',
+    '^MountPoint.+$',
+    '^.+Queue$',
+    '^EC2Instance.+$',
+    '^IntDNS.*$',
+    '^ElastiCache.*$',
+    '^.+Topic$',
+    '^AttachedDB$',
+    '^AttachedDBSubnet$',
+    '^VPCSecurityGroup$',
+    '^KeyName$'
+]
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 # CloudFormation is nicely chopped up into:
@@ -775,7 +818,8 @@ def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)
     download_cloudformation_template(stackname)
     (pname, instance_id) = core.parse_stackname(stackname)
-    more_context['stackname'] = stackname # TODO: purge this crap
+    more_context['stackname'] = stackname
+
     # lsh@2019-09-27: usage of `instance_id` here is wrong. `instance_id` looks like "foobar" in "journal--foobar"
     # and is only correct when an alt-config matches. We typically have alt-configs for our common environments, like
     # ci, end2end, prod, continuumtest and has thus worked stably for a while now.
