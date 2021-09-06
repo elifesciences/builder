@@ -336,7 +336,6 @@ def _update_dns_a_record(zone_name, name, value):
     if a_record:
         if a_record.resource_records == [value]:
             LOG.info("No need to update DNS record %s (already %s)", name, value)
-            return
         else:
             LOG.info("Updating DNS record %s to %s", name, value)
             zone.update_a(name, value)

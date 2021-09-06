@@ -173,7 +173,7 @@ def format_problem(problem_triple):
 
 def print_problem_list(problem_list):
     title("report")
-    formatted_problem_list = ["%s. %s" % (i + 1, format_problem(problem)) for i, problem in enumerate(problem_list)]
+    formatted_problem_list = ["%s. %s" % (i + 1, format_problem(p)) for i, p in enumerate(problem_list)]
     print("\n\n".join(formatted_problem_list))
 
 @requires_aws_stack
