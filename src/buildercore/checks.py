@@ -26,11 +26,3 @@ def ensure_can_access_builder_private(pname):
 def ensure_stack_does_not_exist(stackname):
     if core.stack_is_active(stackname):
         raise StackAlreadyExistsProblem("%s is an active stack" % stackname, stackname)
-
-# ---
-
-def stack_exists(stackname):
-    "returns `True` if `stackname` exists."
-    region = core.find_region(stackname)
-    asl = core.active_stack_names(region)
-    return asl and stackname in asl

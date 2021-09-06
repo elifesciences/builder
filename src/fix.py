@@ -4,7 +4,9 @@ from decorators import requires_aws_stack
 from buildercore import core, cfngen, context_handler
 from buildercore.utils import json_dumps, subdict, lu, shallow_flatten
 import logging
+
 LOG = logging.getLogger(__name__)
+SEP = "%s\n" % ("-" * 20,)
 
 def success(msg=None):
     if msg:
@@ -17,39 +19,15 @@ def problem(description, solution, details=None):
 def title(t):
     print("## %s\n" % t)
 
-#
-
-
-SEP = "%s\n" % ("-" * 20,)
-
-
 def _has_nodes(context):
-    if not 'ec2' in context:
-        # very old stack, canned response
-        return True
+    if 'ec2' not in context:
+        LOG.warning("stack has broken context or is extremely old, not looking for ec2")
+        return False
     if isinstance(context['ec2'], bool):
         # no ec2 instances or an instance whose buildvars haven't been updated.
         # either way, the value here can be used as-is
         return context['ec2']
-
     return True
-
-def _has_elb(context):
-    return _has_nodes(context) and context['ec2']['cluster-size'] > 1
-
-# ---
-
-
-def ec2_node_summary(ec2):
-    data = ec2.meta.data
-    keys = [
-        'InstanceId',
-        'InstanceType',
-        'PublicIpAddress',
-        'PrivateIpAddress',
-        'State',
-    ]
-    return subdict(data, keys)
 
 # ---
 
@@ -77,6 +55,7 @@ def _stack_diff(stackname):
     return success()
 
 def _aws_drift(stackname):
+    "calls AWS and does a drift check for the given `stackname`. returns `True` if no drift detected."
     title('AWS drift check')
     drift_result = core.drift_check(stackname)
     if drift_result:
@@ -87,6 +66,7 @@ def _aws_drift(stackname):
     return success()
 
 def _dns_check(stackname, context):
+    "looks for all of the possible DNS entries for the given route and returns `True` if all are found"
     title('ec2 DNS')
     keys = [
         'ext_node_hostname', # "prod--lax--%s.elifesciences.org"
@@ -96,10 +76,10 @@ def _dns_check(stackname, context):
     domain_map = subdict(context, keys)
 
     # these don't appear in Route53
-    #domain_map['cloudfront'] = (context.get('cloudfront') or {}).get('subdomains', [])
+    # domain_map['cloudfront'] = (context.get('cloudfront') or {}).get('subdomains', []) # todo
     domain_map['fastly'] = (context.get('fastly') or {}).get('subdomains', [])
 
-    # this should only appear if ...
+    # `project_hostname` is only exactly what it is for prod stacks.
     if context['instance_id'] != 'prod':
         del domain_map['project_hostname']
 
@@ -115,6 +95,7 @@ def _dns_check(stackname, context):
         del domain_map['ext_node_hostname']
 
     def hosted_zone_id(dns):
+        "given a DNS entry, figures out which AWS Hosted Zone it belongs to"
         bits = dns.split('.')
         if len(bits) == 3:
             name = '.'.join(bits[1:]) + '.'
@@ -125,6 +106,8 @@ def _dns_check(stackname, context):
     record_map = {}
 
     def get_records(dns):
+        """fetches all of the DNS entries for the Hosted Zone the given `dns` entry belongs to.
+        results are cached in `record_map` to prevent multiple lookups."""
         zone_id = hosted_zone_id(dns)
         if zone_id in record_map:
             return record_map[zone_id]
@@ -134,12 +117,14 @@ def _dns_check(stackname, context):
         return results
 
     def find_records(dns):
+        "fetches all of the DNS records for the given `dns` record's Hosted Zone and returns the A or CNAME ones, if any"
         dnsd = dns + '.'
         records = get_records(dns)
         type_list = ['A', 'CNAME']
         return [r for r in records if r['Name'] == dnsd and r['Type'] in type_list]
 
     def check_record(label, dns):
+        "looks for the given `dns` entry and returns a `problem` if one is not found."
         print('* checking %r' % dns)
         records = find_records(dns)
         if not records:
@@ -209,16 +194,13 @@ def fix_infrastructure(stackname):
     # context should be available from disk after diff check
     context = context_handler._load_context_from_disk(stackname)
     has_ec2 = _has_nodes(context)
-    #has_elb = _has_elb(context)
 
     # the original problem was that another instance had 'stolen' the DNS records of the journal--prod instance.
     # update_infrastructure failed because nothing looked out of place.
     # so we check the *expected* DNS records against the actual ones.
     check(has_ec2 and _dns_check(stackname, context))
 
-    #check(has_ec2 and _nodes_running(stackname, context))
-
-    # todo: buildvars, ...
+    # todo: buildvars, ec2 nodes are all running, ...
 
     if problems:
         print_problem_list(problems)

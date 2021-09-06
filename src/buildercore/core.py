@@ -772,9 +772,6 @@ def project_data_for_stackname(stackname):
 def drift_check(stackname):
     "returns a list of resources that have drifted for the given `stackname`"
     conn = boto_conn(stackname, 'cloudformation', client=True)
-    # trigger a check to happen.
-    # this can take up to several minutes depending on the number of resources to check.
-    # https://boto3.amazonaws.com/v1/documentation/api/1.17.111/reference/services/cloudformation.html#CloudFormation.Client.detect_stack_drift
 
     handle = conn.detect_stack_drift(StackName=stackname)
     handle = handle['StackDriftDetectionId']
