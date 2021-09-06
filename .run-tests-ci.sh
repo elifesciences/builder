@@ -23,12 +23,12 @@ export BUILDER_NON_INTERACTIVE=1
 # `patched_pytest` is a copy of 'pytest' but with gevent monkey patching.
 # see `venv/bin/pytest` and `src/buildercore/threadbare/__init__.py`
 ./patched_pytest \
-    $coverage_options \
+    "$coverage_options" \
     --capture=no \
     --junitxml="build/pytest-$envname.xml" \
     src/tests src/integration_tests
 
-if [ ! -z "$coverage_options" ]; then
+if [ -n "$coverage_options" ]; then
     echo "Checking coverage report"
-    coverage report --fail-under=69
+    coverage report --fail-under=68
 fi
