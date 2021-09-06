@@ -51,7 +51,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-081401883653eb11a # GENERATED created from basebox--1804
+            ami: ami-0a87df60fcef35956 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -267,13 +267,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-081401883653eb11a # GENERATED created from basebox--1804
+                ami: ami-0a87df60fcef35956 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-081401883653eb11a # GENERATED created from basebox--1804
+                ami: ami-0a87df60fcef35956 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 18.04, same as default
@@ -748,9 +748,12 @@ elife-bot:
             "{instance}-elife-bot-decision-letter-input":
             "{instance}-elife-bot-decision-letter-output":
         sqs:
+            # gnott@2021-08: poa-incoming-queue was configured to avoid the rigidly timed PoA packaging process.
+            # now the S3 notifications go into the queue, and elife-bot reads the messages at four specific times daily
             "{instance}-poa-incoming-queue":
                 # no subscriptions to SNS
                 subscriptions: []
+            # gnott@2021-08: used for the RDS / ERA article pipeline to trigger depositing to Software Heritage.
             "{instance}-era-incoming-queue":
                 # no subscriptions to SNS
                 subscriptions: []
@@ -1232,7 +1235,6 @@ api-dummy:
             - 443
             - 80
     aws-alt:
-        # 2020-09-21: todo, remove when api-dummy--demo is removed
         demo:
             type: t2.micro
     vagrant:
@@ -1867,8 +1869,6 @@ fastly-logs:
 data-pipeline:
     description: Data consolidation project
     aws:
-        # unique because: 'gcp.bigquery.{instance}.project' value is static.
-        unique: true
         ec2: false
         s3:
             "{instance}-elife-data-pipeline":
@@ -2045,11 +2045,3 @@ accepted-submission-cleaning:
                 deletion-policy: retain
         sns:
             - elife-accepted-submission-cleaning-s3-events
-
-drift-demo:
-    description: do not merge, this exists only to test and fix drift detection
-    subdomain: dd # {instance}--dd.elifesciences.org
-    aws:
-        ports:
-            - 22
-    aws-alt: {}

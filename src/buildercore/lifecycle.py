@@ -328,17 +328,24 @@ def delete_dns(stackname):
         LOG.info("No internal full hostname to delete")
 
 def _update_dns_a_record(zone_name, name, value):
+    # "zone_name" => "elifesciences.org"
+    # "name" => "foo--journal.elifesciences.org"
+    # "value" => "1.2.3.4"
     zone = _r53_connection().get_zone(zone_name)
-    if zone.get_a(name) and zone.get_a(name).resource_records == [value]:
-        LOG.info("No need to update DNS record %s (already %s)", name, value)
-    elif zone.get_a(name):
-        LOG.info("Updating DNS record %s to %s", name, value)
-        zone.update_a(name, value)
+    a_record = zone.get_a(name)
+    if a_record:
+        if a_record.resource_records == [value]:
+            LOG.info("No need to update DNS record %s (already %s)", name, value)
+            return
+        else:
+            LOG.info("Updating DNS record %s to %s", name, value)
+            zone.update_a(name, value)
     else:
-        # lsh@2021-09-06: record doesn't exist. This case almost never happens.
+        # lsh@2021-08-02: record doesn't exist. This case almost never happens.
         # It *did* happen when a journal instance was brought up using the `prod` config.
         # It overwrote the DNS entries for `journal--prod` and then destroyed them when it rolled back.
         # `lifecycle.update_dns` is now the recommended way to fix broken DNS.
+        LOG.warning("DNS record %s does not exist!", name)
         LOG.info("Creating DNS record %s with %s", name, value)
         zone.add_a(name, value)
 
