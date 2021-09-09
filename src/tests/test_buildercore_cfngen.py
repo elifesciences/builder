@@ -3,7 +3,7 @@ from . import base
 from buildercore import core, cfngen, context_handler, cloudformation, utils
 import logging
 
-LOG = logging.getLogger(__name__)   
+LOG = logging.getLogger(__name__)
 
 def test_build_alb_context(test_projects):
     context = cfngen.build_context('project-with-alb', stackname='project-with-alb--test')

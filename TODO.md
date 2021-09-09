@@ -30,3 +30,5 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
     - project config speccing
     - rip out caching
         - parsing/merging/validating little yaml/json files should be *quick*
+* rename 'trop.py' to 'cloudformation.py'
+* rename 'cfngen.py' to 'build_context.py' or something similar

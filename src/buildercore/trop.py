@@ -1,9 +1,15 @@
-"""trop.py is a module that uses the Troposphere library to build up
-a AWS CloudFormation (CFN) template dynamically, using values from
-the projects file and a bunch of sensible defaults.
+"""`trop.py` is a module that uses the Troposphere library to build up
+an AWS CloudFormation template dynamically using values from the 
+'context', a dictionary of data built up in `cfngen.py` derived from
+the projects file (`projects/elife.yaml`):
 
-It's job is to return correct CloudFormation JSON given a dictionary of
-data called a `context`. The `context` is built up in `cfngen.py`."""
+   projects file -> context -> troposphere.py -> cloudformation json
+
+The non-AWS pipeline is similar:
+
+                            -> terraform.py   -> terraform json
+
+see also `terraform.py`"""
 
 from collections import OrderedDict
 from os.path import join
@@ -46,12 +52,17 @@ ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
 
 KEYPAIR = "KeyName"
 
+# --- utils, used by by more than one resource
+
 def _remove_if_none(data, key_list):
     """deletes a list of keys from given `data` if keyed value is `None`.
     Cloudformation may not accept `null` for a value but will accept the absence of it's key."""
     for key in key_list:
         if data[key] is None:
             del data[key]
+
+def _sanitize_title(string):
+    return "".join(map(str.capitalize, string.split("-")))
 
 def _convert_ports_to_dictionary(ports):
     if isinstance(ports, list):
@@ -105,45 +116,6 @@ def security_group(group_id, vpc_id, ingress_data, description=""):
         'SecurityGroupIngress': convert_ports_dict_to_troposphere(ingress_data),
     })
 
-def ec2_security(context):
-    ec2_port_data = context['ec2']['ports']
-    ec2_ports = _convert_ports_to_dictionary(ec2_port_data)
-    security_group_data = context['ec2']['security-group'].get('ports', {})
-    security_group_ports = _convert_ports_to_dictionary(security_group_data)
-    ingress = merge_ports(ec2_ports, security_group_ports)
-
-    return security_group(
-        SECURITY_GROUP_TITLE,
-        context['aws']['vpc-id'],
-        ingress
-    )
-
-def rds_security(context):
-    """returns a security group for an RDS instance.
-    This security group only allows access within the subnet, not because of the ip address range but
-    because this is dealt with in the subnet configuration"""
-    engine_ports = {
-        'postgres': 5432,
-        'mysql': 3306
-    }
-    ingress_data = [engine_ports[context['rds']['engine'].lower()]]
-    ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    return security_group("VPCSecurityGroup",
-                          context['aws']['vpc-id'],
-                          ingress_ports,
-                          "RDS DB security group")
-
-def docdb_security(context):
-    """returns a security group for a DocumentDB instance.
-    This security group only allows access within the subnet, not because of the ip address range but
-    because this is dealt with in the subnet configuration"""
-    ingress_data = [27017] # default MongoDB port
-    ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    return security_group("DocumentDBSecurityGroup",
-                          context['aws']['vpc-id'],
-                          ingress_ports,
-                          "DocumentDB security group")
-
 def _instance_tags(context, node=None):
     """returns a dictionary of common tags for an instance.
     Passing in the node's number will include node-specific tags."""
@@ -165,21 +137,69 @@ def instance_tags(context, node=None, single_tag_obj=False):
         return Tags(data)
     return [ec2.Tag(key, str(value)) for key, value in data.items()]
 
-def elb_tags(context):
-    tags = aws.generic_tags(context)
-    tags.update({
-        'Name': '%s--elb' % context['stackname'], # "journal--prod--elb"
-    })
-    return [ec2.Tag(key, value) for key, value in tags.items()]
-
 def mkoutput(title, desc, val):
     if isinstance(val, tuple):
         val = GetAtt(val[0], val[1])
     return Output(title, Description=desc, Value=val)
 
+def overridden_component(context, component, index, allowed, interesting=None):
+    "two-level merging of overrides into one of context's components"
+    if not interesting:
+        interesting = allowed
+    overrides = context[component].get('overrides', {}).get(index, {})
+    for element in overrides:
+        ensure(element in allowed, "`%s` override is not allowed for `%s` clusters" % (element, component))
+    overridden_context = deepcopy(context)
+    overridden_context[component].pop('overrides', None)
+    for key, value in overrides.items():
+        if key not in interesting:
+            continue
+        assert key in overridden_context[component], "Can't override `%s` as it's not already a key in `%s`" % (key, overridden_context[component].keys())
+        if isinstance(overridden_context[component][key], dict):
+            overridden_context[component][key].update(value)
+        else:
+            overridden_context[component][key] = value
+    return overridden_context[component]
+
+def _is_domain_2nd_level(hostname):
+    "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
+    return hostname.count(".") == 1
+
+def cnames(context):
+    "additional CNAME DNS entries pointing to full_hostname"
+    ensure(isstr(context['domain']), "A 'domain' must be specified for CNAMEs to be built")
+
+    def entry(hostname, i):
+        if _is_domain_2nd_level(hostname):
+            # must be an alias as it is a 2nd-level domain like elifesciences.net
+            hostedzone = hostname + "."
+            ensure(context['elb'], "2nd-level domains aliases are only supported for ELBs")
+            return route53.RecordSetType(
+                R53_CNAME_TITLE % (i + 1),
+                HostedZoneName=hostedzone,
+                Name=hostname,
+                Type="A",
+                AliasTarget=route53.AliasTarget(
+                    GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
+                    GetAtt(ELB_TITLE, "DNSName")
+                )
+            )
+        hostedzone = context['domain'] + "."
+        return route53.RecordSetType(
+            R53_CNAME_TITLE % (i + 1),
+            HostedZoneName=hostedzone,
+            Name=hostname,
+            Type="CNAME",
+            TTL="60",
+            ResourceRecords=[context['full_hostname']],
+        )
+    return [entry(hostname, i) for i, hostname in enumerate(context['subdomains'])]
+
 #
+# render_* functions
 #
-#
+
+# --- ec2
 
 def build_vars(context, node):
     """returns a subset of given context data with some extra node information
@@ -241,79 +261,6 @@ echo %s > /etc/build-vars.json.b64
         }]
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
-def rdsdbparams(context, template):
-    if not context.get('rds_params'):
-        return None
-    lu = partial(utils.lu, context)
-    engine = lu('rds.engine')
-    version = str(lu('rds.version'))
-    name = RDS_DB_PG
-    dbpg = rds.DBParameterGroup(name, **{
-        'Family': "%s%s" % (engine.lower(), version), # "mysql5.6", "postgres9.4"
-        'Description': '%s (%s) custom parameters' % (context['project_name'], context['instance_id']),
-        'Parameters': context['rds_params']
-    })
-    template.add_resource(dbpg)
-    return Ref(dbpg)
-
-def render_rds(context, template):
-    lu = partial(utils.lu, context)
-
-    # db subnet *group*
-    # it's expected the db subnets themselves are already created within the VPC
-    # you just need to plug their ids into the project file.
-    # not really sure if a subnet group is anything more meaningful than 'a collection of subnet ids'
-    rsn = rds.DBSubnetGroup(DBSUBNETGROUP_TITLE, **{
-        "DBSubnetGroupDescription": "a group of subnets for this rds instance.",
-        "SubnetIds": lu('rds.subnets'),
-    })
-
-    # rds security group. uses the ec2 security group
-    vpcdbsg = rds_security(context)
-
-    # rds parameter group. None or a Ref
-    param_group_ref = rdsdbparams(context, template)
-
-    tags = instance_tags(context)
-    # db instance
-    data = {
-        'DBName': lu('rds_dbname'), # dbname generated from instance id.
-        'DBInstanceIdentifier': lu('rds_instance_id'), # ll: 'lax-2015-12-31' from 'lax--2015-12-31'
-        'PubliclyAccessible': False,
-        'AllocatedStorage': lu('rds.storage'),
-        'StorageType': lu('rds.storage-type'),
-        'MultiAZ': lu('rds.multi-az'),
-        'VPCSecurityGroups': [Ref(vpcdbsg)],
-        'DBSubnetGroupName': Ref(rsn),
-        'DBInstanceClass': lu('rds.type'),
-        'Engine': lu('rds.engine'),
-        # something is converting this value to an int from a float :(
-        "EngineVersion": str(lu('rds.version')), # 'defaults.aws.rds.storage')),
-        'MasterUsername': lu('rds_username'), # pillar data is now UNavailable
-        'MasterUserPassword': lu('rds_password'),
-        'BackupRetentionPeriod': lu('rds.backup-retention'),
-        'DeletionPolicy': lu('rds.deletion-policy'),
-        "Tags": tags,
-        "AllowMajorVersionUpgrade": lu('rds.allow-major-version-upgrade'),
-        "AutoMinorVersionUpgrade": True, # default
-    }
-
-    if param_group_ref:
-        data['DBParameterGroupName'] = param_group_ref
-
-    if lu('rds.encryption'):
-        data['StorageEncrypted'] = True
-        data['KmsKeyId'] = lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else ''
-
-    rdbi = rds.DBInstance(RDS_TITLE, **data)
-    lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
-
-    outputs = [
-        mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
-        mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),
-    ]
-    lmap(template.add_output, outputs)
-
 def render_ext_volume(context, context_ext, template, actual_ec2_instances, node=1):
     vtype = context_ext.get('type', 'standard') # todo: no default values here, push this into cfngen.py
 
@@ -338,6 +285,17 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
             "Device": context_ext.get('device'),
         }
         template.add_resource(ec2.VolumeAttachment(EXT_MP_TITLE % node, **args))
+
+def render_ext(context, template, cluster_size, actual_ec2_instances):
+    # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
+    context['ec2']['ext'] = context['ext']
+    for node in range(1, cluster_size + 1):
+        overrides = context['ec2'].get('overrides', {}).get(node, {})
+        overridden_context = deepcopy(context)
+        overridden_context['ext'].update(overrides.get('ext', {}))
+        # TODO: extract `allowed` variable
+        node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
+        render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
 
 def external_dns_ec2_single(context):
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -367,101 +325,18 @@ def internal_dns_ec2_single(context):
     )
     return dns_record
 
-def external_dns_elb(context):
-    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
-    # The DNS name of an existing Amazon Route 53 hosted zone
-    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
-    dns_record = route53.RecordSetType(
-        R53_EXT_TITLE,
-        HostedZoneName=hostedzone,
-        Comment="External DNS record for ELB",
-        Name=context['full_hostname'],
-        Type="A",
-        AliasTarget=route53.AliasTarget(
-            GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
-            GetAtt(ELB_TITLE, "DNSName")
-        )
+def ec2_security(context):
+    ec2_port_data = context['ec2']['ports']
+    ec2_ports = _convert_ports_to_dictionary(ec2_port_data)
+    security_group_data = context['ec2']['security-group'].get('ports', {})
+    security_group_ports = _convert_ports_to_dictionary(security_group_data)
+    ingress = merge_ports(ec2_ports, security_group_ports)
+
+    return security_group(
+        SECURITY_GROUP_TITLE,
+        context['aws']['vpc-id'],
+        ingress
     )
-    return dns_record
-
-def internal_dns_elb(context):
-    # The DNS name of an existing Amazon Route 53 hosted zone
-    hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
-    dns_record = route53.RecordSetType(
-        R53_INT_TITLE,
-        HostedZoneName=hostedzone,
-        Comment="Internal DNS record for ELB",
-        Name=context['int_full_hostname'],
-        Type="A",
-        AliasTarget=route53.AliasTarget(
-            GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
-            GetAtt(ELB_TITLE, "DNSName")
-        )
-    )
-    return dns_record
-
-def external_dns_cloudfront(context):
-    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
-    dns_records = []
-    i = 1
-    for cdn_hostname in context['cloudfront']['subdomains']:
-        if _is_domain_2nd_level(cdn_hostname):
-            hostedzone = cdn_hostname + "."
-        else:
-            hostedzone = context['domain'] + "."
-        dns_records.append(route53.RecordSetType(
-            R53_CDN_TITLE % i,
-            HostedZoneName=hostedzone,
-            Comment="External DNS record for Cloudfront distribution",
-            Name=cdn_hostname + ".",
-            Type="A",
-            AliasTarget=route53.AliasTarget(
-                CLOUDFRONT_HOSTED_ZONE_ID,
-                GetAtt(CLOUDFRONT_TITLE, "DomainName")
-            )
-        ))
-        i = i + 1
-
-    return dns_records
-
-def external_dns_fastly(context):
-    "a Fastly CDN requires additional CNAME DNS entries pointing at it"
-    ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built: %s" % context)
-
-    # may be used to point to TLS servers
-
-    def entry(hostname, i):
-        if _is_domain_2nd_level(hostname):
-            hostedzone = hostname + "."
-            ip_addresses = context['fastly']['dns']['a']
-            return route53.RecordSetType(
-                R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
-                HostedZoneName=hostedzone,
-                Name=hostname,
-                Type="A",
-                TTL="60",
-                ResourceRecords=ip_addresses,
-            )
-            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
-
-        hostedzone = context['domain'] + "."
-        cname = context['fastly']['dns']['cname']
-        return route53.RecordSetType(
-            R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
-            HostedZoneName=hostedzone,
-            Name=hostname,
-            Type="CNAME",
-            TTL="60",
-            ResourceRecords=[cname],
-        )
-    return [entry(hostname, i) for i, hostname in enumerate(context['fastly']['subdomains'])]
-
-#
-# render_* funcs
-#
-
-def _sanitize_title(string):
-    return "".join(map(str.capitalize, string.split("-")))
 
 def render_ec2(context, template):
     # all ec2 nodes in a cluster share the same security group
@@ -547,6 +422,98 @@ def render_ec2_dns(context, template):
         )
         template.add_resource(dns_record)
 
+# --- rds
+
+def rdsdbparams(context, template):
+    if not context.get('rds_params'):
+        return None
+    lu = partial(utils.lu, context)
+    engine = lu('rds.engine')
+    version = str(lu('rds.version'))
+    name = RDS_DB_PG
+    dbpg = rds.DBParameterGroup(name, **{
+        'Family': "%s%s" % (engine.lower(), version), # "mysql5.6", "postgres9.4"
+        'Description': '%s (%s) custom parameters' % (context['project_name'], context['instance_id']),
+        'Parameters': context['rds_params']
+    })
+    template.add_resource(dbpg)
+    return Ref(dbpg)
+
+def rds_security(context):
+    """returns a security group for an RDS instance.
+    This security group only allows access within the subnet, not because of the ip address range but
+    because this is dealt with in the subnet configuration"""
+    engine_ports = {
+        'postgres': 5432,
+        'mysql': 3306
+    }
+    ingress_data = [engine_ports[context['rds']['engine'].lower()]]
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
+    return security_group("VPCSecurityGroup",
+                          context['aws']['vpc-id'],
+                          ingress_ports,
+                          "RDS DB security group")
+
+def render_rds(context, template):
+    lu = partial(utils.lu, context)
+
+    # db subnet *group*
+    # it's expected the db subnets themselves are already created within the VPC
+    # you just need to plug their ids into the project file.
+    # not really sure if a subnet group is anything more meaningful than 'a collection of subnet ids'
+    rsn = rds.DBSubnetGroup(DBSUBNETGROUP_TITLE, **{
+        "DBSubnetGroupDescription": "a group of subnets for this rds instance.",
+        "SubnetIds": lu('rds.subnets'),
+    })
+
+    # rds security group. uses the ec2 security group
+    vpcdbsg = rds_security(context)
+
+    # rds parameter group. None or a Ref
+    param_group_ref = rdsdbparams(context, template)
+
+    tags = instance_tags(context)
+    # db instance
+    data = {
+        'DBName': lu('rds_dbname'), # dbname generated from instance id.
+        'DBInstanceIdentifier': lu('rds_instance_id'), # ll: 'lax-2015-12-31' from 'lax--2015-12-31'
+        'PubliclyAccessible': False,
+        'AllocatedStorage': lu('rds.storage'),
+        'StorageType': lu('rds.storage-type'),
+        'MultiAZ': lu('rds.multi-az'),
+        'VPCSecurityGroups': [Ref(vpcdbsg)],
+        'DBSubnetGroupName': Ref(rsn),
+        'DBInstanceClass': lu('rds.type'),
+        'Engine': lu('rds.engine'),
+        # something is converting this value to an int from a float :(
+        "EngineVersion": str(lu('rds.version')), # 'defaults.aws.rds.storage')),
+        'MasterUsername': lu('rds_username'), # pillar data is now UNavailable
+        'MasterUserPassword': lu('rds_password'),
+        'BackupRetentionPeriod': lu('rds.backup-retention'),
+        'DeletionPolicy': lu('rds.deletion-policy'),
+        "Tags": tags,
+        "AllowMajorVersionUpgrade": lu('rds.allow-major-version-upgrade'),
+        "AutoMinorVersionUpgrade": True, # default
+    }
+
+    if param_group_ref:
+        data['DBParameterGroupName'] = param_group_ref
+
+    if lu('rds.encryption'):
+        data['StorageEncrypted'] = True
+        data['KmsKeyId'] = lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else ''
+
+    rdbi = rds.DBInstance(RDS_TITLE, **data)
+    lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
+
+    outputs = [
+        mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
+        mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),
+    ]
+    lmap(template.add_output, outputs)
+
+# --- sqs/sns
+
 def render_sns(context, template):
     for topic_name in context['sns']:
         topic = template.add_resource(sns.Topic(
@@ -568,6 +535,8 @@ def render_sqs(context, template):
             _sanitize_title(queue_name) + "QueueArn",
             Value=GetAtt(queue, "Arn")
         ))
+
+# --- s3
 
 def render_s3(context, template):
     for bucket_name in context['s3']:
@@ -637,10 +606,52 @@ def _bucket_kms_encryption(key_arn):
         ]
     )
 
+# --- elb
+
+def external_dns_elb(context):
+    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_EXT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment="External DNS record for ELB",
+        Name=context['full_hostname'],
+        Type="A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ELB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
+
+def internal_dns_elb(context):
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_INT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment="Internal DNS record for ELB",
+        Name=context['int_full_hostname'],
+        Type="A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ELB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
+
 def _elb_protocols(context):
     if isstr(context['elb']['protocol']):
         return [context['elb']['protocol']]
     return context['elb']['protocol']
+
+def elb_tags(context):
+    tags = aws.generic_tags(context)
+    tags.update({
+        'Name': '%s--elb' % context['stackname'], # "journal--prod--elb"
+    })
+    return [ec2.Tag(key, value) for key, value in tags.items()]
 
 def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
@@ -763,6 +774,32 @@ def _elb_healthcheck_target(context):
     if context['elb']['healthcheck']['protocol'] == 'http':
         return 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
     raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
+
+# --- cloudfront
+
+def external_dns_cloudfront(context):
+    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    dns_records = []
+    i = 1
+    for cdn_hostname in context['cloudfront']['subdomains']:
+        if _is_domain_2nd_level(cdn_hostname):
+            hostedzone = cdn_hostname + "."
+        else:
+            hostedzone = context['domain'] + "."
+        dns_records.append(route53.RecordSetType(
+            R53_CDN_TITLE % i,
+            HostedZoneName=hostedzone,
+            Comment="External DNS record for Cloudfront distribution",
+            Name=cdn_hostname + ".",
+            Type="A",
+            AliasTarget=route53.AliasTarget(
+                CLOUDFRONT_HOSTED_ZONE_ID,
+                GetAtt(CLOUDFRONT_TITLE, "DomainName")
+            )
+        ))
+        i = i + 1
+
+    return dns_records
 
 def render_cloudfront(context, template, origin_hostname):
     if not context['cloudfront']['origins']:
@@ -892,10 +929,48 @@ def render_cloudfront(context, template, origin_hostname):
     for dns in external_dns_cloudfront(context):
         template.add_resource(dns)
 
+
+# --- fastly
+
+def external_dns_fastly(context):
+    "a Fastly CDN requires additional CNAME DNS entries pointing at it"
+    ensure(isinstance(context['domain'], str), "A 'domain' must be specified for CNAMEs to be built: %s" % context)
+
+    # may be used to point to TLS servers
+
+    def entry(hostname, i):
+        if _is_domain_2nd_level(hostname):
+            hostedzone = hostname + "."
+            ip_addresses = context['fastly']['dns']['a']
+            return route53.RecordSetType(
+                R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
+                HostedZoneName=hostedzone,
+                Name=hostname,
+                Type="A",
+                TTL="60",
+                ResourceRecords=ip_addresses,
+            )
+            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
+
+        hostedzone = context['domain'] + "."
+        cname = context['fastly']['dns']['cname']
+        return route53.RecordSetType(
+            R53_FASTLY_TITLE % (i + 1), # expecting more than one entry (aliases), so numbering them immediately
+            HostedZoneName=hostedzone,
+            Name=hostname,
+            Type="CNAME",
+            TTL="60",
+            ResourceRecords=[cname],
+        )
+    return [entry(hostname, i) for i, hostname in enumerate(context['fastly']['subdomains'])]
+
+
 def render_fastly(context, template):
     "WARNING: only creates Route53 DNS entries, delegating the rest of the setup to Terraform"
     for dns in external_dns_fastly(context):
         template.add_resource(dns)
+
+# --- elasticache
 
 def elasticache_security_group(context):
     "returns a security group for the ElastiCache instances. this security group only allows access within the VPC"
@@ -980,77 +1055,18 @@ def render_elasticache(context, template):
     if default_parameter_group_use:
         template.add_resource(parameter_group)
 
-def render_ext(context, template, cluster_size, actual_ec2_instances):
-    # backward compatibility: ext is still specified outside of ec2 rather than as a sub-key
-    context['ec2']['ext'] = context['ext']
-    for node in range(1, cluster_size + 1):
-        overrides = context['ec2'].get('overrides', {}).get(node, {})
-        overridden_context = deepcopy(context)
-        overridden_context['ext'].update(overrides.get('ext', {}))
-        # TODO: extract `allowed` variable
-        node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
-        render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
+# --- docdb
 
-def add_outputs(context, template):
-    if R53_EXT_TITLE in template.resources.keys():
-        template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
-
-    if R53_INT_TITLE in template.resources.keys():
-        template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
-
-
-def cnames(context):
-    "additional CNAME DNS entries pointing to full_hostname"
-    ensure(isstr(context['domain']), "A 'domain' must be specified for CNAMEs to be built")
-
-    def entry(hostname, i):
-        if _is_domain_2nd_level(hostname):
-            # must be an alias as it is a 2nd-level domain like elifesciences.net
-            hostedzone = hostname + "."
-            ensure(context['elb'], "2nd-level domains aliases are only supported for ELBs")
-            return route53.RecordSetType(
-                R53_CNAME_TITLE % (i + 1),
-                HostedZoneName=hostedzone,
-                Name=hostname,
-                Type="A",
-                AliasTarget=route53.AliasTarget(
-                    GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
-                    GetAtt(ELB_TITLE, "DNSName")
-                )
-            )
-        hostedzone = context['domain'] + "."
-        return route53.RecordSetType(
-            R53_CNAME_TITLE % (i + 1),
-            HostedZoneName=hostedzone,
-            Name=hostname,
-            Type="CNAME",
-            TTL="60",
-            ResourceRecords=[context['full_hostname']],
-        )
-    return [entry(hostname, i) for i, hostname in enumerate(context['subdomains'])]
-
-def _is_domain_2nd_level(hostname):
-    "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
-    return hostname.count(".") == 1
-
-def overridden_component(context, component, index, allowed, interesting=None):
-    "two-level merging of overrides into one of context's components"
-    if not interesting:
-        interesting = allowed
-    overrides = context[component].get('overrides', {}).get(index, {})
-    for element in overrides:
-        ensure(element in allowed, "`%s` override is not allowed for `%s` clusters" % (element, component))
-    overridden_context = deepcopy(context)
-    overridden_context[component].pop('overrides', None)
-    for key, value in overrides.items():
-        if key not in interesting:
-            continue
-        assert key in overridden_context[component], "Can't override `%s` as it's not already a key in `%s`" % (key, overridden_context[component].keys())
-        if isinstance(overridden_context[component][key], dict):
-            overridden_context[component][key].update(value)
-        else:
-            overridden_context[component][key] = value
-    return overridden_context[component]
+def docdb_security(context):
+    """returns a security group for a DocumentDB instance.
+    This security group only allows access within the subnet, not because of the ip address range but
+    because this is dealt with in the subnet configuration"""
+    ingress_data = [27017] # default MongoDB port
+    ingress_ports = _convert_ports_to_dictionary(ingress_data)
+    return security_group("DocumentDBSecurityGroup",
+                          context['aws']['vpc-id'],
+                          ingress_ports,
+                          "DocumentDB security group")
 
 def render_docdb(context, template):
     # create cluster
@@ -1088,6 +1104,15 @@ def render_docdb(context, template):
         })
     for i in range(1, context['docdb']['cluster-size'] + 1):
         template.add_resource(docdb_node(i))
+
+# --- todo: revisit this, seems to be part of rds+ec2
+
+def add_outputs(context, template):
+    if R53_EXT_TITLE in template.resources.keys():
+        template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
+
+    if R53_INT_TITLE in template.resources.keys():
+        template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
 #
 #

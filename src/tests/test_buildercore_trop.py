@@ -105,7 +105,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertTrue(db['AllowMajorVersionUpgrade'])
 
     # --- sns/sqs
-        
+
     def test_sns_template(self):
         extra = {
             'stackname': 'just-some-sns--prod',
@@ -594,7 +594,7 @@ class TestBuildercoreTrop(base.BaseCase):
         )
 
     # --- dns
-    
+
     def test_additional_cnames(self):
         extra = {
             'stackname': 'dummy2--prod',
@@ -617,7 +617,7 @@ class TestBuildercoreTrop(base.BaseCase):
         )
 
     # --- s3
-        
+
     def test_s3_template(self):
         extra = {
             'stackname': 'project-with-s3--prod',
