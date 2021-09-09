@@ -30,5 +30,5 @@ export BUILDER_NON_INTERACTIVE=1
 
 if [ -n "$coverage_options" ]; then
     echo "Checking coverage report"
-    coverage report --fail-under=68
+    coverage report --fail-under=65
 fi
