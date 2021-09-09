@@ -1,6 +1,5 @@
 #!/bin/bash
-
-set -e # everything must pass
+set -e
 
 envname="${1}"
 
@@ -24,6 +23,7 @@ export BUILDER_NON_INTERACTIVE=1
     src/tests src/integration_tests
 
 echo "Checking coverage report"
-coverage report --fail-under=70 || (
-    echo "FAILED coverage report, but exiting successfully with this warning."
+threshold=70
+coverage report --fail-under="$threshold" || (
+    echo "FAILED coverage test of $threshold%, but exiting successfully with this warning."
 )
