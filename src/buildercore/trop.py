@@ -3,7 +3,7 @@ a AWS CloudFormation (CFN) template dynamically, using values from
 the projects file and a bunch of sensible defaults.
 
 It's job is to return correct CloudFormation JSON given a dictionary of
-data called a `context`. The `context` is built in `cfngen.py`."""
+data called a `context`. The `context` is built up in `cfngen.py`."""
 
 from collections import OrderedDict
 from os.path import join

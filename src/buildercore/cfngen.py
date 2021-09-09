@@ -118,6 +118,7 @@ def build_context(pname, **more_context):
         's3': {},
         'eks': False,
         'elb': False,
+        'alb': False,
         'sns': [],
         'sqs': {},
         'ext': False,
@@ -137,6 +138,7 @@ def build_context(pname, **more_context):
         build_context_aws,
         build_context_ec2,
         build_context_elb,
+        build_context_alb,
         build_context_cloudfront,
         build_context_sns_sqs,
         build_context_s3,
@@ -365,6 +367,17 @@ def build_context_elb(pdata, context):
         if isinstance(pdata['aws']['elb'], dict):
             context['elb'] = pdata['aws']['elb']
         context['elb'].update({
+            'subnets': [
+                pdata['aws']['subnet-id'],
+                pdata['aws']['redundant-subnet-id']
+            ],
+        })
+    return context
+
+def build_context_alb(pdata, context):
+    if 'alb' in pdata['aws'] and pdata['aws']['alb'] is not False:
+        context['alb'] = pdata['aws']['alb']
+        context['alb'].update({
             'subnets': [
                 pdata['aws']['subnet-id'],
                 pdata['aws']['redundant-subnet-id']

@@ -92,6 +92,22 @@ defaults:
             #type: gp2 # standard|gp2|io1|sc1 # todo: enable
             size: 10 # GB
             device: /dev/sdh
+        alb:
+            # elb defaults only used if an 'elb' section present in project
+            stickiness: false
+            protocol: http
+            additional_listeners: {}
+            idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
+            certificate: arn:aws:iam::...:...
+            healthcheck:
+                protocol: http
+                port: 80
+                path: /ping
+                timeout: 4
+                interval: 5
+                unhealthy_threshold: 2
+                healthy_threshold: 2
         elb:
             # elb defaults only used if an 'elb' section present in project
             stickiness: false
@@ -862,3 +878,13 @@ project-with-unique-alt-config:
         prod:
             unique: true
 
+project-with-alb:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: project-with-alb
+    aws:
+        ports:
+            - 80
+        ec2:
+            cluster-size: 3
+        alb: 
+            protocol: http

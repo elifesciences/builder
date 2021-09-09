@@ -112,8 +112,27 @@ defaults:
             type: gp2 # standard|gp2|io1|sc1
             size: 10 # GB
             device: /dev/sdh
+
+        # alb default only used if an 'alb' section present in project
+        # also known as 'Elastic Load Balancer v2'
+        alb:
+            stickiness: false
+            protocol: http
+            additional_listeners: {}
+            idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
+            healthcheck:
+                protocol: http
+                port: 80
+                path: /ping
+                timeout: 4
+                interval: 5
+                unhealthy_threshold: 2
+                healthy_threshold: 2
+
+        # elb defaults only used if an 'elb' section present in project
         elb:
-            # elb defaults only used if an 'elb' section present in project
             stickiness: false
             protocol: http
             additional_listeners: {}
