@@ -24,7 +24,7 @@ else
     python=$(which python3.8 python3.6 python3 | head -n 1)
 fi
 
-py=${python##*/} # ll: python3.6
+py=${python##*/} # "python3.6"
 echo "using $py"
 
 if [ ! -e "venv/bin/$py" ]; then
