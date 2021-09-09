@@ -41,7 +41,10 @@ pytest = "~=3.5"
 pytest-cov = "==2.5.*"
 pytest-forked = "~=0.2"
 # drops support for python2 in 6.0
-coverage = "~=4.5"
+#coverage = "~=4.5"
+# py2 tests are measured for coverage and newer versions are failing to collect or accumulate data (for some reason).
+# https://coverage.readthedocs.io/en/coverage-5.5/changes.html
+coverage = "==4.3.4"
 # remove along with python2
 mock = "~=2.0"
 unittest2 = "~=1.1"
