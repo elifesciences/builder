@@ -885,6 +885,8 @@ project-with-alb:
         ports:
             - 80
         ec2:
-            cluster-size: 3
+            cluster-size: 2
         alb: 
-            protocol: http
+            protocol: 
+                - http
+                - https

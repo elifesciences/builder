@@ -1,5 +1,5 @@
 """`trop.py` is a module that uses the Troposphere library to build up
-an AWS CloudFormation template dynamically using values from the 
+an AWS CloudFormation template dynamically using values from the
 'context', a dictionary of data built up in `cfngen.py` derived from
 the projects file (`projects/elife.yaml`):
 
@@ -16,7 +16,7 @@ from os.path import join
 from . import config, utils, bvars, aws
 from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb
-from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticache
+from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
 import logging
@@ -49,6 +49,7 @@ ELASTICACHE_TITLE = 'ElastiCache%s'
 ELASTICACHE_SECURITY_GROUP_TITLE = 'ElastiCacheSecurityGroup'
 ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
+ALB_TITLE = 'ElasticLoadBalancerV2'
 
 KEYPAIR = "KeyName"
 
@@ -373,8 +374,9 @@ def render_ec2(context, template):
     return ec2_instances
 
 def render_ec2_dns(context, template):
+    lb = context.get('elb') or context.get('alb')
     # single ec2 node may get an external hostname
-    if context['full_hostname'] and not context['elb']:
+    if context['full_hostname'] and not lb:
         ensure(context['ec2']['cluster-size'] <= 1,
                "If there is no load balancer, multiple EC2 instances cannot be assigned a single DNS entry")
 
@@ -383,7 +385,7 @@ def render_ec2_dns(context, template):
             [template.add_resource(cname) for cname in cnames(context)]
 
     # single ec2 node may get an internal hostname
-    if context['int_full_hostname'] and not context['elb']:
+    if context['int_full_hostname'] and not lb:
         ensure(context['ec2']['cluster-size'] == 1,
                "If there is no load balancer, only a single EC2 instance can be assigned a DNS entry")
         template.add_resource(internal_dns_ec2_single(context))
@@ -641,17 +643,19 @@ def internal_dns_elb(context):
     )
     return dns_record
 
-def _elb_protocols(context):
-    if isstr(context['elb']['protocol']):
-        return [context['elb']['protocol']]
-    return context['elb']['protocol']
-
 def elb_tags(context):
     tags = aws.generic_tags(context)
     tags.update({
         'Name': '%s--elb' % context['stackname'], # "journal--prod--elb"
     })
     return [ec2.Tag(key, value) for key, value in tags.items()]
+
+def _elb_healthcheck_target(context):
+    if context['elb']['healthcheck']['protocol'] == 'tcp':
+        return 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
+    if context['elb']['healthcheck']['protocol'] == 'http':
+        return 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
+    raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
@@ -674,7 +678,9 @@ def render_elb(context, template, ec2_instances):
         else:
             raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
 
-    protocols = _elb_protocols(context)
+    protocols = context['elb']['protocol']
+    if isstr(protocols):
+        protocols = [protocols]
 
     listeners = []
     elb_ports = []
@@ -768,12 +774,104 @@ def render_elb(context, template, ec2_instances):
     if context['full_hostname']:
         [template.add_resource(cname) for cname in cnames(context)]
 
-def _elb_healthcheck_target(context):
-    if context['elb']['healthcheck']['protocol'] == 'tcp':
-        return 'TCP:%d' % context['elb']['healthcheck'].get('port', 80)
-    if context['elb']['healthcheck']['protocol'] == 'http':
-        return 'HTTP:%s%s' % (context['elb']['healthcheck']['port'], context['elb']['healthcheck']['path'])
-    raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
+# --- alb
+
+def render_alb(context, template, ec2_instances):
+    """
+
+    https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.elasticloadbalancingv2
+    """
+
+    # -- load balancer
+
+    lb_attrs = {
+        'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
+    }
+    lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
+    lb = alb.LoadBalancer(
+        ALB_TITLE,
+        Subnets=context['alb']['subnets'],
+        # SecurityGroups=, # TODO
+        Type='application', # default, could also be 'network', superceding ELB logic
+        # Tags=[], # TODO
+        LoadBalancerAttributes=lb_attrs,
+    )
+
+    protocol_map = {
+        'http': {'protocol': 'HTTP',
+                 'port': '80'},
+        'https': {'protocol': 'HTTPS',
+                  'port': '443'},
+        # not used at elife
+        # 'tcp': {'protocol': 'TCP',
+        #        'port': str(protocol)}
+    }
+
+    # -- target groups, also one for each protocol+port pair
+
+    def healthcheck(protocol):
+        if protocol != context['alb']['healthcheck']['protocol']:
+            return {}
+        return {
+            'HealthCheckEnabled': True,
+            "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
+            "HealthCheckPath": context['alb']['healthcheck']['path'],
+            "HealthCheckPort": context['alb']['healthcheck']['port'],
+            "HealthCheckProtocol": context['alb']['healthcheck']['protocol'],
+            "HealthCheckTimeoutSeconds": context['alb']['healthcheck']['timeout'],
+            "HealthyThresholdCount": context['alb']['healthcheck']['healthy_threshold'],
+            "UnhealthyThresholdCount": context['alb']['healthcheck']['unhealthy_threshold'],
+        }
+
+    def target_group_id(protocol):
+        return ALB_TITLE + 'TargetGroup' + str(protocol).title()
+
+    _lb_target_group_list = []
+    for protocol in context['alb']['protocol']:
+        _lb_target_group = {
+            'Protocol': protocol_map[protocol]['protocol'],
+            'Port': protocol_map[protocol]['port'],
+            'Targets': [], # TODO
+            'VpcId': context['aws']['vpc-id'],
+        }
+        # if protocol == 'https':
+        #    _lb_target_group['ProtocolVersion'] = 'HTTP2'
+        _lb_target_group.update(healthcheck(protocol))
+        _lb_target_group_list.append(
+            alb.TargetGroup(
+                # "ElasticLoadBalancerV2TargetGroupHttps"
+                target_group_id(protocol),
+                **_lb_target_group))
+
+    # -- listeners, one for each protocol+port pair
+    #    listeners need to know about target groups
+
+    _lb_listener_list = []
+    for protocol in context['alb']['protocol']:
+        _lb_listener_action = alb.Action(
+            Type='forward', # or 'redirect' ? not sure
+            TargetGroupArn=GetAtt(target_group_id(protocol), 'Arn')
+        )
+
+        _lb_listener_list.append(alb.Listener(
+            # "ElasticLoadBalancerV2ListenerHttps"
+            ALB_TITLE + 'Listener' + str(protocol).title(),
+            LoadBalancerArn=GetAtt(lb, 'Arn'),
+            DefaultActions=[_lb_listener_action],
+            Port=protocol_map[protocol]['port'],
+            Protocol=protocol_map[protocol]['protocol']
+        ))
+
+    # ---
+
+    resources = [lb]
+    resources.extend(_lb_listener_list)
+    resources.extend(_lb_target_group_list)
+    [template.add_resource(resource) for resource in resources]
+
+    # --- outputs (TODO)
+
+    return context
 
 # --- cloudfront
 
@@ -1124,8 +1222,8 @@ def render(context):
     ec2_instances = render_ec2(context, template) if context['ec2'] else {}
     cluster_size = context['ec2']['cluster-size'] if context['ec2'] else 0
 
-    # order is probably important.
-    # each render function is modifying the state of a single Template object.
+    # order is possibly important as each render function is modifying
+    # the state of a single `Template` object.
     renderer_list = [
         # ('ec2', render_ec2), # called above. other renderers depend on it's result
         ('rds', render_rds),
@@ -1137,6 +1235,7 @@ def render(context):
         # hostname is assigned to an ELB, which has priority over
         # N>=1 EC2 instances
         ('elb', render_elb, {'ec2_instances': ec2_instances}),
+        ('alb', render_alb, {'ec2_instances': ec2_instances}),
         ('ec2', render_ec2_dns),
         ('cloudfront', render_cloudfront, {'origin_hostname': context['full_hostname']}),
         ('fastly', render_fastly),

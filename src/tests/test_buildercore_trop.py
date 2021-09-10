@@ -593,6 +593,14 @@ class TestBuildercoreTrop(base.BaseCase):
             ]
         )
 
+    # --- alb
+
+    def test_render_alb(self):
+        context = cfngen.build_context('project-with-alb', stackname='project-with-alb--foo')
+        cfn_template = trop.render(context)
+        print(cfn_template)  # ['Resources']['ElasticLoadBalancerV2'])
+        assert False
+
     # --- dns
 
     def test_additional_cnames(self):

@@ -374,9 +374,20 @@ def build_context_elb(pdata, context):
         })
     return context
 
+def update_in(ddict, path, fn):
+    "modifies given `ddict` in place at dotted path using fn."
+    bits = path.split('.', 1)
+    if len(bits) == 1:
+        ddict[bits[0]] = fn(ddict[bits[0]])
+        return
+    update_in(ddict[bits[0]], bits[1], fn)
+
 def build_context_alb(pdata, context):
     if 'alb' in pdata['aws'] and pdata['aws']['alb'] is not False:
         context['alb'] = pdata['aws']['alb']
+        update_in(context, 'alb.idle_timeout', str)
+        update_in(context, 'alb.protocol', lambda p: [p] if utils.isstr(p) else p)
+        update_in(context, 'alb.protocol', lambda ps: [p.lower() for p in ps])
         context['alb'].update({
             'subnets': [
                 pdata['aws']['subnet-id'],
