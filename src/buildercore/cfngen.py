@@ -378,7 +378,7 @@ def update_in(ddict, path, fn):
     "modifies given `ddict` in place at dotted path using fn."
     bits = path.split('.', 1)
     if len(bits) == 1:
-        ddict[bits[0]] = fn(ddict[bits[0]])
+        ddict[bits[0]] = fn(ddict.get(bits[0]))
         return
     update_in(ddict[bits[0]], bits[1], fn)
 
@@ -388,12 +388,9 @@ def build_context_alb(pdata, context):
         update_in(context, 'alb.idle_timeout', str)
         update_in(context, 'alb.protocol', lambda p: [p] if utils.isstr(p) else p)
         update_in(context, 'alb.protocol', lambda ps: [p.lower() for p in ps])
-        context['alb'].update({
-            'subnets': [
-                pdata['aws']['subnet-id'],
-                pdata['aws']['redundant-subnet-id']
-            ],
-        })
+        update_in(context, 'alb.subnets', lambda _: [
+            pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
+        ])
     return context
 
 def build_context_cloudfront(pdata, context):

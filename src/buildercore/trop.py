@@ -788,10 +788,13 @@ def render_alb(context, template, ec2_instances):
         'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
     }
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
+
+    ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
+
     lb = alb.LoadBalancer(
         ALB_TITLE,
         Subnets=context['alb']['subnets'],
-        # SecurityGroups=, # TODO
+        SecurityGroups=[Ref(ALB_SECURITY_GROUP_ID)],
         Type='application', # default, could also be 'network', superceding ELB logic
         # Tags=[], # TODO
         LoadBalancerAttributes=lb_attrs,
@@ -799,10 +802,10 @@ def render_alb(context, template, ec2_instances):
 
     protocol_map = {
         'http': {'protocol': 'HTTP',
-                 'port': '80'},
+                 'port': 80},
         'https': {'protocol': 'HTTPS',
-                  'port': '443'},
-        # not used at elife
+                  'port': 443},
+        # not used
         # 'tcp': {'protocol': 'TCP',
         #        'port': str(protocol)}
     }
@@ -852,7 +855,6 @@ def render_alb(context, template, ec2_instances):
             Type='forward', # or 'redirect' ? not sure
             TargetGroupArn=GetAtt(target_group_id(protocol), 'Arn')
         )
-
         _lb_listener_list.append(alb.Listener(
             # "ElasticLoadBalancerV2ListenerHttps"
             ALB_TITLE + 'Listener' + str(protocol).title(),
@@ -862,9 +864,19 @@ def render_alb(context, template, ec2_instances):
             Protocol=protocol_map[protocol]['protocol']
         ))
 
+    # security group
+
+    alb_ports = [protocol_map[protocol]['port'] for protocol in context['alb']['protocol']]
+    alb_ports = _convert_ports_to_dictionary(alb_ports)
+    _lb_security_group = security_group(
+        ALB_SECURITY_GROUP_ID,
+        context['aws']['vpc-id'],
+        alb_ports
+    )
+
     # ---
 
-    resources = [lb]
+    resources = [lb, _lb_security_group]
     resources.extend(_lb_listener_list)
     resources.extend(_lb_target_group_list)
     [template.add_resource(resource) for resource in resources]
