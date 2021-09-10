@@ -6,4 +6,4 @@ RUN wget https://releases.hashicorp.com/terraform/0.11.15/terraform_0.11.15_linu
 RUN wget https://releases.hashicorp.com/vault/0.11.6/vault_0.11.6_linux_amd64.zip -O vault.zip && unzip ./vault.zip -d /bin && rm ./vault.zip
 RUN echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc
 
-SHELL ["/usr/bin/bash", "-c"]
+SHELL ["/bin/bash", "-c"]
