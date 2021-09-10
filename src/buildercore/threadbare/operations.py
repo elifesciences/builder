@@ -947,7 +947,8 @@ def _write_bytes_to_temporary_file(local_path):
             data = local_bytes.getvalue()
             # data may be a string or it may be bytes.
             # if it's a string we assume it's a UTF-8 string.
-            if isinstance(data, str):
+            # skip entirely if we're on Python2
+            if not common.PY3 and isinstance(data, str):
                 data = bytes(data, "utf-8")
             fh.write(data)
         cleanup = lambda: os.unlink(local_path)
