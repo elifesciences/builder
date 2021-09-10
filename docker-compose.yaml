@@ -1,15 +1,19 @@
-version: "2.1"
+version: "3.8"
 services:
-  ubuntu:
-    image: builder:${TAG-test}
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: builder:${TAG-local}
     container_name: ubuntu-builder
+    stdin_open: true
+    tty: true 
     environment: 
       - TZ='Europe/London'
-      - CUSTOM_SSH_KEY=${USER_ID-~/.ssh/id_rsa}
     volumes:
       - '/etc/timezone:/etc/timezone:ro'
       - '/etc/localtime:/etc/localtime:ro'
-      - ~/.ssh:/home/.ssh:ro
-      - ~/.aws:/home/.aws:ro
-      - ./:/builder/projects:rw
-    restart: unless-stopped
+      - ${CUSTOM_SSH_KEY-~/.ssh/id_rsa}:/root/.ssh/id_rsa:ro
+      - ${CUSTOM_SSH_KEY-~/.ssh/id_rsa}.pub:/root/.ssh/id_rsa.pub:ro
+      - ${CUSTOM_AWS_CREDENTIALS-~/.aws/.credentials}:/root/.aws/.credentials:ro
+      - ./:/builder:rw
