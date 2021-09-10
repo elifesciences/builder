@@ -1,0 +1,15 @@
+version: "2.1"
+services:
+  ubuntu:
+    image: builder:${TAG-test}
+    container_name: ubuntu-builder
+    environment: 
+      - TZ='Europe/London'
+      - CUSTOM_SSH_KEY=${USER_ID-~/.ssh/id_rsa}
+    volumes:
+      - '/etc/timezone:/etc/timezone:ro'
+      - '/etc/localtime:/etc/localtime:ro'
+      - ~/.ssh:/home/.ssh:ro
+      - ~/.aws:/home/.aws:ro
+      - ./:/builder/projects:rw
+    restart: unless-stopped
