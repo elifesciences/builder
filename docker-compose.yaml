@@ -15,5 +15,5 @@ services:
       - '/etc/localtime:/etc/localtime:ro'
       - ${CUSTOM_SSH_KEY-~/.ssh/id_rsa}:/root/.ssh/id_rsa:ro
       - ${CUSTOM_SSH_KEY-~/.ssh/id_rsa}.pub:/root/.ssh/id_rsa.pub:ro
-      - ${CUSTOM_AWS_CREDENTIALS-~/.aws/.credentials}:/root/.aws/.credentials:ro
+      - ${CUSTOM_AWS_CREDENTIALS-~/.aws/credentials}:/root/.aws/credentials:ro
       - ./:/builder:rw
