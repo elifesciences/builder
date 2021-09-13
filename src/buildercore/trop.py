@@ -1,7 +1,7 @@
 """`trop.py` is a module that uses the Troposphere library to build up
 an AWS CloudFormation template dynamically using values from the
 'context', a dictionary of data built up in `cfngen.py` derived from
-the projects file (`projects/elife.yaml`):
+the project file (`projects/elife.yaml`):
 
    projects file -> context -> troposphere.py -> cloudformation json
 
@@ -163,7 +163,9 @@ def overridden_component(context, component, index, allowed, interesting=None):
     return overridden_context[component]
 
 def _is_domain_2nd_level(hostname):
-    "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
+    """returns True if hostname is a 2nd level TLD.
+    e.g. the 'elifesciences' in 'journal.elifesciences.org'.
+    '.org' would be the first-level domain name, and 'journal' would be the third-level or 'sub' domain name."""
     return hostname.count(".") == 1
 
 def cnames(context):
@@ -173,16 +175,22 @@ def cnames(context):
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):
             # must be an alias as it is a 2nd-level domain like elifesciences.net
-            hostedzone = hostname + "."
-            ensure(context['elb'], "2nd-level domains aliases are only supported for ELBs")
+            ensure(context['elb'] or context['alb'], "2nd-level domain aliases are only supported for ELBs and ALBs")
+
+            hostedzone = hostname + "." # "elifesciences.org."
+
+            # ELBs take precendence.
+            # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
+            target = ELB_TITLE if context['elb'] else ALB_TITLE
+
             return route53.RecordSetType(
                 R53_CNAME_TITLE % (i + 1),
                 HostedZoneName=hostedzone,
                 Name=hostname,
                 Type="A",
                 AliasTarget=route53.AliasTarget(
-                    GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
-                    GetAtt(ELB_TITLE, "DNSName")
+                    GetAtt(target, "CanonicalHostedZoneNameID"),
+                    GetAtt(target, "DNSName")
                 )
             )
         hostedzone = context['domain'] + "."
@@ -383,6 +391,9 @@ def render_ec2_dns(context, template):
         if context['ec2']['cluster-size'] == 1:
             template.add_resource(external_dns_ec2_single(context))
             [template.add_resource(cname) for cname in cnames(context)]
+        else:
+            # see `render_elb` and `render_alb` for clustered node DNS
+            pass
 
     # single ec2 node may get an internal hostname
     if context['int_full_hostname'] and not lb:
@@ -768,7 +779,7 @@ def render_elb(context, template, ec2_instances):
         _convert_ports_to_dictionary(elb_ports)
     )) # list of strings or dicts
 
-    if any([context['full_hostname'], context['int_full_hostname']]):
+    if context['full_hostname'] or context['int_full_hostname']:
         dns = external_dns_elb if elb_is_public else internal_dns_elb
         template.add_resource(dns(context))
     if context['full_hostname']:
@@ -776,9 +787,41 @@ def render_elb(context, template, ec2_instances):
 
 # --- alb
 
+def _external_dns_alb(context):
+    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_EXT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment="External DNS record for ALB",
+        Name=context['full_hostname'],
+        Type="A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ALB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ALB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
+
+def _internal_dns_alb(context):
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_INT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment="Internal DNS record for ALB",
+        Name=context['int_full_hostname'],
+        Type="A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ALB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ALB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
+
 def render_alb(context, template, ec2_instances):
     """
-
     https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.elasticloadbalancingv2
     """
 
@@ -864,7 +907,7 @@ def render_alb(context, template, ec2_instances):
             Protocol=protocol_map[protocol]['protocol']
         ))
 
-    # security group
+    # -- security group
 
     alb_ports = [protocol_map[protocol]['port'] for protocol in context['alb']['protocol']]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
@@ -873,6 +916,16 @@ def render_alb(context, template, ec2_instances):
         context['aws']['vpc-id'],
         alb_ports
     )
+
+    # -- dns
+
+    alb_is_public = True if context['full_hostname'] else False
+    if context['full_hostname'] or context['int_full_hostname']:
+        dns = _external_dns_alb if alb_is_public else _internal_dns_alb
+        template.add_resource(dns(context))
+
+    if context['full_hostname']:
+        [template.add_resource(cname) for cname in cnames(context)]
 
     # ---
 
