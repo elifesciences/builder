@@ -883,6 +883,7 @@ project-with-alb:
     subdomain: project-with-alb
     aws:
         ports:
+            - 22
             - 80
         ec2:
             cluster-size: 2

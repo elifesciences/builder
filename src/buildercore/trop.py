@@ -830,24 +830,6 @@ def render_alb(context, template, ec2_instances):
     lb_attrs = {
         'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
     }
-    # lsh@2021-09: not sure any projects are actually using stickiness ...
-    if context['alb']['stickiness']:
-        # 'cookie' is 'app_cookie'
-        # 'browser' is 'lb_cookie'
-        if context['alb']['stickiness']['type'] == 'cookie':
-            sticky_settings = {
-                'stickiness.enabled': "true",
-                'stickiness.type': 'app_cookie',
-                'stickiness.app_cookie.cookie_name': context['alb']['stickiness']['cookie-name'],
-            }
-        elif context['alb']['stickiness']['type'] == 'browser':
-            sticky_settings = {
-                'stickiness.enabled': True,
-                'stickiness.type': 'lb_cookie',
-            }
-        else:
-            raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
-        lb_attrs.update(sticky_settings)
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
 
     ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
@@ -881,7 +863,7 @@ def render_alb(context, template, ec2_instances):
             "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
             "HealthCheckPath": context['alb']['healthcheck']['path'],
             "HealthCheckPort": context['alb']['healthcheck']['port'],
-            "HealthCheckProtocol": context['alb']['healthcheck']['protocol'],
+            "HealthCheckProtocol": protocol_map.get(context['alb']['healthcheck']['protocol'])['protocol'],
             "HealthCheckTimeoutSeconds": context['alb']['healthcheck']['timeout'],
             "HealthyThresholdCount": context['alb']['healthcheck']['healthy_threshold'],
             "UnhealthyThresholdCount": context['alb']['healthcheck']['unhealthy_threshold'],
@@ -890,12 +872,36 @@ def render_alb(context, template, ec2_instances):
     def target_group_id(protocol):
         return ALB_TITLE + 'TargetGroup' + str(protocol).title()
 
+    _target_group_attr_map = {
+
+    }
+    # lsh@2021-09: not sure any projects are actually using stickiness ...
+    if context['alb']['stickiness']:
+        # 'cookie' is 'app_cookie'
+        # 'browser' is 'lb_cookie'
+        if context['alb']['stickiness']['type'] == 'cookie':
+            sticky_settings = {
+                'stickiness.enabled': "true",
+                'stickiness.type': 'app_cookie',
+                'stickiness.app_cookie.cookie_name': context['alb']['stickiness']['cookie-name'],
+            }
+        elif context['alb']['stickiness']['type'] == 'browser':
+            sticky_settings = {
+                'stickiness.enabled': "true",
+                'stickiness.type': 'lb_cookie',
+            }
+        else:
+            raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
+        _target_group_attr_map.update(sticky_settings)
+
+    _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in _target_group_attr_map.items()]
     _lb_target_group_list = []
     for protocol in context['alb']['protocol']:
         _lb_target_group = {
             'Protocol': protocol_map[protocol]['protocol'],
             'Port': protocol_map[protocol]['port'],
             'Targets': [alb.TargetDescription(Id=Ref(ec2)) for ec2 in ec2_instances.values()],
+            'TargetGroupAttributes': _target_group_attrs,
             'VpcId': context['aws']['vpc-id'],
         }
         # if protocol == 'https':
@@ -914,12 +920,12 @@ def render_alb(context, template, ec2_instances):
     for protocol in context['alb']['protocol']:
         _lb_listener_action = alb.Action(
             Type='forward', # or 'redirect' ? not sure
-            TargetGroupArn=GetAtt(target_group_id(protocol), 'Arn')
+            TargetGroupArn=Ref(target_group_id(protocol))
         )
         _lb_listener_list.append(alb.Listener(
             # "ElasticLoadBalancerV2ListenerHttps"
             ALB_TITLE + 'Listener' + str(protocol).title(),
-            LoadBalancerArn=GetAtt(lb, 'Arn'),
+            LoadBalancerArn=Ref(lb),
             DefaultActions=[_lb_listener_action],
             Port=protocol_map[protocol]['port'],
             Protocol=protocol_map[protocol]['protocol']

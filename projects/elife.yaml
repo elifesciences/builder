@@ -117,7 +117,7 @@ defaults:
         # also known as 'Elastic Load Balancer v2'
         alb:
             stickiness: false
-            #sticiness:
+            #stickiness:
             #   type: cookie | browser
             #   cookie-name: ...
             protocol: http
@@ -137,6 +137,9 @@ defaults:
         # elb defaults only used if an 'elb' section present in project
         elb:
             stickiness: false
+            #stickiness:
+            #   type: cookie | browser
+            #   cookie-name: ...
             protocol: http
             additional_listeners: {}
             idle_timeout: 60
@@ -2069,3 +2072,25 @@ accepted-submission-cleaning:
                 deletion-policy: retain
         sns:
             - elife-accepted-submission-cleaning-s3-events
+
+alb-demo:
+    #subdomain: albdemo
+    description: test for Application Load Balancer
+    aws:
+        ec2:
+            cluster-size: 2
+        alb:
+            stickiness:
+               type: browser
+            protocol: http
+            idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
+            healthcheck:
+                protocol: http
+                port: 80
+                path: /ping
+                timeout: 4
+                interval: 5
+                unhealthy_threshold: 2
+                healthy_threshold: 2
