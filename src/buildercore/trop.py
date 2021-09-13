@@ -877,7 +877,7 @@ def render_alb(context, template, ec2_instances):
         _lb_target_group = {
             'Protocol': protocol_map[protocol]['protocol'],
             'Port': protocol_map[protocol]['port'],
-            'Targets': [], # TODO
+            'Targets': [alb.TargetDescription(Id=Ref(ec2)) for ec2 in ec2_instances.values()],
             'VpcId': context['aws']['vpc-id'],
         }
         # if protocol == 'https':
