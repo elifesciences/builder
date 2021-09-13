@@ -890,3 +890,6 @@ project-with-alb:
             protocol: 
                 - http
                 - https
+            stickiness:
+                type: cookie
+                cookie-name: foo

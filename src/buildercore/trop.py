@@ -830,6 +830,24 @@ def render_alb(context, template, ec2_instances):
     lb_attrs = {
         'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
     }
+    # lsh@2021-09: not sure any projects are actually using stickiness ...
+    if context['alb']['stickiness']:
+        # 'cookie' is 'app_cookie'
+        # 'browser' is 'lb_cookie'
+        if context['alb']['stickiness']['type'] == 'cookie':
+            sticky_settings = {
+                'stickiness.enabled': "true",
+                'stickiness.type': 'app_cookie',
+                'stickiness.app_cookie.cookie_name': context['alb']['stickiness']['cookie-name'],
+            }
+        elif context['alb']['stickiness']['type'] == 'browser':
+            sticky_settings = {
+                'stickiness.enabled': True,
+                'stickiness.type': 'lb_cookie',
+            }
+        else:
+            raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
+        lb_attrs.update(sticky_settings)
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
 
     ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"

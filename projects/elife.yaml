@@ -117,6 +117,9 @@ defaults:
         # also known as 'Elastic Load Balancer v2'
         alb:
             stickiness: false
+            #sticiness:
+            #   type: cookie | browser
+            #   cookie-name: ...
             protocol: http
             additional_listeners: {}
             idle_timeout: 60
