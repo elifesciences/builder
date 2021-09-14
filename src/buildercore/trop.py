@@ -49,7 +49,7 @@ ELASTICACHE_TITLE = 'ElastiCache%s'
 ELASTICACHE_SECURITY_GROUP_TITLE = 'ElastiCacheSecurityGroup'
 ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
-ALB_TITLE = 'ElasticLoadBalancerV2'
+ALB_TITLE = 'ELBv2'
 
 KEYPAIR = "KeyName"
 
@@ -826,15 +826,23 @@ def render_alb(context, template, ec2_instances):
     https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.elasticloadbalancingv2
     """
 
+    # -- security group
+    
+    ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
+    alb_ports = [protocol_port_pair[1] for protocol_port_pair in context['alb']['listeners']]
+    alb_ports = _convert_ports_to_dictionary(alb_ports)
+    _lb_security_group = security_group(
+        ALB_SECURITY_GROUP_ID,
+        context['aws']['vpc-id'],
+        alb_ports
+    )
+    
     # -- load balancer
 
     lb_attrs = {
         'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
     }
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
-
-    ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
-
     lb = alb.LoadBalancer(
         ALB_TITLE,
         Subnets=context['alb']['subnets'],
@@ -865,11 +873,9 @@ def render_alb(context, template, ec2_instances):
         # "ElasticLoadBalancerV2TargetGroupHttp80"
         return ALB_TITLE + 'TargetGroup' + str(protocol).title() + str(port)
 
-    _target_group_attr_map = {
-
-    }
-    # lsh@2021-09: not sure any projects are actually using stickiness ...
+    _target_group_attr_map = {}
     if context['alb']['stickiness']:
+        # lsh@2021-09: not sure any projects are actually using stickiness ...
         # 'cookie' is 'app_cookie'
         # 'browser' is 'lb_cookie'
         if context['alb']['stickiness']['type'] == 'cookie':
@@ -886,8 +892,8 @@ def render_alb(context, template, ec2_instances):
         else:
             raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
         _target_group_attr_map.update(sticky_settings)
-
     _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in _target_group_attr_map.items()]
+
     _lb_target_group_list = []
     for protocol, port in context['alb']['listeners']:
         _lb_target_group = {
@@ -927,16 +933,6 @@ def render_alb(context, template, ec2_instances):
             })
         _lb_listener_list.append(alb.Listener(**props))
 
-    # -- security group
-
-    alb_ports = [protocol_port_pair[1] for protocol_port_pair in context['alb']['listeners']]
-    alb_ports = _convert_ports_to_dictionary(alb_ports)
-    _lb_security_group = security_group(
-        ALB_SECURITY_GROUP_ID,
-        context['aws']['vpc-id'],
-        alb_ports
-    )
-
     # -- dns
 
     alb_is_public = True if context['full_hostname'] else False
@@ -947,14 +943,16 @@ def render_alb(context, template, ec2_instances):
     if context['full_hostname']:
         [template.add_resource(cname) for cname in cnames(context)]
 
-    # ---
+    # -- outputs
 
-    resources = [lb, _lb_security_group]
+    _lb_output_alb_arn = mkoutput("ElasticLoadBalancerV2", "Generated name of the ALB", Ref(ALB_TITLE))
+    
+    # --
+
+    resources = [lb, _lb_security_group, _lb_output_alb_arn]
     resources.extend(_lb_listener_list)
     resources.extend(_lb_target_group_list)
     [template.add_resource(resource) for resource in resources]
-
-    # --- outputs (TODO)
 
     return context
 

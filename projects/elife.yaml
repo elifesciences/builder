@@ -2084,6 +2084,7 @@ alb-demo:
             - 22
             - 80
             - 443
+            - 8001
         ec2:
             cluster-size: 2
         alb:
