@@ -180,8 +180,9 @@ def cnames(context):
             hostedzone = hostname + "." # "elifesciences.org."
 
             # ELBs take precendence.
+            using_elb = True if context['elb'] else False
             # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
-            target = ELB_TITLE if context['elb'] else ALB_TITLE
+            target = ELB_TITLE if using_elb else ALB_TITLE
 
             return route53.RecordSetType(
                 R53_CNAME_TITLE % (i + 1),
@@ -189,7 +190,7 @@ def cnames(context):
                 Name=hostname,
                 Type="A",
                 AliasTarget=route53.AliasTarget(
-                    GetAtt(target, "CanonicalHostedZoneNameID"),
+                    GetAtt(target, "CanonicalHostedZoneNameID" if using_elb else "CanonicalHostedZoneID"),
                     GetAtt(target, "DNSName")
                 )
             )
@@ -798,7 +799,7 @@ def _external_dns_alb(context):
         Name=context['full_hostname'],
         Type="A",
         AliasTarget=route53.AliasTarget(
-            GetAtt(ALB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ALB_TITLE, "CanonicalHostedZoneID"),
             GetAtt(ALB_TITLE, "DNSName")
         )
     )
@@ -814,7 +815,7 @@ def _internal_dns_alb(context):
         Name=context['int_full_hostname'],
         Type="A",
         AliasTarget=route53.AliasTarget(
-            GetAtt(ALB_TITLE, "CanonicalHostedZoneNameID"),
+            GetAtt(ALB_TITLE, "CanonicalHostedZoneID"),
             GetAtt(ALB_TITLE, "DNSName")
         )
     )

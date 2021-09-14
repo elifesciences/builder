@@ -2074,9 +2074,11 @@ accepted-submission-cleaning:
             - elife-accepted-submission-cleaning-s3-events
 
 alb-demo:
-    #subdomain: albdemo
+    subdomain: albdemo
     description: test for Application Load Balancer
     aws:
+        subdomains:
+            - albdemo-omg
         ports:
             - 22
             - 80

@@ -879,18 +879,19 @@ project-with-unique-alt-config:
             unique: true
 
 project-with-alb:
-    repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-alb
     aws:
+        subdomains:
+            - foo.bar
         ports:
             - 22
             - 80
         ec2:
             cluster-size: 2
         alb: 
-            protocol: 
+            protocol:
                 - http
                 - https
             stickiness:
                 type: cookie
-                cookie-name: foo
+                cookie-name: dummy-cookie

@@ -611,8 +611,8 @@ def validate_project(pname, **extra):
 #
 
 def quick_render(project_name, **more_context):
-    """generates a representative Cloudformation template for given project with dummy values
-    only called during testing"""
+    """generates a Cloudformation template for given `project_name` with dummy values overriden by anything in `more_context`.
+    lsh@2021-09: only called during testing so far."""
     # set a dummy instance id if one hasn't been set.
     more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
     context = build_context(project_name, **more_context)

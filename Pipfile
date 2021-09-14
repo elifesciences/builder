@@ -20,6 +20,7 @@ python-terraform = "~=0.10"
 pytz = "*"
 PyYAML = "~=5.4"
 requests = "~=2.26"
+# py2 support dropped in 3.0
 troposphere = "~=2.6"
 # doesn't follow semver, py2 support dropped in 2.5.0
 parallel-ssh = "==1.9.*"
