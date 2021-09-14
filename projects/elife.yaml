@@ -2077,6 +2077,9 @@ alb-demo:
     #subdomain: albdemo
     description: test for Application Load Balancer
     aws:
+        ports:
+            - 22
+            - 80
         ec2:
             cluster-size: 2
         alb:
