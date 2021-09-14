@@ -923,13 +923,20 @@ def render_alb(context, template, ec2_instances):
             Type='forward', # or 'redirect' ? not sure
             TargetGroupArn=Ref(target_group_id(protocol))
         )
-        _lb_listener_list.append(alb.Listener(
+        props = {
             # "ElasticLoadBalancerV2ListenerHttps"
+            'LoadBalancerArn': Ref(lb),
+            'DefaultActions': [_lb_listener_action],
+            'Port': protocol_map[protocol]['port'],
+            'Protocol': protocol_map[protocol]['protocol']
+        }
+        if props['Protocol'] == 'HTTPS':
+            props.update({
+                'Certificates': [alb.Certificate(CertificateArn=context['alb']['certificate'])]
+            })
+        _lb_listener_list.append(alb.Listener(
             ALB_TITLE + 'Listener' + str(protocol).title(),
-            LoadBalancerArn=Ref(lb),
-            DefaultActions=[_lb_listener_action],
-            Port=protocol_map[protocol]['port'],
-            Protocol=protocol_map[protocol]['protocol']
+            **props
         ))
 
     # -- security group
