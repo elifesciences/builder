@@ -844,16 +844,6 @@ def render_alb(context, template, ec2_instances):
         LoadBalancerAttributes=lb_attrs,
     )
 
-    protocol_map = {
-        'http': {'protocol': 'HTTP',
-                 'port': 80},
-        'https': {'protocol': 'HTTPS',
-                  'port': 443},
-        # not used
-        # 'tcp': {'protocol': 'TCP',
-        #        'port': str(protocol)}
-    }
-
     # -- target groups, also one for each protocol+port pair
 
     def healthcheck(protocol):
@@ -864,14 +854,16 @@ def render_alb(context, template, ec2_instances):
             "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
             "HealthCheckPath": context['alb']['healthcheck']['path'],
             "HealthCheckPort": context['alb']['healthcheck']['port'],
-            "HealthCheckProtocol": protocol_map.get(context['alb']['healthcheck']['protocol'])['protocol'],
+            "HealthCheckProtocol": context['alb']['healthcheck']['protocol'],
             "HealthCheckTimeoutSeconds": context['alb']['healthcheck']['timeout'],
             "HealthyThresholdCount": context['alb']['healthcheck']['healthy_threshold'],
             "UnhealthyThresholdCount": context['alb']['healthcheck']['unhealthy_threshold'],
         }
 
-    def target_group_id(protocol):
-        return ALB_TITLE + 'TargetGroup' + str(protocol).title()
+    def target_group_id(protocol, port):
+        # "ElasticLoadBalancerV2TargetGroupHttps443"
+        # "ElasticLoadBalancerV2TargetGroupHttp80"
+        return ALB_TITLE + 'TargetGroup' + str(protocol).title() + str(port)
 
     _target_group_attr_map = {
 
@@ -897,51 +889,47 @@ def render_alb(context, template, ec2_instances):
 
     _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in _target_group_attr_map.items()]
     _lb_target_group_list = []
-    for protocol in context['alb']['protocol']:
+    for protocol, port in context['alb']['listeners']:
         _lb_target_group = {
-            'Protocol': protocol_map[protocol]['protocol'],
-            'Port': protocol_map[protocol]['port'],
+            'title': target_group_id(protocol, port),
+            'Protocol': protocol,
+            'Port': port,
             'Targets': [alb.TargetDescription(Id=Ref(ec2)) for ec2 in ec2_instances.values()],
             'TargetGroupAttributes': _target_group_attrs,
             'VpcId': context['aws']['vpc-id'],
         }
-        # if protocol == 'https':
-        #    _lb_target_group['ProtocolVersion'] = 'HTTP2'
+        if protocol == 'HTTPS':
+            #_lb_target_group['ProtocolVersion'] = 'HTTP2'
+            pass
         _lb_target_group.update(healthcheck(protocol))
-        _lb_target_group_list.append(
-            alb.TargetGroup(
-                # "ElasticLoadBalancerV2TargetGroupHttps"
-                target_group_id(protocol),
-                **_lb_target_group))
+        _lb_target_group_list.append(alb.TargetGroup(**_lb_target_group))
 
     # -- listeners, one for each protocol+port pair
-    #    listeners need to know about target groups
 
     _lb_listener_list = []
-    for protocol in context['alb']['protocol']:
-        _lb_listener_action = alb.Action(
-            Type='forward', # or 'redirect' ? not sure
-            TargetGroupArn=Ref(target_group_id(protocol))
-        )
+    for protocol, port in context['alb']['listeners']:
         props = {
-            # "ElasticLoadBalancerV2ListenerHttps"
+            # "ElasticLoadBalancerV2ListenerHttp80"
+            # "ElasticLoadBalancerV2ListenerHttps443"
+            # "ElasticLoadBalancerV2ListenerHttps8001"
+            'title': ALB_TITLE + 'Listener' + str(protocol).title() + str(port),
             'LoadBalancerArn': Ref(lb),
-            'DefaultActions': [_lb_listener_action],
-            'Port': protocol_map[protocol]['port'],
-            'Protocol': protocol_map[protocol]['protocol']
+            'DefaultActions': [alb.Action(
+                Type='forward', # or 'redirect' ? not sure
+                TargetGroupArn=Ref(target_group_id(protocol, port))
+            )],
+            'Protocol': protocol,
+            'Port': port
         }
-        if props['Protocol'] == 'HTTPS':
+        if protocol == 'HTTPS':
             props.update({
                 'Certificates': [alb.Certificate(CertificateArn=context['alb']['certificate'])]
             })
-        _lb_listener_list.append(alb.Listener(
-            ALB_TITLE + 'Listener' + str(protocol).title(),
-            **props
-        ))
+        _lb_listener_list.append(alb.Listener(**props))
 
     # -- security group
 
-    alb_ports = [protocol_map[protocol]['port'] for protocol in context['alb']['protocol']]
+    alb_ports = [protocol_port_pair[1] for protocol_port_pair in context['alb']['listeners']]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
     _lb_security_group = security_group(
         ALB_SECURITY_GROUP_ID,

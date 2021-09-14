@@ -386,8 +386,13 @@ def build_context_alb(pdata, context):
     if 'alb' in pdata['aws'] and pdata['aws']['alb'] is not False:
         context['alb'] = pdata['aws']['alb']
         update_in(context, 'alb.idle_timeout', str)
-        update_in(context, 'alb.protocol', lambda p: [p] if utils.isstr(p) else p)
-        update_in(context, 'alb.protocol', lambda ps: [p.lower() for p in ps])
+        new_listeners = []
+        for pair_map in context['alb']['listeners']:
+            protocol, port = list(pair_map.items())[0]
+            protocol = protocol.upper()
+            new_listeners.append((protocol, port))
+        context['alb']['listeners'] = new_listeners
+        update_in(context, 'alb.healthcheck.protocol', lambda p: p.upper())
         update_in(context, 'alb.subnets', lambda _: [
             pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
         ])

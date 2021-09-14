@@ -120,8 +120,9 @@ defaults:
             #stickiness:
             #   type: cookie | browser
             #   cookie-name: ...
-            protocol: http
-            additional_listeners: {}
+            # (replaces ELB's 'protocol' and 'additional_listeners'
+            listeners:
+                - http: 80
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
@@ -2088,9 +2089,11 @@ alb-demo:
         alb:
             stickiness:
                type: browser
-            protocol: 
-                - http
-                - https
+            # (replaces 'protocol' and 'additional-listeners' in elb)
+            listeners: 
+                - http: 80
+                - https: 443
+                - https: 8001
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
