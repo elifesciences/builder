@@ -666,6 +666,10 @@ UPDATABLE_TITLE_PATTERNS = [
     '^RDSPort$',
     '^DocumentDB.*$',
 
+    #'^ELBv2$',
+    #'^ELBv2Listener.*',
+    '^ELBv2TargetGroup.*',
+
     # note: can't add ExtDNS as it changes dynamically when we start/stop instances and
     # should not be touched after creation.
     #'^ExtDNS$',
@@ -676,6 +680,8 @@ LB_UPDATABLE_TITLE_PATTERNS = [
     # 2021-09-16: an exception needs to be made for load balancers where the ExtDNS points to the LB.
     '^ExtDNS$',
 ]
+
+EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 REMOVABLE_TITLE_PATTERNS = [
     '^CloudFront.*',
@@ -695,7 +701,6 @@ REMOVABLE_TITLE_PATTERNS = [
     '^VPCSecurityGroup$',
     '^KeyName$'
 ]
-EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 # patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
 LB_REMOVABLE_TITLE_PATTERNS = [

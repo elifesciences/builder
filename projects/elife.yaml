@@ -2087,6 +2087,7 @@ alb-demo:
             - 8001
         ec2:
             cluster-size: 2
+            #suppressed: [1]
         #elb:
         #    stickiness:
         #       type: browser
