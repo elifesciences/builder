@@ -1,0 +1,408 @@
+{
+    "Outputs": {
+        "AZ1": {
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "AZ2": {
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "DomainName": {
+            "Description": "Domain name of the newly created stack instance",
+            "Value": {
+                "Ref": "ExtDNS"
+            }
+        },
+        "InstanceId1": {
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance1"
+            }
+        },
+        "InstanceId2": {
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance2"
+            }
+        },
+        "PrivateIP1": {
+            "Description": "Private IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "PrivateIP2": {
+            "Description": "Private IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "PublicIP1": {
+            "Description": "Public IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "PublicIp"
+                ]
+            }
+        },
+        "PublicIP2": {
+            "Description": "Public IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "PublicIp"
+                ]
+            }
+        }
+    },
+    "Parameters": {
+        "KeyName": {
+            "Description": "EC2 KeyPair that enables SSH access to this instance",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "CnameDNS1": {
+            "Properties": {
+                "AliasTarget": {
+                    "DNSName": {
+                        "Fn::GetAtt": [
+                            "ElasticLoadBalancerV2",
+                            "DNSName"
+                        ]
+                    },
+                    "HostedZoneId": {
+                        "Fn::GetAtt": [
+                            "ElasticLoadBalancerV2",
+                            "CanonicalHostedZoneNameID"
+                        ]
+                    }
+                },
+                "HostedZoneName": "foo.bar.",
+                "Name": "foo.bar",
+                "Type": "A"
+            },
+            "Type": "AWS::Route53::RecordSet"
+        },
+        "CnameDNS2": {
+            "Properties": {
+                "AliasTarget": {
+                    "DNSName": {
+                        "Fn::GetAtt": [
+                            "ElasticLoadBalancerV2",
+                            "DNSName"
+                        ]
+                    },
+                    "HostedZoneId": {
+                        "Fn::GetAtt": [
+                            "ElasticLoadBalancerV2",
+                            "CanonicalHostedZoneNameID"
+                        ]
+                    }
+                },
+                "HostedZoneName": "example.org.",
+                "Name": "example.org",
+                "Type": "A"
+            },
+            "Type": "AWS::Route53::RecordSet"
+        },
+        "EC2Instance1": {
+            "Properties": {
+                "ImageId": "ami-9eaa1cf6",
+                "InstanceType": "t2.small",
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "StackSecurityGroup"
+                    }
+                ],
+                "SubnetId": "subnet-1d4eb46a",
+                "Tags": [
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-alb"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-alb--foo--1"
+                    },
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Node",
+                        "Value": "1"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": "#!/bin/bash\nset -x\nexec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\necho eyJwcm9qZWN0X25hbWUiOiAicHJvamVjdC13aXRoLWFsYiIsICJhdXRob3IiOiAibXlfdXNlciIsICJkYXRlX3JlbmRlcmVkIjogIjIwMjEtMDktMTQiLCAic3RhY2tuYW1lIjogInByb2plY3Qtd2l0aC1hbGItLWZvbyIsICJpbnN0YW5jZV9pZCI6ICJmb28iLCAiY2x1c3Rlcl9pZCI6IG51bGwsICJhbHQtY29uZmlnIjogbnVsbCwgImJyYW5jaCI6ICJtYXN0ZXIiLCAicmV2aXNpb24iOiBudWxsLCAicmRzX2RibmFtZSI6IG51bGwsICJyZHNfdXNlcm5hbWUiOiBudWxsLCAicmRzX3Bhc3N3b3JkIjogbnVsbCwgInJkc19pbnN0YW5jZV9pZCI6IG51bGwsICJyZHMiOiB7fSwgImVjMiI6IHsiY2x1c3Rlci1zaXplIjogMiwgImNwdS1jcmVkaXRzIjogInN0YW5kYXJkIiwgImRucy1leHRlcm5hbC1wcmltYXJ5IjogZmFsc2UsICJkbnMtaW50ZXJuYWwiOiBmYWxzZSwgInN1cHByZXNzZWQiOiBbXSwgImFtaSI6ICJhbWktOWVhYTFjZjYiLCAibWFzdGVybGVzcyI6IGZhbHNlLCAibWFzdGVyX2lwIjogIjEwLjAuMi40MiIsICJzZWN1cml0eS1ncm91cCI6IHt9LCAidHlwZSI6ICJ0Mi5zbWFsbCIsICJwb3J0cyI6IFsyMiwgODBdfSwgInMzIjoge30sICJla3MiOiBmYWxzZSwgImVsYiI6IGZhbHNlLCAiYWxiIjogeyJzdGlja2luZXNzIjogeyJ0eXBlIjogImNvb2tpZSIsICJjb29raWUtbmFtZSI6ICJjb29va2llIn0sICJwcm90b2NvbCI6IFsiaHR0cCIsICJodHRwcyJdLCAiYWRkaXRpb25hbF9saXN0ZW5lcnMiOiB7fSwgImlkbGVfdGltZW91dCI6ICI2MCIsICJjZXJ0aWZpY2F0ZSI6ICJhcm46YXdzOmlhbTo6Li4uOi4uLiIsICJoZWFsdGhjaGVjayI6IHsicHJvdG9jb2wiOiAiaHR0cCIsICJwb3J0IjogODAsICJwYXRoIjogIi9waW5nIiwgInRpbWVvdXQiOiA0LCAiaW50ZXJ2YWwiOiA1LCAidW5oZWFsdGh5X3RocmVzaG9sZCI6IDIsICJoZWFsdGh5X3RocmVzaG9sZCI6IDJ9LCAic3VibmV0cyI6IFsic3VibmV0LTFkNGViNDZhIiwgInN1Ym5ldC03YTMxZGQ0NiJdfSwgInNucyI6IFtdLCAic3FzIjoge30sICJleHQiOiBmYWxzZSwgImNsb3VkZnJvbnQiOiBmYWxzZSwgImVsYXN0aWNhY2hlIjogZmFsc2UsICJkb2NkYiI6IGZhbHNlLCAiZG9tYWluIjogImV4YW1wbGUub3JnIiwgImludF9kb21haW4iOiAiZXhhbXBsZS5pbnRlcm5hbCIsICJzdWJkb21haW4iOiAicHJvamVjdC13aXRoLWFsYiIsICJob3N0bmFtZSI6ICJmb28tLXByb2plY3Qtd2l0aC1hbGIiLCAicHJvamVjdF9ob3N0bmFtZSI6ICJwcm9qZWN0LXdpdGgtYWxiLmV4YW1wbGUub3JnIiwgImludF9wcm9qZWN0X2hvc3RuYW1lIjogInByb2plY3Qtd2l0aC1hbGIuZXhhbXBsZS5pbnRlcm5hbCIsICJmdWxsX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi5leGFtcGxlLm9yZyIsICJpbnRfZnVsbF9ob3N0bmFtZSI6ICJmb28tLXByb2plY3Qtd2l0aC1hbGIuZXhhbXBsZS5pbnRlcm5hbCIsICJleHRfbm9kZV9ob3N0bmFtZSI6ICJmb28tLXByb2plY3Qtd2l0aC1hbGItLSVzLmV4YW1wbGUub3JnIiwgImludF9ub2RlX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi0tJXMuZXhhbXBsZS5pbnRlcm5hbCIsICJwcm9qZWN0IjogeyJmb3JtdWxhLXJlcG8iOiBudWxsLCAiZm9ybXVsYS1kZXBlbmRlbmNpZXMiOiBbImh0dHBzOi8vZ2l0aHViLmNvbS9leGFtcGxlL2J1aWxkZXItYmFzZS1mb3JtdWxhIl19LCAiYXdzIjogeyJhY2NvdW50LWlkIjogNTEyNjg2NTU0NTkyLCAicmVnaW9uIjogInVzLWVhc3QtMSIsICJ2cGMtaWQiOiAidnBjLTc4YTIwNzFkIiwgInN1Ym5ldC1pZCI6ICJzdWJuZXQtMWQ0ZWI0NmEiLCAic3VibmV0LWNpZHIiOiAiMTAuMC4yLjAvMjQiLCAiYXZhaWxhYmlsaXR5LXpvbmUiOiAidXMtZWFzdC0xZCIsICJyZWR1bmRhbnQtc3VibmV0LWlkIjogInN1Ym5ldC03YTMxZGQ0NiIsICJyZWR1bmRhbnQtc3VibmV0LWNpZHIiOiAiMTAuMC4yLjAvMjQiLCAicmVkdW5kYW50LWF2YWlsYWJpbGl0eS16b25lIjogInVzLWVhc3QtMWUifSwgImZhc3RseSI6IGZhbHNlLCAiZ2NzIjogZmFsc2UsICJiaWdxdWVyeSI6IGZhbHNlLCAic3ViZG9tYWlucyI6IFsiZm9vLmJhciIsICJleGFtcGxlLm9yZyJdLCAidmF1bHQiOiB7ImFkZHJlc3MiOiAiaHR0cHM6Ly92YXVsdC5leGFtcGxlLm9yZzo4MjAwIn0sICJub2RlIjogMSwgIm5vZGVuYW1lIjogInByb2plY3Qtd2l0aC1hbGItLWZvby0tMSJ9 > /etc/build-vars.json.b64\n\nif command -v salt-minion > /dev/null; then\n    # salt is installed, probably using an AMI or creating an AMI\n    # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.saltutil.html#salt.modules.saltutil.clear_cache\n    systemctl stop salt-minion 2> /dev/null || service salt-minion stop\nfi\n\n# remove leftover files from AMIs\nrm -rf \\\n    /etc/cfn-info.json \\\n    /etc/salt/pki/minion/* \\\n    /etc/salt/minion \\\n    /root/.ssh/* \\\n    /home/elife/.ssh/* \\\n    /home/ubuntu/.ssh/id_rsa* \\\n    /etc/certificates/* \\\n    /root/events.log \\\n    /var/cache/salt/minion\n"
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "EC2Instance2": {
+            "Properties": {
+                "ImageId": "ami-9eaa1cf6",
+                "InstanceType": "t2.small",
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "StackSecurityGroup"
+                    }
+                ],
+                "SubnetId": "subnet-7a31dd46",
+                "Tags": [
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-alb"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-alb--foo--2"
+                    },
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Node",
+                        "Value": "2"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": "#!/bin/bash\nset -x\nexec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\necho eyJwcm9qZWN0X25hbWUiOiAicHJvamVjdC13aXRoLWFsYiIsICJhdXRob3IiOiAibXlfdXNlciIsICJkYXRlX3JlbmRlcmVkIjogIjIwMjEtMDktMTQiLCAic3RhY2tuYW1lIjogInByb2plY3Qtd2l0aC1hbGItLWZvbyIsICJpbnN0YW5jZV9pZCI6ICJmb28iLCAiY2x1c3Rlcl9pZCI6IG51bGwsICJhbHQtY29uZmlnIjogbnVsbCwgImJyYW5jaCI6ICJtYXN0ZXIiLCAicmV2aXNpb24iOiBudWxsLCAicmRzX2RibmFtZSI6IG51bGwsICJyZHNfdXNlcm5hbWUiOiBudWxsLCAicmRzX3Bhc3N3b3JkIjogbnVsbCwgInJkc19pbnN0YW5jZV9pZCI6IG51bGwsICJyZHMiOiB7fSwgImVjMiI6IHsiY2x1c3Rlci1zaXplIjogMiwgImNwdS1jcmVkaXRzIjogInN0YW5kYXJkIiwgImRucy1leHRlcm5hbC1wcmltYXJ5IjogZmFsc2UsICJkbnMtaW50ZXJuYWwiOiBmYWxzZSwgInN1cHByZXNzZWQiOiBbXSwgImFtaSI6ICJhbWktOWVhYTFjZjYiLCAibWFzdGVybGVzcyI6IGZhbHNlLCAibWFzdGVyX2lwIjogIjEwLjAuMi40MiIsICJzZWN1cml0eS1ncm91cCI6IHt9LCAidHlwZSI6ICJ0Mi5zbWFsbCIsICJwb3J0cyI6IFsyMiwgODBdfSwgInMzIjoge30sICJla3MiOiBmYWxzZSwgImVsYiI6IGZhbHNlLCAiYWxiIjogeyJzdGlja2luZXNzIjogeyJ0eXBlIjogImNvb2tpZSIsICJjb29raWUtbmFtZSI6ICJjb29va2llIn0sICJwcm90b2NvbCI6IFsiaHR0cCIsICJodHRwcyJdLCAiYWRkaXRpb25hbF9saXN0ZW5lcnMiOiB7fSwgImlkbGVfdGltZW91dCI6ICI2MCIsICJjZXJ0aWZpY2F0ZSI6ICJhcm46YXdzOmlhbTo6Li4uOi4uLiIsICJoZWFsdGhjaGVjayI6IHsicHJvdG9jb2wiOiAiaHR0cCIsICJwb3J0IjogODAsICJwYXRoIjogIi9waW5nIiwgInRpbWVvdXQiOiA0LCAiaW50ZXJ2YWwiOiA1LCAidW5oZWFsdGh5X3RocmVzaG9sZCI6IDIsICJoZWFsdGh5X3RocmVzaG9sZCI6IDJ9LCAic3VibmV0cyI6IFsic3VibmV0LTFkNGViNDZhIiwgInN1Ym5ldC03YTMxZGQ0NiJdfSwgInNucyI6IFtdLCAic3FzIjoge30sICJleHQiOiBmYWxzZSwgImNsb3VkZnJvbnQiOiBmYWxzZSwgImVsYXN0aWNhY2hlIjogZmFsc2UsICJkb2NkYiI6IGZhbHNlLCAiZG9tYWluIjogImV4YW1wbGUub3JnIiwgImludF9kb21haW4iOiAiZXhhbXBsZS5pbnRlcm5hbCIsICJzdWJkb21haW4iOiAicHJvamVjdC13aXRoLWFsYiIsICJob3N0bmFtZSI6ICJmb28tLXByb2plY3Qtd2l0aC1hbGIiLCAicHJvamVjdF9ob3N0bmFtZSI6ICJwcm9qZWN0LXdpdGgtYWxiLmV4YW1wbGUub3JnIiwgImludF9wcm9qZWN0X2hvc3RuYW1lIjogInByb2plY3Qtd2l0aC1hbGIuZXhhbXBsZS5pbnRlcm5hbCIsICJmdWxsX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi5leGFtcGxlLm9yZyIsICJpbnRfZnVsbF9ob3N0bmFtZSI6ICJmb28tLXByb2plY3Qtd2l0aC1hbGIuZXhhbXBsZS5pbnRlcm5hbCIsICJleHRfbm9kZV9ob3N0bmFtZSI6ICJmb28tLXByb2plY3Qtd2l0aC1hbGItLSVzLmV4YW1wbGUub3JnIiwgImludF9ub2RlX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi0tJXMuZXhhbXBsZS5pbnRlcm5hbCIsICJwcm9qZWN0IjogeyJmb3JtdWxhLXJlcG8iOiBudWxsLCAiZm9ybXVsYS1kZXBlbmRlbmNpZXMiOiBbImh0dHBzOi8vZ2l0aHViLmNvbS9leGFtcGxlL2J1aWxkZXItYmFzZS1mb3JtdWxhIl19LCAiYXdzIjogeyJhY2NvdW50LWlkIjogNTEyNjg2NTU0NTkyLCAicmVnaW9uIjogInVzLWVhc3QtMSIsICJ2cGMtaWQiOiAidnBjLTc4YTIwNzFkIiwgInN1Ym5ldC1pZCI6ICJzdWJuZXQtMWQ0ZWI0NmEiLCAic3VibmV0LWNpZHIiOiAiMTAuMC4yLjAvMjQiLCAiYXZhaWxhYmlsaXR5LXpvbmUiOiAidXMtZWFzdC0xZCIsICJyZWR1bmRhbnQtc3VibmV0LWlkIjogInN1Ym5ldC03YTMxZGQ0NiIsICJyZWR1bmRhbnQtc3VibmV0LWNpZHIiOiAiMTAuMC4yLjAvMjQiLCAicmVkdW5kYW50LWF2YWlsYWJpbGl0eS16b25lIjogInVzLWVhc3QtMWUifSwgImZhc3RseSI6IGZhbHNlLCAiZ2NzIjogZmFsc2UsICJiaWdxdWVyeSI6IGZhbHNlLCAic3ViZG9tYWlucyI6IFsiZm9vLmJhciIsICJleGFtcGxlLm9yZyJdLCAidmF1bHQiOiB7ImFkZHJlc3MiOiAiaHR0cHM6Ly92YXVsdC5leGFtcGxlLm9yZzo4MjAwIn0sICJub2RlIjogMiwgIm5vZGVuYW1lIjogInByb2plY3Qtd2l0aC1hbGItLWZvby0tMiJ9 > /etc/build-vars.json.b64\n\nif command -v salt-minion > /dev/null; then\n    # salt is installed, probably using an AMI or creating an AMI\n    # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.saltutil.html#salt.modules.saltutil.clear_cache\n    systemctl stop salt-minion 2> /dev/null || service salt-minion stop\nfi\n\n# remove leftover files from AMIs\nrm -rf \\\n    /etc/cfn-info.json \\\n    /etc/salt/pki/minion/* \\\n    /etc/salt/minion \\\n    /root/.ssh/* \\\n    /home/elife/.ssh/* \\\n    /home/ubuntu/.ssh/id_rsa* \\\n    /etc/certificates/* \\\n    /root/events.log \\\n    /var/cache/salt/minion\n"
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "ElasticLoadBalancerV2": {
+            "Properties": {
+                "LoadBalancerAttributes": [
+                    {
+                        "Key": "idle_timeout.timeout_seconds",
+                        "Value": "60"
+                    }
+                ],
+                "SecurityGroups": [
+                    {
+                        "Ref": "ElasticLoadBalancerV2SecurityGroup"
+                    }
+                ],
+                "Subnets": [
+                    "subnet-1d4eb46a",
+                    "subnet-7a31dd46"
+                ],
+                "Type": "application"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer"
+        },
+        "ElasticLoadBalancerV2ListenerHttp": {
+            "Properties": {
+                "DefaultActions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "ElasticLoadBalancerV2TargetGroupHttp"
+                        },
+                        "Type": "forward"
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ElasticLoadBalancerV2"
+                },
+                "Port": 80,
+                "Protocol": "HTTP"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::Listener"
+        },
+        "ElasticLoadBalancerV2ListenerHttps": {
+            "Properties": {
+                "DefaultActions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "ElasticLoadBalancerV2TargetGroupHttps"
+                        },
+                        "Type": "forward"
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ElasticLoadBalancerV2"
+                },
+                "Port": 443,
+                "Protocol": "HTTPS"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::Listener"
+        },
+        "ElasticLoadBalancerV2SecurityGroup": {
+            "Properties": {
+                "GroupDescription": "security group",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 80,
+                        "IpProtocol": "tcp",
+                        "ToPort": 80
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 443,
+                        "IpProtocol": "tcp",
+                        "ToPort": 443
+                    }
+                ],
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "ElasticLoadBalancerV2TargetGroupHttp": {
+            "Properties": {
+                "HealthCheckEnabled": "true",
+                "HealthCheckIntervalSeconds": 5,
+                "HealthCheckPath": "/ping",
+                "HealthCheckPort": 80,
+                "HealthCheckProtocol": "HTTP",
+                "HealthCheckTimeoutSeconds": 4,
+                "HealthyThresholdCount": 2,
+                "Port": 80,
+                "Protocol": "HTTP",
+                "TargetGroupAttributes": [
+                    {
+                        "Key": "stickiness.enabled",
+                        "Value": "true"
+                    },
+                    {
+                        "Key": "stickiness.type",
+                        "Value": "app_cookie"
+                    },
+                    {
+                        "Key": "stickiness.app_cookie.cookie_name",
+                        "Value": "coookie"
+                    }
+                ],
+                "Targets": [
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance1"
+                        }
+                    },
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance2"
+                        }
+                    }
+                ],
+                "UnhealthyThresholdCount": 2,
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup"
+        },
+        "ElasticLoadBalancerV2TargetGroupHttps": {
+            "Properties": {
+                "Port": 443,
+                "Protocol": "HTTPS",
+                "TargetGroupAttributes": [
+                    {
+                        "Key": "stickiness.enabled",
+                        "Value": "true"
+                    },
+                    {
+                        "Key": "stickiness.type",
+                        "Value": "app_cookie"
+                    },
+                    {
+                        "Key": "stickiness.app_cookie.cookie_name",
+                        "Value": "coookie"
+                    }
+                ],
+                "Targets": [
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance1"
+                        }
+                    },
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance2"
+                        }
+                    }
+                ],
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup"
+        },
+        "ExtDNS": {
+            "Properties": {
+                "AliasTarget": {
+                    "DNSName": {
+                        "Fn::GetAtt": [
+                            "ElasticLoadBalancerV2",
+                            "DNSName"
+                        ]
+                    },
+                    "HostedZoneId": {
+                        "Fn::GetAtt": [
+                            "ElasticLoadBalancerV2",
+                            "CanonicalHostedZoneNameID"
+                        ]
+                    }
+                },
+                "Comment": "External DNS record for ALB",
+                "HostedZoneName": "example.org.",
+                "Name": "foo--project-with-alb.example.org",
+                "Type": "A"
+            },
+            "Type": "AWS::Route53::RecordSet"
+        },
+        "StackSecurityGroup": {
+            "Properties": {
+                "GroupDescription": "security group",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 22,
+                        "IpProtocol": "tcp",
+                        "ToPort": 22
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 80,
+                        "IpProtocol": "tcp",
+                        "ToPort": 80
+                    }
+                ],
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        }
+    }
+}

@@ -4,13 +4,13 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [requires]
-python_version = "3.6"
+python_version = "2.7"
 
 [packages]
 backoff = "~=1.5"
-boto = "~=2.48"
-boto3 = "~=1.6"
-fabric3 = "==1.14.post1"
+boto = "*"
+boto3 = "*"
+fabric = "==1.13.2"
 "kids.cache" = "==0.0.7"
 more-itertools = "~=4.1"
 netaddr = "~=0.7.19"
@@ -24,7 +24,9 @@ requests = "~=2.26"
 troposphere = "~=2.6"
 # doesn't follow semver, py2 support dropped in 2.5.0
 parallel-ssh = "==1.9.*"
-# transitive from python-slugify. not semver. dropped support for py2 in 1.3
+# still necessary. gevent 21.8 will try to build itself
+gevent = "==21.1.2"
+# transitive from python-slugify. not semver. support for py2 dropped in 1.3
 Unidecode = "==1.2.*"
 # cryptography doesn't use semantic versioning
 # cryptography removed Py2 support in 3.4
@@ -35,12 +37,15 @@ cryptography = ">=3.3.2,<3.4"
 autopep8 = "~=1.3"
 pyflakes = "~=2.1"
 # dropped support for py2 in 2.0, no mention in changelog
-pylint = "~=2.0"
+pylint = "<2.0"
 pytest = "~=3.5"
 pytest-cov = "==2.5.*"
 pytest-forked = "~=0.2"
-# dropped support for py2 in 6.0
-coverage = "~=4.5"
+# drops support for python2 in 6.0
+#coverage = "~=4.5"
+# py2 tests are measured for coverage and newer versions are failing to collect or accumulate data (for some reason).
+# https://coverage.readthedocs.io/en/coverage-5.5/changes.html
+coverage = "==4.3.4"
 # remove along with python2
 mock = "~=2.0"
 unittest2 = "~=1.1"

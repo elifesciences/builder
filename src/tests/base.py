@@ -26,6 +26,14 @@ def generate_environment_name():
 this_dir = os.path.realpath(os.path.dirname(__file__))
 fixtures_dir = join(this_dir, 'fixtures')
 
+def fixture_path(fixture_subpath):
+    "returns full path to given fixture"
+    return os.path.join(fixtures_dir, fixture_subpath)
+
+def fixture(fixture_subpath):
+    "returns contents of given fixture as a string"
+    return open(fixture_path(fixture_subpath), 'r').read()
+
 def switch_in_test_settings(projects_files=None):
     if not projects_files:
         projects_files = ['src/tests/fixtures/projects/']

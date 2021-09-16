@@ -1,7 +1,7 @@
 """`trop.py` is a module that uses the Troposphere library to build up
 an AWS CloudFormation template dynamically using values from the
 'context', a dictionary of data built up in `cfngen.py` derived from
-the projects file (`projects/elife.yaml`):
+the project file (`projects/elife.yaml`):
 
    projects file -> context -> troposphere.py -> cloudformation json
 
@@ -49,7 +49,7 @@ ELASTICACHE_TITLE = 'ElastiCache%s'
 ELASTICACHE_SECURITY_GROUP_TITLE = 'ElastiCacheSecurityGroup'
 ELASTICACHE_SUBNET_GROUP_TITLE = 'ElastiCacheSubnetGroup'
 ELASTICACHE_PARAMETER_GROUP_TITLE = 'ElastiCacheParameterGroup'
-ALB_TITLE = 'ElasticLoadBalancerV2'
+ALB_TITLE = 'ELBv2'
 
 KEYPAIR = "KeyName"
 
@@ -163,8 +163,13 @@ def overridden_component(context, component, index, allowed, interesting=None):
     return overridden_context[component]
 
 def _is_domain_2nd_level(hostname):
-    "returns True if hostname is a 2nd level TLD, e.g. elifesciences.org or elifesciences.net"
+    """returns True if hostname is a 2nd level TLD.
+    e.g. the 'elifesciences' in 'journal.elifesciences.org'.
+    '.org' would be the first-level domain name, and 'journal' would be the third-level or 'sub' domain name."""
     return hostname.count(".") == 1
+
+def using_elb(context):
+    return True if 'elb' in context and context['elb'] else False
 
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"
@@ -173,16 +178,22 @@ def cnames(context):
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):
             # must be an alias as it is a 2nd-level domain like elifesciences.net
-            hostedzone = hostname + "."
-            ensure(context['elb'], "2nd-level domains aliases are only supported for ELBs")
+            ensure(context['elb'] or context['alb'], "2nd-level domain aliases are only supported for ELBs and ALBs")
+
+            hostedzone = hostname + "." # "elifesciences.org."
+
+            # ELBs take precendence.
+            # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
+            target = ELB_TITLE if using_elb(context) else ALB_TITLE
+
             return route53.RecordSetType(
                 R53_CNAME_TITLE % (i + 1),
                 HostedZoneName=hostedzone,
                 Name=hostname,
                 Type="A",
                 AliasTarget=route53.AliasTarget(
-                    GetAtt(ELB_TITLE, "CanonicalHostedZoneNameID"),
-                    GetAtt(ELB_TITLE, "DNSName")
+                    GetAtt(target, "CanonicalHostedZoneNameID" if using_elb(context) else "CanonicalHostedZoneID"),
+                    GetAtt(target, "DNSName")
                 )
             )
         hostedzone = context['domain'] + "."
@@ -383,6 +394,9 @@ def render_ec2_dns(context, template):
         if context['ec2']['cluster-size'] == 1:
             template.add_resource(external_dns_ec2_single(context))
             [template.add_resource(cname) for cname in cnames(context)]
+        else:
+            # see `render_elb` and `render_alb` for clustered node DNS
+            pass
 
     # single ec2 node may get an internal hostname
     if context['int_full_hostname'] and not lb:
@@ -768,7 +782,7 @@ def render_elb(context, template, ec2_instances):
         _convert_ports_to_dictionary(elb_ports)
     )) # list of strings or dicts
 
-    if any([context['full_hostname'], context['int_full_hostname']]):
+    if context['full_hostname'] or context['int_full_hostname']:
         dns = external_dns_elb if elb_is_public else internal_dns_elb
         template.add_resource(dns(context))
     if context['full_hostname']:
@@ -776,47 +790,105 @@ def render_elb(context, template, ec2_instances):
 
 # --- alb
 
+def _external_dns_alb(context):
+    """returns a DNS A record for accessing this ALB externally.
+    if an ELB is also present, returns None as the ELB takes precendence when both are present.
+    Public ALBs will always have an AWS-assigned resolveable external DNS address even if we 
+    don't give it one of our own here."""
+    
+    # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
+    if using_elb(context):
+        return
+
+    # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_EXT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment="External DNS record for ALB",
+        Name=context['full_hostname'],
+        Type="A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ALB_TITLE, "CanonicalHostedZoneID"),
+            GetAtt(ALB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
+
+def _internal_dns_alb(context):
+    """returns a DNS A record for accessing this ALB internally (`id--project.elife.internal`).
+    if an ELB is also present, returns None as the ELB takes precedence when both are present."""
+
+    # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
+    if using_elb(context):
+        return
+
+    # The DNS name of an existing Amazon Route 53 hosted zone
+    hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
+    dns_record = route53.RecordSetType(
+        R53_INT_TITLE,
+        HostedZoneName=hostedzone,
+        Comment="Internal DNS record for ALB",
+        Name=context['int_full_hostname'],
+        Type="A",
+        AliasTarget=route53.AliasTarget(
+            GetAtt(ALB_TITLE, "CanonicalHostedZoneID"),
+            GetAtt(ALB_TITLE, "DNSName")
+        )
+    )
+    return dns_record
+
+def _alb_tags(context):
+    tags = aws.generic_tags(context)
+    tags.update({
+        'Name': '%s--alb' % context['stackname'], # "journal--prod--alb"
+    })
+    return [ec2.Tag(key, value) for key, value in tags.items()]
+
 def render_alb(context, template, ec2_instances):
     """
-
     https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.elasticloadbalancingv2
     """
 
+    alb_is_public = True if context['full_hostname'] else False
+
+    # -- security group
+    
+    ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
+    alb_ports = [protocol_port_pair[1] for protocol_port_pair in context['alb']['listeners']]
+    alb_ports = _convert_ports_to_dictionary(alb_ports)
+    _lb_security_group = security_group(
+        ALB_SECURITY_GROUP_ID,
+        context['aws']['vpc-id'],
+        alb_ports
+    )
+    
     # -- load balancer
 
     lb_attrs = {
         'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
     }
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
-
-    ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
-
     lb = alb.LoadBalancer(
         ALB_TITLE,
+        Scheme='internet-facing' if alb_is_public else 'internal',
         Subnets=context['alb']['subnets'],
         SecurityGroups=[Ref(ALB_SECURITY_GROUP_ID)],
         Type='application', # default, could also be 'network', superceding ELB logic
-        # Tags=[], # TODO
+        Tags=_alb_tags(context),
         LoadBalancerAttributes=lb_attrs,
     )
-
-    protocol_map = {
-        'http': {'protocol': 'HTTP',
-                 'port': 80},
-        'https': {'protocol': 'HTTPS',
-                  'port': 443},
-        # not used
-        # 'tcp': {'protocol': 'TCP',
-        #        'port': str(protocol)}
-    }
 
     # -- target groups, also one for each protocol+port pair
 
     def healthcheck(protocol):
         if protocol != context['alb']['healthcheck']['protocol']:
             return {}
+        # note: 'If the target type is instance or ip, health checks are always enabled and cannot be disabled.'
+        # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-targetgroup.html
         return {
-            'HealthCheckEnabled': True,
+            #'HealthCheckEnabled': True, # no choice
             "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
             "HealthCheckPath": context['alb']['healthcheck']['path'],
             "HealthCheckPort": context['alb']['healthcheck']['port'],
@@ -826,62 +898,100 @@ def render_alb(context, template, ec2_instances):
             "UnhealthyThresholdCount": context['alb']['healthcheck']['unhealthy_threshold'],
         }
 
-    def target_group_id(protocol):
-        return ALB_TITLE + 'TargetGroup' + str(protocol).title()
+    def target_group_id(protocol, port):
+        # "ElasticLoadBalancerV2TargetGroupHttps443"
+        # "ElasticLoadBalancerV2TargetGroupHttp80"
+        return ALB_TITLE + 'TargetGroup' + str(protocol).title() + str(port)
+
+    _target_group_attr_map = {}
+    if context['alb']['stickiness']:
+        # lsh@2021-09: not sure any projects are actually using stickiness ...
+        # 'cookie' is 'app_cookie'
+        # 'browser' is 'lb_cookie'
+        if context['alb']['stickiness']['type'] == 'cookie':
+            sticky_settings = {
+                'stickiness.enabled': "true",
+                'stickiness.type': 'app_cookie',
+                'stickiness.app_cookie.cookie_name': context['alb']['stickiness']['cookie-name'],
+            }
+        elif context['alb']['stickiness']['type'] == 'browser':
+            sticky_settings = {
+                'stickiness.enabled': "true",
+                'stickiness.type': 'lb_cookie',
+            }
+        else:
+            raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
+        _target_group_attr_map.update(sticky_settings)
+    _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in _target_group_attr_map.items()]
 
     _lb_target_group_list = []
-    for protocol in context['alb']['protocol']:
+    for protocol, port in context['alb']['listeners']:
         _lb_target_group = {
-            'Protocol': protocol_map[protocol]['protocol'],
-            'Port': protocol_map[protocol]['port'],
-            'Targets': [], # TODO
+            'title': target_group_id(protocol, port),
+            'Protocol': protocol,
+            'Port': port,
+            'Targets': [alb.TargetDescription(Id=Ref(ec2)) for ec2 in ec2_instances.values()],
+            'TargetGroupAttributes': _target_group_attrs,
             'VpcId': context['aws']['vpc-id'],
         }
-        # if protocol == 'https':
-        #    _lb_target_group['ProtocolVersion'] = 'HTTP2'
+        if protocol == 'HTTPS':
+            #_lb_target_group['ProtocolVersion'] = 'HTTP2'
+            pass
         _lb_target_group.update(healthcheck(protocol))
-        _lb_target_group_list.append(
-            alb.TargetGroup(
-                # "ElasticLoadBalancerV2TargetGroupHttps"
-                target_group_id(protocol),
-                **_lb_target_group))
+        _lb_target_group_list.append(alb.TargetGroup(**_lb_target_group))
 
     # -- listeners, one for each protocol+port pair
-    #    listeners need to know about target groups
 
     _lb_listener_list = []
-    for protocol in context['alb']['protocol']:
-        _lb_listener_action = alb.Action(
-            Type='forward', # or 'redirect' ? not sure
-            TargetGroupArn=GetAtt(target_group_id(protocol), 'Arn')
-        )
-        _lb_listener_list.append(alb.Listener(
-            # "ElasticLoadBalancerV2ListenerHttps"
-            ALB_TITLE + 'Listener' + str(protocol).title(),
-            LoadBalancerArn=GetAtt(lb, 'Arn'),
-            DefaultActions=[_lb_listener_action],
-            Port=protocol_map[protocol]['port'],
-            Protocol=protocol_map[protocol]['protocol']
-        ))
+    for protocol, port in context['alb']['listeners']:
+        props = {
+            # "ElasticLoadBalancerV2ListenerHttp80"
+            # "ElasticLoadBalancerV2ListenerHttps443"
+            # "ElasticLoadBalancerV2ListenerHttps8001"
+            'title': ALB_TITLE + 'Listener' + str(protocol).title() + str(port),
+            'LoadBalancerArn': Ref(lb),
+            'DefaultActions': [alb.Action(
+                Type='forward', # or 'redirect' ? not sure
+                TargetGroupArn=Ref(target_group_id(protocol, port))
+            )],
+            'Protocol': protocol,
+            'Port': port
+        }
+        if protocol == 'HTTPS':
+            props.update({
+                'Certificates': [alb.Certificate(CertificateArn=context['alb']['certificate'])]
+            })
+        _lb_listener_list.append(alb.Listener(**props))
 
-    # security group
+    # -- dns
 
-    alb_ports = [protocol_map[protocol]['port'] for protocol in context['alb']['protocol']]
-    alb_ports = _convert_ports_to_dictionary(alb_ports)
-    _lb_security_group = security_group(
-        ALB_SECURITY_GROUP_ID,
-        context['aws']['vpc-id'],
-        alb_ports
-    )
+    alb_is_public = True if context['full_hostname'] else False
+    if context['full_hostname'] or context['int_full_hostname']:
+        # add A records to `elifesciences.org` or `elife.internal` hosted zones
+        dns_fn = _external_dns_alb if alb_is_public else _internal_dns_alb
+        dns = dns_fn(context)
+        if dns:
+            template.add_resource(dns)
 
-    # ---
+    if context['full_hostname']:
+        # add CNAME records
+        if not using_elb(context):
+            # skip calling this again if ELB present
+            [template.add_resource(cname) for cname in cnames(context)]
+
+    # -- outputs
+
+    _lb_output_alb_arn = mkoutput("ElasticLoadBalancerV2", "Generated name of the ALB", Ref(ALB_TITLE))
+    
+    # --
 
     resources = [lb, _lb_security_group]
     resources.extend(_lb_listener_list)
     resources.extend(_lb_target_group_list)
     [template.add_resource(resource) for resource in resources]
 
-    # --- outputs (TODO)
+    outputs = [_lb_output_alb_arn]
+    [template.add_output(output) for output in outputs]
 
     return context
 
