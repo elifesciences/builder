@@ -2110,8 +2110,8 @@ alb-demo:
         #        unhealthy_threshold: 2
         #        healthy_threshold: 2
         alb:
-            stickiness:
-               type: browser
+            stickiness: false
+            #   type: browser
             # (replaces 'protocol' and 'additional-listeners' in elb)
             listeners: 
                 - http: 80
