@@ -641,7 +641,6 @@ def generate_stack(pname, **more_context):
 #
 
 
-# note: can't add ExtDNS as it changes dynamically when we start/stop instances and should not be touched after creation.
 UPDATABLE_TITLE_PATTERNS = [
     '^CloudFront.*',
     '^ElasticLoadBalancer.*',
@@ -665,7 +664,17 @@ UPDATABLE_TITLE_PATTERNS = [
     '^IntDomainName$',
     '^RDSHost$',
     '^RDSPort$',
-    '^DocumentDB.*$'
+    '^DocumentDB.*$',
+
+    # note: can't add ExtDNS as it changes dynamically when we start/stop instances and
+    # should not be touched after creation.
+    #'^ExtDNS$',
+]
+
+# patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
+LB_UPDATABLE_TITLE_PATTERNS = [
+    # 2021-09-16: an exception needs to be made for load balancers where the ExtDNS points to the LB.
+    '^ExtDNS$',
 ]
 
 REMOVABLE_TITLE_PATTERNS = [
@@ -687,6 +696,13 @@ REMOVABLE_TITLE_PATTERNS = [
     '^KeyName$'
 ]
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
+
+# patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
+LB_REMOVABLE_TITLE_PATTERNS = [
+    '^ElasticLoadBalancer$',
+    '^ELBSecurityGroup$',
+    'ELBv2.*',
+]
 
 # CloudFormation is nicely chopped up into:
 # * what to add
@@ -717,12 +733,30 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'ter
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None, None)
 
+
+def wrangle(source_list, *more_lists):
+    new_source = source_list[:] # copy all elements, don't affect source
+    for more in more_lists:
+        new_source.extend(more)
+    return new_source
+
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
-
-    Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
+    Some existing resources are treated as immutable and not put in the delta. 
+    Most resources that support non-destructive updates like CloudFront are instead included."""
+    
     old_template = cloudformation.read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
+
+    removeable_title_patterns = REMOVABLE_TITLE_PATTERNS[:]
+    updateable_title_patterns = UPDATABLE_TITLE_PATTERNS[:]
+
+    # when should we be able to modify load balancers?
+    # this condition covers the case of migrating from an ELB to an ALB.
+    # it doesn't cover downgrading, removing an LB altogether etc.
+    if 'ElasticLoadBalancer' in old_template['Resources']:
+        updateable_title_patterns.extend(LB_UPDATABLE_TITLE_PATTERNS)
+        removeable_title_patterns.extend(LB_REMOVABLE_TITLE_PATTERNS)
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -733,10 +767,10 @@ def template_delta(context):
         return False
 
     def _title_is_updatable(title):
-        return len([p for p in UPDATABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+        return len([p for p in updateable_title_patterns if re.match(p, title)]) > 0
 
     def _title_is_removable(title):
-        return len([p for p in REMOVABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+        return len([p for p in removeable_title_patterns if re.match(p, title)]) > 0
 
     # TODO: investigate if this is still necessary
     # start backward compatibility code

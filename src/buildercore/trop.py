@@ -817,6 +817,13 @@ def _external_dns_alb(context):
     return dns_record
 
 def _internal_dns_alb(context):
+    """returns a DNS A record for accessing this ALB internally (`id--project.elife.internal`).
+    if an ELB is also present, returns None as the ELB takes precedence when both are present."""
+
+    # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
+    if using_elb(context):
+        return
+
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
     dns_record = route53.RecordSetType(
@@ -844,6 +851,8 @@ def render_alb(context, template, ec2_instances):
     https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.elasticloadbalancingv2
     """
 
+    alb_is_public = True if context['full_hostname'] else False
+
     # -- security group
     
     ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
@@ -863,6 +872,7 @@ def render_alb(context, template, ec2_instances):
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
     lb = alb.LoadBalancer(
         ALB_TITLE,
+        Scheme='internet-facing' if alb_is_public else 'internal',
         Subnets=context['alb']['subnets'],
         SecurityGroups=[Ref(ALB_SECURITY_GROUP_ID)],
         Type='application', # default, could also be 'network', superceding ELB logic
@@ -875,8 +885,10 @@ def render_alb(context, template, ec2_instances):
     def healthcheck(protocol):
         if protocol != context['alb']['healthcheck']['protocol']:
             return {}
+        # note: 'If the target type is instance or ip, health checks are always enabled and cannot be disabled.'
+        # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-targetgroup.html
         return {
-            'HealthCheckEnabled': True,
+            #'HealthCheckEnabled': True, # no choice
             "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
             "HealthCheckPath": context['alb']['healthcheck']['path'],
             "HealthCheckPort": context['alb']['healthcheck']['port'],
