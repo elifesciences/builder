@@ -32,3 +32,7 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
         - parsing/merging/validating little yaml/json files should be *quick*
 * rename 'trop.py' to 'cloudformation.py'
 * rename 'cfngen.py' to 'build_context.py' or something similar
+* delete src/tests/fixtures/dummy-project2.yaml
+    - looks like the pattern in tests/fixtures/dummy-project.yaml caught on instead
+* delete src/tests/fixtures/additional-projects
+    - I think support for different regions and things has been removed
