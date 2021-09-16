@@ -168,6 +168,9 @@ def _is_domain_2nd_level(hostname):
     '.org' would be the first-level domain name, and 'journal' would be the third-level or 'sub' domain name."""
     return hostname.count(".") == 1
 
+def using_elb(context):
+    return True if 'elb' in context and context['elb'] else False
+
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"
     ensure(isstr(context['domain']), "A 'domain' must be specified for CNAMEs to be built")
@@ -180,9 +183,8 @@ def cnames(context):
             hostedzone = hostname + "." # "elifesciences.org."
 
             # ELBs take precendence.
-            using_elb = True if context['elb'] else False
             # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
-            target = ELB_TITLE if using_elb else ALB_TITLE
+            target = ELB_TITLE if using_elb(context) else ALB_TITLE
 
             return route53.RecordSetType(
                 R53_CNAME_TITLE % (i + 1),
@@ -190,7 +192,7 @@ def cnames(context):
                 Name=hostname,
                 Type="A",
                 AliasTarget=route53.AliasTarget(
-                    GetAtt(target, "CanonicalHostedZoneNameID" if using_elb else "CanonicalHostedZoneID"),
+                    GetAtt(target, "CanonicalHostedZoneNameID" if using_elb(context) else "CanonicalHostedZoneID"),
                     GetAtt(target, "DNSName")
                 )
             )
@@ -789,6 +791,15 @@ def render_elb(context, template, ec2_instances):
 # --- alb
 
 def _external_dns_alb(context):
+    """returns a DNS A record for accessing this ALB externally.
+    if an ELB is also present, returns None as the ELB takes precendence when both are present.
+    Public ALBs will always have an AWS-assigned resolveable external DNS address even if we 
+    don't give it one of our own here."""
+    
+    # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
+    if using_elb(context):
+        return
+
     # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['domain'] + "." # TRAILING DOT IS IMPORTANT!
@@ -821,6 +832,13 @@ def _internal_dns_alb(context):
     )
     return dns_record
 
+def _alb_tags(context):
+    tags = aws.generic_tags(context)
+    tags.update({
+        'Name': '%s--alb' % context['stackname'], # "journal--prod--alb"
+    })
+    return [ec2.Tag(key, value) for key, value in tags.items()]
+
 def render_alb(context, template, ec2_instances):
     """
     https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.elasticloadbalancingv2
@@ -848,7 +866,7 @@ def render_alb(context, template, ec2_instances):
         Subnets=context['alb']['subnets'],
         SecurityGroups=[Ref(ALB_SECURITY_GROUP_ID)],
         Type='application', # default, could also be 'network', superceding ELB logic
-        # Tags=[], # TODO
+        Tags=_alb_tags(context),
         LoadBalancerAttributes=lb_attrs,
     )
 
@@ -937,11 +955,17 @@ def render_alb(context, template, ec2_instances):
 
     alb_is_public = True if context['full_hostname'] else False
     if context['full_hostname'] or context['int_full_hostname']:
-        dns = _external_dns_alb if alb_is_public else _internal_dns_alb
-        template.add_resource(dns(context))
+        # add A records to `elifesciences.org` or `elife.internal` hosted zones
+        dns_fn = _external_dns_alb if alb_is_public else _internal_dns_alb
+        dns = dns_fn(context)
+        if dns:
+            template.add_resource(dns)
 
     if context['full_hostname']:
-        [template.add_resource(cname) for cname in cnames(context)]
+        # add CNAME records
+        if not using_elb(context):
+            # skip calling this again if ELB present
+            [template.add_resource(cname) for cname in cnames(context)]
 
     # -- outputs
 
@@ -949,10 +973,13 @@ def render_alb(context, template, ec2_instances):
     
     # --
 
-    resources = [lb, _lb_security_group, _lb_output_alb_arn]
+    resources = [lb, _lb_security_group]
     resources.extend(_lb_listener_list)
     resources.extend(_lb_target_group_list)
     [template.add_resource(resource) for resource in resources]
+
+    outputs = [_lb_output_alb_arn]
+    [template.add_output(output) for output in outputs]
 
     return context
 
