@@ -935,7 +935,8 @@ def render_alb(context, template, ec2_instances):
             'VpcId': context['aws']['vpc-id'],
         }
         if protocol == 'HTTPS':
-            _lb_target_group['ProtocolVersion'] = 'HTTP2'
+            #_lb_target_group['ProtocolVersion'] = 'HTTP2'
+            pass
         _lb_target_group.update(healthcheck(protocol))
         _lb_target_group_list.append(alb.TargetGroup(**_lb_target_group))
 
