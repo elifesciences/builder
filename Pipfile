@@ -21,7 +21,7 @@ pytz = "*"
 PyYAML = "~=5.4"
 requests = "~=2.26"
 # py2 support dropped in 3.0
-troposphere = "~=2.6"
+troposphere = "~=3.0"
 # doesn't follow semver, py2 support dropped in 2.5.0
 parallel-ssh = "==1.9.*"
 # transitive from python-slugify. not semver. dropped support for py2 in 1.3
