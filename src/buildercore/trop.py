@@ -21,6 +21,13 @@ from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
 import logging
 
+# todo: remove on upgrade to python 3
+# backports a fix we need to py2-compatible troposphere 2.7.3.
+# see: 
+# - https://github.com/cloudtools/troposphere/issues/1888
+# - https://github.com/cloudtools/troposphere/commit/15478380cc0775c1cb915b74c031d68ca988b1c5
+alb.TargetGroup.props["ProtocolVersion"] = (str, False)
+
 LOG = logging.getLogger(__name__)
 
 SECURITY_GROUP_TITLE = "StackSecurityGroup"
@@ -935,8 +942,7 @@ def render_alb(context, template, ec2_instances):
             'VpcId': context['aws']['vpc-id'],
         }
         if protocol == 'HTTPS':
-            #_lb_target_group['ProtocolVersion'] = 'HTTP2'
-            pass
+            _lb_target_group['ProtocolVersion'] = 'HTTP2'
         _lb_target_group.update(healthcheck(protocol))
         _lb_target_group_list.append(alb.TargetGroup(**_lb_target_group))
 
