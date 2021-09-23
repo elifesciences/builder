@@ -127,8 +127,9 @@ defaults:
             # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
             healthcheck:
-                protocol: http
-                port: 80
+                # all listeners get a healthcheck under elbv2
+                #protocol: http
+                #port: 80
                 path: /ping
                 timeout: 4
                 interval: 5
@@ -690,6 +691,41 @@ journal:
                     project: "elife-fastly"
                     dataset: "{instance}"
                     table: "journal"
+        withalb:
+            ec2:
+                cluster-size: 2
+            fastly:
+                subdomains:
+                    - "{instance}--cdn-journal"
+                healthcheck:
+                    path: /ping-fastly
+                    check-interval: 10000
+                    timeout: 2000
+                errors:
+                    # always prod for simplicity
+                    url: https://prod-elife-error-pages.s3.amazonaws.com/
+                    codes:
+                        404: "404.html"
+                        410: "410.html"
+                        503: "503.html"
+                    fallbacks:
+                        4xx: "4xx.html"
+                        5xx: "5xx.html"
+                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/1WzbLJKoGqzOF1IrhTNx2M/versions/19/data/acls
+                vcl:
+                    - "original-host"
+                    - "ping-status"
+                    - "strip-non-journal-cookies"
+                    - "journal-google-scholar"
+                    - "journal-google-scholar-vary"
+            alb:
+                stickiness: false
+                # (replaces 'protocol' and 'additional-listeners' in elb)
+                listeners:
+                    - http: 80
+                    - https: 443
+                    #- https: 8001
+
     vagrant:
         ram: 4096
         ports:
@@ -2110,8 +2146,8 @@ alb-demo:
         #        unhealthy_threshold: 2
         #        healthy_threshold: 2
         alb:
-            stickiness: false
-            #   type: browser
+            stickiness:
+               type: browser
             # (replaces 'protocol' and 'additional-listeners' in elb)
             listeners: 
                 - http: 80
@@ -2121,8 +2157,6 @@ alb-demo:
             # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
             healthcheck:
-                protocol: http
-                port: 80
                 path: /ping
                 timeout: 4
                 interval: 5
