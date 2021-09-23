@@ -1,6 +1,7 @@
-from . import bluegreen, context_handler
+"Bit of a floating module, I guess to avoid circular dependencies. Needs to be reconciled somehow."
 
-# TODO: move as buildercore.concurrency.concurrency_for
+from . import bluegreen, bluegreen_v2, context_handler, cloudformation
+
 def concurrency_for(stackname, concurrency_name):
     """concurrency default is to perform updates one machine at a time.
 
@@ -13,9 +14,13 @@ def concurrency_for(stackname, concurrency_name):
 
     if concurrency_name == 'blue-green':
         context = context_handler.load_context(stackname)
-        return bluegreen.BlueGreenConcurrency(context['aws']['region'])
+
+        if cloudformation.using_elb_v1(stackname):
+            return bluegreen.BlueGreenConcurrency(context['aws']['region'])
+
+        return bluegreen_v2.do
+
     if concurrency_name == 'serial' or concurrency_name == 'parallel':
-        # maybe return a fabric object in the future
         return concurrency_name
 
     if concurrency_name is None:

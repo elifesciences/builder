@@ -122,6 +122,7 @@ fi
 if $elife_depends_on_python2; then
     # upgrade pip setuptools, install dockerlib
     python2.7 -m pip install pip "setuptools==44.0.0" --upgrade
+    # some Salt states require libraries to be installed before calling highstate
     python2.7 -m pip install "docker[tls]==4.1.0"
 fi
 
