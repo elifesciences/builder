@@ -305,6 +305,7 @@ class NoPublicIps(Exception):
     pass
 
 def all_node_params(stackname):
+    "returns a map of node data"
     data = stack_data(stackname)
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {
@@ -314,7 +315,7 @@ def all_node_params(stackname):
         for ec2 in data
     }
 
-    # TODO: default copied from stack_all_ec2_nodes, but not the most robust probably
+    # default copied from stack_all_ec2_nodes, but not the most robust probably
     params = _ec2_connection_params(stackname, config.DEPLOY_USER)
 
     # custom for builder, these are available inside workfn as `command.env('public_ips')`
@@ -364,7 +365,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
     # TODO: candidate for a @backoff decorator
-    def single_node_work():
+    def single_node_work_fn():
         for attempt in range(0, 6):
             try:
                 return workfn(**work_kwargs)
@@ -389,18 +390,17 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         'aborts': False
     }
 
-    # TODO: extract in buildercore.concurrency
     if not concurrency:
         concurrency = 'parallel'
 
     if concurrency == 'serial':
-        return serial_work(single_node_work, params)
+        return serial_work(single_node_work_fn, params)
 
     if concurrency == 'parallel':
-        return parallel_work(single_node_work, params)
+        return parallel_work(single_node_work_fn, params)
 
     if callable(concurrency):
-        return concurrency(single_node_work, params)
+        return concurrency(single_node_work_fn, params)
 
     raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
 

@@ -23,7 +23,7 @@ import logging
 
 # todo: remove on upgrade to python 3
 # backports a fix we need to py2-compatible troposphere 2.7.3.
-# see: 
+# see:
 # - https://github.com/cloudtools/troposphere/issues/1888
 # - https://github.com/cloudtools/troposphere/commit/15478380cc0775c1cb915b74c031d68ca988b1c5
 alb.TargetGroup.props["ProtocolVersion"] = (str, False)
@@ -800,9 +800,9 @@ def render_elb(context, template, ec2_instances):
 def _external_dns_alb(context):
     """returns a DNS A record for accessing this ALB externally.
     if an ELB is also present, returns None as the ELB takes precendence when both are present.
-    Public ALBs will always have an AWS-assigned resolveable external DNS address even if we 
+    Public ALBs will always have an AWS-assigned resolveable external DNS address even if we
     don't give it one of our own here."""
-    
+
     # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
     if using_elb(context):
         return
@@ -860,8 +860,10 @@ def render_alb(context, template, ec2_instances):
 
     alb_is_public = True if context['full_hostname'] else False
 
+    outputs = []
+
     # -- security group
-    
+
     ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
     alb_ports = [protocol_port_pair[1] for protocol_port_pair in context['alb']['listeners']]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
@@ -870,7 +872,7 @@ def render_alb(context, template, ec2_instances):
         context['aws']['vpc-id'],
         alb_ports
     )
-    
+
     # -- load balancer
 
     lb_attrs = {
@@ -886,24 +888,9 @@ def render_alb(context, template, ec2_instances):
         Tags=_alb_tags(context),
         LoadBalancerAttributes=lb_attrs,
     )
+    outputs.append(mkoutput(ALB_TITLE, "Generated name of the ALB", Ref(ALB_TITLE)))
 
     # -- target groups, also one for each protocol+port pair
-
-    def healthcheck(protocol):
-        if protocol != context['alb']['healthcheck']['protocol']:
-            return {}
-        # note: 'If the target type is instance or ip, health checks are always enabled and cannot be disabled.'
-        # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-targetgroup.html
-        return {
-            #'HealthCheckEnabled': True, # no choice
-            "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
-            "HealthCheckPath": context['alb']['healthcheck']['path'],
-            "HealthCheckPort": context['alb']['healthcheck']['port'],
-            "HealthCheckProtocol": context['alb']['healthcheck']['protocol'],
-            "HealthCheckTimeoutSeconds": context['alb']['healthcheck']['timeout'],
-            "HealthyThresholdCount": context['alb']['healthcheck']['healthy_threshold'],
-            "UnhealthyThresholdCount": context['alb']['healthcheck']['unhealthy_threshold'],
-        }
 
     def target_group_id(protocol, port):
         # "ElasticLoadBalancerV2TargetGroupHttps443"
@@ -933,18 +920,39 @@ def render_alb(context, template, ec2_instances):
 
     _lb_target_group_list = []
     for protocol, port in context['alb']['listeners']:
+        target_group_arn = target_group_id(protocol, port)
         _lb_target_group = {
-            'title': target_group_id(protocol, port),
+            'title': target_group_arn,
             'Protocol': protocol,
+            'ProtocolVersion': 'HTTP1',
             'Port': port,
             'Targets': [alb.TargetDescription(Id=Ref(ec2)) for ec2 in ec2_instances.values()],
             'TargetGroupAttributes': _target_group_attrs,
             'VpcId': context['aws']['vpc-id'],
+
+            # note: 'If the target type is instance or ip, health checks are always enabled and cannot be disabled.'
+            # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-targetgroup.html
+            # 'HealthCheckEnabled': True, # no choice
+            "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
+            "HealthCheckPath": context['alb']['healthcheck']['path'],
+            # disabled so the 'traffic' port is used (incoming from Listener)
+            # "HealthCheckPort": context['alb']['healthcheck']['port'],
+            # "HealthCheckProtocol": context['alb']['healthcheck']['protocol'],
+            "HealthCheckTimeoutSeconds": context['alb']['healthcheck']['timeout'],
+            "HealthyThresholdCount": context['alb']['healthcheck']['healthy_threshold'],
+            "UnhealthyThresholdCount": context['alb']['healthcheck']['unhealthy_threshold'],
         }
-        if protocol == 'HTTPS':
-            _lb_target_group['ProtocolVersion'] = 'HTTP2'
-        _lb_target_group.update(healthcheck(protocol))
+        # unlike cloudfront that converts incoming http2 to http1.1, elbv2 passes it through.
+        # at time of writing our nginx servers haven't been configured to support http2.
+        # if protocol == 'HTTPS':
+        #    _lb_target_group['ProtocolVersion'] = 'HTTP2'
+
         _lb_target_group_list.append(alb.TargetGroup(**_lb_target_group))
+
+        output = mkoutput(target_group_arn,
+                          "TargetGroup for protocol %s on port %s" % (protocol, port),
+                          Ref(target_group_arn))
+        outputs.append(output)
 
     # -- listeners, one for each protocol+port pair
 
@@ -985,10 +993,6 @@ def render_alb(context, template, ec2_instances):
             # skip calling this again if ELB present
             [template.add_resource(cname) for cname in cnames(context)]
 
-    # -- outputs
-
-    _lb_output_alb_arn = mkoutput("ElasticLoadBalancerV2", "Generated name of the ALB", Ref(ALB_TITLE))
-    
     # --
 
     resources = [lb, _lb_security_group]
@@ -996,7 +1000,6 @@ def render_alb(context, template, ec2_instances):
     resources.extend(_lb_target_group_list)
     [template.add_resource(resource) for resource in resources]
 
-    outputs = [_lb_output_alb_arn]
     [template.add_output(output) for output in outputs]
 
     return context

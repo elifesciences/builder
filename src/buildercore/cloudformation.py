@@ -132,15 +132,30 @@ def _wait_until_in_progress(stackname):
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    # TODO: use a context manager to close the file afterwards
     return json.load(open(output_fname, 'r'))
 
+def outputs_map(stackname):
+    data = core.describe_stack(stackname).meta.data # boto3
+    if not 'Outputs' in data:
+        return {}
+    return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
+
+def elb_name(stackname):
+    outputs = outputs_map(stackname)
+    return outputs.get(trop.ELB_TITLE) or outputs.get(trop.ALB_TITLE)
+
+def using_elb_v1(stackname):
+    "returns `True` if given `stackname` is using a v1 ELB"
+    return trop.ELB_TITLE in outputs_map(stackname)
+
 def read_output(stackname, key):
+    "finds a literal `Output` from a cloudformation template matching given `key`"
     data = core.describe_stack(stackname).meta.data # boto3
     ensure('Outputs' in data, "Outputs missing: %s" % data)
     selected_outputs = [o for o in data['Outputs'] if o['OutputKey'] == key]
-    ensure(len(selected_outputs) == 1, "Too many outputs selected: %s" % selected_outputs)
-    ensure('OutputValue' in selected_outputs[0], "Badly formed Output: %s" % selected_outputs[0])
+    ensure(selected_outputs, "No outputs found for key %r" % (key,))
+    ensure(len(selected_outputs) == 1, "Too many outputs selected for key %r: %s" % (key, selected_outputs))
+    ensure('OutputValue' in selected_outputs[0], "Badly formed Output for key %r: %s" % (key, selected_outputs[0]))
     return selected_outputs[0]['OutputValue']
 
 def apply_delta(template, delta):

@@ -392,7 +392,6 @@ def build_context_alb(pdata, context):
             protocol = protocol.upper()
             new_listeners.append((protocol, port))
         context['alb']['listeners'] = new_listeners
-        update_in(context, 'alb.healthcheck.protocol', lambda p: p.upper())
         update_in(context, 'alb.subnets', lambda _: [
             pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
         ])
@@ -666,13 +665,13 @@ UPDATABLE_TITLE_PATTERNS = [
     '^RDSPort$',
     '^DocumentDB.*$',
 
-    #'^ELBv2$',
-    #'^ELBv2Listener.*',
+    # '^ELBv2$', # outputs as well as the lb resource
+    # '^ELBv2Listener.*', # changes here seem to require re-creation of lb entirely
     '^ELBv2TargetGroup.*',
 
     # note: can't add ExtDNS as it changes dynamically when we start/stop instances and
     # should not be touched after creation.
-    #'^ExtDNS$',
+    # '^ExtDNS$',
 ]
 
 # patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
@@ -747,9 +746,8 @@ def wrangle(source_list, *more_lists):
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
-    Some existing resources are treated as immutable and not put in the delta. 
+    Some existing resources are treated as immutable and not put in the delta.
     Most resources that support non-destructive updates like CloudFront are instead included."""
-    
     old_template = cloudformation.read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
 

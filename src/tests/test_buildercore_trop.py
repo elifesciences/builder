@@ -600,7 +600,6 @@ class TestBuildercoreTrop(base.BaseCase):
         fixture = fixture.strip() # trailing new line :(
         context = cfngen.build_context('project-with-alb', stackname='project-with-alb--foo')
         cfn_template = trop.render(context)
-        #print(cfn_template)
         assert fixture == cfn_template
 
     # --- dns
@@ -1227,7 +1226,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertNotIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
 
     # --- docdb
-        
+
     def test_docdb(self):
         expected = {'Resources':
 
