@@ -34,8 +34,7 @@ def divide_by_color(node_params):
     return subset(is_blue), subset(is_green)
 
 def _target_groups(stackname):
-    """returns a map of `{target-group-arn: [{target}, ...], ...}`.
-    target data is *complete*, including health description."""
+    "returns a map of `{target-group-arn: [{target}, ...], ...}`."
     target_group_arn_list = [val for key, val in cloudformation.outputs_map(stackname).items() if key.startswith('ELBv2TargetGroup')]
     c = conn(stackname)
     target_groups = {} # {target-group-arn: [{target: ...}, ]}
@@ -46,19 +45,13 @@ def _target_groups(stackname):
         target_groups[target_group_arn] = results
     return target_groups
 
-def find_targets(stackname, node_params):
-    """returns a map of {target-group-arn: [{target}, ...], ...} for targets found in `node_params`.
-    target data is *partial*, with *just* the `Target` description.
-    Used to pass targets to the `register_target` API in bulk."""
+def build_targets(stackname, node_params):
+    "returns a map of {target-group-arn: [{id: target}, ...], ...} for targets in `node_params`."
+    target_group_arn_list = [val for key, val in cloudformation.outputs_map(stackname).items() if key.startswith('ELBv2TargetGroup')]
     ec2_arns = node_params['nodes'].keys()
     target_groups = {}
-    for target_group_arn, target_group_targets in _target_groups(stackname).items():
-        targets = []
-        for target in target_group_targets:
-            target_arn = target['Target']['Id']
-            if target_arn in ec2_arns:
-                targets.append(target['Target'])
-        target_groups[target_group_arn] = targets
+    for target_group_arn in target_group_arn_list:
+        target_groups[target_group_arn] = [{'Id': ec2_arn} for ec2_arn in ec2_arns]
     return target_groups
 
 def _registered(stackname, node_params):
@@ -75,16 +68,18 @@ def _registered(stackname, node_params):
 def register(stackname, node_params):
     "register all targets in all target groups that are in node_params"
     c = conn(stackname)
-    for target_group_arn, target_list in find_targets(stackname, node_params).items():
+    for target_group_arn, target_list in build_targets(stackname, node_params).items():
         LOG.info("registering targets: %s", target_list)
-        c.register_targets(TargetGroupArn=target_group_arn, Targets=target_list)
+        if target_list:
+            c.register_targets(TargetGroupArn=target_group_arn, Targets=target_list)
 
 def deregister(stackname, node_params):
     "deregister all targets in all target groups"
     c = conn(stackname)
-    for target_group_arn, target_list in find_targets(stackname, node_params).items():
+    for target_group_arn, target_list in build_targets(stackname, node_params).items():
         LOG.info("deregistering targets: %s", target_list)
-        c.deregister_targets(TargetGroupArn=target_group_arn, Targets=target_list)
+        if target_list:
+            c.deregister_targets(TargetGroupArn=target_group_arn, Targets=target_list)
 
 # see also this:
 # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#waiters

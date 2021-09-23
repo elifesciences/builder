@@ -665,7 +665,7 @@ UPDATABLE_TITLE_PATTERNS = [
     '^RDSPort$',
     '^DocumentDB.*$',
 
-    # '^ELBv2$', # outputs as well as the lb resource
+    '^ELBv2$',
     # '^ELBv2Listener.*', # changes here seem to require re-creation of lb entirely
     '^ELBv2TargetGroup.*',
 
