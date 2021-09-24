@@ -13,6 +13,9 @@ from slugify import slugify
 import logging
 from kids.cache import cache as cached
 
+# lsh@2021-09-24: not sure about this relationship. move if necessary
+from . import trop
+
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
 
@@ -506,16 +509,28 @@ def stack_path(stackname, relative=False):
         return join(path, stackname) + ".json"
     raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
 
-# def stack_body(stackname):
-#    stack = boto_conn(stackname, 'cloudformation', client=True)
-#    return stack.get_template()['TemplateBody']
+# lsh@2021-09-24: disabled, unused, trivial
+# def stack_json(stackname, parse=False):
+#    "returns the json of the given stack as a STRING, not the parsed json unless `parse = True`."
+#    fp = open(stack_path(stackname), 'r')
+#    if parse:
+#        return json.load(fp)
+#    return fp.read()
 
-def stack_json(stackname, parse=False):
-    "returns the json of the given stack as a STRING, not the parsed json unless `parse = True`."
-    fp = open(stack_path(stackname), 'r')
-    if parse:
-        return json.load(fp)
-    return fp.read()
+# todo: this needs a better home
+def stack_outputs(stackname):
+    stack = json.load(open(stack_path(stackname), 'r'))
+    output_map = stack.get('Outputs', [])
+    return {output_key: output['Value'] for output_key, output in output_map.items()}
+
+def using_elb_v1(stackname):
+    "returns `True` if given `stackname` is using a v1 ELB"
+    return trop.ELB_TITLE in stack_outputs(stackname)
+
+def elb_name(stackname):
+    outputs = stack_outputs(stackname)
+    return outputs.get(trop.ELB_TITLE) or outputs.get(trop.ALB_TITLE)
+
 
 #
 # aws stack wrangling

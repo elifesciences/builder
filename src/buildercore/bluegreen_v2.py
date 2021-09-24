@@ -18,10 +18,14 @@ def conn(stackname):
 
 def find_load_balancer(stackname):
     "looks for the ELBv2 resource in the cloudformation template Outputs"
-    elb_name = cloudformation.read_output(stackname, trop.ALB_TITLE)
-    return elb_name
+    return cloudformation.read_output(stackname, trop.ALB_TITLE)
 
-def divide_by_color(node_params):
+def info(msg, stackname, node_params):
+    kwargs = {'elb_name': find_load_balancer(stackname),
+              'iid_list': ", ".join(node_params['nodes'].keys())}
+    LOG.info(msg.format(**kwargs))
+
+def divide_by_colour(node_params):
     is_blue = lambda node: node % 2 == 1
     is_green = lambda node: node % 2 == 0
 
@@ -33,24 +37,25 @@ def divide_by_color(node_params):
 
     return subset(is_blue), subset(is_green)
 
-def _target_groups(stackname):
-    "returns a map of `{target-group-arn: [{target}, ...], ...}`."
-    target_group_arn_list = [val for key, val in cloudformation.outputs_map(stackname).items() if key.startswith('ELBv2TargetGroup')]
-    c = conn(stackname)
-    target_groups = {} # {target-group-arn: [{target: ...}, ]}
-    for target_group_arn in target_group_arn_list:
-        results = c.describe_target_health(
-            TargetGroupArn=target_group_arn
-        )['TargetHealthDescriptions']
-        target_groups[target_group_arn] = results
-    return target_groups
+def _target_group_arn_list(stackname):
+    "returns a list of TargetGroup ARNs"
+    return [val for key, val in cloudformation.outputs_map(stackname).items() if key.startswith('ELBv2TargetGroup')]
 
-def build_targets(stackname, node_params):
+def _target_group_health(stackname, target_group_arn):
+    "returns a list of target data that includes their health"
+    return conn(stackname).describe_target_health(
+        TargetGroupArn=target_group_arn
+    )['TargetHealthDescriptions']
+
+def _target_groups(stackname):
+    "returns a map of `{target-group-arn: [{target}, ...], ...}` for all TargetGroups attached to `stackname`"
+    return {target_group_arn: _target_group_health(stackname, target_group_arn) for target_group_arn in _target_group_arn_list(stackname)}
+
+def _build_targets(stackname, node_params):
     "returns a map of {target-group-arn: [{id: target}, ...], ...} for targets in `node_params`."
-    target_group_arn_list = [val for key, val in cloudformation.outputs_map(stackname).items() if key.startswith('ELBv2TargetGroup')]
-    ec2_arns = node_params['nodes'].keys()
+    ec2_arns = sorted(node_params['nodes'].keys()) # predictable testing
     target_groups = {}
-    for target_group_arn in target_group_arn_list:
+    for target_group_arn in _target_group_arn_list(stackname):
         target_groups[target_group_arn] = [{'Id': ec2_arn} for ec2_arn in ec2_arns]
     return target_groups
 
@@ -65,10 +70,12 @@ def _registered(stackname, node_params):
             result[key] = 'Reason' not in target['TargetHealth']
     return result
 
+# ---
+
 def register(stackname, node_params):
     "register all targets in all target groups that are in node_params"
     c = conn(stackname)
-    for target_group_arn, target_list in build_targets(stackname, node_params).items():
+    for target_group_arn, target_list in _build_targets(stackname, node_params).items():
         LOG.info("registering targets: %s", target_list)
         if target_list:
             c.register_targets(TargetGroupArn=target_group_arn, Targets=target_list)
@@ -76,7 +83,7 @@ def register(stackname, node_params):
 def deregister(stackname, node_params):
     "deregister all targets in all target groups"
     c = conn(stackname)
-    for target_group_arn, target_list in build_targets(stackname, node_params).items():
+    for target_group_arn, target_list in _build_targets(stackname, node_params).items():
         LOG.info("deregistering targets: %s", target_list)
         if target_list:
             c.deregister_targets(TargetGroupArn=target_group_arn, Targets=target_list)
@@ -85,7 +92,7 @@ def deregister(stackname, node_params):
 # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#waiters
 
 def wait_registered_any(stackname, node_params):
-    LOG.info("Waiting for registration of any on %s: %s")  # , elb_name, _instance_ids(node_params))
+    info("Waiting for registration of any on {elb_name}: {iid_list}", stackname, node_params)
 
     def condition():
         registered = _registered(stackname, node_params)
@@ -97,7 +104,7 @@ def wait_registered_any(stackname, node_params):
     utils.call_while(condition, interval=1, timeout=600)
 
 def wait_registered_all(stackname, node_params):
-    LOG.info("Waiting for registration of all on %s: %s")  # , elb_name, _instance_ids(node_params))
+    info("Waiting for registration of all on {elb_name}: {iid_list}", stackname, node_params)
 
     def condition():
         registered = _registered(stackname, node_params)
@@ -107,7 +114,7 @@ def wait_registered_all(stackname, node_params):
     utils.call_while(condition, interval=5, timeout=600)
 
 def wait_deregistered_all(stackname, node_params):
-    LOG.info("Waiting for deregistration of all on %s: %s")  # , elb_name, _instance_ids(node_params))
+    info("Waiting for deregistration of all on {elb_name}: {iid_list}", stackname, node_params)
 
     def condition():
         registered = _registered(stackname, node_params)
@@ -126,7 +133,7 @@ def wait_all_in_service(stackname):
         for target_group in _target_groups(stackname).values():
             for target in target_group:
                 target_status_by_arn[target['Target']['Id']] = target['TargetHealth']['State']
-        LOG.info("Instance statuses on %s: %s", stackname, target_status_by_arn)
+        LOG.info("Instance statuses on %s: %s", find_load_balancer(stackname), target_status_by_arn)
         return [status for status in target_status_by_arn.values() if status != 'healthy']
 
     utils.call_while(
@@ -136,10 +143,6 @@ def wait_all_in_service(stackname):
         update_msg='Waiting for all instances to be in service...',
         exception_class=SomeOutOfServiceInstances
     )
-
-def _instance_ids(node_params):
-    return list(node_params['nodes'].keys())
-
 
 def do(single_node_work_fn, node_params):
     """`node_params` is a dictionary:
@@ -156,12 +159,11 @@ def do(single_node_work_fn, node_params):
         }
     """
     stackname = node_params['stackname']
-    elb_name = find_load_balancer(stackname)
 
     wait_all_in_service(stackname)
-    blue, green = divide_by_color(node_params)
+    blue, green = divide_by_colour(node_params)
 
-    LOG.info("Blue phase on %s: %s", elb_name, _instance_ids(blue))
+    info("Blue phase on {elb_name}: {iid_list}", stackname, blue)
     deregister(stackname, blue)
     wait_deregistered_all(stackname, blue)
     core.parallel_work(single_node_work_fn, blue)
@@ -170,7 +172,7 @@ def do(single_node_work_fn, node_params):
     register(stackname, blue)
     wait_registered_any(stackname, blue)
 
-    LOG.info("Green phase on %s: %s", stackname, _instance_ids(green))
+    info("Green phase on {elb_name}: {iid_list}", stackname, green)
     deregister(stackname, green)
     wait_deregistered_all(stackname, green)
     core.parallel_work(single_node_work_fn, green)

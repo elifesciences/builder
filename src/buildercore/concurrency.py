@@ -1,6 +1,6 @@
 "Bit of a floating module, I guess to avoid circular dependencies. Needs to be reconciled somehow."
 
-from . import bluegreen, bluegreen_v2, context_handler, cloudformation
+from . import core, bluegreen, bluegreen_v2, context_handler
 
 def concurrency_for(stackname, concurrency_name):
     """concurrency default is to perform updates one machine at a time.
@@ -15,7 +15,7 @@ def concurrency_for(stackname, concurrency_name):
     if concurrency_name == 'blue-green':
         context = context_handler.load_context(stackname)
 
-        if cloudformation.using_elb_v1(stackname):
+        if core.using_elb_v1(stackname):
             return bluegreen.BlueGreenConcurrency(context['aws']['region'])
 
         return bluegreen_v2.do

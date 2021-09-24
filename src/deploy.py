@@ -68,7 +68,7 @@ def switch_revision_update_instance(stackname, revision=None, concurrency='blue-
 def load_balancer_status(stackname):
     "prints the 'health' status of ec2 instances attached to the load balancer."
     LOG.info("Load balancer name: %s", cloudformation.elb_name(stackname))
-    if cloudformation.using_elb_v1(stackname):
+    if core.using_elb_v1(stackname):
         load_balancer_status__v1(stackname)
     else:
         load_balancer_status__v2(stackname)
@@ -77,7 +77,7 @@ def load_balancer_status(stackname):
 def load_balancer_register_all(stackname):
     "ensure all ec2 nodes for given `stackname` are registered (added) to the load balancer."
     LOG.info("Load balancer name: %s", cloudformation.elb_name(stackname))
-    if cloudformation.using_elb_v1(stackname):
+    if core.using_elb_v1(stackname):
         load_balancer_register_all__v1(stackname)
     else:
         load_balancer_register_all__v2(stackname)

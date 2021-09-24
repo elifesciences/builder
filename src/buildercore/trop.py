@@ -926,7 +926,7 @@ def render_alb(context, template, ec2_instances):
             'Protocol': protocol,
             'ProtocolVersion': 'HTTP1',
             'Port': port,
-            'Targets': [alb.TargetDescription(Id=Ref(ec2)) for ec2 in ec2_instances.values()],
+            'Targets': [alb.TargetDescription(Id=Ref(ec2id)) for ec2id in ec2_instances.values()],
             'TargetGroupAttributes': _target_group_attrs,
             'VpcId': context['aws']['vpc-id'],
 
@@ -949,10 +949,10 @@ def render_alb(context, template, ec2_instances):
 
         _lb_target_group_list.append(alb.TargetGroup(**_lb_target_group))
 
-        output = mkoutput(target_group_arn,
-                          "TargetGroup for protocol %s on port %s" % (protocol, port),
-                          Ref(target_group_arn))
-        outputs.append(output)
+        _output = mkoutput(target_group_arn,
+                           "TargetGroup for protocol %s on port %s" % (protocol, port),
+                           Ref(target_group_arn))
+        outputs.append(_output)
 
     # -- listeners, one for each protocol+port pair
 

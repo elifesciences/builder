@@ -93,7 +93,7 @@ def bootstrap(stackname, context):
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_body = core.stack_json(stackname)
+    stack_body = open(core.stack_path(stackname), 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         LOG.warning("empty template: %s" % (core.stack_path(stackname),))
         return
@@ -143,10 +143,6 @@ def outputs_map(stackname):
 def elb_name(stackname):
     outputs = outputs_map(stackname)
     return outputs.get(trop.ELB_TITLE) or outputs.get(trop.ALB_TITLE)
-
-def using_elb_v1(stackname):
-    "returns `True` if given `stackname` is using a v1 ELB"
-    return trop.ELB_TITLE in outputs_map(stackname)
 
 def read_output(stackname, key):
     "finds a literal `Output` from a cloudformation template matching given `key`"
