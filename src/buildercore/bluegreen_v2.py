@@ -1,8 +1,7 @@
-"""Performs blue-green actions over a load-balanced stack.
+"""Performs blue-green actions over a load-balanced stack (ElasticLoadBalancer v2).
 
 The nodes inside a stack are divided into two groups: blue and green.
-Actions are performed separately on the two groups while they are detached from the load balancer.
-Obviously requires a load balancer."""
+Actions are performed separately on the two groups while they are detached from the load balancer."""
 
 import logging
 from . import core, utils, cloudformation, trop
@@ -17,7 +16,7 @@ def conn(stackname):
     return core.boto_conn(stackname, 'elbv2', client=True)
 
 def find_load_balancer(stackname):
-    "looks for the ELBv2 resource in the cloudformation template Outputs"
+    "returns name of the ELBv2 resource in the cloudformation template Outputs"
     return cloudformation.read_output(stackname, trop.ALB_TITLE)
 
 def info(msg, stackname, node_params):
@@ -66,7 +65,7 @@ def _registered(stackname, node_params):
         for target in target_group_targets:
             # key has to be complex because target is present across multiple target-groups/ports
             key = (target['Target']['Id'], target['Target']['Port'])
-            # if there is a 'Reason' key, it isn't healthy/registered.
+            # if there is a 'Reason' key then it isn't healthy/registered.
             result[key] = 'Reason' not in target['TargetHealth']
     return result
 
@@ -87,9 +86,6 @@ def deregister(stackname, node_params):
         LOG.info("deregistering targets: %s", target_list)
         if target_list:
             c.deregister_targets(TargetGroupArn=target_group_arn, Targets=target_list)
-
-# see also this:
-# - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#waiters
 
 def wait_registered_any(stackname, node_params):
     info("Waiting for registration of any on {elb_name}: {iid_list}", stackname, node_params)

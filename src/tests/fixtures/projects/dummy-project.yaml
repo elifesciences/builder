@@ -95,14 +95,12 @@ defaults:
         alb:
             # elb defaults only used if an 'elb' section present in project
             stickiness: false
-            protocol: http
-            additional_listeners: {}
+            listeners:
+                - http: 80
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::...:...
             healthcheck:
-                protocol: http
-                port: 80
                 path: /ping
                 timeout: 4
                 interval: 5

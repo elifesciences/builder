@@ -8,9 +8,11 @@ source venv/bin/activate
 find src/ -name '*.py[c|~]' -delete
 find src/ -regex "\(.*__pycache__.*\|*.py[co]\)" -delete
 
+# --jobs 0 will auto-detect the number of processors available to use
 # E1129=doesn't like Fabric's context manager
 # E0602=undefined-variable, temporary while python2 is still supported
 pylint -E *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py src/tests/*.py src/integration_tests/*.py \
+    --jobs 0 \
     --disable=E1129 \
     --disable=E0602
 # specific warnings we're interested in, comma separated with no spaces

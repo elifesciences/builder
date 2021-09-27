@@ -1,8 +1,7 @@
-"""Performs blue-green actions over a load-balanced stack (AWS ElasticLoadBalancer v1)
+"""Performs blue-green actions over a load-balanced stack (ElasticLoadBalancer v1)
 
 The nodes inside a stack are divided into two groups: blue and green.
-Actions are performed separately on the two groups while they are detached from the load balancer.
-Obviously requires a load balancer."""
+Actions are performed separately on the two groups while they are detached from the load balancer."""
 
 import logging
 from .core import boto_client, parallel_work

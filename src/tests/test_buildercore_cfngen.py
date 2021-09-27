@@ -9,14 +9,13 @@ def test_build_alb_context(test_projects):
     context = cfngen.build_context('project-with-alb', stackname='project-with-alb--test')
     context = utils.remove_ordereddict(context)
     expected = {
-        'stickiness': False,
-        'protocol': 'http',
-        'additional_listeners': {},
-        'idle_timeout': 60,
+        'stickiness': {'type': 'cookie', 'cookie-name': 'dummy-cookie'},
+        'idle_timeout': '60',
         'certificate': 'arn:aws:iam::...:...',
+        'listeners': [
+            ['HTTP', 80], ['HTTPS', 443], ['HTTPS', 8001]
+        ],
         'healthcheck': {
-            'protocol': 'http',
-            'port': 80,
             'path': '/ping',
             'timeout': 4,
             'interval': 5,

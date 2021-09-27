@@ -135,17 +135,28 @@ def read_template(stackname):
     return json.load(open(output_fname, 'r'))
 
 def outputs_map(stackname):
+    """returns a map of a stack's 'Output' keys to their values.
+    performs a boto API call."""
     data = core.describe_stack(stackname).meta.data # boto3
     if not 'Outputs' in data:
         return {}
     return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
 
-def elb_name(stackname):
-    outputs = outputs_map(stackname)
-    return outputs.get(trop.ELB_TITLE) or outputs.get(trop.ALB_TITLE)
+def template_outputs_map(stackname):
+    """returns a map of a stack template's 'Output' keys to their values.
+    requires a stack to exist on the filesystem."""
+    stack = json.load(open(core.stack_path(stackname), 'r'))
+    output_map = stack.get('Outputs', [])
+    return {output_key: output['Value'] for output_key, output in output_map.items()}
+
+def template_using_elb_v1(stackname):
+    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)"
+    return trop.ELB_TITLE in template_outputs_map(stackname)
 
 def read_output(stackname, key):
-    "finds a literal `Output` from a cloudformation template matching given `key`"
+    """finds a literal `Output` from a cloudformation template matching given `key`.
+    fails hard if expected key not found, or too many keys found.
+    performs a boto API call."""
     data = core.describe_stack(stackname).meta.data # boto3
     ensure('Outputs' in data, "Outputs missing: %s" % data)
     selected_outputs = [o for o in data['Outputs'] if o['OutputKey'] == key]

@@ -3,11 +3,11 @@ an AWS CloudFormation template dynamically using values from the
 'context', a dictionary of data built up in `cfngen.py` derived from
 the project file (`projects/elife.yaml`):
 
-   projects file -> context -> troposphere.py -> cloudformation json
+   projects file -> build context -> troposphere.py -> cloudformation json
 
 The non-AWS pipeline is similar:
 
-                            -> terraform.py   -> terraform json
+                                  -> terraform.py   -> terraform json
 
 see also `terraform.py`"""
 
@@ -22,7 +22,7 @@ from .utils import ensure, subdict, lmap, isstr, deepcopy
 import logging
 
 # todo: remove on upgrade to python 3
-# backports a fix we need to py2-compatible troposphere 2.7.3.
+# backports a fix we need to py2-compatible troposphere 2.7.1
 # see:
 # - https://github.com/cloudtools/troposphere/issues/1888
 # - https://github.com/cloudtools/troposphere/commit/15478380cc0775c1cb915b74c031d68ca988b1c5
@@ -70,6 +70,11 @@ def _remove_if_none(data, key_list):
             del data[key]
 
 def _sanitize_title(string):
+    """a form of slugification.
+    foo = Foo
+    foo-bar => FooBar
+    foo-bar-baz => FooBarBaz
+    FOO-BAR-BAZ => FooBarBaz"""
     return "".join(map(str.capitalize, string.split("-")))
 
 def _convert_ports_to_dictionary(ports):
@@ -854,9 +859,8 @@ def _alb_tags(context):
     return [ec2.Tag(key, value) for key, value in tags.items()]
 
 def render_alb(context, template, ec2_instances):
-    """
-    https://troposphere.readthedocs.io/en/latest/apis/troposphere.html#module-troposphere.elasticloadbalancingv2
-    """
+    """an ALB is an ELBv2. It can operate at the network level if need be but we're using it at the
+    'Application' level, routing using port and protocol."""
 
     alb_is_public = True if context['full_hostname'] else False
 

@@ -374,27 +374,19 @@ def build_context_elb(pdata, context):
         })
     return context
 
-def update_in(ddict, path, fn):
-    "modifies given `ddict` in place at dotted path using fn."
-    bits = path.split('.', 1)
-    if len(bits) == 1:
-        ddict[bits[0]] = fn(ddict.get(bits[0]))
-        return
-    update_in(ddict[bits[0]], bits[1], fn)
-
 def build_context_alb(pdata, context):
     if 'alb' in pdata['aws'] and pdata['aws']['alb'] is not False:
         context['alb'] = pdata['aws']['alb']
-        update_in(context, 'alb.idle_timeout', str)
+        context['alb']['idle_timeout'] = str(context['alb']['idle_timeout'])
         new_listeners = []
         for pair_map in context['alb']['listeners']:
             protocol, port = list(pair_map.items())[0]
             protocol = protocol.upper()
             new_listeners.append((protocol, port))
         context['alb']['listeners'] = new_listeners
-        update_in(context, 'alb.subnets', lambda _: [
+        context['alb']['subnets'] = [
             pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
-        ])
+        ]
     return context
 
 def build_context_cloudfront(pdata, context):
@@ -676,7 +668,6 @@ UPDATABLE_TITLE_PATTERNS = [
 
 # patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
 LB_UPDATABLE_TITLE_PATTERNS = [
-    # 2021-09-16: an exception needs to be made for load balancers where the ExtDNS points to the LB.
     '^ExtDNS$',
 ]
 
@@ -701,11 +692,11 @@ REMOVABLE_TITLE_PATTERNS = [
     '^KeyName$'
 ]
 
-# patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
+# patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
 LB_REMOVABLE_TITLE_PATTERNS = [
     '^ElasticLoadBalancer$',
     '^ELBSecurityGroup$',
-    'ELBv2.*',
+    '^ELBv2.*',
 ]
 
 # CloudFormation is nicely chopped up into:
@@ -737,12 +728,6 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'ter
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None, None)
 
-
-def wrangle(source_list, *more_lists):
-    new_source = source_list[:] # copy all elements, don't affect source
-    for more in more_lists:
-        new_source.extend(more)
-    return new_source
 
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.

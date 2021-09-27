@@ -120,7 +120,7 @@ defaults:
             #stickiness:
             #   type: cookie | browser
             #   cookie-name: ...
-            # (replaces ELB's 'protocol' and 'additional_listeners'
+            # 'listeners' replaces ELB's 'protocol' and 'additional_listeners'
             listeners:
                 - http: 80
             idle_timeout: 60
@@ -691,41 +691,6 @@ journal:
                     project: "elife-fastly"
                     dataset: "{instance}"
                     table: "journal"
-        withalb:
-            ec2:
-                cluster-size: 2
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-journal"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 10000
-                    timeout: 2000
-                errors:
-                    # always prod for simplicity
-                    url: https://prod-elife-error-pages.s3.amazonaws.com/
-                    codes:
-                        404: "404.html"
-                        410: "410.html"
-                        503: "503.html"
-                    fallbacks:
-                        4xx: "4xx.html"
-                        5xx: "5xx.html"
-                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/1WzbLJKoGqzOF1IrhTNx2M/versions/19/data/acls
-                vcl:
-                    - "original-host"
-                    - "ping-status"
-                    - "strip-non-journal-cookies"
-                    - "journal-google-scholar"
-                    - "journal-google-scholar-vary"
-            alb:
-                stickiness: false
-                # (replaces 'protocol' and 'additional-listeners' in elb)
-                listeners:
-                    - http: 80
-                    - https: 443
-                    #- https: 8001
-
     vagrant:
         ram: 4096
         ports:
@@ -2109,56 +2074,3 @@ accepted-submission-cleaning:
                 deletion-policy: retain
         sns:
             - elife-accepted-submission-cleaning-s3-events
-
-alb-demo:
-    subdomain: albdemo
-    description: test for Application Load Balancer
-    aws:
-        subdomains:
-            - albdemo-omg
-        ports:
-            - 22
-            - 80
-            - 443
-            - 8001
-        ec2:
-            cluster-size: 2
-            #suppressed: [1]
-        #elb:
-        #    stickiness:
-        #       type: browser
-        #    protocol:
-        #        - http
-        #        - https
-        #    additional_listeners:
-        #        foo_bar_baz:
-        #            protocol: https
-        #            port: 8001
-        #    idle_timeout: 60
-        #    # maintained through `aws iam upload-server-certificate`
-        #    certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
-        #    healthcheck:
-        #        protocol: http
-        #        port: 80
-        #        path: /ping
-        #        timeout: 4
-        #        interval: 5
-        #        unhealthy_threshold: 2
-        #        healthy_threshold: 2
-        alb:
-            stickiness:
-               type: browser
-            # (replaces 'protocol' and 'additional-listeners' in elb)
-            listeners: 
-                - http: 80
-                - https: 443
-                - https: 8001
-            idle_timeout: 60
-            # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2021-02-11.wildcard.elifesciences.org
-            healthcheck:
-                path: /ping
-                timeout: 4
-                interval: 5
-                unhealthy_threshold: 2
-                healthy_threshold: 2

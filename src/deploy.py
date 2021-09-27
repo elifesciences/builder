@@ -2,7 +2,7 @@
 
 from pprint import pformat
 from decorators import requires_aws_stack
-from buildercore import core, bootstrap, bluegreen_v2, bluegreen, cloudformation, context_handler
+from buildercore import core, bootstrap, bluegreen_v2, bluegreen, cloudformation, context_handler, trop
 from buildercore.core import all_node_params
 from buildercore.concurrency import concurrency_for
 import buildvars
@@ -20,10 +20,9 @@ def load_balancer_status__v1(stackname):
     LOG.info("Health: %s", pformat(health))
 
 def load_balancer_status__v2(stackname):
-    arn_list = [val for key, val in cloudformation.outputs_map(stackname).items() if key.startswith('ELBv2TargetGroup')]
     conn = core.boto_conn(stackname, 'elbv2', client=True)
     health_list = []
-    for target_group_arn in arn_list:
+    for target_group_arn in bluegreen_v2._target_group_arn_list(stackname):
         for health in conn.describe_target_health(
             TargetGroupArn=target_group_arn
         )['TargetHealthDescriptions']:
@@ -59,7 +58,8 @@ def load_balancer_register_all__v2(stackname):
 
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None, concurrency='blue-green'):
-    "todo: what does this task do?"
+    """changes the revision of the stack's project and then calls highstate.
+    if multiple nodes, it does this using blue-green concurrency."""
     buildvars.switch_revision(stackname, revision)
     bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency_for(stackname, concurrency))
 
@@ -67,8 +67,9 @@ def switch_revision_update_instance(stackname, revision=None, concurrency='blue-
 @requires_aws_stack
 def load_balancer_status(stackname):
     "prints the 'health' status of ec2 instances attached to the load balancer."
-    LOG.info("Load balancer name: %s", cloudformation.elb_name(stackname))
-    if core.using_elb_v1(stackname):
+    elb_name = cloudformation.read_output(stackname, trop.ALB_TITLE)
+    LOG.info("Load balancer name: %s", elb_name)
+    if cloudformation.template_using_elb_v1(stackname):
         load_balancer_status__v1(stackname)
     else:
         load_balancer_status__v2(stackname)
@@ -76,8 +77,7 @@ def load_balancer_status(stackname):
 @requires_aws_stack
 def load_balancer_register_all(stackname):
     "ensure all ec2 nodes for given `stackname` are registered (added) to the load balancer."
-    LOG.info("Load balancer name: %s", cloudformation.elb_name(stackname))
-    if core.using_elb_v1(stackname):
+    if cloudformation.template_using_elb_v1(stackname):
         load_balancer_register_all__v1(stackname)
     else:
         load_balancer_register_all__v2(stackname)

@@ -40,8 +40,6 @@ TARGET_HEALTH = {
                 'State': 'healthy',
             }
         },
-
-
     ]
 }
 
@@ -102,10 +100,7 @@ def test_target_group_health():
                 'State': 'healthy',
             }
         },
-
-
     ]
-
     stackname = "foo"
     target_group_arn = "arn--my-target-group"
     mock = MagicMock()
@@ -141,7 +136,6 @@ def test_target_groups():
             },
         ]
     }
-
     stackname = "foo"
     mock = MagicMock()
     mock.describe_target_health.return_value = TARGET_HEALTH
@@ -169,8 +163,3 @@ def test_registered():
     with patch('buildercore.bluegreen_v2.conn', return_value=mock):
         with patch('buildercore.cloudformation.outputs_map', return_value=TARGET_GROUP_OUTPUT):
             assert bluegreen_v2._registered(stackname, NODE_PARAMS) == expected
-
-# ---
-
-def test_register():
-    pass
