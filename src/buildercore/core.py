@@ -1,6 +1,6 @@
 "general logic for the `buildercore` module."
 
-import os, glob, json, re
+import os, glob, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
@@ -305,6 +305,7 @@ class NoPublicIps(Exception):
     pass
 
 def all_node_params(stackname):
+    "returns a map of node data"
     data = stack_data(stackname)
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {
@@ -314,7 +315,7 @@ def all_node_params(stackname):
         for ec2 in data
     }
 
-    # TODO: default copied from stack_all_ec2_nodes, but not the most robust probably
+    # copied from stack_all_ec2_nodes. probably not the most robust.
     params = _ec2_connection_params(stackname, config.DEPLOY_USER)
 
     # custom for builder, these are available inside workfn as `command.env('public_ips')`
@@ -364,7 +365,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
     # TODO: candidate for a @backoff decorator
-    def single_node_work():
+    def single_node_work_fn():
         for attempt in range(0, 6):
             try:
                 return workfn(**work_kwargs)
@@ -389,18 +390,17 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         'aborts': False
     }
 
-    # TODO: extract in buildercore.concurrency
     if not concurrency:
         concurrency = 'parallel'
 
     if concurrency == 'serial':
-        return serial_work(single_node_work, params)
+        return serial_work(single_node_work_fn, params)
 
     if concurrency == 'parallel':
-        return parallel_work(single_node_work, params)
+        return parallel_work(single_node_work_fn, params)
 
     if callable(concurrency):
-        return concurrency(single_node_work, params)
+        return concurrency(single_node_work_fn, params)
 
     raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
 
@@ -505,17 +505,6 @@ def stack_path(stackname, relative=False):
         path = config.STACK_DIR if relative else config.STACK_PATH
         return join(path, stackname) + ".json"
     raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
-
-# def stack_body(stackname):
-#    stack = boto_conn(stackname, 'cloudformation', client=True)
-#    return stack.get_template()['TemplateBody']
-
-def stack_json(stackname, parse=False):
-    "returns the json of the given stack as a STRING, not the parsed json unless `parse = True`."
-    fp = open(stack_path(stackname), 'r')
-    if parse:
-        return json.load(fp)
-    return fp.read()
 
 #
 # aws stack wrangling

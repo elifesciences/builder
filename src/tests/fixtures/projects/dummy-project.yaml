@@ -92,6 +92,20 @@ defaults:
             #type: gp2 # standard|gp2|io1|sc1 # todo: enable
             size: 10 # GB
             device: /dev/sdh
+        alb:
+            # elb defaults only used if an 'elb' section present in project
+            stickiness: false
+            listeners:
+                - http: 80
+            idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
+            certificate: arn:aws:iam::...:...
+            healthcheck:
+                path: /ping
+                timeout: 4
+                interval: 5
+                unhealthy_threshold: 2
+                healthy_threshold: 2
         elb:
             # elb defaults only used if an 'elb' section present in project
             stickiness: false
@@ -862,3 +876,21 @@ project-with-unique-alt-config:
         prod:
             unique: true
 
+project-with-alb:
+    subdomain: project-with-alb
+    aws:
+        subdomains:
+            - foo.bar
+        ports:
+            - 22
+            - 80
+        ec2:
+            cluster-size: 2
+        alb: 
+            listeners:
+                - http: 80
+                - https: 443
+                - https: 8001
+            stickiness:
+                type: cookie
+                cookie-name: dummy-cookie

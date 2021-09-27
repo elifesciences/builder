@@ -118,6 +118,7 @@ def build_context(pname, **more_context):
         's3': {},
         'eks': False,
         'elb': False,
+        'alb': False,
         'sns': [],
         'sqs': {},
         'ext': False,
@@ -137,6 +138,7 @@ def build_context(pname, **more_context):
         build_context_aws,
         build_context_ec2,
         build_context_elb,
+        build_context_alb,
         build_context_cloudfront,
         build_context_sns_sqs,
         build_context_s3,
@@ -372,6 +374,21 @@ def build_context_elb(pdata, context):
         })
     return context
 
+def build_context_alb(pdata, context):
+    if 'alb' in pdata['aws'] and pdata['aws']['alb'] is not False:
+        context['alb'] = pdata['aws']['alb']
+        context['alb']['idle_timeout'] = str(context['alb']['idle_timeout'])
+        new_listeners = []
+        for pair_map in context['alb']['listeners']:
+            protocol, port = list(pair_map.items())[0]
+            protocol = protocol.upper()
+            new_listeners.append((protocol, port))
+        context['alb']['listeners'] = new_listeners
+        context['alb']['subnets'] = [
+            pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
+        ]
+    return context
+
 def build_context_cloudfront(pdata, context):
     _parameterize = parameterize(context)
 
@@ -590,8 +607,8 @@ def validate_project(pname, **extra):
 #
 
 def quick_render(project_name, **more_context):
-    """generates a representative Cloudformation template for given project with dummy values
-    only called during testing"""
+    """generates a Cloudformation template for given `project_name` with dummy values overriden by anything in `more_context`.
+    lsh@2021-09: only called during testing so far."""
     # set a dummy instance id if one hasn't been set.
     more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
     context = build_context(project_name, **more_context)
@@ -615,7 +632,6 @@ def generate_stack(pname, **more_context):
 #
 
 
-# note: can't add ExtDNS as it changes dynamically when we start/stop instances and should not be touched after creation.
 UPDATABLE_TITLE_PATTERNS = [
     '^CloudFront.*',
     '^ElasticLoadBalancer.*',
@@ -639,8 +655,23 @@ UPDATABLE_TITLE_PATTERNS = [
     '^IntDomainName$',
     '^RDSHost$',
     '^RDSPort$',
-    '^DocumentDB.*$'
+    '^DocumentDB.*$',
+
+    '^ELBv2$',
+    # '^ELBv2Listener.*', # changes here seem to require re-creation of lb entirely
+    '^ELBv2TargetGroup.*',
+
+    # note: can't add ExtDNS as it changes dynamically when we start/stop instances and
+    # should not be touched after creation.
+    # '^ExtDNS$',
 ]
+
+# patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
+LB_UPDATABLE_TITLE_PATTERNS = [
+    '^ExtDNS$',
+]
+
+EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
 
 REMOVABLE_TITLE_PATTERNS = [
     '^CloudFront.*',
@@ -660,7 +691,13 @@ REMOVABLE_TITLE_PATTERNS = [
     '^VPCSecurityGroup$',
     '^KeyName$'
 ]
-EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
+
+# patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
+LB_REMOVABLE_TITLE_PATTERNS = [
+    '^ElasticLoadBalancer$',
+    '^ELBSecurityGroup$',
+    '^ELBv2.*',
+]
 
 # CloudFormation is nicely chopped up into:
 # * what to add
@@ -691,12 +728,23 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'ter
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None, None)
 
+
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
-
-    Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
+    Some existing resources are treated as immutable and not put in the delta.
+    Most resources that support non-destructive updates like CloudFront are instead included."""
     old_template = cloudformation.read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
+
+    removeable_title_patterns = REMOVABLE_TITLE_PATTERNS[:]
+    updateable_title_patterns = UPDATABLE_TITLE_PATTERNS[:]
+
+    # when should we be able to modify load balancers?
+    # this condition covers the case of migrating from an ELB to an ALB.
+    # it doesn't cover downgrading, removing an LB altogether etc.
+    if 'ElasticLoadBalancer' in old_template['Resources']:
+        updateable_title_patterns.extend(LB_UPDATABLE_TITLE_PATTERNS)
+        removeable_title_patterns.extend(LB_REMOVABLE_TITLE_PATTERNS)
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -707,10 +755,10 @@ def template_delta(context):
         return False
 
     def _title_is_updatable(title):
-        return len([p for p in UPDATABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+        return len([p for p in updateable_title_patterns if re.match(p, title)]) > 0
 
     def _title_is_removable(title):
-        return len([p for p in REMOVABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+        return len([p for p in removeable_title_patterns if re.match(p, title)]) > 0
 
     # TODO: investigate if this is still necessary
     # start backward compatibility code

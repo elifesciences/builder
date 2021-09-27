@@ -13,7 +13,7 @@ export BUILDER_NON_INTERACTIVE=1
 
 if [ -z "$args" ]; then
     # no arguments given, run the regular test suite and ignore integration tests
-    ./patched_pytest src/tests/ -vv "$@"
+    ./patched_pytest src/tests/ -vv
 else
-    ./patched_pytest "$@"
+    ./patched_pytest -vv "$@"
 fi

@@ -93,7 +93,7 @@ def bootstrap(stackname, context):
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_body = core.stack_json(stackname)
+    stack_body = open(core.stack_path(stackname), 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         LOG.warning("empty template: %s" % (core.stack_path(stackname),))
         return
@@ -132,15 +132,37 @@ def _wait_until_in_progress(stackname):
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    # TODO: use a context manager to close the file afterwards
     return json.load(open(output_fname, 'r'))
 
+def outputs_map(stackname):
+    """returns a map of a stack's 'Output' keys to their values.
+    performs a boto API call."""
+    data = core.describe_stack(stackname).meta.data # boto3
+    if not 'Outputs' in data:
+        return {}
+    return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
+
+def template_outputs_map(stackname):
+    """returns a map of a stack template's 'Output' keys to their values.
+    requires a stack to exist on the filesystem."""
+    stack = json.load(open(core.stack_path(stackname), 'r'))
+    output_map = stack.get('Outputs', [])
+    return {output_key: output['Value'] for output_key, output in output_map.items()}
+
+def template_using_elb_v1(stackname):
+    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)"
+    return trop.ELB_TITLE in template_outputs_map(stackname)
+
 def read_output(stackname, key):
+    """finds a literal `Output` from a cloudformation template matching given `key`.
+    fails hard if expected key not found, or too many keys found.
+    performs a boto API call."""
     data = core.describe_stack(stackname).meta.data # boto3
     ensure('Outputs' in data, "Outputs missing: %s" % data)
     selected_outputs = [o for o in data['Outputs'] if o['OutputKey'] == key]
-    ensure(len(selected_outputs) == 1, "Too many outputs selected: %s" % selected_outputs)
-    ensure('OutputValue' in selected_outputs[0], "Badly formed Output: %s" % selected_outputs[0])
+    ensure(selected_outputs, "No outputs found for key %r" % (key,))
+    ensure(len(selected_outputs) == 1, "Too many outputs selected for key %r: %s" % (key, selected_outputs))
+    ensure('OutputValue' in selected_outputs[0], "Badly formed Output for key %r: %s" % (key, selected_outputs[0]))
     return selected_outputs[0]['OutputValue']
 
 def apply_delta(template, delta):

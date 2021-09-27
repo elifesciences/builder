@@ -1,9 +1,30 @@
 import pytest
 from . import base
-from buildercore import core, cfngen, context_handler, cloudformation
+from buildercore import core, cfngen, context_handler, cloudformation, utils
 import logging
 
 LOG = logging.getLogger(__name__)
+
+def test_build_alb_context(test_projects):
+    context = cfngen.build_context('project-with-alb', stackname='project-with-alb--test')
+    context = utils.remove_ordereddict(context)
+    expected = {
+        'stickiness': {'type': 'cookie', 'cookie-name': 'dummy-cookie'},
+        'idle_timeout': '60',
+        'certificate': 'arn:aws:iam::...:...',
+        'listeners': [
+            ['HTTP', 80], ['HTTPS', 443], ['HTTPS', 8001]
+        ],
+        'healthcheck': {
+            'path': '/ping',
+            'timeout': 4,
+            'interval': 5,
+            'unhealthy_threshold': 2,
+            'healthy_threshold': 2
+        },
+        'subnets': ['subnet-1d4eb46a', 'subnet-7a31dd46']
+    }
+    assert context['alb'] == expected
 
 def test_docdb_config(test_projects):
     context = cfngen.build_context('project-with-docdb', stackname='project-with-docdb--test')
