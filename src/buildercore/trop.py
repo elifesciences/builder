@@ -920,7 +920,7 @@ def render_alb(context, template, ec2_instances):
         else:
             raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
         _target_group_attr_map.update(sticky_settings)
-    _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in _target_group_attr_map.items()]
+    _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in sorted(_target_group_attr_map.items())]
 
     _lb_target_group_list = []
     for protocol, port in context['alb']['listeners']:
