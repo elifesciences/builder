@@ -16,7 +16,8 @@ ALL_PROJECTS = [
     'project-on-gcp', 'project-with-bigquery-datasets-only', 'project-with-bigquery', 'project-with-bigquery-remote-schemas',
     'project-with-eks', 'project-with-eks-helm', 'project-with-eks-external-dns', 'project-with-eks-efs',
     'project-with-docdb', 'project-with-docdb-cluster',
-    'project-with-unique-alt-config'
+    'project-with-unique-alt-config',
+    'project-with-alb'
 ]
 
 class TestProject(base.BaseCase):
