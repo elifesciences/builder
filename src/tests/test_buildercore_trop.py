@@ -606,7 +606,7 @@ class TestBuildercoreTrop(base.BaseCase):
         del cfn_template['Resources']['EC2Instance1']['Properties']['UserData']
         del cfn_template['Resources']['EC2Instance2']['Properties']['UserData']
 
-        assert fixture == cfn_template
+        self.assertEqual(fixture, cfn_template)
 
     # --- dns
 
