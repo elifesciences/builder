@@ -57,7 +57,7 @@ def load_balancer_register_all__v2(stackname):
 # --- api
 
 @requires_aws_stack
-def switch_revision_update_instance(stackname, revision=None, concurrency='blue-green'):
+def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
     """changes the revision of the stack's project and then calls highstate.
     if multiple nodes, it does this using blue-green concurrency."""
     buildvars.switch_revision(stackname, revision)
