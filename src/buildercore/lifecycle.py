@@ -302,7 +302,7 @@ def update_dns(stackname):
         LOG.info("External primary full hostname: %s", primary_hostname)
         _update_dns_a_record(context['domain'], primary_hostname, primary_ip_address)
 
-    if 'elb' in context or 'alb' in context:
+    if context.get('elb', False) or context.get('alb', 'False'):
         # LB has its own DNS, EC2 nodes will autoregister
         LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB that has a stable hostname, nothing else to do")
         # TODO: time to implement this as there may be an old A record around...
