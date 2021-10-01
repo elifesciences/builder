@@ -8,22 +8,33 @@ LOG = logging.getLogger(__name__)
 def test_build_alb_context(test_projects):
     context = cfngen.build_context('project-with-alb', stackname='project-with-alb--test')
     context = utils.remove_ordereddict(context)
-    expected = {
-        'stickiness': {'type': 'cookie', 'cookie-name': 'dummy-cookie'},
-        'idle_timeout': '60',
-        'certificate': 'arn:aws:iam::...:...',
-        'listeners': [
-            ['HTTP', 80], ['HTTPS', 443], ['HTTPS', 8001]
-        ],
-        'healthcheck': {
-            'path': '/ping',
-            'timeout': 4,
-            'interval': 5,
-            'unhealthy_threshold': 2,
-            'healthy_threshold': 2
-        },
-        'subnets': ['subnet-1d4eb46a', 'subnet-7a31dd46']
-    }
+    expected = {'certificate': 'arn:aws:iam::...:...',
+                'idle_timeout': '60',
+                'listeners': {'listener1': {'forward': 'target-group1',
+                                            'port': 80,
+                                            'protocol': 'http'},
+                              'listener2': {'forward': 'target-group1',
+                                            'port': 443,
+                                            'protocol': 'https'},
+                              'listener3': {'forward': 'target-group2',
+                                            'port': 8001,
+                                            'protocol': 'https'}},
+                'stickiness': {'cookie-name': 'dummy-cookie', 'type': 'cookie'},
+                'subnets': ['subnet-1d4eb46a', 'subnet-7a31dd46'],
+                'target_groups': {'target-group1': {'healthcheck': {'healthy_threshold': 2,
+                                                                    'interval': 5,
+                                                                    'path': '/ping',
+                                                                    'timeout': 4,
+                                                                    'unhealthy_threshold': 2},
+                                                    'port': 80,
+                                                    'protocol': 'http'},
+                                  'target-group2': {'healthcheck': {'healthy_threshold': 2,
+                                                                    'interval': 5,
+                                                                    'path': '/ping',
+                                                                    'timeout': 4,
+                                                                    'unhealthy_threshold': 2},
+                                                    'port': 8001,
+                                                    'protocol': 'http'}}}
     assert context['alb'] == expected
 
 def test_docdb_config(test_projects):

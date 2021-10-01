@@ -92,20 +92,38 @@ defaults:
             #type: gp2 # standard|gp2|io1|sc1 # todo: enable
             size: 10 # GB
             device: /dev/sdh
+        # alb default only used if an 'alb' section present in project
+        # also known as 'Elastic Load Balancer v2'
         alb:
-            # elb defaults only used if an 'elb' section present in project
             stickiness: false
+            #stickiness:
+            #   type: cookie | browser
+            #   cookie-name: ...
+            # 'listeners' replaces ELB's 'protocol' and 'additional_listeners'
             listeners:
-                - http: 80
+                listener1:
+                    protocol: http
+                    port: 80
+                    forward: target-group1
+
+                listener2:
+                    protocol: https
+                    port: 443
+                    forward: target-group1
+
+            target_groups:
+                target-group1:
+                    protocol: http
+                    port: 80
+                    healthcheck:
+                        path: /ping
+                        timeout: 4
+                        interval: 5
+                        unhealthy_threshold: 2
+                        healthy_threshold: 2
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::...:...
-            healthcheck:
-                path: /ping
-                timeout: 4
-                interval: 5
-                unhealthy_threshold: 2
-                healthy_threshold: 2
         elb:
             # elb defaults only used if an 'elb' section present in project
             stickiness: false
@@ -886,11 +904,40 @@ project-with-alb:
             - 80
         ec2:
             cluster-size: 2
-        alb: 
+        alb:
             listeners:
-                - http: 80
-                - https: 443
-                - https: 8001
+                listener1:
+                    protocol: http
+                    port: 80
+                    forward: target-group1
+                listener2:
+                    protocol: https
+                    port: 443
+                    forward: target-group1
+                listener3:
+                    protocol: https
+                    port: 8001
+                    forward: target-group2
+
+            target_groups:
+                target-group1:
+                    protocol: http
+                    port: 80
+                    healthcheck:
+                        path: /ping
+                        timeout: 4
+                        interval: 5
+                        unhealthy_threshold: 2
+                        healthy_threshold: 2
+                target-group2:
+                    protocol: http
+                    port: 8001
+                    healthcheck:
+                        path: /ping
+                        timeout: 4
+                        interval: 5
+                        unhealthy_threshold: 2
+                        healthy_threshold: 2
             stickiness:
                 type: cookie
                 cookie-name: dummy-cookie
