@@ -953,6 +953,8 @@ def render_alb(context, template, ec2_instances):
             "HealthCheckTimeoutSeconds": healthcheck['timeout'],
             "HealthyThresholdCount": healthcheck['healthy_threshold'],
             "UnhealthyThresholdCount": healthcheck['unhealthy_threshold'],
+
+            "Tags": Tags(**aws.generic_tags(context)),
         }
         # TODO: can we put http2 on the listener?
         # unlike cloudfront that converts incoming http2 to http1.1, elbv2 passes it through.
