@@ -139,6 +139,7 @@ def build_context(pname, **more_context):
         build_context_ec2,
         build_context_elb,
         build_context_alb,
+        build_context_elb_alb,
         build_context_cloudfront,
         build_context_sns_sqs,
         build_context_s3,
@@ -378,15 +379,20 @@ def build_context_alb(pdata, context):
     if 'alb' in pdata['aws'] and pdata['aws']['alb'] is not False:
         context['alb'] = pdata['aws']['alb']
         context['alb']['idle_timeout'] = str(context['alb']['idle_timeout'])
-        new_listeners = []
-        for pair_map in context['alb']['listeners']:
-            protocol, port = list(pair_map.items())[0]
-            protocol = protocol.upper()
-            new_listeners.append((protocol, port))
-        context['alb']['listeners'] = new_listeners
         context['alb']['subnets'] = [
             pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
         ]
+    return context
+
+def build_context_elb_alb(pdata, context):
+    "context for when both an ELBv1 and an ELBv2 (ALB) are present."
+    if not ('alb' in pdata['aws'] and 'elb' in pdata['aws']):
+        return context
+
+    primary_lb = pdata['aws']['primary_lb']
+    ensure(primary_lb in ['elb', 'alb'], "unknown value %r for 'primary_key'. expecting 'elb' or 'alb'." % primary_lb)
+
+    context['primary_lb'] = primary_lb
     return context
 
 def build_context_cloudfront(pdata, context):
@@ -658,7 +664,7 @@ UPDATABLE_TITLE_PATTERNS = [
     '^DocumentDB.*$',
 
     '^ELBv2$',
-    # '^ELBv2Listener.*', # changes here seem to require re-creation of lb entirely
+    '^ELBv2Listener.*',
     '^ELBv2TargetGroup.*',
 
     # note: can't add ExtDNS as it changes dynamically when we start/stop instances and
