@@ -685,10 +685,26 @@ journal:
                 overrides:
                     2:
                         type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
-            elb:
-                protocol:
-                    - https
-                    - http
+            alb:
+                listeners:
+                    listener1:
+                        protocol: http
+                        port: 80
+                        forward: target-group1
+                    listener2:
+                        protocol: https
+                        port: 443
+                        forward: target-group1
+                target_groups:
+                    target-group1:
+                        protocol: http
+                        port: 80
+                        healthcheck:
+                            path: /ping
+                            timeout: 4
+                            interval: 5
+                            unhealthy_threshold: 2
+                            healthy_threshold: 2
             cloudfront:
                 subdomains:
                     - "placeholder2-prod-journal" # only here to avoid rewriting the following values
