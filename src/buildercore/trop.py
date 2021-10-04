@@ -181,6 +181,10 @@ def _is_domain_2nd_level(hostname):
     return hostname.count(".") == 1
 
 def using_elb(context):
+    # two load balancers present, check the explicit primary
+    if 'primary_lb' in context and context['primary_lb'] == 'alb':
+        return False
+    # one or the other is present
     return True if 'elb' in context and context['elb'] else False
 
 def cnames(context):
@@ -794,7 +798,7 @@ def render_elb(context, template, ec2_instances):
         _convert_ports_to_dictionary(elb_ports)
     )) # list of strings or dicts
 
-    if context['full_hostname'] or context['int_full_hostname']:
+    if using_elb(context) and (context['full_hostname'] or context['int_full_hostname']):
         dns = external_dns_elb if elb_is_public else internal_dns_elb
         template.add_resource(dns(context))
     if context['full_hostname']:
@@ -808,6 +812,7 @@ def _external_dns_alb(context):
     Public ALBs will always have an AWS-assigned resolveable external DNS address even if we
     don't give it one of our own here."""
 
+    # todo: update
     # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
     if using_elb(context):
         return
@@ -832,6 +837,7 @@ def _internal_dns_alb(context):
     """returns a DNS A record for accessing this ALB internally (`id--project.elife.internal`).
     if an ELB is also present, returns None as the ELB takes precedence when both are present."""
 
+    # todo: update
     # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
     if using_elb(context):
         return
@@ -869,7 +875,7 @@ def render_alb(context, template, ec2_instances):
     # -- security group
 
     ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
-    alb_ports = [protocol_port_pair[1] for protocol_port_pair in context['alb']['listeners']]
+    alb_ports = [attr_map['port'] for attr_map in context['alb']['listeners'].values()]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
     _lb_security_group = security_group(
         ALB_SECURITY_GROUP_ID,
@@ -922,8 +928,11 @@ def render_alb(context, template, ec2_instances):
         _target_group_attr_map.update(sticky_settings)
     _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in sorted(_target_group_attr_map.items())]
 
-    _lb_target_group_list = []
-    for protocol, port in context['alb']['listeners']:
+    _lb_target_group_map = {}
+    for target_group_name, attr_map in context['alb']['target_groups'].items():
+        protocol = attr_map['protocol'].upper()
+        port = attr_map['port']
+        healthcheck = attr_map['healthcheck']
         target_group_arn = target_group_id(protocol, port)
         _lb_target_group = {
             'title': target_group_arn,
@@ -937,21 +946,23 @@ def render_alb(context, template, ec2_instances):
             # note: 'If the target type is instance or ip, health checks are always enabled and cannot be disabled.'
             # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-elasticloadbalancingv2-targetgroup.html
             # 'HealthCheckEnabled': True, # no choice
-            "HealthCheckIntervalSeconds": context['alb']['healthcheck']['interval'],
-            "HealthCheckPath": context['alb']['healthcheck']['path'],
-            # disabled so the 'traffic' port is used (incoming from Listener)
-            # "HealthCheckPort": context['alb']['healthcheck']['port'],
-            # "HealthCheckProtocol": context['alb']['healthcheck']['protocol'],
-            "HealthCheckTimeoutSeconds": context['alb']['healthcheck']['timeout'],
-            "HealthyThresholdCount": context['alb']['healthcheck']['healthy_threshold'],
-            "UnhealthyThresholdCount": context['alb']['healthcheck']['unhealthy_threshold'],
+            "HealthCheckIntervalSeconds": healthcheck['interval'],
+            "HealthCheckPath": healthcheck['path'],
+            "HealthCheckProtocol": protocol,
+            "HealthCheckPort": port,
+            "HealthCheckTimeoutSeconds": healthcheck['timeout'],
+            "HealthyThresholdCount": healthcheck['healthy_threshold'],
+            "UnhealthyThresholdCount": healthcheck['unhealthy_threshold'],
+
+            "Tags": Tags(**aws.generic_tags(context)),
         }
+        # TODO: can we put http2 on the listener?
         # unlike cloudfront that converts incoming http2 to http1.1, elbv2 passes it through.
         # at time of writing our nginx servers haven't been configured to support http2.
         # if protocol == 'HTTPS':
         #    _lb_target_group['ProtocolVersion'] = 'HTTP2'
 
-        _lb_target_group_list.append(alb.TargetGroup(**_lb_target_group))
+        _lb_target_group_map[target_group_name] = alb.TargetGroup(**_lb_target_group)
 
         _output = mkoutput(target_group_arn,
                            "TargetGroup for protocol %s on port %s" % (protocol, port),
@@ -961,17 +972,18 @@ def render_alb(context, template, ec2_instances):
     # -- listeners, one for each protocol+port pair
 
     _lb_listener_list = []
-    for protocol, port in context['alb']['listeners']:
+    for listener_name, attr_map in context['alb']['listeners'].items():
+        _target_group = _lb_target_group_map[attr_map['forward']]
+        _target_group_arn = target_group_id(_target_group.Protocol, _target_group.Port)
+        protocol = attr_map['protocol'].upper()
+        port = attr_map['port']
         props = {
             # "ElasticLoadBalancerV2ListenerHttp80"
             # "ElasticLoadBalancerV2ListenerHttps443"
             # "ElasticLoadBalancerV2ListenerHttps8001"
             'title': ALB_TITLE + 'Listener' + str(protocol).title() + str(port),
             'LoadBalancerArn': Ref(lb),
-            'DefaultActions': [alb.Action(
-                Type='forward', # or 'redirect' ? not sure
-                TargetGroupArn=Ref(target_group_id(protocol, port))
-            )],
+            'DefaultActions': [alb.Action(Type='forward', TargetGroupArn=Ref(_target_group_arn))],
             'Protocol': protocol,
             'Port': port
         }
@@ -1001,7 +1013,7 @@ def render_alb(context, template, ec2_instances):
 
     resources = [lb, _lb_security_group]
     resources.extend(_lb_listener_list)
-    resources.extend(_lb_target_group_list)
+    resources.extend(_lb_target_group_map.values()) # names in project file are discarded
     [template.add_resource(resource) for resource in resources]
 
     [template.add_output(output) for output in outputs]

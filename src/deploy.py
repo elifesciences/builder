@@ -49,6 +49,8 @@ def load_balancer_register_all__v1(stackname):
     executor.wait_registered_all(elb_name, node_params)
 
 def load_balancer_register_all__v2(stackname):
+    elb_name = cloudformation.read_output(stackname, trop.ALB_TITLE)
+    LOG.info("Load balancer name: %s", elb_name)
     node_params = all_node_params(stackname)
     LOG.info("Register all: %s", pformat(node_params))
     bluegreen_v2.register(stackname, node_params)
@@ -67,8 +69,6 @@ def switch_revision_update_instance(stackname, revision=None, concurrency='seria
 @requires_aws_stack
 def load_balancer_status(stackname):
     "prints the 'health' status of ec2 instances attached to the load balancer."
-    elb_name = cloudformation.read_output(stackname, trop.ALB_TITLE)
-    LOG.info("Load balancer name: %s", elb_name)
     if cloudformation.template_using_elb_v1(stackname):
         load_balancer_status__v1(stackname)
     else:
