@@ -297,6 +297,12 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
     else:
         availability_zone = context['aws']['availability-zone'] if node % 2 == 1 else context['aws']['redundant-availability-zone']
 
+    # 2021-10-05: iiif--prod--2 died and the MountPoint failed to attach to the ext Volume during re-creation.
+    # I suspected a bad ext Volume and needed CloudFormation to delete it for me.
+    # preventing it's creation here when the given `node` was being suppressed, successfully allowed me to recover.
+    # if node not in actual_ec2_instances:
+    #    return
+
     args = {
         "Size": str(context_ext['size']),
         "AvailabilityZone": availability_zone,
