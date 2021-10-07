@@ -143,7 +143,7 @@ def test_target_groups():
         with patch('buildercore.cloudformation.outputs_map', return_value=TARGET_GROUP_OUTPUT):
             assert bluegreen_v2._target_groups(stackname) == expected
 
-def test_build_targets():
+def test_target_group_nodes():
     stackname = "foo"
     expected = {
         'arn--my-target-group': [
@@ -152,7 +152,7 @@ def test_build_targets():
         ]
     }
     with patch('buildercore.cloudformation.outputs_map', return_value=TARGET_GROUP_OUTPUT):
-        assert bluegreen_v2._build_targets(stackname, NODE_PARAMS) == expected
+        assert bluegreen_v2._target_group_nodes(stackname, NODE_PARAMS) == expected
 
 def test_registered():
     expected = {('i-10000001', 80): True,
