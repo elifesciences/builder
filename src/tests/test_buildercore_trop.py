@@ -598,7 +598,8 @@ class TestBuildercoreTrop(base.BaseCase):
     def test_render_alb(self):
         fixture = json.loads(base.fixture("cloudformation/project-with-alb.json"))
         context = cfngen.build_context('project-with-alb', stackname='project-with-alb--foo')
-        cfn_template = json.loads(trop.render(context))
+        cfn_template_json = trop.render(context)
+        cfn_template = json.loads(cfn_template_json)
 
         # UserData is identical, but ordering is not preserved in py2 vs py3
         del fixture['Resources']['EC2Instance1']['Properties']['UserData']

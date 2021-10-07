@@ -913,7 +913,9 @@ def render_alb(context, template, ec2_instances):
         # "ElasticLoadBalancerV2TargetGroupHttp80"
         return ALB_TITLE + 'TargetGroup' + str(protocol).title() + str(port)
 
-    _target_group_attr_map = {}
+    _target_group_attr_map = {
+        'deregistration_delay.timeout_seconds': '30'
+    }
     if context['alb']['stickiness']:
         # lsh@2021-09: not sure any projects are actually using stickiness ...
         # 'cookie' is 'app_cookie'
