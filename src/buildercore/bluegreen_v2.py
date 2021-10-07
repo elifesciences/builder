@@ -37,34 +37,64 @@ def divide_by_colour(node_params):
     return subset(is_blue), subset(is_green)
 
 def _target_group_arn_list(stackname):
-    "returns a list of TargetGroup ARNs"
+    "returns a list of `TargetGroup` ARNs for given `stackname`."
     return [val for key, val in cloudformation.outputs_map(stackname).items() if key.startswith('ELBv2TargetGroup')]
 
 def _target_group_health(stackname, target_group_arn):
-    "returns a list of target data that includes their health"
-    return conn(stackname).describe_target_health(
+    "returns a map of target data for the given `target_group_arn`, keyed by the Target's ID (ec2 ARN)"
+    result = conn(stackname).describe_target_health(
         TargetGroupArn=target_group_arn
-    )['TargetHealthDescriptions']
+    )
+    return {target['Target']['Id']: target for target in result['TargetHealthDescriptions']}
 
-def _target_groups(stackname):
-    "returns a map of `{target-group-arn: [{target}, ...], ...}` for all TargetGroups attached to `stackname`"
-    return {target_group_arn: _target_group_health(stackname, target_group_arn) for target_group_arn in _target_group_arn_list(stackname)}
-
-def _build_targets(stackname, node_params):
-    "returns a map of {target-group-arn: [{id: target}, ...], ...} for targets in `node_params`."
+def _target_group_nodes(stackname, node_params=None):
+    """returns a map of {target-group-arn: [{'Id': target}, ...], ...} for Targets in `node_params`.
+    if a `Target` isn't registered with the `TargetGroup` a synthetic result is returned instead.
+    if `node_params` is `None` then *all* nodes are considered."""
+    node_params = node_params or core.all_node_params(stackname)
     ec2_arns = sorted(node_params['nodes'].keys()) # predictable testing
     target_groups = {}
     for target_group_arn in _target_group_arn_list(stackname):
         target_groups[target_group_arn] = [{'Id': ec2_arn} for ec2_arn in ec2_arns]
     return target_groups
 
+def _target_groups(stackname):
+    "returns a map of `{target-group-arn: [{target}, ...], ...}` for all TargetGroups attached to `stackname`"
+    results = {}
+    for target_group_arn, target_list in _target_group_nodes(stackname).items():
+        target_health = _target_group_health(stackname, target_group_arn)
+        target_results = []
+        for target in target_list:
+            ec2_arn = target['Id']
+            # synthetic response. actual valid response structure:
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/elbv2.html#ElasticLoadBalancingv2.Client.describe_target_health
+            unknown_health = {
+                'Target': {
+                    "Id": ec2_arn,
+                    "Port": "~"
+                },
+                "TargetHealth": {
+                    'State': 'no-health-data',
+                    # health data is not returned for unregistered targets, so how this valid state ever gets returned I don't know ...
+                    'Reason': 'Target.NotRegistered',
+                    'Description': 'synthetic response, given target not registered.'
+                }
+            }
+            health = target_health.get(ec2_arn) or unknown_health
+            target_results.append(health)
+        results[target_group_arn] = target_results
+    return results
+
 def _registered(stackname, node_params):
     "returns a map of {target-arn: healthy?}"
+    ec2_arns = node_params['nodes'].keys()
     result = {}
-    for target_group_targets in _target_groups(stackname).values():
-        for target in target_group_targets:
+    for target_group_arn, target_list in _target_groups(stackname).items():
+        for target in target_list:
+            if target['Target']['Id'] not in ec2_arns:
+                continue
             # key has to be complex because target is present across multiple target-groups/ports
-            key = (target['Target']['Id'], target['Target']['Port'])
+            key = (target_group_arn, target['Target']['Id'])
             # if there is a 'Reason' key then it isn't healthy/registered.
             result[key] = 'Reason' not in target['TargetHealth']
     return result
@@ -74,7 +104,7 @@ def _registered(stackname, node_params):
 def register(stackname, node_params):
     "register all targets in all target groups that are in node_params"
     c = conn(stackname)
-    for target_group_arn, target_list in _build_targets(stackname, node_params).items():
+    for target_group_arn, target_list in _target_group_nodes(stackname, node_params).items():
         LOG.info("registering targets: %s", target_list)
         if target_list:
             c.register_targets(TargetGroupArn=target_group_arn, Targets=target_list)
@@ -82,7 +112,7 @@ def register(stackname, node_params):
 def deregister(stackname, node_params):
     "deregister all targets in all target groups"
     c = conn(stackname)
-    for target_group_arn, target_list in _build_targets(stackname, node_params).items():
+    for target_group_arn, target_list in _target_group_nodes(stackname, node_params).items():
         LOG.info("deregistering targets: %s", target_list)
         if target_list:
             c.deregister_targets(TargetGroupArn=target_group_arn, Targets=target_list)
@@ -116,8 +146,8 @@ def wait_deregistered_all(stackname, node_params):
         registered = _registered(stackname, node_params)
         LOG.info("InService: %s", registered)
         # wait ... that isn't right. this is 'any deregistered' rather than 'all deregistered'.
-        # return True in registered.values()
-        return not all(v is False for v in registered.values())
+        # return True in registered.values() # bluegreen v1 implementation. typo?
+        return all(registered.values())
 
     utils.call_while(condition, interval=5, timeout=600)
 
