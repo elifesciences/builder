@@ -579,11 +579,6 @@ journal:
                             interval: 5
                             unhealthy_threshold: 2
                             healthy_threshold: 2
-            elb:
-                protocol:
-                    - https
-                    - http
-            primary_lb: elb
             fastly:
                 subdomains:
                     - "{instance}--cdn-journal"
