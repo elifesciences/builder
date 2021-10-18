@@ -10,6 +10,12 @@ from buildercore.utils import ensure
 from pprint import pprint
 import utils
 import logging
+
+try:
+    from json import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
+
 LOG = logging.getLogger(__name__)
 
 OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
@@ -33,7 +39,7 @@ def _retrieve_build_vars():
 
         return buildvars
 
-    except (ValueError, AssertionError) as ex:
+    except (ValueError, AssertionError, JSONDecodeError) as ex:
         LOG.exception(ex)
         raise
 
@@ -82,14 +88,18 @@ def fix(stackname):
         try:
             buildvars = _retrieve_build_vars()
             LOG.info("valid bvars found, no fix necessary: %s", buildvars)
+            return
         except AssertionError:
             LOG.info("invalid build vars found, regenerating from context")
-            context = load_context(stackname)
-            # some contexts are missing stackname
-            context['stackname'] = stackname
-            node_id = current_node_id()
-            new_vars = trop.build_vars(context, node_id)
-            _update_remote_bvars(stackname, new_vars)
+        except (ValueError, JSONDecodeError):
+            LOG.info("bad JSON data found, regenerating from context")
+
+        context = load_context(stackname)
+        # some contexts are missing stackname
+        context['stackname'] = stackname
+        node_id = current_node_id()
+        new_vars = trop.build_vars(context, node_id)
+        _update_remote_bvars(stackname, new_vars)
 
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
