@@ -9,8 +9,13 @@ from buildercore import utils as core_utils, trop, keypair
 from buildercore.utils import ensure
 from pprint import pprint
 import utils
-import json
 import logging
+
+try:
+    from json import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
+
 LOG = logging.getLogger(__name__)
 
 OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
@@ -34,7 +39,7 @@ def _retrieve_build_vars():
 
         return buildvars
 
-    except (ValueError, AssertionError, json.decoder.JSONDecodeError) as ex:
+    except (ValueError, AssertionError, JSONDecodeError) as ex:
         LOG.exception(ex)
         raise
 
@@ -86,7 +91,7 @@ def fix(stackname):
             return
         except AssertionError:
             LOG.info("invalid build vars found, regenerating from context")
-        except (ValueError, json.decoder.JSONDecodeError):
+        except (ValueError, JSONDecodeError):
             LOG.info("bad JSON data found, regenerating from context")
 
         context = load_context(stackname)
