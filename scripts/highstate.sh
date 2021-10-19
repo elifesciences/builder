@@ -23,7 +23,7 @@ else
     echo "Executing salt highstate"
     log_file=/var/log/salt/salt-highstate-$(date "+%Y-%m-%dT%H:%M:%S").log
     set -o pipefail
-    sudo salt-call "$force_color" state.highstate -l info --retcode-passthrough | tee "$log_file" || {
+    sudo salt-call $force_color state.highstate -l info --retcode-passthrough | tee "$log_file" || {
         status=$?
         echo "Error provisioning, state.highstate returned: ${status}"
         logger "Salt highstate failure: $log_file on $(hostname)"
