@@ -2,15 +2,17 @@
 set -e # everything must pass
 
 arg1=$1 # --dry-run
+arg2=$2 # --no-color
 
+# a dry run will plan a highstate and emit a report but won't actually run.
 dry_run=false
 if [ "$arg1" = "--dry-run" ]; then
     dry_run=true
 fi
 
-# coloured output enabled by default. disabled in CI environments.
+# coloured output is enabled by default.
 force_color="--force-color"
-if [ -n "$SALT_NO_COLOR" ]; then
+if [ "$arg2" = "--no-color" ]; then
     force_color=""
 fi
 

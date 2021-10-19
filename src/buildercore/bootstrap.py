@@ -13,7 +13,7 @@ from .context_handler import only_if as updates
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
 from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER
+from .config import BOOTSTRAP_USER, WHOAMI, CI_USER
 from .command import remote_sudo, remote_file_exists, remote_listfiles, fab_get, fab_put, fab_put_data
 import backoff
 import botocore
@@ -34,14 +34,14 @@ def _put_temporary_script(script_filename):
     return fab_put(local_script, remote_script)
 
 def put_script(script_filename, remote_script):
-    """uploads a script for SCRIPTS_PATH in remote_script location, making it executable
+    """uploads a script for `config.SCRIPTS_PATH` in remote_script location, making it executable
     WARN: assumes you are connected to a stack"""
     temporary_script = _put_temporary_script(script_filename)
     remote_sudo("mv %s %s && chmod +x %s" % (temporary_script, remote_script, remote_script))
 
 @backoff.on_exception(backoff.expo, command.NetworkError, max_time=60)
 def run_script(script_filename, *script_params, **environment_variables):
-    """uploads a script for SCRIPTS_PATH and executes it in the /tmp dir with given params.
+    """uploads a script for `config.SCRIPTS_PATH` and executes it in the /tmp dir with given params.
     WARN: assumes you are connected to a stack"""
     start = datetime.now()
     remote_script = _put_temporary_script(script_filename)
@@ -543,8 +543,10 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             # TODO: I suspect this should be removed because the master-server must be updated through a builder command e.g. so that it adds any new formulas that come from the project/ definitions
             put_script('update-master.sh', '/opt/update-master.sh')
 
-        # this will tell the machine to update itself
-        run_script('highstate.sh')
+        # anything other than '--dry-run' and '--no-color' essentially
+        dry_run = "--no-dry-run"
+        coloured_output = "--no-color" if WHOAMI == CI_USER else "--yes-color"
+        run_script('highstate.sh', dry_run, coloured_output)
 
     stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 

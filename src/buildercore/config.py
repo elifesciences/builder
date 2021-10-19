@@ -7,6 +7,7 @@ from the interface logic in `./src/taskrunner.py`.
 
 """
 import os
+import getpass
 from os.path import join
 from buildercore import utils
 from buildercore.utils import lmap, lfilter
@@ -24,6 +25,9 @@ class ConfigurationError(Exception):
 ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
+CI_USER = 'jenkins'
+
+WHOAMI = getpass.getuser()
 
 PROJECT_PATH = os.getcwd() # ll: /path/to/elife-builder/
 SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
