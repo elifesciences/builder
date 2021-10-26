@@ -2137,3 +2137,76 @@ accepted-submission-cleaning:
                 deletion-policy: retain
         sns:
             - elife-accepted-submission-cleaning-s3-events
+
+firewall:
+    description: Web Application Firewall rules
+    aws:
+        # $5/mo each
+        waf:
+            description: general purpose WAF, good for public facing apps
+            # resources using this WAF
+            resources:
+                - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journ-ELBv2-ZS5YM5X643TN/31cb27d388b7a1b8 # journal--prod ALB
+            # default action for requests that don't match any of the rules in the list of below rules
+            action: allow # count, block, custom-response
+            # custom rule sets, $1/mo each
+            custom-rules: []
+            # managed rule sets, $1/mo, "vendorname/ruleset-name"
+            # all rules in 
+            managed-rules:
+                AWS/AWSManagedRulesBotControlRuleSet:
+                    # excluded rules in a ruleset are set to 'count' only.
+                    # when a rule is not excluded, matching requests will be blocked (opposite of default WAF action).
+                    # when *all* rules are being excluded you should probably remove that ruleset.
+                    # measuring occurances can be done through Cloudwatch of the WAF overview tab
+                    excluded:
+                        -   CategoryAdvertising
+                            CategoryArchiver
+                            CategoryContentFetcher
+                            CategoryHttpLibrary
+                            CategoryLinkChecker
+                            CategoryMiscellaneous
+                            CategoryMonitoring
+                            CategoryScrapingFramework
+                            CategorySearchEngine
+                            CategorySecurity
+                            CategorySeo
+                            CategorySocialMedia
+                            SignalNonBrowserUserAgent
+                AWS/AWSManagedRulesAmazonIpReputationList:
+                    excluded:
+                        -   AWSManagedIPReputationList
+                AWS/AWSManagedRulesCommonRuleSet:
+                    excluded:
+                        -   CrossSiteScripting_COOKIE
+                            CrossSiteScripting_QUERYARGUMENTS
+                            CrossSiteScripting_URIPATH
+                            EC2MetaDataSSRF_BODY
+                            EC2MetaDataSSRF_COOKIE
+                            EC2MetaDataSSRF_QUERYARGUMENTS
+                            EC2MetaDataSSRF_URIPATH
+                            GenericLFI_BODY
+                            GenericRFI_BODY
+                            GenericRFI_QUERYARGUMENTS
+                            RestrictedExtensions_QUERYARGUMENTS
+                            RestrictedExtensions_URIPATH
+                            SizeRestrictions_BODY
+                            SizeRestrictions_Cookie_HEADER
+                            SizeRestrictions_QUERYSTRING
+                            SizeRestrictions_URIPATH
+                AWS-AWSManagedRulesKnownBadInputsRuleSet:
+                    excluded:
+                        -   BadAuthToken_COOKIE_AUTHORIZATION
+                            ExploitablePaths_URIPATH
+                            Host_localhost_HEADER
+                            PROPFIND_METHOD
+                AWS-AWSManagedRulesLinuxRuleSet:
+                    excluded:
+                        -   LFI_BODY
+                            LFI_QUERYARGUMENTS
+                            LFI_URIPATH
+                AWS-AWSManagedRulesPHPRuleSet:
+                    excluded: []
+                AWS-AWSManagedRulesUnixRuleSet:
+                    excluded: []
+

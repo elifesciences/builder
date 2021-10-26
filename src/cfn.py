@@ -13,7 +13,7 @@ from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2di
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY
 from buildercore.utils import lmap, ensure
-
+ 
 import logging
 LOG = logging.getLogger(__name__)
 
