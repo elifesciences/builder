@@ -152,6 +152,7 @@ def build_context(pname, **more_context):
         build_context_elasticache,
         build_context_vault,
         partial(build_context_docdb, existing_context=existing_context),
+        build_context_waf,
     ]
 
     # ... exceptions to the rule
@@ -177,6 +178,12 @@ def build_context(pname, **more_context):
 # Do that here.
 #
 
+def build_context_waf(pdata, context):
+    if not pdata['aws'].get('waf'):
+        return context
+    context['waf'] = pdata['aws']['waf']
+    return context
+
 def build_context_docdb(pdata, context, existing_context=None):
     "DocumentDB (docdb) configuration"
     if not pdata['aws'].get('docdb'):
@@ -198,6 +205,7 @@ def build_context_docdb(pdata, context, existing_context=None):
     return context
 
 def build_context_aws(pdata, context):
+    "adds common AWS fields to the context under `aws`."
     if 'aws' not in pdata:
         return context
     keepers = [

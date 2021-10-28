@@ -15,7 +15,7 @@ from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
 from .config import ConfigurationError
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, waf, wafv2
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
@@ -1358,6 +1358,32 @@ def render_docdb(context, template):
     for i in range(1, context['docdb']['cluster-size'] + 1):
         template.add_resource(docdb_node(i))
 
+# --- waf
+
+WAF_NAME = 'WAF'
+
+def render_waf_rule(rule_name, rule):
+    managed_statement = wafv2.ManagedRuleGroupStatement(**{
+        'Name': rule_name,
+        'ExcludedRules': [wafv2.ExcludedRule(Name=name) for name in rule['excluded']]
+    })
+    managed_rule = wafv2.WebACLRule(**{
+        # 'Priority': rule['priority'],
+        'Statement': wafv2.StatementOne(ManagedRuleGroupStatement=managed_statement),
+    })
+    return managed_rule
+
+def render_waf(context, template):
+    webacl = wafv2.WebACL('SomeTitleHere', **{
+        'Name': context['stackname'],
+        # 'MetricName': context['stackname'], # todo: can we do better?
+        # 'DefaultAction': wafv2.DefaultAction(Allow=True),
+        'Rules': [render_waf_rule(rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()],
+        'Scope': 'REGIONAL'
+    })
+    template.add_resource(webacl)
+
+
 # --- todo: revisit this, seems to be part of rds+ec2
 
 def add_outputs(context, template):
@@ -1372,6 +1398,9 @@ def add_outputs(context, template):
 #
 
 def render(context):
+    """given a dictionary `context`, generates a CloudFormation instance.
+    returns the instance as JSON."""
+
     template = Template()
 
     ec2_instances = render_ec2(context, template) if context['ec2'] else {}
@@ -1396,6 +1425,7 @@ def render(context):
         ('fastly', render_fastly),
         ('elasticache', render_elasticache),
         ('docdb', render_docdb),
+        ('waf', render_waf),
     ]
 
     for value in renderer_list:
