@@ -879,7 +879,7 @@ set -o xtrace
         'image_id': '${data.aws_ami.worker.id}',
         'instance_type': context['eks']['worker']['type'],
         'root_block_device': {
-            'volume_size': 20
+            'volume_size': 40
         },
         'name_prefix': '%s--worker' % context['stackname'],
         'security_groups': ['${aws_security_group.worker.id}'],
