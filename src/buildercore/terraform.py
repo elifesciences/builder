@@ -878,6 +878,9 @@ set -o xtrace
         'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
         'image_id': '${data.aws_ami.worker.id}',
         'instance_type': context['eks']['worker']['type'],
+        'root_block_device': {
+            'volume_size': 20
+        },
         'name_prefix': '%s--worker' % context['stackname'],
         'security_groups': ['${aws_security_group.worker.id}'],
         'user_data_base64': '${base64encode(local.worker_userdata)}',
