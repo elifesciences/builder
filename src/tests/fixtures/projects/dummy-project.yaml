@@ -844,6 +844,8 @@ project-with-eks:
                 desired-capacity: 3
                 min-size: 1
                 max-size: 3
+                root:
+                    size: 40
 
 project-with-eks-helm:
     description: project managing an EKS cluster with Helm for chart installation
