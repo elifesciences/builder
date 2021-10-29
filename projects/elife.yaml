@@ -1509,6 +1509,8 @@ observer:
                 subscriptions:
                     - bus-articles--{instance}
                     - bus-press-packages--{instance}
+                    - bus-labs-posts--{instance}
+                    - bus-digests--{instance}
     aws-alt:
         end2end:
             description: production-like environment. RDS backed
