@@ -838,9 +838,6 @@ elife-bot:
             "{instance}-elife-bot-decision-letter-input":
             "{instance}-elife-bot-decision-letter-output":
             "{instance}-elife-bot-accepted-submission-cleaning-output":
-                deletion-policy: delete
-                sqs-notifications:
-                    "{instance}-elife-bot-accepted-submission-cleaning-output-s3-events": {}
         sqs:
             # gnott@2021-08: poa-incoming-queue was configured to avoid the rigidly timed PoA packaging process.
             # now the S3 notifications go into the queue, and elife-bot reads the messages at four specific times daily
@@ -849,9 +846,6 @@ elife-bot:
                 subscriptions: []
             # gnott@2021-08: used for the RDS / ERA article pipeline to trigger depositing to Software Heritage.
             "{instance}-era-incoming-queue":
-                subscriptions: []
-            # elife-bot -> (s3) elife-bot-accepted-submission-cleaning-output -> (sqs) elife-bot-accepted-submission-cleaning-output-s3-events
-            "{instance}-elife-bot-accepted-submission-cleaning-output-s3-events":
                 subscriptions: []
         sns:
             - elife-bot-event-property--{instance}
@@ -963,6 +957,8 @@ elife-bot:
                         incoming-queue: {}
                 "{instance}-elife-bot-accepted-submission-cleaning-output":
                     deletion-policy: retain
+                    sqs-notifications:
+                        "{instance}-elife-bot-accepted-submission-cleaning-output-s3-events": {}
                 # already existing bucket, do not uncomment
                 #"{instance}-elife-ejp-poa-delivery":
                 #    sqs-notifications:
@@ -972,6 +968,9 @@ elife-bot:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
                         - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
+                # elife-bot -> (s3) elife-bot-accepted-submission-cleaning-output -> (sqs) elife-bot-accepted-submission-cleaning-output-s3-events
+                "{instance}-elife-bot-accepted-submission-cleaning-output-s3-events":
+                    subscriptions: []
     vagrant: {}
 
 generic-cdn:
