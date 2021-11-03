@@ -4,7 +4,7 @@ from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p
+from .utils import ensure, mkdir_p, lookup
 from . import aws, fastly
 
 MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
@@ -873,7 +873,7 @@ def _render_eks_workers_autoscaling_group(context, template):
 set -o xtrace
 /etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
 
-    template.populate_resource('aws_launch_configuration', 'worker', block={
+    worker = {
         'associate_public_ip_address': True,
         'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
         'image_id': '${data.aws_ami.worker.id}',
@@ -884,7 +884,13 @@ set -o xtrace
         'lifecycle': {
             'create_before_destroy': True,
         },
-    })
+    }
+    root_volume_size = lookup(context, 'eks.worker.root.size', None)
+    if root_volume_size:
+        worker['root_block_device'] = {
+            'volume_size': root_volume_size
+        }
+    template.populate_resource('aws_launch_configuration', 'worker', block=worker)
 
     autoscaling_group_tags = [
         {
