@@ -182,6 +182,16 @@ def build_context_waf(pdata, context):
     if not pdata['aws'].get('waf'):
         return context
     context['waf'] = pdata['aws']['waf']
+
+    new_managed_rules = {}
+    for managed_rule_key, managed_rule in context['waf']['managed-rules'].items():
+        vendor, rule_name = managed_rule_key.split('/', 1) # "AWS/SomeFooRuleSet" => "AWS", "SomeFooRuleSet"
+        managed_rule['vendor'] = vendor
+        managed_rule['name'] = rule_name
+        new_key_name = "%s-%s" % (vendor, rule_name)
+        new_managed_rules[new_key_name] = managed_rule
+    context['waf']['managed-rules'] = new_managed_rules
+
     return context
 
 def build_context_docdb(pdata, context, existing_context=None):
@@ -670,6 +680,7 @@ UPDATABLE_TITLE_PATTERNS = [
     '^RDSHost$',
     '^RDSPort$',
     '^DocumentDB.*$',
+    '^WAF.*',
 
     '^ELBv2$',
     '^ELBv2Listener.*',

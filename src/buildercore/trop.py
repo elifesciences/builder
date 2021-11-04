@@ -15,7 +15,7 @@ from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
 from .config import ConfigurationError
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, waf, wafv2
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, wafv2
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
@@ -1362,24 +1362,45 @@ def render_docdb(context, template):
 
 WAF_NAME = 'WAF'
 
-def render_waf_rule(rule_name, rule):
+def render_waf_rule(stackname, rule_name_with_ns, rule):
+
+    # 'ns' is 'namespace'
+    # `rule_name_with_ns` = "AWS-SomeRuleName"
+    # `rule['name']` = "SomeRuleName"
+    # `rule['vendor']` = "AWS"
+
     managed_statement = wafv2.ManagedRuleGroupStatement(**{
-        'Name': rule_name,
-        'ExcludedRules': [wafv2.ExcludedRule(Name=name) for name in rule['excluded']]
+        'Name': rule['name'], # "AWSManagedRulesKnownBadInputsRuleSet"
+        'ExcludedRules': [wafv2.ExcludedRule(Name=name) for name in rule['excluded']],
+        'VendorName': rule['vendor']
     })
     managed_rule = wafv2.WebACLRule(**{
-        # 'Priority': rule['priority'],
+        'Name': rule_name_with_ns,
+        'Priority': rule['priority'],
         'Statement': wafv2.StatementOne(ManagedRuleGroupStatement=managed_statement),
+        'OverrideAction': wafv2.OverrideAction(**{"None": wafv2.NoneAction()}), # double urgh.
+        'VisibilityConfig': wafv2.VisibilityConfig(**{
+            'CloudWatchMetricsEnabled': True,
+            # 'firewall--prod--AWS-AWSManagedRulesKnownBadInputsRuleSet"
+            'MetricName': "%s--%s" % (stackname, rule_name_with_ns),
+            'SampledRequestsEnabled': True
+        })
     })
     return managed_rule
 
+WAF_TITLE = 'WAF'
+
 def render_waf(context, template):
-    webacl = wafv2.WebACL('SomeTitleHere', **{
-        'Name': context['stackname'],
-        # 'MetricName': context['stackname'], # todo: can we do better?
-        # 'DefaultAction': wafv2.DefaultAction(Allow=True),
-        'Rules': [render_waf_rule(rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()],
-        'Scope': 'REGIONAL'
+    stackname = context['stackname']
+    webacl = wafv2.WebACL(WAF_TITLE, **{
+        'DefaultAction': wafv2.DefaultAction(Allow=wafv2.AllowAction()), # urgh.
+        'Rules': [render_waf_rule(stackname, rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()],
+        'Scope': 'REGIONAL',
+        'VisibilityConfig': wafv2.VisibilityConfig(**{
+            "CloudWatchMetricsEnabled": True,
+            "MetricName": context['stackname'],
+            "SampledRequestsEnabled": True
+        })
     })
     template.add_resource(webacl)
 

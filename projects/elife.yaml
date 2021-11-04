@@ -2215,23 +2215,23 @@ firewall:
                             - SizeRestrictions_Cookie_HEADER
                             - SizeRestrictions_QUERYSTRING
                             - SizeRestrictions_URIPATH
-                    AWS-AWSManagedRulesKnownBadInputsRuleSet:
+                    AWS/AWSManagedRulesKnownBadInputsRuleSet:
                         priority: 3
                         excluded:
                             - BadAuthToken_COOKIE_AUTHORIZATION
                             - ExploitablePaths_URIPATH
                             - Host_localhost_HEADER
                             - PROPFIND_METHOD
-                    AWS-AWSManagedRulesLinuxRuleSet:
+                    AWS/AWSManagedRulesLinuxRuleSet:
                         priority: 4
                         excluded:
                             - LFI_BODY
                             - LFI_QUERYARGUMENTS
                             - LFI_URIPATH
-                    AWS-AWSManagedRulesPHPRuleSet:
+                    AWS/AWSManagedRulesPHPRuleSet:
                         priority: 5
                         excluded: []
-                    AWS-AWSManagedRulesUnixRuleSet:
+                    AWS/AWSManagedRulesUnixRuleSet:
                         priority: 6
                         excluded: []
 
