@@ -25,7 +25,7 @@ from functools import partial
 import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, deepcopy, subdict
+from .utils import ensure, lmap, deepcopy, subdict, lookup
 
 LOG = logging.getLogger(__name__)
 
@@ -215,6 +215,9 @@ def build_context_aws(pdata, context):
     return context
 
 def build_context_s3(pdata, context):
+    if not pdata['aws'].get('s3'):
+        return context
+
     # future: build what is necessary for buildercore.bootstrap.setup_s3()
     default_bucket_configuration = {
         'sqs-notifications': {},
@@ -224,12 +227,18 @@ def build_context_s3(pdata, context):
         'public': False,
         'encryption': False,
     }
-    if pdata['aws'].get('s3'):
-        for bucket_template_name in pdata['aws']['s3']:
-            configuration = pdata['aws']['s3'][bucket_template_name]
-            bucket_name = parameterize(context)(bucket_template_name)
-            context['s3'][bucket_name] = default_bucket_configuration.copy()
-            context['s3'][bucket_name].update(configuration if configuration else {})
+
+    for bucket_template_name in pdata['aws']['s3']:
+        configuration = pdata['aws']['s3'][bucket_template_name]
+        bucket_name = parameterize(context)(bucket_template_name)
+        context['s3'][bucket_name] = default_bucket_configuration.copy()
+        context['s3'][bucket_name].update(configuration if configuration else {})
+
+        sqs_notifications = lookup(pdata, 'aws.s3.sqs-notifications', {})
+        for sqs_name, sqs_opts in sqs_notifications.items():
+            new_sqs_name = parameterize(context)(sqs_name)
+            context['s3'][bucket_name]['sqs-notifications'][new_sqs_name] = sqs_opts
+
     return context
 
 def build_context_sns_sqs(pdata, context):
