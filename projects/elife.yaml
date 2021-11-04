@@ -51,7 +51,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0b027726dd2222f4c # GENERATED created from basebox--1804
+            ami: ami-03bf63042a8b4fd1a # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -197,6 +197,8 @@ defaults:
                 max-size: 3
                 # (currently fixed) number of EC2 nodes
                 desired-capacity: 1
+                #root:
+                #   size: 20 # GiB, default
             helm: false
             external-dns: false
                 # Route53 hosted zone to create subdomains on
@@ -309,13 +311,13 @@ defaults:
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
             ec2:
-                ami: ami-0b027726dd2222f4c # GENERATED created from basebox--1804
+                ami: ami-03bf63042a8b4fd1a # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         s1804:
             description: alias for standalone1804
             ec2:
-                ami: ami-0b027726dd2222f4c # GENERATED created from basebox--1804
+                ami: ami-03bf63042a8b4fd1a # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
         # 18.04, same as default
@@ -837,6 +839,7 @@ elife-bot:
             "{instance}-elife-bot-digests-input":
             "{instance}-elife-bot-decision-letter-input":
             "{instance}-elife-bot-decision-letter-output":
+            "{instance}-elife-bot-accepted-submission-cleaning-output":
         sqs:
             # gnott@2021-08: poa-incoming-queue was configured to avoid the rigidly timed PoA packaging process.
             # now the S3 notifications go into the queue, and elife-bot reads the messages at four specific times daily
@@ -845,10 +848,8 @@ elife-bot:
                 subscriptions: []
             # gnott@2021-08: used for the RDS / ERA article pipeline to trigger depositing to Software Heritage.
             "{instance}-era-incoming-queue":
-                # no subscriptions to SNS
                 subscriptions: []
         sns:
-            # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
     aws-alt:
         snsalt:
@@ -908,7 +909,6 @@ elife-bot:
                 - 8020 # exposing FTP contents
                 - 8021 # exposing FTP contents, HTTPS
                 - 1080 # exposing mailcatcher API
-            description: speeding up end2end tests
             s3:
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
@@ -947,9 +947,6 @@ elife-bot:
                         continuumtest-poa-incoming-queue: {}
                     deletion-policy: delete
         prod:
-            # lsh@2021-06-18: is this still true?
-            # don't change type through CloudFormation because the template is too old to be modified successfully
-            #type: c5.2xlarge
             s3:
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
@@ -960,6 +957,10 @@ elife-bot:
                 "{instance}-elife-bot-decision-letter-input":
                     sqs-notifications:
                         incoming-queue: {}
+                "{instance}-elife-bot-accepted-submission-cleaning-output":
+                    deletion-policy: retain
+                    sqs-notifications:
+                        "prod-elife-bot-accepted-submission-cleaning-output-s3-events": {}
                 # already existing bucket, do not uncomment
                 #"{instance}-elife-ejp-poa-delivery":
                 #    sqs-notifications:
@@ -969,6 +970,9 @@ elife-bot:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
                         - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
+                # elife-bot -> (s3) elife-bot-accepted-submission-cleaning-output -> (sqs) elife-bot-accepted-submission-cleaning-output-s3-events
+                "{instance}-elife-bot-accepted-submission-cleaning-output-s3-events":
+                    subscriptions: []
     vagrant: {}
 
 generic-cdn:
@@ -1509,6 +1513,8 @@ observer:
                 subscriptions:
                     - bus-articles--{instance}
                     - bus-press-packages--{instance}
+                    - bus-labs-posts--{instance}
+                    - bus-digests--{instance}
     aws-alt:
         end2end:
             description: production-like environment. RDS backed
@@ -2079,6 +2085,8 @@ kubernetes-aws:
                     type: t2.large
                     max-size: 6
                     desired-capacity: 6
+                    root:
+                        size: 40 # GiB    
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:
