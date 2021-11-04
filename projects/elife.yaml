@@ -958,7 +958,7 @@ elife-bot:
                 "{instance}-elife-bot-accepted-submission-cleaning-output":
                     deletion-policy: retain
                     sqs-notifications:
-                        "{instance}-elife-bot-accepted-submission-cleaning-output-s3-events": {}
+                        "prod-elife-bot-accepted-submission-cleaning-output-s3-events": {}
                 # already existing bucket, do not uncomment
                 #"{instance}-elife-ejp-poa-delivery":
                 #    sqs-notifications:
