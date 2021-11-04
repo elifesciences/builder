@@ -186,6 +186,8 @@ def sub_sqs(stackname, context_sqs, region):
             # idempotent, works as lookup
             # risky, may subscribe to a typo-filled topic name like 'aarticles'
             # there is no boto method to lookup a topic
+            # lsh@2021-11-02: there is now a boto method to lookup topics:
+            # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sns.html#SNS.Client.list_topics
             topic_lookup = sns_client.create_topic(Name=topic_name) # idempotent
             topic_arn = topic_lookup['TopicArn']
 
