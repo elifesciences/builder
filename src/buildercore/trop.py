@@ -897,6 +897,7 @@ def render_alb(context, template, ec2_instances):
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
     lb = alb.LoadBalancer(
         ALB_TITLE,
+        Name=context['stackname'],
         Scheme='internet-facing' if alb_is_public else 'internal',
         Subnets=context['alb']['subnets'],
         SecurityGroups=[Ref(ALB_SECURITY_GROUP_ID)],
