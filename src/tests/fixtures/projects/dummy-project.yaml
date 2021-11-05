@@ -896,6 +896,22 @@ project-with-unique-alt-config:
         prod:
             unique: true
 
+project-with-waf:
+    aws:
+        ec2: false
+        waf:
+            description: dummy firewall for testing
+            associations:
+                - arn:aws:iam::...:...
+            custom-rules: {}
+            managed-rules:
+                AWS/AWSManagedRulesBotControlRuleSet:
+                    priority: 0
+                    excluded:
+                        - foo
+                        - bar
+                        - baz
+
 project-with-alb:
     subdomain: project-with-alb
     aws:

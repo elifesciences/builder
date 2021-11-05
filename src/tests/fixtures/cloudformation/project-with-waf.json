@@ -1,0 +1,82 @@
+{
+    "Resources": {
+        "WAF": {
+            "Properties": {
+                "DefaultAction": {
+                    "Allow": {}
+                },
+                "Description": "dummy firewall for testing",
+                "Name": "project-with-waf--foo",
+                "Rules": [
+                    {
+                        "Name": "AWS-AWSManagedRulesBotControlRuleSet",
+                        "OverrideAction": {
+                            "None": {}
+                        },
+                        "Priority": 0,
+                        "Statement": {
+                            "ManagedRuleGroupStatement": {
+                                "ExcludedRules": [
+                                    {
+                                        "Name": "foo"
+                                    },
+                                    {
+                                        "Name": "bar"
+                                    },
+                                    {
+                                        "Name": "baz"
+                                    }
+                                ],
+                                "Name": "AWSManagedRulesBotControlRuleSet",
+                                "VendorName": "AWS"
+                            }
+                        },
+                        "VisibilityConfig": {
+                            "CloudWatchMetricsEnabled": "true",
+                            "MetricName": "project-with-waf--foo--AWS-AWSManagedRulesBotControlRuleSet",
+                            "SampledRequestsEnabled": "true"
+                        }
+                    }
+                ],
+                "Scope": "REGIONAL",
+                "Tags": [
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-waf--foo"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-waf--foo"
+                    },
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-waf"
+                    }
+                ],
+                "VisibilityConfig": {
+                    "CloudWatchMetricsEnabled": "true",
+                    "MetricName": "project-with-waf--foo",
+                    "SampledRequestsEnabled": "true"
+                }
+            },
+            "Type": "AWS::WAFv2::WebACL"
+        },
+        "WAFAssociation": {
+            "Properties": {
+                "ResourceArn": "arn:aws:iam::...:...",
+                "WebACLArn": {
+                    "Fn::GetAtt": [
+                        "WAF",
+                        "Arn"
+                    ]
+                }
+            },
+            "Type": "AWS::WAFv2::WebACLAssociation"
+        }
+    }
+}
+

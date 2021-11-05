@@ -1315,6 +1315,16 @@ class TestBuildercoreTrop(base.BaseCase):
             cfn_template = _parse_json(cfn_template)
             self.assertEqual(expected, cfn_template)
 
+
+    # --- WAF
+
+    def test_render_waf(self):
+        fixture = json.loads(base.fixture("cloudformation/project-with-waf.json"))
+        context = cfngen.build_context('project-with-waf', stackname='project-with-waf--foo')
+        cfn_template_json = trop.render(context)
+        cfn_template = json.loads(cfn_template_json)
+        self.assertEqual(fixture, cfn_template)
+
 #
 #
 #
