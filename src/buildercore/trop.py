@@ -1402,7 +1402,8 @@ def render_waf(context, template):
             "CloudWatchMetricsEnabled": True,
             "MetricName": context['stackname'],
             "SampledRequestsEnabled": True
-        })
+        }),
+        'Tags': instance_tags(context, single_tag_obj=True)
     })
     template.add_resource(webacl)
 
