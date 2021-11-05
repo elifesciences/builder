@@ -93,7 +93,6 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
 # todo: rename. nothing is being bootstrapped here.
 def bootstrap(stackname, context):
     "called by `bootstrap.create_stack` to generate a cloudformation template."
-    pdata = core.project_data_for_stackname(stackname)
     parameters = []
     on_start = _noop
     on_error = _noop

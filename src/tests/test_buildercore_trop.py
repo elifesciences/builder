@@ -1315,7 +1315,6 @@ class TestBuildercoreTrop(base.BaseCase):
             cfn_template = _parse_json(cfn_template)
             self.assertEqual(expected, cfn_template)
 
-
     # --- WAF
 
     def test_render_waf(self):

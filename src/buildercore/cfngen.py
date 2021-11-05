@@ -194,7 +194,7 @@ def build_context_waf(pdata, context):
 
     description = lookup(pdata, 'aws.waf.description', 'web application firewall')
     context['waf']['description'] = description
-    
+
     return context
 
 def build_context_docdb(pdata, context, existing_context=None):
