@@ -204,6 +204,7 @@
         },
         "ELBv2": {
             "Properties": {
+                "Name": "project-with-alb--foo",
                 "LoadBalancerAttributes": [
                     {
                         "Key": "idle_timeout.timeout_seconds",
