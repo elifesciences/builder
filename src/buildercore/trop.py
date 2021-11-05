@@ -1389,6 +1389,7 @@ def render_waf_rule(stackname, rule_name_with_ns, rule):
     return managed_rule
 
 WAF_TITLE = 'WAF'
+WAF_ASSOCIATION = 'WAFAssociation'
 
 def render_waf(context, template):
     stackname = context['stackname']
@@ -1406,6 +1407,13 @@ def render_waf(context, template):
         'Tags': instance_tags(context, single_tag_obj=True)
     })
     template.add_resource(webacl)
+
+    for arn in context['waf']['associations']:
+        association = wafv2.WebACLAssociation(WAF_ASSOCIATION, **{
+            'WebACLArn': GetAtt(webacl, "Arn"),
+            'ResourceArn': arn,
+        })
+        template.add_resource(association)
 
 
 # --- todo: revisit this, seems to be part of rds+ec2

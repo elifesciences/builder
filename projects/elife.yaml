@@ -2161,13 +2161,15 @@ firewall:
 
     aws-alt:
         prod:
-            # unique because we should be sharing a single WAF rather than creating multiple instances.
+            # unique because associations can only be associated to one WAF.
+            # we should be sharing a single WAF rather than creating multiple instances.
             unique: true
             waf:
                 description: General purpose Web Application Firewall
-                # resources using this WAF
-                resources:
-                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journ-ELBv2-ZS5YM5X643TN/31cb27d388b7a1b8 # journal--prod ALB
+                # associated resources using this WAF
+                associations:
+                    #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journ-ELBv2-ZS5YM5X643TN/31cb27d388b7a1b8 # journal--prod ALB
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journ-ELBv2-GV4QIPM0KBML/b19e3b64cc9fe439 # journal--continuumtest
                 # custom rule sets, $1/mo each
                 custom-rules: {}
                 # managed rule sets, $1/mo, "vendorname/ruleset-name"
