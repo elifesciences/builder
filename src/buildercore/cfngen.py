@@ -25,7 +25,7 @@ from functools import partial
 import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, deepcopy, subdict
+from .utils import ensure, lmap, deepcopy, subdict, lookup
 
 LOG = logging.getLogger(__name__)
 
@@ -192,6 +192,9 @@ def build_context_waf(pdata, context):
         new_managed_rules[new_key_name] = managed_rule
     context['waf']['managed-rules'] = new_managed_rules
 
+    description = lookup(pdata, 'aws.waf.description', 'web application firewall')
+    context['waf']['description'] = description
+    
     return context
 
 def build_context_docdb(pdata, context, existing_context=None):
@@ -350,7 +353,7 @@ def build_context_rds(pdata, context, existing_context):
     stackname = context['stackname']
 
     # deletion policy
-    deletion_policy = utils.lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
+    deletion_policy = lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
 
     # used to give mysql a range of valid ip addresses to connect from
     subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
@@ -584,7 +587,7 @@ def more_validation(json_template_str):
         # case: when "DBInstanceIdentifier" == "lax--temp2"
         # The parameter Filter: db-instance-id is not a valid identifier. Identifiers must begin with a letter;
         # must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens.
-        dbid = utils.lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
+        dbid = lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
         if dbid:
             ensure('--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid)
 

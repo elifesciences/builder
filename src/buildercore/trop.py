@@ -3,13 +3,13 @@ an AWS CloudFormation template dynamically using values from the
 'context', a dictionary of data built up in `cfngen.py` derived from
 the project file (`projects/elife.yaml`):
 
-   projects file -> build context -> troposphere.py -> cloudformation json
+   projects file -> build context -> trop.py -> cloudformation json
 
 The non-AWS pipeline is similar:
 
-                                  -> terraform.py   -> terraform json
+                                  -> terraform.py -> terraform json
 
-see also `terraform.py`"""
+see also `terraform.py`."""
 
 from collections import OrderedDict
 from os.path import join
@@ -1393,6 +1393,8 @@ WAF_TITLE = 'WAF'
 def render_waf(context, template):
     stackname = context['stackname']
     webacl = wafv2.WebACL(WAF_TITLE, **{
+        'Name': stackname,
+        'Description': context['waf']['description'],
         'DefaultAction': wafv2.DefaultAction(Allow=wafv2.AllowAction()), # urgh.
         'Rules': [render_waf_rule(stackname, rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()],
         'Scope': 'REGIONAL',

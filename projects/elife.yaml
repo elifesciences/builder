@@ -2164,7 +2164,7 @@ firewall:
             # unique because we should be sharing a single WAF rather than creating multiple instances.
             unique: true
             waf:
-                description: general purpose WAF, good for public facing apps
+                description: General purpose Web Application Firewall
                 # resources using this WAF
                 resources:
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journ-ELBv2-ZS5YM5X643TN/31cb27d388b7a1b8 # journal--prod ALB
