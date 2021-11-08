@@ -287,11 +287,12 @@ defaults:
                 - subnet-0590f9e8ead4bbd9a # elife-docdb-subnet-1
                 - subnet-02dc8ba012ee359ae # elife-docdb-subnet-2
         waf:
-            description: a Web Application Firewall
-            resources: []
-            # default action for requests that don't match any of the rules in the list of below rules
+            # a list of ARNs that should be attached to this WAF. Only tested with ALBs.
+            associations: []
+            # default action for requests that don't match any rule in the list of below rules.
             action: allow # count, block, custom-response
             custom-rules: {}
+            # a map of vendor->rulesets. see the `firewall` project for a better example.
             managed-rules: {}
     aws-alt:
 
@@ -2154,25 +2155,17 @@ accepted-submission-cleaning:
             - elife-accepted-submission-cleaning-s3-events
 
 firewall:
-    description: Web Application Firewall rules
     aws:
         ec2: false
-        # $5/mo each
-        waf:
-            description: a WAF
-            resources: []
-            # default action for requests that don't match any of the rules in the list of below rules
-            action: allow # count, block, custom-response
-            custom-rules: {}
-            managed-rules: {}
+        waf: {}
 
     aws-alt:
         prod:
+            description: General purpose Web Application Firewall
             # unique because associations can only be associated to one WAF.
             # we should be sharing a single WAF rather than creating multiple instances.
             unique: true
             waf:
-                description: General purpose Web Application Firewall
                 # associated resources using this WAF
                 associations:
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218

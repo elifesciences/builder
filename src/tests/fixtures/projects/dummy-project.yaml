@@ -233,7 +233,7 @@ defaults:
                 - subnet-bar
         waf:
             description: a Web Application Firewall
-            resources: []
+            associations: []
             # default action for requests that don't match any of the rules in the list of below rules
             action: allow # count, block, custom-response
             custom-rules: {}
@@ -905,9 +905,9 @@ project-with-unique-alt-config:
 
 project-with-waf:
     aws:
+        description: dummy firewall for testing
         ec2: false
         waf:
-            description: dummy firewall for testing
             associations:
                 - arn:aws:iam::...:...
             custom-rules: {}

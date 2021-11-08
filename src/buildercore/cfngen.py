@@ -192,9 +192,7 @@ def build_context_waf(pdata, context):
         new_key_name = "%s-%s" % (vendor, rule_name)
         new_managed_rules[new_key_name] = managed_rule
     context['waf']['managed-rules'] = new_managed_rules
-
-    description = lookup(pdata, 'aws.waf.description', 'web application firewall')
-    context['waf']['description'] = description
+    context['waf']['description'] = lookup(pdata, 'aws.description')
 
     return context
 
@@ -219,7 +217,8 @@ def build_context_docdb(pdata, context, existing_context=None):
     return context
 
 def build_context_aws(pdata, context):
-    "adds common AWS fields to the context under `aws`."
+    """adds the commonly used AWS fields to the context under `aws`.
+    these are fields that are common to many resources such as `account-id` and `availability-zone`."""
     if 'aws' not in pdata:
         return context
     keepers = [

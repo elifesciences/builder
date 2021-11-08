@@ -1363,11 +1363,12 @@ def render_docdb(context, template):
 WAF_NAME = 'WAF'
 
 def render_waf_rule(stackname, rule_name_with_ns, rule):
+    """Returns a managed WebACL rule with certain (sub?) rules excluded.
 
-    # 'ns' is 'namespace'
-    # `rule_name_with_ns` = "AWS-SomeRuleName"
-    # `rule['name']` = "SomeRuleName"
-    # `rule['vendor']` = "AWS"
+    `ns` stands for 'namespace' and looks like 'AWS' in 'AWS/SomeRuleName' or 'AWS-SomeRuleName'.
+    `rule_name_with_ns` looks like 'AWS-SomeRuleName'
+    `rule['name']` looks like 'SomeRuleName'
+    `rule['vendor']` is 'AWS'"""
 
     managed_statement = wafv2.ManagedRuleGroupStatement(**{
         'Name': rule['name'], # "AWSManagedRulesKnownBadInputsRuleSet"
