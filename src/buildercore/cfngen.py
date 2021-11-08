@@ -192,7 +192,7 @@ def build_context_waf(pdata, context):
         new_key_name = "%s-%s" % (vendor, rule_name)
         new_managed_rules[new_key_name] = managed_rule
     context['waf']['managed-rules'] = new_managed_rules
-    context['waf']['description'] = lookup(pdata, 'aws.description')
+    context['waf']['description'] = lookup(pdata, 'aws.description', 'a web application firewall')
 
     return context
 
@@ -684,7 +684,7 @@ UPDATABLE_TITLE_PATTERNS = [
     '^RDSPort$',
     '^DocumentDB.*$',
     '^WAF$',
-    '^WAFAssociation$',
+    '^WAFAssociation.+$',
 
     '^ELBv2$',
     '^ELBv2Listener.*',
@@ -720,7 +720,7 @@ REMOVABLE_TITLE_PATTERNS = [
     '^VPCSecurityGroup$',
     '^KeyName$',
     '^WAF$',
-    '^WAFAssociation$',
+    '^WAFAssociation.+$',
 ]
 
 # patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.

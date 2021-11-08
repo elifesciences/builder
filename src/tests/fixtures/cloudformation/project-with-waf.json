@@ -65,7 +65,7 @@
             },
             "Type": "AWS::WAFv2::WebACL"
         },
-        "WAFAssociation": {
+        "WAFAssociation1": {
             "Properties": {
                 "ResourceArn": "arn:aws:iam::...:...",
                 "WebACLArn": {

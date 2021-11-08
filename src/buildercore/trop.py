@@ -1360,8 +1360,6 @@ def render_docdb(context, template):
 
 # --- waf
 
-WAF_NAME = 'WAF'
-
 def render_waf_rule(stackname, rule_name_with_ns, rule):
     """Returns a managed WebACL rule with certain (sub?) rules excluded.
 
@@ -1390,7 +1388,7 @@ def render_waf_rule(stackname, rule_name_with_ns, rule):
     return managed_rule
 
 WAF_TITLE = 'WAF'
-WAF_ASSOCIATION = 'WAFAssociation'
+WAF_ASSOCIATION = 'WAFAssociation%s'
 
 def render_waf(context, template):
     stackname = context['stackname']
@@ -1409,8 +1407,8 @@ def render_waf(context, template):
     })
     template.add_resource(webacl)
 
-    for arn in context['waf']['associations']:
-        association = wafv2.WebACLAssociation(WAF_ASSOCIATION, **{
+    for i, arn in enumerate(context['waf']['associations']):
+        association = wafv2.WebACLAssociation(WAF_ASSOCIATION % str(i + 1), **{
             'WebACLArn': GetAtt(webacl, "Arn"),
             'ResourceArn': arn,
         })

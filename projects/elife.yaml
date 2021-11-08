@@ -2160,6 +2160,14 @@ firewall:
         waf: {}
 
     aws-alt:
+        fresh:
+            ec2: false
+        1804:
+            ec2: false
+        s1804:
+            ec2: false
+        standalone:
+            ec2: false
         prod:
             description: General purpose Web Application Firewall
             # unique because associations can only be associated to one WAF.
@@ -2168,7 +2176,9 @@ firewall:
             waf:
                 # associated resources using this WAF
                 associations:
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--prod/677b5066e869788d
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
                 # custom rule sets, $1/mo each
                 custom-rules: {}
                 # managed rule sets, $1/mo, "vendorname/ruleset-name"
