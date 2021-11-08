@@ -286,6 +286,13 @@ defaults:
             subnets:
                 - subnet-0590f9e8ead4bbd9a # elife-docdb-subnet-1
                 - subnet-02dc8ba012ee359ae # elife-docdb-subnet-2
+        waf:
+            description: a Web Application Firewall
+            resources: []
+            # default action for requests that don't match any of the rules in the list of below rules
+            action: allow # count, block, custom-response
+            custom-rules: {}
+            managed-rules: {}
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -2168,8 +2175,7 @@ firewall:
                 description: General purpose Web Application Firewall
                 # associated resources using this WAF
                 associations:
-                    #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journ-ELBv2-ZS5YM5X643TN/31cb27d388b7a1b8 # journal--prod ALB
-                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journ-ELBv2-GV4QIPM0KBML/b19e3b64cc9fe439 # journal--continuumtest
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218
                 # custom rule sets, $1/mo each
                 custom-rules: {}
                 # managed rule sets, $1/mo, "vendorname/ruleset-name"

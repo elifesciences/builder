@@ -125,6 +125,7 @@ def build_context(pname, **more_context):
         'cloudfront': False,
         'elasticache': False,
         'docdb': False,
+        'waf': False,
     }
 
     context = deepcopy(defaults)
@@ -683,7 +684,8 @@ UPDATABLE_TITLE_PATTERNS = [
     '^RDSHost$',
     '^RDSPort$',
     '^DocumentDB.*$',
-    '^WAF.*',
+    '^WAF$',
+    '^WAFAssociation$',
 
     '^ELBv2$',
     '^ELBv2Listener.*',
@@ -717,7 +719,9 @@ REMOVABLE_TITLE_PATTERNS = [
     '^AttachedDB$',
     '^AttachedDBSubnet$',
     '^VPCSecurityGroup$',
-    '^KeyName$'
+    '^KeyName$',
+    '^WAF$',
+    '^WAFAssociation$',
 ]
 
 # patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
@@ -814,12 +818,13 @@ def template_delta(context):
 
         title_in_old = dict(old_template[section][title])
         title_in_new = dict(template[section][title])
+
         # ignore UserData changes, it's not useful to update them and cause
         # a needless reboot
-        if 'Type' in title_in_old:
-            if title_in_old['Type'] == 'AWS::EC2::Instance':
-                for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
-                    title_in_new['Properties'][property_name] = title_in_old['Properties'][property_name]
+        if title_in_old.get('Type') == 'AWS::EC2::Instance':
+            for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
+                title_in_new['Properties'][property_name] = title_in_old['Properties'][property_name]
+
         return title_in_old != title_in_new
 
     def legacy_title(title):

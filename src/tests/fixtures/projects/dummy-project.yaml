@@ -231,6 +231,13 @@ defaults:
             subnets:
                 - subnet-foo
                 - subnet-bar
+        waf:
+            description: a Web Application Firewall
+            resources: []
+            # default action for requests that don't match any of the rules in the list of below rules
+            action: allow # count, block, custom-response
+            custom-rules: {}
+            managed-rules: {}
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
