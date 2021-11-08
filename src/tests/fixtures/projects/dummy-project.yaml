@@ -231,6 +231,13 @@ defaults:
             subnets:
                 - subnet-foo
                 - subnet-bar
+        waf:
+            description: a Web Application Firewall
+            associations: []
+            # default action for requests that don't match any of the rules in the list of below rules
+            action: allow # count, block, custom-response
+            custom-rules: {}
+            managed-rules: {}
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -895,6 +902,22 @@ project-with-unique-alt-config:
     aws-alt:
         prod:
             unique: true
+
+project-with-waf:
+    aws:
+        description: dummy firewall for testing
+        ec2: false
+        waf:
+            associations:
+                - arn:aws:iam::...:...
+            custom-rules: {}
+            managed-rules:
+                AWS/AWSManagedRulesBotControlRuleSet:
+                    priority: 0
+                    excluded:
+                        - foo
+                        - bar
+                        - baz
 
 project-with-alb:
     subdomain: project-with-alb

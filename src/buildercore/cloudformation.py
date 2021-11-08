@@ -1,3 +1,7 @@
+"""module concerns itself with the creation, updating and deleting of Cloudformation template instances.
+
+see `trop.py` for the *generation* of Cloudformation templates."""
+
 from collections import namedtuple
 from contextlib import contextmanager
 import logging
@@ -13,10 +17,12 @@ from .utils import call_while, ensure
 LOG = logging.getLogger(__name__)
 
 def render_template(context):
-    pname = context['project_name']
-    msg = 'could not render a CloudFormation template for %r' % pname
+    "generates an instance of a Cloudformation template using the given `context`."
+    msg = 'could not render a CloudFormation template for %r' % context['project_name']
     ensure('aws' in context, msg, ValueError)
     return trop.render(context)
+
+# ---
 
 def _give_up_backoff(e):
     return e.response['Error']['Code'] != 'Throttling'
@@ -33,6 +39,8 @@ def validate_template(pname_or_stackname, rendered_template):
 
     conn = core.boto_conn(pname_or_stackname, 'cloudformation', client=True)
     return conn.validate_template(TemplateBody=rendered_template)
+
+# ---
 
 class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
     """represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed
@@ -82,13 +90,14 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
         raise
 
 
+# todo: rename. nothing is being bootstrapped here.
 def bootstrap(stackname, context):
-    pdata = core.project_data_for_stackname(stackname)
+    "called by `bootstrap.create_stack` to generate a cloudformation template."
     parameters = []
     on_start = _noop
     on_error = _noop
-    # TODO: should use context by this point
-    if pdata['aws']['ec2']:
+
+    if context['ec2']:
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
@@ -99,7 +108,7 @@ def bootstrap(stackname, context):
         return
 
     if core.stack_is_active(stackname):
-        LOG.info("stack exists") # avoid on_start handler
+        LOG.info("stack exists") # avoid `on_start` handler
         return True
 
     with stack_creation(stackname, on_start=on_start, on_error=on_error):
@@ -215,7 +224,6 @@ def _update_template(stackname, template):
         print(json.dumps(template, indent=4))
         conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
     except botocore.exceptions.ClientError as ex:
-        # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
         if ex.response['Error']['Message'] == 'No updates are to be performed.':
             LOG.info(str(ex), extra={'response': ex.response})
             return

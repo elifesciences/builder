@@ -17,6 +17,7 @@ ALL_PROJECTS = [
     'project-with-eks', 'project-with-eks-helm', 'project-with-eks-external-dns', 'project-with-eks-efs',
     'project-with-docdb', 'project-with-docdb-cluster',
     'project-with-unique-alt-config',
+    'project-with-waf',
     'project-with-alb'
 ]
 

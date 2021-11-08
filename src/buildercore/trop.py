@@ -3,19 +3,19 @@ an AWS CloudFormation template dynamically using values from the
 'context', a dictionary of data built up in `cfngen.py` derived from
 the project file (`projects/elife.yaml`):
 
-   projects file -> build context -> troposphere.py -> cloudformation json
+   projects file -> build context -> trop.py -> cloudformation json
 
 The non-AWS pipeline is similar:
 
-                                  -> terraform.py   -> terraform json
+                                  -> terraform.py -> terraform json
 
-see also `terraform.py`"""
+see also `terraform.py`."""
 
 from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
 from .config import ConfigurationError
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb
+from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, wafv2
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
 from .utils import ensure, subdict, lmap, isstr, deepcopy
@@ -1359,6 +1359,63 @@ def render_docdb(context, template):
     for i in range(1, context['docdb']['cluster-size'] + 1):
         template.add_resource(docdb_node(i))
 
+# --- waf
+
+def render_waf_rule(stackname, rule_name_with_ns, rule):
+    """Returns a managed WebACL rule with certain (sub?) rules excluded.
+
+    `ns` stands for 'namespace' and looks like 'AWS' in 'AWS/SomeRuleName' or 'AWS-SomeRuleName'.
+    `rule_name_with_ns` looks like 'AWS-SomeRuleName'
+    `rule['name']` looks like 'SomeRuleName'
+    `rule['vendor']` is 'AWS'"""
+
+    managed_statement = wafv2.ManagedRuleGroupStatement(**{
+        'Name': rule['name'], # "AWSManagedRulesKnownBadInputsRuleSet"
+        'ExcludedRules': [wafv2.ExcludedRule(Name=name) for name in rule['excluded']],
+        'VendorName': rule['vendor']
+    })
+    managed_rule = wafv2.WebACLRule(**{
+        'Name': rule_name_with_ns,
+        'Priority': rule['priority'],
+        'Statement': wafv2.StatementOne(ManagedRuleGroupStatement=managed_statement),
+        'OverrideAction': wafv2.OverrideAction(**{"None": wafv2.NoneAction()}), # double urgh.
+        'VisibilityConfig': wafv2.VisibilityConfig(**{
+            'CloudWatchMetricsEnabled': True,
+            # 'firewall--prod--AWS-AWSManagedRulesKnownBadInputsRuleSet"
+            'MetricName': "%s--%s" % (stackname, rule_name_with_ns),
+            'SampledRequestsEnabled': True
+        })
+    })
+    return managed_rule
+
+WAF_TITLE = 'WAF'
+WAF_ASSOCIATION = 'WAFAssociation%s'
+
+def render_waf(context, template):
+    stackname = context['stackname']
+    webacl = wafv2.WebACL(WAF_TITLE, **{
+        'Name': stackname,
+        'Description': context['waf']['description'],
+        'DefaultAction': wafv2.DefaultAction(Allow=wafv2.AllowAction()), # urgh.
+        'Rules': [render_waf_rule(stackname, rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()],
+        'Scope': 'REGIONAL',
+        'VisibilityConfig': wafv2.VisibilityConfig(**{
+            "CloudWatchMetricsEnabled": True,
+            "MetricName": context['stackname'],
+            "SampledRequestsEnabled": True
+        }),
+        'Tags': instance_tags(context, single_tag_obj=True)
+    })
+    template.add_resource(webacl)
+
+    for i, arn in enumerate(context['waf']['associations']):
+        association = wafv2.WebACLAssociation(WAF_ASSOCIATION % str(i + 1), **{
+            'WebACLArn': GetAtt(webacl, "Arn"),
+            'ResourceArn': arn,
+        })
+        template.add_resource(association)
+
+
 # --- todo: revisit this, seems to be part of rds+ec2
 
 def add_outputs(context, template):
@@ -1373,6 +1430,9 @@ def add_outputs(context, template):
 #
 
 def render(context):
+    """given a dictionary `context`, generates a CloudFormation instance.
+    returns the instance as JSON."""
+
     template = Template()
 
     ec2_instances = render_ec2(context, template) if context['ec2'] else {}
@@ -1397,6 +1457,7 @@ def render(context):
         ('fastly', render_fastly),
         ('elasticache', render_elasticache),
         ('docdb', render_docdb),
+        ('waf', render_waf),
     ]
 
     for value in renderer_list:

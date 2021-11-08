@@ -286,6 +286,14 @@ defaults:
             subnets:
                 - subnet-0590f9e8ead4bbd9a # elife-docdb-subnet-1
                 - subnet-02dc8ba012ee359ae # elife-docdb-subnet-2
+        waf:
+            # a list of ARNs that should be attached to this WAF. Only tested with ALBs.
+            associations: []
+            # default action for requests that don't match any rule in the list of below rules.
+            action: allow # count, block, custom-response
+            custom-rules: {}
+            # a map of vendor->rulesets. see the `firewall` project for a better example.
+            managed-rules: {}
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -2145,3 +2153,96 @@ accepted-submission-cleaning:
                 deletion-policy: retain
         sns:
             - elife-accepted-submission-cleaning-s3-events
+
+firewall:
+    aws:
+        ec2: false
+        waf: {}
+
+    aws-alt:
+        fresh:
+            ec2: false
+        1804:
+            ec2: false
+        s1804:
+            ec2: false
+        standalone:
+            ec2: false
+        prod:
+            description: General purpose Web Application Firewall
+            # unique because associations can only be associated to one WAF.
+            # we should be sharing a single WAF rather than creating multiple instances.
+            unique: true
+            waf:
+                # associated resources using this WAF
+                associations:
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--prod/677b5066e869788d
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
+                # custom rule sets, $1/mo each
+                custom-rules: {}
+                # managed rule sets, $1/mo, "vendorname/ruleset-name"
+                managed-rules:
+                    AWS/AWSManagedRulesBotControlRuleSet:
+                        priority: 0
+                        # excluded rules in a ruleset are set to 'count' only.
+                        # when a rule is not excluded, matching requests will be blocked (opposite of default WAF action).
+                        # when *all* rules are being excluded you should probably remove that ruleset.
+                        # measuring occurances can be done through Cloudwatch of the WAF overview tab.
+                        excluded:
+                            - CategoryAdvertising
+                            - CategoryArchiver
+                            - CategoryContentFetcher
+                            - CategoryHttpLibrary
+                            - CategoryLinkChecker
+                            - CategoryMiscellaneous
+                            - CategoryMonitoring
+                            - CategoryScrapingFramework
+                            - CategorySearchEngine
+                            - CategorySecurity
+                            - CategorySeo
+                            - CategorySocialMedia
+                            - SignalNonBrowserUserAgent
+                    AWS/AWSManagedRulesAmazonIpReputationList:
+                        priority: 1
+                        excluded:
+                            -   AWSManagedIPReputationList
+                    AWS/AWSManagedRulesCommonRuleSet:
+                        priority: 2
+                        excluded:
+                            - CrossSiteScripting_COOKIE
+                            - CrossSiteScripting_QUERYARGUMENTS
+                            - CrossSiteScripting_URIPATH
+                            - EC2MetaDataSSRF_BODY
+                            - EC2MetaDataSSRF_COOKIE
+                            - EC2MetaDataSSRF_QUERYARGUMENTS
+                            - EC2MetaDataSSRF_URIPATH
+                            - GenericLFI_BODY
+                            - GenericRFI_BODY
+                            - GenericRFI_QUERYARGUMENTS
+                            - RestrictedExtensions_QUERYARGUMENTS
+                            - RestrictedExtensions_URIPATH
+                            - SizeRestrictions_BODY
+                            - SizeRestrictions_Cookie_HEADER
+                            - SizeRestrictions_QUERYSTRING
+                            - SizeRestrictions_URIPATH
+                    AWS/AWSManagedRulesKnownBadInputsRuleSet:
+                        priority: 3
+                        excluded:
+                            - BadAuthToken_COOKIE_AUTHORIZATION
+                            - ExploitablePaths_URIPATH
+                            - Host_localhost_HEADER
+                            - PROPFIND_METHOD
+                    AWS/AWSManagedRulesLinuxRuleSet:
+                        priority: 4
+                        excluded:
+                            - LFI_BODY
+                            - LFI_QUERYARGUMENTS
+                            - LFI_URIPATH
+                    AWS/AWSManagedRulesPHPRuleSet:
+                        priority: 5
+                        excluded: []
+                    AWS/AWSManagedRulesUnixRuleSet:
+                        priority: 6
+                        excluded: []
+

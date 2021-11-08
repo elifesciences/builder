@@ -25,7 +25,7 @@ from functools import partial
 import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, deepcopy, subdict
+from .utils import ensure, lmap, deepcopy, subdict, lookup
 
 LOG = logging.getLogger(__name__)
 
@@ -125,6 +125,7 @@ def build_context(pname, **more_context):
         'cloudfront': False,
         'elasticache': False,
         'docdb': False,
+        'waf': False,
     }
 
     context = deepcopy(defaults)
@@ -152,6 +153,7 @@ def build_context(pname, **more_context):
         build_context_elasticache,
         build_context_vault,
         partial(build_context_docdb, existing_context=existing_context),
+        build_context_waf,
     ]
 
     # ... exceptions to the rule
@@ -177,6 +179,23 @@ def build_context(pname, **more_context):
 # Do that here.
 #
 
+def build_context_waf(pdata, context):
+    if not pdata['aws'].get('waf'):
+        return context
+    context['waf'] = pdata['aws']['waf']
+
+    new_managed_rules = {}
+    for managed_rule_key, managed_rule in context['waf']['managed-rules'].items():
+        vendor, rule_name = managed_rule_key.split('/', 1) # "AWS/SomeFooRuleSet" => "AWS", "SomeFooRuleSet"
+        managed_rule['vendor'] = vendor
+        managed_rule['name'] = rule_name
+        new_key_name = "%s-%s" % (vendor, rule_name)
+        new_managed_rules[new_key_name] = managed_rule
+    context['waf']['managed-rules'] = new_managed_rules
+    context['waf']['description'] = lookup(pdata, 'aws.description', 'a web application firewall')
+
+    return context
+
 def build_context_docdb(pdata, context, existing_context=None):
     "DocumentDB (docdb) configuration"
     if not pdata['aws'].get('docdb'):
@@ -198,6 +217,8 @@ def build_context_docdb(pdata, context, existing_context=None):
     return context
 
 def build_context_aws(pdata, context):
+    """adds the commonly used AWS fields to the context under `aws`.
+    these are fields that are common to many resources such as `account-id` and `availability-zone`."""
     if 'aws' not in pdata:
         return context
     keepers = [
@@ -332,7 +353,7 @@ def build_context_rds(pdata, context, existing_context):
     stackname = context['stackname']
 
     # deletion policy
-    deletion_policy = utils.lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
+    deletion_policy = lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
 
     # used to give mysql a range of valid ip addresses to connect from
     subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
@@ -566,7 +587,7 @@ def more_validation(json_template_str):
         # case: when "DBInstanceIdentifier" == "lax--temp2"
         # The parameter Filter: db-instance-id is not a valid identifier. Identifiers must begin with a letter;
         # must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens.
-        dbid = utils.lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
+        dbid = lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
         if dbid:
             ensure('--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid)
 
@@ -662,6 +683,8 @@ UPDATABLE_TITLE_PATTERNS = [
     '^RDSHost$',
     '^RDSPort$',
     '^DocumentDB.*$',
+    '^WAF$',
+    '^WAFAssociation.+$',
 
     '^ELBv2$',
     '^ELBv2Listener.*',
@@ -695,7 +718,9 @@ REMOVABLE_TITLE_PATTERNS = [
     '^AttachedDB$',
     '^AttachedDBSubnet$',
     '^VPCSecurityGroup$',
-    '^KeyName$'
+    '^KeyName$',
+    '^WAF$',
+    '^WAFAssociation.+$',
 ]
 
 # patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
@@ -792,12 +817,13 @@ def template_delta(context):
 
         title_in_old = dict(old_template[section][title])
         title_in_new = dict(template[section][title])
+
         # ignore UserData changes, it's not useful to update them and cause
         # a needless reboot
-        if 'Type' in title_in_old:
-            if title_in_old['Type'] == 'AWS::EC2::Instance':
-                for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
-                    title_in_new['Properties'][property_name] = title_in_old['Properties'][property_name]
+        if title_in_old.get('Type') == 'AWS::EC2::Instance':
+            for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
+                title_in_new['Properties'][property_name] = title_in_old['Properties'][property_name]
+
         return title_in_old != title_in_new
 
     def legacy_title(title):
