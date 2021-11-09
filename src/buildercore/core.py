@@ -41,8 +41,8 @@ ALL_CFN_STATUS = [
     'UPDATE_ROLLBACK_FAILED',
     'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS',
     'UPDATE_ROLLBACK_COMPLETE',
-    'REVIEW_IN_PROGRESS',
     # imports not supported/used so far
+    # 'REVIEW_IN_PROGRESS',
     # 'IMPORT_IN_PROGRESS',
     # 'IMPORT_COMPLETE',
     # 'IMPORT_ROLLBACK_IN_PROGRESS',
@@ -574,15 +574,15 @@ def stack_is_active(stackname):
     return stack_is(stackname, ACTIVE_CFN_STATUS)
 
 def stack_exists(stackname, steady=False, active=False):
-    """returns True if the stack exists and is a 'steady' state - not transitioning between states.
+    """returns `True` if the stack exists.
     if `steady` is `True`, stack must also be in a non-transitioning 'steady' state.
     if `active` is `True`, stack must also be in a healthy 'active' state (no failed updates, etc)."""
     allowed_states = ALL_CFN_STATUS
     if steady:
-        # order is important, 'steady' is a subset of 'allowed'
+        # order is important, 'steady' is a subset of 'all'.
         allowed_states = STEADY_CFN_STATUS
     if active:
-        # and 'active' is a subset of 'steady'
+        # and 'active' is a subset of 'steady'.
         allowed_states = ACTIVE_CFN_STATUS
     return stack_is(stackname, allowed_states)
 

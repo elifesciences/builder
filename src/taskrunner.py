@@ -107,7 +107,6 @@ TASK_LIST = [
     report.all_adhoc_ec2_instances,
 
     checks.stack_exists,
-
 ]
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
