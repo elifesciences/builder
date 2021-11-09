@@ -255,7 +255,8 @@ def exec_task(task_str, task_map_list):
 
     except utils.TaskExit as te:
         msg = str(te)
-        msg and print(msg)
+        if msg:
+            print(msg)
         print('\nQuit.')
         return_map['rc'] = 1
         return return_map
