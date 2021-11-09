@@ -8,6 +8,7 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 
 ## todo (bucket)
 
+* handle all cases of BUILDER_NON_INTERACTIVE and get_input
 * add a changelog and versioning and releases
 * revisit tests
     - they take *forever*

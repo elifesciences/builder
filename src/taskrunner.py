@@ -3,7 +3,7 @@ from buildercore import threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks
 import sys, os, traceback
 import utils
 
@@ -105,6 +105,8 @@ TASK_LIST = [
     report.all_ec2_instances_for_salt_upgrade,
     report.all_formulas,
     report.all_adhoc_ec2_instances,
+
+    checks.stack_exists,
 
 ]
 
@@ -252,7 +254,8 @@ def exec_task(task_str, task_map_list):
         return return_map
 
     except utils.TaskExit as te:
-        print(te)
+        msg = str(te)
+        msg and print(msg)
         print('\nQuit.')
         return_map['rc'] = 1
         return return_map
