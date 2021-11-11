@@ -71,7 +71,7 @@ def project_data(pname):
     try:
         return data[pname]
     except KeyError:
-        raise ValueError("unknown project %r, known projects %r" % (pname, data.keys()))
+        raise ValueError("unknown project %r, known projects %r" % (pname, list(data.keys())))
 
 #
 #

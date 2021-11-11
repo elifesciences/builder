@@ -22,7 +22,7 @@ class DeprecationException(Exception):
 class NoMasterException(Exception):
     pass
 
-
+# https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudformation.html#CloudFormation.Client.describe_stacks
 ALL_CFN_STATUS = [
     'CREATE_IN_PROGRESS',
     'CREATE_FAILED',
@@ -32,15 +32,26 @@ ALL_CFN_STATUS = [
     'ROLLBACK_COMPLETE',
     'DELETE_IN_PROGRESS',
     'DELETE_FAILED',
+    'DELETE_COMPLETE',
     'UPDATE_IN_PROGRESS',
     'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS',
     'UPDATE_COMPLETE',
+    'UPDATE_FAILED',
     'UPDATE_ROLLBACK_IN_PROGRESS',
     'UPDATE_ROLLBACK_FAILED',
     'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS',
     'UPDATE_ROLLBACK_COMPLETE',
+    # imports not supported/used so far
+    # 'REVIEW_IN_PROGRESS',
+    # 'IMPORT_IN_PROGRESS',
+    # 'IMPORT_COMPLETE',
+    # 'IMPORT_ROLLBACK_IN_PROGRESS',
+    # 'IMPORT_ROLLBACK_FAILED',
+    # 'IMPORT_ROLLBACK_COMPLETE',
 ]
 
+# TODO: rename 'healthy', 'active' is a bit ambiguous.
+# and shouldn't 'rollback complete' be in this list?
 ACTIVE_CFN_STATUS = [
     'CREATE_COMPLETE',
     'UPDATE_COMPLETE',
@@ -54,11 +65,14 @@ STEADY_CFN_STATUS = [
     'ROLLBACK_FAILED',
     'ROLLBACK_COMPLETE',
     'DELETE_FAILED',
-    # 'DELETE_COMPLETE', # technically true, but we can't do anything with them
+    # 'DELETE_COMPLETE', # technically true, but we can't do anything with these.
     'UPDATE_COMPLETE',
     'UPDATE_ROLLBACK_FAILED',
     'UPDATE_ROLLBACK_COMPLETE',
 ]
+
+# just an example
+# UNSTEADY_CFN_STATUS = list(set(ALL_CFN_STATUS) - set(STEADY_CFN_STATUS))
 
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
 ALL_EC2_STATES = [
@@ -490,9 +504,9 @@ def is_master_server_stack(stackname):
 #
 
 def parse_stack_file_name(stack_filename):
-    "returns just the stackname sans leading dirs and trailing extensions given a path to a stack"
-    stack = os.path.basename(stack_filename) # just the file
-    return os.path.splitext(stack)[0] # just the filename
+    "given a `/path/to/a/stackname.ext`, returns just the `stackname`, pruning directories and extensions"
+    stack = os.path.basename(stack_filename) # "stackname.ext"
+    return os.path.splitext(stack)[0] # "stackname"
 
 def stack_files():
     "returns a list of manually created cloudformation stacknames"
@@ -537,7 +551,7 @@ def stack_data(stackname, ensure_single_instance=False):
         LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
         raise
 
-# DO NOT CACHE
+# DO NOT CACHE: function is used in polling
 def stack_is(stackname, acceptable_states, terminal_states=None):
     "returns True if the given stack is in one of acceptable_states"
     terminal_states = terminal_states or []
@@ -552,14 +566,31 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
         return result
     except botocore.exceptions.ClientError as err:
         if err.response['Error']['Message'].endswith('does not exist'):
+            LOG.info("stack %r does not exist", stackname)
             return False
         LOG.warning("unhandled exception testing state of stack %r", stackname)
         raise
 
-# DO NOT CACHE
+# DO NOT CACHE: function is used in polling
 def stack_is_active(stackname):
-    "returns True if the given stack is in a completed state"
+    "returns `True` if `stackname` is in a completed state"
     return stack_is(stackname, ACTIVE_CFN_STATUS)
+
+def stack_exists(stackname, state=None):
+    """convenience wrapper around `stack_is`. returns `True` if the stack exists else `False`.
+    if `state` is 'steady', stack must also be in a non-transitioning 'steady' state.
+    if `state` is 'active', stack must also be in a healthy 'active' state (no failed updates, etc).
+
+    lsh@2021-11: added so CI can differentiate between existence/steadiness/healthiness of stack."""
+    allowed_states = {
+        None: ALL_CFN_STATUS,
+        'steady': STEADY_CFN_STATUS,
+        'active': ACTIVE_CFN_STATUS,
+        # 'unsteady': UNSTEADY_CFN_STATUS,
+    }
+    msg = ', '.join(sorted(map(str, allowed_states.keys())))
+    ensure(state in allowed_states, "unsupported state label %r. supported states: %s" % (state, msg))
+    return stack_is(stackname, allowed_states[state])
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."

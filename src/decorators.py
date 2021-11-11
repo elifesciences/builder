@@ -38,6 +38,10 @@ def requires_filtered_project(filterfn=None):
             pname = os.environ.get('PROJECT', _pname) # used by Vagrant ...?
             project_list = project.filtered_projects(filterfn)
             if not pname or not pname.strip() or pname not in project_list:
+                # TODO:
+                # if config.BUILDER_NON_INTERACTIVE:
+                #    print('project name not found or not provided and input is disabled, cannot continue.')
+                #    return
                 pname = utils._pick("project", sorted(project_list), default_file=deffile('.project'))
             return func(pname, *args, **kwargs)
         return wrap2

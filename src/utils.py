@@ -49,6 +49,9 @@ def errcho(x):
     return x
 
 def get_input(message):
+    # TODO
+    # if config.BUILDER_NON_INTERACTIVE:
+    #    raise IOError("stdin requested in non-interactive mode.")
     fn = input if gtpy2() else raw_input
     return fn(message)
 

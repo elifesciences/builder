@@ -3,7 +3,7 @@ from buildercore import threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks
 import sys, os, traceback
 import utils
 
@@ -106,6 +106,7 @@ TASK_LIST = [
     report.all_formulas,
     report.all_adhoc_ec2_instances,
 
+    checks.stack_exists,
 ]
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
@@ -252,7 +253,9 @@ def exec_task(task_str, task_map_list):
         return return_map
 
     except utils.TaskExit as te:
-        print(te)
+        msg = str(te)
+        if msg:
+            print(msg)
         print('\nQuit.')
         return_map['rc'] = 1
         return return_map

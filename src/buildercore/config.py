@@ -88,6 +88,11 @@ logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 # TODO: leave on for FILE_HANDLER but not for CONSOLE_HANDLER
 # logging.getLogger('botocore.vendored').setLevel(logging.ERROR)
 
+# disables the endless log messages from boto:
+# 2021-11-09 15:43:51,541 botocore.credentials [INFO] Found credentials in shared credentials file: ~/.aws/credentials
+# INFO - botocore.credentials - Found credentials in shared credentials file: ~/.aws/credentials
+logging.getLogger('botocore.credentials').setLevel(logging.WARNING)
+
 def get_logger(name):
     "ensures logging is setup before handing out a Logger object to use"
     return logging.getLogger(name)
