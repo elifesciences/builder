@@ -71,6 +71,9 @@ STEADY_CFN_STATUS = [
     'UPDATE_ROLLBACK_COMPLETE',
 ]
 
+# just an example
+# UNSTEADY_CFN_STATUS = list(set(ALL_CFN_STATUS) - set(STEADY_CFN_STATUS))
+
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
 ALL_EC2_STATES = [
     "pending",
@@ -570,21 +573,24 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
 
 # DO NOT CACHE: function is used in polling
 def stack_is_active(stackname):
-    "returns True if the given stack is in a completed state"
+    "returns `True` if `stackname` is in a completed state"
     return stack_is(stackname, ACTIVE_CFN_STATUS)
 
-def stack_exists(stackname, steady=False, active=False):
-    """returns `True` if the stack exists.
-    if `steady` is `True`, stack must also be in a non-transitioning 'steady' state.
-    if `active` is `True`, stack must also be in a healthy 'active' state (no failed updates, etc)."""
-    allowed_states = ALL_CFN_STATUS
-    if steady:
-        # order is important, 'steady' is a subset of 'all'.
-        allowed_states = STEADY_CFN_STATUS
-    if active:
-        # and 'active' is a subset of 'steady'.
-        allowed_states = ACTIVE_CFN_STATUS
-    return stack_is(stackname, allowed_states)
+def stack_exists(stackname, state=None):
+    """convenience wrapper around `stack_is`. returns `True` if the stack exists else `False`.
+    if `state` is 'steady', stack must also be in a non-transitioning 'steady' state.
+    if `state` is 'active', stack must also be in a healthy 'active' state (no failed updates, etc).
+
+    lsh@2021-11: added so CI can differentiate between existence/steadiness/healthiness of stack."""
+    allowed_states = {
+        None: ALL_CFN_STATUS,
+        'steady': STEADY_CFN_STATUS,
+        'active': ACTIVE_CFN_STATUS,
+        # 'unsteady': UNSTEADY_CFN_STATUS,
+    }
+    msg = ', '.join(sorted(map(str, allowed_states.keys())))
+    ensure(state in allowed_states, "unsupported state label %r. supported states: %s" % (state, msg))
+    return stack_is(stackname, allowed_states[state])
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."
