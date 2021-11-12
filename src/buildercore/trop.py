@@ -11,6 +11,7 @@ The non-AWS pipeline is similar:
 
 see also `terraform.py`."""
 
+import json, os
 from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
@@ -18,7 +19,7 @@ from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, wafv2
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
-from .utils import ensure, subdict, lmap, isstr, deepcopy
+from .utils import ensure, subdict, lmap, isstr, deepcopy, lookup
 import logging
 
 # todo: remove on upgrade to python 3
@@ -1361,7 +1362,10 @@ def render_docdb(context, template):
 
 # --- waf
 
-def render_waf_rule(stackname, rule_name_with_ns, rule):
+WAF_TITLE = 'WAF'
+WAF_ASSOCIATION = 'WAFAssociation%s'
+
+def render_waf_managed_rule(stackname, rule_name_with_ns, rule):
     """Returns a managed WebACL rule with certain (sub?) rules excluded.
 
     `ns` stands for 'namespace' and looks like 'AWS' in 'AWS/SomeRuleName' or 'AWS-SomeRuleName'.
@@ -1388,16 +1392,37 @@ def render_waf_rule(stackname, rule_name_with_ns, rule):
     })
     return managed_rule
 
-WAF_TITLE = 'WAF'
-WAF_ASSOCIATION = 'WAFAssociation%s'
 
-def render_waf(context, template):
+class JSONRule(object):
+    title = 'Rule'
+
+    def __init__(self, name):
+        self.path = join(config.SRC_PATH, 'buildercore/waf/', name)
+        ensure(os.path.exists(self.path), "path not found: %s" % (self.path,))
+
+    def JSONrepr(self):
+        return json.load(open(self.path, 'r'))
+
+class PatchedWebACL(wafv2.WebACL):
+    props = {
+        'DefaultAction': (wafv2.DefaultAction, False),
+        'Description': (str, False),
+        'Name': (str, False),
+        'Rules': ([wafv2.WebACLRule, JSONRule], False),
+        'Scope': (str, True),
+        'Tags': (Tags, False),
+        'VisibilityConfig': (wafv2.VisibilityConfig, False)
+    }
+
+def render_waf_acl(context):
     stackname = context['stackname']
-    webacl = wafv2.WebACL(WAF_TITLE, **{
+    managed_rule_list = [render_waf_managed_rule(stackname, rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()]
+    custom_rule_list = [JSONRule('elife-rule1.json'), JSONRule('elife-rule2.json')]
+    webacl = PatchedWebACL(WAF_TITLE, **{
         'Name': stackname,
         'Description': context['waf']['description'],
         'DefaultAction': wafv2.DefaultAction(Allow=wafv2.AllowAction()), # urgh.
-        'Rules': [render_waf_rule(stackname, rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()],
+        'Rules': managed_rule_list + custom_rule_list,
         'Scope': 'REGIONAL',
         'VisibilityConfig': wafv2.VisibilityConfig(**{
             "CloudWatchMetricsEnabled": True,
@@ -1406,15 +1431,36 @@ def render_waf(context, template):
         }),
         'Tags': instance_tags(context, single_tag_obj=True)
     })
-    template.add_resource(webacl)
+    return webacl
 
-    for i, arn in enumerate(context['waf']['associations']):
-        association = wafv2.WebACLAssociation(WAF_ASSOCIATION % str(i + 1), **{
-            'WebACLArn': GetAtt(webacl, "Arn"),
+def render_waf_associations(context):
+    def association(i, arn):
+        return wafv2.WebACLAssociation(WAF_ASSOCIATION % str(i + 1), **{
+            'WebACLArn': GetAtt(WAF_TITLE, "Arn"),
             'ResourceArn': arn,
         })
-        template.add_resource(association)
+    return [association(i, arn) for i, arn in enumerate(context['waf']['associations'])]
 
+def render_waf_ipsets(context):
+    def ipset(ip_list_key, ip_list_values):
+        return wafv2.IPSet('IPSet%s' % ip_list_key, **{
+            'Name': ip_list_key, # "elsevier"
+            'Description': '%s %s', # "firewall--prod whitelist"
+            'Addresses': ip_list_values,
+            'IPAddressVersion': 'IPV4',
+            'Scope': 'REGIONAL',
+        })
+    return [ipset(key, val) for key, val in lookup(context, 'waf.ip-sets', {}).items()]
+
+def render_waf(context, template):
+    web_acl = render_waf_acl(context)
+    template.add_resource(web_acl)
+
+    web_acl_associations = render_waf_associations(context)
+    [template.add_resource(association) for association in web_acl_associations]
+
+    waf_ipset_list = render_waf_ipsets(context)
+    [template.add_resource(ipset) for ipset in waf_ipset_list]
 
 # --- todo: revisit this, seems to be part of rds+ec2
 

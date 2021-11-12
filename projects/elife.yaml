@@ -2174,6 +2174,22 @@ firewall:
             # we should be sharing a single WAF rather than creating multiple instances.
             unique: true
             waf:
+                ip-sets:
+                    whitelist:
+                        # elsevier
+                        - 203.56.241.128
+                        - 54.166.39.175
+                        - 125.17.16.94
+                        - 123.63.87.185
+                        - 125.22.44.100
+                        - 101.3.231.64
+                        - 145.36.141.14
+                        - 145.36.140.14
+                        - 115.112.71.126
+                        - 182.76.143.226
+                        - 61.16.162.69
+                        # okinawa institute of science and technology:
+                        - 203.181.243.17
                 # associated resources using this WAF
                 associations:
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--prod/677b5066e869788d
