@@ -2204,6 +2204,7 @@ firewall:
                 custom-rules:
                     - elife-Whitelist.json
                     - elife-RateLimitExcessiveBotTraffic.json
+                    - elife-Blacklist.json
                 # managed rule sets, $1/mo, "vendorname/ruleset-name"
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
