@@ -2200,7 +2200,7 @@ firewall:
                 # managed rule sets, $1/mo, "vendorname/ruleset-name"
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
-                        priority: 0
+                        priority: 5
                         # excluded rules in a ruleset are set to 'count' only.
                         # when a rule is not excluded, matching requests will be blocked (opposite of default WAF action).
                         # when *all* rules are being excluded you should probably remove that ruleset.
@@ -2220,11 +2220,11 @@ firewall:
                             - CategorySocialMedia
                             - SignalNonBrowserUserAgent
                     AWS/AWSManagedRulesAmazonIpReputationList:
-                        priority: 1
+                        priority: 6
                         excluded:
                             -   AWSManagedIPReputationList
                     AWS/AWSManagedRulesCommonRuleSet:
-                        priority: 2
+                        priority: 7
                         excluded:
                             - CrossSiteScripting_COOKIE
                             - CrossSiteScripting_QUERYARGUMENTS
@@ -2243,22 +2243,22 @@ firewall:
                             - SizeRestrictions_QUERYSTRING
                             - SizeRestrictions_URIPATH
                     AWS/AWSManagedRulesKnownBadInputsRuleSet:
-                        priority: 3
+                        priority: 8
                         excluded:
                             - BadAuthToken_COOKIE_AUTHORIZATION
                             - ExploitablePaths_URIPATH
                             - Host_localhost_HEADER
                             - PROPFIND_METHOD
                     AWS/AWSManagedRulesLinuxRuleSet:
-                        priority: 4
+                        priority: 9
                         excluded:
                             - LFI_BODY
                             - LFI_QUERYARGUMENTS
                             - LFI_URIPATH
                     AWS/AWSManagedRulesPHPRuleSet:
-                        priority: 5
+                        priority: 10
                         excluded: []
                     AWS/AWSManagedRulesUnixRuleSet:
-                        priority: 6
+                        priority: 11
                         excluded: []
 

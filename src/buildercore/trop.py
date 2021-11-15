@@ -1364,6 +1364,7 @@ def render_docdb(context, template):
 
 WAF_TITLE = 'WAF'
 WAF_ASSOCIATION = 'WAFAssociation%s'
+WAF_IPSET = 'WAFIPSet%s'
 
 def render_waf_managed_rule(stackname, rule_name_with_ns, rule):
     """Returns a managed WebACL rule with certain (sub?) rules excluded.
@@ -1443,10 +1444,12 @@ def render_waf_associations(context):
 
 def render_waf_ipsets(context):
     def ipset(ip_list_key, ip_list_values):
-        return wafv2.IPSet('IPSet%s' % ip_list_key, **{
-            'Name': ip_list_key, # "elsevier"
-            'Description': '%s %s', # "firewall--prod whitelist"
-            'Addresses': ip_list_values,
+        title = WAF_IPSET % ip_list_key.title() # "whitelist" => "IPSetWhitelist"
+        return wafv2.IPSet(title, **{
+            'Name': "%s--%s" % (context['stackname'], ip_list_key), # "whitelist"
+            # "whitelist of IP addresses for firewall--prod"
+            'Description': "%s of IPs for %s" % (ip_list_key, context['stackname']),
+            'Addresses': [ip_address + "/32" for ip_address in ip_list_values],
             'IPAddressVersion': 'IPV4',
             'Scope': 'REGIONAL',
         })

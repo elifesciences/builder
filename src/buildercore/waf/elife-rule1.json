@@ -1,5 +1,5 @@
     {
-      "Name": "elife_rule1",
+      "Name": "elife-RateLimitExcessiveBotTraffic",
       "Priority": 1,
       "Statement": {
         "RateBasedStatement": {
@@ -37,6 +37,6 @@
       "VisibilityConfig": {
         "SampledRequestsEnabled": true,
         "CloudWatchMetricsEnabled": true,
-        "MetricName": "elife_rule1"
+        "MetricName": "firewall--prod--elife-RateLimitExcessiveBotTraffic"
       }
     }

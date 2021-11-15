@@ -688,6 +688,7 @@ UPDATABLE_TITLE_PATTERNS = [
     '^DocumentDB.*$',
     '^WAF$',
     '^WAFAssociation.+$',
+    '^WAFIPSet.+',
 
     '^ELBv2$',
     '^ELBv2Listener.*',
@@ -724,6 +725,7 @@ REMOVABLE_TITLE_PATTERNS = [
     '^KeyName$',
     '^WAF$',
     '^WAFAssociation.+$',
+    '^WAFIPSet.+',
 ]
 
 # patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.

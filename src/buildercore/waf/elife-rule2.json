@@ -1,6 +1,6 @@
 
     {
-      "Name": "elife_rule2_whitelist",
+      "Name": "elife-Whitelist",
       "Priority": 0,
       "Statement": {
         "OrStatement": {
@@ -49,6 +49,13 @@
                 ],
                 "PositionalConstraint": "EXACTLY"
               }
+            },
+            {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": ["WAFIPSetWhitelist", "Arn"]
+                }
+              }
             }
           ]
         }
@@ -59,6 +66,6 @@
       "VisibilityConfig": {
         "SampledRequestsEnabled": true,
         "CloudWatchMetricsEnabled": true,
-        "MetricName": "elife_rule2_whitelist"
+        "MetricName": "firewall--prod--elife-Whitelist"
       }
     }
