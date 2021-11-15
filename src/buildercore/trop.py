@@ -1418,7 +1418,7 @@ class PatchedWebACL(wafv2.WebACL):
 def render_waf_acl(context):
     stackname = context['stackname']
     managed_rule_list = [render_waf_managed_rule(stackname, rule_name, rule) for rule_name, rule in context['waf']['managed-rules'].items()]
-    custom_rule_list = [JSONRule('elife-rule1.json'), JSONRule('elife-rule2.json')]
+    custom_rule_list = [JSONRule(rule_filename) for rule_filename in lookup(context, 'waf.custom-rules', [])]
     webacl = PatchedWebACL(WAF_TITLE, **{
         'Name': stackname,
         'Description': context['waf']['description'],
