@@ -59,6 +59,23 @@
             "Scope": "LABEL",
             "Key": "awswaf:managed:aws:bot-control:bot:name:mauibot"
           }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "User-Agent"
+              }
+            },
+            "PositionalConstraint": "CONTAINS",
+            "SearchString": "https://neeva.com/neevabot",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
         }
       ]
     }

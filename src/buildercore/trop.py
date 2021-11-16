@@ -1393,7 +1393,8 @@ def render_waf_managed_rule(stackname, rule_name_with_ns, rule):
     })
     return managed_rule
 
-
+# when given an object to render, Troposphere will look for some way to encode it's data:
+# - https://github.com/cloudtools/troposphere/blob/2.7.1/troposphere/__init__.py#L69-L72
 class JSONRule(object):
     title = 'Rule'
 
@@ -1404,6 +1405,7 @@ class JSONRule(object):
     def JSONrepr(self):
         return json.load(open(self.path, 'r'))
 
+# in order to allow custom objects as Rules, I had to slip `JSONRule` in here:
 class PatchedWebACL(wafv2.WebACL):
     props = {
         'DefaultAction': (wafv2.DefaultAction, False),
@@ -1435,6 +1437,7 @@ def render_waf_acl(context):
     return webacl
 
 def render_waf_associations(context):
+    "many resources are associated to a single WAF using their ARNs. This creates those relationships."
     def association(i, arn):
         return wafv2.WebACLAssociation(WAF_ASSOCIATION % str(i + 1), **{
             'WebACLArn': GetAtt(WAF_TITLE, "Arn"),
@@ -1443,10 +1446,12 @@ def render_waf_associations(context):
     return [association(i, arn) for i, arn in enumerate(context['waf']['associations'])]
 
 def render_waf_ipsets(context):
+    """returns a list of IPSet objects. These can be used in WAF rules to affect groups of IP addresses.
+    we use them to whitelist traffic."""
     def ipset(ip_list_key, ip_list_values):
         title = WAF_IPSET % ip_list_key.title() # "whitelist" => "IPSetWhitelist"
         return wafv2.IPSet(title, **{
-            'Name': "%s--%s" % (context['stackname'], ip_list_key), # "whitelist"
+            'Name': "%s--%s" % (context['stackname'], ip_list_key), # "firewall--prod--whitelist"
             # "whitelist of IP addresses for firewall--prod"
             'Description': "%s of IPs for %s" % (ip_list_key, context['stackname']),
             'Addresses': [ip_address + "/32" for ip_address in ip_list_values],

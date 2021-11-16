@@ -293,9 +293,25 @@ defaults:
             associations: []
             # default action for requests that don't match any rule in the list of below rules.
             action: allow # count, block, custom-response
+            # custom rule sets, $1/mo each.
+            # the implementation of these is done as snippets of JSON rather than modeling them in Troposphere.
+            # it makes them slightly *brittle* but you can also build rules in the WAF Rule Builder and then drop 
+            # them in here with no/little effort.
+            # see `src/buildercore/waf/*.json` for examples.
             custom-rules: []
-            # a map of vendor->rulesets. see the `firewall` project for a better example.
+            # managed rule sets, $1/mo, "vendorname/ruleset-name"
+            # a map of vendor->rulesets.
             managed-rules: {}
+            #   NS/ManagedRuleSetName:
+            #       # order precedence of this ruleset vs other rules and rule sets
+            #       priority: 5
+            #       # excluded rules in a ruleset are set to 'count' only.
+            #       # when a rule is not excluded, matching requests will be blocked (opposite of default WAF action).
+            #       # when *all* rules are being excluded you should probably remove that ruleset.
+            #       # measuring occurances can be done through Cloudwatch of the WAF overview tab.
+            #       excluded:
+            #           - RuleName1
+            #           - RuleName2
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -2190,29 +2206,21 @@ firewall:
                         - 115.112.71.126
                         - 182.76.143.226
                         - 61.16.162.69
-                        # okinawa institute of science and technology:
+                        # okinawa institute of science and technology.
+                        # because I blocked them once accidentally :(
                         - 203.181.243.17
-                # associated resources using this WAF
+
                 associations:
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--prod/677b5066e869788d
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
-                # custom rule sets, $1/mo each
-                # the implementation of these is done as snippets of JSON rather than modeling them in boto.
-                # it makes them a bit *brittle* but it also means you can build rules in the WAF Rule Builder and then 
-                # drop them in here with no/minor tweaks.
                 custom-rules:
                     - elife-Whitelist.json
                     - elife-RateLimitExcessiveBotTraffic.json
                     - elife-Blacklist.json
-                # managed rule sets, $1/mo, "vendorname/ruleset-name"
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
                         priority: 5
-                        # excluded rules in a ruleset are set to 'count' only.
-                        # when a rule is not excluded, matching requests will be blocked (opposite of default WAF action).
-                        # when *all* rules are being excluded you should probably remove that ruleset.
-                        # measuring occurances can be done through Cloudwatch of the WAF overview tab.
                         excluded:
                             - CategoryAdvertising
                             - CategoryArchiver
