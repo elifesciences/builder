@@ -908,9 +908,14 @@ project-with-waf:
         description: dummy firewall for testing
         ec2: false
         waf:
+            ip-sets:
+                localhost:
+                    - 10.1.1.1
+                    - 192.168.0.1
             associations:
                 - arn:aws:iam::...:...
-            custom-rules: {}
+            custom-rules:
+                - test-Snippet.json
             managed-rules:
                 AWS/AWSManagedRulesBotControlRuleSet:
                     priority: 0

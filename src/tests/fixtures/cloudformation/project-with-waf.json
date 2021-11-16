@@ -36,6 +36,24 @@
                             "MetricName": "project-with-waf--foo--AWS-AWSManagedRulesBotControlRuleSet",
                             "SampledRequestsEnabled": "true"
                         }
+                    },
+                    {
+                        "Action": {
+                            "Block": {}
+                        },
+                        "Name": "test-Snippet",
+                        "Priority": 2,
+                        "Statement": {
+                            "LabelMatchStatement": {
+                                "Key": "awswaf:managed:aws:bot-control:bot:name:pants",
+                                "Scope": "LABEL"
+                            }
+                        },
+                        "VisibilityConfig": {
+                            "CloudWatchMetricsEnabled": true,
+                            "MetricName": "test-Snippet",
+                            "SampledRequestsEnabled": true
+                        }
                     }
                 ],
                 "Scope": "REGIONAL",
@@ -76,7 +94,19 @@
                 }
             },
             "Type": "AWS::WAFv2::WebACLAssociation"
+        },
+        "WAFIPSetLocalhost": {
+            "Properties": {
+                "Addresses": [
+                    "10.1.1.1/32",
+                    "192.168.0.1/32"
+                ],
+                "Description": "localhost of IPs for project-with-waf--foo",
+                "IPAddressVersion": "IPV4",
+                "Name": "project-with-waf--foo--localhost",
+                "Scope": "REGIONAL"
+            },
+            "Type": "AWS::WAFv2::IPSet"
         }
     }
 }
-

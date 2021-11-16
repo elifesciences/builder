@@ -608,6 +608,9 @@ def more_validation(json_template_str):
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
 
+def validate_template(template_json):
+    return cloudformation.validate_template(template_json)
+
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
     only called during testing"""
@@ -616,7 +619,7 @@ def validate_project(pname, **extra):
     pdata = project.project_data(pname)
     altconfig = None
 
-    cloudformation.validate_template(pname, template)
+    cloudformation.validate_template(template)
     more_validation(template)
     LOG.debug("local validation of cloudformation template passed")
     # validate all alternative configurations
@@ -626,7 +629,7 @@ def validate_project(pname, **extra):
             'alt-config': altconfig
         }
         template = quick_render(pname, **extra)
-        cloudformation.validate_template(pname, template)
+        cloudformation.validate_template(template)
         LOG.debug("remote validation of cloudformation template passed")
 
 #
@@ -685,6 +688,7 @@ UPDATABLE_TITLE_PATTERNS = [
     '^DocumentDB.*$',
     '^WAF$',
     '^WAFAssociation.+$',
+    '^WAFIPSet.+',
 
     '^ELBv2$',
     '^ELBv2Listener.*',
@@ -721,6 +725,7 @@ REMOVABLE_TITLE_PATTERNS = [
     '^KeyName$',
     '^WAF$',
     '^WAFAssociation.+$',
+    '^WAFIPSet.+',
 ]
 
 # patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.

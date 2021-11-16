@@ -31,13 +31,12 @@ def _log_backoff(event):
     LOG.warning("Backing off in validating project %s", event['args'][0])
 
 @backoff.on_exception(backoff.expo, botocore.exceptions.ClientError, on_backoff=_log_backoff, giveup=_give_up_backoff, max_time=30)
-def validate_template(pname_or_stackname, rendered_template):
+def validate_template(rendered_template):
     "remote cloudformation template checks."
     if json.loads(rendered_template) == EMPTY_TEMPLATE:
         # empty templates are technically invalid, but they don't interact with CloudFormation at all
         return
-
-    conn = core.boto_conn(pname_or_stackname, 'cloudformation', client=True)
+    conn = core.boto_client('cloudformation', region='us-east-1')
     return conn.validate_template(TemplateBody=rendered_template)
 
 # ---

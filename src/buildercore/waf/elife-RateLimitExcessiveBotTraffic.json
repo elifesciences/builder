@@ -1,0 +1,42 @@
+    {
+      "Name": "elife-RateLimitExcessiveBotTraffic",
+      "Priority": 1,
+      "Statement": {
+        "RateBasedStatement": {
+          "Limit": 100,
+          "AggregateKeyType": "IP",
+          "ScopeDownStatement": {
+            "OrStatement": {
+              "Statements": [
+                {
+                  "LabelMatchStatement": {
+                    "Scope": "LABEL",
+                    "Key": "awswaf:managed:aws:bot-control:signal:non_browser_user_agent"
+                  }
+                },
+                {
+                  "LabelMatchStatement": {
+                    "Scope": "LABEL",
+                    "Key": "awswaf:managed:aws:bot-control:signal:automated_browser"
+                  }
+                },
+                {
+                  "LabelMatchStatement": {
+                    "Scope": "LABEL",
+                    "Key": "awswaf:managed:aws:bot-control:signal:known_bot_data_center"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Action": {
+        "Count": {}
+      },
+      "VisibilityConfig": {
+        "SampledRequestsEnabled": true,
+        "CloudWatchMetricsEnabled": true,
+        "MetricName": "firewall--prod--elife-RateLimitExcessiveBotTraffic"
+      }
+    }
