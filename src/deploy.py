@@ -60,8 +60,7 @@ def load_balancer_register_all__v2(stackname):
 
 @requires_aws_stack
 def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
-    """changes the revision of the stack's project and then calls highstate.
-    if multiple nodes, it does this using blue-green concurrency."""
+    "changes the revision of the stack's project and then calls highstate."
     buildvars.switch_revision(stackname, revision)
     bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency_for(stackname, concurrency))
 

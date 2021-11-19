@@ -705,7 +705,7 @@ journal:
             # - 'cloudfront.subdomains' contains static values.
             unique: true
             ec2:
-                cluster-size: 3
+                cluster-size: 4
             elasticache:
                 engine: redis
                 type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
