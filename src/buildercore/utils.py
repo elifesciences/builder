@@ -358,6 +358,11 @@ def renkeys(ddict, pair_list):
     for oldkey, newkey in pair_list:
         renkey(ddict, oldkey, newkey)
 
+def delkey(d, k):
+    "mutator. deletes the key `k` from the dict `d` if `k` in `d`"
+    if k in d:
+        del d[k]
+
 def tempdir():
     # usage: tempdir, killer = tempdir(); killer()
     name = tempfile.mkdtemp()

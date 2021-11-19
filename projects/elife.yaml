@@ -301,14 +301,16 @@ defaults:
             custom-rules: []
             # managed rule sets, $1/mo, "vendorname/ruleset-name"
             # a map of vendor->rulesets.
+            # - https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html
             managed-rules: {}
             #   NS/ManagedRuleSetName:
             #       # order precedence of this ruleset vs other rules and rule sets
             #       priority: 5
+            #       # just to illustrate which rules are not being excluded.
+            #       included: []
             #       # excluded rules in a ruleset are set to 'count' only.
-            #       # when a rule is not excluded, matching requests will be blocked (opposite of default WAF action).
-            #       # when *all* rules are being excluded you should probably remove that ruleset.
-            #       # measuring occurances can be done through Cloudwatch of the WAF overview tab.
+            #       # requests matching a non-excluded rule will take the rule's action, which is either 'none' or 'block'
+            #       # 'none' will defer to the WebACL's default action (allow).
             #       excluded:
             #           - RuleName1
             #           - RuleName2
@@ -2234,6 +2236,8 @@ firewall:
                             - CategorySecurity
                             - CategorySeo
                             - CategorySocialMedia
+                            - SignalAutomatedBrowser
+                            - SignalKnownBotDataCenter
                             - SignalNonBrowserUserAgent
                     AWS/AWSManagedRulesAmazonIpReputationList:
                         priority: 6
@@ -2241,6 +2245,14 @@ firewall:
                             -   AWSManagedIPReputationList
                     AWS/AWSManagedRulesCommonRuleSet:
                         priority: 7
+                        included:
+                            - NoUserAgent_HEADER
+                            - UserAgent_BadBots_HEADER
+                            - GenericLFI_QUERYARGUMENTS
+                            - GenericLFI_URIPATH
+                            - GenericRFI_URIPATH
+                            - CrossSiteScripting_BODY
+                        # these do not use the ruleset action (block) but are counted and passed through for further processing
                         excluded:
                             - CrossSiteScripting_COOKIE
                             - CrossSiteScripting_QUERYARGUMENTS
@@ -2273,8 +2285,14 @@ firewall:
                             - LFI_URIPATH
                     AWS/AWSManagedRulesPHPRuleSet:
                         priority: 10
+                        included:
+                            - PHPHighRiskMethodsVariables_QUERYARGUMENTS
+                            - PHPHighRiskMethodsVariables_BODY
                         excluded: []
                     AWS/AWSManagedRulesUnixRuleSet:
                         priority: 11
+                        included:
+                            - UNIXShellCommandsVariables_QUERYARGUMENTS
+                            - UNIXShellCommandsVariables_BODY
                         excluded: []
 

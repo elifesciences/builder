@@ -25,7 +25,7 @@ from functools import partial
 import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, deepcopy, subdict, lookup
+from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
 
 LOG = logging.getLogger(__name__)
 
@@ -191,6 +191,10 @@ def build_context_waf(pdata, context):
         managed_rule['name'] = rule_name
         new_key_name = "%s-%s" % (vendor, rule_name)
         new_managed_rules[new_key_name] = managed_rule
+
+        # 'included' exists purely to illustrate which rules are *not* excluded.
+        delkey(managed_rule, 'included')
+
     context['waf']['managed-rules'] = new_managed_rules
     context['waf']['description'] = lookup(pdata, 'aws.description', 'a web application firewall')
 
