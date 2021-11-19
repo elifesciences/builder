@@ -1,6 +1,6 @@
 {
   "Name": "elife-Blacklist",
-  "Priority": 2,
+  "Priority": 15,
   "Action": {
     "Block": {}
   },

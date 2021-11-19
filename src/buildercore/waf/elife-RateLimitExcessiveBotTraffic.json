@@ -1,6 +1,6 @@
     {
       "Name": "elife-RateLimitExcessiveBotTraffic",
-      "Priority": 1,
+      "Priority": 20,
       "Statement": {
         "RateBasedStatement": {
           "Limit": 100,
