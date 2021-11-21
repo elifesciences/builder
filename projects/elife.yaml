@@ -1438,6 +1438,8 @@ search:
                     cidr-ip: 10.0.0.0/16 # follower nodes
                 - 9200: # ElasticSearch
                     cidr-ip: 10.0.0.0/16 # follower nodes
+                - 9201: # Opensearch
+                    cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
                 cluster-size: 2
                 dns-internal: true
@@ -1456,6 +1458,8 @@ search:
                 - 4730: # Gearman
                     cidr-ip: 10.0.0.0/16 # follower nodes
                 - 9200: # ElasticSearch
+                    cidr-ip: 10.0.0.0/16 # follower nodes
+                - 9201: # Opensearch
                     cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
                 root:
