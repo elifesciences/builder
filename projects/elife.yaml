@@ -1419,6 +1419,8 @@ search:
         opendistro:
             ec2:
                 masterless: true
+                root:
+                    size: 15 # GB
             sqs:
                 # search--prod, search--end2end, etc.
                 search--{instance}:
@@ -1474,6 +1476,7 @@ search:
             1244: 80
             1245: 8080
             9920: 9200 # elasticsearch
+            9921: 9201 # opensearch
 
 recommendations:
     domain: false

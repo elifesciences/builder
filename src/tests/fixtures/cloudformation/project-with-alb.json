@@ -209,6 +209,10 @@
                     {
                         "Key": "idle_timeout.timeout_seconds",
                         "Value": "60"
+                    },
+                    {
+                        "Key": "waf.fail_open.enabled",
+                        "Value": "true"
                     }
                 ],
                 "Scheme": "internet-facing",
