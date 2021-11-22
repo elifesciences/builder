@@ -892,8 +892,13 @@ def render_alb(context, template, ec2_instances):
 
     # -- load balancer
 
+    # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticloadbalancingv2-loadbalancer-loadbalancerattributes.html
     lb_attrs = {
         'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
+        # "Indicates whether to allow a WAF-enabled load balancer to route requests to targets if it is unable
+        # to forward the request to AWS WAF. The possible values are true and false.
+        # The default is false."
+        'waf.fail_open.enabled': 'true',
     }
     lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
     lb = alb.LoadBalancer(
