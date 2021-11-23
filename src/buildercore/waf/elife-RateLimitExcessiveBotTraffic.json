@@ -32,7 +32,7 @@
         }
       },
       "Action": {
-        "Count": {}
+        "Block": {}
       },
       "VisibilityConfig": {
         "SampledRequestsEnabled": true,
