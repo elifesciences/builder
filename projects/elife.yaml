@@ -2222,7 +2222,8 @@ firewall:
                 associations:
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--prod/677b5066e869788d
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218
-                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
+                    # lsh@2021-11-23: disabled https://github.com/elifesciences/issues/issues/7089
+                    #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
                 custom-rules:
                     - elife-Whitelist.json
                     - elife-RateLimitExcessiveBotTraffic.json
