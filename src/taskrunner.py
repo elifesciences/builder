@@ -81,6 +81,9 @@ TASK_LIST = [
     # see: elife-jenkins-workflow-libs/vars/builderRunAll.groovy
     buildvars.switch_revision,
 
+    # see: journal/Jenkinsfile.prod
+    deploy.load_balancer_register_all,
+
     project.data,
     project.context,
     project.new,
@@ -125,7 +128,6 @@ DEBUG_TASK_LIST = [
     aws.detailed_stack_list,
 
     deploy.load_balancer_status,
-    deploy.load_balancer_register_all,
 
     master.write_missing_keypairs_to_s3,
     master.download_keypair,
