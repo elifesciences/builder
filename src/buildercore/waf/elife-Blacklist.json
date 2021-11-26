@@ -76,6 +76,23 @@
               }
             ]
           }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "User-Agent"
+              }
+            },
+            "PositionalConstraint": "CONTAINS",
+            "SearchString": "headlesschrome",
+            "TextTransformations": [
+              {
+                "Type": "LOWERCASE",
+                "Priority": 0
+              }
+            ]
+          }
         }
       ]
     }

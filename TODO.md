@@ -8,6 +8,7 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 
 ## todo (bucket)
 
+* ssh, when I specify a node for a non-clustered environment, it should give me a stacktrace
 * handle all cases of BUILDER_NON_INTERACTIVE and get_input
 * add a changelog and versioning and releases
 * revisit tests
