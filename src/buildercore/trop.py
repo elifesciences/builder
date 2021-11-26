@@ -893,14 +893,13 @@ def render_alb(context, template, ec2_instances):
     # -- load balancer
 
     # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticloadbalancingv2-loadbalancer-loadbalancerattributes.html
-    lb_attrs = {
-        'idle_timeout.timeout_seconds': context['alb']['idle_timeout'],
+    lb_attrs = [
+        ('idle_timeout.timeout_seconds', context['alb']['idle_timeout']),
         # "Indicates whether to allow a WAF-enabled load balancer to route requests to targets if it is unable
-        # to forward the request to AWS WAF. The possible values are true and false.
-        # The default is false."
-        'waf.fail_open.enabled': 'true',
-    }
-    lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs.items()]
+        # to forward the request to AWS WAF. The possible values are true and false. The default is false."
+        ('waf.fail_open.enabled', 'true'),
+    ]
+    lb_attrs = [alb.LoadBalancerAttributes(Key=key, Value=val) for key, val in lb_attrs]
     lb = alb.LoadBalancer(
         ALB_TITLE,
         Name=context['stackname'],
@@ -920,28 +919,28 @@ def render_alb(context, template, ec2_instances):
         # "ElasticLoadBalancerV2TargetGroupHttp80"
         return ALB_TITLE + 'TargetGroup' + str(protocol).title() + str(port)
 
-    _target_group_attr_map = {
-        'deregistration_delay.timeout_seconds': '30'
-    }
+    _target_group_attr_map = [
+        ('deregistration_delay.timeout_seconds', '30'),
+    ]
     if context['alb']['stickiness']:
         # lsh@2021-09: not sure any projects are actually using stickiness ...
         # 'cookie' is 'app_cookie'
         # 'browser' is 'lb_cookie'
         if context['alb']['stickiness']['type'] == 'cookie':
-            sticky_settings = {
-                'stickiness.enabled': "true",
-                'stickiness.type': 'app_cookie',
-                'stickiness.app_cookie.cookie_name': context['alb']['stickiness']['cookie-name'],
-            }
+            sticky_settings = [
+                ('stickiness.enabled', "true"),
+                ('stickiness.type', 'app_cookie'),
+                ('stickiness.app_cookie.cookie_name', context['alb']['stickiness']['cookie-name']),
+            ]
         elif context['alb']['stickiness']['type'] == 'browser':
-            sticky_settings = {
-                'stickiness.enabled': "true",
-                'stickiness.type': 'lb_cookie',
-            }
+            sticky_settings = [
+                ('stickiness.enabled', "true"),
+                ('stickiness.type', 'lb_cookie'),
+            ]
         else:
             raise ValueError('Unsupported stickiness: %s' % context['elb']['stickiness'])
-        _target_group_attr_map.update(sticky_settings)
-    _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in sorted(_target_group_attr_map.items())]
+        _target_group_attr_map.extend(sticky_settings)
+    _target_group_attrs = [alb.TargetGroupAttribute(Key=key, Value=val) for key, val in _target_group_attr_map]
 
     _lb_target_group_map = {}
     for target_group_name, attr_map in context['alb']['target_groups'].items():

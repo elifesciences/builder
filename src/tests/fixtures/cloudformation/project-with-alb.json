@@ -373,16 +373,16 @@
                         "Value": "30"
                     },
                     {
-                        "Key": "stickiness.app_cookie.cookie_name",
-                        "Value": "dummy-cookie"
-                    },
-                    {
                         "Key": "stickiness.enabled",
                         "Value": "true"
                     },
                     {
                         "Key": "stickiness.type",
                         "Value": "app_cookie"
+                    },
+                    {
+                        "Key": "stickiness.app_cookie.cookie_name",
+                        "Value": "dummy-cookie"
                     }
                 ],
                 "Targets": [
@@ -437,16 +437,16 @@
                         "Value": "30"
                     },
                     {
-                        "Key": "stickiness.app_cookie.cookie_name",
-                        "Value": "dummy-cookie"
-                    },
-                    {
                         "Key": "stickiness.enabled",
                         "Value": "true"
                     },
                     {
                         "Key": "stickiness.type",
                         "Value": "app_cookie"
+                    },
+                    {
+                        "Key": "stickiness.app_cookie.cookie_name",
+                        "Value": "dummy-cookie"
                     }
                 ],
                 "Targets": [
