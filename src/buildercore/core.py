@@ -1,9 +1,6 @@
-"""this module appears to be where I collect functionality
-that is built upon by the more specialised parts of builder.
+"general logic for the `buildercore` module."
 
-suggestions for a better name than 'core' welcome."""
-
-import os, glob, json, re
+import os, glob, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .decorators import testme
@@ -25,7 +22,7 @@ class DeprecationException(Exception):
 class NoMasterException(Exception):
     pass
 
-
+# https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudformation.html#CloudFormation.Client.describe_stacks
 ALL_CFN_STATUS = [
     'CREATE_IN_PROGRESS',
     'CREATE_FAILED',
@@ -35,15 +32,26 @@ ALL_CFN_STATUS = [
     'ROLLBACK_COMPLETE',
     'DELETE_IN_PROGRESS',
     'DELETE_FAILED',
+    'DELETE_COMPLETE',
     'UPDATE_IN_PROGRESS',
     'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS',
     'UPDATE_COMPLETE',
+    'UPDATE_FAILED',
     'UPDATE_ROLLBACK_IN_PROGRESS',
     'UPDATE_ROLLBACK_FAILED',
     'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS',
     'UPDATE_ROLLBACK_COMPLETE',
+    # imports not supported/used so far
+    # 'REVIEW_IN_PROGRESS',
+    # 'IMPORT_IN_PROGRESS',
+    # 'IMPORT_COMPLETE',
+    # 'IMPORT_ROLLBACK_IN_PROGRESS',
+    # 'IMPORT_ROLLBACK_FAILED',
+    # 'IMPORT_ROLLBACK_COMPLETE',
 ]
 
+# TODO: rename 'healthy', 'active' is a bit ambiguous.
+# and shouldn't 'rollback complete' be in this list?
 ACTIVE_CFN_STATUS = [
     'CREATE_COMPLETE',
     'UPDATE_COMPLETE',
@@ -57,11 +65,14 @@ STEADY_CFN_STATUS = [
     'ROLLBACK_FAILED',
     'ROLLBACK_COMPLETE',
     'DELETE_FAILED',
-    # 'DELETE_COMPLETE', # technically true, but we can't do anything with them
+    # 'DELETE_COMPLETE', # technically true, but we can't do anything with these.
     'UPDATE_COMPLETE',
     'UPDATE_ROLLBACK_FAILED',
     'UPDATE_ROLLBACK_COMPLETE',
 ]
+
+# just an example
+# UNSTEADY_CFN_STATUS = list(set(ALL_CFN_STATUS) - set(STEADY_CFN_STATUS))
 
 # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
 ALL_EC2_STATES = [
@@ -107,9 +118,8 @@ def boto_resource(service, region):
     return boto3.resource(service, region_name=region)
 
 def boto_client(service, region=None):
-    """the boto3 service client is a lower-level construct compared to the boto3 resource client.
-    it excludes some convenient functionality, like automatic pagination.
-    prefer the service resource over the client"""
+    """the boto3 'service' client is a lower-level construct compared to the boto3 'resource' client.
+    it excludes some convenient functionality, like automatic pagination."""
     exceptions = ['route53']
     if service not in exceptions:
         ensure(region, "'region' is a required parameter for all services except: %s" % (', '.join(exceptions),))
@@ -292,7 +302,7 @@ def _ec2_connection_params(stackname, username, **kwargs):
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     if 'user' in kwargs:
-        LOG.warn("found key 'user' in given kwargs - did you mean 'username' ??")
+        LOG.warning("found key 'user' in given kwargs - did you mean 'username' ??")
 
     data = stack_data(stackname, ensure_single_instance=False)
     ensure(len(data) == 1 or node, "stack is clustered with %s nodes and no specific node provided" % len(data))
@@ -309,6 +319,7 @@ class NoPublicIps(Exception):
     pass
 
 def all_node_params(stackname):
+    "returns a map of node data"
     data = stack_data(stackname)
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {
@@ -318,7 +329,7 @@ def all_node_params(stackname):
         for ec2 in data
     }
 
-    # TODO: default copied from stack_all_ec2_nodes, but not the most robust probably
+    # copied from stack_all_ec2_nodes. probably not the most robust.
     params = _ec2_connection_params(stackname, config.DEPLOY_USER)
 
     # custom for builder, these are available inside workfn as `command.env('public_ips')`
@@ -368,7 +379,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
     # TODO: candidate for a @backoff decorator
-    def single_node_work():
+    def single_node_work_fn():
         for attempt in range(0, 6):
             try:
                 return workfn(**work_kwargs)
@@ -393,18 +404,17 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         'aborts': False
     }
 
-    # TODO: extract in buildercore.concurrency
     if not concurrency:
         concurrency = 'parallel'
 
     if concurrency == 'serial':
-        return serial_work(single_node_work, params)
+        return serial_work(single_node_work_fn, params)
 
     if concurrency == 'parallel':
-        return parallel_work(single_node_work, params)
+        return parallel_work(single_node_work_fn, params)
 
     if callable(concurrency):
-        return concurrency(single_node_work, params)
+        return concurrency(single_node_work_fn, params)
 
     raise RuntimeError("Concurrency mode not supported: %s" % concurrency)
 
@@ -494,9 +504,9 @@ def is_master_server_stack(stackname):
 #
 
 def parse_stack_file_name(stack_filename):
-    "returns just the stackname sans leading dirs and trailing extensions given a path to a stack"
-    stack = os.path.basename(stack_filename) # just the file
-    return os.path.splitext(stack)[0] # just the filename
+    "given a `/path/to/a/stackname.ext`, returns just the `stackname`, pruning directories and extensions"
+    stack = os.path.basename(stack_filename) # "stackname.ext"
+    return os.path.splitext(stack)[0] # "stackname"
 
 def stack_files():
     "returns a list of manually created cloudformation stacknames"
@@ -509,17 +519,6 @@ def stack_path(stackname, relative=False):
         path = config.STACK_DIR if relative else config.STACK_PATH
         return join(path, stackname) + ".json"
     raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
-
-# def stack_body(stackname):
-#    stack = boto_conn(stackname, 'cloudformation', client=True)
-#    return stack.get_template()['TemplateBody']
-
-def stack_json(stackname, parse=False):
-    "returns the json of the given stack as a STRING, not the parsed json unless `parse = True`."
-    fp = open(stack_path(stackname), 'r')
-    if parse:
-        return json.load(fp)
-    return fp.read()
 
 #
 # aws stack wrangling
@@ -552,7 +551,7 @@ def stack_data(stackname, ensure_single_instance=False):
         LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
         raise
 
-# DO NOT CACHE
+# DO NOT CACHE: function is used in polling
 def stack_is(stackname, acceptable_states, terminal_states=None):
     "returns True if the given stack is in one of acceptable_states"
     terminal_states = terminal_states or []
@@ -567,14 +566,31 @@ def stack_is(stackname, acceptable_states, terminal_states=None):
         return result
     except botocore.exceptions.ClientError as err:
         if err.response['Error']['Message'].endswith('does not exist'):
+            LOG.info("stack %r does not exist", stackname)
             return False
         LOG.warning("unhandled exception testing state of stack %r", stackname)
         raise
 
-# DO NOT CACHE
+# DO NOT CACHE: function is used in polling
 def stack_is_active(stackname):
-    "returns True if the given stack is in a completed state"
+    "returns `True` if `stackname` is in a completed state"
     return stack_is(stackname, ACTIVE_CFN_STATUS)
+
+def stack_exists(stackname, state=None):
+    """convenience wrapper around `stack_is`. returns `True` if the stack exists else `False`.
+    if `state` is 'steady', stack must also be in a non-transitioning 'steady' state.
+    if `state` is 'active', stack must also be in a healthy 'active' state (no failed updates, etc).
+
+    lsh@2021-11: added so CI can differentiate between existence/steadiness/healthiness of stack."""
+    allowed_states = {
+        None: ALL_CFN_STATUS,
+        'steady': STEADY_CFN_STATUS,
+        'active': ACTIVE_CFN_STATUS,
+        # 'unsteady': UNSTEADY_CFN_STATUS,
+    }
+    msg = ', '.join(sorted(map(str, allowed_states.keys())))
+    ensure(state in allowed_states, "unsupported state label %r. supported states: %s" % (state, msg))
+    return stack_is(stackname, allowed_states[state])
 
 def stack_triple(aws_stack):
     "returns a triple of (name, status, data) of stacks."
@@ -668,7 +684,7 @@ def find_master_servers(stacks):
     msl = lfilter(lambda triple: is_master_server_stack(first(triple)), stacks)
     msl = lmap(first, msl) # just stack names
     if len(msl) > 1:
-        LOG.warn("more than one master server found: %s. this state should only ever be temporary.", msl)
+        LOG.warning("more than one master server found: %s. this state should only ever be temporary.", msl)
     return sorted(msl, key=parse_stackname) # oldest to newest
 
 def find_master(region):
@@ -757,6 +773,9 @@ def hostname_struct(stackname):
 #
 
 def project_data_for_stackname(stackname):
+    """like `project.project_data` but modifies the project data if the instance-id
+    extracted from the given `stackname` matches a project alt-config.
+    does nothing for ad-hoc instance using an alt-config."""
     (pname, instance_id) = parse_stackname(stackname)
     project_data = project.project_data(pname)
     if 'aws-alt' in project_data and instance_id in project_data['aws-alt']:
@@ -764,3 +783,24 @@ def project_data_for_stackname(stackname):
     if 'gcp-alt' in project_data and instance_id in project_data['gcp-alt']:
         project_data = project.set_project_alt(project_data, 'gcp', instance_id)
     return project_data
+
+
+#
+# AWS configuration drift
+#
+
+def drift_check(stackname):
+    "returns a list of resources that have drifted for the given `stackname`"
+    conn = boto_conn(stackname, 'cloudformation', client=True)
+
+    handle = conn.detect_stack_drift(StackName=stackname)
+    handle = handle['StackDriftDetectionId']
+
+    def is_detecting_drift():
+        job = conn.describe_stack_drift_detection_status(StackDriftDetectionId=handle)
+        return job.get('DetectionStatus') == 'DETECTION_IN_PROGRESS'
+    utils.call_while(is_detecting_drift, interval=2, update_msg='Waiting for drift results ...')
+
+    result = conn.describe_stack_resource_drifts(StackName=stackname)
+    drifted = [resource for resource in result["StackResourceDrifts"] if resource["StackResourceDriftStatus"] != "IN_SYNC"]
+    return drifted or None

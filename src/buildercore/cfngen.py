@@ -25,7 +25,7 @@ from functools import partial
 import botocore
 import netaddr
 from . import utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, deepcopy, subdict
+from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
 
 LOG = logging.getLogger(__name__)
 
@@ -103,7 +103,9 @@ def build_context(pname, **more_context):
         'alt-config': None,
 
         'branch': project_data.get('default-branch'),
-        'revision': None, # may be used in future to checkout a specific revision of project
+        # used to checkout a specific revision of a project or a container.
+        # value may be modified in-place on the created instance by Jenkins.
+        'revision': None,
 
         # TODO: shift these rds_ values under the 'rds' key
         'rds_dbname': None, # generated from the instance_id when present
@@ -116,12 +118,14 @@ def build_context(pname, **more_context):
         's3': {},
         'eks': False,
         'elb': False,
+        'alb': False,
         'sns': [],
         'sqs': {},
         'ext': False,
         'cloudfront': False,
         'elasticache': False,
         'docdb': False,
+        'waf': False,
     }
 
     context = deepcopy(defaults)
@@ -135,6 +139,8 @@ def build_context(pname, **more_context):
         build_context_aws,
         build_context_ec2,
         build_context_elb,
+        build_context_alb,
+        build_context_elb_alb,
         build_context_cloudfront,
         build_context_sns_sqs,
         build_context_s3,
@@ -147,6 +153,7 @@ def build_context(pname, **more_context):
         build_context_elasticache,
         build_context_vault,
         partial(build_context_docdb, existing_context=existing_context),
+        build_context_waf,
     ]
 
     # ... exceptions to the rule
@@ -172,6 +179,27 @@ def build_context(pname, **more_context):
 # Do that here.
 #
 
+def build_context_waf(pdata, context):
+    if not pdata['aws'].get('waf'):
+        return context
+    context['waf'] = pdata['aws']['waf']
+
+    new_managed_rules = {}
+    for managed_rule_key, managed_rule in context['waf']['managed-rules'].items():
+        vendor, rule_name = managed_rule_key.split('/', 1) # "AWS/SomeFooRuleSet" => "AWS", "SomeFooRuleSet"
+        managed_rule['vendor'] = vendor
+        managed_rule['name'] = rule_name
+        new_key_name = "%s-%s" % (vendor, rule_name)
+        new_managed_rules[new_key_name] = managed_rule
+
+        # 'included' exists purely to illustrate which rules are *not* excluded.
+        delkey(managed_rule, 'included')
+
+    context['waf']['managed-rules'] = new_managed_rules
+    context['waf']['description'] = lookup(pdata, 'aws.description', 'a web application firewall')
+
+    return context
+
 def build_context_docdb(pdata, context, existing_context=None):
     "DocumentDB (docdb) configuration"
     if not pdata['aws'].get('docdb'):
@@ -193,6 +221,8 @@ def build_context_docdb(pdata, context, existing_context=None):
     return context
 
 def build_context_aws(pdata, context):
+    """adds the commonly used AWS fields to the context under `aws`.
+    these are fields that are common to many resources such as `account-id` and `availability-zone`."""
     if 'aws' not in pdata:
         return context
     keepers = [
@@ -294,11 +324,18 @@ def build_context_ec2(pdata, context):
     # TODO: this is a problem. using the default 'True' preserves the behaviour of
     # when 'ec2: True' meant, 'use defaults with nothing changed'
     # but now I need to store master ip info there.
+
+    # lsh@2021-06-22: `True` should not be valid for 'ec2'
+    # I've replaced the alt-config '1804' with `ec2: {}` so config merging happens properly.
+    # I suspect the project_data caching oversight was allowing this to pass.
+
     context['ec2'] = pdata['aws'].get('ec2')
     if context['ec2'] == True:
-        LOG.warn("stack needs it's context refreshed: %s", context['stackname'])
+        msg = "stack needs it's context refreshed: %s" % context['stackname']
+        LOG.warning(msg)
+        raise ValueError(msg)
 
-    elif context['ec2'] == False:
+    if context['ec2'] == False:
         return context
 
     # we can now assume this will always be a dict
@@ -320,7 +357,7 @@ def build_context_rds(pdata, context, existing_context):
     stackname = context['stackname']
 
     # deletion policy
-    deletion_policy = utils.lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
+    deletion_policy = lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
 
     # used to give mysql a range of valid ip addresses to connect from
     subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
@@ -363,10 +400,31 @@ def build_context_elb(pdata, context):
         })
     return context
 
+def build_context_alb(pdata, context):
+    if 'alb' in pdata['aws'] and pdata['aws']['alb'] is not False:
+        context['alb'] = pdata['aws']['alb']
+        context['alb']['idle_timeout'] = str(context['alb']['idle_timeout'])
+        context['alb']['subnets'] = [
+            pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
+        ]
+    return context
+
+def build_context_elb_alb(pdata, context):
+    "context for when both an ELBv1 and an ELBv2 (ALB) are present."
+    if not ('alb' in pdata['aws'] and 'elb' in pdata['aws']):
+        return context
+
+    primary_lb = pdata['aws']['primary_lb']
+    ensure(primary_lb in ['elb', 'alb'], "unknown value %r for 'primary_key'. expecting 'elb' or 'alb'." % primary_lb)
+
+    context['primary_lb'] = primary_lb
+    return context
+
 def build_context_cloudfront(pdata, context):
     _parameterize = parameterize(context)
 
     def build_subdomain(x):
+        # "{instance}--cdn", "elifesciences.org" => "foo--cdn.elifesciences.org"
         return complete_domain(_parameterize(x), context['domain'])
 
     context['cloudfront'] = False
@@ -490,17 +548,27 @@ def build_context_eks(pdata, context):
     return context
 
 def complete_domain(host, default_main):
+    """converts a partial domain name into a complete one.
+    an empty `host` will return `default_main` (typically 'elifesciences.org')
+    a simple `host` like 'foo' will be expanded to 'foo.elifesciences.org'
+    a complete `host` like 'foo.elifesciences.org' will be returned as-is."""
+    # "" means "elifesciences.org" (top-level). see 'journal--prod' configuration.
     is_main = host == ''
-    is_complete = host.count(".") > 0
     if is_main:
         return default_main
+    # for cases like 'e-lifejournal.com'. see 'redirects' project.
+    is_complete = host.count(".") > 0
     if is_complete:
         return host
-    return host + '.' + default_main # something + '.' + elifesciences.org
+    # "foo--cdn" + "." + "elifesciences.org" => "foo--cdn.elifesciences.org"
+    return host + '.' + default_main
 
 def build_context_subdomains(pdata, context):
     # note! a distinction is being made between 'subdomain' and 'subdomains'
-    context['subdomains'] = [complete_domain(s, pdata['domain']) for s in pdata['aws'].get('subdomains', []) if pdata['domain']]
+    context['subdomains'] = []
+    if pdata['domain'] and 'subdomains' in pdata['aws']:
+        for subdomain in pdata['aws']['subdomains']:
+            context['subdomains'].append(complete_domain(subdomain, pdata['domain']))
     return context
 
 def build_context_elasticache(pdata, context):
@@ -523,7 +591,7 @@ def more_validation(json_template_str):
         # case: when "DBInstanceIdentifier" == "lax--temp2"
         # The parameter Filter: db-instance-id is not a valid identifier. Identifiers must begin with a letter;
         # must contain only ASCII letters, digits, and hyphens; and must not end with a hyphen or contain two consecutive hyphens.
-        dbid = utils.lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
+        dbid = lookup(data, 'Resources.AttachedDB.Properties.DBInstanceIdentifier', False)
         if dbid:
             ensure('--' not in dbid, "database instance identifier contains a double hyphen: %r" % dbid)
 
@@ -544,6 +612,9 @@ def more_validation(json_template_str):
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
 
+def validate_template(template_json):
+    return cloudformation.validate_template(template_json)
+
 def validate_project(pname, **extra):
     """validates all of project's possible cloudformation templates.
     only called during testing"""
@@ -552,7 +623,7 @@ def validate_project(pname, **extra):
     pdata = project.project_data(pname)
     altconfig = None
 
-    cloudformation.validate_template(pname, template)
+    cloudformation.validate_template(template)
     more_validation(template)
     LOG.debug("local validation of cloudformation template passed")
     # validate all alternative configurations
@@ -562,7 +633,7 @@ def validate_project(pname, **extra):
             'alt-config': altconfig
         }
         template = quick_render(pname, **extra)
-        cloudformation.validate_template(pname, template)
+        cloudformation.validate_template(template)
         LOG.debug("remote validation of cloudformation template passed")
 
 #
@@ -570,8 +641,8 @@ def validate_project(pname, **extra):
 #
 
 def quick_render(project_name, **more_context):
-    """generates a representative Cloudformation template for given project with dummy values
-    only called during testing"""
+    """generates a Cloudformation template for given `project_name` with dummy values overriden by anything in `more_context`.
+    lsh@2021-09: only called during testing so far."""
     # set a dummy instance id if one hasn't been set.
     more_context['stackname'] = more_context.get('stackname', core.mk_stackname(project_name, 'dummy'))
     context = build_context(project_name, **more_context)
@@ -595,11 +666,78 @@ def generate_stack(pname, **more_context):
 #
 
 
-# can't add ExtDNS: it changes dynamically when we start/stop instances and should not be touched after creation
-UPDATABLE_TITLE_PATTERNS = ['^CloudFront.*', '^ElasticLoadBalancer.*', '^EC2Instance.*', '.*Bucket$', '.*BucketPolicy', '^StackSecurityGroup$', '^ELBSecurityGroup$', '^CnameDNS.+$', 'FastlyDNS\\d+$', '^AttachedDB$', '^AttachedDBSubnet$', '^ExtraStorage.+$', '^MountPoint.+$', '^IntDNS.*$', '^ElastiCache.*$', '^AZ.+$', '^InstanceId.+$', '^PrivateIP.+$', '^DomainName$', '^IntDomainName$', '^RDSHost$', '^RDSPort$', '^DocumentDB.*$']
+UPDATABLE_TITLE_PATTERNS = [
+    '^CloudFront.*',
+    '^ElasticLoadBalancer.*',
+    '^EC2Instance.*',
+    '.*Bucket$',
+    '.*BucketPolicy',
+    '^StackSecurityGroup$',
+    '^ELBSecurityGroup$',
+    '^CnameDNS.+$',
+    'FastlyDNS\\d+$',
+    '^AttachedDB$',
+    '^AttachedDBSubnet$',
+    '^ExtraStorage.+$',
+    '^MountPoint.+$',
+    '^IntDNS.*$',
+    '^ElastiCache.*$',
+    '^AZ.+$',
+    '^InstanceId.+$',
+    '^PrivateIP.+$',
+    '^DomainName$',
+    '^IntDomainName$',
+    '^RDSHost$',
+    '^RDSPort$',
+    '^DocumentDB.*$',
+    '^WAF$',
+    '^WAFAssociation.+$',
+    '^WAFIPSet.+',
 
-REMOVABLE_TITLE_PATTERNS = ['^CloudFront.*', '^CnameDNS\\d+$', 'FastlyDNS\\d+$', '^ExtDNS$', '^ExtDNS1$', '^ExtraStorage.+$', '^MountPoint.+$', '^.+Queue$', '^EC2Instance.+$', '^IntDNS.*$', '^ElastiCache.*$', '^.+Topic$', '^AttachedDB$', '^AttachedDBSubnet$', '^VPCSecurityGroup$', '^KeyName$']
+    '^ELBv2$',
+    '^ELBv2Listener.*',
+    '^ELBv2TargetGroup.*',
+
+    # note: can't add ExtDNS as it changes dynamically when we start/stop instances and
+    # should not be touched after creation.
+    # '^ExtDNS$',
+]
+
+# patterns that should be updateable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
+LB_UPDATABLE_TITLE_PATTERNS = [
+    '^ExtDNS$',
+]
+
 EC2_NOT_UPDATABLE_PROPERTIES = ['ImageId', 'Tags', 'UserData']
+
+REMOVABLE_TITLE_PATTERNS = [
+    '^CloudFront.*',
+    '^CnameDNS\\d+$',
+    'FastlyDNS\\d+$',
+    '^ExtDNS$',
+    '^ExtDNS1$',
+    '^ExtraStorage.+$',
+    '^MountPoint.+$',
+    '^.+Queue$',
+    '^EC2Instance.+$',
+    '^IntDNS.*$',
+    '^ElastiCache.*$',
+    '^.+Topic$',
+    '^AttachedDB$',
+    '^AttachedDBSubnet$',
+    '^VPCSecurityGroup$',
+    '^KeyName$',
+    '^WAF$',
+    '^WAFAssociation.+$',
+    '^WAFIPSet.+',
+]
+
+# patterns that should be removable if a load balancer (ElasticLoadBalancer, ELBv2) is involved.
+LB_REMOVABLE_TITLE_PATTERNS = [
+    '^ElasticLoadBalancer$',
+    '^ELBSecurityGroup$',
+    '^ELBv2.*',
+]
 
 # CloudFormation is nicely chopped up into:
 # * what to add
@@ -630,12 +768,23 @@ class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'ter
 _empty_cloudformation_dictionary = {'Resources': {}, 'Outputs': {}}
 Delta.__new__.__defaults__ = (_empty_cloudformation_dictionary, _empty_cloudformation_dictionary, _empty_cloudformation_dictionary, None, None)
 
+
 def template_delta(context):
     """given an already existing template, regenerates it and produces a delta containing only the new resources.
-
-    Some the existing resources are treated as immutable and not put in the delta. Most that support non-destructive updates like CloudFront are instead included"""
+    Some existing resources are treated as immutable and not put in the delta.
+    Most resources that support non-destructive updates like CloudFront are instead included."""
     old_template = cloudformation.read_template(context['stackname'])
     template = json.loads(cloudformation.render_template(context))
+
+    removeable_title_patterns = REMOVABLE_TITLE_PATTERNS[:]
+    updateable_title_patterns = UPDATABLE_TITLE_PATTERNS[:]
+
+    # when should we be able to modify load balancers?
+    # this condition covers the case of migrating from an ELB to an ALB.
+    # it doesn't cover downgrading, removing an LB altogether etc.
+    if 'ElasticLoadBalancer' in old_template['Resources']:
+        updateable_title_patterns.extend(LB_UPDATABLE_TITLE_PATTERNS)
+        removeable_title_patterns.extend(LB_REMOVABLE_TITLE_PATTERNS)
 
     def _related_to_ec2(output):
         if 'Value' in output:
@@ -646,10 +795,10 @@ def template_delta(context):
         return False
 
     def _title_is_updatable(title):
-        return len([p for p in UPDATABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+        return len([p for p in updateable_title_patterns if re.match(p, title)]) > 0
 
     def _title_is_removable(title):
-        return len([p for p in REMOVABLE_TITLE_PATTERNS if re.match(p, title)]) > 0
+        return len([p for p in removeable_title_patterns if re.match(p, title)]) > 0
 
     # TODO: investigate if this is still necessary
     # start backward compatibility code
@@ -672,17 +821,18 @@ def template_delta(context):
             if not title in old_template[section]:
                 return False
         else:
-            LOG.warn("section %r not present in old template but is present in new: %s" % (section, title))
+            LOG.warning("section %r not present in old template but is present in new: %s" % (section, title))
             return False # can we handle this better?
 
         title_in_old = dict(old_template[section][title])
         title_in_new = dict(template[section][title])
+
         # ignore UserData changes, it's not useful to update them and cause
         # a needless reboot
-        if 'Type' in title_in_old:
-            if title_in_old['Type'] == 'AWS::EC2::Instance':
-                for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
-                    title_in_new['Properties'][property_name] = title_in_old['Properties'][property_name]
+        if title_in_old.get('Type') == 'AWS::EC2::Instance':
+            for property_name in EC2_NOT_UPDATABLE_PROPERTIES:
+                title_in_new['Properties'][property_name] = title_in_old['Properties'][property_name]
+
         return title_in_old != title_in_new
 
     def legacy_title(title):
@@ -757,7 +907,8 @@ def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)
     download_cloudformation_template(stackname)
     (pname, instance_id) = core.parse_stackname(stackname)
-    more_context['stackname'] = stackname # TODO: purge this crap
+    more_context['stackname'] = stackname
+
     # lsh@2019-09-27: usage of `instance_id` here is wrong. `instance_id` looks like "foobar" in "journal--foobar"
     # and is only correct when an alt-config matches. We typically have alt-configs for our common environments, like
     # ci, end2end, prod, continuumtest and has thus worked stably for a while now.

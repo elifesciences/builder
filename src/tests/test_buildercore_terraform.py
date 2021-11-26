@@ -497,6 +497,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'path': '/ping-fastly',
                                 'check_interval': 30000,
                                 'timeout': 10000,
+                                'initial': 2,
+                                'threshold': 2,
                             },
                             'condition': [
                                 {
@@ -1084,6 +1086,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
                 'image_id': '${data.aws_ami.worker.id}',
                 'instance_type': 't2.small',
+                'root_block_device': {
+                    'volume_size': 40
+                },
                 'name_prefix': 'project-with-eks--%s--worker' % self.environment,
                 'security_groups': ['${aws_security_group.worker.id}'],
                 'user_data_base64': '${base64encode(local.worker_userdata)}',

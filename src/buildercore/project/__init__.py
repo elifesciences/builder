@@ -38,7 +38,7 @@ def find_project(project_location_triple):
     return fnmap[protocol](path, hostname)
 
 @cache
-def project_map(project_locations_list=None):
+def _project_map(project_locations_list=None):
     """returns a single map of all projects and their data"""
     def merge(orderedDict1, orderedDict2):
         orderedDict1.update(orderedDict2)
@@ -55,6 +55,12 @@ def project_map(project_locations_list=None):
 
     return reduce(merge, data)
 
+def project_map(project_locations_list=None):
+    """returns a deepcopy of the cached `_project_map` results.
+    `cfngen.build_context` is one of probably many functions that are modifying the project data, unintentionally modifying it for all subsequent accesses, including during tests.
+    this approach should be safer, avoid the speed problems with parsing the project files at the cost of a deepcopy."""
+    return utils.deepcopy(_project_map(project_locations_list))
+
 def project_list():
     "returns a single list of projects, ignoring organization and project data"
     return list(project_map().keys())
@@ -65,7 +71,7 @@ def project_data(pname):
     try:
         return data[pname]
     except KeyError:
-        raise ValueError("unknown project %r, known projects %r" % (pname, data.keys()))
+        raise ValueError("unknown project %r, known projects %r" % (pname, list(data.keys())))
 
 #
 #

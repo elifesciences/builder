@@ -3,8 +3,9 @@ from buildercore import threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks
 import sys, os, traceback
+import utils
 
 # threadbare module is otherwise not used is flagged for linting
 assert threadbare
@@ -20,41 +21,56 @@ def echo(msg, *args, **kwargs):
     return "received: %s" % (msg,)
 
 
-# 'unqualified' tasks are those that can be called just by their function name.
-# for example: './bldr start' is the unqualified function 'lifecycle.start'
+# NOTE: 'unqualified' tasks are those that can be called just by their function name.
+# for example: `./bldr start` is the unqualified function `lifecycle.start`
+# NOTE: a task's function signature constitutes it's API, check twice before changing it.
+# the 'see: ...' references below are *not* comprehensive.
 UNQUALIFIED_TASK_LIST = [
     ping, echo,
 
     cfn.destroy,
+    # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.clean-journal-environments
     cfn.ensure_destroyed,
+    # see: elife-jenkins-workflow-libs/vars/builderUpdate.groovy, elifeFormula.groovy
     cfn.update,
     cfn.update_infrastructure,
+    fix.fix_infrastructure,
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.update-journal-pr
     cfn.launch,
     cfn.ssh,
     cfn.owner_ssh,
+    # see: elife-jenkins-workflow-libs/vars/builderTestArtifact.groovy
     cfn.download_file,
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.journal-cms-restore-continuumtest
     cfn.upload_file,
+    # see: elife-jenkins-workflow-libs/vars/builderCmd*.groovy
     cfn.cmd,
-
+    # see: elife-jenkins-workflow-libs/vars/builderDeployRevision.groovy
     deploy.switch_revision_update_instance,
-
+    # see: elife-jenkins-workflow-libs/vars/builderStart.groovy
     lifecycle.start,
+    # see: elife-jenkins-workflow-libs/vars/builderStop.groovy
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     lifecycle.stop,
     lifecycle.restart,
+    # see: elife-jenkins-workflow-libs/vars/builderStopIfRunningFor.groovy
     lifecycle.stop_if_running_for,
     lifecycle.update_dns,
 ]
 
-# these are 'qualified' tasks where the full path to the function must be used
-# for example: './bldr buildvars.switch_revision'
+# NOTE: these are 'qualified' tasks where the full path to the function must be used.
+# for example: `./bldr buildvars.switch_revision`
 TASK_LIST = [
     metrics.regenerate_results, # todo: remove
 
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     tasks.create_ami,
     tasks.repair_cfn_info,
     tasks.repair_context,
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     tasks.remove_minion_key,
-
+    # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.master-server
     master.update,
 
     askmaster.fail2ban_running,
@@ -62,13 +78,19 @@ TASK_LIST = [
     askmaster.linux_distro,
     askmaster.installed_salt_version,
 
+    # see: elife-jenkins-workflow-libs/vars/builderRunAll.groovy
     buildvars.switch_revision,
+
+    # see: journal/Jenkinsfile.prod
+    deploy.load_balancer_register_all,
 
     project.data,
     project.context,
     project.new,
 
+    # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.launch,
+    # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.set_versions,
 
     vault.login,
@@ -87,6 +109,7 @@ TASK_LIST = [
     report.all_formulas,
     report.all_adhoc_ec2_instances,
 
+    checks.stack_exists,
 ]
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
@@ -105,7 +128,6 @@ DEBUG_TASK_LIST = [
     aws.detailed_stack_list,
 
     deploy.load_balancer_status,
-    deploy.load_balancer_register_all,
 
     master.write_missing_keypairs_to_s3,
     master.download_keypair,
@@ -159,6 +181,8 @@ def generate_task_list(show_debug_tasks=False):
 # --- taken from Fabric3 (fork of Fabric 1, BSD Licenced)
 # --- https://github.com/mathiasertl/fabric/blob/1.13.1/fabric/main.py#L499-L564
 def _escape_split(sep, argstr):
+    # autopep8 wants to format "r'foo\" to "r'foo\\"
+    # fmt: off
     """
     Allows for escaping of the separator: e.g. task:arg=r'foo\, bar' (ignore leading 'r')
 
@@ -228,6 +252,14 @@ def exec_task(task_str, task_map_list):
         task_map = task_map_list[0]
         return_map['result'] = task_map['fn'](*task_args, **task_kwargs)
         return_map['rc'] = 0
+        return return_map
+
+    except utils.TaskExit as te:
+        msg = str(te)
+        if msg:
+            print(msg)
+        print('\nQuit.')
+        return_map['rc'] = 1
         return return_map
 
     except KeyboardInterrupt:

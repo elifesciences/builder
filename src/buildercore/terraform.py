@@ -4,7 +4,7 @@ from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p
+from .utils import ensure, mkdir_p, lookup
 from . import aws, fastly
 
 MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
@@ -190,6 +190,7 @@ def render_fastly(context, template):
         }
     )
 
+    # https://registry.terraform.io/providers/fastly/fastly/latest/docs/resources/service_v1#nested-schema-for-healthcheck
     if context['fastly']['healthcheck']:
         template.populate_resource(
             RESOURCE_TYPE_FASTLY,
@@ -201,6 +202,12 @@ def render_fastly(context, template):
                 'path': context['fastly']['healthcheck']['path'],
                 'check_interval': context['fastly']['healthcheck']['check-interval'],
                 'timeout': context['fastly']['healthcheck']['timeout'],
+                # lsh@2021-06-14: while debugging 503 errors from end2end and continuumtest CDNs, Fastly support offered:
+                # > "I would suggest to change your healthcheck configuration .initial value shouldn't be lower than threshold.
+                # > If .initial < .threshold, the backend will be initialized as Unhealthy state until (.threshold - .initial)
+                # > number of healthchecks have happened and they all are pass."
+                'initial': 2, # default is 2
+                'threshold': 2, # default is 3
             }
         )
         for b in template.resource[RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
@@ -866,7 +873,7 @@ def _render_eks_workers_autoscaling_group(context, template):
 set -o xtrace
 /etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
 
-    template.populate_resource('aws_launch_configuration', 'worker', block={
+    worker = {
         'associate_public_ip_address': True,
         'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
         'image_id': '${data.aws_ami.worker.id}',
@@ -877,7 +884,13 @@ set -o xtrace
         'lifecycle': {
             'create_before_destroy': True,
         },
-    })
+    }
+    root_volume_size = lookup(context, 'eks.worker.root.size', None)
+    if root_volume_size:
+        worker['root_block_device'] = {
+            'volume_size': root_volume_size
+        }
+    template.populate_resource('aws_launch_configuration', 'worker', block=worker)
 
     autoscaling_group_tags = [
         {
@@ -1150,7 +1163,7 @@ def _clean_stdout(stdout):
     return stdout
 
 def init(stackname, context):
-    working_dir = join(TERRAFORM_DIR, stackname) # ll: ./.cfn/terraform/project--prod/
+    working_dir = join(TERRAFORM_DIR, stackname) # "./.cfn/terraform/project--prod/"
     terraform = Terraform(working_dir=working_dir)
     with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
@@ -1273,17 +1286,20 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
-def _file_path_for_generation(stackname, name, extension='tf.json'):
-    "builds a path for a file to be placed in conf.TERRAFORM_DIR"
-    return join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
-
 def _open(stackname, name, extension='tf.json', mode='r'):
-    "`open`s a file in the conf.TERRAFORM_DIR belonging to given `stackname` (./.cfn/terraform/$stackname/)"
+    "`open`s a file in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
+    # "./.cfn/journal--prod/generated.tf"
+    # "./.cfn/journal--prod/backend.tf"
+    # "./.cfn/journal--prod/providers.tf"
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
     if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
 
-    return open(_file_path_for_generation(stackname, name, extension), mode)
+    # "./.cfn/journal--prod/generated.tf.json"
+    # "./.cfn/journal--prod/backend.tf.json"
+    # "./.cfn/journal--prod/providers.tf.json"
+    path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
+    return open(path, mode)

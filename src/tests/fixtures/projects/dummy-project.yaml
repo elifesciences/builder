@@ -24,6 +24,7 @@ defaults:
         - https://github.com/example/builder-base-formula
     aws:
         account-id: 512686554592
+        unique: false
         ec2:
             cluster-size: 1
             cpu-credits: standard
@@ -91,6 +92,38 @@ defaults:
             #type: gp2 # standard|gp2|io1|sc1 # todo: enable
             size: 10 # GB
             device: /dev/sdh
+        # alb default only used if an 'alb' section present in project
+        # also known as 'Elastic Load Balancer v2'
+        alb:
+            stickiness: false
+            #stickiness:
+            #   type: cookie | browser
+            #   cookie-name: ...
+            # 'listeners' replaces ELB's 'protocol' and 'additional_listeners'
+            listeners:
+                listener1:
+                    protocol: http
+                    port: 80
+                    forward: target-group1
+
+                listener2:
+                    protocol: https
+                    port: 443
+                    forward: target-group1
+
+            target_groups:
+                target-group1:
+                    protocol: http
+                    port: 80
+                    healthcheck:
+                        path: /ping
+                        timeout: 4
+                        interval: 5
+                        unhealthy_threshold: 2
+                        healthy_threshold: 2
+            idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
+            certificate: arn:aws:iam::...:...
         elb:
             # elb defaults only used if an 'elb' section present in project
             stickiness: false
@@ -198,6 +231,13 @@ defaults:
             subnets:
                 - subnet-foo
                 - subnet-bar
+        waf:
+            description: a Web Application Firewall
+            associations: []
+            # default action for requests that don't match any of the rules in the list of below rules
+            action: allow # count, block, custom-response
+            custom-rules: {}
+            managed-rules: {}
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -811,6 +851,8 @@ project-with-eks:
                 desired-capacity: 3
                 min-size: 1
                 max-size: 3
+                root:
+                    size: 40
 
 project-with-eks-helm:
     description: project managing an EKS cluster with Helm for chart installation
@@ -852,3 +894,80 @@ project-with-docdb-cluster:
             backup-retention-period: 14 # days
             deletion-protection: True
             engine-version: 4.0.0
+
+project-with-unique-alt-config:
+    description: project has a unique configuration
+    aws:
+        ec2: false
+    aws-alt:
+        prod:
+            unique: true
+
+project-with-waf:
+    aws:
+        description: dummy firewall for testing
+        ec2: false
+        waf:
+            ip-sets:
+                localhost:
+                    - 10.1.1.1
+                    - 192.168.0.1
+            associations:
+                - arn:aws:iam::...:...
+            custom-rules:
+                - test-Snippet.json
+            managed-rules:
+                AWS/AWSManagedRulesBotControlRuleSet:
+                    priority: 0
+                    excluded:
+                        - foo
+                        - bar
+                        - baz
+
+project-with-alb:
+    subdomain: project-with-alb
+    aws:
+        subdomains:
+            - foo.bar
+        ports:
+            - 22
+            - 80
+        ec2:
+            cluster-size: 2
+        alb:
+            listeners:
+                listener1:
+                    protocol: http
+                    port: 80
+                    forward: target-group1
+                listener2:
+                    protocol: https
+                    port: 443
+                    forward: target-group1
+                listener3:
+                    protocol: https
+                    port: 8001
+                    forward: target-group2
+
+            target_groups:
+                target-group1:
+                    protocol: http
+                    port: 80
+                    healthcheck:
+                        path: /ping
+                        timeout: 4
+                        interval: 5
+                        unhealthy_threshold: 2
+                        healthy_threshold: 2
+                target-group2:
+                    protocol: http
+                    port: 8001
+                    healthcheck:
+                        path: /ping
+                        timeout: 4
+                        interval: 5
+                        unhealthy_threshold: 2
+                        healthy_threshold: 2
+            stickiness:
+                type: cookie
+                cookie-name: dummy-cookie

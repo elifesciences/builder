@@ -54,9 +54,9 @@ elifePipeline {
         }
     }
 
-    elifeMainlineOnly {
-        stage 'Deploy to Alfred', {
-            sh 'cd /srv/builder && git pull && . && ./update.sh --exclude virtualbox vagrant vault ssh-agent ssh-credentials'
+    stage 'Downstream', {
+        elifeMainlineOnly {
+            build job: '/release/release-builder-jenkins', wait: false
         }
     }
 }

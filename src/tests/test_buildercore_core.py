@@ -1,10 +1,12 @@
+import pytest
 from functools import partial
 import json
 from os.path import join
 from . import base
 from buildercore import core, utils, project
 from unittest import skip
-from mock import patch
+from mock import patch, Mock
+import botocore
 
 class SimpleCases(base.BaseCase):
     def setUp(self):
@@ -221,3 +223,35 @@ class TestCoreNewProjectData(base.BaseCase):
         expected_data['vagrant']['cpucap'] = 111
 
         self.assertEqual(project_data, expected_data)
+
+def test_stack_exists():
+    stackname = 'foo--bar'
+    cases = [
+        ("CREATE_COMPLETE", [None, "steady", "active"]),
+        ("UPDATE_ROLLBACK_COMPLETE", [None, "steady"]),
+        ("UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", [None])
+    ]
+    for stack_status, true_state_list in cases:
+        mock = Mock(stack_status=stack_status)
+        with patch('buildercore.core.describe_stack', return_value=mock):
+            for true_state in true_state_list:
+                assert core.stack_exists(stackname, state=true_state), stack_status
+
+def test_stack_exists__dne():
+    stackname = 'foo--bar'
+    exception = botocore.exceptions.ClientError(**{
+        'error_response': {'Error': {'Message': 'does not exist'}},
+        'operation_name': 'describe'
+    })
+    with patch('buildercore.core.describe_stack', raises=exception):
+        assert not core.stack_exists(stackname)
+        assert not core.stack_exists(stackname, state='steady')
+        assert not core.stack_exists(stackname, state='active')
+
+def test_stack_exists__bad_state_label():
+    stackname = 'foo--bar'
+    with patch('buildercore.core.describe_stack'):
+        with pytest.raises(AssertionError) as pytest_exc_info:
+            core.stack_exists(stackname, state='cursed')
+        exc = pytest_exc_info.value
+        assert str(exc) == "unsupported state label 'cursed'. supported states: None, active, steady"

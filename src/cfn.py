@@ -1,8 +1,9 @@
-import os
+import os, json
 from pprint import pformat
 import backoff
 from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
 import utils, buildvars
+from utils import TaskExit
 from decorators import requires_project, requires_aws_stack, echo_output, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 # potentially remove to go through buildercore.bootstrap?
@@ -24,10 +25,7 @@ def destroy(stackname):
     print('type the name of the stack to continue or anything else to quit')
     uin = utils.get_input('> ')
     if not uin or not uin.strip().lower() == stackname.lower():
-        import difflib
         print('you needed to type "%s" to continue.' % stackname)
-        print('got:')
-        print('\n'.join(difflib.ndiff([stackname], [uin])))
         exit(1)
     return bootstrap.destroy(stackname)
 
@@ -35,10 +33,10 @@ def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
     except context_handler.MissingContextFile:
-        LOG.warn("Context does not exist anymore or was never created, exiting idempotently")
+        LOG.warning("Context does not exist anymore or was never created, exiting idempotently")
     except PredicateException as e:
         if "I couldn't find a cloudformation stack" in str(e):
-            LOG.warn("Not even the CloudFormation template exists anymore, exiting idempotently")
+            LOG.warning("Not even the CloudFormation template exists anymore, exiting idempotently")
             return
         raise
 
@@ -84,6 +82,8 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     LOG.info("Update: %s", pformat(delta.edit))
     LOG.info("Delete: %s", pformat(delta.minus))
     LOG.info("Terraform delta: %s", delta.terraform)
+
+    # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
     utils.confirm('Confirming changes to CloudFormation and Terraform templates?')
 
     context_handler.write_context(stackname, context)
@@ -106,53 +106,106 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     if context.get('s3', {}) and not 's3' in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
-@requires_project
-def generate_stack_from_input(pname, instance_id=None, alt_config=None):
-    """creates a new CloudFormation file for the given project."""
+def check_user_input(pname, instance_id=None, alt_config=None):
+    "marshals user input and checks it for correctness"
     instance_id = instance_id or utils.uin("instance id", core_utils.ymd())
     stackname = core.mk_stackname(pname, instance_id)
-    checks.ensure_stack_does_not_exist(stackname)
-    more_context = {'stackname': stackname}
-
     pdata = project.project_data(pname)
-    if alt_config:
-        ensure('aws-alt' in pdata, "alternative configuration name given, but project has no alternate configurations")
 
-    # prompt user for alternate configurations
-    if pdata['aws-alt']:
-        default = 'skip'
+    # alt-config given, die if it doesn't exist
+    if alt_config:
+        ensure('aws-alt' in pdata, "alt-config %r given, but project has no alternate configurations" % alt_config)
+
+    # if the requested instance-id matches a known alt-config, we'll use that alt-config. warn user.
+    if instance_id in pdata['aws-alt'].keys():
+        LOG.warn("instance-id %r found in alt-config list, using that.", instance_id)
+        alt_config = instance_id
+
+    # no alt-config given but alt-config options exist, prompt user
+    if not alt_config and pdata['aws-alt']:
+        default_choice = 'skip'
 
         def helpfn(altkey):
-            if altkey == default:
+            if altkey == default_choice:
                 return 'uses the default configuration'
             try:
                 return pdata['aws-alt'][altkey]['description']
             except KeyError:
                 return None
-        if instance_id in pdata['aws-alt'].keys():
-            LOG.info("instance-id found in known alternative configurations. using configuration %r", instance_id)
-            more_context['alt-config'] = instance_id
-        else:
-            alt_config_choices = [default] + list(pdata['aws-alt'].keys())
-            if not alt_config:
-                alt_config = utils._pick('alternative config', alt_config_choices, helpfn=helpfn)
-            if alt_config != default:
-                more_context['alt-config'] = alt_config
 
-    # TODO: return the templates used here, so that they can be passed down to
-    # bootstrap.create_stack() without relying on them implicitly existing
-    # on the filesystem
-    cfngen.generate_stack(pname, **more_context)
+        alt_config_choice_list = [default_choice] + list(pdata['aws-alt'].keys())
+        alt_config_choice = utils._pick('alternative config', alt_config_choice_list, helpfn=helpfn)
+        if alt_config_choice != default_choice:
+            alt_config = alt_config_choice
+
+    # check the alt-config isn't unique and if it *is* unique, that an instance using it doesn't exist yet.
+    # note: it is *technically* possible that an instance is using a unique configuration but
+    # that its instance-id *is not* the name of the alt-config passed in.
+    # For example, if `journal--prod` didn't exist, I could create `journal--foo` using the `prod` config.
+    if alt_config and alt_config in pdata['aws-alt'] and pdata['aws-alt'][alt_config]['unique']:
+        dealbreaker = core.mk_stackname(pname, alt_config)
+        # "project 'journal' config 'prod' is marked as unique!"
+        # "checking for any instance named 'journal--prod' ..."
+        print("project %r config %r is marked as unique!" % (pname, alt_config))
+        print("checking for any instance named %r ..." % (dealbreaker,))
+        try:
+            checks.ensure_stack_does_not_exist(dealbreaker)
+        except checks.StackAlreadyExistsProblem:
+            # "stack 'journal--prod' exists, cannot re-use unique configuration 'prod'"
+            msg = "stack %r exists, cannot re-use unique configuration %r." % (dealbreaker, alt_config)
+            raise TaskExit(msg)
+
+    # check that the instance we want to create doesn't exist
+    try:
+        print("checking %r doesn't exist." % stackname)
+        checks.ensure_stack_does_not_exist(stackname)
+    except checks.StackAlreadyExistsProblem as e:
+        msg = 'stack %r already exists.' % e.stackname
+        raise TaskExit(msg)
+
+    more_context = {'stackname': stackname}
+    if alt_config:
+        more_context['alt-config'] = alt_config
+
+    return more_context
+
+def generate_stack_from_input(pname, instance_id=None, alt_config=None):
+    """creates a new CloudFormation/Terraform file for the given project `pname` with
+    the identifier `instance_id` using the (optional) project configuration `alt_config`."""
+    more_context = check_user_input(pname, instance_id, alt_config)
+    stackname = more_context['stackname']
+
+    # ~TODO: return the templates used here, so that they can be passed down to~
+    # ~bootstrap.create_stack() without relying on them implicitly existing~
+    # ~on the filesystem~
+    # lsh@2021-07: having the files on the filesystem with predictable names seems more
+    # robust than carrying it around as a parameter through complex logic.
+    _, cloudformation_file, terraform_file = cfngen.generate_stack(pname, **more_context)
+
+    if cloudformation_file:
+        print('cloudformation template:')
+        print(json.dumps(json.load(open(cloudformation_file, 'r')), indent=4))
+        print()
+
+    if terraform_file:
+        print('terraform template:')
+        print(json.dumps(json.load(open(terraform_file, 'r')), indent=4))
+        print()
+
+    if cloudformation_file:
+        LOG.info('wrote: %s' % os.path.abspath(cloudformation_file))
+
+    if terraform_file:
+        LOG.info('wrote: %s' % os.path.abspath(terraform_file))
+
+    # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
+    utils.confirm('the above resources will be created')
+
     return stackname
 
 @requires_project
 def launch(pname, instance_id=None, alt_config=None):
-    try:
-        stackname = generate_stack_from_input(pname, instance_id, alt_config)
-    except checks.StackAlreadyExistsProblem as e:
-        LOG.info('stack %s already exists', e.stackname)
-        return
-
+    stackname = generate_stack_from_input(pname, instance_id, alt_config)
     pdata = core.project_data_for_stackname(stackname)
 
     LOG.info('attempting to create %s (AWS region %s)', stackname, pdata['aws']['region'])
@@ -230,7 +283,7 @@ def _check_want_to_be_running(stackname, autostart=False):
             return False
 
     except context_handler.MissingContextFile as e:
-        LOG.warn(e)
+        LOG.warning(e)
 
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
     num_instances = len(instance_list)
@@ -252,7 +305,7 @@ def _interactive_ssh(username, public_ip, private_key):
         command = "ssh -o \"ConnectionAttempts 3\" %s@%s -i %s" % (username, public_ip, private_key)
         return local(command)
     except CommandException as e:
-        LOG.warn(e)
+        LOG.warning(e)
 
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
@@ -297,6 +350,7 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
 @requires_aws_stack
 def upload_file(stackname, local_path, remote_path=None, overwrite=False, confirm=False, node=1):
     remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
+    # todo: use utils.strtobool
     overwrite = str(overwrite).lower() == "true"
     confirm = str(confirm).lower() == "true"
     node = int(node)
@@ -305,6 +359,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, confir
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
+        # todo: switch to utils.confirm and remove `confirm` kwarg
         if not confirm:
             utils.get_input('continue?')
         if remote_file_exists(remote_path) and not overwrite:

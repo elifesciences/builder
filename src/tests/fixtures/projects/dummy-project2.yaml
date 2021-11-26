@@ -20,6 +20,8 @@ defaults:
     formula-dependencies:
         - https://github.com/example2/builder-base-formula
     aws:
+        account-id: 512686554592
+        unique: false
         ec2:
             cluster-size: 1
             cpu-credits: standard

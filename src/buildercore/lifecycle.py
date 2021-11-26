@@ -110,9 +110,11 @@ def start(stackname):
     ec2_to_be_started = _select_nodes_with_state('stopped', ec2_states)
     ec2_to_be_checked = ec2_to_be_started + _select_nodes_with_state('running', ec2_states)
     rds_to_be_started = _select_nodes_with_state('stopped', rds_states)
+
     if ec2_to_be_started:
         LOG.info("EC2 nodes to be started: %s", ec2_to_be_started)
         _ec2_connection(stackname).instances.filter(InstanceIds=ec2_to_be_started).start()
+
     if rds_to_be_started:
         LOG.info("RDS nodes to be started: %s", rds_to_be_started)
         [_rds_connection(stackname).start_db_instance(DBInstanceIdentifier=n) for n in rds_to_be_started]
@@ -283,7 +285,7 @@ def update_dns(stackname):
         return
 
     def _log_backoff(event):
-        LOG.warn("Backing off in waiting for running nodes on %s to map them onto a DNS entry", event['args'][0])
+        LOG.warning("Backing off in waiting for running nodes on %s to map them onto a DNS entry", event['args'][0])
 
     @backoff.on_exception(backoff.expo, core.NoRunningInstances, on_backoff=_log_backoff, max_time=30)
     def _wait_for_running_nodes(stackname):
@@ -300,8 +302,8 @@ def update_dns(stackname):
         LOG.info("External primary full hostname: %s", primary_hostname)
         _update_dns_a_record(context['domain'], primary_hostname, primary_ip_address)
 
-    if context.get('elb', False):
-        # ELB has its own DNS, EC2 nodes will autoregister
+    if context.get('elb', False) or context.get('alb', False):
+        # LB has its own DNS, EC2 nodes will autoregister
         LOG.info("Multiple nodes, EC2 nodes will autoregister to ELB that has a stable hostname, nothing else to do")
         # TODO: time to implement this as there may be an old A record around...
         return
@@ -326,12 +328,25 @@ def delete_dns(stackname):
         LOG.info("No internal full hostname to delete")
 
 def _update_dns_a_record(zone_name, name, value):
+    # "zone_name" => "elifesciences.org"
+    # "name" => "foo--journal.elifesciences.org"
+    # "value" => "1.2.3.4"
     zone = _r53_connection().get_zone(zone_name)
-    if zone.get_a(name) and zone.get_a(name).resource_records == [value]:
-        LOG.info("No need to update DNS record %s (already %s)", name, value)
+    a_record = zone.get_a(name)
+    if a_record:
+        if a_record.resource_records == [value]:
+            LOG.info("No need to update DNS record %s (already %s)", name, value)
+        else:
+            LOG.info("Updating DNS record %s to %s", name, value)
+            zone.update_a(name, value)
     else:
-        LOG.info("Updating DNS record %s to %s", name, value)
-        zone.update_a(name, value)
+        # lsh@2021-08-02: record doesn't exist. This case almost never happens.
+        # It *did* happen when a journal instance was brought up using the `prod` config.
+        # It overwrote the DNS entries for `journal--prod` and then destroyed them when it rolled back.
+        # `lifecycle.update_dns` is now the recommended way to fix broken DNS.
+        LOG.warning("DNS record %s does not exist!", name)
+        LOG.info("Creating DNS record %s with %s", name, value)
+        zone.add_a(name, value)
 
 def _delete_dns_a_record(zone_name, name):
     zone = _r53_connection().get_zone(zone_name)
@@ -386,6 +401,12 @@ def _rds_connection(stackname):
     return boto_conn(stackname, 'rds', client=True)
 
 def _r53_connection():
-    """returns a boto2 route53 connection.
-    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided"""
+    """returns a *boto2* route53 connection.
+    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided.
+
+    http://boto.cloudhackers.com/en/latest/ref/route53.html
+
+    lsh@2021-08: boto3 still hasn't got it's higher level 'resource' interface yet, but
+    it's 'client' interface looks more fleshed out now than it did when boto3 was first
+    introduced. Consider upgrading."""
     return boto.connect_route53() # no region necessary

@@ -33,6 +33,8 @@ class TestBuildercoreTrop(base.BaseCase):
     def tearDown(self):
         del os.environ['LOGNAME']
 
+    # --- rds
+
     def test_rds_template_contains_rds(self):
         extra = {
             'stackname': 'dummy3--test',
@@ -102,6 +104,8 @@ class TestBuildercoreTrop(base.BaseCase):
         db = cfn_template['Resources']['AttachedDB']['Properties']
         self.assertTrue(db['AllowMajorVersionUpgrade'])
 
+    # --- sns/sqs
+
     def test_sns_template(self):
         extra = {
             'stackname': 'just-some-sns--prod',
@@ -137,6 +141,8 @@ class TestBuildercoreTrop(base.BaseCase):
             {'Value': {'Fn::GetAtt': ['ProjectWithSqsIncomingProdQueue', 'Arn']}},
             data['Outputs']['ProjectWithSqsIncomingProdQueueArn']
         )
+
+    # --- fs/ext
 
     def test_ext_template(self):
         extra = {
@@ -208,6 +214,8 @@ class TestBuildercoreTrop(base.BaseCase):
                 'CPUCredits': 'unlimited',
             },
         )
+
+    # --- elb
 
     def test_clustered_template(self):
         extra = {
@@ -559,27 +567,6 @@ class TestBuildercoreTrop(base.BaseCase):
             }
         )
 
-    def test_additional_cnames(self):
-        extra = {
-            'stackname': 'dummy2--prod',
-        }
-        context = cfngen.build_context('dummy2', **extra)
-        cfn_template = trop.render(context)
-        data = _parse_json(cfn_template)
-        resources = data['Resources']
-        self.assertIn('CnameDNS1', list(resources.keys()))
-        dns = resources['CnameDNS1']['Properties']
-        self.assertEqual(
-            dns,
-            {
-                'HostedZoneName': 'example.org.',
-                'Name': 'official.example.org',
-                'ResourceRecords': ['prod--dummy2.example.org'],
-                'TTL': '60',
-                'Type': 'CNAME',
-            }
-        )
-
     def test_stickiness_template(self):
         extra = {
             'stackname': 'project-with-stickiness--prod',
@@ -605,6 +592,47 @@ class TestBuildercoreTrop(base.BaseCase):
                 'AppCookieStickinessPolicy',
             ]
         )
+
+    # --- alb
+
+    def test_render_alb(self):
+        fixture = json.loads(base.fixture("cloudformation/project-with-alb.json"))
+        context = cfngen.build_context('project-with-alb', stackname='project-with-alb--foo')
+        cfn_template_json = trop.render(context)
+        cfn_template = json.loads(cfn_template_json)
+
+        # UserData is identical, but ordering is not preserved in py2 vs py3
+        del fixture['Resources']['EC2Instance1']['Properties']['UserData']
+        del fixture['Resources']['EC2Instance2']['Properties']['UserData']
+        del cfn_template['Resources']['EC2Instance1']['Properties']['UserData']
+        del cfn_template['Resources']['EC2Instance2']['Properties']['UserData']
+
+        self.assertEqual(fixture, cfn_template)
+
+    # --- dns
+
+    def test_additional_cnames(self):
+        extra = {
+            'stackname': 'dummy2--prod',
+        }
+        context = cfngen.build_context('dummy2', **extra)
+        cfn_template = trop.render(context)
+        data = _parse_json(cfn_template)
+        resources = data['Resources']
+        self.assertIn('CnameDNS1', list(resources.keys()))
+        dns = resources['CnameDNS1']['Properties']
+        self.assertEqual(
+            dns,
+            {
+                'HostedZoneName': 'example.org.',
+                'Name': 'official.example.org',
+                'ResourceRecords': ['prod--dummy2.example.org'],
+                'TTL': '60',
+                'Type': 'CNAME',
+            }
+        )
+
+    # --- s3
 
     def test_s3_template(self):
         extra = {
@@ -776,6 +804,8 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['WidgetsEncryptedProdBucket']
         )
+
+    # --- cdn
 
     def test_cdn_template(self):
         extra = {
@@ -1012,6 +1042,8 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
         )
 
+    # --- fastly
+
     def test_fastly_template_contains_only_dns(self):
         extra = {
             'stackname': 'project-with-fastly-complex--prod',
@@ -1066,6 +1098,8 @@ class TestBuildercoreTrop(base.BaseCase):
             },
             data['Resources']['FastlyDNS4']['Properties']
         )
+
+    # --- elasticache
 
     def test_elasticache_redis_template(self):
         extra = {
@@ -1198,6 +1232,8 @@ class TestBuildercoreTrop(base.BaseCase):
         data = _parse_json(cfn_template)
         self.assertNotIn('ElastiCacheParameterGroup', list(data['Resources'].keys()))
 
+    # --- docdb
+
     def test_docdb(self):
         expected = {'Resources':
 
@@ -1278,6 +1314,15 @@ class TestBuildercoreTrop(base.BaseCase):
             cfn_template = trop.render(context)
             cfn_template = _parse_json(cfn_template)
             self.assertEqual(expected, cfn_template)
+
+    # --- WAF
+
+    def test_render_waf(self):
+        fixture = json.loads(base.fixture("cloudformation/project-with-waf.json"))
+        context = cfngen.build_context('project-with-waf', stackname='project-with-waf--foo')
+        cfn_template_json = trop.render(context)
+        cfn_template = json.loads(cfn_template_json)
+        self.assertEqual(fixture, cfn_template)
 
 #
 #

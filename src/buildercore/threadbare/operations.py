@@ -278,7 +278,7 @@ def _print_line(output_pipe, line, **kwargs):
                 template = template[template.index("{line}"):]
             except ValueError:  # "substring not found"
                 msg = "'display_prefix' option ignored: '{line}' not found in 'line_template' setting"
-                LOG.warn(msg)
+                LOG.warning(msg)
                 pass
 
         output_pipe.write(template.format(**template_kwargs))
@@ -947,7 +947,8 @@ def _write_bytes_to_temporary_file(local_path):
             data = local_bytes.getvalue()
             # data may be a string or it may be bytes.
             # if it's a string we assume it's a UTF-8 string.
-            if isinstance(data, str):
+            # skip entirely if we're on Python2
+            if isinstance(data, str) and common.PY3:
                 data = bytes(data, "utf-8")
             fh.write(data)
         cleanup = lambda: os.unlink(local_path)

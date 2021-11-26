@@ -1,3 +1,7 @@
+"""module concerns itself with the creation, updating and deleting of Cloudformation template instances.
+
+see `trop.py` for the *generation* of Cloudformation templates."""
+
 from collections import namedtuple
 from contextlib import contextmanager
 import logging
@@ -13,26 +17,29 @@ from .utils import call_while, ensure
 LOG = logging.getLogger(__name__)
 
 def render_template(context):
-    pname = context['project_name']
-    msg = 'could not render a CloudFormation template for %r' % pname
+    "generates an instance of a Cloudformation template using the given `context`."
+    msg = 'could not render a CloudFormation template for %r' % context['project_name']
     ensure('aws' in context, msg, ValueError)
     return trop.render(context)
+
+# ---
 
 def _give_up_backoff(e):
     return e.response['Error']['Code'] != 'Throttling'
 
 def _log_backoff(event):
-    LOG.warn("Backing off in validating project %s", event['args'][0])
+    LOG.warning("Backing off in validating project %s", event['args'][0])
 
 @backoff.on_exception(backoff.expo, botocore.exceptions.ClientError, on_backoff=_log_backoff, giveup=_give_up_backoff, max_time=30)
-def validate_template(pname_or_stackname, rendered_template):
+def validate_template(rendered_template):
     "remote cloudformation template checks."
     if json.loads(rendered_template) == EMPTY_TEMPLATE:
         # empty templates are technically invalid, but they don't interact with CloudFormation at all
         return
-
-    conn = core.boto_conn(pname_or_stackname, 'cloudformation', client=True)
+    conn = core.boto_client('cloudformation', region='us-east-1')
     return conn.validate_template(TemplateBody=rendered_template)
+
+# ---
 
 class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
     """represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed
@@ -82,24 +89,25 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
         raise
 
 
+# todo: rename. nothing is being bootstrapped here.
 def bootstrap(stackname, context):
-    pdata = core.project_data_for_stackname(stackname)
+    "called by `bootstrap.create_stack` to generate a cloudformation template."
     parameters = []
     on_start = _noop
     on_error = _noop
-    # TODO: should use context by this point
-    if pdata['aws']['ec2']:
+
+    if context['ec2']:
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_body = core.stack_json(stackname)
+    stack_body = open(core.stack_path(stackname), 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
-        LOG.warn("empty template: %s" % (core.stack_path(stackname),))
+        LOG.warning("empty template: %s" % (core.stack_path(stackname),))
         return
 
     if core.stack_is_active(stackname):
-        LOG.info("stack exists") # avoid on_start handler
+        LOG.info("stack exists") # avoid `on_start` handler
         return True
 
     with stack_creation(stackname, on_start=on_start, on_error=on_error):
@@ -132,15 +140,37 @@ def _wait_until_in_progress(stackname):
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    # TODO: use a context manager to close the file afterwards
     return json.load(open(output_fname, 'r'))
 
+def outputs_map(stackname):
+    """returns a map of a stack's 'Output' keys to their values.
+    performs a boto API call."""
+    data = core.describe_stack(stackname).meta.data # boto3
+    if not 'Outputs' in data:
+        return {}
+    return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
+
+def template_outputs_map(stackname):
+    """returns a map of a stack template's 'Output' keys to their values.
+    requires a stack to exist on the filesystem."""
+    stack = json.load(open(core.stack_path(stackname), 'r'))
+    output_map = stack.get('Outputs', [])
+    return {output_key: output['Value'] for output_key, output in output_map.items()}
+
+def template_using_elb_v1(stackname):
+    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)"
+    return trop.ELB_TITLE in template_outputs_map(stackname)
+
 def read_output(stackname, key):
+    """finds a literal `Output` from a cloudformation template matching given `key`.
+    fails hard if expected key not found, or too many keys found.
+    performs a boto API call."""
     data = core.describe_stack(stackname).meta.data # boto3
     ensure('Outputs' in data, "Outputs missing: %s" % data)
     selected_outputs = [o for o in data['Outputs'] if o['OutputKey'] == key]
-    ensure(len(selected_outputs) == 1, "Too many outputs selected: %s" % selected_outputs)
-    ensure('OutputValue' in selected_outputs[0], "Badly formed Output: %s" % selected_outputs[0])
+    ensure(selected_outputs, "No outputs found for key %r" % (key,))
+    ensure(len(selected_outputs) == 1, "Too many outputs selected for key %r: %s" % (key, selected_outputs))
+    ensure('OutputValue' in selected_outputs[0], "Badly formed Output for key %r: %s" % (key, selected_outputs[0]))
     return selected_outputs[0]['OutputValue']
 
 def apply_delta(template, delta):
@@ -171,8 +201,8 @@ def _merge_delta(stackname, delta):
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    # TODO: use a context manager to close the file afterwards
-    open(output_fname, 'w').write(contents)
+    with open(output_fname, 'w') as fp:
+        fp.write(contents)
     return output_fname
 
 def update_template(stackname, delta):
@@ -193,7 +223,6 @@ def _update_template(stackname, template):
         print(json.dumps(template, indent=4))
         conn.update(TemplateBody=json.dumps(template), Parameters=parameters)
     except botocore.exceptions.ClientError as ex:
-        # ex.response ll: {'ResponseMetadata': {'RetryAttempts': 0, 'HTTPStatusCode': 400, 'RequestId': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'HTTPHeaders': {'x-amzn-requestid': 'dc28fd8f-4456-11e8-8851-d9346a742012', 'date': 'Fri, 20 Apr 2018 04:54:08 GMT', 'content-length': '288', 'content-type': 'text/xml', 'connection': 'close'}}, 'Error': {'Message': 'No updates are to be performed.', 'Code': 'ValidationError', 'Type': 'Sender'}}
         if ex.response['Error']['Message'] == 'No updates are to be performed.':
             LOG.info(str(ex), extra={'response': ex.response})
             return
