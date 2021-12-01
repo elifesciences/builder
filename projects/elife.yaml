@@ -419,8 +419,8 @@ master-server:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
-            - 8080 # chemist, Github webhooks for formulas
-            - 8200 # Vault, secrets management
+            - 8080 # chemist, receives Github webhooks for formulas
+            - 8200 # Vault, secrets management # why open?
     aws-alt:
         '2018-04-09-2':
             # unique because: 'subdomains' contains static values.
@@ -442,7 +442,7 @@ lax:
             - 443
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-            - 8001 # bot-lax api
+            - 8001 # bot-lax 'api', a tiny web interface used to upload, transform and validate XML and article-json
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
@@ -508,10 +508,10 @@ api-gateway:
             # only internal traffic has access to port 80 and http
             - 80:
                 cidr-ip: 10.0.0.0/16
-            # the world must use https
+            # public access to api gateway
             - 443
-            # - 8000: # don't expose this to public. Kong uses this to proxy requests
-            # - 8001: # don't ever expose to public. Kong uses this for API admin
+            # - 8000: # don't expose to public. Kong uses this to proxy requests.
+            # - 8001: # don't expose to public. Kong uses this for API admin.
         fastly:
             subdomains:
                 - "{instance}--cdn-gateway"
@@ -796,7 +796,7 @@ pattern-library:
     aws:
         ports:
             - 22
-            - 80
+            - 80 # disable
             - 443
     aws-alt:
         ci:
@@ -822,8 +822,8 @@ elife-metrics:
         ports:
             - 22
             - 443
-            - 80
-            - 5432
+            - 80 # internal only
+            - 5432 # postgres? wth?
     aws-alt:
         end2end:
             description: end2end environment for metrics. RDS backed
@@ -853,6 +853,7 @@ elife-bot:
         ports:
             - 22
             # TODO: close this port to outside the VPC
+            # what needs port 80 open?
             - 80
         ext:
             size: 30 # GB
@@ -1187,8 +1188,8 @@ elife-dashboard:
             - 22
             - 80 # dashboard
             - 443 # dashboard
-            - 8081 # dashboard_2
-            - 8082 # dashboard_2
+            - 8081 # dashboard_2 # disable
+            - 8082 # dashboard_2 # disable
     aws-alt:
         end2end:
             # unique because: 'sqs' contains static values.
@@ -1300,10 +1301,10 @@ elife-alfred:
         type: t2.large
         ports:
             - 22
-            - 80
+            - 80 # disable? is anything (workers) communicating with alfred over http?
             - 443
-            - 10241 # JNLP for jenkins-cli.jar
-            - 16022 # Jenkins SSH port
+            - 10241 # JNLP for jenkins-cli.jar # make internal?
+            - 16022 # Jenkins SSH port # make internal?
         ext:
             size: 100 # GB
         s3:
@@ -1354,8 +1355,8 @@ api-dummy:
     aws:
         ports:
             - 22
-            - 443
             - 80
+            - 443
     aws-alt:
         demo:
             type: t2.micro
@@ -1507,7 +1508,7 @@ personalised-covers:
     aws:
         ports:
             - 22
-            - 80
+            - 80 # disable or internal only?
             - 443
         s3:
             "{instance}-elife-personalised-covers":
@@ -1540,9 +1541,9 @@ observer:
         type: t2.medium
         ports:
             - 22
-            - 80
-            - 8001
-            - 443
+            - 80   # internal only
+            - 8001 # metabase
+            - 443  # app
         sqs:
             observer--{instance}:
                 subscriptions:
@@ -1603,7 +1604,7 @@ iiif:
         type: t2.medium
         ports:
             - 22
-            - 80
+            - 80 # make internal only, remove repeated in alt configs
             - 443
         fastly:
             subdomains:
@@ -1802,7 +1803,7 @@ profiles:
     aws:
         ports:
             - 22
-            - 80
+            - 80 # internal only?
             - 443
     aws-alt:
         end2end:
@@ -1813,10 +1814,10 @@ profiles:
                 backup-retention: 2 # days
             ports:
                 - 22
-                - 80
+                - 80 # internal only?
                 - 443
-                - 8081 # orcid-dummy http
-                - 8082 # orcid-dummy https
+                - 8081 # orcid-dummy http # elaborate
+                - 8082 # orcid-dummy https # elaborate
         prod:
             rds:
                 engine: postgres
@@ -2154,7 +2155,7 @@ bioprotocol:
         # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
         ports:
             - 22
-            - 80
+            - 80 # internal only
             - 443
         sqs:
             # single queue that receives messages about updates to articles (internally)
