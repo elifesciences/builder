@@ -95,11 +95,6 @@ both_checks = [
 mac_checks = [
     ('brew',
      {'osx': 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'}),
-
-    ('brew cask',
-     {'osx': 'brew tap caskroom/cask'},
-     lambda x: sh('brew cask help')
-     ),
 ]
 
 def run_checks(check_list, exclusions=[]):
