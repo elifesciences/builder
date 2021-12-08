@@ -419,8 +419,8 @@ master-server:
                 cidr-ip: 10.0.0.0/16 # access via VPC ip range only
             - 4505: # salt return port
                 cidr-ip: 10.0.0.0/16
-            - 8080 # chemist, receives Github webhooks for formulas
-            - 8200 # Vault, secrets management # why open?
+            - 8080 # chemist, receives Github webhooks for updating formulas
+            - 8200 # Vault, secrets management web UI
     aws-alt:
         '2018-04-09-2':
             # unique because: 'subdomains' contains static values.
@@ -442,7 +442,8 @@ lax:
             - 443
             - 80:
                 cidr-ip: 10.0.0.0/16 # internal access only
-            - 8001 # bot-lax 'api', a tiny web interface used to upload, transform and validate XML and article-json
+            # bot-lax web UI to upload/validate/transform XML and article-json
+            - 8001 
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
@@ -821,9 +822,9 @@ elife-metrics:
     aws:
         ports:
             - 22
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 443
-            - 80 # internal only
-            - 5432 # postgres? wth?
     aws-alt:
         end2end:
             description: end2end environment for metrics. RDS backed
@@ -1186,10 +1187,9 @@ elife-dashboard:
     aws:
         ports:
             - 22
-            - 80 # dashboard
-            - 443 # dashboard
-            - 8081 # dashboard_2 # disable
-            - 8082 # dashboard_2 # disable
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
+            - 443
     aws-alt:
         end2end:
             # unique because: 'sqs' contains static values.
@@ -1303,8 +1303,8 @@ elife-alfred:
             - 22
             - 80 # disable? is anything (workers) communicating with alfred over http?
             - 443
-            - 10241 # JNLP for jenkins-cli.jar # make internal?
-            - 16022 # Jenkins SSH port # make internal?
+            - 10241 # JNLP for jenkins-cli.jar
+            - 16022 # Jenkins SSH port
         ext:
             size: 100 # GB
         s3:
@@ -1508,7 +1508,7 @@ personalised-covers:
     aws:
         ports:
             - 22
-            - 80 # disable or internal only?
+            - 80
             - 443
         s3:
             "{instance}-elife-personalised-covers":
