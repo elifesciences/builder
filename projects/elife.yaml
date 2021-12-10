@@ -2226,8 +2226,9 @@ firewall:
                     #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
                 custom-rules:
                     - elife-Whitelist.json
-                    - elife-RateLimitExcessiveBotTraffic.json
                     - elife-Blacklist.json
+                    - elife-DistributedSlowBot.json
+                    - elife-RateLimitExcessiveBotTraffic.json
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
                         priority: 5
