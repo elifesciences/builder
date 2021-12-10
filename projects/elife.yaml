@@ -797,7 +797,6 @@ pattern-library:
     aws:
         ports:
             - 22
-            - 80 # disable
             - 443
     aws-alt:
         ci:
@@ -853,9 +852,6 @@ elife-bot:
         type: t2.medium
         ports:
             - 22
-            # TODO: close this port to outside the VPC
-            # what needs port 80 open?
-            - 80
         ext:
             size: 30 # GB
             type: standard
@@ -1301,7 +1297,6 @@ elife-alfred:
         type: t2.large
         ports:
             - 22
-            - 80 # disable? is anything (workers) communicating with alfred over http?
             - 443
             - 10241 # JNLP for jenkins-cli.jar
             - 16022 # Jenkins SSH port
@@ -1355,7 +1350,8 @@ api-dummy:
     aws:
         ports:
             - 22
-            - 80
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 443
     aws-alt:
         demo:
@@ -1508,7 +1504,8 @@ personalised-covers:
     aws:
         ports:
             - 22
-            - 80
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 443
         s3:
             "{instance}-elife-personalised-covers":
@@ -1541,7 +1538,8 @@ observer:
         type: t2.medium
         ports:
             - 22
-            - 80   # internal only
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 8001 # metabase
             - 443  # app
         sqs:
@@ -1803,7 +1801,8 @@ profiles:
     aws:
         ports:
             - 22
-            - 80 # internal only?
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 443
     aws-alt:
         end2end:
@@ -1814,7 +1813,8 @@ profiles:
                 backup-retention: 2 # days
             ports:
                 - 22
-                - 80 # internal only?
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
                 - 8081 # orcid-dummy http # elaborate
                 - 8082 # orcid-dummy https # elaborate
@@ -2155,7 +2155,8 @@ bioprotocol:
         # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
         ports:
             - 22
-            - 80 # internal only
+            - 80:
+                cidr-ip: 10.0.0.0/16
             - 443
         sqs:
             # single queue that receives messages about updates to articles (internally)
