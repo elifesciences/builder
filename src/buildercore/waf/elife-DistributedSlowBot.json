@@ -19,20 +19,19 @@
           }
         },
         {
-          "ByteMatchStatement": {
+          "RegexMatchStatement": {
             "FieldToMatch": {
               "SingleHeader": {
                 "Name": "user-agent"
               }
             },
-            "PositionalConstraint": "EXACTLY",
-            "SearchString": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
             "TextTransformations": [
               {
                 "Type": "NONE",
                 "Priority": 0
               }
-            ]
+            ],
+            "RegexString": "Mozilla/5\\.0 (X11; Linux x86_64) AppleWebKit/537\\.36 (KHTML, like Gecko) Chrome/\\d+\\.\\d+\\.\\d+\\.\\d+ Safari/537\\.36"
           }
         }
       ]
