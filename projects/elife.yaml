@@ -1602,7 +1602,8 @@ iiif:
         type: t2.medium
         ports:
             - 22
-            - 80 # make internal only, remove repeated in alt configs
+            - 80:
+                cidr-ip: 10.0.0.0/16 # internal access only
             - 443
         fastly:
             subdomains:
@@ -1816,8 +1817,8 @@ profiles:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
-                - 8081 # orcid-dummy http # elaborate
-                - 8082 # orcid-dummy https # elaborate
+                - 8081 # orcid-dummy http
+                - 8082 # orcid-dummy https
         prod:
             rds:
                 engine: postgres
