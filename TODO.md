@@ -8,6 +8,9 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 
 ## todo (bucket)
 
+* build_vars, are these supposed to look like that?
+        "ext_node_hostname": "prod--alfred--%s.elifesciences.org",
+        "int_node_hostname": "prod--alfred--%s.elife.internal",
 * start/stop, I want to be able to start and stop individual nodes
     - ./bldr stop:iiif--prod--2
 * ssh, when I specify a node for a non-clustered environment, it should give me a stacktrace
