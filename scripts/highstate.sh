@@ -32,7 +32,7 @@ else
         # It may be a vagrant machine or the first highstate.
         # However, we can test for the build vars and we can guarantee that base64 and python exist (see bootstrap.sh).
         # "elife-alfred--prod--1" or "prod--alfred.elifesciences.org"
-        node_name=$(test -f /etc/build-vars.json.b64 && sudo cat /etc/build-vars.json.b64 | base64 -d - | python -c 'import json; import sys; print(json.loads(sys.stdin.read())["nodename"])' || hostname)
+        node_name=$( (test -f /etc/build-vars.json.b64 && sudo cat /etc/build-vars.json.b64 | base64 -d - | python -c 'import json; import sys; print(json.loads(sys.stdin.read())["nodename"])') || hostname)
 
         echo "Error provisioning, state.highstate returned: ${status}"
         logger "Salt highstate failure: $log_file on $node_name"
