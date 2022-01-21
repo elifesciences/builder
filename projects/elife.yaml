@@ -1548,7 +1548,6 @@ observer:
                     - bus-collections--{instance}
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
-                    - bus-profiles--{instance}
     aws-alt:
         end2end:
             description: production-like environment. RDS backed
