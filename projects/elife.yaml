@@ -985,8 +985,6 @@ elife-bot:
                         incoming-queue: {}
                 "{instance}-elife-bot-accepted-submission-cleaning-output":
                     deletion-policy: retain
-                    sqs-notifications:
-                        "prod-elife-bot-accepted-submission-cleaning-output-s3-events": {}
                 # already existing bucket, do not uncomment
                 #"{instance}-elife-ejp-poa-delivery":
                 #    sqs-notifications:
@@ -996,9 +994,6 @@ elife-bot:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
                         - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
-                # elife-bot -> (s3) elife-bot-accepted-submission-cleaning-output -> (sqs) elife-bot-accepted-submission-cleaning-output-s3-events
-                "{instance}-elife-bot-accepted-submission-cleaning-output-s3-events":
-                    subscriptions: []
     vagrant: {}
 
 generic-cdn:
