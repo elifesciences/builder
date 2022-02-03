@@ -3,7 +3,7 @@ services:
   builder:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.osx
     image: builder:${TAG-local}
     container_name: ubuntu-builder
     stdin_open: true
