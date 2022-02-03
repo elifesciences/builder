@@ -26,10 +26,12 @@ echo "$0: INFO: building container 'builder:${TAG}'"
 $DOCKER build \
     -f "Dockerfile.osx" \
     -t "builder:${TAG}" \
+    --platform linux/amd64 \
     .
 
 echo "$0: INFO: starting container 'builder:${TAG}'"
 $DOCKER run \
+    --platform linux/amd64 \
     -it \
     -e "TZ=Europe/London" \
     -v "/etc/timezone:/etc/timezone:ro" \
