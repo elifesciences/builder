@@ -31,6 +31,7 @@ $DOCKER build \
 
 echo "$0: INFO: starting container 'builder:${TAG}'"
 $DOCKER run \
+    --rm \
     --platform linux/amd64 \
     -it \
     -e "TZ=Europe/London" \
