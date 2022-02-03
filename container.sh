@@ -24,8 +24,8 @@ fi
 
 echo "$0: INFO: building container 'builder:${TAG}'"
 $DOCKER build \
-    -f Dockerfile.osx \
-    -t builder:${TAG} \
+    -f "Dockerfile.osx" \
+    -t "builder:${TAG}" \
     .
 
 echo "$0: INFO: starting container 'builder:${TAG}'"
@@ -38,4 +38,4 @@ $DOCKER run \
     -v "$CUSTOM_SSH_KEY.pub:/root/.ssh/id_rsa.pub:ro" \
     -v "$CUSTOM_AWS_CREDENTIALS:/root/.aws/credentials:ro" \
     -v "$CUR_DIR:/builder:rw" \
-    builder:${TAG}
+    "builder:${TAG}"
