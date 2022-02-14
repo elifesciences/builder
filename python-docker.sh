@@ -7,11 +7,7 @@ set -e
 # errcho() { echo "$@" 1>&2; } # writes to stderr, will not be interpreted as YAML
 # errcho "debug"
 
-if [ -e .use-python-3.flag ]; then
-    image=py3
-else
-    image=py2
-fi
+image=py3
 
 # skips building image each time
 #if ! docker inspect --type=image "elifesciences/builder:$image" > /dev/null; then
