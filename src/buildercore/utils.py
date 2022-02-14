@@ -10,13 +10,7 @@ from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
-
-# Iterable has moved and is being removed from collections in Python 3.8
-try:
-    from collections.abc import Iterable
-except ImportError:
-
-    from collections import Iterable
+from collections.abc import Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -373,11 +367,5 @@ def http_responses():
     """a map of integers to response reason phrases
 
     e.g. 404: 'Not Found'"""
-    try:
-        # Python 2
-        import httplib
-        return httplib.responses
-    except ImportError:
-        # Python 3
-        import http.client
-        return http.client.responses
+    import http.client
+    return http.client.responses

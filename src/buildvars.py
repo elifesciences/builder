@@ -10,11 +10,7 @@ from buildercore.utils import ensure
 from pprint import pprint
 import utils
 import logging
-
-try:
-    from json import JSONDecodeError
-except ImportError:
-    JSONDecodeError = ValueError
+from json import JSONDecodeError
 
 LOG = logging.getLogger(__name__)
 
