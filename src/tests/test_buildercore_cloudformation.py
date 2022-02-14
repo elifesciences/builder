@@ -1,6 +1,6 @@
 from buildercore import cloudformation
 from . import base
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 import botocore
 
 class StackCreationContextManager(base.BaseCase):

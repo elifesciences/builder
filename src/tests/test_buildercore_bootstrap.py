@@ -1,7 +1,8 @@
 from . import base
 from buildercore import bootstrap
 from buildercore.utils import yaml_dumps
-import mock, json
+from unittest import mock
+import json
 from os.path import join
 
 class TestBuildercoreBootstrap(base.BaseCase):

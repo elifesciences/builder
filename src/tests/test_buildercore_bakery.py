@@ -1,4 +1,4 @@
-from mock import patch
+from unittest.mock import patch
 from buildercore import bakery
 from . import base
 

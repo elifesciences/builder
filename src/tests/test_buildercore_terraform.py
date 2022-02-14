@@ -5,7 +5,7 @@ import re
 import shutil
 import yaml
 from os.path import exists, join
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 # pylint: disable-msg=import-error
 from unittest2 import TestCase
 from . import base

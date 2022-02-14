@@ -5,7 +5,7 @@ from os.path import join
 from . import base
 from buildercore import core, utils, project
 from unittest import skip
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 import botocore
 
 class SimpleCases(base.BaseCase):

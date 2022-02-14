@@ -5,7 +5,7 @@ import utils
 from . import base
 from buildercore import cfngen, context_handler
 from cfn import ssh, owner_ssh, generate_stack_from_input
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 # warn: this module uses fixtures implicitly loaded from `./src/conftest.py`
 

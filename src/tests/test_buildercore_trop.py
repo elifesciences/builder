@@ -3,7 +3,7 @@ import json  # , yaml
 import os
 from os.path import join
 import unittest
-from mock import patch
+from unittest.mock import patch
 from . import base
 from buildercore import cfngen, trop
 

@@ -1,7 +1,7 @@
 from . import base
 from functools import partial
 from buildercore import utils
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 import logging
 
 LOG = logging.getLogger(__name__)

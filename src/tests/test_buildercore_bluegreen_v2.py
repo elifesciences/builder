@@ -1,5 +1,5 @@
 from buildercore import bluegreen_v2
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 NODE_PARAMS = {
     'key_filename': './dummy1--test.pem',

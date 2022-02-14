@@ -1,5 +1,5 @@
 import json
-from mock import patch
+from unittest.mock import patch
 from buildercore import vault
 from . import base
 
