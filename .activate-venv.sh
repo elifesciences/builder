@@ -1,9 +1,13 @@
 #!/bin/bash
 set -e
 
+# lsh@2022-02-14: threadbare is now the default backend. flag switched to '.use-fabric.flag'
+rm -f .use-threadbare.flag
+
 # lsh@2022-02-14: venv is now preserved by default
 rm -f .no-delete-venv.flag
 
+# lsh@2022-02-14: python2 support has been removed
 rm -f .use-python-3.flag
 # python 3.6, 18.04
 # python 3.8, 20.04
