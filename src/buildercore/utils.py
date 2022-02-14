@@ -36,12 +36,7 @@ def isint(v):
     return str(v).lstrip('-+').isdigit()
 
 def isstr(v):
-    # TODO: python2 warning
-    try:
-        return isinstance(v, basestring)
-    except NameError:
-        # no basestring in py3
-        return isinstance(v, str)
+    return isinstance(v, str)
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
