@@ -2090,8 +2090,8 @@ kubernetes-aws:
                 version: 1.14
                 worker:
                     type: t2.xlarge
-                    max-size: 2
-                    desired-capacity: 2
+                    max-size: 0
+                    desired-capacity: 0
                 helm: true
                 external-dns:
                     domain-filter: "elifesciences.org"
