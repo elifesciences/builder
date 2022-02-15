@@ -11,7 +11,7 @@ from pprint import pformat
 from functools import partial
 import backoff
 import botocore
-from . import config, core, keypair, trop
+from . import config, core, keypair, trop, utils
 from .utils import call_while, ensure
 
 LOG = logging.getLogger(__name__)
@@ -137,10 +137,33 @@ def _wait_until_in_progress(stackname):
     ensure(final_stack.stack_status in core.ACTIVE_CFN_STATUS,
            "Failed to create stack: %s.\nEvents: %s" % (final_stack.stack_status, pformat(events)))
 
+def upgrade_v2_troposphere_template_to_v3(template_data):
+    """the major version update of troposphere 2.7.1 to 3.0.0 switched string-booleans to plain booleans:
+    > Booleans are output instead of string booleans for better interoperability with tools like cfn-lint.
+    - https://github.com/cloudtools/troposphere/releases/tag/3.0.0
+
+    this function looks for the strings "true" and "false" and converts them to True and False, emitting
+    a warning if it finds any.
+
+    I don't know if there are string-booleans that need to be kept as such."""
+    def convert_string_bools(v):
+        if v == 'true':
+            LOG.warning("found string 'true' in Cloudformation template, converting to boolean True")
+            return True
+        if v == 'false':
+            LOG.warning("found string 'false' in Cloudformation template, converting to boolean False")
+            return False
+        return v
+    return utils.visit(template_data, convert_string_bools)
+
+def _read_template(path_to_template):
+    template_data = json.load(open(path_to_template, 'r'))
+    template_data = upgrade_v2_troposphere_template_to_v3(template_data)
+    return template_data
+
 def read_template(stackname):
     "returns the contents of a cloudformation template as a python data structure"
-    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    return json.load(open(output_fname, 'r'))
+    return _read_template(os.path.join(config.STACK_DIR, stackname + ".json"))
 
 def outputs_map(stackname):
     """returns a map of a stack's 'Output' keys to their values.

@@ -10,13 +10,7 @@ from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
-
-# Iterable has moved and is being removed from collections in Python 3.8
-try:
-    from collections.abc import Iterable
-except ImportError:
-
-    from collections import Iterable
+from collections.abc import Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -42,12 +36,7 @@ def isint(v):
     return str(v).lstrip('-+').isdigit()
 
 def isstr(v):
-    # TODO: python2 warning
-    try:
-        return isinstance(v, basestring)
-    except NameError:
-        # no basestring in py3
-        return isinstance(v, str)
+    return isinstance(v, str)
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
@@ -373,11 +362,13 @@ def http_responses():
     """a map of integers to response reason phrases
 
     e.g. 404: 'Not Found'"""
-    try:
-        # Python 2
-        import httplib
-        return httplib.responses
-    except ImportError:
-        # Python 3
-        import http.client
-        return http.client.responses
+    import http.client
+    return http.client.responses
+
+def visit(d, f):
+    "visits each value in `d` and applies function `f` to it"
+    if isinstance(d, dict):
+        return {k: visit(v, f) for k, v in d.items()}
+    if isinstance(d, list):
+        return [visit(v, f) for v in d]
+    return f(d)

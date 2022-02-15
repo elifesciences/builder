@@ -42,40 +42,16 @@ else
     fi
 fi
 
-upgrade_python2=false
+remove_python2=false
 upgrade_python3=false
 install_git=false
 
+if command -v python2.7; then
+    remove_python2=true
+fi
+
 # Python is such a hard dependency of Salt that we have to upgrade it outside of 
 # Salt to avoid changing it while it is running
-
-# TODO: remove this block once our python2 dependency is gone
-if ! command -v python2.7 || ! python2.7 -m pip; then
-    # python2 not found
-    upgrade_python2=true
-else
-    # python2 found, check installed version
-    python_version=$(dpkg-query -W --showformat="\${Version}" python2.7) # e.g. 2.7.5-5ubuntu3
-    if dpkg --compare-versions "$python_version" lt 2.7.12; then
-        # we used this, which is not available anymore, to provide a more recent Python 2.7
-        # let's remove it to avoid apt-get update errors
-        rm -f /etc/apt/sources.list.d/fkrull-deadsnakes-python2_7-trusty.list
-
-        # provides python2.7[.13] package and some dependencies
-        add-apt-repository -y ppa:jonathonf/python-2.7
-
-        # provides a recent python-urllib3 (1.13.1-2) because:
-        # libpython2.7-stdlib : Breaks: python-urllib3 (< 1.9.1-3) but 1.7.1-1ubuntu4 is to be installed
-        # due to the previous PPA
-        add-apt-repository -y ppa:ross-kallisti/python-urllib3
-        upgrade_python2=true
-    fi
-
-    # if flag present, upgrade python
-    if [ -f /root/upgrade-python.flag ]; then
-        upgrade_python2=true
-    fi
-fi
 
 if ! command -v python3; then
     # python3 not found
@@ -92,43 +68,19 @@ if ! dpkg -l git; then
     install_git=true
 fi
 
-if ($upgrade_python2 || $upgrade_python3 || $install_git); then
+if ($upgrade_python3 || $install_git); then
     apt-get update -y -q
-fi
-
-
-# flag we can toggle to disable installation of python2 and python2 libs.
-# set to `false` once all formulas and formula code has been updated.
-elife_depends_on_python2=true
-
-if $upgrade_python2; then
-
-    if $elife_depends_on_python2; then
-        echo "eLife still has formulas that depend on Python2!"
-        apt-get install python2.7 python2.7-dev -y -q
-
-        # virtualenvs have to be recreated
-        # lsh@2020-01-23: disabled as no longer necessary. re-enable if anything breaks
-        #find /srv /opt -depth -type d -name venv -exec rm -rf "{}" \;
-
-        # install pip+setuptools
-        apt-get install python-pip python-setuptools --no-install-recommends -y -q
-    fi
-
-    # remove flag, if it exists
-    rm -f /root/upgrade-python.flag
-fi
-
-if $elife_depends_on_python2; then
-    # upgrade pip setuptools, install dockerlib
-    python2.7 -m pip install pip "setuptools==44.0.0" --upgrade
-    # some Salt states require libraries to be installed before calling highstate
-    python2.7 -m pip install "docker[tls]==4.1.0"
 fi
 
 if $upgrading; then
     # old versions of this file interfere with the salt upgrade process as they 404 software as soon as it falls out of support.
     rm -f /etc/apt/sources.list.d/saltstack.list
+fi
+
+if $remove_python2; then
+    # shortcut for 'remove'+'autoremove'+'purge' that doesn't fail when a package is not found.
+    # run before anything we control is installed. if python2 exists afterwards, something is still installing it.
+    apt --purge autoremove python2.7 python2.7-dev -y
 fi
 
 if $upgrade_python3; then

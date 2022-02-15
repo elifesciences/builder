@@ -175,7 +175,7 @@ class TestUpdates(base.BaseCase):
         context['rds']['multi-az'] = True
         (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_edit['Resources'].keys()), ['AttachedDB'])
-        self.assertEqual(delta_edit['Resources']['AttachedDB']['Properties']['MultiAZ'], 'true')
+        self.assertEqual(delta_edit['Resources']['AttachedDB']['Properties']['MultiAZ'], True)
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
 
     def test_template_delta_doesnt_unnecessarily_update_rds(self):

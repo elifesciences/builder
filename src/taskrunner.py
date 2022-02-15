@@ -117,6 +117,7 @@ TASK_LIST = [
 # for example: 'BLDR_ROLE=admin ./bldr highstate' will execute the 'highstate' task
 UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.highstate,
+    cfn.fix_bootstrap,
     cfn.pillar,
     cfn.aws_stack_list,
 ]

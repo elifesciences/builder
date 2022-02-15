@@ -1,6 +1,6 @@
 import json
 import fix
-import mock
+from unittest import mock
 
 def test_success():
     assert fix.success()

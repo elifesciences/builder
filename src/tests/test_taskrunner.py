@@ -1,9 +1,6 @@
 import sys
 from . import base
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 import taskrunner as tr
 
 SUCCESS_RC = 0

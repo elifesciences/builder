@@ -32,9 +32,9 @@
                             }
                         },
                         "VisibilityConfig": {
-                            "CloudWatchMetricsEnabled": "true",
+                            "CloudWatchMetricsEnabled": true,
                             "MetricName": "project-with-waf--foo--AWS-AWSManagedRulesBotControlRuleSet",
-                            "SampledRequestsEnabled": "true"
+                            "SampledRequestsEnabled": true
                         }
                     },
                     {
@@ -76,9 +76,9 @@
                     }
                 ],
                 "VisibilityConfig": {
-                    "CloudWatchMetricsEnabled": "true",
+                    "CloudWatchMetricsEnabled": true,
                     "MetricName": "project-with-waf--foo",
-                    "SampledRequestsEnabled": "true"
+                    "SampledRequestsEnabled": true
                 }
             },
             "Type": "AWS::WAFv2::WebACL"
