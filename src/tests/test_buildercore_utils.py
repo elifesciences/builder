@@ -40,8 +40,12 @@ class Simple(base.BaseCase):
         self.assertAllTrue(utils.isint, expected_true)
 
     def test_isstr(self):
-        expected_true = ['', r'', b'']
+        expected_true = ['', r'']
         self.assertAllTrue(utils.isstr, expected_true)
+
+        # when is a string not a string? when it's a bytestring
+        expected_false = b''
+        self.assertFalse(utils.isstr(expected_false))
 
     def test_nth(self):
         expected_vals = [

@@ -830,96 +830,9 @@ class TestBuildercoreTrop(base.BaseCase):
             context['cloudfront']
         )
         cfn_template = trop.render(context)
-        data = _parse_json(cfn_template)
-        self.assertTrue('CloudFrontCDN' in list(data['Resources'].keys()))
-        self.assertEqual(
-            {
-                'Type': 'AWS::CloudFront::Distribution',
-                'Properties': {
-                    'DistributionConfig': {
-                        'Aliases': ['prod--cdn-of-www.example.org', 'example.org', 'future.example.org'],
-                        'CacheBehaviors': [],
-                        'DefaultCacheBehavior': {
-                            'AllowedMethods': ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'],
-                            'CachedMethods': ['GET', 'HEAD'],
-                            'Compress': 'true',
-                            'DefaultTTL': 5,
-                            'ForwardedValues': {
-                                'Cookies': {
-                                    'Forward': 'whitelist',
-                                    'WhitelistedNames': ['session_id'],
-                                },
-                                'Headers': ['Accept'],
-                                # yes this is a string containing the word 'true'...
-                                'QueryString': "true",
-                            },
-                            'TargetOriginId': 'CloudFrontCDNOrigin',
-                            'ViewerProtocolPolicy': 'redirect-to-https',
-                        },
-                        # yes this is a string containing the word 'true'...
-                        'Enabled': 'true',
-                        'HttpVersion': 'http2',
-                        'Logging': {
-                            'Bucket': 'acme-logs.s3.amazonaws.com',
-                            'Prefix': 'project-with-cloudfront--prod/',
-                        },
-                        'Origins': [
-                            {
-                                'DomainName': 'prod--www.example.org',
-                                'Id': 'CloudFrontCDNOrigin',
-                                'CustomOriginConfig': {
-                                    'HTTPSPort': 443,
-                                    'OriginProtocolPolicy': 'https-only',
-                                },
-                            }
-                        ],
-                        'ViewerCertificate': {
-                            'IamCertificateId': 'dummy...',
-                            'SslSupportMethod': 'sni-only',
-                        },
-                    },
-                },
-            },
-            data['Resources']['CloudFrontCDN']
-        )
-        self.assertTrue('CloudFrontCDNDNS1' in list(data['Resources'].keys()))
-        self.assertEqual(
-            {
-                'Type': 'AWS::Route53::RecordSet',
-                'Properties': {
-                    'AliasTarget': {
-                        'DNSName': {
-                            'Fn::GetAtt': ['CloudFrontCDN', 'DomainName']
-                        },
-                        'HostedZoneId': 'Z2FDTNDATAQYW2',
-                    },
-                    'Comment': 'External DNS record for Cloudfront distribution',
-                    'HostedZoneName': 'example.org.',
-                    'Name': 'prod--cdn-of-www.example.org.',
-                    'Type': 'A',
-                },
-            },
-            data['Resources']['CloudFrontCDNDNS1']
-        )
-        self.assertTrue('CloudFrontCDNDNS2' in list(data['Resources'].keys()))
-        self.assertEqual(
-            {
-                'Type': 'AWS::Route53::RecordSet',
-                'Properties': {
-                    'AliasTarget': {
-                        'DNSName': {
-                            'Fn::GetAtt': ['CloudFrontCDN', 'DomainName']
-                        },
-                        'HostedZoneId': 'Z2FDTNDATAQYW2',
-                    },
-                    'Comment': 'External DNS record for Cloudfront distribution',
-                    'HostedZoneName': 'example.org.',
-                    'Name': 'example.org.',
-                    'Type': 'A',
-                },
-            },
-            data['Resources']['CloudFrontCDNDNS2']
-        )
+        cfn_template = _parse_json(cfn_template)
+        fixture = json.loads(base.fixture("cloudformation/project-with-cloudfront-cdn.json"))
+        self.assertEqual(fixture, cfn_template)
 
     def test_cdn_template_minimal(self):
         extra = {
@@ -990,7 +903,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'WhitelistedNames': ['session_id'],
                 },
                 'Headers': ['Referer'],
-                'QueryString': 'false',
+                'QueryString': False,
             },
             distribution_config['CacheBehaviors'][0]['ForwardedValues'],
         )
@@ -1023,7 +936,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     },
                     'Headers': [],
                     # yes this is a string containing the word 'false'...
-                    'QueryString': 'false',
+                    'QueryString': False,
                 },
                 'PathPattern': '???.html',
                 'TargetOriginId': 'ErrorsOrigin',
@@ -1235,85 +1148,13 @@ class TestBuildercoreTrop(base.BaseCase):
     # --- docdb
 
     def test_docdb(self):
-        expected = {'Resources':
-
-                    {'DocumentDBCluster':
-                     {'Properties':
-                      {'DBSubnetGroupName':
-                       {'Ref': 'DocumentDBSubnet'},
-                       'DeletionProtection': 'false',
-                       'EngineVersion': '4.0.0',
-                       'MasterUserPassword': '$random-password',
-                       'MasterUsername': 'root',
-                       'StorageEncrypted': 'false',
-                       'Tags': [{'Key': 'Cluster',
-                                 'Value': 'project-with-docdb--prod'},
-                                {'Key': 'Environment',
-                                 'Value': 'prod'},
-                                {'Key': 'Name',
-                                 'Value': 'project-with-docdb--prod'},
-                                {'Key': 'Project',
-                                 'Value': 'project-with-docdb'}],
-                       'VpcSecurityGroupIds': [{'Ref': 'DocumentDBSecurityGroup'}]},
-                      'Type': 'AWS::DocDB::DBCluster'},
-
-                     'DocumentDBInst1':
-                     {'Properties':
-                      {'AutoMinorVersionUpgrade': 'true',
-                       'DBClusterIdentifier': {'Ref': 'DocumentDBCluster'},
-                       'DBInstanceClass': 'db.t3.medium',
-                       'Tags': [{'Key': 'Cluster',
-                                 'Value': 'project-with-docdb--prod'},
-                                {'Key': 'Environment',
-                                 'Value': 'prod'},
-                                {'Key': 'Name',
-                                 'Value': 'project-with-docdb--prod--1'},
-                                {'Key': 'Node',
-                                 'Value': 1},
-                                {'Key': 'Project',
-                                 'Value': 'project-with-docdb'}]},
-                      'Type': 'AWS::DocDB::DBInstance'},
-
-                     'DocumentDBInst2':
-                     {'Properties':
-                      {'AutoMinorVersionUpgrade': 'true',
-                       'DBClusterIdentifier': {'Ref': 'DocumentDBCluster'},
-                       'DBInstanceClass': 'db.t3.medium',
-                       'Tags': [{'Key': 'Cluster',
-                                 'Value': 'project-with-docdb--prod'},
-                                {'Key': 'Environment',
-                                 'Value': 'prod'},
-                                {'Key': 'Name',
-                                 'Value': 'project-with-docdb--prod--2'},
-                                {'Key': 'Node',
-                                 'Value': 2},
-                                {'Key': 'Project',
-                                 'Value': 'project-with-docdb'}]},
-                      'Type': 'AWS::DocDB::DBInstance'},
-
-                     'DocumentDBSecurityGroup':
-                     {'Properties':
-                      {'GroupDescription': 'DocumentDB security group',
-                       'SecurityGroupIngress': [{'CidrIp': '0.0.0.0/0',
-                                                 'FromPort': 27017,
-                                                 'ToPort': 27017,
-                                                 'IpProtocol': 'tcp'}],
-                       'VpcId': 'vpc-78a2071d'},
-                      'Type': 'AWS::EC2::SecurityGroup'},
-
-                     'DocumentDBSubnet':
-                     {'Properties':
-                      {'DBSubnetGroupDescription': 'a group of subnets for this DocumentDB cluster.',
-                       'SubnetIds': ['subnet-foo',
-                                     'subnet-bar']},
-                      'Type': 'AWS::DocDB::DBSubnetGroup'}}}
-
+        fixture = json.loads(base.fixture("cloudformation/project-with-docdb.json"))
         with patch('buildercore.utils.random_alphanumeric', return_value='$random-password'):
             extra = {'stackname': 'project-with-docdb--prod'}
             context = cfngen.build_context('project-with-docdb', **extra)
             cfn_template = trop.render(context)
             cfn_template = _parse_json(cfn_template)
-            self.assertEqual(expected, cfn_template)
+            self.assertEqual(fixture, cfn_template)
 
     # --- WAF
 
