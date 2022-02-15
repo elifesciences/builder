@@ -221,6 +221,16 @@ def launch(pname, instance_id=None, alt_config=None):
     bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
     setdefault('.active-stack', stackname)
 
+
+@requires_aws_stack
+def fix_bootstrap(stackname):
+    """uploads the bootstrap script and re-runs the bootstrap process.
+    Used when stack creation succeeds but the bootstrap script failed for some reason."""
+    LOG.info('bootstrapping stack %s', stackname)
+    bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
+    setdefault('.active-stack', stackname)
+
+
 @requires_aws_stack
 def highstate(stackname, node=1):
     "a fast update with many caveats. prefer `update` instead"
