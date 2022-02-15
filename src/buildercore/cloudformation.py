@@ -142,7 +142,7 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
     > Booleans are output instead of string booleans for better interoperability with tools like cfn-lint.
     - https://github.com/cloudtools/troposphere/releases/tag/3.0.0
 
-    this functions looks for the strings "true" and "false" and converts them to True and False, emitting 
+    this functions looks for the strings "true" and "false" and converts them to True and False, emitting
     a warning if it finds any.
 
     I don't know if there are string-booleans that need to be kept as such."""
