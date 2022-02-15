@@ -364,3 +364,11 @@ def http_responses():
     e.g. 404: 'Not Found'"""
     import http.client
     return http.client.responses
+
+def visit(d, f):
+    "visits each value in dictionary `d` and applies function `f` to it"
+    if isinstance(d, dict):
+        return {k: visit(v, f) for k, v in d.items()}
+    elif isinstance(d, list):
+        return [visit(v, f) for v in d]
+    return f(d)
