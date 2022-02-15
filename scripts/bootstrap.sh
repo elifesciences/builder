@@ -80,7 +80,7 @@ fi
 if $remove_python2; then
     # shortcut for 'remove'+'autoremove'+'purge' that doesn't fail when a package is not found.
     # run before anything we control is installed. if python2 exists afterwards, something is still installing it.
-    apt --purge autoremove python2.7 python2.7-dev
+    apt --purge autoremove python2.7 python2.7-dev -y
 fi
 
 if $upgrade_python3; then
