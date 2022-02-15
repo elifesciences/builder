@@ -1,7 +1,14 @@
+import json
 from buildercore import cloudformation
 from . import base
 from unittest.mock import patch, MagicMock
 import botocore
+
+def test_troposphere_v2_template_upgraded_to_v3_template():
+    "`cloudformation.read_template` will upgrade any Troposphere v2 string-booleans to v3 literal booleans."
+    v3_fixture = json.loads(base.fixture("cloudformation/project-with-troposphere-v3-template.json"))
+    v2_fixture_path = base.fixture_path("cloudformation/project-with-troposphere-v2-template.json")
+    assert v3_fixture == cloudformation._read_template(v2_fixture_path)
 
 class StackCreationContextManager(base.BaseCase):
     def test_catches_already_existing_stack_and_continues(self):

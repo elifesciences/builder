@@ -142,24 +142,28 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
     > Booleans are output instead of string booleans for better interoperability with tools like cfn-lint.
     - https://github.com/cloudtools/troposphere/releases/tag/3.0.0
 
-    this functions looks for the strings "true" and "false" and converts them to True and False, emitting
+    this function looks for the strings "true" and "false" and converts them to True and False, emitting
     a warning if it finds any.
 
     I don't know if there are string-booleans that need to be kept as such."""
     def convert_string_bools(v):
         if v == 'true':
+            LOG.warning("found string 'true' in Cloudformation template, converting to boolean True")
             return True
         if v == 'false':
+            LOG.warning("found string 'false' in Cloudformation template, converting to boolean False")
             return False
         return v
     return utils.visit(template_data, convert_string_bools)
 
-def read_template(stackname):
-    "returns the contents of a cloudformation template as a python data structure"
-    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    template_data = json.load(open(output_fname, 'r'))
+def _read_template(path_to_template):
+    template_data = json.load(open(path_to_template, 'r'))
     template_data = upgrade_v2_troposphere_template_to_v3(template_data)
     return template_data
+
+def read_template(stackname):
+    "returns the contents of a cloudformation template as a python data structure"
+    return _read_template(os.path.join(config.STACK_DIR, stackname + ".json"))
 
 def outputs_map(stackname):
     """returns a map of a stack's 'Output' keys to their values.

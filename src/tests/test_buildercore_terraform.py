@@ -6,8 +6,7 @@ import shutil
 import yaml
 from os.path import exists, join
 from unittest.mock import patch, MagicMock
-# pylint: disable-msg=import-error
-from unittest2 import TestCase
+from unittest import TestCase
 from . import base
 from buildercore import cfngen, terraform
 

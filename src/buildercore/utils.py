@@ -366,7 +366,7 @@ def http_responses():
     return http.client.responses
 
 def visit(d, f):
-    "visits each value in dictionary `d` and applies function `f` to it"
+    "visits each value in `d` and applies function `f` to it"
     if isinstance(d, dict):
         return {k: visit(v, f) for k, v in d.items()}
     if isinstance(d, list):

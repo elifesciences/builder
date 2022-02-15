@@ -227,7 +227,7 @@ def fix_bootstrap(stackname):
     """uploads the bootstrap script and re-runs the bootstrap process.
     Used when stack creation succeeds but the bootstrap script failed for some reason."""
     LOG.info('bootstrapping stack %s', stackname)
-    bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
+    bootstrap.update_stack(stackname)
     setdefault('.active-stack', stackname)
 
 
