@@ -93,7 +93,8 @@ def build_context(pname, **more_context):
         # 'project': project_data,
 
         'author': os.environ.get("LOGNAME") or 'unknown',
-        'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
+        # lsh@2022-02-16: disabled. dates make testing difficult and this value doesn't appear to be used.
+        # 'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
 
         # a stackname looks like: <pname>--<instance_id>[--<cluster-id>]
         'stackname': None, # must be provided by whatever is calling this

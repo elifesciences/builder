@@ -335,6 +335,7 @@ defaults:
             description: Ubuntu 18.04 (Bionic)
             # todo: explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
             ec2: {} # means 'use defaults'. don't use 'true'.
+
          # 18.04, deprecated, use s1804
         standalone1804:
             description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
@@ -342,12 +343,27 @@ defaults:
                 ami: ami-0b0ee0ed644caf76a # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
+
         s1804:
             description: alias for standalone1804
             ec2:
                 ami: ami-0b0ee0ed644caf76a # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
+
+        2004:
+            description: Ubuntu 20.04 (Focal)
+            ec2:
+                ami: ami-01b996646377b6619 # GENERATED created from basebox--2004
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+
+        s2004:
+            description: standalone Ubuntu 20.04 (Focal)
+            ec2:
+                ami: ami-01b996646377b6619 # GENERATED created from basebox--2004
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
+
         # 18.04, same as default
         standalone:
             description: isolated from the master-server and uses same AMI as default configuration
@@ -358,7 +374,7 @@ defaults:
     vagrant:
         # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
         box: bento/ubuntu-18.04
-        ip: 192.168.33.44
+        ip: 192.168.56.44
         ram: 2048
         cpus: 2
         cpucap: 100 # percent (vagrant default)
@@ -366,6 +382,10 @@ defaults:
         #ports:
         #    1239: 80
         #    1240: 8001
+
+    vagrant-alt:
+        2004:
+            box: ubuntu/focal64
 
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
@@ -382,6 +402,10 @@ basebox:
             ec2:
                 # should match aws-alt 'fresh'
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+
+        2004:
+            ec2:
+                ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
 
         # overrides to default aws-alt configurations to use non-basebox AMIs *and* run isolated from master-server
 
