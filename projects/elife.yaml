@@ -2109,17 +2109,6 @@ kubernetes-aws:
     aws:
         ec2: false
     aws-alt:
-        test:
-            eks:
-                version: 1.14
-                worker:
-                    type: t2.xlarge
-                    max-size: 2
-                    desired-capacity: 2
-                helm: true
-                external-dns:
-                    domain-filter: "elifesciences.org"
-                efs: true
         flux-prod:
             ec2: false
             eks:
