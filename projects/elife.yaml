@@ -33,7 +33,7 @@ defaults:
             # root partition properties, left undefined, results in a ~7.7GiB EBS root volume
             #root:
             #    size:
-            #    type: gp2|ebs
+            #    type: standard|gp2|ebs # default is 'standard'. t2 'standard' is magnetic, t3 'standard' is gp2.
             # how many EC2 instance per stack instance
             cluster-size: 1
             # turn on T2 `unlimited` if necessary

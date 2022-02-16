@@ -63,7 +63,7 @@ else
     fi
 fi
 
-if ! dpkg -l git; then
+if ! command -v git; then
     # git not found
     install_git=true
 fi
