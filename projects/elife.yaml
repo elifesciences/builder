@@ -354,13 +354,13 @@ defaults:
         2004:
             description: Ubuntu 20.04 (Focal)
             ec2:
-                ami: ami-0ec881600901a5f39 # GENERATED created from basebox--2004
+                ami: ami-0be33b5c1a8357918 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
 
         s2004:
             description: standalone Ubuntu 20.04 (Focal)
             ec2:
-                ami: ami-0ec881600901a5f39 # GENERATED created from basebox--2004
+                ami: ami-0be33b5c1a8357918 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
