@@ -29,25 +29,27 @@ from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
 
 LOG = logging.getLogger(__name__)
 
+# taken from:
+# - https://developer.fastly.com/learning/concepts/shielding/#choosing-a-shield-location
 FASTLY_AWS_REGION_SHIELDS = {
-    'us-east-1': 'dca-dc-us', # N. Virginia: Ashburn
+    'us-east-1': 'iad-va-us', # Ashburn (Metro)
     'us-east-2': 'mdw-il-us', # Ohio: Chicago
-    'us-west-1': 'sjc-ca-us', # N. California: San Jose
+    'us-west-1': 'pao-ca-us', # Palo Alto
     'us-west-2': 'sea-wa-us', # Oregon: Seattle
-    'ap-northeast-1': 'tokyo-jp2', # Tokyo: Tokyo
-    'ap-northeast-2': 'tokyo-jp2', # Seoul: Tokyo
-    'ap-northeast-3': 'osaka-jp', # Osaka-Local: Osaka
-    'ap-south-1': 'singapore-sg', # Mumbai: Singapore (change to Mumbai when available)
-    'ap-southeast-1': 'singapore-sg', # Singapore: Singapore
+    'ap-northeast-1': 'tyo-tokyo-jp', # Tokyo: Tokyo
+    'ap-northeast-2': 'osaka-jp', # Osaka
+    'ap-northeast-3': 'osaka-jp', # Osaka
+    'ap-south-1': 'bom-mumbai-in', # Mumbai
+    'ap-southeast-1': 'qpg-singapore-sg', # Singapore
     'ap-southeast-2': 'sydney-au', # Sydney : Sydney
     'ca-central-1': 'yyz-on-ca', # Canada (Central): Toronto
     'cn-north-1': 'hongkong-hk', # Beijing: Hong Kong
     'cn-northwest-1': 'hongkong-hk', # Ningxia: Hong Kong
     'eu-central-1': 'frankfurt-de', # Frankfurt: Frankfurt
-    'eu-west-1': 'london_city-uk', # Ireland: London City
-    'eu-west-2': 'london_city-uk', # London: London City
+    'eu-west-1': 'dub-dublin-ie', # Dublin
+    'eu-west-2': 'london-uk', # London - LHR
     'eu-west-3': 'cdg-par-fr', # Paris: Paris
-    'sa-east-1': 'gru-br-sa', # São Paulo: São Paulo
+    'sa-east-1': 'gig-riodejaneiro-br', # Rio de Janeiro
 }
 
 def parameterize(context):
