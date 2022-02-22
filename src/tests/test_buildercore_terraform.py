@@ -428,7 +428,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles2-condition',
                                     'healthcheck': 'default',
-                                    'shield': 'dca-dc-us',
+                                    'shield': 'iad-va-us',
                                 },
                                 {
                                     'address': '%s-special3.example.org' % self.environment,
@@ -440,7 +440,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles3-condition',
                                     'healthcheck': 'default',
-                                    'shield': 'dca-dc-us',
+                                    'shield': 'iad-va-us',
                                 },
                             ],
                             'acl': [
@@ -588,7 +588,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
         service = template['resource']['fastly_service_v1']['fastly-cdn']
-        self.assertEqual(service['backend'][0].get('shield'), 'dca-dc-us')
+        self.assertEqual(service['backend'][0].get('shield'), 'iad-va-us')
         self.assertIn('domain', service)
 
     def test_fastly_template_shield_pop(self):
