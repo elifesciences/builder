@@ -2151,7 +2151,7 @@ kubernetes-aws:
                 worker:
                     type: t3.large
                     max-size: 6
-                    desired-capacity: 4
+                    desired-capacity: 3
                     root:
                         size: 40 # GiB    
                 # since helm: is not installed, this will only add AWS resources
