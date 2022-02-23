@@ -572,7 +572,11 @@ api-gateway:
         # standalone instances do not have access to Vault secrets via the master-server and it's ext_pillar
         standalone:
             fastly: false
+        1804:
+            fastly: false
         s1804:
+            fastly: false
+        2004:
             fastly: false
         s2004:
             fastly: false
