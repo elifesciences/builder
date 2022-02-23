@@ -29,7 +29,7 @@ defaults:
         # for example: the 'prod' configuration for 'journal' is unique to `journal--prod` and cannot be reused.
         unique: false
         ec2:
-            type: t2.small # ~ $20/mo
+            type: t3.small # ~ $20/mo
             # ports: {} # no open ports
             # ports:
             #    - 22 # open ssh to world
@@ -176,7 +176,7 @@ defaults:
         #           queue-name:
         #               prefix: 'elife-'
         #               suffix: '.xml'
-        #       deletion-policy: delete|retain
+        #       deletion-policy: delete|retain (default 'delete')
         #       encryption: false
         s3: []
         eks:
@@ -321,32 +321,38 @@ defaults:
             ec2:
                 # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+                type: t2.small
 
         snsalt:
-            description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
+            description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
             ec2:
                 salt: '3003'
                 masterless: True
 
         1804:
             description: Ubuntu 18.04 (Bionic)
-            # todo: explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
-            ec2: {} # means 'use defaults'. don't use 'true'.
-
-         # 18.04, deprecated, use s1804
-        standalone1804:
-            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            # todo: explicitly specify an 18.04 AMI when 18.04 is no longer the default (2023?)
+            #ec2: {} # means 'use defaults'. don't use 'true'.
             ec2:
-                ami: ami-0d4b8c4a2336412b3 # GENERATED created from basebox--1804
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-                masterless: true
+                type: t2.small
+
+        # lsh@2022-02-23: disabled, unused.
+        # 18.04, deprecated, use s1804
+        #standalone1804:
+        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+        #    ec2:
+        #        ami: ami-0d4b8c4a2336412b3 # GENERATED created from basebox--1804
+        #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+        #        masterless: true
+        #        type: t2.small
 
         s1804:
-            description: alias for standalone1804
+            description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 ami: ami-0d4b8c4a2336412b3 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
+                type: t2.small
 
         2004:
             description: Ubuntu 20.04 (Focal)
@@ -355,17 +361,17 @@ defaults:
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
 
         s2004:
-            description: standalone Ubuntu 20.04 (Focal)
+            description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 ami: ami-0be33b5c1a8357918 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
-        # 18.04, same as default
         standalone:
-            description: isolated from the master-server and uses same AMI as default configuration
+            description: same as default configuration, but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 masterless: true
+                type: t2.small
     gcp:
         bigquery: false
     vagrant:
@@ -392,6 +398,7 @@ basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
     aws-alt:
@@ -407,12 +414,13 @@ basebox:
 
         # overrides to default aws-alt configurations to use non-basebox AMIs *and* run isolated from master-server
 
+        # lsh@2022-02-23: disabled, unused.
         # 18.04
-        standalone1804:
-            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
-            ec2:
-                # should match aws-alt 'fresh'
-                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+        #standalone1804:
+        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+        #    ec2:
+        #        # should match aws-alt 'fresh'
+        #        ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
     vagrant: {}
 
 heavybox:
@@ -420,6 +428,7 @@ heavybox:
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
         ext:
@@ -436,6 +445,7 @@ master-server:
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 4506: # salt publish port
@@ -462,6 +472,7 @@ lax:
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 443
@@ -526,6 +537,7 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
+            type: t2.small
             root:
                 size: 30 # GB
                 type: gp2
@@ -557,13 +569,15 @@ api-gateway:
                 dataset: "{instance}"
                 table: "api_gateway"
     aws-alt:
+        # standalone instances do not have access to Vault secrets via the master-server and it's ext_pillar
         standalone:
             fastly: false
         s1804:
             fastly: false
+        s2004:
+            fastly: false
         snsalt:
             fastly: false
-        end2end: {}
         continuumtest:
             # unique because: 
             # - 'fastly.bigquerylogging.dataset' is static.
@@ -594,6 +608,7 @@ journal:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 443
@@ -822,6 +837,7 @@ pattern-library:
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 443
@@ -847,6 +863,7 @@ elife-metrics:
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -854,12 +871,12 @@ elife-metrics:
                 - 443
     aws-alt:
         end2end:
-            description: end2end environment for metrics. RDS backed
+            description: end2end environment for metrics. RDS backed.
             rds:
                 backup-retention: 2 # days
                 storage-type: Standard
         prod:
-            description: production environment for metrics. RDS backed
+            description: production environment for metrics. RDS backed.
             ext:
                 size: 10 # GB
                 type: standard
@@ -907,6 +924,9 @@ elife-bot:
         sns:
             - elife-bot-event-property--{instance}
     aws-alt:
+        # lsh@2022-02-23: 
+        # * why are there no overrides for the other alt-configs?
+        # * if the default deletion-policy is to 'delete' why are we repeating ourselves over and over in the alt-configs?
         snsalt:
             s3:
                 "{instance}-elife-silent-corrections":
@@ -925,6 +945,23 @@ elife-bot:
                 #"{instance}-elife-bot":
                 #    deletion-policy: delete
         s1804:
+            s3:
+                "{instance}-elife-silent-corrections":
+                    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: delete
+                "{instance}-elife-bot-sessions":
+                    deletion-policy: delete
+                "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
+                    deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
+        s2004:
             s3:
                 "{instance}-elife-silent-corrections":
                     deletion-policy: delete
@@ -1094,6 +1131,10 @@ generic-cdn:
             ec2: false
         s1804:
             ec2: false
+        2004:
+            ec2: false
+        s2004:
+            ec2: false
         standalone:
             ec2: false
         end2end:
@@ -1138,6 +1179,7 @@ journal-cms:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 443
@@ -1208,6 +1250,7 @@ elife-dashboard:
     default-branch: develop
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1267,6 +1310,7 @@ elife-libraries:
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
         ext:
@@ -1334,26 +1378,17 @@ elife-alfred:
             size: 100 # GB
         s3:
             "{instance}-elife-alfred":
-                deletion-policy: retain
+                deletion-policy: delete
     aws-alt:
-        snsalt:
-            s3:
-                "{instance}-elife-alfred":
-                    deletion-policy: delete
-        s1804:
-            s3:
-                "{instance}-elife-alfred":
-                    deletion-policy: delete
-        standalone:
-            s3:
-                "{instance}-elife-alfred":
-                    deletion-policy: delete
         prod:
             # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - alfred
                 - ci--alfred # backward compatibility
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: retain
     vagrant:
         ram: 4096
         ports:
@@ -1367,11 +1402,11 @@ elife-alfred-nodes:
     intdomain: false
     aws:
         ec2:
+            type: t2.small
             cluster-size: 0
             security-group:
                 ports:
                     - 22
-
 
 api-dummy:
     subdomain: api-dummy
@@ -1379,6 +1414,7 @@ api-dummy:
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1444,21 +1480,6 @@ search:
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
     aws-alt:
-        opendistro:
-            ec2:
-                masterless: true
-                root:
-                    size: 15 # GB
-            sqs:
-                # search--prod, search--end2end, etc.
-                search--{instance}:
-                    subscriptions:
-                        - bus-articles--prod
-                        - bus-podcast-episodes--prod
-                        - bus-collections--prod
-                        - bus-interviews--prod
-                        - bus-blog-articles--prod
-                        - bus-labs-posts--prod
         end2end:
             ec2:
                 ports:
@@ -1530,6 +1551,7 @@ personalised-covers:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1537,20 +1559,25 @@ personalised-covers:
                 - 443
         s3:
             "{instance}-elife-personalised-covers":
-                deletion-policy: retain
+                deletion-policy: delete
     aws-alt:
-        snsalt:
-            s3: false
         standalone:
             s3: false
         ci:
             ec2:
                 cpu-credits: unlimited
+        continuumtest:
+            s3:
+                "{instance}-elife-personalised-covers":
+                    deletion-policy: retain
         prod:
             # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - covers
+            s3:
+                "{instance}-elife-personalised-covers":
+                    deletion-policy: retain
     vagrant:
         ports:
             1246: 80
@@ -1706,6 +1733,14 @@ iiif:
     aws-alt:
         standalone:
             fastly: false
+        1804:
+            fastly: false
+        2004:
+            fastly: false
+        s1804:
+            fastly: false
+        s2004:
+            fastly: false
         snsalt:
             fastly: false
         # for testing new versions
@@ -1837,6 +1872,7 @@ profiles:
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1876,6 +1912,7 @@ annotations:
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1902,6 +1939,7 @@ digests:
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -2167,6 +2205,7 @@ large-repo-wrangler:
     formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
     aws:
         ec2:
+            type: t2.small
             ports:
                 - 22
         ext:
@@ -2186,6 +2225,7 @@ bioprotocol:
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
         ec2:
+            type: t2.small
             # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
             ports:
                 - 22
@@ -2228,6 +2268,10 @@ firewall:
         1804:
             ec2: false
         s1804:
+            ec2: false
+        2004:
+            ec2: false
+        s2004:
             ec2: false
         standalone:
             ec2: false
