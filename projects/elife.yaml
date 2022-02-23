@@ -28,8 +28,13 @@ defaults:
         # typically it can be reused, but some configurations embed values that are unique to a named instance.
         # for example: the 'prod' configuration for 'journal' is unique to `journal--prod` and cannot be reused.
         unique: false
-        # TODO: this field will become a dictionary of all EC2-related configuration
         ec2:
+            type: t2.small # ~ $20/mo
+            # ports: {} # no open ports
+            # ports:
+            #    - 22 # open ssh to world
+            #    - 4506: # open 4506 to VPC ip range only
+            #        cidr-ip: 10.0.0.0/16
             # root partition properties, left undefined, results in a ~7.7GiB EBS root volume
             #root:
             #    size:
@@ -71,14 +76,6 @@ defaults:
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.3.0/24'
         redundant-availability-zone: us-east-1e
-        # TODO: this will be moved inside aws.ec2
-        type: t2.small  # ~ $20/mo
-        # TODO: move inside aws.ec2
-        # ports: {} # no open ports
-        # ports:
-        #    - 22 # open ssh to world
-        #    - 4506: # open 4506 to VPC ip range only
-        #        cidr-ip: 10.0.0.0/16
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -394,8 +391,9 @@ builder:
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
-        ports:
-            - 22
+        ec2:
+            ports:
+                - 22
     aws-alt:
         # overrides to default aws-alt configurations to use non-basebox AMIs
         1804:
@@ -421,8 +419,9 @@ heavybox:
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
-        ports:
-            - 22
+        ec2:
+            ports:
+                - 22
         ext:
             size: 10 # GB
             type: standard
@@ -436,15 +435,16 @@ master-server:
     # see: https://github.com/elifesciences/builder-private
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
-        ports:
-            - 22
-            - 4506: # salt publish port
-                # CIDR of subnet this master will server
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-            - 4505: # salt return port
-                cidr-ip: 10.0.0.0/16
-            - 8080 # chemist, receives Github webhooks for updating formulas
-            - 8200 # Vault, secrets management web UI
+        ec2:
+            ports:
+                - 22
+                - 4506: # salt publish port
+                    # CIDR of subnet this master will server
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                - 4505: # salt return port
+                    cidr-ip: 10.0.0.0/16
+                - 8080 # chemist, receives Github webhooks for updating formulas
+                - 8200 # Vault, secrets management web UI
     aws-alt:
         '2018-04-09-2':
             # unique because: 'subdomains' contains static values.
@@ -461,13 +461,14 @@ lax:
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            # bot-lax web UI to upload/validate/transform XML and article-json
-            - 8001 
+        ec2:
+            ports:
+                - 22
+                - 443
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                # bot-lax web UI to upload/validate/transform XML and article-json
+                - 8001 
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
@@ -528,15 +529,15 @@ api-gateway:
             root:
                 size: 30 # GB
                 type: gp2
-        ports:
-            - 22
-            # only internal traffic has access to port 80 and http
-            - 80:
-                cidr-ip: 10.0.0.0/16
-            # public access to api gateway
-            - 443
-            # - 8000: # don't expose to public. Kong uses this to proxy requests.
-            # - 8001: # don't expose to public. Kong uses this for API admin.
+            ports:
+                - 22
+                # only internal traffic has access to port 80 and http
+                - 80:
+                    cidr-ip: 10.0.0.0/16
+                # public access to api gateway
+                - 443
+                # - 8000: # don't expose to public. Kong uses this to proxy requests.
+                # - 8001: # don't expose to public. Kong uses this for API admin.
         fastly:
             subdomains:
                 - "{instance}--cdn-gateway"
@@ -592,18 +593,19 @@ journal:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80:
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-    aws-alt:
-        ci:
-            #type: t2.2xlarge
-            type: c4.2xlarge
+        ec2:
             ports:
                 - 22
                 - 443
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+    aws-alt:
+        ci:
+            ec2:
+                type: c4.2xlarge
+                ports:
+                    - 22
+                    - 443
         end2end:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -819,9 +821,10 @@ pattern-library:
     repo: https://github.com/elifesciences/pattern-library
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
-        ports:
-            - 22
-            - 443
+        ec2:
+            ports:
+                - 22
+                - 443
     aws-alt:
         ci:
             ec2: false
@@ -843,11 +846,12 @@ elife-metrics:
     repo: https://github.com/elifesciences/elife-metrics
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 443
+        ec2:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
         end2end:
             description: end2end environment for metrics. RDS backed
@@ -873,9 +877,10 @@ elife-bot:
     subdomain: bot
     # ip: 54.164.145.166 # bot.elifesciences.org must be available at this IP
     aws:
-        type: t2.medium
-        ports:
-            - 22
+        ec2:
+            type: t2.medium
+            ports:
+                - 22
         ext:
             size: 30 # GB
             type: standard
@@ -954,11 +959,12 @@ elife-bot:
                 #"{instance}-elife-bot":
                 #    deletion-policy: delete
         end2end:
-            ports:
-                - 22
-                - 8020 # exposing FTP contents
-                - 8021 # exposing FTP contents, HTTPS
-                - 1080 # exposing mailcatcher API
+            ec2:
+                ports:
+                    - 22
+                    - 8020 # exposing FTP contents
+                    - 8021 # exposing FTP contents, HTTPS
+                    - 1080 # exposing mailcatcher API
             s3:
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
@@ -1131,11 +1137,12 @@ journal-cms:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80:
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+        ec2:
+            ports:
+                - 22
+                - 443
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
@@ -1200,11 +1207,12 @@ elife-dashboard:
     formula-repo: https://github.com/elifesciences/elife-dashboard-formula
     default-branch: develop
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 443
+        ec2:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
         end2end:
             # unique because: 'sqs' contains static values.
@@ -1258,8 +1266,9 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        ports:
-            - 22
+        ec2:
+            ports:
+                - 22
         ext:
             size: 30 # GB
     aws-alt:
@@ -1287,9 +1296,10 @@ containers:
     intdomain: false
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
-        type: t2.medium # 4GB of RAM
-        ports:
-            - 22
+        ec2:
+            type: t2.medium # 4GB of RAM
+            ports:
+                - 22
         ext:
             size: 100 # GB
     aws-alt:
@@ -1303,8 +1313,8 @@ containers:
                     size: 100 # GB
                     type: gp2
         xlarge:
-            type: t2.xlarge # 4 CPUs
             ec2:
+                type: t2.xlarge # 4 CPUs
                 cpu-credits: unlimited
     vagrant:
         ram: 1024
@@ -1313,12 +1323,13 @@ elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
-        type: t2.large
-        ports:
-            - 22
-            - 443
-            - 10241 # JNLP for jenkins-cli.jar
-            - 16022 # Jenkins SSH port
+        ec2:
+            type: t2.large
+            ports:
+                - 22
+                - 443
+                - 10241 # JNLP for jenkins-cli.jar
+                - 16022 # Jenkins SSH port
         ext:
             size: 100 # GB
         s3:
@@ -1367,11 +1378,12 @@ api-dummy:
     repo: https://github.com/elifesciences/api-dummy
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 443
+        ec2:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
         demo:
             type: t2.micro
@@ -1414,13 +1426,13 @@ search:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.medium
         ec2:
+            type: t2.medium
             cpu-credits: unlimited
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             # search--prod, search--end2end, etc.
             search--{instance}:
@@ -1448,15 +1460,15 @@ search:
                         - bus-blog-articles--prod
                         - bus-labs-posts--prod
         end2end:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-                - 4730: # Gearman
-                    cidr-ip: 10.0.0.0/16 # follower nodes
-                - 9201: # Opensearch
-                    cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
+                    - 4730: # Gearman
+                        cidr-ip: 10.0.0.0/16 # follower nodes
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1467,15 +1479,15 @@ search:
                 root:
                     size: 15 # GB
         prod:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-                - 4730: # Gearman
-                    cidr-ip: 10.0.0.0/16 # follower nodes
-                - 9201: # Opensearch
-                    cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
+                    - 4730: # Gearman
+                        cidr-ip: 10.0.0.0/16 # follower nodes
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
                     size: 30 # GB
                 cluster-size: 2
@@ -1498,11 +1510,12 @@ recommendations:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.medium # 4 GB of RAM, same as search for now.
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
+        ec2:
+            type: t2.medium # 4 GB of RAM, same as search for now.
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
         ports:
@@ -1516,11 +1529,12 @@ personalised-covers:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 443
+        ec2:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
         s3:
             "{instance}-elife-personalised-covers":
                 deletion-policy: retain
@@ -1548,14 +1562,15 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
-        # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
-        type: t2.medium
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 8001 # metabase
-            - 443  # app
+        ec2:
+            # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
+            type: t2.medium
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 8001 # metabase
+                - 443  # app
         sqs:
             observer--{instance}:
                 subscriptions:
@@ -1617,12 +1632,13 @@ iiif:
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
-        type: t2.medium
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 443
+        ec2:
+            type: t2.medium
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
         fastly:
             subdomains:
                 - "{instance}--cdn-iiif"
@@ -1694,11 +1710,11 @@ iiif:
             fastly: false
         # for testing new versions
         ci:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 overrides:
                     1:
                         ext:
@@ -1717,11 +1733,11 @@ iiif:
                     path: /
             fastly: false
         end2end:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 cluster-size: 2
             ext:
                 size: 30 # GB
@@ -1736,11 +1752,11 @@ iiif:
             # unique because: 
             # - 'fastly.bigquerylogging.dataset' is using a static value.
             unique: true
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 cluster-size: 2
             elb:
                 protocol:
@@ -1755,11 +1771,11 @@ iiif:
         prod:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 cluster-size: 3
             ext:
                 size: 30 # GB
@@ -1783,14 +1799,16 @@ redirects:
     intdomain: null
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
-        type: t2.nano
-        ports:
-            - 22
-            - 80
-            - 443
+        ec2:
+            type: t2.nano
+            ports:
+                - 22
+                - 80
+                - 443
     aws-alt:
         s1804:
-            type: t2.small
+            ec2:
+                type: t2.small
         prod:
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
@@ -1818,11 +1836,12 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 443
+        ec2:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
         end2end:
             rds:
@@ -1830,13 +1849,14 @@ profiles:
                 storage: 5 # GB
                 storage-type: Standard
                 backup-retention: 2 # days
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # internal access only
-                - 443
-                - 8081 # orcid-dummy http
-                - 8082 # orcid-dummy https
+            ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # internal access only
+                    - 443
+                    - 8081 # orcid-dummy http
+                    - 8082 # orcid-dummy https
         prod:
             rds:
                 engine: postgres
@@ -1855,10 +1875,11 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
+        ec2:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             annotations--{instance}:
                 subscriptions:
@@ -1880,10 +1901,11 @@ digests:
     repo: https://github.com/elifesciences/digests
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+        ec2:
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
     aws-alt:
         end2end:
             rds:
@@ -2036,9 +2058,10 @@ bastion:
     subdomain: bastion
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
-        type: t2.nano # 500 MB
-        ports:
-            - 22
+        ec2:
+            type: t2.nano # 500 MB
+            ports:
+                - 22
     aws-alt:
         prod:
             # unique because: 'subdomains' contains static values.
@@ -2143,14 +2166,16 @@ large-repo-wrangler:
     intdomain: False
     formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
     aws:
+        ec2:
+            ports:
+                - 22
         ext:
             size: 20 # GB
             device: /dev/sdh
-        ports:
-            - 22
     aws-alt:
         quite-large:
-            type: t2.large
+            ec2:
+                type: t2.large
             ext:
                 size: 50
     vagrant: {}
@@ -2160,12 +2185,13 @@ bioprotocol:
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
-        # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16
-            - 443
+        ec2:
+            # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16
+                - 443
         sqs:
             # single queue that receives messages about updates to articles (internally)
             bioprotocol--{instance}:
@@ -2207,7 +2233,7 @@ firewall:
             ec2: false
         prod:
             description: General purpose Web Application Firewall
-            # unique because associations can only be associated to one WAF.
+            # unique because: associations can only be associated to one WAF.
             # we should be sharing a single WAF rather than creating multiple instances.
             unique: true
             waf:
@@ -2271,7 +2297,7 @@ firewall:
                             - GenericLFI_URIPATH
                             - GenericRFI_URIPATH
                             - CrossSiteScripting_BODY
-                        # these do not use the ruleset action (block) but are counted and passed through for further processing
+                        # these rules do not use the ruleset action (block) but are counted and passed through for further processing
                         excluded:
                             - CrossSiteScripting_COOKIE
                             - CrossSiteScripting_QUERYARGUMENTS

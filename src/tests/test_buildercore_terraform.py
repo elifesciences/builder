@@ -603,7 +603,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('domain', service)
 
     def test_fastly_template_shield_aws_region(self):
-        base.switch_in_test_settings(['src/tests/fixtures/additional-projects/'])
         extra = {
             'stackname': 'project-with-fastly-shield-aws-region--%s' % self.environment,
         }
