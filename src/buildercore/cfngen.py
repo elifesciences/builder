@@ -323,6 +323,9 @@ def set_master_address(pdata, context, master_ip=None):
 def build_context_ec2(pdata, context):
     if 'ec2' not in pdata['aws']:
         return context
+
+    stackname = context['stackname']
+
     # ec2
     # TODO: this is a problem. using the default 'True' preserves the behaviour of
     # when 'ec2: True' meant, 'use defaults with nothing changed'
@@ -334,7 +337,7 @@ def build_context_ec2(pdata, context):
 
     context['ec2'] = pdata['aws'].get('ec2')
     if context['ec2'] == True:
-        msg = "stack needs it's context refreshed: %s" % context['stackname']
+        msg = "'ec2: True' is no longer supported, stack needs it's context refreshed: %s" % stackname
         LOG.warning(msg)
         raise ValueError(msg)
 
@@ -343,9 +346,16 @@ def build_context_ec2(pdata, context):
 
     # we can now assume this will always be a dict
 
+    # lsh@2022-02-23: new failure cases for old configuration.
+    if 'type' in pdata['aws']:
+        msg = "'aws.type' is no longer supported, use 'aws.ec2.type': %s" % stackname
+        LOG.warning(msg)
+    if 'ports' in pdata['aws']:
+        msg = "'aws.ports' is no longer supported, use 'aws.ec2.ports' instead: %s" % stackname
+        LOG.warning(msg)
+
     context['ec2'] = pdata['aws']['ec2']
-    context['ec2']['type'] = pdata['aws']['type'] # TODO: shift aws.type to aws.ec2.type in project file
-    context['ec2']['ports'] = pdata['aws'].get('ports', {}) # TODO: shift aws.ports to aws.ec2.ports in project file
+    context['ec2']['ports'] = pdata['aws']['ec2'].get('ports', {})
 
     set_master_address(pdata, context) # mutator
 

@@ -26,6 +26,7 @@ defaults:
         account-id: 512686554592
         unique: false
         ec2:
+            type: t2.small
             cluster-size: 1
             cpu-credits: standard
             # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
@@ -60,7 +61,6 @@ defaults:
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
         redundant-subnet-cidr: '10.0.2.0/24'
         redundant-availability-zone: us-east-1e
-        type: t2.small
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -267,9 +267,10 @@ dummy1:
     #subdomain: dummy1 # dummy.elifesciences.org
     repo: ssh://git@github.com/elifesciences/dummy1
     aws:
-        type: t2.micro
-        ports:
-            - 22
+        ec2:
+            type: t2.micro
+            ports:
+                - 22
     vagrant:
         ports:
             1239: 80
@@ -281,12 +282,12 @@ dummy2:
     meta:
         description: "foo"
     aws:
-        ports:
-            - 22
-            - 80:
-                guest: 80
-                cidr-ip: 0.0.0.0/0
         ec2:
+            ports:
+                - 22
+                - 80:
+                    guest: 80
+                    cidr-ip: 0.0.0.0/0
             ami: ami-111111
         rds:
             storage: 10
@@ -313,13 +314,14 @@ dummy3:
     aws:
         ec2:
             ami: ami-111111
-        ports:
-            - 22
+            ports:
+                - 22
     aws-alt:
         # uses an rds backend, snapshot on delete
         alt-config1:
-            ports:
-                - 80
+            ec2:
+                ports:
+                    - 80
             rds:
                 storage: 15
             ext:
@@ -365,8 +367,9 @@ project-with-s3:
 project-with-ext:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         ext: 
             size: 200
 
@@ -374,8 +377,9 @@ project-with-cloudfront:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         cloudfront:
             subdomains:
                 - "{instance}--cdn-of-www"
@@ -394,8 +398,9 @@ project-with-cloudfront-minimal:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         cloudfront:
             subdomains:
                 - "{instance}--cdn-of-www"
@@ -404,8 +409,9 @@ project-with-cloudfront-error-pages:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         cloudfront:
             subdomains:
                 - "{instance}--cdn-of-www"
@@ -419,8 +425,9 @@ project-with-cloudfront-error-pages:
 project-with-cloudfront-origins:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         cloudfront:
             subdomains:
                 - "{instance}--cdn"
@@ -439,8 +446,9 @@ project-with-fastly-minimal:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         fastly:
             subdomains:
                 - "{instance}--cdn-of-www"
@@ -449,8 +457,9 @@ project-with-fastly-complex:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         fastly:
             shield: true
             backends:
@@ -506,8 +515,9 @@ project-with-fastly-gcs:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         fastly:
             subdomains:
                 - "{instance}--cdn-of-www"
@@ -520,8 +530,9 @@ project-with-fastly-bigquery:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: www
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         fastly:
             subdomains:
                 - "{instance}--cdn-of-www"
@@ -545,6 +556,14 @@ project-with-fastly-shield-pop:
             shield:
                 pop: london-uk
 
+project-with-fastly-shield-aws-region:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        region: eu-central-1
+        fastly:
+            shield: true
+
 project-with-ec2-custom-root:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
@@ -562,9 +581,9 @@ project-with-cluster:
     repo: ssh://git@github.com/elifesciences/dummy3
     subdomain: project-with-cluster
     aws:
-        ports:
-            - 80
         ec2:
+            ports:
+                - 80
             cluster-size: 2
             dns-external-primary: true
             dns-internal: true
@@ -580,9 +599,9 @@ project-with-cluster-suppressed:
     # no internal domain, while the public 'domain' is true by default
     intdomain: false
     aws:
-        ports:
-            - 80
         ec2:
+            ports:
+                - 80
             cluster-size: 3
             suppressed: [1]
         ext:
@@ -596,9 +615,9 @@ project-with-cluster-overrides:
     # no internal domain, while the public 'domain' is true by default
     intdomain: false
     aws:
-        ports:
-            - 80
         ec2:
+            ports:
+                - 80
             cluster-size: 2
             overrides:
                 1: 
@@ -627,8 +646,9 @@ project-with-stickiness:
     # no internal domain, while the public 'domain' is true by default
     intdomain: false
     aws:
-        ports:
-            - 80
+        ec2:
+            ports:
+                - 80
         ec2:
             cluster-size: 2
         elb: 
@@ -643,11 +663,11 @@ project-with-multiple-elb-listeners:
     # no internal domain, while the public 'domain' is true by default
     intdomain: false
     aws:
-        ports:
-            - 25
-            - 80
-            - 8001
         ec2:
+            ports:
+                - 25
+                - 80
+                - 8001
             cluster-size: 2
         elb: 
             protocol:
@@ -668,10 +688,10 @@ project-with-cluster-integration-tests:
     domain: false
     intdomain: false
     aws:
-        ports:
-            - 80
-            - 22
         ec2:
+            ports:
+                - 80
+                - 22
             cluster-size: 2
         elb: 
             protocol: http
@@ -682,7 +702,8 @@ project-with-cluster-integration-tests:
 project-with-db-params:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
-        ports: [80]
+        ec2:
+            ports: [80]
         rds:
             params:
                 key1: val1
@@ -714,8 +735,6 @@ project-with-elasticache-redis:
     subdomain: www
     aws:
         ec2: false
-        ports:
-            - 80
         elasticache:
             engine: redis
 
@@ -725,8 +744,6 @@ project-with-multiple-elasticaches:
     subdomain: www
     aws:
         ec2: false
-        ports:
-            - 80
         elasticache:
             engine: redis
             clusters: 3
@@ -745,8 +762,6 @@ project-with-fully-overridden-elasticaches:
     subdomain: www
     aws:
         ec2: false
-        ports:
-            - 80
         elasticache:
             engine: redis
             clusters: 2
@@ -929,10 +944,10 @@ project-with-alb:
     aws:
         subdomains:
             - foo.bar
-        ports:
-            - 22
-            - 80
         ec2:
+            ports:
+                - 22
+                - 80
             cluster-size: 2
         alb:
             listeners:

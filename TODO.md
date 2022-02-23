@@ -4,6 +4,10 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 
 ## done
 
+* delete src/tests/fixtures/additional-projects
+    - I think support for different regions and things has been removed
+        - it was never really used
+
 ## todo
 
 ## todo (bucket)
@@ -41,8 +45,8 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 * rename 'cfngen.py' to 'build_context.py' or something similar
 * delete src/tests/fixtures/dummy-project2.yaml
     - looks like the pattern in tests/fixtures/dummy-project.yaml caught on instead
-* delete src/tests/fixtures/additional-projects
-    - I think support for different regions and things has been removed
+
 * if skip=ec2 in update_infrastructure, don't bring the nodes into a running state
     - this may actually interfere with IP addresses in the cloudformation template
         - in which case, what depends on those values? surely they would get old/stale quickly ...
+* projects, removing caching 
