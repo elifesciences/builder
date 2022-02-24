@@ -2137,7 +2137,7 @@ kubernetes-aws:
             eks:
                 version: '1.19'
                 worker:
-                    type: t2.large
+                    type: t3.large
                     max-size: 8
                     desired-capacity: 8
                 # since helm: is not installed, this will only add AWS resources
