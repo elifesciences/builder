@@ -819,7 +819,9 @@ def _render_eks_workers_role(context, template):
             'role': "${aws_iam_role.worker.name}",
         })
 
+
     if lookup(context, 'eks.autoscaler', False):
+        # kubernetes autoscaler needs to have permission to query and alter the autoscaling group from the worker nodes
         template.populate_resource('aws_iam_policy', 'kubernetes_autoscaler', block={
             'name': '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
             'path': '/',
@@ -844,7 +846,6 @@ def _render_eks_workers_role(context, template):
                 ],
             }),
         })
-
         template.populate_resource('aws_iam_role_policy_attachment', 'worker_autoscaler', block={
             'policy_arn': "${aws_iam_policy.kubernetes_autoscaler.arn}",
             'role': "${aws_iam_role.worker.name}",
