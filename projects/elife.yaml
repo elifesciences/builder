@@ -2227,7 +2227,7 @@ kubernetes-aws:
                 # but not the ExternalDNS chart release
                 external-dns:
                     domain-filter: "elifesciences.org"
-                autoscaler: true
+                autoscaler-policy: true
 
 # lsh@2021-06-18: deprecated. Software Heritage is replacing elifesciences-publications
 large-repo-wrangler:
