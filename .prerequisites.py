@@ -60,12 +60,12 @@ both_checks = [
      lambda x: shs('make -v').splitlines()[0]),
 
     ('virtualbox',
-     {'Mac OS': 'brew install --cask virtualbox'},
+     {'Mac OS': 'brew install virtualbox'},
      dumb_install_check,
      lambda x: shs('vboxmanage --version')),
 
     ('vagrant',
-     {'Mac OS': 'brew install --cask vagrant'}),
+     {'Mac OS': 'brew install vagrant'}),
 
     ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
@@ -101,11 +101,6 @@ mac_checks = [
     ('brew',
      {'Mac OS': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'},
      dumb_version_check,
-     None),
-
-    ('brew cask',
-     {'Mac OS': 'brew tap caskroom/cask'},
-     lambda x: sh('brew tap | grep homebrew/cask &> /dev/null'),
      None),
 
     ('ssh-agent',
@@ -160,7 +155,7 @@ def main():
     if platform.startswith('linux'):
         print('Linux detected')
         checks = linux_checks + checks
-    elif platform == 'darwin': 
+    elif platform == 'darwin':
         print('Mac OS detected')
         checks = mac_checks + checks
     else:
