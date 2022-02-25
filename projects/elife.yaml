@@ -375,8 +375,7 @@ defaults:
     gcp:
         bigquery: false
     vagrant:
-        # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
-        box: bento/ubuntu-18.04
+        box: ubuntu/focal64
         ip: 192.168.56.44
         ram: 2048
         cpus: 2
@@ -386,9 +385,11 @@ defaults:
         #    1239: 80
         #    1240: 8001
 
+    # support for vagrant-alt was removed apparently, so this doesn't do anything.
     vagrant-alt:
-        2004:
-            box: ubuntu/focal64
+        1804:
+            # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
+            box: bento/ubuntu-18.04
 
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
@@ -462,6 +463,7 @@ master-server:
             subdomains:
                 - master-server
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             8200: 8200 # Vault GUI
 
@@ -528,6 +530,7 @@ lax:
                 healthcheck:
                     path: /api/v2/ping
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1239: 80
             1240: 8001
@@ -599,6 +602,7 @@ api-gateway:
                     - "{instance}--cdn-gateway"
                     - api
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1323: 80
 
@@ -831,6 +835,7 @@ journal:
                     dataset: "{instance}"
                     table: "journal"
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1240: 80
@@ -857,6 +862,7 @@ pattern-library:
             subdomains:
                 - ui-patterns
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1340: 80
 
@@ -889,6 +895,7 @@ elife-metrics:
                 storage: 20
                 storage-type: Standard
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1240: 80
 
@@ -1065,7 +1072,8 @@ elife-bot:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
                         - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
-    vagrant: {}
+    vagrant:
+        box: bento/ubuntu-18.04
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -1243,6 +1251,7 @@ journal-cms:
                 size: 60 # GB
                 type: standard
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1241: 80
 
@@ -1296,6 +1305,7 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--prod
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
@@ -1304,6 +1314,7 @@ elife-reporting:
     description: an environment for development of 'eLife-Reporting-SQL', integrated with lax.
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1333: 80
@@ -1336,6 +1347,7 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
 
 containers:
@@ -1365,6 +1377,7 @@ containers:
                 type: t2.xlarge # 4 CPUs
                 cpu-credits: unlimited
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
 
 elife-alfred:
@@ -1394,6 +1407,7 @@ elife-alfred:
                 "{instance}-elife-alfred":
                     deletion-policy: retain
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1433: 80
@@ -1428,6 +1442,7 @@ api-dummy:
         demo:
             type: t2.micro
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1242: 80
 
@@ -1521,6 +1536,7 @@ search:
                 protocol:
                     - http
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1244: 80
             1245: 8080
@@ -1543,6 +1559,7 @@ recommendations:
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1254: 80
 
@@ -1583,6 +1600,7 @@ personalised-covers:
                 "{instance}-elife-personalised-covers":
                     deletion-policy: retain
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1246: 80
             1247: 8080
@@ -1627,6 +1645,7 @@ observer:
                 storage-type: Standard
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1239: 80
             1240: 8001
@@ -1829,6 +1848,7 @@ iiif:
                     - "{instance}--cdn-iiif"
                     - iiif
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1261: 80
 
@@ -1866,6 +1886,7 @@ redirects:
                 headers:
                     - Host
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 512
         ports:
             1262: 80
@@ -1904,6 +1925,7 @@ profiles:
                 storage-type: Standard
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1265: 80
@@ -1932,6 +1954,7 @@ annotations:
                     # bucket policy has been added:
                     # http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1248: 80
@@ -1968,6 +1991,7 @@ digests:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1290: 80
@@ -2113,6 +2137,7 @@ bastion:
             subdomains:
                 - bastion
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 512
 
 reproducible-document-stack:
@@ -2245,6 +2270,7 @@ bioprotocol:
                     - bus-articles--{instance}
     aws-alt: {}
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1280: 80
 
