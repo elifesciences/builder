@@ -819,6 +819,37 @@ def _render_eks_workers_role(context, template):
             'role': "${aws_iam_role.worker.name}",
         })
 
+    if context['eks']['autoscaler']:
+        template.populate_resource('aws_iam_policy', 'kubernetes_autoscaler', block={
+            'name': '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
+            'path': '/',
+            'description': 'Allows management of ASGs based on cluster requested workload from within the cluster',
+            'policy': json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "autoscaling:DescribeAutoScalingGroups",
+                            "autoscaling:DescribeAutoScalingInstances",
+                            "autoscaling:DescribeLaunchConfigurations",
+                            "autoscaling:DescribeTags",
+                            "autoscaling:SetDesiredCapacity",
+                            "autoscaling:TerminateInstanceInAutoScalingGroup"
+                        ],
+                        "Resource": [
+                            "${aws_autoscaling_group.worker.arn}",
+                        ],
+                    },
+                ],
+            }),
+        })
+
+        template.populate_resource('aws_iam_role_policy_attachment', 'worker_autoscaler', block={
+            'policy_arn': "${aws_iam_policy.kubernetes_autoscaler.arn}",
+            'role': "${aws_iam_role.worker.name}",
+        })
+
     if context['eks']['efs']:
         template.populate_resource('aws_iam_policy', 'kubernetes_efs', block={
             'name': '%s--AmazonEFSKubernetes' % context['stackname'],
