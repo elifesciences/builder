@@ -29,3 +29,4 @@ scripts/salt/*.minion
 /etc-salt-master
 
 .*.flag
+.bin/
