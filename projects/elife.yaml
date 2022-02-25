@@ -1973,6 +1973,7 @@ digests:
             1290: 80
 
 
+# deployed via EKS, not EC2
 elife-libero-reviewer:
     default-branch: null
     domain: null
@@ -2005,6 +2006,7 @@ elife-libero-reviewer:
                 "{instance}-elife-libero-reviewer":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
 
+# deployed via EKS, not EC2
 elife-libero-editor:
     aws:
         ec2: false
