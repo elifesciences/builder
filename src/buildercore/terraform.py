@@ -819,7 +819,7 @@ def _render_eks_workers_role(context, template):
             'role': "${aws_iam_role.worker.name}",
         })
 
-    if context['eks']['autoscaler']:
+    if lookup(context, 'eks.autoscaler', False):
         template.populate_resource('aws_iam_policy', 'kubernetes_autoscaler', block={
             'name': '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
             'path': '/',
