@@ -28,12 +28,12 @@ CUSTOM_SSH_KEY=/path/to/ssh/key CUSTOM_AWS_CREDENTIALS=/path/to/aws/credentials/
 
 ## Running natively
 
-As mentioned, running builder natively on macOS can be hit a miss due to changes in builder, and painpoints of python on macOS. These instructions should get you up and running as of today.
+As mentioned, running builder natively on macOS can be hit a miss due to changes in builder, and painpoints of python on macOS from homebrew. This can run faster than the intel-based container above, and is much easier to setup the ssh-agent. These instructions should get you up and running.
 
 Install from dependancies with homebrew:
 
 ```
-brew install vagrant git openssl@1.1 libssh2 libffi python@3.8
+brew install vagrant git openssl@1.1 libssh2 libffi python@3.8 # parallel-ssh fails to build again python > 3.8
 ```
 
 Some other hashicorp dependancies require legacy versions right now - 0.11 for `terraform` and 0.11 for `vault`. You can install these globally, or local to just builder and set your path appropriately like so:
