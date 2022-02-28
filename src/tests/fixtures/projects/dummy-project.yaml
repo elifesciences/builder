@@ -170,6 +170,7 @@ defaults:
             helm: false
             external-dns: false
             efs: false
+            autoscaler-policy: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             #subdomains: [] # todo: enable

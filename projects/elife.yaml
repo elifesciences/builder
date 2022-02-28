@@ -201,6 +201,7 @@ defaults:
                 # Route53 hosted zone to create subdomains on
                 #domain-filter: elifesciences.org
             efs: false
+            autoscaler-policy: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -2417,4 +2418,3 @@ firewall:
                             - UNIXShellCommandsVariables_QUERYARGUMENTS
                             - UNIXShellCommandsVariables_BODY
                         excluded: []
-
