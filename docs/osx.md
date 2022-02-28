@@ -45,12 +45,9 @@ curl https://releases.hashicorp.com/vault/0.11.6/vault_0.11.6_darwin_amd64.zip -
 export PATH="$(PWD)/.bin:$PATH"
 ```
 
-Then run the `./update.sh` script, but overriding a few of the build paths via Environment Variables to build correctly from homebrew installed libraries (to match libraries Python was built against)
+Then run the `./update.sh` script, which overrides a few of the build paths via Environment Variables to build correctly from homebrew installed libraries (to match libraries Python was built against)
 
 ```
-OPENSSL_ROOT_DIR="$(brew --prefix openssl@1.1)" \
-LDFLAGS="-L$(brew --prefix openssl@1.1)/lib -L$(brew --prefix libffi)/lib -L$(brew --prefix libssh2)/lib" \
-CPPFLAGS="-I$(brew --prefix openssl@1.1)/include -I$(brew --prefix libffi)/include -I$(brew --prefix libssh2)/include" \
 ./update.sh --exclude virtualbox
 ```
 

@@ -106,7 +106,19 @@ mac_checks = [
      dumb_version_check,
      None),
 
-    # Needed to build ssh2-python
+    # Needed to build ssh2-python and cryptography python modules
+    ('openssl@1.1',
+     {'Mac OS': "brew install openssl@1.1"},
+     lambda x: sh('brew ls | grep openssl@1.1 > /dev/null'),
+     None),
+    ('libffi',
+     {'Mac OS': "brew install libffi"},
+     lambda x: sh('brew ls | grep libffi > /dev/null'),
+     None),
+    ('libssh2',
+     {'Mac OS': "brew install libssh2"},
+     lambda x: sh('brew ls | grep libssh2 > /dev/null'),
+     None),
     ('cmake',
      {'Mac OS': "brew install cmake"},
      dumb_install_check,
