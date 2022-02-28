@@ -1,0 +1,40 @@
+{
+  "Name": "elife-DistributedSlowBot",
+  "Priority": 16,
+  "Action": {
+    "Block": {}
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "firewall--prod--elife-DistributedSlowBot"
+  },
+  "Statement": {
+    "AndStatement": {
+      "Statements": [
+        {
+          "LabelMatchStatement": {
+            "Scope": "LABEL",
+            "Key": "awswaf:managed:aws:bot-control:signal:known_bot_data_center"
+          }
+        },
+        {
+          "RegexMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "user-agent"
+              }
+            },
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ],
+            "RegexString": "Mozilla/5\\.0 (X11; Linux x86_64) AppleWebKit/537\\.36 (KHTML, like Gecko) Chrome/\\d+\\.\\d+\\.\\d+\\.\\d+ Safari/537\\.36"
+          }
+        }
+      ]
+    }
+  }
+}

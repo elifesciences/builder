@@ -10,13 +10,7 @@ from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
-
-# Iterable has moved and is being removed from collections in Python 3.8
-try:
-    from collections.abc import Iterable
-except ImportError:
-
-    from collections import Iterable
+from collections.abc import Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -42,12 +36,7 @@ def isint(v):
     return str(v).lstrip('-+').isdigit()
 
 def isstr(v):
-    # TODO: python2 warning
-    try:
-        return isinstance(v, basestring)
-    except NameError:
-        # no basestring in py3
-        return isinstance(v, str)
+    return isinstance(v, str)
 
 def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
@@ -172,13 +161,14 @@ def firstnn(x):
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
     """calls the given function `fn` every `interval` seconds until it returns False.
 
-    An `exception_class` will be raised if `timeout` is reached.
+    An `exception_class` will be raised if `timeout` is reached (default `RuntimeError`).
 
-    Any truthy value will continue the polling, so might as well return an Exception from `fn` in order for his message to be propagated up."""
+    Any exception objects returned from `fn` will be raised."""
     if not exception_class:
         exception_class = RuntimeError
     elapsed = 0
     while True:
+        LOG.info(update_msg)
         result = fn()
         if not result:
             break
@@ -187,7 +177,6 @@ def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="
             if isinstance(result, BaseException):
                 message = message + (" (%s)" % result)
             raise exception_class(message)
-        LOG.info(update_msg)
         time.sleep(interval)
         elapsed = elapsed + interval
     LOG.info(done_msg)
@@ -358,6 +347,11 @@ def renkeys(ddict, pair_list):
     for oldkey, newkey in pair_list:
         renkey(ddict, oldkey, newkey)
 
+def delkey(d, k):
+    "mutator. deletes the key `k` from the dict `d` if `k` in `d`"
+    if k in d:
+        del d[k]
+
 def tempdir():
     # usage: tempdir, killer = tempdir(); killer()
     name = tempfile.mkdtemp()
@@ -368,11 +362,13 @@ def http_responses():
     """a map of integers to response reason phrases
 
     e.g. 404: 'Not Found'"""
-    try:
-        # Python 2
-        import httplib
-        return httplib.responses
-    except ImportError:
-        # Python 3
-        import http.client
-        return http.client.responses
+    import http.client
+    return http.client.responses
+
+def visit(d, f):
+    "visits each value in `d` and applies function `f` to it"
+    if isinstance(d, dict):
+        return {k: visit(v, f) for k, v in d.items()}
+    if isinstance(d, list):
+        return [visit(v, f) for v in d]
+    return f(d)

@@ -5,9 +5,8 @@ import re
 import shutil
 import yaml
 from os.path import exists, join
-from mock import patch, MagicMock
-# pylint: disable-msg=import-error
-from unittest2 import TestCase
+from unittest.mock import patch, MagicMock
+from unittest import TestCase
 from . import base
 from buildercore import cfngen, terraform
 
@@ -429,7 +428,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles2-condition',
                                     'healthcheck': 'default',
-                                    'shield': 'dca-dc-us',
+                                    'shield': 'iad-va-us',
                                 },
                                 {
                                     'address': '%s-special3.example.org' % self.environment,
@@ -441,7 +440,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                     'ssl_check_cert': True,
                                     'request_condition': 'backend-articles3-condition',
                                     'healthcheck': 'default',
-                                    'shield': 'dca-dc-us',
+                                    'shield': 'iad-va-us',
                                 },
                             ],
                             'acl': [
@@ -497,6 +496,8 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 'path': '/ping-fastly',
                                 'check_interval': 30000,
                                 'timeout': 10000,
+                                'initial': 2,
+                                'threshold': 2,
                             },
                             'condition': [
                                 {
@@ -587,7 +588,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
         service = template['resource']['fastly_service_v1']['fastly-cdn']
-        self.assertEqual(service['backend'][0].get('shield'), 'dca-dc-us')
+        self.assertEqual(service['backend'][0].get('shield'), 'iad-va-us')
         self.assertIn('domain', service)
 
     def test_fastly_template_shield_pop(self):
@@ -602,7 +603,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('domain', service)
 
     def test_fastly_template_shield_aws_region(self):
-        base.switch_in_test_settings(['src/tests/fixtures/additional-projects/'])
         extra = {
             'stackname': 'project-with-fastly-shield-aws-region--%s' % self.environment,
         }
@@ -1084,6 +1084,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
                 'image_id': '${data.aws_ami.worker.id}',
                 'instance_type': 't2.small',
+                'root_block_device': {
+                    'volume_size': 40
+                },
                 'name_prefix': 'project-with-eks--%s--worker' % self.environment,
                 'security_groups': ['${aws_security_group.worker.id}'],
                 'user_data_base64': '${base64encode(local.worker_userdata)}',

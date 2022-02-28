@@ -1,0 +1,250 @@
+{
+  "Outputs": {
+    "AZ1": {
+      "Description": "Availability Zone of the newly created EC2 instance",
+      "Value": {
+        "Fn::GetAtt": [
+          "EC2Instance1",
+          "AvailabilityZone"
+        ]
+      }
+    },
+    "DomainName": {
+      "Description": "Domain name of the newly created stack instance",
+      "Value": {
+        "Ref": "ExtDNS"
+      }
+    },
+    "InstanceId1": {
+      "Description": "InstanceId of the newly created EC2 instance",
+      "Value": {
+        "Ref": "EC2Instance1"
+      }
+    },
+    "IntDomainName": {
+      "Description": "Domain name of the newly created stack instance",
+      "Value": {
+        "Ref": "IntDNS"
+      }
+    },
+    "PrivateIP1": {
+      "Description": "Private IP address of the newly created EC2 instance",
+      "Value": {
+        "Fn::GetAtt": [
+          "EC2Instance1",
+          "PrivateIp"
+        ]
+      }
+    },
+    "PublicIP1": {
+      "Description": "Public IP address of the newly created EC2 instance",
+      "Value": {
+        "Fn::GetAtt": [
+          "EC2Instance1",
+          "PublicIp"
+        ]
+      }
+    }
+  },
+  "Parameters": {
+    "KeyName": {
+      "Description": "EC2 KeyPair that enables SSH access to this instance",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "CloudFrontCDN": {
+      "Properties": {
+        "DistributionConfig": {
+          "Aliases": [
+            "prod--cdn-of-www.example.org",
+            "example.org",
+            "future.example.org"
+          ],
+          "CacheBehaviors": [],
+          "DefaultCacheBehavior": {
+            "AllowedMethods": [
+              "DELETE",
+              "GET",
+              "HEAD",
+              "OPTIONS",
+              "PATCH",
+              "POST",
+              "PUT"
+            ],
+            "CachedMethods": [
+              "GET",
+              "HEAD"
+            ],
+            "Compress": true,
+            "DefaultTTL": 5,
+            "ForwardedValues": {
+              "Cookies": {
+                "Forward": "whitelist",
+                "WhitelistedNames": [
+                  "session_id"
+                ]
+              },
+              "Headers": [
+                "Accept"
+              ],
+              "QueryString": true
+            },
+            "TargetOriginId": "CloudFrontCDNOrigin",
+            "ViewerProtocolPolicy": "redirect-to-https"
+          },
+          "Enabled": true,
+          "HttpVersion": "http2",
+          "Logging": {
+            "Bucket": "acme-logs.s3.amazonaws.com",
+            "Prefix": "project-with-cloudfront--prod/"
+          },
+          "Origins": [
+            {
+              "CustomOriginConfig": {
+                "HTTPSPort": 443,
+                "OriginProtocolPolicy": "https-only"
+              },
+              "DomainName": "prod--www.example.org",
+              "Id": "CloudFrontCDNOrigin"
+            }
+          ],
+          "ViewerCertificate": {
+            "IamCertificateId": "dummy...",
+            "SslSupportMethod": "sni-only"
+          }
+        }
+      },
+      "Type": "AWS::CloudFront::Distribution"
+    },
+    "CloudFrontCDNDNS1": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "CloudFrontCDN",
+              "DomainName"
+            ]
+          },
+          "HostedZoneId": "Z2FDTNDATAQYW2"
+        },
+        "Comment": "External DNS record for Cloudfront distribution",
+        "HostedZoneName": "example.org.",
+        "Name": "prod--cdn-of-www.example.org.",
+        "Type": "A"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
+    "CloudFrontCDNDNS2": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "CloudFrontCDN",
+              "DomainName"
+            ]
+          },
+          "HostedZoneId": "Z2FDTNDATAQYW2"
+        },
+        "Comment": "External DNS record for Cloudfront distribution",
+        "HostedZoneName": "example.org.",
+        "Name": "example.org.",
+        "Type": "A"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
+    "EC2Instance1": {
+      "Properties": {
+        "ImageId": "ami-9eaa1cf6",
+        "InstanceType": "t2.small",
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SecurityGroupIds": [
+          {
+            "Ref": "StackSecurityGroup"
+          }
+        ],
+        "SubnetId": "subnet-1d4eb46a",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "project-with-cloudfront"
+          },
+          {
+            "Key": "Environment",
+            "Value": "prod"
+          },
+          {
+            "Key": "Name",
+            "Value": "project-with-cloudfront--prod--1"
+          },
+          {
+            "Key": "Cluster",
+            "Value": "project-with-cloudfront--prod"
+          },
+          {
+            "Key": "Node",
+            "Value": "1"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nset -x\nexec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\necho eyJwcm9qZWN0X25hbWUiOiAicHJvamVjdC13aXRoLWNsb3VkZnJvbnQiLCAiYXV0aG9yIjogIm15X3VzZXIiLCAic3RhY2tuYW1lIjogInByb2plY3Qtd2l0aC1jbG91ZGZyb250LS1wcm9kIiwgImluc3RhbmNlX2lkIjogInByb2QiLCAiY2x1c3Rlcl9pZCI6IG51bGwsICJhbHQtY29uZmlnIjogbnVsbCwgImJyYW5jaCI6ICJtYXN0ZXIiLCAicmV2aXNpb24iOiBudWxsLCAicmRzX2RibmFtZSI6IG51bGwsICJyZHNfdXNlcm5hbWUiOiBudWxsLCAicmRzX3Bhc3N3b3JkIjogbnVsbCwgInJkc19pbnN0YW5jZV9pZCI6IG51bGwsICJyZHMiOiB7fSwgImVjMiI6IHsidHlwZSI6ICJ0Mi5zbWFsbCIsICJjbHVzdGVyLXNpemUiOiAxLCAiY3B1LWNyZWRpdHMiOiAic3RhbmRhcmQiLCAiZG5zLWV4dGVybmFsLXByaW1hcnkiOiBmYWxzZSwgImRucy1pbnRlcm5hbCI6IGZhbHNlLCAic3VwcHJlc3NlZCI6IFtdLCAiYW1pIjogImFtaS05ZWFhMWNmNiIsICJtYXN0ZXJsZXNzIjogZmFsc2UsICJtYXN0ZXJfaXAiOiAiMTAuMC4yLjQyIiwgInNlY3VyaXR5LWdyb3VwIjoge30sICJwb3J0cyI6IFs4MF19LCAiczMiOiB7fSwgImVrcyI6IGZhbHNlLCAiZWxiIjogZmFsc2UsICJhbGIiOiBmYWxzZSwgInNucyI6IFtdLCAic3FzIjoge30sICJleHQiOiBmYWxzZSwgImNsb3VkZnJvbnQiOiB7InN1YmRvbWFpbnMiOiBbInByb2QtLWNkbi1vZi13d3cuZXhhbXBsZS5vcmciLCAiZXhhbXBsZS5vcmciXSwgInN1YmRvbWFpbnMtd2l0aG91dC1kbnMiOiBbImZ1dHVyZS5leGFtcGxlLm9yZyJdLCAiY2VydGlmaWNhdGVfaWQiOiAiZHVtbXkuLi4iLCAiY29va2llcyI6IFsic2Vzc2lvbl9pZCJdLCAiY29tcHJlc3MiOiB0cnVlLCAiaGVhZGVycyI6IFsiQWNjZXB0Il0sICJkZWZhdWx0LXR0bCI6IDUsICJlcnJvcnMiOiBudWxsLCAibG9nZ2luZyI6IHsiYnVja2V0IjogImFjbWUtbG9ncyJ9LCAib3JpZ2lucyI6IHt9fSwgImVsYXN0aWNhY2hlIjogZmFsc2UsICJkb2NkYiI6IGZhbHNlLCAid2FmIjogZmFsc2UsICJkb21haW4iOiAiZXhhbXBsZS5vcmciLCAiaW50X2RvbWFpbiI6ICJleGFtcGxlLmludGVybmFsIiwgInN1YmRvbWFpbiI6ICJ3d3ciLCAiaG9zdG5hbWUiOiAicHJvZC0td3d3IiwgInByb2plY3RfaG9zdG5hbWUiOiAid3d3LmV4YW1wbGUub3JnIiwgImludF9wcm9qZWN0X2hvc3RuYW1lIjogInd3dy5leGFtcGxlLmludGVybmFsIiwgImZ1bGxfaG9zdG5hbWUiOiAicHJvZC0td3d3LmV4YW1wbGUub3JnIiwgImludF9mdWxsX2hvc3RuYW1lIjogInByb2QtLXd3dy5leGFtcGxlLmludGVybmFsIiwgImV4dF9ub2RlX2hvc3RuYW1lIjogInByb2QtLXd3dy0tJXMuZXhhbXBsZS5vcmciLCAiaW50X25vZGVfaG9zdG5hbWUiOiAicHJvZC0td3d3LS0lcy5leGFtcGxlLmludGVybmFsIiwgInByb2plY3QiOiB7ImZvcm11bGEtcmVwbyI6IG51bGwsICJmb3JtdWxhLWRlcGVuZGVuY2llcyI6IFsiaHR0cHM6Ly9naXRodWIuY29tL2V4YW1wbGUvYnVpbGRlci1iYXNlLWZvcm11bGEiXX0sICJhd3MiOiB7ImFjY291bnQtaWQiOiA1MTI2ODY1NTQ1OTIsICJyZWdpb24iOiAidXMtZWFzdC0xIiwgInZwYy1pZCI6ICJ2cGMtNzhhMjA3MWQiLCAic3VibmV0LWlkIjogInN1Ym5ldC0xZDRlYjQ2YSIsICJzdWJuZXQtY2lkciI6ICIxMC4wLjIuMC8yNCIsICJhdmFpbGFiaWxpdHktem9uZSI6ICJ1cy1lYXN0LTFkIiwgInJlZHVuZGFudC1zdWJuZXQtaWQiOiAic3VibmV0LTdhMzFkZDQ2IiwgInJlZHVuZGFudC1zdWJuZXQtY2lkciI6ICIxMC4wLjIuMC8yNCIsICJyZWR1bmRhbnQtYXZhaWxhYmlsaXR5LXpvbmUiOiAidXMtZWFzdC0xZSJ9LCAiZmFzdGx5IjogZmFsc2UsICJnY3MiOiBmYWxzZSwgImJpZ3F1ZXJ5IjogZmFsc2UsICJzdWJkb21haW5zIjogW10sICJ2YXVsdCI6IHsiYWRkcmVzcyI6ICJodHRwczovL3ZhdWx0LmV4YW1wbGUub3JnOjgyMDAifSwgIm5vZGUiOiAxLCAibm9kZW5hbWUiOiAicHJvamVjdC13aXRoLWNsb3VkZnJvbnQtLXByb2QtLTEifQ== > /etc/build-vars.json.b64\n\nif command -v salt-minion > /dev/null; then\n    # salt is installed, probably using an AMI or creating an AMI\n    # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.saltutil.html#salt.modules.saltutil.clear_cache\n    systemctl stop salt-minion 2> /dev/null || service salt-minion stop\nfi\n\n# remove leftover files from AMIs\nrm -rf \\\n    /etc/cfn-info.json \\\n    /etc/salt/pki/minion/* \\\n    /etc/salt/minion \\\n    /root/.ssh/* \\\n    /home/elife/.ssh/* \\\n    /home/ubuntu/.ssh/id_rsa* \\\n    /etc/certificates/* \\\n    /root/events.log \\\n    /var/cache/salt/minion\n"
+        }
+      },
+      "Type": "AWS::EC2::Instance"
+    },
+    "ExtDNS": {
+      "Properties": {
+        "Comment": "External DNS record for EC2",
+        "HostedZoneName": "example.org.",
+        "Name": "prod--www.example.org.",
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "EC2Instance1",
+              "PublicIp"
+            ]
+          }
+        ],
+        "TTL": "60",
+        "Type": "A"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
+    "IntDNS": {
+      "Properties": {
+        "Comment": "Internal DNS record for EC2",
+        "HostedZoneName": "example.internal.",
+        "Name": "prod--www.example.internal.",
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "EC2Instance1",
+              "PrivateIp"
+            ]
+          }
+        ],
+        "TTL": "60",
+        "Type": "A"
+      },
+      "Type": "AWS::Route53::RecordSet"
+    },
+    "StackSecurityGroup": {
+      "Properties": {
+        "GroupDescription": "security group",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80
+          }
+        ],
+        "VpcId": "vpc-78a2071d"
+      },
+      "Type": "AWS::EC2::SecurityGroup"
+    }
+  }
+}
+

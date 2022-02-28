@@ -20,7 +20,10 @@ defaults:
     formula-dependencies:
         - https://github.com/example2/builder-base-formula
     aws:
+        account-id: 512686554592
+        unique: false
         ec2:
+            type: t2.small
             cluster-size: 1
             cpu-credits: standard
             dns-external-primary: false
@@ -30,7 +33,6 @@ defaults:
             master_ip: 192.168.1.254
             security-group: {}
             masterless: false
-        type: t2.small
         region: us-east-1
         vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
         subnet-id: subnet-191919191

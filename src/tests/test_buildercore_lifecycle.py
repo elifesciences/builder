@@ -1,5 +1,5 @@
 from datetime import datetime
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 from pytz import utc
 from . import base
 from buildercore.core import parse_stackname

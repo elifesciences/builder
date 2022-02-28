@@ -22,31 +22,27 @@ elifePipeline {
     }
 
     lock('builder') {
-        def pythons = ['py27', 'py3']
-        def majorVersions = [2, 3]
         def actions = [:]
-        for (int i = 0; i < pythons.size(); i++) {
-            def python = pythons.get(i)
-            def majorVersion = majorVersions.get(i)
-            actions["Test ${python}"] = {
-                withCommitStatus({
-                    try {
-                        sh "tox -e ${python}"
-                    } finally {
-                        // https://issues.jenkins-ci.org/browse/JENKINS-27395?focusedCommentId=345589&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-345589
-                        junit testResults: "build/pytest-${python}.xml"
-                    }
-                }, python, commit)
-            }
+        def python = 'py3'
+        
+        actions["Test ${python}"] = {
+            withCommitStatus({
+                try {
+                    sh "tox -e ${python}"
+                } finally {
+                    // https://issues.jenkins-ci.org/browse/JENKINS-27395?focusedCommentId=345589&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-345589
+                    junit testResults: "build/pytest-${python}.xml"
+                }
+            }, python, commit)
+        }
 
-            actions["Docker ${python}"] = {
-                withCommitStatus({
-                    node('containers-jenkins-plugin') {
-                        checkout scm
-                        sh "./docker-smoke.sh ${majorVersion}"
-                    }
-                }, "docker-${python}", commit)
-            }
+        actions["Docker ${python}"] = {
+            withCommitStatus({
+                node('containers-jenkins-plugin') {
+                    checkout scm
+                    sh "./docker-smoke.sh"
+                }
+            }, "docker-${python}", commit)
         }
 
         stage 'Project tests', {
@@ -54,9 +50,9 @@ elifePipeline {
         }
     }
 
-    elifeMainlineOnly {
-        stage 'Deploy to Alfred', {
-            sh 'cd /srv/builder && git pull && . && ./update.sh --exclude virtualbox vagrant vault ssh-agent ssh-credentials'
+    stage 'Downstream', {
+        elifeMainlineOnly {
+            build job: '/release/release-builder-jenkins', wait: false
         }
     }
 }

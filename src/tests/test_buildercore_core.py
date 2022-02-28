@@ -1,10 +1,12 @@
+import pytest
 from functools import partial
 import json
 from os.path import join
 from . import base
 from buildercore import core, utils, project
 from unittest import skip
-from mock import patch
+from unittest.mock import patch, Mock
+import botocore
 
 class SimpleCases(base.BaseCase):
     def setUp(self):
@@ -120,20 +122,18 @@ class SimpleCases(base.BaseCase):
         self.assertFalse(all(results), "not all false cases identified: %r" % list(zip(false_cases, results)))
 
     def test_find_region(self):
-        self.assertEqual(core.find_region(), "us-east-1")
+        # lsh@2022-02-23: added new project to `dummy-project.yaml` with a different aws region.
+        # this means calling `find_region` without a stack will now find multiple regions and die.
+        #self.assertEqual(core.find_region(), "us-east-1")
+        self.assertEqual(core.find_region("dummy1--foo"), "us-east-1")
+        self.assertEqual(core.find_region("project-with-fastly-shield-aws-region--bar"), "eu-central-1")
 
     def test_find_region_when_more_than_one_is_available(self):
         try:
-            base.switch_in_test_settings([
-                'src/tests/fixtures/projects/dummy-project.yaml',
-                'src/tests/fixtures/additional-projects/dummy-project-eu.yaml',
-            ])
             core.find_region()
             self.fail("Shouldn't be able to choose a region")
         except core.MultipleRegionsError as e:
             self.assertCountEqual(["us-east-1", "eu-central-1"], e.regions())
-        finally:
-            base.switch_out_test_settings()
 
     def test_find_ec2_instances(self):
         self.assertEqual([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
@@ -192,6 +192,7 @@ class TestCoreNewProjectData(base.BaseCase):
         for pname, expected_path in expected:
             expected_data = json.load(open(expected_path, 'r'))
             project_data = project.project_data(pname)
+            #json.dump(project_data, open('/tmp/foo.json', 'w'), indent=4)
             project_data = utils.remove_ordereddict(project_data)
             self.assertEqual(expected_data, project_data)
 
@@ -221,3 +222,35 @@ class TestCoreNewProjectData(base.BaseCase):
         expected_data['vagrant']['cpucap'] = 111
 
         self.assertEqual(project_data, expected_data)
+
+def test_stack_exists():
+    stackname = 'foo--bar'
+    cases = [
+        ("CREATE_COMPLETE", [None, "steady", "active"]),
+        ("UPDATE_ROLLBACK_COMPLETE", [None, "steady"]),
+        ("UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", [None])
+    ]
+    for stack_status, true_state_list in cases:
+        mock = Mock(stack_status=stack_status)
+        with patch('buildercore.core.describe_stack', return_value=mock):
+            for true_state in true_state_list:
+                assert core.stack_exists(stackname, state=true_state), stack_status
+
+def test_stack_exists__dne():
+    stackname = 'foo--bar'
+    exception = botocore.exceptions.ClientError(**{
+        'error_response': {'Error': {'Message': 'does not exist'}},
+        'operation_name': 'describe'
+    })
+    with patch('buildercore.core.describe_stack', raises=exception):
+        assert not core.stack_exists(stackname)
+        assert not core.stack_exists(stackname, state='steady')
+        assert not core.stack_exists(stackname, state='active')
+
+def test_stack_exists__bad_state_label():
+    stackname = 'foo--bar'
+    with patch('buildercore.core.describe_stack'):
+        with pytest.raises(AssertionError) as pytest_exc_info:
+            core.stack_exists(stackname, state='cursed')
+        exc = pytest_exc_info.value
+        assert str(exc) == "unsupported state label 'cursed'. supported states: None, active, steady"

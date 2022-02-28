@@ -7,6 +7,7 @@ from the interface logic in `./src/taskrunner.py`.
 
 """
 import os
+import getpass
 from os.path import join
 from buildercore import utils
 from buildercore.utils import lmap, lfilter
@@ -24,6 +25,9 @@ class ConfigurationError(Exception):
 ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
+CI_USER = 'jenkins'
+
+WHOAMI = getpass.getuser()
 
 PROJECT_PATH = os.getcwd() # ll: /path/to/elife-builder/
 SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
@@ -84,6 +88,11 @@ logging.getLogger('paramiko.transport').setLevel(logging.ERROR)
 # TODO: leave on for FILE_HANDLER but not for CONSOLE_HANDLER
 # logging.getLogger('botocore.vendored').setLevel(logging.ERROR)
 
+# disables the endless log messages from boto:
+# 2021-11-09 15:43:51,541 botocore.credentials [INFO] Found credentials in shared credentials file: ~/.aws/credentials
+# INFO - botocore.credentials - Found credentials in shared credentials file: ~/.aws/credentials
+logging.getLogger('botocore.credentials').setLevel(logging.WARNING)
+
 def get_logger(name):
     "ensures logging is setup before handing out a Logger object to use"
     return logging.getLogger(name)
@@ -100,7 +109,7 @@ BUILDER_NON_INTERACTIVE = 'BUILDER_NON_INTERACTIVE' in os.environ and os.environ
 if 'BUILDER_TIMEOUT' in os.environ:
     BUILDER_TIMEOUT = int(os.environ['BUILDER_TIMEOUT'])
 else:
-    BUILDER_TIMEOUT = 600
+    BUILDER_TIMEOUT = 600 # seconds/10 minutes
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 
@@ -112,7 +121,7 @@ PACKER_BOX_S3_PATH = "s3://%s" % join(PACKER_BOX_BUCKET, PACKER_BOX_KEY)
 PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PACKER_BOX_KEY)
 
 # these sections *shouldn't* be merged if they *don't* exist in the project
-CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb']
+CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf']
 
 #
 # settings
@@ -157,7 +166,7 @@ def parse_loc_list(loc_list):
     def expand_dirs(triple):
         protocol, host, path = triple
         if protocol in ['dir', 'file'] and not os.path.exists(path):
-            LOG.warn("could not resolve %r, skipping", path)
+            LOG.warning("could not resolve %r, skipping", path)
             return [None]
         if protocol == 'dir':
             yaml_files = utils.listfiles(path, ['.yaml'])

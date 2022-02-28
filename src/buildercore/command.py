@@ -11,8 +11,8 @@ from . import utils, threadbare
 THREADBARE = 'threadbare'
 FABRIC = 'fabric'
 
-#DEFAULT_BACKEND = THREADBARE
-DEFAULT_BACKEND = FABRIC
+DEFAULT_BACKEND = THREADBARE
+#DEFAULT_BACKEND = FABRIC
 
 BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
 assert BACKEND in [FABRIC, THREADBARE]
@@ -77,6 +77,17 @@ def fab_api_settings_wrapper(*args, **kwargs):
 
     return fab_api.settings(*args, **kwargs)
 
+def threadbare_state_settings_wrapper(*args, **kwargs):
+    """a context manager that alters mutable application state for functions called within it's scope.
+    Not necessary for threadbare but there are some outlier Fabric settings that need coercing."""
+    utils.ensure(not args, "threadbare doesn't support non-keyword arguments.")
+    for key, val in kwargs.pop('fabric.state.output', {}).items():
+        opt = "display_" + key # display_running, display_aborts, etc
+        kwargs[opt] = val
+    if 'output_prefix' in kwargs:
+        kwargs['display_prefix'] = kwargs.pop('output_prefix')
+    return threadbare.state.settings(*args, **kwargs)
+
 #
 
 # lsh@2020-12-10: last minute change to how `env` is accessed.
@@ -97,7 +108,7 @@ serial = api(fab_api.serial, threadbare.execute.serial)
 
 hide = api(fab_api.hide, threadbare.operations.hide)
 
-settings = api(fab_api_settings_wrapper, threadbare.state.settings)
+settings = api(fab_api_settings_wrapper, threadbare_state_settings_wrapper)
 
 lcd = api(fab_api.lcd, threadbare.operations.lcd) # local change dir
 rcd = api(fab_api.cd, threadbare.operations.rcd) # remote change dir

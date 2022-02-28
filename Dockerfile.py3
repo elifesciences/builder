@@ -15,12 +15,10 @@ RUN apk add --no-cache --virtual build-deps \
     g++ \
     make
 
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python get-pip.py pip && \
-    pip install virtualenv && \
-    virtualenv --python=python3 /venv && \
-    /venv/bin/pip install wheel pip --upgrade
-    
+# setuptools>=58 dropped support for a dependency 2to3 Troposphere 2.7.1 depends on
+RUN python3 -m venv /venv && \
+    /venv/bin/pip install wheel pip "setuptools<58" --upgrade
+
 COPY requirements.txt /requirements.txt
 
 RUN /venv/bin/pip install -r /requirements.txt

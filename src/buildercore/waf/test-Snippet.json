@@ -1,0 +1,18 @@
+{
+  "Name": "test-Snippet",
+  "Priority": 2,
+  "Action": {
+    "Block": {}
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "test-Snippet"
+  },
+  "Statement": {
+    "LabelMatchStatement": {
+      "Scope": "LABEL",
+      "Key": "awswaf:managed:aws:bot-control:bot:name:pants"
+    }
+  }
+}

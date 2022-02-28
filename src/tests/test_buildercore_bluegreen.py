@@ -1,6 +1,6 @@
 from buildercore import bluegreen
 from . import base
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 from collections import OrderedDict
 
 def try_only_once(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):

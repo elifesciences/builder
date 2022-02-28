@@ -8,6 +8,12 @@ from buildercore import core
 
 LOG = logging.getLogger(__name__)
 
+# added 2021-06
+# see `taskrunner.exec_task` for handling of tasks that raise this.
+class TaskExit(BaseException):
+    "raise to quit a task early"
+    pass
+
 def strtobool(x):
     """wraps `distutils.util.strtobool` that casts 'yes', 'no', '1', '0', 'true', 'false', etc to
     boolean values, but only if the given value isn't already a boolean"""
@@ -43,6 +49,9 @@ def errcho(x):
     return x
 
 def get_input(message):
+    # TODO
+    # if config.BUILDER_NON_INTERACTIVE:
+    #    raise IOError("stdin requested in non-interactive mode.")
     fn = input if gtpy2() else raw_input
     return fn(message)
 

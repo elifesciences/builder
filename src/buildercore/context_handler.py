@@ -23,16 +23,52 @@ def s3_context_key(stackname):
 def local_context_file(stackname):
     return join(config.CONTEXT_DIR, stackname + ".json")
 
+def download_from_s3(stackname, refresh=False):
+    key = s3_context_key(stackname)
+    if not s3.exists(key):
+        return False
+
+    expected_path = local_context_file(stackname)
+    if os.path.exists(expected_path) and refresh:
+        os.unlink(expected_path)
+    s3.download(key, expected_path)
+    return True
+
+def _load_context_from_disk(stackname):
+    path = local_context_file(stackname)
+    return json.load(open(path, 'r'))
+
+def _load_context_from_s3(stackname):
+    "downloads context from S3 then returns the results of loading it from disk"
+    if not download_from_s3(stackname, refresh=True):
+        raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+    return _load_context_from_disk(stackname)
+
 def load_context(stackname):
     """Returns the store context data structure for 'stackname'.
     Downloads from S3 if missing on the local builder instance"""
-    path = local_context_file(stackname)
-    if not download_from_s3(stackname, refresh=True):
-        raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
-    contents = json.load(open(path, 'r'))
+    #path = local_context_file(stackname)
 
-    # fallback: if no `aws` key is there, copy from legacy `project.aws` key
+    # giorgio@2018-11-03: "Current situation is you may have a old context around on your local disk.
+    # This applies to `elife-alfred--prod` as well. Making the context always downloaded from S3 avoids this stale copy
+    # causing weird bugs like https://alfred.elifesciences.org/job/process/job/process-master-server/7, but it may be slower.
+    # lsh@2021-06-22: link above still works, I think this is the error being referred to:
+    #   ...
+    # 14:52:48     return workfn(**work_kwargs)
+    # 14:52:48   File "/ext/srv/builder/src/buildercore/bootstrap.py", line 514, in _update_ec2_node
+    # 14:52:48     builder_configuration_repo = fdata['configuration-repo']
+    # 14:52:48 KeyError: 'configuration-repo'
+    #
+    # if not download_from_s3(stackname, refresh=True):
+    #    raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+    #contents = json.load(open(path, 'r'))
+
+    # lsh@2021-06-22: broke the above logic into two parts so I can swap out s3 during testing
+    contents = _load_context_from_s3(stackname)
+
+    # fallback: if legacy 'project.aws' key exists, use that for 'aws'
     if contents.get('project', {}).get('aws'):
+        LOG.warn("stack context is using legacy 'project.aws' instead of just 'aws': %s" % stackname)
         contents['aws'] = contents['project']['aws']
     # end of fallback
 
@@ -62,17 +98,6 @@ def delete_context_locally(stackname):
     path = local_context_file(stackname)
     if os.path.exists(path):
         os.unlink(path)
-
-def download_from_s3(stackname, refresh=False):
-    key = s3_context_key(stackname)
-    if not s3.exists(key):
-        return False
-
-    expected_path = local_context_file(stackname)
-    if os.path.exists(expected_path) and refresh:
-        os.unlink(expected_path)
-    s3.download(key, expected_path)
-    return True
 
 def only_if(*servicenames):
     """Decorator that only executes an update function if the context contains a particular servicename that would need it"""

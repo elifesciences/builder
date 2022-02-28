@@ -59,7 +59,7 @@ def delete(key):
     protected = ['boxes/', 'cfn/', 'private/']
     if not all([not key.startswith(prefix) for prefix in protected]):
         msg = "you tried to delete a key with a protected prefix"
-        LOG.warn(msg, extra={'key': key, 'protected': protected})
+        LOG.warning(msg, extra={'key': key, 'protected': protected})
         raise ValueError(msg)
     if not exists(key):
         return True

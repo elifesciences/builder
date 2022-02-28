@@ -1,0 +1,514 @@
+{
+    "Outputs": {
+        "AZ1": {
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "AZ2": {
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "DomainName": {
+            "Description": "Domain name of the newly created stack instance",
+            "Value": {
+                "Ref": "ExtDNS"
+            }
+        },
+        "ELBv2": {
+            "Description": "Generated name of the ALB",
+            "Value": {
+                "Ref": "ELBv2"
+            }
+        },
+        "ELBv2TargetGroupHttp80": {
+            "Description": "TargetGroup for protocol HTTP on port 80",
+            "Value": {
+                "Ref": "ELBv2TargetGroupHttp80"
+            }
+        },
+        "ELBv2TargetGroupHttp8001": {
+            "Description": "TargetGroup for protocol HTTP on port 8001",
+            "Value": {
+                "Ref": "ELBv2TargetGroupHttp8001"
+            }
+        },
+        "InstanceId1": {
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance1"
+            }
+        },
+        "InstanceId2": {
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance2"
+            }
+        },
+        "PrivateIP1": {
+            "Description": "Private IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "PrivateIP2": {
+            "Description": "Private IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "PublicIP1": {
+            "Description": "Public IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "PublicIp"
+                ]
+            }
+        },
+        "PublicIP2": {
+            "Description": "Public IP address of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "PublicIp"
+                ]
+            }
+        }
+    },
+    "Parameters": {
+        "KeyName": {
+            "Description": "EC2 KeyPair that enables SSH access to this instance",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "CnameDNS1": {
+            "Properties": {
+                "AliasTarget": {
+                    "DNSName": {
+                        "Fn::GetAtt": [
+                            "ELBv2",
+                            "DNSName"
+                        ]
+                    },
+                    "HostedZoneId": {
+                        "Fn::GetAtt": [
+                            "ELBv2",
+                            "CanonicalHostedZoneID"
+                        ]
+                    }
+                },
+                "HostedZoneName": "foo.bar.",
+                "Name": "foo.bar",
+                "Type": "A"
+            },
+            "Type": "AWS::Route53::RecordSet"
+        },
+        "EC2Instance1": {
+            "Properties": {
+                "ImageId": "ami-9eaa1cf6",
+                "InstanceType": "t2.small",
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "StackSecurityGroup"
+                    }
+                ],
+                "SubnetId": "subnet-1d4eb46a",
+                "Tags": [
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-alb"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-alb--foo--1"
+                    },
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Node",
+                        "Value": "1"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": "#!/bin/bash\nset -x\nexec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\necho eyJwcm9qZWN0X25hbWUiOiAicHJvamVjdC13aXRoLWFsYiIsICJhdXRob3IiOiAibXlfdXNlciIsICJkYXRlX3JlbmRlcmVkIjogIjIwMjEtMTAtMDciLCAic3RhY2tuYW1lIjogInByb2plY3Qtd2l0aC1hbGItLWZvbyIsICJpbnN0YW5jZV9pZCI6ICJmb28iLCAiY2x1c3Rlcl9pZCI6IG51bGwsICJhbHQtY29uZmlnIjogbnVsbCwgImJyYW5jaCI6ICJtYXN0ZXIiLCAicmV2aXNpb24iOiBudWxsLCAicmRzX2RibmFtZSI6IG51bGwsICJyZHNfdXNlcm5hbWUiOiBudWxsLCAicmRzX3Bhc3N3b3JkIjogbnVsbCwgInJkc19pbnN0YW5jZV9pZCI6IG51bGwsICJyZHMiOiB7fSwgImVjMiI6IHsiY2x1c3Rlci1zaXplIjogMiwgImNwdS1jcmVkaXRzIjogInN0YW5kYXJkIiwgImRucy1leHRlcm5hbC1wcmltYXJ5IjogZmFsc2UsICJkbnMtaW50ZXJuYWwiOiBmYWxzZSwgInN1cHByZXNzZWQiOiBbXSwgImFtaSI6ICJhbWktOWVhYTFjZjYiLCAibWFzdGVybGVzcyI6IGZhbHNlLCAibWFzdGVyX2lwIjogIjEwLjAuMi40MiIsICJzZWN1cml0eS1ncm91cCI6IHt9LCAidHlwZSI6ICJ0Mi5zbWFsbCIsICJwb3J0cyI6IFsyMiwgODBdfSwgInMzIjoge30sICJla3MiOiBmYWxzZSwgImVsYiI6IGZhbHNlLCAiYWxiIjogeyJzdGlja2luZXNzIjogeyJ0eXBlIjogImNvb2tpZSIsICJjb29raWUtbmFtZSI6ICJkdW1teS1jb29raWUifSwgImxpc3RlbmVycyI6IHsibGlzdGVuZXIxIjogeyJwcm90b2NvbCI6ICJodHRwIiwgInBvcnQiOiA4MCwgImZvcndhcmQiOiAidGFyZ2V0LWdyb3VwMSJ9LCAibGlzdGVuZXIyIjogeyJwcm90b2NvbCI6ICJodHRwcyIsICJwb3J0IjogNDQzLCAiZm9yd2FyZCI6ICJ0YXJnZXQtZ3JvdXAxIn0sICJsaXN0ZW5lcjMiOiB7InByb3RvY29sIjogImh0dHBzIiwgInBvcnQiOiA4MDAxLCAiZm9yd2FyZCI6ICJ0YXJnZXQtZ3JvdXAyIn19LCAidGFyZ2V0X2dyb3VwcyI6IHsidGFyZ2V0LWdyb3VwMSI6IHsicHJvdG9jb2wiOiAiaHR0cCIsICJwb3J0IjogODAsICJoZWFsdGhjaGVjayI6IHsicGF0aCI6ICIvcGluZyIsICJ0aW1lb3V0IjogNCwgImludGVydmFsIjogNSwgInVuaGVhbHRoeV90aHJlc2hvbGQiOiAyLCAiaGVhbHRoeV90aHJlc2hvbGQiOiAyfX0sICJ0YXJnZXQtZ3JvdXAyIjogeyJwcm90b2NvbCI6ICJodHRwIiwgInBvcnQiOiA4MDAxLCAiaGVhbHRoY2hlY2siOiB7InBhdGgiOiAiL3BpbmciLCAidGltZW91dCI6IDQsICJpbnRlcnZhbCI6IDUsICJ1bmhlYWx0aHlfdGhyZXNob2xkIjogMiwgImhlYWx0aHlfdGhyZXNob2xkIjogMn19fSwgImlkbGVfdGltZW91dCI6ICI2MCIsICJjZXJ0aWZpY2F0ZSI6ICJhcm46YXdzOmlhbTo6Li4uOi4uLiIsICJzdWJuZXRzIjogWyJzdWJuZXQtMWQ0ZWI0NmEiLCAic3VibmV0LTdhMzFkZDQ2Il19LCAic25zIjogW10sICJzcXMiOiB7fSwgImV4dCI6IGZhbHNlLCAiY2xvdWRmcm9udCI6IGZhbHNlLCAiZWxhc3RpY2FjaGUiOiBmYWxzZSwgImRvY2RiIjogZmFsc2UsICJkb21haW4iOiAiZXhhbXBsZS5vcmciLCAiaW50X2RvbWFpbiI6ICJleGFtcGxlLmludGVybmFsIiwgInN1YmRvbWFpbiI6ICJwcm9qZWN0LXdpdGgtYWxiIiwgImhvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYiIsICJwcm9qZWN0X2hvc3RuYW1lIjogInByb2plY3Qtd2l0aC1hbGIuZXhhbXBsZS5vcmciLCAiaW50X3Byb2plY3RfaG9zdG5hbWUiOiAicHJvamVjdC13aXRoLWFsYi5leGFtcGxlLmludGVybmFsIiwgImZ1bGxfaG9zdG5hbWUiOiAiZm9vLS1wcm9qZWN0LXdpdGgtYWxiLmV4YW1wbGUub3JnIiwgImludF9mdWxsX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi5leGFtcGxlLmludGVybmFsIiwgImV4dF9ub2RlX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi0tJXMuZXhhbXBsZS5vcmciLCAiaW50X25vZGVfaG9zdG5hbWUiOiAiZm9vLS1wcm9qZWN0LXdpdGgtYWxiLS0lcy5leGFtcGxlLmludGVybmFsIiwgInByb2plY3QiOiB7ImZvcm11bGEtcmVwbyI6IG51bGwsICJmb3JtdWxhLWRlcGVuZGVuY2llcyI6IFsiaHR0cHM6Ly9naXRodWIuY29tL2V4YW1wbGUvYnVpbGRlci1iYXNlLWZvcm11bGEiXX0sICJhd3MiOiB7ImFjY291bnQtaWQiOiA1MTI2ODY1NTQ1OTIsICJyZWdpb24iOiAidXMtZWFzdC0xIiwgInZwYy1pZCI6ICJ2cGMtNzhhMjA3MWQiLCAic3VibmV0LWlkIjogInN1Ym5ldC0xZDRlYjQ2YSIsICJzdWJuZXQtY2lkciI6ICIxMC4wLjIuMC8yNCIsICJhdmFpbGFiaWxpdHktem9uZSI6ICJ1cy1lYXN0LTFkIiwgInJlZHVuZGFudC1zdWJuZXQtaWQiOiAic3VibmV0LTdhMzFkZDQ2IiwgInJlZHVuZGFudC1zdWJuZXQtY2lkciI6ICIxMC4wLjIuMC8yNCIsICJyZWR1bmRhbnQtYXZhaWxhYmlsaXR5LXpvbmUiOiAidXMtZWFzdC0xZSJ9LCAiZmFzdGx5IjogZmFsc2UsICJnY3MiOiBmYWxzZSwgImJpZ3F1ZXJ5IjogZmFsc2UsICJzdWJkb21haW5zIjogWyJmb28uYmFyIl0sICJ2YXVsdCI6IHsiYWRkcmVzcyI6ICJodHRwczovL3ZhdWx0LmV4YW1wbGUub3JnOjgyMDAifSwgIm5vZGUiOiAxLCAibm9kZW5hbWUiOiAicHJvamVjdC13aXRoLWFsYi0tZm9vLS0xIn0= > /etc/build-vars.json.b64\n\nif command -v salt-minion > /dev/null; then\n    # salt is installed, probably using an AMI or creating an AMI\n    # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.saltutil.html#salt.modules.saltutil.clear_cache\n    systemctl stop salt-minion 2> /dev/null || service salt-minion stop\nfi\n\n# remove leftover files from AMIs\nrm -rf \\\n    /etc/cfn-info.json \\\n    /etc/salt/pki/minion/* \\\n    /etc/salt/minion \\\n    /root/.ssh/* \\\n    /home/elife/.ssh/* \\\n    /home/ubuntu/.ssh/id_rsa* \\\n    /etc/certificates/* \\\n    /root/events.log \\\n    /var/cache/salt/minion\n"
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "EC2Instance2": {
+            "Properties": {
+                "ImageId": "ami-9eaa1cf6",
+                "InstanceType": "t2.small",
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "StackSecurityGroup"
+                    }
+                ],
+                "SubnetId": "subnet-7a31dd46",
+                "Tags": [
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-alb"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-alb--foo--2"
+                    },
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Node",
+                        "Value": "2"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": "#!/bin/bash\nset -x\nexec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\necho eyJwcm9qZWN0X25hbWUiOiAicHJvamVjdC13aXRoLWFsYiIsICJhdXRob3IiOiAibXlfdXNlciIsICJkYXRlX3JlbmRlcmVkIjogIjIwMjEtMTAtMDciLCAic3RhY2tuYW1lIjogInByb2plY3Qtd2l0aC1hbGItLWZvbyIsICJpbnN0YW5jZV9pZCI6ICJmb28iLCAiY2x1c3Rlcl9pZCI6IG51bGwsICJhbHQtY29uZmlnIjogbnVsbCwgImJyYW5jaCI6ICJtYXN0ZXIiLCAicmV2aXNpb24iOiBudWxsLCAicmRzX2RibmFtZSI6IG51bGwsICJyZHNfdXNlcm5hbWUiOiBudWxsLCAicmRzX3Bhc3N3b3JkIjogbnVsbCwgInJkc19pbnN0YW5jZV9pZCI6IG51bGwsICJyZHMiOiB7fSwgImVjMiI6IHsiY2x1c3Rlci1zaXplIjogMiwgImNwdS1jcmVkaXRzIjogInN0YW5kYXJkIiwgImRucy1leHRlcm5hbC1wcmltYXJ5IjogZmFsc2UsICJkbnMtaW50ZXJuYWwiOiBmYWxzZSwgInN1cHByZXNzZWQiOiBbXSwgImFtaSI6ICJhbWktOWVhYTFjZjYiLCAibWFzdGVybGVzcyI6IGZhbHNlLCAibWFzdGVyX2lwIjogIjEwLjAuMi40MiIsICJzZWN1cml0eS1ncm91cCI6IHt9LCAidHlwZSI6ICJ0Mi5zbWFsbCIsICJwb3J0cyI6IFsyMiwgODBdfSwgInMzIjoge30sICJla3MiOiBmYWxzZSwgImVsYiI6IGZhbHNlLCAiYWxiIjogeyJzdGlja2luZXNzIjogeyJ0eXBlIjogImNvb2tpZSIsICJjb29raWUtbmFtZSI6ICJkdW1teS1jb29raWUifSwgImxpc3RlbmVycyI6IHsibGlzdGVuZXIxIjogeyJwcm90b2NvbCI6ICJodHRwIiwgInBvcnQiOiA4MCwgImZvcndhcmQiOiAidGFyZ2V0LWdyb3VwMSJ9LCAibGlzdGVuZXIyIjogeyJwcm90b2NvbCI6ICJodHRwcyIsICJwb3J0IjogNDQzLCAiZm9yd2FyZCI6ICJ0YXJnZXQtZ3JvdXAxIn0sICJsaXN0ZW5lcjMiOiB7InByb3RvY29sIjogImh0dHBzIiwgInBvcnQiOiA4MDAxLCAiZm9yd2FyZCI6ICJ0YXJnZXQtZ3JvdXAyIn19LCAidGFyZ2V0X2dyb3VwcyI6IHsidGFyZ2V0LWdyb3VwMSI6IHsicHJvdG9jb2wiOiAiaHR0cCIsICJwb3J0IjogODAsICJoZWFsdGhjaGVjayI6IHsicGF0aCI6ICIvcGluZyIsICJ0aW1lb3V0IjogNCwgImludGVydmFsIjogNSwgInVuaGVhbHRoeV90aHJlc2hvbGQiOiAyLCAiaGVhbHRoeV90aHJlc2hvbGQiOiAyfX0sICJ0YXJnZXQtZ3JvdXAyIjogeyJwcm90b2NvbCI6ICJodHRwIiwgInBvcnQiOiA4MDAxLCAiaGVhbHRoY2hlY2siOiB7InBhdGgiOiAiL3BpbmciLCAidGltZW91dCI6IDQsICJpbnRlcnZhbCI6IDUsICJ1bmhlYWx0aHlfdGhyZXNob2xkIjogMiwgImhlYWx0aHlfdGhyZXNob2xkIjogMn19fSwgImlkbGVfdGltZW91dCI6ICI2MCIsICJjZXJ0aWZpY2F0ZSI6ICJhcm46YXdzOmlhbTo6Li4uOi4uLiIsICJzdWJuZXRzIjogWyJzdWJuZXQtMWQ0ZWI0NmEiLCAic3VibmV0LTdhMzFkZDQ2Il19LCAic25zIjogW10sICJzcXMiOiB7fSwgImV4dCI6IGZhbHNlLCAiY2xvdWRmcm9udCI6IGZhbHNlLCAiZWxhc3RpY2FjaGUiOiBmYWxzZSwgImRvY2RiIjogZmFsc2UsICJkb21haW4iOiAiZXhhbXBsZS5vcmciLCAiaW50X2RvbWFpbiI6ICJleGFtcGxlLmludGVybmFsIiwgInN1YmRvbWFpbiI6ICJwcm9qZWN0LXdpdGgtYWxiIiwgImhvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYiIsICJwcm9qZWN0X2hvc3RuYW1lIjogInByb2plY3Qtd2l0aC1hbGIuZXhhbXBsZS5vcmciLCAiaW50X3Byb2plY3RfaG9zdG5hbWUiOiAicHJvamVjdC13aXRoLWFsYi5leGFtcGxlLmludGVybmFsIiwgImZ1bGxfaG9zdG5hbWUiOiAiZm9vLS1wcm9qZWN0LXdpdGgtYWxiLmV4YW1wbGUub3JnIiwgImludF9mdWxsX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi5leGFtcGxlLmludGVybmFsIiwgImV4dF9ub2RlX2hvc3RuYW1lIjogImZvby0tcHJvamVjdC13aXRoLWFsYi0tJXMuZXhhbXBsZS5vcmciLCAiaW50X25vZGVfaG9zdG5hbWUiOiAiZm9vLS1wcm9qZWN0LXdpdGgtYWxiLS0lcy5leGFtcGxlLmludGVybmFsIiwgInByb2plY3QiOiB7ImZvcm11bGEtcmVwbyI6IG51bGwsICJmb3JtdWxhLWRlcGVuZGVuY2llcyI6IFsiaHR0cHM6Ly9naXRodWIuY29tL2V4YW1wbGUvYnVpbGRlci1iYXNlLWZvcm11bGEiXX0sICJhd3MiOiB7ImFjY291bnQtaWQiOiA1MTI2ODY1NTQ1OTIsICJyZWdpb24iOiAidXMtZWFzdC0xIiwgInZwYy1pZCI6ICJ2cGMtNzhhMjA3MWQiLCAic3VibmV0LWlkIjogInN1Ym5ldC0xZDRlYjQ2YSIsICJzdWJuZXQtY2lkciI6ICIxMC4wLjIuMC8yNCIsICJhdmFpbGFiaWxpdHktem9uZSI6ICJ1cy1lYXN0LTFkIiwgInJlZHVuZGFudC1zdWJuZXQtaWQiOiAic3VibmV0LTdhMzFkZDQ2IiwgInJlZHVuZGFudC1zdWJuZXQtY2lkciI6ICIxMC4wLjIuMC8yNCIsICJyZWR1bmRhbnQtYXZhaWxhYmlsaXR5LXpvbmUiOiAidXMtZWFzdC0xZSJ9LCAiZmFzdGx5IjogZmFsc2UsICJnY3MiOiBmYWxzZSwgImJpZ3F1ZXJ5IjogZmFsc2UsICJzdWJkb21haW5zIjogWyJmb28uYmFyIl0sICJ2YXVsdCI6IHsiYWRkcmVzcyI6ICJodHRwczovL3ZhdWx0LmV4YW1wbGUub3JnOjgyMDAifSwgIm5vZGUiOiAyLCAibm9kZW5hbWUiOiAicHJvamVjdC13aXRoLWFsYi0tZm9vLS0yIn0= > /etc/build-vars.json.b64\n\nif command -v salt-minion > /dev/null; then\n    # salt is installed, probably using an AMI or creating an AMI\n    # https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.saltutil.html#salt.modules.saltutil.clear_cache\n    systemctl stop salt-minion 2> /dev/null || service salt-minion stop\nfi\n\n# remove leftover files from AMIs\nrm -rf \\\n    /etc/cfn-info.json \\\n    /etc/salt/pki/minion/* \\\n    /etc/salt/minion \\\n    /root/.ssh/* \\\n    /home/elife/.ssh/* \\\n    /home/ubuntu/.ssh/id_rsa* \\\n    /etc/certificates/* \\\n    /root/events.log \\\n    /var/cache/salt/minion\n"
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "ELBv2": {
+            "Properties": {
+                "Name": "project-with-alb--foo",
+                "LoadBalancerAttributes": [
+                    {
+                        "Key": "idle_timeout.timeout_seconds",
+                        "Value": "60"
+                    },
+                    {
+                        "Key": "waf.fail_open.enabled",
+                        "Value": "true"
+                    }
+                ],
+                "Scheme": "internet-facing",
+                "SecurityGroups": [
+                    {
+                        "Ref": "ELBv2SecurityGroup"
+                    }
+                ],
+                "Subnets": [
+                    "subnet-1d4eb46a",
+                    "subnet-7a31dd46"
+                ],
+                "Tags": [
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-alb"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-alb--foo--alb"
+                    },
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-alb--foo"
+                    }
+                ],
+                "Type": "application"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer"
+        },
+        "ELBv2ListenerHttp80": {
+            "Properties": {
+                "DefaultActions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "ELBv2TargetGroupHttp80"
+                        },
+                        "Type": "forward"
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ELBv2"
+                },
+                "Port": 80,
+                "Protocol": "HTTP"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::Listener"
+        },
+        "ELBv2ListenerHttps443": {
+            "Properties": {
+                "Certificates": [
+                    {
+                        "CertificateArn": "arn:aws:iam::...:..."
+                    }
+                ],
+                "DefaultActions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "ELBv2TargetGroupHttp80"
+                        },
+                        "Type": "forward"
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ELBv2"
+                },
+                "Port": 443,
+                "Protocol": "HTTPS"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::Listener"
+        },
+        "ELBv2ListenerHttps8001": {
+            "Properties": {
+                "Certificates": [
+                    {
+                        "CertificateArn": "arn:aws:iam::...:..."
+                    }
+                ],
+                "DefaultActions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "ELBv2TargetGroupHttp8001"
+                        },
+                        "Type": "forward"
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "ELBv2"
+                },
+                "Port": 8001,
+                "Protocol": "HTTPS"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::Listener"
+        },
+        "ELBv2SecurityGroup": {
+            "Properties": {
+                "GroupDescription": "security group",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 80,
+                        "IpProtocol": "tcp",
+                        "ToPort": 80
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 443,
+                        "IpProtocol": "tcp",
+                        "ToPort": 443
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 8001,
+                        "IpProtocol": "tcp",
+                        "ToPort": 8001
+                    }
+                ],
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "ELBv2TargetGroupHttp80": {
+            "Properties": {
+                "HealthCheckIntervalSeconds": 5,
+                "HealthCheckPath": "/ping",
+                "HealthCheckPort": 80,
+                "HealthCheckProtocol": "HTTP",
+                "HealthCheckTimeoutSeconds": 4,
+                "HealthyThresholdCount": 2,
+                "Port": 80,
+                "Protocol": "HTTP",
+                "ProtocolVersion": "HTTP1",
+                "Tags": [
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-alb"
+                    }
+                ],
+                "TargetGroupAttributes": [
+                    {
+                        "Key": "deregistration_delay.timeout_seconds",
+                        "Value": "30"
+                    },
+                    {
+                        "Key": "stickiness.enabled",
+                        "Value": "true"
+                    },
+                    {
+                        "Key": "stickiness.type",
+                        "Value": "app_cookie"
+                    },
+                    {
+                        "Key": "stickiness.app_cookie.cookie_name",
+                        "Value": "dummy-cookie"
+                    }
+                ],
+                "Targets": [
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance1"
+                        }
+                    },
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance2"
+                        }
+                    }
+                ],
+                "UnhealthyThresholdCount": 2,
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup"
+        },
+        "ELBv2TargetGroupHttp8001": {
+            "Properties": {
+                "HealthCheckIntervalSeconds": 5,
+                "HealthCheckPath": "/ping",
+                "HealthCheckPort": 8001,
+                "HealthCheckProtocol": "HTTP",
+                "HealthCheckTimeoutSeconds": 4,
+                "HealthyThresholdCount": 2,
+                "Port": 8001,
+                "Protocol": "HTTP",
+                "ProtocolVersion": "HTTP1",
+                "Tags": [
+                    {
+                        "Key": "Cluster",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Environment",
+                        "Value": "foo"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "project-with-alb--foo"
+                    },
+                    {
+                        "Key": "Project",
+                        "Value": "project-with-alb"
+                    }
+                ],
+                "TargetGroupAttributes": [
+                    {
+                        "Key": "deregistration_delay.timeout_seconds",
+                        "Value": "30"
+                    },
+                    {
+                        "Key": "stickiness.enabled",
+                        "Value": "true"
+                    },
+                    {
+                        "Key": "stickiness.type",
+                        "Value": "app_cookie"
+                    },
+                    {
+                        "Key": "stickiness.app_cookie.cookie_name",
+                        "Value": "dummy-cookie"
+                    }
+                ],
+                "Targets": [
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance1"
+                        }
+                    },
+                    {
+                        "Id": {
+                            "Ref": "EC2Instance2"
+                        }
+                    }
+                ],
+                "UnhealthyThresholdCount": 2,
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup"
+        },
+        "ExtDNS": {
+            "Properties": {
+                "AliasTarget": {
+                    "DNSName": {
+                        "Fn::GetAtt": [
+                            "ELBv2",
+                            "DNSName"
+                        ]
+                    },
+                    "HostedZoneId": {
+                        "Fn::GetAtt": [
+                            "ELBv2",
+                            "CanonicalHostedZoneID"
+                        ]
+                    }
+                },
+                "Comment": "External DNS record for ALB",
+                "HostedZoneName": "example.org.",
+                "Name": "foo--project-with-alb.example.org",
+                "Type": "A"
+            },
+            "Type": "AWS::Route53::RecordSet"
+        },
+        "StackSecurityGroup": {
+            "Properties": {
+                "GroupDescription": "security group",
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 22,
+                        "IpProtocol": "tcp",
+                        "ToPort": 22
+                    },
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": 80,
+                        "IpProtocol": "tcp",
+                        "ToPort": 80
+                    }
+                ],
+                "VpcId": "vpc-78a2071d"
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        }
+    }
+}

@@ -1,0 +1,71 @@
+
+    {
+      "Name": "elife-Whitelist",
+      "Priority": 0,
+      "Statement": {
+        "OrStatement": {
+          "Statements": [
+            {
+              "ByteMatchStatement": {
+                "SearchString": "/ping",
+                "FieldToMatch": {
+                  "UriPath": {}
+                },
+                "TextTransformations": [
+                  {
+                    "Priority": 0,
+                    "Type": "NONE"
+                  }
+                ],
+                "PositionalConstraint": "EXACTLY"
+              }
+            },
+            {
+              "ByteMatchStatement": {
+                "SearchString": "/ping-fastly",
+                "FieldToMatch": {
+                  "UriPath": {}
+                },
+                "TextTransformations": [
+                  {
+                    "Priority": 0,
+                    "Type": "NONE"
+                  }
+                ],
+                "PositionalConstraint": "EXACTLY"
+              }
+            },
+            {
+              "ByteMatchStatement": {
+                "SearchString": "/status",
+                "FieldToMatch": {
+                  "UriPath": {}
+                },
+                "TextTransformations": [
+                  {
+                    "Priority": 0,
+                    "Type": "NONE"
+                  }
+                ],
+                "PositionalConstraint": "EXACTLY"
+              }
+            },
+            {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": ["WAFIPSetWhitelist", "Arn"]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "Action": {
+        "Allow": {}
+      },
+      "VisibilityConfig": {
+        "SampledRequestsEnabled": true,
+        "CloudWatchMetricsEnabled": true,
+        "MetricName": "firewall--prod--elife-Whitelist"
+      }
+    }

@@ -55,9 +55,9 @@ DEPTH = 0  # used to determine how deeply nested we are
 
 def set_defaults(defaults_dict=None):
     """re-initialises the `state.ENV` dictionary with the given defaults.
-    with no arguments, the global state will be reverted to it's initial state (an empty FreezeableDict).
+    With no arguments the global state will be reverted to it's initial state (an empty FreezeableDict).
 
-    use `state.set_defaults` BEFORE using ANY other `state.*` functions are called."""
+    Use `state.set_defaults` BEFORE using ANY other `state.*` functions are called."""
     global ENV, DEPTH
     if DEPTH != 0:
         msg = "refusing to set initial `threadbare.state.ENV` state within a `threadbare.state.settings` context manager."

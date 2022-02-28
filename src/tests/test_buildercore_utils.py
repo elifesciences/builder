@@ -1,7 +1,8 @@
+from collections import OrderedDict
 from . import base
 from functools import partial
 from buildercore import utils
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -40,8 +41,12 @@ class Simple(base.BaseCase):
         self.assertAllTrue(utils.isint, expected_true)
 
     def test_isstr(self):
-        expected_true = [''] if utils.gtpy2() else ['', r'', u'']
+        expected_true = ['', r'']
         self.assertAllTrue(utils.isstr, expected_true)
+
+        # when is a string not a string? when it's a bytestring
+        expected_false = b''
+        self.assertFalse(utils.isstr(expected_false))
 
     def test_nth(self):
         expected_vals = [
@@ -196,3 +201,51 @@ class Simple(base.BaseCase):
         ]
         for given, expected, func in cases:
             self.assertEqual(expected, utils.nested_dictmap(func, given))
+
+#
+
+def test_visit():
+    "`visit` can pass a value or object through unmodified."
+    cases = [
+        (None, None),
+        (True, True),
+        ("", ""),
+        ({}, {}),
+        ([], []),
+        (OrderedDict(), OrderedDict())
+    ]
+
+    def identity(value):
+        return value
+
+    for given, expected in cases:
+        assert utils.visit(given, identity) == expected, "failed case: %r" % given
+
+def test_visit__modify():
+    "`visit` can modify top-level as well as deeply-nested values in place."
+    cases = [
+        (None, None),
+        (1, 1),
+        (2, 2),
+        (3, 'fizz'),
+        (4, 4),
+        (5, 'buzz'),
+        (15, 'fizzbuzz'),
+        ({3: 3}, {3: 'fizz'}),
+        ({'foo': {'bar': {'baz': ['bup', 1, 2, 3, 4, 5, 15]}}},
+         {'foo': {'bar': {'baz': ['bup', 1, 2, 'fizz', 4, 'buzz', 'fizzbuzz']}}})
+    ]
+
+    def f(value):
+        if not isinstance(value, int):
+            return value
+        if not value % 3 and not value % 5:
+            return 'fizzbuzz'
+        if not value % 3:
+            return 'fizz'
+        if not value % 5:
+            return 'buzz'
+        return value
+
+    for given, expected in cases:
+        assert utils.visit(given, f) == expected, "failed case: %r" % given

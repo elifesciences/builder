@@ -1,5 +1,5 @@
 from . import base
-from mock import patch, call
+from unittest.mock import patch, call
 import utils
 
 class TestUtils(base.BaseCase):

@@ -1,199 +1,202 @@
 {
-    "description": "defaults for all projects in this file", 
-    "salt": "2016.3", 
-    "domain": "example.org", 
-    "intdomain": "example.internal", 
-    "subdomain": "dummy3", 
-    "repo": "ssh://git@github.com/elifesciences/dummy3", 
-    "formula-repo": null, 
-    "private-repo": "ssh://github.com/exampleorg/builder-private-example", 
-    "configuration-repo": "ssh://github.com/exampleorg/builder-configuration-example", 
-    "default-branch": "master", 
+    "description": "defaults for all projects in this file",
+    "salt": "2016.3",
+    "domain": "example.org",
+    "intdomain": "example.internal",
+    "subdomain": "dummy3",
+    "repo": "ssh://git@github.com/elifesciences/dummy3",
+    "formula-repo": null,
+    "private-repo": "ssh://github.com/exampleorg/builder-private-example",
+    "configuration-repo": "ssh://github.com/exampleorg/builder-configuration-example",
+    "default-branch": "master",
     "formula-dependencies": [
         "https://github.com/example/builder-base-formula"
-    ], 
+    ],
     "aws": {
+        "account-id": 512686554592,
+        "unique": false,
         "ec2": {
-            "cluster-size": 1, 
+            "type": "t2.small",
+            "cluster-size": 1,
             "cpu-credits": "standard",
             "dns-external-primary": false,
-            "dns-internal": false, 
-            "suppressed": [], 
-            "overrides": {}, 
-            "security-group": {},
+            "dns-internal": false,
+            "overrides": {},
+            "suppressed": [],
             "ami": "ami-111111",
+            "masterless": false,
             "master_ip": "10.0.2.42",
-            "masterless": false
-        }, 
-        "type": "t2.small", 
-        "region": "us-east-1", 
+            "security-group": {},
+            "ports": [
+                22
+            ]
+        },
+        "region": "us-east-1",
+        "vpc-id": "vpc-78a2071d",
+        "subnet-id": "subnet-1d4eb46a",
+        "subnet-cidr": "10.0.2.0/24",
+        "availability-zone": "us-east-1d",
+        "redundant-subnet-id": "subnet-7a31dd46",
+        "redundant-subnet-cidr": "10.0.2.0/24",
+        "redundant-availability-zone": "us-east-1e",
+        "sqs": [],
+        "sns": [],
+        "s3": [],
+        "subdomains": [],
         "vault": {
             "address": "https://vault.example.org:8200"
-        },
-        "vpc-id": "vpc-78a2071d", 
-        "subnet-id": "subnet-1d4eb46a", 
-        "subnet-cidr": "10.0.2.0/24", 
-        "account-id": 512686554592,
-        "availability-zone": "us-east-1d",
-        "redundant-subnet-id": "subnet-7a31dd46", 
-        "redundant-subnet-cidr": "10.0.2.0/24", 
-        "redundant-availability-zone": "us-east-1e",
-        "sns": [], 
-        "sqs": [], 
-        "s3": [], 
-        "subdomains": [], 
-        "ports": [
-            22
-        ]
-    }, 
+        }
+    },
     "aws-alt": {
         "fresh": {
+            "account-id": 512686554592,
+            "unique": false,
             "ec2": {
-                "cluster-size": 1, 
+                "type": "t2.small",
+                "cluster-size": 1,
                 "cpu-credits": "standard",
                 "dns-external-primary": false,
-                "dns-internal": false, 
-                "suppressed": [], 
-                "overrides": {}, 
-                "security-group": {},
+                "dns-internal": false,
+                "overrides": {},
+                "suppressed": [],
                 "ami": "ami-9eaa1cf6",
+                "masterless": false,
                 "master_ip": "10.0.2.42",
-                "masterless": false
-            }, 
-            "type": "t2.small", 
-            "region": "us-east-1", 
+                "security-group": {},
+                "ports": [
+                    22
+                ]
+            },
+            "region": "us-east-1",
+            "vpc-id": "vpc-78a2071d",
+            "subnet-id": "subnet-1d4eb46a",
+            "subnet-cidr": "10.0.2.0/24",
+            "availability-zone": "us-east-1d",
+            "redundant-subnet-id": "subnet-7a31dd46",
+            "redundant-subnet-cidr": "10.0.2.0/24",
+            "redundant-availability-zone": "us-east-1e",
+            "sqs": [],
+            "sns": [],
+            "s3": [],
+            "subdomains": [],
             "vault": {
                 "address": "https://vault.example.org:8200"
             },
-            "vpc-id": "vpc-78a2071d", 
-            "subnet-id": "subnet-1d4eb46a", 
-            "subnet-cidr": "10.0.2.0/24", 
-            "account-id": 512686554592,
-            "availability-zone": "us-east-1d",
-            "redundant-subnet-id": "subnet-7a31dd46", 
-            "redundant-subnet-cidr": "10.0.2.0/24", 
-            "redundant-availability-zone": "us-east-1e",
-            "sns": [], 
-            "sqs": [], 
-            "s3": [], 
-            "subdomains": [], 
-            "ports": [
-                22
-            ], 
             "description": "uses a public Ubuntu AMI instead of an elife generated basebox."
-        }, 
+        },
         "alt-config1": {
+            "account-id": 512686554592,
+            "unique": false,
             "ec2": {
-                "cluster-size": 1, 
+                "type": "t2.small",
+                "cluster-size": 1,
                 "cpu-credits": "standard",
                 "dns-external-primary": false,
-                "dns-internal": false, 
-                "suppressed": [], 
-                "overrides": {}, 
-                "security-group": {},
+                "dns-internal": false,
+                "overrides": {},
+                "suppressed": [],
                 "ami": "ami-111111",
+                "masterless": false,
                 "master_ip": "10.0.2.42",
-                "masterless": false
-            }, 
-            "type": "t2.small", 
-            "region": "us-east-1", 
-            "vault": {
-                "address": "https://vault.example.org:8200"
+                "security-group": {},
+                "ports": [
+                    80
+                ]
             },
-            "vpc-id": "vpc-78a2071d", 
-            "subnet-id": "subnet-1d4eb46a", 
-            "subnet-cidr": "10.0.2.0/24", 
-            "account-id": 512686554592,
+            "region": "us-east-1",
+            "vpc-id": "vpc-78a2071d",
+            "subnet-id": "subnet-1d4eb46a",
+            "subnet-cidr": "10.0.2.0/24",
             "availability-zone": "us-east-1d",
-            "redundant-subnet-id": "subnet-7a31dd46", 
-            "redundant-subnet-cidr": "10.0.2.0/24", 
+            "redundant-subnet-id": "subnet-7a31dd46",
+            "redundant-subnet-cidr": "10.0.2.0/24",
             "redundant-availability-zone": "us-east-1e",
             "rds": {
-                "multi-az": false, 
-                "engine": "postgres", 
-                "version": "9.4", 
+                "multi-az": false,
+                "engine": "postgres",
+                "version": "9.4",
                 "allow-major-version-upgrade": false,
-                "type": "db.t2.small", 
-                "storage": 15, 
+                "type": "db.t2.small",
+                "storage": 15,
                 "storage-type": "standard",
-                "backup-retention": 28, 
-                "params": [], 
+                "backup-retention": 28,
+                "params": [],
                 "encryption": false,
                 "subnets": [
-                    "subnet-foo", 
+                    "subnet-foo",
                     "subnet-bar"
                 ]
-            }, 
+            },
             "ext": {
-                "size": 200, 
+                "size": 200,
                 "device": "/dev/sdh"
-            }, 
-            "sns": [], 
-            "sqs": [], 
-            "s3": [], 
-            "subdomains": [], 
-            "ports": [
-                80
-            ]
-        }, 
-        "alt-config2": {
-            "ec2": {
-                "cluster-size": 1, 
-                "cpu-credits": "standard",
-                "dns-external-primary": false,
-                "dns-internal": false, 
-                "suppressed": [], 
-                "overrides": {}, 
-                "security-group": {},
-                "ami": "ami-111111",
-                "master_ip": "10.0.2.42",
-                "masterless": false
-            }, 
-            "type": "t2.small", 
-            "region": "us-east-1", 
+            },
+            "sqs": [],
+            "sns": [],
+            "s3": [],
+            "subdomains": [],
             "vault": {
                 "address": "https://vault.example.org:8200"
-            },
-            "vpc-id": "vpc-78a2071d", 
-            "subnet-id": "subnet-1d4eb46a", 
-            "subnet-cidr": "10.0.2.0/24", 
+            }
+        },
+        "alt-config2": {
             "account-id": 512686554592,
+            "unique": false,
+            "ec2": {
+                "type": "t2.small",
+                "cluster-size": 1,
+                "cpu-credits": "standard",
+                "dns-external-primary": false,
+                "dns-internal": false,
+                "overrides": {},
+                "suppressed": [],
+                "ami": "ami-111111",
+                "masterless": false,
+                "master_ip": "10.0.2.42",
+                "security-group": {},
+                "ports": [
+                    22
+                ]
+            },
+            "region": "us-east-1",
+            "vpc-id": "vpc-78a2071d",
+            "subnet-id": "subnet-1d4eb46a",
+            "subnet-cidr": "10.0.2.0/24",
             "availability-zone": "us-east-1d",
-            "redundant-subnet-id": "subnet-7a31dd46", 
-            "redundant-subnet-cidr": "10.0.2.0/24", 
+            "redundant-subnet-id": "subnet-7a31dd46",
+            "redundant-subnet-cidr": "10.0.2.0/24",
             "redundant-availability-zone": "us-east-1e",
             "rds": {
-                "multi-az": false, 
-                "engine": "postgres", 
-                "version": "9.4", 
+                "multi-az": false,
+                "engine": "postgres",
+                "version": "9.4",
                 "allow-major-version-upgrade": false,
-                "type": "db.t2.small", 
-                "storage": 5, 
+                "type": "db.t2.small",
+                "storage": 5,
                 "storage-type": "standard",
-                "backup-retention": 28, 
-                "params": [], 
+                "backup-retention": 28,
+                "params": [],
                 "encryption": false,
                 "subnets": [
-                    "subnet-foo", 
+                    "subnet-foo",
                     "subnet-bar"
-                ], 
+                ],
                 "deletion-policy": "Delete"
-            }, 
-            "sns": [], 
-            "sqs": [], 
-            "s3": [], 
-            "subdomains": [], 
-            "ports": [
-                22
-            ]
+            },
+            "sqs": [],
+            "sns": [],
+            "s3": [],
+            "subdomains": [],
+            "vault": {
+                "address": "https://vault.example.org:8200"
+            }
         }
-    }, 
+    },
     "gcp": {
         "bigquery": false
     },
-    "gcp-alt": {
-    },
     "meta": {
         "description": "foo"
-    }
+    },
+    "gcp-alt": {}
 }

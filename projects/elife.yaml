@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '3000.3' # the version of salt these project use
+    salt: '3003' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -24,12 +24,21 @@ defaults:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         account-id: 512686554592
-        # TODO: this field will become a dictionary of all EC2-related configuration
+        # can this configuration be reused or is it unique? 
+        # typically it can be reused, but some configurations embed values that are unique to a named instance.
+        # for example: the 'prod' configuration for 'journal' is unique to `journal--prod` and cannot be reused.
+        unique: false
         ec2:
+            type: t3.small # ~ $20/mo
+            # ports: {} # no open ports
+            # ports:
+            #    - 22 # open ssh to world
+            #    - 4506: # open 4506 to VPC ip range only
+            #        cidr-ip: 10.0.0.0/16
             # root partition properties, left undefined, results in a ~7.7GiB EBS root volume
             #root:
             #    size:
-            #    type: gpt|ebs
+            #    type: standard|gp2|ebs # default is 'standard'. t2 'standard' is magnetic, t3 'standard' is gp2.
             # how many EC2 instance per stack instance
             cluster-size: 1
             # turn on T2 `unlimited` if necessary
@@ -47,7 +56,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0a8632ef79ea29a59 # GENERATED created from basebox--1804
+            ami: ami-0d8afbd9842c2b224 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -67,10 +76,6 @@ defaults:
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.3.0/24'
         redundant-availability-zone: us-east-1e
-        # TODO: this will be moved inside aws.ec2
-        type: t2.small  # ~ $20/mo
-        # TODO: this will be moved inside aws.ec2
-        # ports: {}
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -104,14 +109,51 @@ defaults:
             type: gp2 # standard|gp2|io1|sc1
             size: 10 # GB
             device: /dev/sdh
-        elb:
-            # elb defaults only used if an 'elb' section present in project
+
+        # alb default only used if an 'alb' section present in project
+        # also known as 'Elastic Load Balancer v2'
+        alb:
             stickiness: false
+            #stickiness:
+            #   type: cookie | browser
+            #   cookie-name: ...
+            # 'listeners' replaces ELB's 'protocol' and 'additional_listeners'
+            listeners:
+                listener1:
+                    protocol: http
+                    port: 80
+                    forward: target-group1
+
+                listener2:
+                    protocol: https
+                    port: 443
+                    forward: target-group1
+
+            target_groups:
+                target-group1:
+                    protocol: http
+                    port: 80
+                    healthcheck:
+                        path: /ping
+                        timeout: 4
+                        interval: 5
+                        unhealthy_threshold: 2
+                        healthy_threshold: 2
+            idle_timeout: 60
+            # maintained through `aws iam upload-server-certificate`
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2022-02-22.wildcard.elifesciences.org
+
+        # elb defaults only used if an 'elb' section present in project
+        elb:
+            stickiness: false
+            #stickiness:
+            #   type: cookie | browser
+            #   cookie-name: ...
             protocol: http
             additional_listeners: {}
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2019.wildcard.elifesciences.org
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2022-02-22.wildcard.elifesciences.org
             healthcheck:
                 protocol: http
                 port: 80
@@ -120,6 +162,11 @@ defaults:
                 interval: 5
                 unhealthy_threshold: 2
                 healthy_threshold: 2
+
+        # when both elb and alb are present, the elb is the primary load balancer.
+        # change this (per-project) to 'alb' to migrate from one lb to the other.
+        primary_lb: elb
+
         sqs: []
         sns: []
         # e.g.
@@ -129,7 +176,7 @@ defaults:
         #           queue-name:
         #               prefix: 'elife-'
         #               suffix: '.xml'
-        #       deletion-policy: delete|retain
+        #       deletion-policy: delete|retain (default 'delete')
         #       encryption: false
         s3: []
         eks:
@@ -147,6 +194,8 @@ defaults:
                 max-size: 3
                 # (currently fixed) number of EC2 nodes
                 desired-capacity: 1
+                #root:
+                #   size: 20 # GiB, default
             helm: false
             external-dns: false
                 # Route53 hosted zone to create subdomains on
@@ -159,7 +208,8 @@ defaults:
             domains: []
             origins: {}
             # maintained through `aws iam upload-server-certificate`
-            certificate_id: ASCAJG6DKII7DCOTNDHNC
+            # arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2022-02-22.wildcard.elifesciences.org
+            certificate_id: ASCAXOXT77XQIYT7U4CQM
             cookies: []
             compress: true
             headers: []
@@ -180,7 +230,15 @@ defaults:
                     - 151.101.130.217
                     - 151.101.194.217
             gcslogging: false
+            # gcslogging:
+            #   bucket: 
+            #   path: 
+            #   period: 
             bigquerylogging: false
+            # bigquerylogging:
+            #   project:
+            #   dataset: 
+            #   table:
             healthcheck: false
             errors: false
             ip-blacklist: false
@@ -188,6 +246,15 @@ defaults:
             vcl:
                 - "original-host"
             surrogate-keys: {}
+            # if no backend specified then a Fastly 'shield' is used.
+            # the Fastly shield PoP to use is mapped to the 'aws.region' value.
+            #backends:
+            #    # first is default
+            #    default:
+            #        hostname: some-bucket.s3.amazonaws.com
+            #    articles:
+            #        hostname: "{instance}-some-bucket.s3.amazonaws.com"
+            #        condition: req.url ~ "^/some-prefix/"
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -216,6 +283,34 @@ defaults:
             subnets:
                 - subnet-0590f9e8ead4bbd9a # elife-docdb-subnet-1
                 - subnet-02dc8ba012ee359ae # elife-docdb-subnet-2
+        waf:
+            # a map of IP group-name to ip-group
+            ip-sets: {}
+            # a list of ARNs that should be attached to this WAF. Only tested with ALBs.
+            associations: []
+            # default action for requests that don't match any rule in the list of below rules.
+            action: allow # count, block, custom-response
+            # custom rule sets, $1/mo each.
+            # the implementation of these is done as snippets of JSON rather than modeling them in Troposphere.
+            # it makes them slightly *brittle* but you can also build rules in the WAF Rule Builder and then drop 
+            # them in here with no/little effort.
+            # see `src/buildercore/waf/*.json` for examples.
+            custom-rules: []
+            # managed rule sets, $1/mo, "vendorname/ruleset-name"
+            # a map of vendor->rulesets.
+            # - https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html
+            managed-rules: {}
+            #   NS/ManagedRuleSetName:
+            #       # order precedence of this ruleset vs other rules and rule sets
+            #       priority: 5
+            #       # just to illustrate which rules are not being excluded.
+            #       included: []
+            #       # excluded rules in a ruleset are set to 'count' only.
+            #       # requests matching a non-excluded rule will take the rule's action, which is either 'none' or 'block'
+            #       # 'none' will defer to the WebACL's default action (allow).
+            #       excluded:
+            #           - RuleName1
+            #           - RuleName2
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -226,40 +321,62 @@ defaults:
             ec2:
                 # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+                type: t2.small
 
         snsalt:
-            description: uses the next version of Salt to test formula for problems upgrading. OS agnostic.
+            description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
             ec2:
-                salt: '3000.3'
+                salt: '3003'
                 masterless: True
 
         1804:
             description: Ubuntu 18.04 (Bionic)
-            ec2: true # explicitly specify an 18.04 ami when 18.04 is no longer the default (2023?)
-         # 18.04, deprecated, use s1804
-        standalone1804:
-            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+            # todo: explicitly specify an 18.04 AMI when 18.04 is no longer the default (2023?)
+            #ec2: {} # means 'use defaults'. don't use 'true'.
             ec2:
-                ami: ami-0a8632ef79ea29a59 # GENERATED created from basebox--1804
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-                masterless: true
+                type: t2.small
+
+        # lsh@2022-02-23: disabled, unused.
+        # 18.04, deprecated, use s1804
+        #standalone1804:
+        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+        #    ec2:
+        #        ami: ami-0d8afbd9842c2b224 # GENERATED created from basebox--1804
+        #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+        #        masterless: true
+        #        type: t2.small
+
         s1804:
-            description: alias for standalone1804
+            description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-0a8632ef79ea29a59 # GENERATED created from basebox--1804
+                ami: ami-0d8afbd9842c2b224 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
-        # 18.04, same as default
+                type: t2.small
+
+        2004:
+            description: Ubuntu 20.04 (Focal)
+            ec2:
+                ami: ami-0d5b1796a6517f68b # GENERATED created from basebox--2004
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+
+        s2004:
+            description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
+            ec2:
+                ami: ami-0d5b1796a6517f68b # GENERATED created from basebox--2004
+                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
+                masterless: true
+
         standalone:
-            description: isolated from the master-server and uses same AMI as default configuration
+            description: same as default configuration, but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 masterless: true
+                type: t2.small
     gcp:
         bigquery: false
     vagrant:
-        # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
-        box: bento/ubuntu-18.04
-        ip: 192.168.33.44
+        box: ubuntu/focal64
+        ip: 192.168.56.44
         ram: 2048
         cpus: 2
         cpucap: 100 # percent (vagrant default)
@@ -268,6 +385,12 @@ defaults:
         #    1239: 80
         #    1240: 8001
 
+    # support for vagrant-alt was removed apparently, so this doesn't do anything.
+    vagrant-alt:
+        1804:
+            # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
+            box: bento/ubuntu-18.04
+
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
     vagrant: {}
@@ -275,8 +398,10 @@ builder:
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
-        ports:
-            - 22
+        ec2:
+            type: t2.small
+            ports:
+                - 22
     aws-alt:
         # overrides to default aws-alt configurations to use non-basebox AMIs
         1804:
@@ -284,22 +409,29 @@ basebox:
                 # should match aws-alt 'fresh'
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
 
+        2004:
+            ec2:
+                ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
+
         # overrides to default aws-alt configurations to use non-basebox AMIs *and* run isolated from master-server
 
+        # lsh@2022-02-23: disabled, unused.
         # 18.04
-        standalone1804:
-            description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
-            ec2:
-                # should match aws-alt 'fresh'
-                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+        #standalone1804:
+        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
+        #    ec2:
+        #        # should match aws-alt 'fresh'
+        #        ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
     vagrant: {}
 
 heavybox:
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
-        ports:
-            - 22
+        ec2:
+            type: t2.small
+            ports:
+                - 22
         ext:
             size: 10 # GB
             type: standard
@@ -313,20 +445,25 @@ master-server:
     # see: https://github.com/elifesciences/builder-private
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
-        ports:
-            - 22
-            - 4506: # salt publish port
-                # CIDR of subnet this master will server
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-            - 4505: # salt return port
-                cidr-ip: 10.0.0.0/16
-            - 8080 # chemist, Github webhooks for formulas
-            - 8200 # Vault, secrets management
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 4506: # salt publish port
+                    # CIDR of subnet this master will server
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                - 4505: # salt return port
+                    cidr-ip: 10.0.0.0/16
+                - 8080 # chemist, receives Github webhooks for updating formulas
+                - 8200 # Vault, secrets management web UI
     aws-alt:
         '2018-04-09-2':
+            # unique because: 'subdomains' contains static values.
+            unique: true
             subdomains:
                 - master-server
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             8200: 8200 # Vault GUI
 
@@ -336,12 +473,15 @@ lax:
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
-            - 8001 # bot-lax api
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 443
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                # bot-lax web UI to upload/validate/transform XML and article-json
+                - 8001 
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
@@ -390,6 +530,7 @@ lax:
                 healthcheck:
                     path: /api/v2/ping
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1239: 80
             1240: 8001
@@ -399,18 +540,19 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
+            type: t2.small
             root:
                 size: 30 # GB
                 type: gp2
-        ports:
-            - 22
-            # only internal traffic has access to port 80 and http
-            - 80:
-                cidr-ip: 10.0.0.0/16
-            # the world must use https
-            - 443
-            # - 8000: # don't expose this to public. Kong uses this to proxy requests
-            # - 8001: # don't ever expose to public. Kong uses this for API admin
+            ports:
+                - 22
+                # only internal traffic has access to port 80 and http
+                - 80:
+                    cidr-ip: 10.0.0.0/16
+                # public access to api gateway
+                - 443
+                # - 8000: # don't expose to public. Kong uses this to proxy requests.
+                # - 8001: # don't expose to public. Kong uses this for API admin.
         fastly:
             subdomains:
                 - "{instance}--cdn-gateway"
@@ -430,25 +572,37 @@ api-gateway:
                 dataset: "{instance}"
                 table: "api_gateway"
     aws-alt:
+        # standalone instances do not have access to Vault secrets via the master-server and it's ext_pillar
         standalone:
+            fastly: false
+        1804:
             fastly: false
         s1804:
             fastly: false
+        2004:
+            fastly: false
+        s2004:
+            fastly: false
         snsalt:
             fastly: false
-        end2end: {}
         continuumtest:
+            # unique because: 
+            # - 'fastly.bigquerylogging.dataset' is static.
+            unique: true
             fastly:
                 bigquerylogging:
                     dataset: staging
                 gcslogging:
                     bucket: staging-elife-fastly
         prod:
+            # unique because: 'fastly.subdomains' contains static values.
+            unique: true
             fastly:
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1323: 80
 
@@ -461,18 +615,20 @@ journal:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80:
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-    aws-alt:
-        ci:
-            #type: t2.2xlarge
-            type: c4.2xlarge
+        ec2:
+            type: t2.small
             ports:
                 - 22
                 - 443
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+    aws-alt:
+        ci:
+            ec2:
+                type: c4.2xlarge
+                ports:
+                    - 22
+                    - 443
         end2end:
             description: end2end environment for journal. ELB on top of multiple EC2 instances
             ec2:
@@ -483,10 +639,26 @@ journal:
                 overrides:
                     2:
                         type: cache.t2.micro
-            elb:
-                protocol:
-                    - https
-                    - http
+            alb:
+                listeners:
+                    listener1:
+                        protocol: http
+                        port: 80
+                        forward: target-group1
+                    listener2:
+                        protocol: https
+                        port: 443
+                        forward: target-group1
+                target_groups:
+                    target-group1:
+                        protocol: http
+                        port: 80
+                        healthcheck:
+                            path: /ping
+                            timeout: 4
+                            interval: 5
+                            unhealthy_threshold: 2
+                            healthy_threshold: 2
             fastly:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -520,14 +692,32 @@ journal:
                     dataset: "{instance}"
                     table: "journal"
         continuumtest:
+            # unique because: 'fastly.bigquerylogging.*' values are static.
+            unique: true
             elasticache:
                 engine: redis
                 type: cache.t2.micro
                 clusters: 2
-            elb:
-                protocol:
-                    - https
-                    - http
+            alb:
+                listeners:
+                    listener1:
+                        protocol: http
+                        port: 80
+                        forward: target-group1
+                    listener2:
+                        protocol: https
+                        port: 443
+                        forward: target-group1
+                target_groups:
+                    target-group1:
+                        protocol: http
+                        port: 80
+                        healthcheck:
+                            path: /ping
+                            timeout: 4
+                            interval: 5
+                            unhealthy_threshold: 2
+                            healthy_threshold: 2
             fastly:
                 subdomains:
                     - "{instance}--cdn-journal"
@@ -561,9 +751,13 @@ journal:
                     dataset: "staging"
                     table: "journal"
         prod:
-            description: prod environment for journal. ELB on top of multiple EC2 instances
+            description: production environment for journal. An ELB on top of multiple EC2 instances fronted by Fastly.
+            # unique because:
+            # - 'fastly.subdomains' contains static values.
+            # - 'cloudfront.subdomains' contains static values.
+            unique: true
             ec2:
-                cluster-size: 3
+                cluster-size: 4
             elasticache:
                 engine: redis
                 type: cache.t2.medium # 3.22 GB of memory, ~$50/mo
@@ -571,10 +765,26 @@ journal:
                 overrides:
                     2:
                         type: cache.t2.micro # 0.56 GB of memory, ~$12/mo
-            elb:
-                protocol:
-                    - https
-                    - http
+            alb:
+                listeners:
+                    listener1:
+                        protocol: http
+                        port: 80
+                        forward: target-group1
+                    listener2:
+                        protocol: https
+                        port: 443
+                        forward: target-group1
+                target_groups:
+                    target-group1:
+                        protocol: http
+                        port: 80
+                        healthcheck:
+                            path: /ping
+                            timeout: 4
+                            interval: 5
+                            unhealthy_threshold: 2
+                            healthy_threshold: 2
             cloudfront:
                 subdomains:
                     - "placeholder2-prod-journal" # only here to avoid rewriting the following values
@@ -625,6 +835,7 @@ journal:
                     dataset: "{instance}"
                     table: "journal"
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1240: 80
@@ -634,10 +845,11 @@ pattern-library:
     repo: https://github.com/elifesciences/pattern-library
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
-        ports:
-            - 22
-            - 80
-            - 443
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 443
     aws-alt:
         ci:
             ec2: false
@@ -645,9 +857,12 @@ pattern-library:
                 "{instance}-pattern-library":
                     public: true
         prod:
+            # unique because: 'subdomains' contains static values.
+            unique: true
             subdomains:
                 - ui-patterns
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1340: 80
 
@@ -657,19 +872,21 @@ elife-metrics:
     repo: https://github.com/elifesciences/elife-metrics
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80
-            - 5432
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
         end2end:
-            description: end2end environment for metrics. RDS backed
+            description: end2end environment for metrics. RDS backed.
             rds:
                 backup-retention: 2 # days
                 storage-type: Standard
         prod:
-            description: production environment for metrics. RDS backed
+            description: production environment for metrics. RDS backed.
             ext:
                 size: 10 # GB
                 type: standard
@@ -678,6 +895,7 @@ elife-metrics:
                 storage: 20
                 storage-type: Standard
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1240: 80
 
@@ -687,11 +905,10 @@ elife-bot:
     subdomain: bot
     # ip: 54.164.145.166 # bot.elifesciences.org must be available at this IP
     aws:
-        type: t2.medium
-        ports:
-            - 22
-            # TODO: close this port to outside the VPC
-            - 80
+        ec2:
+            type: t2.medium
+            ports:
+                - 22
         ext:
             size: 30 # GB
             type: standard
@@ -705,14 +922,22 @@ elife-bot:
             "{instance}-elife-bot-digests-input":
             "{instance}-elife-bot-decision-letter-input":
             "{instance}-elife-bot-decision-letter-output":
+            "{instance}-elife-bot-accepted-submission-cleaning-output":
         sqs:
+            # gnott@2021-08: poa-incoming-queue was configured to avoid the rigidly timed PoA packaging process.
+            # now the S3 notifications go into the queue, and elife-bot reads the messages at four specific times daily
             "{instance}-poa-incoming-queue":
                 # no subscriptions to SNS
                 subscriptions: []
+            # gnott@2021-08: used for the RDS / ERA article pipeline to trigger depositing to Software Heritage.
+            "{instance}-era-incoming-queue":
+                subscriptions: []
         sns:
-            # elife-bot-event-property--prod, elife-bot-event-property--end2end, etc.
             - elife-bot-event-property--{instance}
     aws-alt:
+        # lsh@2022-02-23: 
+        # * why are there no overrides for the other alt-configs?
+        # * if the default deletion-policy is to 'delete' why are we repeating ourselves over and over in the alt-configs?
         snsalt:
             s3:
                 "{instance}-elife-silent-corrections":
@@ -747,6 +972,23 @@ elife-bot:
                 # commented out because buckets already exist outside of CloudFormation:
                 #"{instance}-elife-bot":
                 #    deletion-policy: delete
+        s2004:
+            s3:
+                "{instance}-elife-silent-corrections":
+                    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: delete
+                "{instance}-elife-bot-sessions":
+                    deletion-policy: delete
+                "{instance}-elife-bot-digests-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: delete
+                "{instance}-elife-bot-decision-letter-output":
+                    deletion-policy: delete
+                # commented out because buckets already exist outside of CloudFormation:
+                #"{instance}-elife-bot":
+                #    deletion-policy: delete
         standalone:
             s3:
                 "{instance}-elife-silent-corrections":
@@ -765,12 +1007,12 @@ elife-bot:
                 #"{instance}-elife-bot":
                 #    deletion-policy: delete
         end2end:
-            ports:
-                - 22
-                - 8020 # exposing FTP contents
-                - 8021 # exposing FTP contents, HTTPS
-                - 1080 # exposing mailcatcher API
-            description: speeding up end2end tests
+            ec2:
+                ports:
+                    - 22
+                    - 8020 # exposing FTP contents
+                    - 8021 # exposing FTP contents, HTTPS
+                    - 1080 # exposing mailcatcher API
             s3:
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
@@ -809,8 +1051,6 @@ elife-bot:
                         continuumtest-poa-incoming-queue: {}
                     deletion-policy: delete
         prod:
-            # don't change type through CloudFormation because the template is too old to be modified successfully
-            #type: c5.2xlarge
             s3:
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
@@ -821,12 +1061,19 @@ elife-bot:
                 "{instance}-elife-bot-decision-letter-input":
                     sqs-notifications:
                         incoming-queue: {}
+                "{instance}-elife-bot-accepted-submission-cleaning-output":
+                    deletion-policy: retain
                 # already existing bucket, do not uncomment
                 #"{instance}-elife-ejp-poa-delivery":
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
-    vagrant: {}
+            sqs:
+                "{instance}-elife-accepted-submission-cleaning-s3-events":
+                    subscriptions:
+                        - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
+    vagrant:
+        box: bento/ubuntu-18.04
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -889,22 +1136,32 @@ generic-cdn:
                 table: "generic_cdn"
     aws-alt:
         # have to specify this because otherwise configuration such as `fresh` inherited from defaults
-        # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them?
+        # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them.
         fresh:
             ec2: false
         1804:
             ec2: false
         s1804:
             ec2: false
+        2004:
+            ec2: false
+        s2004:
+            ec2: false
         standalone:
             ec2: false
         end2end:
+            # unique because: 
+            # - 'fastly.gcslogging.path' is static. log data would be commingled.
+            unique: true
             fastly:
                 gcslogging:
                     bucket: end2end-elife-fastly
                     path: generic-cdn--end2end/
                     period: 600
         continuumtest:
+            # unique because: 
+            # - 'fastly.gcslogging.path' is static. log data would be commingled.
+            unique: true
             fastly:
                 gcslogging:
                     bucket: staging-elife-fastly
@@ -913,6 +1170,10 @@ generic-cdn:
                 bigquerylogging:
                     dataset: "staging"
         prod:
+            # unique because: 
+            # - 'fastly.subdomains' contains static values.
+            # - 'fastly.gcslogging.path' is static. log data would be commingled.
+            unique: true
             fastly:
                 subdomains:
                     - "cdn"
@@ -929,11 +1190,13 @@ journal-cms:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80:
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 443
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
@@ -988,6 +1251,7 @@ journal-cms:
                 size: 60 # GB
                 type: standard
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1241: 80
 
@@ -998,15 +1262,18 @@ elife-dashboard:
     formula-repo: https://github.com/elifesciences/elife-dashboard-formula
     default-branch: develop
     aws:
-        ports:
-            - 22
-            - 80 # dashboard
-            - 443 # dashboard
-            - 8081 # dashboard_2
-            - 8082 # dashboard_2
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
         end2end:
-            description: production-like environment. backed by RDS
+            # unique because: 'sqs' contains static values.
+            unique: true
+            description: production-like environment.
             rds:
                 storage: 5
                 storage-type: Standard
@@ -1017,12 +1284,16 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--end2end
         continuumtest:
+            # unique because: 'sqs' contains static values.
+            unique: true
             sqs:
                 # legacy custom name
                 ct-event-property-incoming-queue:
                     subscriptions:
                         - elife-bot-event-property--continuumtest
         prod:
+            # unique because: static value in 'sqs'.
+            unique: true
             description: production environment. backed by RDS
             rds:
                 storage: 5
@@ -1034,13 +1305,16 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--prod
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
 
 elife-reporting:
+    description: an environment for development of 'eLife-Reporting-SQL', integrated with lax.
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1333: 80
@@ -1050,8 +1324,10 @@ elife-libraries:
     subdomain: libraries
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
-        ports:
-            - 22
+        ec2:
+            type: t2.small
+            ports:
+                - 22
         ext:
             size: 30 # GB
     aws-alt:
@@ -1071,6 +1347,7 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
 
 containers:
@@ -1079,9 +1356,10 @@ containers:
     intdomain: false
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
-        type: t2.medium # 4GB of RAM
-        ports:
-            - 22
+        ec2:
+            type: t2.medium # 4GB of RAM
+            ports:
+                - 22
         ext:
             size: 100 # GB
     aws-alt:
@@ -1095,46 +1373,41 @@ containers:
                     size: 100 # GB
                     type: gp2
         xlarge:
-            type: t2.xlarge # 4 CPUs
             ec2:
+                type: t2.xlarge # 4 CPUs
                 cpu-credits: unlimited
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
 
 elife-alfred:
     subdomain: alfred
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
-        type: t2.large
-        ports:
-            - 22
-            - 80
-            - 443
-            - 10241 # JNLP for jenkins-cli.jar
-            - 16022 # Jenkins SSH port
+        ec2:
+            type: t2.large
+            ports:
+                - 22
+                - 443
+                - 10241 # JNLP for jenkins-cli.jar
+                - 16022 # Jenkins SSH port
         ext:
             size: 100 # GB
         s3:
             "{instance}-elife-alfred":
-                deletion-policy: retain
+                deletion-policy: delete
     aws-alt:
-        snsalt:
-            s3:
-                "{instance}-elife-alfred":
-                    deletion-policy: delete
-        s1804:
-            s3:
-                "{instance}-elife-alfred":
-                    deletion-policy: delete
-        standalone:
-            s3:
-                "{instance}-elife-alfred":
-                    deletion-policy: delete
         prod:
+            # unique because: 'subdomains' contains static values.
+            unique: true
             subdomains:
                 - alfred
                 - ci--alfred # backward compatibility
+            s3:
+                "{instance}-elife-alfred":
+                    deletion-policy: retain
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1433: 80
@@ -1147,26 +1420,29 @@ elife-alfred-nodes:
     intdomain: false
     aws:
         ec2:
+            type: t2.small
             cluster-size: 0
             security-group:
                 ports:
                     - 22
-
 
 api-dummy:
     subdomain: api-dummy
     repo: https://github.com/elifesciences/api-dummy
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 443
-            - 80
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
-        # 2020-09-21: todo, remove when api-dummy--demo is removed
         demo:
             type: t2.micro
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1242: 80
 
@@ -1205,13 +1481,13 @@ search:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.medium
         ec2:
+            type: t2.medium
             cpu-credits: unlimited
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             # search--prod, search--end2end, etc.
             search--{instance}:
@@ -1224,15 +1500,15 @@ search:
                     - bus-labs-posts--{instance}
     aws-alt:
         end2end:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-                - 4730: # Gearman
-                    cidr-ip: 10.0.0.0/16 # follower nodes
-                - 9200: # ElasticSearch
-                    cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
+                    - 4730: # Gearman
+                        cidr-ip: 10.0.0.0/16 # follower nodes
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1243,15 +1519,15 @@ search:
                 root:
                     size: 15 # GB
         prod:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
-                - 4730: # Gearman
-                    cidr-ip: 10.0.0.0/16 # follower nodes
-                - 9200: # ElasticSearch
-                    cidr-ip: 10.0.0.0/16 # follower nodes
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
+                    - 4730: # Gearman
+                        cidr-ip: 10.0.0.0/16 # follower nodes
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
                     size: 30 # GB
                 cluster-size: 2
@@ -1260,10 +1536,11 @@ search:
                 protocol:
                     - http
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1244: 80
             1245: 8080
-            9920: 9200 # elasticsearch
+            9921: 9201 # opensearch
 
 recommendations:
     domain: false
@@ -1274,13 +1551,15 @@ recommendations:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        type: t2.medium # 4 GB of RAM, same as search for now.
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
+        ec2:
+            type: t2.medium # 4 GB of RAM, same as search for now.
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1254: 80
 
@@ -1292,25 +1571,36 @@ personalised-covers:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
     aws:
-        ports:
-            - 22
-            - 80
-            - 443
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
         s3:
             "{instance}-elife-personalised-covers":
-                deletion-policy: retain
+                deletion-policy: delete
     aws-alt:
-        snsalt:
-            s3: false
         standalone:
             s3: false
         ci:
             ec2:
                 cpu-credits: unlimited
+        continuumtest:
+            s3:
+                "{instance}-elife-personalised-covers":
+                    deletion-policy: retain
         prod:
+            # unique because: 'subdomains' contains static values.
+            unique: true
             subdomains:
                 - covers
+            s3:
+                "{instance}-elife-personalised-covers":
+                    deletion-policy: retain
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1246: 80
             1247: 8080
@@ -1321,18 +1611,26 @@ observer:
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
-        # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
-        type: t2.medium
-        ports:
-            - 22
-            - 80
-            - 8001
-            - 443
+        ec2:
+            # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
+            type: t2.medium
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 8001 # metabase
+                - 443  # app
         sqs:
             observer--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
                     - bus-press-packages--{instance}
+                    - bus-labs-posts--{instance}
+                    - bus-digests--{instance}
+                    - bus-podcast-episodes--{instance}
+                    - bus-collections--{instance}
+                    - bus-interviews--{instance}
+                    - bus-blog-articles--{instance}
     aws-alt:
         end2end:
             description: production-like environment. RDS backed
@@ -1347,6 +1645,7 @@ observer:
                 storage-type: Standard
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1239: 80
             1240: 8001
@@ -1383,11 +1682,13 @@ iiif:
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
-        type: t2.medium
-        ports:
-            - 22
-            - 80
-            - 443
+        ec2:
+            type: t2.medium
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
         fastly:
             subdomains:
                 - "{instance}--cdn-iiif"
@@ -1455,16 +1756,23 @@ iiif:
     aws-alt:
         standalone:
             fastly: false
+        1804:
+            fastly: false
+        2004:
+            fastly: false
+        s1804:
+            fastly: false
+        s2004:
+            fastly: false
         snsalt:
             fastly: false
         # for testing new versions
         ci:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
-                #suppressed: [2]
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 overrides:
                     1:
                         ext:
@@ -1483,13 +1791,12 @@ iiif:
                     path: /
             fastly: false
         end2end:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 cluster-size: 2
-                #suppressed: [1]
             ext:
                 size: 30 # GB
                 type: standard
@@ -1500,11 +1807,14 @@ iiif:
                     path: /
         # manual tests
         continuumtest:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
+            # unique because: 
+            # - 'fastly.bigquerylogging.dataset' is using a static value.
+            unique: true
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 cluster-size: 2
             elb:
                 protocol:
@@ -1517,11 +1827,13 @@ iiif:
                 gcslogging:
                     bucket: staging-elife-fastly
         prod:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # ELB only
+            # unique because: 'fastly.subdomains' contains static values.
+            unique: true
             ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # ELB only
                 cluster-size: 3
             ext:
                 size: 30 # GB
@@ -1536,6 +1848,7 @@ iiif:
                     - "{instance}--cdn-iiif"
                     - iiif
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1261: 80
 
@@ -1545,18 +1858,22 @@ redirects:
     intdomain: null
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
-        type: t2.nano
-        ports:
-            - 22
-            - 80
-            - 443
+        ec2:
+            type: t2.nano
+            ports:
+                - 22
+                - 80
+                - 443
     aws-alt:
         s1804:
-            type: t2.small
+            ec2:
+                type: t2.small
         prod:
+            # unique because: 'cloudfront.subdomains' contains static values.
+            unique: true
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
-                certificate_id: ASCAXOXT77XQJYKX6YHQ5
+                certificate_id: ASCAXOXT77XQCNEIRLCUH
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
@@ -1569,6 +1886,7 @@ redirects:
                 headers:
                     - Host
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 512
         ports:
             1262: 80
@@ -1578,10 +1896,13 @@ profiles:
     repo: https://github.com/elifesciences/profiles
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
-        ports:
-            - 22
-            - 80
-            - 443
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443
     aws-alt:
         end2end:
             rds:
@@ -1589,12 +1910,14 @@ profiles:
                 storage: 5 # GB
                 storage-type: Standard
                 backup-retention: 2 # days
-            ports:
-                - 22
-                - 80
-                - 443
-                - 8081 # orcid-dummy http
-                - 8082 # orcid-dummy https
+            ec2:
+                ports:
+                    - 22
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # internal access only
+                    - 443
+                    - 8081 # orcid-dummy http
+                    - 8082 # orcid-dummy https
         prod:
             rds:
                 engine: postgres
@@ -1602,6 +1925,7 @@ profiles:
                 storage-type: Standard
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1265: 80
@@ -1613,10 +1937,12 @@ annotations:
     repo: https://github.com/elifesciences/annotations
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # internal access only
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             annotations--{instance}:
                 subscriptions:
@@ -1628,6 +1954,7 @@ annotations:
                     # bucket policy has been added:
                     # http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1248: 80
@@ -1638,10 +1965,12 @@ digests:
     repo: https://github.com/elifesciences/digests
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
-        ports:
-            - 22
-            - 80:
-                cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+        ec2:
+            type: t2.small
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
     aws-alt:
         end2end:
             rds:
@@ -1662,11 +1991,13 @@ digests:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1290: 80
 
 
+# deployed via EKS, not EC2
 elife-libero-reviewer:
     default-branch: null
     domain: null
@@ -1699,6 +2030,7 @@ elife-libero-reviewer:
                 "{instance}-elife-libero-reviewer":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
 
+# deployed via EKS, not EC2
 elife-libero-editor:
     aws:
         ec2: false
@@ -1712,6 +2044,8 @@ elife-libero-editor:
         docdb: {}
     aws-alt: 
         staging:
+            # unique because: 'sns' contains static values.
+            unique: true
             # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
             # It should also notify the bus-elife-libero-editor on Put events
             # s3:
@@ -1748,6 +2082,10 @@ fastly-logs:
     domain: false
     intdomain: false
     aws:
+        # unique because: 
+        # - 'gcp.bigquery.{instance}.project' is static.
+        # - 'gcp.bigquery.{instance}.tables' contains static values.
+        unique: true
         ec2: false
         gcs:
             "{instance}-elife-fastly":
@@ -1781,7 +2119,6 @@ data-pipeline:
     gcp:
         bigquery:
             "{instance}": # dataset
-                # does 'project' belong beneath dataset? do we want an instance affecting multiple projects?
                 project: elife-data-pipeline
 
 bastion:
@@ -1789,18 +2126,26 @@ bastion:
     subdomain: bastion
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
-        type: t2.nano # 500 MB
-        ports:
-            - 22
-        subdomains:
-            - bastion
+        ec2:
+            type: t2.nano # 500 MB
+            ports:
+                - 22
+    aws-alt:
+        prod:
+            # unique because: 'subdomains' contains static values.
+            unique: true
+            subdomains:
+                - bastion
     vagrant:
+        box: bento/ubuntu-18.04
         ram: 512
 
 reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
     aws:
+        # unique because: 'fastly.bigquerylogging.table' contains a static value.
+        unique: true
         ec2: false
         s3:
             "{instance}-elife-reproducible-document-stack":
@@ -1840,6 +2185,10 @@ reproducible-document-stack:
                 table: "reproducible_document_stack"
     aws-alt:
         prod:
+            # unique because: 
+            # - 'fastly.bigquerylogging.table' contains a static value.
+            # - 'fastly.subdomains' contains a static value.
+            unique: true
             fastly:
                 subdomains:
                     - "{instance}--cdn-repro"
@@ -1852,24 +2201,14 @@ kubernetes-aws:
     aws:
         ec2: false
     aws-alt:
-        test:
-            eks:
-                version: 1.14
-                worker:
-                    type: t2.xlarge
-                    max-size: 2
-                    desired-capacity: 2
-                helm: true
-                external-dns:
-                    domain-filter: "elifesciences.org"
-                efs: true
         flux-prod:
             ec2: false
             eks:
+                version: '1.19'
                 worker:
-                    type: t2.large
-                    max-size: 3
-                    desired-capacity: 3
+                    type: t3.large
+                    max-size: 9
+                    desired-capacity: 9
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:
@@ -1877,43 +2216,53 @@ kubernetes-aws:
         flux-test:
             ec2: false
             eks:
+                version: '1.19'
                 worker:
-                    type: t2.large
+                    type: t3.large
                     max-size: 6
-                    desired-capacity: 6
+                    desired-capacity: 3
+                    root:
+                        size: 40 # GiB    
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:
                     domain-filter: "elifesciences.org"
 
+# lsh@2021-06-18: deprecated. Software Heritage is replacing elifesciences-publications
 large-repo-wrangler:
-    description: when elife-publications requires a large git repository to be wrangled. adhoc instances only.
+    description: when elifesciences-publications requires a large git repository to be wrangled. adhoc instances only.
     domain: False
     intdomain: False
     formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
     aws:
+        ec2:
+            type: t2.small
+            ports:
+                - 22
         ext:
             size: 20 # GB
             device: /dev/sdh
-        ports:
-            - 22
     aws-alt:
         quite-large:
-            type: t2.large
+            ec2:
+                type: t2.large
             ext:
                 size: 50
     vagrant: {}
 
 bioprotocol:
-    subdomain: bp # end2end--bp.elifesciences.org
+    subdomain: bp # {instance}--bp.elifesciences.org
     repo: https://github.com/elifesciences/bioprotocol-service
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
-        # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
-        ports:
-            - 22
-            - 80
-            - 443
+        ec2:
+            type: t2.small
+            # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
+            ports:
+                - 22
+                - 80:
+                    cidr-ip: 10.0.0.0/16
+                - 443
         sqs:
             # single queue that receives messages about updates to articles (internally)
             bioprotocol--{instance}:
@@ -1921,5 +2270,150 @@ bioprotocol:
                     - bus-articles--{instance}
     aws-alt: {}
     vagrant:
+        box: bento/ubuntu-18.04
         ports:
             1280: 80
+
+accepted-submission-cleaning:
+    description: see https://github.com/elifesciences/bus
+    default-branch: null
+    domain: null
+    intdomain: null
+    aws:
+        # unique because: 'sns' contains static values.
+        unique: true
+        ec2: false
+        s3:
+            elife-accepted-submission-cleaning:
+                deletion-policy: retain
+        sns:
+            - elife-accepted-submission-cleaning-s3-events
+
+firewall:
+    aws:
+        ec2: false
+        waf: {}
+
+    aws-alt:
+        fresh:
+            ec2: false
+        1804:
+            ec2: false
+        s1804:
+            ec2: false
+        2004:
+            ec2: false
+        s2004:
+            ec2: false
+        standalone:
+            ec2: false
+        prod:
+            description: General purpose Web Application Firewall
+            # unique because: associations can only be associated to one WAF.
+            # we should be sharing a single WAF rather than creating multiple instances.
+            unique: true
+            waf:
+                ip-sets:
+                    whitelist:
+                        # elsevier
+                        - 203.56.241.128
+                        - 54.166.39.175
+                        - 125.17.16.94
+                        - 123.63.87.185
+                        - 125.22.44.100
+                        - 101.3.231.64
+                        - 145.36.141.14
+                        - 145.36.140.14
+                        - 115.112.71.126
+                        - 182.76.143.226
+                        - 61.16.162.69
+                        # okinawa institute of science and technology.
+                        # because I blocked them once accidentally :(
+                        - 203.181.243.17
+
+                associations:
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--prod/677b5066e869788d
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218
+                    # lsh@2021-11-23: disabled https://github.com/elifesciences/issues/issues/7089
+                    #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
+                custom-rules:
+                    - elife-Whitelist.json
+                    - elife-Blacklist.json
+                    - elife-DistributedSlowBot.json
+                    - elife-RateLimitExcessiveBotTraffic.json
+                managed-rules:
+                    AWS/AWSManagedRulesBotControlRuleSet:
+                        priority: 5
+                        excluded:
+                            - CategoryAdvertising
+                            - CategoryArchiver
+                            - CategoryContentFetcher
+                            - CategoryHttpLibrary
+                            - CategoryLinkChecker
+                            - CategoryMiscellaneous
+                            - CategoryMonitoring
+                            - CategoryScrapingFramework
+                            - CategorySearchEngine
+                            - CategorySecurity
+                            - CategorySeo
+                            - CategorySocialMedia
+                            - SignalAutomatedBrowser
+                            - SignalKnownBotDataCenter
+                            - SignalNonBrowserUserAgent
+                    AWS/AWSManagedRulesAmazonIpReputationList:
+                        priority: 6
+                        excluded:
+                            -   AWSManagedIPReputationList
+                    AWS/AWSManagedRulesCommonRuleSet:
+                        priority: 7
+                        included:
+                            - NoUserAgent_HEADER
+                            - UserAgent_BadBots_HEADER
+                            - GenericLFI_QUERYARGUMENTS
+                            - GenericLFI_URIPATH
+                            - GenericRFI_URIPATH
+                            - CrossSiteScripting_BODY
+                        # these rules do not use the ruleset action (block) but are counted and passed through for further processing
+                        excluded:
+                            - CrossSiteScripting_COOKIE
+                            - CrossSiteScripting_QUERYARGUMENTS
+                            - CrossSiteScripting_URIPATH
+                            - EC2MetaDataSSRF_BODY
+                            - EC2MetaDataSSRF_COOKIE
+                            - EC2MetaDataSSRF_QUERYARGUMENTS
+                            - EC2MetaDataSSRF_URIPATH
+                            - GenericLFI_BODY
+                            - GenericRFI_BODY
+                            - GenericRFI_QUERYARGUMENTS
+                            - RestrictedExtensions_QUERYARGUMENTS
+                            - RestrictedExtensions_URIPATH
+                            - SizeRestrictions_BODY
+                            - SizeRestrictions_Cookie_HEADER
+                            - SizeRestrictions_QUERYSTRING
+                            - SizeRestrictions_URIPATH
+                    AWS/AWSManagedRulesKnownBadInputsRuleSet:
+                        priority: 8
+                        excluded:
+                            - BadAuthToken_COOKIE_AUTHORIZATION
+                            - ExploitablePaths_URIPATH
+                            - Host_localhost_HEADER
+                            - PROPFIND_METHOD
+                    AWS/AWSManagedRulesLinuxRuleSet:
+                        priority: 9
+                        excluded:
+                            - LFI_BODY
+                            - LFI_QUERYARGUMENTS
+                            - LFI_URIPATH
+                    AWS/AWSManagedRulesPHPRuleSet:
+                        priority: 10
+                        included:
+                            - PHPHighRiskMethodsVariables_QUERYARGUMENTS
+                            - PHPHighRiskMethodsVariables_BODY
+                        excluded: []
+                    AWS/AWSManagedRulesUnixRuleSet:
+                        priority: 11
+                        included:
+                            - UNIXShellCommandsVariables_QUERYARGUMENTS
+                            - UNIXShellCommandsVariables_BODY
+                        excluded: []
+

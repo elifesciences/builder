@@ -1,5 +1,5 @@
 from . import base
-from mock import patch
+from unittest.mock import patch
 import decorators
 
 class TestDecorators(base.BaseCase):

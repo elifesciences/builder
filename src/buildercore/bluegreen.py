@@ -1,9 +1,8 @@
-"""Performs blue-green actions over a load-balanced stack.
+"""Performs blue-green actions over a load-balanced stack (ElasticLoadBalancer v1)
 
-The nodes inside a stack are divided into two groups: blue and green. Actions are performed separately on the two groups while they are detached from the load balancer. Obviously, requires a load balancer.
+The nodes inside a stack are divided into two groups: blue and green.
+Actions are performed separately on the two groups while they are detached from the load balancer."""
 
-nodes_params is a data structure (dictionary) .
-TODO: make nodes_params a named tuple"""
 import logging
 from .core import boto_client, parallel_work
 from .cloudformation import read_output
@@ -15,7 +14,20 @@ class BlueGreenConcurrency(object):
     def __init__(self, region):
         self.conn = boto_client('elb', region)
 
-    def __call__(self, single_node_work, nodes_params):
+    def __call__(self, single_node_work_fn, nodes_params):
+        """`nodes_params` is a dictionary:
+        {'stackname': ...,
+         'nodes': {
+            node-id: 0,
+            node-id: 1,
+            ...,
+         },
+         'public_ips': {
+            node-id: ip,
+            node-id: ip,
+            ...
+        }
+        """
         elb_name = self.find_load_balancer(nodes_params['stackname'])
         self.wait_all_in_service(elb_name)
         blue, green = self.divide_by_color(nodes_params)
@@ -23,7 +35,7 @@ class BlueGreenConcurrency(object):
         LOG.info("Blue phase on %s: %s", elb_name, self._instance_ids(blue))
         self.deregister(elb_name, blue)
         self.wait_deregistered_all(elb_name, blue)
-        parallel_work(single_node_work, blue)
+        parallel_work(single_node_work_fn, blue)
 
         # this is the window of time in which old and new servers overlap
         self.register(elb_name, blue)
@@ -32,7 +44,7 @@ class BlueGreenConcurrency(object):
         LOG.info("Green phase on %s: %s", elb_name, self._instance_ids(green))
         self.deregister(elb_name, green)
         self.wait_deregistered_all(elb_name, green)
-        parallel_work(single_node_work, green)
+        parallel_work(single_node_work_fn, green)
         self.register(elb_name, green)
 
         self.wait_registered_all(elb_name, nodes_params)
@@ -60,7 +72,7 @@ class BlueGreenConcurrency(object):
             )['InstanceStates']
             service_status_by_id = {result['InstanceId']: result['State'] for result in health}
             LOG.info("Instance statuses on %s: %s", elb_name, service_status_by_id)
-            return [bad_status for bad_status in service_status_by_id.values() if bad_status != 'InService']
+            return [status for status in service_status_by_id.values() if status != 'InService']
 
         call_while(
             condition,
