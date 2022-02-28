@@ -29,4 +29,5 @@ scripts/salt/*.minion
 /etc-salt-master
 
 .*.flag
+# osx, home of older terraform and vault binaries as versions from homebrew packages are too new.
 .bin/
