@@ -81,7 +81,7 @@ defaults:
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
             # version: '9.4' # EOL Feb 2020
-            version: '11.1' # EOL Nov 2023
+            version: '11.14' # EOL Nov 2023
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
@@ -494,7 +494,7 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
-                storage: 5
+                storage: 10
                 storage-type: Standard
                 backup-retention: 2 # days
             ext:
@@ -514,7 +514,7 @@ lax:
             ec2:
                 cluster-size: 3
             rds:
-                storage: 5
+                storage: 10
                 storage-type: Standard
                 multi-az: true
             ext:
