@@ -72,6 +72,12 @@ both_checks = [
      lambda x: sh('test -f %s && test -f %s.pub' % (ssh_key, ssh_key)),
      None), # do not check version
 
+    ('ssh-agent',
+     {'Linux': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc",
+      'Mac OS': "echo 'Host *\n\tUseKeychain yes\n\tAddKeysToAgent yes\n' >> ~/.ssh/config && ssh-add -K %s" % ssh_key},
+     lambda x: sh("ssh-add -L 2>&1 > /dev/null || [ $? -eq 1 ]"),
+     None),
+
     ('aws-credentials',
      {'all': 'do `aws configure` after installing builder'},
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
@@ -90,10 +96,6 @@ both_checks = [
 
 # Checks that ONLY need to be run on Linux.
 linux_checks = [
-    ('ssh-agent',
-     {'Linux': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc"},
-     lambda x: sh("ssh-add -L 2>&1 > /dev/null || [ $? -eq 1 ]"),
-     None)
 ]
 
 # Checks that ONLY need to be run on Mac OS.
@@ -101,11 +103,6 @@ mac_checks = [
     ('brew',
      {'Mac OS': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'},
      dumb_version_check,
-     None),
-
-    ('ssh-agent',
-     {'Mac OS': "echo 'Host *\n\tUseKeychain yes\n\tAddKeysToAgent yes\n' >> ~/.ssh/config && ssh-add -K %s" % ssh_key},
-     lambda x: sh("ssh-add -L 2>&1 > /dev/null || [ $? -eq 1 ]"),
      None),
 
     # Needed to build ssh2-python
