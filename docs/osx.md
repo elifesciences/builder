@@ -28,7 +28,7 @@ CUSTOM_SSH_KEY=/path/to/ssh/key CUSTOM_AWS_CREDENTIALS=/path/to/aws/credentials/
 
 ## Running natively
 
-As mentioned, running builder natively on macOS can be hit a miss due to changes in builder, and painpoints of python on macOS from homebrew. This can run faster than the intel-based container above, and is much easier to setup the ssh-agent. These instructions should get you up and running.
+As mentioned, running builder natively on macOS can be hit a miss due to changes in builder primarily targetting linux, and the painpoints of running modern python on macOS from homebrew. However, it can run faster than the intel-based container above, and is much easier to setup with an existing ssh-agent. These instructions should get you up and running.
 
 Install from dependancies with homebrew:
 
@@ -45,7 +45,7 @@ curl https://releases.hashicorp.com/vault/0.11.6/vault_0.11.6_darwin_amd64.zip -
 export PATH="$(PWD)/.bin:$PATH"
 ```
 
-Then run the `./update.sh` script, but overriding a few of the build paths to build correctly from homebrew installed libraries (to match libraries Python was built against)
+Then run the `./update.sh` script, but overriding a few of the build paths via Environment Variables to build correctly from homebrew installed libraries (to match libraries Python was built against)
 
 ```
 OPENSSL_ROOT_DIR="$(brew --prefix openssl@1.1)" \
