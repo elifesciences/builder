@@ -1402,6 +1402,53 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_efs']
         )
 
+    def test_eks_and_autoscaler_policy(self):
+        pname = 'project-with-eks-and-autoscaler-policy'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('kubernetes_autoscaler', terraform_template['resource']['aws_iam_policy'])
+        self.assertEqual(
+            '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
+            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['name']
+        )
+        self.assertEqual(
+            '/',
+            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['path']
+        )
+        self.assertEqual(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "autoscaling:DescribeAutoScalingGroups",
+                            "autoscaling:DescribeAutoScalingInstances",
+                            "autoscaling:DescribeLaunchConfigurations",
+                            "autoscaling:DescribeTags",
+                            "autoscaling:SetDesiredCapacity",
+                            "autoscaling:TerminateInstanceInAutoScalingGroup"
+                        ],
+                        "Resource": [
+                            "${aws_autoscaling_group.worker.arn}",
+                        ],
+                    },
+                ],
+            },
+            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['policy'])
+        )
+
+        self.assertIn('worker_autoscaler', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual(
+            {
+                'policy_arn': '${aws_iam_policy.kubernetes_autoscaler.arn}',
+                'role': "${aws_iam_role.worker.name}",
+            },
+            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_autoscaler']
+        )
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(
