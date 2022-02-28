@@ -75,6 +75,7 @@ both_checks = [
     ('ssh-agent',
      {'Linux': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc",
       'Mac OS': "echo 'Host *\n\tUseKeychain yes\n\tAddKeysToAgent yes\n' >> ~/.ssh/config && ssh-add -K %s" % ssh_key},
+     # Checks for a successful connection to the SSH agent, but allows for empty identity list.
      lambda x: sh("ssh-add -L 2>&1 > /dev/null || [ $? -eq 1 ]"),
      None),
 
