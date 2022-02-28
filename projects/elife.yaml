@@ -891,6 +891,9 @@ elife-metrics:
                 size: 10 # GB
                 type: standard
             rds:
+                # lsh@2022-03-01: upgraded from a db.t2.small.
+                # metrics sees a constant > 20% CPU usage and isn't regenerating credits well.
+                type: db.t2.medium
                 multi-az: true
                 storage: 20
                 storage-type: Standard
