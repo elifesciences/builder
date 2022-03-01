@@ -36,7 +36,7 @@ Install from dependancies with homebrew:
 brew install vagrant git openssl@1.1 libssh2 libffi python@3.8 # parallel-ssh fails to build again python > 3.8
 ```
 
-Some other hashicorp dependancies require legacy versions right now - 0.11 for `terraform` and 0.11 for `vault`. You can install these globally, or local to just builder and set your path appropriately like so:
+As of now, a legacy version (v0.11) of hashicorp terraform is required. We also run a legacy version of `vault` (v0.11) on the server-side (though the newer clients maintain a level of backwards compatibility with older server APIs). You can install these versions globally, or local to just builder and set your path appropriately like so:
 
 ```
 mkdir .bin
