@@ -2224,8 +2224,6 @@ kubernetes-aws:
                     type: t3.large
                     max-size: 6
                     desired-capacity: 3
-                    root:
-                        size: 40 # GiB    
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:
