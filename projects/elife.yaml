@@ -201,6 +201,7 @@ defaults:
                 # Route53 hosted zone to create subdomains on
                 #domain-filter: elifesciences.org
             efs: false
+            autoscaler-policy: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -2230,6 +2231,7 @@ kubernetes-aws:
                 # but not the ExternalDNS chart release
                 external-dns:
                     domain-filter: "elifesciences.org"
+                autoscaler-policy: true
 
 # lsh@2021-06-18: deprecated. Software Heritage is replacing elifesciences-publications
 large-repo-wrangler:
@@ -2419,4 +2421,3 @@ firewall:
                             - UNIXShellCommandsVariables_QUERYARGUMENTS
                             - UNIXShellCommandsVariables_BODY
                         excluded: []
-

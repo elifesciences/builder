@@ -170,6 +170,7 @@ defaults:
             helm: false
             external-dns: false
             efs: false
+            autoscaler-policy: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             #subdomains: [] # todo: enable
@@ -894,6 +895,14 @@ project-with-eks-efs:
     aws:
         eks:
             efs: true
+
+project-with-eks-and-autoscaler-policy:
+    description: project managing an EKS cluster with autoscaler support in AWS
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            autoscaler-policy: true
 
 project-with-docdb:
     description: project managing a single DocumentDB instance
