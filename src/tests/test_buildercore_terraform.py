@@ -1428,8 +1428,16 @@ class TestBuildercoreTerraform(base.BaseCase):
                             "autoscaling:DescribeAutoScalingInstances",
                             "autoscaling:DescribeLaunchConfigurations",
                             "autoscaling:DescribeTags",
+                            "ec2:DescribeInstanceTypes",
+                            "ec2:DescribeLaunchTemplateVersions"
+                        ],
+                        "Resource": ["*"]
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
                             "autoscaling:SetDesiredCapacity",
-                            "autoscaling:TerminateInstanceInAutoScalingGroup"
+                            "autoscaling:TerminateInstanceInAutoScalingGroup",
                         ],
                         "Resource": [
                             "${aws_autoscaling_group.worker.arn}",
