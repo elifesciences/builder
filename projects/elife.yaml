@@ -1863,16 +1863,17 @@ redirects:
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
         ec2:
-            type: t2.nano
+            # lsh@2022-03-14: changed default instance type from a t2.nano to a t2.small.
+            # getting freezing behaviour during formula testing
+            #type: t2.nano
             ports:
                 - 22
                 - 80
                 - 443
     aws-alt:
-        s1804:
-            ec2:
-                type: t2.small
         prod:
+            ec2:
+                type: t2.nano
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
