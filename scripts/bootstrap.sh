@@ -119,7 +119,7 @@ fi
 # salt-minion
 if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
-    wget -O salt_bootstrap.sh https://bootstrap.saltstack.com --no-verbose
+    wget https://bootstrap.saltstack.com --output-document salt_bootstrap.sh --no-verbose
 
     # -x  Changes the Python version used to install Salt.
     # -P  Allow pip based installations.
