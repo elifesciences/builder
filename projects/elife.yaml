@@ -899,7 +899,6 @@ elife-metrics:
                 storage: 20
                 storage-type: Standard
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1240: 80
 
@@ -1255,7 +1254,6 @@ journal-cms:
                 size: 60 # GB
                 type: standard
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1241: 80
 
@@ -1309,7 +1307,6 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--prod
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
@@ -1351,8 +1348,7 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             type: c4.8xlarge
     vagrant:
-        box: bento/ubuntu-18.04
-        ram: 1024
+        ram: 4096
 
 containers:
     description: run any Docker-based workload
@@ -1381,7 +1377,6 @@ containers:
                 type: t2.xlarge # 4 CPUs
                 cpu-credits: unlimited
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
 
 elife-alfred:
@@ -1411,7 +1406,6 @@ elife-alfred:
                 "{instance}-elife-alfred":
                     deletion-policy: retain
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1433: 80
@@ -1540,7 +1534,6 @@ search:
                 protocol:
                     - http
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1244: 80
             1245: 8080
@@ -2275,7 +2268,6 @@ bioprotocol:
                     - bus-articles--{instance}
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1280: 80
 
