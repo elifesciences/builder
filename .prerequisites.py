@@ -50,7 +50,7 @@ both_checks = [
 
     ('virtualenv',
      {'Linux': 'sudo pip install virtualenv',
-      'Mac OS': 'brew install python@2'}),
+      'Mac OS': 'brew install python@3.8'}),
 
     # needed for installing pynacl, which is a transitive dependency of Paramiko which is a dependency of Fabric
     ('make',
