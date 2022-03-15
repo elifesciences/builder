@@ -26,9 +26,6 @@ def dumb_install_check(cmd):
 def dumb_version_check(cmd):
     return shs(cmd + ' --version')
 
-def osx():
-    return sh('[ "$(uname)" = "Darwin" ]')
-
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
 def terraform_version_checker(_cmd):
@@ -45,26 +42,30 @@ def vault_version_checker(_cmd):
 
     return str(installed_version)
 
+# Checks that need to be run on all operating systems.
 both_checks = [
     ('git',
-     {'osx': 'brew install git'}),
+     {'Linux': 'apt-get install build-essential',
+      'Mac OS': 'xcode-select --install'}),
 
     ('virtualenv',
-     {'all': 'sudo pip install virtualenv'}),
+     {'Linux': 'sudo pip install virtualenv',
+      'Mac OS': 'brew install python@3.8'}),
 
     # needed for installing pynacl, which is a transitive dependency of Paramiko which is a dependency of Fabric
     ('make',
-     {'all': 'which make'},
+     {'Linux': 'apt-get install build-essential',
+      'Mac OS': 'xcode-select --install'},
      dumb_install_check,
      lambda x: shs('make -v').splitlines()[0]),
 
     ('virtualbox',
-     {'osx': 'brew cask install virtualbox'},
+     {'Mac OS': 'brew install virtualbox'},
      dumb_install_check,
      lambda x: shs('vboxmanage --version')),
 
     ('vagrant',
-     {'osx': 'brew cask install vagrant'}),
+     {'Mac OS': 'brew install vagrant'}),
 
     ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
@@ -72,8 +73,10 @@ both_checks = [
      None), # do not check version
 
     ('ssh-agent',
-     {'all': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc"},
-     lambda x: sh("ps aux | grep 'ssh-agent$' > /dev/null"),
+     {'Linux': "echo 'eval $(ssh-agent); ssh-add;' >> ~/.bashrc && source ~/.bashrc",
+      'Mac OS': "echo 'Host *\n\tUseKeychain yes\n\tAddKeysToAgent yes\n' >> ~/.ssh/config && ssh-add -K %s" % ssh_key},
+     # Checks for a successful connection to the SSH agent, but allows for empty identity list.
+     lambda x: sh("ssh-add -L 2>&1 > /dev/null || [ $? -eq 1 ]"),
      None),
 
     ('aws-credentials',
@@ -92,9 +95,34 @@ both_checks = [
      vault_version_checker),
 ]
 
+# Checks that ONLY need to be run on Linux.
+linux_checks = [
+]
+
+# Checks that ONLY need to be run on Mac OS.
 mac_checks = [
     ('brew',
-     {'osx': 'ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"'}),
+     {'Mac OS': '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'},
+     dumb_version_check,
+     None),
+
+    # Needed to build ssh2-python and cryptography python modules
+    ('openssl@1.1',
+     {'Mac OS': "brew install openssl@1.1"},
+     lambda x: sh('brew ls | grep openssl@1.1 > /dev/null'),
+     None),
+    ('libffi',
+     {'Mac OS': "brew install libffi"},
+     lambda x: sh('brew ls | grep libffi > /dev/null'),
+     None),
+    ('libssh2',
+     {'Mac OS': "brew install libssh2"},
+     lambda x: sh('brew ls | grep libssh2 > /dev/null'),
+     None),
+    ('cmake',
+     {'Mac OS': "brew install cmake"},
+     dumb_install_check,
+     None)
 ]
 
 def run_checks(check_list, exclusions=[]):
@@ -133,9 +161,15 @@ def run_checks(check_list, exclusions=[]):
 
 def main():
     checks = both_checks
-    if osx():
-        print('OSX detected')
+    platform = sys.platform
+    if platform.startswith('linux'):
+        print('Linux detected')
+        checks = linux_checks + checks
+    elif platform == 'darwin':
+        print('Mac OS detected')
         checks = mac_checks + checks
+    else:
+        print('Unsupported platform \'%s\'' % platform)
 
     import argparse
     parser = argparse.ArgumentParser()
