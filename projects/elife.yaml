@@ -531,7 +531,6 @@ lax:
                 healthcheck:
                     path: /api/v2/ping
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1239: 80
             1240: 8001
@@ -1534,6 +1533,7 @@ search:
                 protocol:
                     - http
     vagrant:
+        ram: 4096
         ports:
             1244: 80
             1245: 8080
