@@ -799,7 +799,7 @@ def drift_check(stackname):
     def is_detecting_drift():
         job = conn.describe_stack_drift_detection_status(StackDriftDetectionId=handle)
         return job.get('DetectionStatus') == 'DETECTION_IN_PROGRESS'
-    utils.call_while(is_detecting_drift, interval=2, update_msg='Waiting for drift results ...')
+    utils.call_while(is_detecting_drift, interval=config.AWS_POLLING_INTERVAL, update_msg='Waiting for drift results ...')
 
     result = conn.describe_stack_resource_drifts(StackName=stackname)
     drifted = [resource for resource in result["StackResourceDrifts"] if resource["StackResourceDriftStatus"] != "IN_SYNC"]

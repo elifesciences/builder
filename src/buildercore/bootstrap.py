@@ -100,7 +100,7 @@ def setup_ec2(stackname, context):
             except command.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
-        utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
+        utils.call_while(is_resourcing, interval=config.AWS_POLLING_INTERVAL, update_msg='Waiting for /home/ubuntu to be detected ...')
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
