@@ -1006,21 +1006,33 @@ elife-bot:
                 "{instance}-elife-published":
                     deletion-policy: retain
                 "{instance}-elife-silent-corrections":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-digests-input":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-accepted-submission-cleaning-output":
                     deletion-policy: retain
-                # already existing bucket, do not uncomment
-                #"{instance}-elife-ejp-poa-delivery":
+                # buckets needed by *elife-bot--prod* but not under configuration control:
+                # - https://github.com/elifesciences/issues/issues/7246
+                #"elife-ejp-poa-delivery":
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
+                #elife-bot
+                #elife-ejp-ftp
+                #elife-ejp-poa-delivery
+                #elife-lens # should probably belong to a 'lens' project
+                #elife-poa-packaging
+                #elife-publishing-archive
+                #elife-publishing-expanded
+
             sqs:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
