@@ -945,6 +945,10 @@ elife-bot:
         sns:
             - elife-bot-event-property--{instance}
     aws-alt:
+        ci:
+            s3:
+                "{instance}-elife-published":
+                    deletion-policy: retain
         end2end:
             ec2:
                 ports:
@@ -953,9 +957,8 @@ elife-bot:
                     - 8021 # exposing FTP contents, HTTPS
                     - 1080 # exposing mailcatcher API
             s3:
-                # commented out because bucket already exists outside of CloudFormation:
-                #"end2end-elife-bot":
-                #    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: retain
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
                         end2end-incoming-queue: {}
@@ -969,20 +972,16 @@ elife-bot:
                     sqs-notifications:
                         end2end-poa-incoming-queue: {}
                     deletion-policy: delete
-            #    end2end-elife-production-final:
-            #        sqs-notifications:
-            #            end2end-incoming-queue: {}
-            #               #prefix: null
-            #               #suffix: null
-        ci:
-            s3:
-                "{instance}-elife-published":
-                    deletion-policy: retain
+                # commented out because bucket already exists outside of CloudFormation:
+                #"end2end-elife-bot":
+                #    deletion-policy: delete
+                #end2end-elife-production-final:
+                #    sqs-notifications:
+                #        end2end-incoming-queue: {}
+                #           #prefix: null
+                #           #suffix: null
         continuumtest:
             s3:
-                # commented out because bucket exists outside of CloudFormation:
-                #"continuumtest-elife-bot":
-                #    deletion-policy: delete
                 "{instance}-elife-published":
                     deletion-policy: retain
                 "{instance}-elife-silent-corrections":
@@ -997,10 +996,9 @@ elife-bot:
                 "{instance}-elife-ejp-poa-delivery":
                     sqs-notifications:
                         continuumtest-poa-incoming-queue: {}
-        end2end:
-            s3:
-                "{instance}-elife-published":
-                    deletion-policy: retain
+                # commented out because bucket exists outside of CloudFormation:
+                #"continuumtest-elife-bot":
+                #    deletion-policy: delete
         prod:
             s3:
                 "{instance}-elife-published":
