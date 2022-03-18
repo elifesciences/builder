@@ -163,22 +163,29 @@ defaults:
                 unhealthy_threshold: 2
                 healthy_threshold: 2
 
-        # when both elb and alb are present, the elb is the primary load balancer.
-        # change this (per-project) to 'alb' to migrate from one lb to the other.
+        # when both elb and alb are present, the *elb* is the primary load balancer.
+        # change this (per-project) to 'alb' to migrate from one configured lb to the other.
         primary_lb: elb
 
         sqs: []
+        #   subscriptions:
+        #       - project-sns-name
+        #       - {instance}--project-sns-name
+
         sns: []
-        # e.g.
-        # s3:
+        #   - project-sns-name
+        #   - {instance}--project-sns-name
+
+        s3: []
         #    bucket-name-{instance}:
-        #       sqs-notifications: # not implemented
+        #       not implemented in Cloudformation. see `src.bootstrap.update_s3_stack`
+        #       sqs-notifications:
         #           queue-name:
         #               prefix: 'elife-'
         #               suffix: '.xml'
         #       deletion-policy: delete|retain (default 'delete')
         #       encryption: false
-        s3: []
+
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
@@ -919,7 +926,6 @@ elife-bot:
         s3:
             "{instance}-elife-silent-corrections":
             "{instance}-elife-published":
-                deletion-policy: retain
                 public: true
                 cors: true
             "{instance}-elife-bot-sessions":
@@ -939,77 +945,6 @@ elife-bot:
         sns:
             - elife-bot-event-property--{instance}
     aws-alt:
-        # lsh@2022-02-23: 
-        # * why are there no overrides for the other alt-configs?
-        # * if the default deletion-policy is to 'delete' why are we repeating ourselves over and over in the alt-configs?
-        snsalt:
-            s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
-                "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
-        s1804:
-            s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
-                "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
-        s2004:
-            s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
-                "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
-        standalone:
-            s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
-                "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
         end2end:
             ec2:
                 ports:
@@ -1018,6 +953,9 @@ elife-bot:
                     - 8021 # exposing FTP contents, HTTPS
                     - 1080 # exposing mailcatcher API
             s3:
+                # commented out because bucket already exists outside of CloudFormation:
+                #"end2end-elife-bot":
+                #    deletion-policy: delete
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
                         end2end-incoming-queue: {}
@@ -1036,9 +974,17 @@ elife-bot:
             #            end2end-incoming-queue: {}
             #               #prefix: null
             #               #suffix: null
-            #
+        ci:
+            s3:
+                "{instance}-elife-published":
+                    deletion-policy: retain
         continuumtest:
             s3:
+                # commented out because bucket exists outside of CloudFormation:
+                #"continuumtest-elife-bot":
+                #    deletion-policy: delete
+                "{instance}-elife-published":
+                    deletion-policy: retain
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
                         ct-incoming-queue: {}
@@ -1048,30 +994,45 @@ elife-bot:
                 "{instance}-elife-bot-decision-letter-input":
                     sqs-notifications:
                         ct-incoming-queue: {}
-                "{instance}-elife-bot":
-                    deletion-policy: delete
                 "{instance}-elife-ejp-poa-delivery":
                     sqs-notifications:
                         continuumtest-poa-incoming-queue: {}
-                    deletion-policy: delete
+        end2end:
+            s3:
+                "{instance}-elife-published":
+                    deletion-policy: retain
         prod:
             s3:
+                "{instance}-elife-published":
+                    deletion-policy: retain
                 "{instance}-elife-silent-corrections":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-digests-input":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-accepted-submission-cleaning-output":
                     deletion-policy: retain
-                # already existing bucket, do not uncomment
-                #"{instance}-elife-ejp-poa-delivery":
+                # buckets needed by *elife-bot--prod* but not under configuration control:
+                # - https://github.com/elifesciences/issues/issues/7246
+                #"elife-ejp-poa-delivery":
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
+                #elife-bot
+                #elife-ejp-ftp
+                #elife-ejp-poa-delivery
+                #elife-lens # should probably belong to a 'lens' project
+                #elife-poa-packaging
+                #elife-publishing-archive
+                #elife-publishing-expanded
+
             sqs:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:

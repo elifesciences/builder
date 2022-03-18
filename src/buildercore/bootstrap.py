@@ -254,7 +254,7 @@ def _queue_configurations(stackname, queues, bucket_name, region):
 
 def _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region):
     """Loads the policy of queue_name, and adds a statement to let bucket_name
-    notify to it"""
+    send notifications to it."""
     # the only way to make this work is to add a new policy
     # statement for each of the buckets
     # - you cannot filter the AWS account by Principal (for some unknown reason)
