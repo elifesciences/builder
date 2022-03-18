@@ -72,7 +72,7 @@ def restart(stackname, initial_states='pending|running|stopping|stopped'):
             node_id = _node_id(node)
             call_while(
                 lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
-                interval=2,
+                interval=config.AWS_POLLING_INTERVAL,
                 timeout=config.BUILDER_TIMEOUT,
                 update_msg="waiting for nodes to complete boot",
                 done_msg="all nodes have public ips, are reachable via SSH and have completed boot"
@@ -146,7 +146,7 @@ def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
     _wait_ec2_all_in_state(stackname, 'running', ec2_to_be_checked)
     call_while(
         lambda: _some_node_is_not_ready(stackname, instance_ids=ec2_to_be_checked),
-        interval=2,
+        interval=config.AWS_POLLING_INTERVAL,
         timeout=config.BUILDER_TIMEOUT,
         update_msg="waiting for nodes to complete boot",
         done_msg="all nodes have public ips, are reachable via SSH and have completed boot",
@@ -252,10 +252,9 @@ def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_descri
         states = source_of_states()
         LOG.info("states of %s %s nodes (%s): %s", stackname, node_description, node_ids, states)
         return set(states.values()) != {state}
-    # TODO: timeout argument
     call_while(
         some_node_is_still_not_compliant,
-        interval=2,
+        interval=config.AWS_POLLING_INTERVAL,
         timeout=config.BUILDER_TIMEOUT,
         update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
         done_msg="all nodes in state %s" % state

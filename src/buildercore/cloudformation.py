@@ -256,7 +256,7 @@ def _update_template(stackname, template):
 
     waiting = "waiting for template of %s to be updated" % stackname
     done = "template of %s is in state UPDATE_COMPLETE" % stackname
-    call_while(stack_is_updating, interval=2, timeout=7200, update_msg=waiting, done_msg=done)
+    call_while(stack_is_updating, interval=config.AWS_POLLING_INTERVAL, timeout=7200, update_msg=waiting, done_msg=done)
 
 def destroy(stackname, context):
     try:

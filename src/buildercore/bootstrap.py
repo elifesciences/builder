@@ -9,7 +9,7 @@ from os.path import join
 from collections import OrderedDict
 from datetime import datetime
 from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod, command
-from .context_handler import only_if as updates
+from .context_handler import only_if
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
 from .lifecycle import delete_dns
@@ -83,7 +83,7 @@ def create_stack(stackname):
         return False
 
 
-@updates('ec2')
+@only_if('ec2')
 def setup_ec2(stackname, context):
     def _setup_ec2_node():
         def is_resourcing():
@@ -100,7 +100,7 @@ def setup_ec2(stackname, context):
             except command.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
-        utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
+        utils.call_while(is_resourcing, interval=config.AWS_POLLING_INTERVAL, update_msg='Waiting for /home/ubuntu to be detected ...')
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
@@ -204,14 +204,14 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns_client.set_subscription_attributes(SubscriptionArn=subscription_arn, AttributeName='RawMessageDelivery', AttributeValue='true')
 
-@updates('sqs')
+@only_if('sqs')
 @core.requires_active_stack
 def update_sqs_stack(stackname, context, **kwargs):
     region = context['aws']['region']
     unsub_sqs(stackname, context['sqs'], region)
     sub_sqs(stackname, context['sqs'], region)
 
-@updates('s3')
+@only_if('s3')
 @core.requires_active_stack
 def update_s3_stack(stackname, context, **kwargs):
     """
@@ -452,7 +452,7 @@ def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
-@updates('ec2')
+@only_if('ec2')
 @core.requires_active_stack
 def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None):
     """installs/updates the ec2 instance attached to the specified stackname.
