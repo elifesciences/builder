@@ -55,3 +55,16 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
     - this may actually interfere with IP addresses in the cloudformation template
         - in which case, what depends on those values? surely they would get old/stale quickly ...
 * projects, removing caching 
+* launch and masterless.launch
+    - emit a more useful summary of the stack about to be created. 
+        - should each resource have a 'summary'? for example, an ec2 summary could be:
+            * test--project.elifesciences.org
+            * us-east-1 t3.small instance with 8GB root and 20GB external volumes
+            * SSH, HTTP (internal), HTTPS, PostgreSQL, Redis (internal)
+
+        - it currently looks like:
+            INFO - masterless - attempting to create masterless stack:
+            INFO - masterless - stackname:	elife-libraries--mysqlauth
+            INFO - masterless - region:	us-east-1
+            INFO - masterless - formula_revisions:	[]
+
