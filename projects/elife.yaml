@@ -515,8 +515,6 @@ lax:
                     bot_lax_adaptor:
                         protocol: https
                         port: 8001
-                healthcheck:
-                    path: /api/v2/ping
         prod:
             description: RDS backed
             ec2:
@@ -535,8 +533,6 @@ lax:
                     bot_lax_adaptor:
                         protocol: https
                         port: 8001
-                healthcheck:
-                    path: /api/v2/ping
     vagrant:
         box: bento/ubuntu-18.04
         ports:
