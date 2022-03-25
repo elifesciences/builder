@@ -24,7 +24,7 @@ defaults:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         account-id: 512686554592
-        # can this configuration be reused or is it unique? 
+        # can this configuration be reused or is it unique?
         # typically it can be reused, but some configurations embed values that are unique to a named instance.
         # for example: the 'prod' configuration for 'journal' is unique to `journal--prod` and cannot be reused.
         unique: false
@@ -239,13 +239,13 @@ defaults:
                     - 151.101.194.217
             gcslogging: false
             # gcslogging:
-            #   bucket: 
-            #   path: 
-            #   period: 
+            #   bucket:
+            #   path:
+            #   period:
             bigquerylogging: false
             # bigquerylogging:
             #   project:
-            #   dataset: 
+            #   dataset:
             #   table:
             healthcheck: false
             errors: false
@@ -300,7 +300,7 @@ defaults:
             action: allow # count, block, custom-response
             # custom rule sets, $1/mo each.
             # the implementation of these is done as snippets of JSON rather than modeling them in Troposphere.
-            # it makes them slightly *brittle* but you can also build rules in the WAF Rule Builder and then drop 
+            # it makes them slightly *brittle* but you can also build rules in the WAF Rule Builder and then drop
             # them in here with no/little effort.
             # see `src/buildercore/waf/*.json` for examples.
             custom-rules: []
@@ -489,7 +489,7 @@ lax:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 # bot-lax web UI to upload/validate/transform XML and article-json
-                - 8001 
+                - 8001
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
@@ -590,7 +590,7 @@ api-gateway:
         snsalt:
             fastly: false
         continuumtest:
-            # unique because: 
+            # unique because:
             # - 'fastly.bigquerylogging.dataset' is static.
             unique: true
             fastly:
@@ -1109,7 +1109,7 @@ generic-cdn:
         standalone:
             ec2: false
         end2end:
-            # unique because: 
+            # unique because:
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
             fastly:
@@ -1118,7 +1118,7 @@ generic-cdn:
                     path: generic-cdn--end2end/
                     period: 600
         continuumtest:
-            # unique because: 
+            # unique because:
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
             fastly:
@@ -1129,7 +1129,7 @@ generic-cdn:
                 bigquerylogging:
                     dataset: "staging"
         prod:
-            # unique because: 
+            # unique because:
             # - 'fastly.subdomains' contains static values.
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
@@ -1766,7 +1766,7 @@ iiif:
                     path: /
         # manual tests
         continuumtest:
-            # unique because: 
+            # unique because:
             # - 'fastly.bigquerylogging.dataset' is using a static value.
             unique: true
             ec2:
@@ -2002,7 +2002,7 @@ elife-libero-editor:
                 subscriptions:
                     - elife-production-processes-events
         docdb: {}
-    aws-alt: 
+    aws-alt:
         staging:
             # unique because: 'sns' contains static values.
             unique: true
@@ -2012,7 +2012,7 @@ elife-libero-editor:
             #   "elife-production-processes":
             sns:
                 - "elife-production-processes-events"
-        prod: 
+        prod:
             s3:
                 "{instance}-elife-libero-editor":
                     deletion-policy: delete
@@ -2042,7 +2042,7 @@ fastly-logs:
     domain: false
     intdomain: false
     aws:
-        # unique because: 
+        # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
         # - 'gcp.bigquery.{instance}.tables' contains static values.
         unique: true
@@ -2145,7 +2145,7 @@ reproducible-document-stack:
                 table: "reproducible_document_stack"
     aws-alt:
         prod:
-            # unique because: 
+            # unique because:
             # - 'fastly.bigquerylogging.table' contains a static value.
             # - 'fastly.subdomains' contains a static value.
             unique: true
@@ -2167,8 +2167,8 @@ kubernetes-aws:
                 version: '1.21'
                 worker:
                     type: t3.large
-                    max-size: 9
-                    desired-capacity: 9
+                    max-size: 10
+                    desired-capacity: 10
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:
