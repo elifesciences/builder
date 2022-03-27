@@ -22,7 +22,8 @@ def stop(stackname, *services):
 @timeit
 @echo_output
 def restart(stackname):
-    return lifecycle.restart(stackname)
+    stop(stackname)
+    start(stackname)
 
 @requires_aws_stack
 @timeit

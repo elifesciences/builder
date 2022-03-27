@@ -4,7 +4,6 @@ The primary reason for doing this is to save on costs."""
 
 from datetime import datetime
 import logging
-from pprint import pformat
 import re
 import backoff
 from .command import remote_file_exists, CommandException
@@ -31,59 +30,6 @@ def start_rds_nodes(stackname):
     def _start(nid):
         return _rds_connection(stackname).start_db_instance(DBInstanceIdentifier=nid)
     return lmap(_start, rds_to_be_started.keys())
-
-def node_states(node_list):
-    history = []
-    for node in node_list:
-        node.reload() # .load and .reload are the same
-        history.append((_node_id(node), node.state['Name']))
-    return history
-
-# ensure no two adjacent records are equal
-def push(lst, rec):
-    if not lst or lst[-1] != rec:
-        lst.append(rec)
-
-def restart(stackname, initial_states='pending|running|stopping|stopped'):
-    """for each ec2 node in given stack, ensure ec2 node is stopped, then start it, then repeat with next node.
-    rds is started if stopped (if *exists*) but otherwise not affected"""
-    # start_rds_nodes(stackname) # something a bit buggy here
-
-    node_list = find_ec2_instances(stackname, state=initial_states, allow_empty=True)
-
-    history = []
-
-    try:
-        for node in node_list:
-            push(history, node_states(node_list))
-
-            node.stop()
-            push(history, node_states(node_list))
-
-            node.wait_until_stopped()
-            push(history, node_states(node_list))
-
-            node.start()
-            push(history, node_states(node_list))
-
-            node.wait_until_running()
-            push(history, node_states(node_list))
-
-            node_id = _node_id(node)
-            call_while(
-                lambda: _some_node_is_not_ready(stackname, node=node_id, concurrency='serial'),
-                interval=config.AWS_POLLING_INTERVAL,
-                timeout=config.BUILDER_TIMEOUT,
-                update_msg="waiting for nodes to complete boot",
-                done_msg="all nodes have public ips, are reachable via SSH and have completed boot"
-            )
-        if history:
-            # only update dns if we have a history of affected nodes
-            update_dns(stackname)
-        return history
-    except Exception:
-        LOG.info("Partial restart history of %s: %s", stackname, pformat(history))
-        raise
 
 def start(stackname):
     "Puts all EC2 nodes and RDS instances for given `stackname` into the 'started' state. Idempotent"
