@@ -682,24 +682,6 @@ project-with-multiple-elb-listeners:
             - project.tv
             - ""
 
-project-with-cluster-integration-tests:
-    repo: ssh://git@github.com/elifesciences/dummy3
-    subdomain: project-with-cluster
-    # no dummy domains since we really create this on CloudFormation
-    domain: false
-    intdomain: false
-    aws:
-        ec2:
-            ports:
-                - 80
-                - 22
-            cluster-size: 2
-        elb: 
-            protocol: http
-            healthcheck:
-                protocol: tcp
-                port: 22
-
 project-with-db-params:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
