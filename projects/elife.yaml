@@ -2087,11 +2087,12 @@ bastion:
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
         ec2:
-            type: t2.nano # 500 MB
             ports:
                 - 22
     aws-alt:
         prod:
+            ec2:
+                type: t2.nano # 500 MB
             # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
