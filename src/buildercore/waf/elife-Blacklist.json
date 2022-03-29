@@ -68,10 +68,10 @@
               }
             },
             "PositionalConstraint": "CONTAINS",
-            "SearchString": "https://neeva.com/neevabot",
+            "SearchString": "neevabot",
             "TextTransformations": [
               {
-                "Type": "NONE",
+                "Type": "LOWERCASE",
                 "Priority": 0
               }
             ]
@@ -86,6 +86,23 @@
             },
             "PositionalConstraint": "CONTAINS",
             "SearchString": "headlesschrome",
+            "TextTransformations": [
+              {
+                "Type": "LOWERCASE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "User-Agent"
+              }
+            },
+            "PositionalConstraint": "CONTAINS",
+            "SearchString": "python-urllib",
             "TextTransformations": [
               {
                 "Type": "LOWERCASE",
