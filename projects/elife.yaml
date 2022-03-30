@@ -1990,33 +1990,6 @@ elife-libero-reviewer:
                 "{instance}-elife-libero-reviewer":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
 
-# deployed via EKS, not EC2
-elife-libero-editor:
-    aws:
-        ec2: false
-        s3:
-            "{instance}-elife-libero-editor": {}
-        sqs:
-            # Monitor the production process bucket for new deposits from Exeter.
-            elife-libero-editor-import--{instance}:
-                subscriptions:
-                    - elife-production-processes-events
-        docdb: {}
-    aws-alt:
-        staging:
-            # unique because: 'sns' contains static values.
-            unique: true
-            # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
-            # It should also notify the bus-elife-libero-editor on Put events
-            # s3:
-            #   "elife-production-processes":
-            sns:
-                - "elife-production-processes-events"
-        prod:
-            s3:
-                "{instance}-elife-libero-editor":
-                    deletion-policy: delete
-
 task-adept:
     description: production data dumps from TaskAdept
     default-branch: null
