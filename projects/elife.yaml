@@ -2134,7 +2134,6 @@ bastion:
             subdomains:
                 - bastion
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 512
 
 reproducible-document-stack:
