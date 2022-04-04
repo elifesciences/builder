@@ -464,7 +464,6 @@ master-server:
             subdomains:
                 - master-server
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             8200: 8200 # Vault GUI
 
@@ -602,7 +601,6 @@ api-gateway:
                     - "{instance}--cdn-gateway"
                     - api
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1323: 80
 
@@ -835,7 +833,6 @@ journal:
                     dataset: "{instance}"
                     table: "journal"
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1240: 80
@@ -862,7 +859,6 @@ pattern-library:
             subdomains:
                 - ui-patterns
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1340: 80
 
@@ -1074,8 +1070,7 @@ elife-bot:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
                         - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
-    vagrant:
-        box: bento/ubuntu-18.04
+    vagrant: {}
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -1314,7 +1309,6 @@ elife-reporting:
     description: an environment for development of 'eLife-Reporting-SQL', integrated with lax.
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1333: 80
@@ -1439,7 +1433,6 @@ api-dummy:
         demo:
             type: t2.micro
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1242: 80
 
@@ -1556,7 +1549,6 @@ recommendations:
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1254: 80
 
@@ -1597,7 +1589,6 @@ personalised-covers:
                 "{instance}-elife-personalised-covers":
                     deletion-policy: retain
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1246: 80
             1247: 8080
@@ -1642,7 +1633,6 @@ observer:
                 storage-type: Standard
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1239: 80
             1240: 8001
@@ -1845,7 +1835,6 @@ iiif:
                     - "{instance}--cdn-iiif"
                     - iiif
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1261: 80
 
@@ -1883,7 +1872,6 @@ redirects:
                 headers:
                     - Host
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 512
         ports:
             1262: 80
@@ -1922,7 +1910,6 @@ profiles:
                 storage-type: Standard
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1265: 80
@@ -1951,7 +1938,6 @@ annotations:
                     # bucket policy has been added:
                     # http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1248: 80
@@ -1988,7 +1974,6 @@ digests:
                 storage: 5 # GB
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1290: 80
