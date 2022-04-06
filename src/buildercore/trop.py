@@ -542,6 +542,21 @@ def render_rds(context, template):
         data['StorageEncrypted'] = True
         data['KmsKeyId'] = lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else ''
 
+    # use existing snapshot to create instance:
+    # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html#cfn-rds-dbinstance-dbsnapshotidentifier
+    if lu('rds.snapshot-id'):
+        data['DBSnapshotIdentifier'] = lu('rds.snapshot-id')
+        delete_these = [
+            # in use
+            "DBName", "MasterUsername", 
+            # not in use
+            "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId",  "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
+        ]
+        removed = {key: data.pop(key) for key in delete_these if key in data}
+        LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s" % removed)
+        LOG.warning("removing the 'snapshot-id' value will cause a new database to be created on update.")
+        LOG.warning("changing the 'snapshot-id' value will cause the database to be replaced.")
+
     rdbi = rds.DBInstance(RDS_TITLE, **data)
     lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
 

@@ -493,6 +493,25 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
+        loadtest:
+            description: used for performance testing and optimisation
+            ec2:
+                masterless: true
+                cluster-size: 2
+                ports:
+                    - 22
+                    - 443
+                    - 80:
+                        cidr-ip: 10.0.0.0/16 # internal access only
+            elb:
+                protocol:
+                    - https
+            sqs: []
+            rds:
+                storage: 10
+                storage-type: standard
+                multi-az: false
+                snapshot-id: arn:aws:rds:us-east-1:512686554592:snapshot:rds:lax-prod-2022-04-05-07-39
         ci:
             ec2:
                 cpu-credits: unlimited

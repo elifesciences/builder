@@ -24,6 +24,25 @@ def all_projects(project_file):
 #
 #
 
+def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
+    cloud_alt = OrderedDict()
+
+    # handle the alternate configurations
+    for altname, altdata in project_alt_contents.items():
+        # take project's *current cloud state*,
+        project_cloud = copy.deepcopy(project_base_cloud)
+
+        # merge in any overrides
+        utils.deepmerge(project_cloud, altdata)
+
+        # merge this over top of original cloud defaults
+        orig_defaults = copy.deepcopy(global_cloud)
+
+        utils.deepmerge(orig_defaults, project_cloud, CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT)
+        cloud_alt[str(altname)] = orig_defaults
+
+    return cloud_alt
+
 def project_data(pname, project_file):
     "does a deep merge of defaults+project data with a few exceptions"
 
@@ -53,25 +72,6 @@ def project_data(pname, project_file):
     )
 
     return pdata
-
-def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
-    cloud_alt = OrderedDict()
-
-    # handle the alternate configurations
-    for altname, altdata in project_alt_contents.items():
-        # take project's *current cloud state*,
-        project_cloud = copy.deepcopy(project_base_cloud)
-
-        # merge in any overrides
-        utils.deepmerge(project_cloud, altdata)
-
-        # merge this over top of original cloud defaults
-        orig_defaults = copy.deepcopy(global_cloud)
-
-        utils.deepmerge(orig_defaults, project_cloud, CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT)
-        cloud_alt[str(altname)] = orig_defaults
-
-    return cloud_alt
 
 def project_file_name(project_file):
     "returns the name of the project file without the extension"
