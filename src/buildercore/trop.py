@@ -494,7 +494,7 @@ def rds_security(context):
                           "RDS DB security group")
 
 def render_rds(context, template):
-    lu = partial(utils.lu, context)
+    lu = partial(utils.lookup, context)
 
     # db subnet *group*
     # it's expected the db subnets themselves are already created within the VPC
@@ -544,13 +544,13 @@ def render_rds(context, template):
 
     # use existing snapshot to create instance:
     # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html#cfn-rds-dbinstance-dbsnapshotidentifier
-    if lu('rds.snapshot-id'):
+    if lu('rds.snapshot-id', None):
         data['DBSnapshotIdentifier'] = lu('rds.snapshot-id')
         delete_these = [
             # in use
-            "DBName", "MasterUsername", 
+            "DBName", "MasterUsername",
             # not in use
-            "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId",  "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
+            "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId", "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
         ]
         removed = {key: data.pop(key) for key in delete_these if key in data}
         LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s" % removed)

@@ -314,7 +314,7 @@ def lookup(data, path, default=0xDEADBEEF):
             raise
         return default
 
-# TODO: this function suffers from truthy-falsey problems.
+# TODO: this function suffers from truthy-falsey problems. prefer `lookup`.
 # pylint: disable=invalid-name
 def lu(context, *paths, **kwargs):
     """looks up many paths given the initial data, returning the first non-nil result.

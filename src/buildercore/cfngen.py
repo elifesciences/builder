@@ -385,7 +385,12 @@ def build_context_rds(pdata, context, existing_context):
         # may be present but None
         rds_password = generated_password
 
-    # TODO: shift the below under a 'rds' key
+    context['rds'] = pdata['aws']['rds']
+    context['rds'].update({
+        'deletion-policy': deletion_policy,
+    })
+
+    # TODO: shift the below under the 'rds' key
     context.update({
         'netmask': networkmask,
         'rds_username': 'root',
@@ -394,9 +399,7 @@ def build_context_rds(pdata, context, existing_context):
         'rds_dbname': core.rds_dbname(stackname, context), # name of default application db
         'rds_instance_id': core.rds_iid(stackname), # name of rds instance
         'rds_params': pdata['aws']['rds'].get('params', []),
-        'rds': pdata['aws']['rds'],
     })
-    context['rds']['deletion-policy'] = deletion_policy
 
     return context
 
