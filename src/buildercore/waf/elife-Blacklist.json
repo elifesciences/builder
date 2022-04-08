@@ -21,18 +21,6 @@
         {
           "LabelMatchStatement": {
             "Scope": "LABEL",
-            "Key": "awswaf:managed:aws:bot-control:bot:name:blexbot"
-          }
-        },
-        {
-          "LabelMatchStatement": {
-            "Scope": "LABEL",
-            "Key": "awswaf:managed:aws:bot-control:bot:name:applebot"
-          }
-        },
-        {
-          "LabelMatchStatement": {
-            "Scope": "LABEL",
             "Key": "awswaf:managed:aws:bot-control:bot:name:megaindex"
           }
         },
@@ -61,54 +49,19 @@
           }
         },
         {
-          "ByteMatchStatement": {
+          "RegexMatchStatement": {
             "FieldToMatch": {
               "SingleHeader": {
                 "Name": "User-Agent"
               }
             },
-            "PositionalConstraint": "CONTAINS",
-            "SearchString": "neevabot",
             "TextTransformations": [
               {
                 "Type": "LOWERCASE",
                 "Priority": 0
               }
-            ]
-          }
-        },
-        {
-          "ByteMatchStatement": {
-            "FieldToMatch": {
-              "SingleHeader": {
-                "Name": "User-Agent"
-              }
-            },
-            "PositionalConstraint": "CONTAINS",
-            "SearchString": "headlesschrome",
-            "TextTransformations": [
-              {
-                "Type": "LOWERCASE",
-                "Priority": 0
-              }
-            ]
-          }
-        },
-        {
-          "ByteMatchStatement": {
-            "FieldToMatch": {
-              "SingleHeader": {
-                "Name": "User-Agent"
-              }
-            },
-            "PositionalConstraint": "CONTAINS",
-            "SearchString": "python-urllib",
-            "TextTransformations": [
-              {
-                "Type": "LOWERCASE",
-                "Priority": 0
-              }
-            ]
+            ],
+            "RegexString": "(blexbot|neevabot|headlesschrome|python-urllib|python-urllib|aiohttp|seostar|seznambot|seekport|applebot)+"
           }
         }
       ]

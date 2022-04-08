@@ -2248,7 +2248,8 @@ firewall:
                 custom-rules:
                     - elife-Whitelist.json
                     - elife-Blacklist.json
-                    - elife-DistributedSlowBot.json
+                    # lsh@2022-04-08: disabled, aws bot rules were ineffective, undermining this rule.
+                    #- elife-DistributedSlowBot.json
                     - elife-RateLimitExcessiveBotTraffic.json
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
