@@ -365,13 +365,13 @@ defaults:
         2004:
             description: Ubuntu 20.04 (Focal)
             ec2:
-                ami: ami-018fc7f8ee56bbce9 # GENERATED created from basebox--2004
+                ami: ami-06ffef0f136fc5826 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
 
         s2004:
             description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-018fc7f8ee56bbce9 # GENERATED created from basebox--2004
+                ami: ami-06ffef0f136fc5826 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
