@@ -2,7 +2,7 @@ import logging
 import os, sys
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from buildercore import config
-from buildercore.utils import second, last, gtpy2
+from buildercore.utils import second, last, gtpy2, isint
 from buildercore.command import local
 from buildercore import core
 
@@ -145,3 +145,20 @@ def find_region(stackname=None):
     except core.MultipleRegionsError as e:
         print("many possible regions found!")
         return _pick('region', e.regions())
+
+def coerce_string_value(value_str):
+    "attempts to coerce given `value_str` to a None, then a boolean, then an integer, ultimately returning the value as-is"
+    none_list = ["", "none", "null"]
+    bool_list = ["false", "true"]
+
+    vlow = value_str.lower().strip()
+    if vlow in none_list:
+        return None
+
+    if vlow in bool_list:
+        return vlow == "true"
+
+    if isint(vlow):
+        return int(vlow)
+
+    return value_str

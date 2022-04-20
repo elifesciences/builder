@@ -188,8 +188,10 @@ def call_while_example():
     call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
 
 def updatein(data, path, newval, create=False):
-    """updates a value within a nested dict. use create=True
-    to create the path if it doesn't already exist"""
+    """mutator. updates a value within a nested dict.
+    for example: `updatein({"foo": {"bar": "boo"}}, "foo.bar", "baz")` => `{"foo": {"bar": "baz"}}`
+    use `create=True` to create the path if it doesn't already exist.
+    for example: `updatein({}, "foo.bar", "baz")` => `{"foo": {"bar": "baz"}}`"""
     path_bits = path.split('.')
     bit, rest = path_bits[0], path_bits[1:]
     if not rest:
