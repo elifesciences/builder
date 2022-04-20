@@ -18,7 +18,7 @@ def decode_bvars(string):
 
 def encode_bvars(data):
     "encodes python data to a json-serialised, base64 encoded ascii string"
-    val = base64.b64encode(json.dumps(data, indent=4).encode('ascii'))
+    val = base64.b64encode(json.dumps(data).encode('ascii'))
     return val.decode('ascii') # bytes => ascii
 
 def read_from_current_host():
