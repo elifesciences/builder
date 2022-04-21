@@ -56,7 +56,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-01c451dc33cd1ac9c # GENERATED created from basebox--1804
+            ami: ami-03ad5d7a3fe98ff86 # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -333,7 +333,9 @@ defaults:
             ec2:
                 # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
-                type: t2.small
+                # lsh@2022-04-21: disabled, not sure why it was added.
+                # it was preventing search-formula PRs from using the default t2.medium instances
+                #type: t2.small
 
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
@@ -344,16 +346,18 @@ defaults:
         1804:
             description: Ubuntu 18.04 (Bionic)
             # todo: explicitly specify an 18.04 AMI when 18.04 is no longer the default (2023?)
-            #ec2: {} # means 'use defaults'. don't use 'true'.
-            ec2:
-                type: t2.small
+            ec2: {} # means 'use defaults'. don't use 'true'.
+            # lsh@2022-04-21: disabled, not sure why it was added.
+            # it was preventing search-formula PRs from using the default t2.medium instances
+            #ec2:
+            #    type: t2.small
 
         # lsh@2022-02-23: disabled, unused.
         # 18.04, deprecated, use s1804
         #standalone1804:
         #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
         #    ec2:
-        #        ami: ami-01c451dc33cd1ac9c # GENERATED created from basebox--1804
+        #        ami: ami-03ad5d7a3fe98ff86 # GENERATED created from basebox--1804
         #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
         #        masterless: true
         #        type: t2.small
@@ -361,21 +365,23 @@ defaults:
         s1804:
             description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-01c451dc33cd1ac9c # GENERATED created from basebox--1804
+                ami: ami-03ad5d7a3fe98ff86 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
-                type: t2.small
+                # lsh@2022-04-21: disabled, not sure why it was added.
+                # it was preventing search-formula PRs from using the default t2.medium instances
+                #type: t2.small
 
         2004:
             description: Ubuntu 20.04 (Focal)
             ec2:
-                ami: ami-09591c9c27dd5e3ab # GENERATED created from basebox--2004
+                ami: ami-06ffef0f136fc5826 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
 
         s2004:
             description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-09591c9c27dd5e3ab # GENERATED created from basebox--2004
+                ami: ami-06ffef0f136fc5826 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
@@ -383,7 +389,9 @@ defaults:
             description: same as default configuration, but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 masterless: true
-                type: t2.small
+                # lsh@2022-04-21: disabled, not sure why it was added.
+                # it was preventing search-formula PRs from using the default t2.medium instances
+                #type: t2.small
     gcp:
         bigquery: false
     vagrant:
@@ -2271,7 +2279,8 @@ firewall:
                 custom-rules:
                     - elife-Whitelist.json
                     - elife-Blacklist.json
-                    - elife-DistributedSlowBot.json
+                    # lsh@2022-04-08: disabled, aws bot rules were ineffective, undermining this rule.
+                    #- elife-DistributedSlowBot.json
                     - elife-RateLimitExcessiveBotTraffic.json
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:

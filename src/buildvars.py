@@ -40,7 +40,7 @@ def _retrieve_build_vars():
         raise
 
 def _update_remote_bvars(stackname, buildvars):
-    LOG.info('updating %r with new vars %r', stackname, buildvars)
+    LOG.debug('updating %r with new vars %r', stackname, buildvars)
     encoded = encode_bvars(buildvars)
     fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
     # make a backup
@@ -82,13 +82,13 @@ def fix(stackname):
     def _fix_single_ec2_node(stackname):
         LOG.info("checking build vars on node %s", current_node_id())
         try:
-            buildvars = _retrieve_build_vars()
-            LOG.info("valid bvars found, no fix necessary: %s", buildvars)
+            _retrieve_build_vars()
+            LOG.info("valid bvars found, no fix necessary.")
             return
         except AssertionError:
-            LOG.info("invalid build vars found, regenerating from context")
+            LOG.info("invalid build vars found (AssertionError), regenerating from context")
         except (ValueError, JSONDecodeError):
-            LOG.info("bad JSON data found, regenerating from context")
+            LOG.info("invalid build vars found (JSONDecodeError), regenerating from context")
 
         context = load_context(stackname)
         # some contexts are missing stackname
@@ -99,20 +99,23 @@ def fix(stackname):
 
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
-# TODO: deletion candidate. can only ever do a shallow update
 @requires_aws_stack
-def force(stackname, field, value):
-    "replace a specific key with a new value in the buildvars for all ec2 instances in stack"
-    def _force_single_ec2_node():
-        # do not validate build vars.
-        # this way it can be used to repair buildvars when they are missing some field.
-        #buildvars = _validate()
-        buildvars = read_from_current_host()
+def force(stackname, field, new_value):
+    """replaces the value of `field` with `new_value` in all buildvars on all ec2 instances in given `stackname`.
+    can only be used to *replace* an *existing* key and not create new ones.
+    `field` can be a dotted path for targeting values inside nested maps.
+    For example: `force("lax--prod", "elb.stickiness", True)`
+    none values, booleans and integers are coerced to their literal types,
+    for example, `"true"` becomes `True`."""
 
-        new_vars = buildvars.copy()
-        new_vars[field] = value
-        _update_remote_bvars(stackname, new_vars)
-        LOG.info("updated bvars %s", new_vars)
+    new_value = utils.coerce_string_value(new_value)
+
+    def _force_single_ec2_node():
+        buildvars = read_from_current_host()
+        new_buildvars = core_utils.deepcopy(buildvars)
+        new_buildvars = core_utils.updatein(buildvars, field, new_value, create=False)
+        _update_remote_bvars(stackname, new_buildvars)
+        LOG.debug("updated bvars %s", new_buildvars)
 
     stack_all_ec2_nodes(stackname, _force_single_ec2_node, username=BOOTSTRAP_USER)
 

@@ -91,3 +91,28 @@ class TestUtils(base.BaseCase):
             self.assertEqual(False, utils.strtobool(false_case))
 
         self.assertRaises(ValueError, utils.strtobool, "this value is neither true nor false")
+
+def test_coerce_string_value():
+    cases = [
+        (None, None),
+        (1, 1),
+        (-1, -1),
+        ({}, {}),
+        ("1.1", "1.1"),
+
+        ("1", 1),
+        ("0", 0),
+        ("-1", -1),
+
+        ("None", None),
+        ("Null", None),
+        ("null", None),
+        ("nil", None),
+
+        ("True", True),
+        ("False", False),
+        ("true", True),
+        ("false", False)
+    ]
+    for given, expected in cases:
+        assert utils.coerce_string_value(given) == expected
