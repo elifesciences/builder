@@ -147,8 +147,12 @@ def find_region(stackname=None):
         return _pick('region', e.regions())
 
 def coerce_string_value(value_str):
-    "attempts to coerce given `value_str` to a None, then a boolean, then an integer, ultimately returning the value as-is"
-    none_list = ["", "none", "null"]
+    """attempts to coerce given `value_str` to a None, then a boolean, then an integer, returning the given value if coercion not possible.
+    non-string values are returned immediately."""
+    if not isinstance(value_str, str):
+        return value_str
+
+    none_list = ["", "none", "null", "nil"]
     bool_list = ["false", "true"]
 
     vlow = value_str.lower().strip()

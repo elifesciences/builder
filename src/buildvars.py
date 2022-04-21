@@ -100,19 +100,20 @@ def fix(stackname):
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
 @requires_aws_stack
-def force(stackname, field, value):
-    """replace a specific key with a new value in the buildvars for all ec2 instances in stack.
-    can only be used to *replace* an *existing* key, not create new ones.
+def force(stackname, field, new_value):
+    """replaces the value of `field` with `new_value` in all buildvars on all ec2 instances in given `stackname`.
+    can only be used to *replace* an *existing* key and not create new ones.
     `field` can be a dotted path for targeting values inside nested maps.
-    For example: force(lax, elb.stickiness, true)`
-    none values, booleans and integers are coerced to their literal types."""
+    For example: `force("lax--prod", "elb.stickiness", True)`
+    none values, booleans and integers are coerced to their literal types,
+    for example, `"true"` becomes `True`."""
 
-    value = utils.coerce_string_value(value)
+    new_value = utils.coerce_string_value(new_value)
 
     def _force_single_ec2_node():
         buildvars = read_from_current_host()
         new_buildvars = core_utils.deepcopy(buildvars)
-        new_buildvars = core_utils.updatein(buildvars, field, value, create=False)
+        new_buildvars = core_utils.updatein(buildvars, field, new_value, create=False)
         _update_remote_bvars(stackname, new_buildvars)
         LOG.debug("updated bvars %s", new_buildvars)
 
