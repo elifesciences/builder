@@ -1,3 +1,4 @@
+import pytest
 from collections import OrderedDict
 from . import base
 from functools import partial
@@ -249,3 +250,31 @@ def test_visit__modify():
 
     for given, expected in cases:
         assert utils.visit(given, f) == expected, "failed case: %r" % given
+
+def test_updatein__no_create():
+    cases = [
+        (({}, '', "foo"), {'': "foo"}),
+        (({}, None, "foo"), {None: "foo"}),
+        (({}, ('foo', 'bar'), 'baz'), {('foo', 'bar'): 'baz'}),
+        (({}, 'foo', 'bar'), {'foo': 'bar'}),
+        (({'foo': 'bar'}, 'foo', 'baz'), {'foo': 'baz'}),
+        (({'foo': {'bar': 'baz'}}, 'foo.bar', 'bup'), {'foo': {'bar': 'bup'}}),
+    ]
+    for (given, path, newval), expected in cases:
+        # all cases should pass regardless of whether create is True or False
+        for create in [False, True]:
+            assert utils.updatein(given, path, newval, create) == expected
+
+def test_updatein__no_create_error():
+    "when create=False, a KeyError is raised if a path segment can't be reached"
+    with pytest.raises(KeyError):
+        utils.updatein({}, 'foo.bar', 'baz', create=False)
+
+def test_updatein__create():
+    "when create=True, deeply nested maps can be made"
+    cases = [
+        (({}, 'foo.bar', 'baz'), {'foo': {'bar': 'baz'}}),
+        (({}, 'foo.bar.baz.bup.boo', 'argh'), {'foo': {'bar': {'baz': {'bup': {'boo': 'argh'}}}}}),
+    ]
+    for (given, path, newval), expected in cases:
+        assert utils.updatein(given, path, newval, create=True) == expected

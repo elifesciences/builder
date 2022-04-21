@@ -5,7 +5,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-# json.dumps and json.loads expect ascii unless the json was explicitly encoded as utf8
+# json.dumps and json.loads expect ascii unless the json was explicitly encoded as utf8,
 # which we don't do anywhere in builder.
 # <bytes>.decode and <string>.encode() both default to UTF-8
 # so we must be careful to preserve the ascii encoding through it's transformations

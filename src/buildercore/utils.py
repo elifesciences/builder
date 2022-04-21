@@ -188,17 +188,27 @@ def call_while_example():
     call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
 
 def updatein(data, path, newval, create=False):
-    """updates a value within a nested dict. use create=True
-    to create the path if it doesn't already exist"""
-    path_bits = path.split('.')
-    bit, rest = path_bits[0], path_bits[1:]
+    """mutator. updates a value within a nested dict.
+    for example: `updatein({"foo": {"bar": "boo"}}, "foo.bar", "baz")` => `{"foo": {"bar": "baz"}}`
+    use `create=True` to create the path if it doesn't already exist.
+    for example: `updatein({}, "foo.bar", "baz")` => `{"foo": {"bar": "baz"}}`"""
+
+    bit, rest = path, None
+    if isinstance(path, str):
+        path_bits = path.split('.')
+        bit, rest = path_bits[0], path_bits[1:]
+
     if not rest:
         # we've come to the end of the path
         data[bit] = newval
-        return newval
+        return data
+
     if create and bit not in data:
         data[bit] = {}
-    return updatein(data[bit], ".".join(rest), newval, create)
+
+    data[bit] = updatein(data[bit], ".".join(rest), newval, create)
+
+    return data
 
 def random_alphanumeric(length=32):
     rand = random.SystemRandom()
