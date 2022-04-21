@@ -85,6 +85,10 @@ defaults:
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
+            # name of the database to be created, *not* the RDS Instance ID
+            # if null (default) then a database with slugified stackname will be created.
+            # if snapshot-id is used, then the name of the database in the snapshot should be used.
+            db-name: null
             # Standard for backward compatibility
             # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
             storage-type: gp2 # standard|gp2|io1
@@ -524,6 +528,7 @@ lax:
                 storage-type: standard
                 multi-az: false
                 snapshot-id: arn:aws:rds:us-east-1:512686554592:snapshot:rds:lax-prod-2022-04-05-07-39
+                snapshot-database-name: laxprod
         ci:
             ec2:
                 cpu-credits: unlimited

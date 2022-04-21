@@ -17,6 +17,7 @@ We want to add an external volume to an EC2 instance to increase available space
 
 """
 
+from slugify import slugify
 import logging
 import os, json
 import re
@@ -390,13 +391,17 @@ def build_context_rds(pdata, context, existing_context):
         'deletion-policy': deletion_policy,
     })
 
+    auto_rds_dbname = slugify(stackname, separator="") # lax--prod => laxprod
+    existing_rds_dbname = existing_context.get('rds_dbname')
+    override = lookup(pdata, 'aws.rds.db-name', None)
+    rds_dbname = override or existing_rds_dbname or auto_rds_dbname
+
     # TODO: shift the below under the 'rds' key
     context.update({
         'netmask': networkmask,
         'rds_username': 'root',
         'rds_password': rds_password,
-        # alpha-numeric only
-        'rds_dbname': core.rds_dbname(stackname, context), # name of default application db
+        'rds_dbname': rds_dbname,
         'rds_instance_id': core.rds_iid(stackname), # name of rds instance
         'rds_params': pdata['aws']['rds'].get('params', []),
     })
