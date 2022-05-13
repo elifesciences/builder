@@ -61,7 +61,7 @@
                 "Priority": 0
               }
             ],
-            "RegexString": "(blexbot|neevabot|headlesschrome|python-urllib|python-urllib|aiohttp|seostar|seznambot|seekport|applebot)+"
+            "RegexString": "(blexbot|neevabot|headlesschrome|python-urllib|aiohttp|seostar|seznambot|seekport|applebot|centuryb\\.o\\.t)+"
           }
         }
       ]
