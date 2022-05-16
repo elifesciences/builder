@@ -528,7 +528,6 @@ lax:
                 cluster-size: 3
             rds:
                 storage: 10
-                storage-type: Standard
                 multi-az: true
             ext:
                 size: 10 # GB
