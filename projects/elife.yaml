@@ -56,7 +56,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-03ad5d7a3fe98ff86 # GENERATED created from basebox--1804
+            ami: ami-0cc9812bf094f1e5b # GENERATED created from basebox--1804
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -361,7 +361,7 @@ defaults:
         #standalone1804:
         #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
         #    ec2:
-        #        ami: ami-03ad5d7a3fe98ff86 # GENERATED created from basebox--1804
+        #        ami: ami-0cc9812bf094f1e5b # GENERATED created from basebox--1804
         #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
         #        masterless: true
         #        type: t2.small
@@ -369,7 +369,7 @@ defaults:
         s1804:
             description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-03ad5d7a3fe98ff86 # GENERATED created from basebox--1804
+                ami: ami-0cc9812bf094f1e5b # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
                 # lsh@2022-04-21: disabled, not sure why it was added.
@@ -379,13 +379,13 @@ defaults:
         2004:
             description: Ubuntu 20.04 (Focal)
             ec2:
-                ami: ami-06ffef0f136fc5826 # GENERATED created from basebox--2004
+                ami: ami-0c7397f3463c1b919 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
 
         s2004:
             description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-06ffef0f136fc5826 # GENERATED created from basebox--2004
+                ami: ami-0c7397f3463c1b919 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
@@ -556,7 +556,6 @@ lax:
                 cluster-size: 3
             rds:
                 storage: 10
-                storage-type: Standard
                 multi-az: true
             ext:
                 size: 10 # GB
