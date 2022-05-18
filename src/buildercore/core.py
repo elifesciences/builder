@@ -232,11 +232,6 @@ def _all_nodes_filter(stackname, node_ids):
 #
 #
 
-def rds_dbname(stackname, context=None):
-    # TODO: investigate possibility of ambiguous RDS naming here
-    context = context or {}
-    return context.get('rds_dbname') or slugify(stackname, separator="") # *must* use 'or' here
-
 def rds_iid(stackname):
     max_rds_iid = 63 # https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options
     # the rds iid needs to be deterministic, or, we need to find an attached rds db without knowing it's name

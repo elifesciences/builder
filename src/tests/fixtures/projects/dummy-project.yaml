@@ -69,7 +69,11 @@ defaults:
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
-            # Standard for backward compatibility
+            # name of the database to be created, *not* the RDS Instance ID
+            # if null (default) then a database with slugified stackname will be created.
+            # if snapshot-id is used, then the name of the database in the snapshot should be used.
+            db-name: null
+            # 'Standard' for backward compatibility
             # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
             storage-type: 'standard' # standard|gp2|io1
             backup-retention: 28 # days
@@ -711,6 +715,12 @@ project-with-rds-major-version-upgrade:
     aws:
         rds:
             allow-major-version-upgrade: True
+
+project-with-rds-snapshot:
+    aws:
+        rds:
+            db-name: lax-prod
+            snapshot-id: arn:aws:rds:us-east-1:512686554592:snapshot:rds:lax-prod-2022-04-05-07-39
 
 project-with-elasticache-redis:
     domain: False

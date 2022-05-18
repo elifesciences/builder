@@ -17,6 +17,7 @@ We want to add an external volume to an EC2 instance to increase available space
 
 """
 
+from slugify import slugify
 import logging
 import os, json
 import re
@@ -369,9 +370,6 @@ def build_context_rds(pdata, context, existing_context):
         return context
     stackname = context['stackname']
 
-    # deletion policy
-    deletion_policy = lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
-
     # used to give mysql a range of valid ip addresses to connect from
     subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
     net = subnet_cidr.network
@@ -380,23 +378,33 @@ def build_context_rds(pdata, context, existing_context):
 
     # pull password from existing context, if it exists
     generated_password = utils.random_alphanumeric(length=32)
-    rds_password = existing_context.get('rds_password')
-    if not rds_password:
-        # may be present but None
-        rds_password = generated_password
+    rds_password = existing_context.get('rds_password') or generated_password
 
-    # TODO: shift the below under a 'rds' key
+    auto_rds_dbname = slugify(stackname, separator="") # lax--prod => laxprod
+    existing_rds_dbname = existing_context.get('rds_dbname')
+    override = lookup(pdata, 'aws.rds.db-name', None)
+    rds_dbname = override or existing_rds_dbname or auto_rds_dbname
+
+    # ---
+
+    context['rds'] = pdata['aws']['rds']
+    context['rds'].update({
+        'deletion-policy': lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
+    })
+
+    # don't introduce new 'db-name' field until we've migrated 'rds_dbname'
+    if 'db-name' in context['rds']:
+        del context['rds']['db-name']
+
+    # TODO: shift the below under the 'rds' key
     context.update({
         'netmask': networkmask,
         'rds_username': 'root',
         'rds_password': rds_password,
-        # alpha-numeric only
-        'rds_dbname': core.rds_dbname(stackname, context), # name of default application db
+        'rds_dbname': rds_dbname,
         'rds_instance_id': core.rds_iid(stackname), # name of rds instance
         'rds_params': pdata['aws']['rds'].get('params', []),
-        'rds': pdata['aws']['rds'],
     })
-    context['rds']['deletion-policy'] = deletion_policy
 
     return context
 

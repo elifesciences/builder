@@ -85,6 +85,10 @@ defaults:
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
+            # name of the database to be created, *not* the RDS Instance ID.
+            # if null (default) then a database with slugified stackname will be created.
+            # if snapshot-id is used, then the name of the database in the snapshot should be used.
+            db-name: null
             # Standard for backward compatibility
             # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
             storage-type: gp2 # standard|gp2|io1
@@ -92,6 +96,10 @@ defaults:
             # if rds.params are specified, a custom db parameter group is created
             params: []
             encryption: false
+            # create a new RDS instance from the snapshot of another one.
+            # updates to the stack do *not* roll the database back to the snapshot, but the snapshot-id *must* be present,
+            # otherwise a new RDS instance is created.
+            snapshot-id: null # snapshot's ARN
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
@@ -391,7 +399,7 @@ defaults:
     gcp:
         bigquery: false
     vagrant:
-        box: ubuntu/focal64
+        box: ubuntu/focal64 # 20.04
         ip: 192.168.56.44
         ram: 2048
         cpus: 2
@@ -2204,6 +2212,12 @@ accepted-submission-cleaning:
                 deletion-policy: retain
         sns:
             - elife-accepted-submission-cleaning-s3-events
+
+php-dev:
+    vagrant:
+        box: bento/ubuntu-18.04
+        ram: 4096
+        cpus: 4
 
 firewall:
     aws:

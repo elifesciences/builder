@@ -235,13 +235,14 @@ def build_vars(context, node):
     that will be encoded and stored on the ec2 instance at /etc/build-vars.json.b64"""
     buildvars = deepcopy(context)
 
-    # preseve some of the project data. all of it is too much
+    # preseve some of the project data. all of it is too much.
     keepers = [
         'formula-repo',
         'formula-dependencies'
     ]
     buildvars['project'] = subdict(buildvars['project'], keepers)
 
+    # per-node buildvars/context.
     buildvars['node'] = node
     buildvars['nodename'] = "%s--%s" % (context['stackname'], node) # "journal--prod--1"
 
@@ -494,7 +495,7 @@ def rds_security(context):
                           "RDS DB security group")
 
 def render_rds(context, template):
-    lu = partial(utils.lu, context)
+    lu = partial(utils.lookup, context)
 
     # db subnet *group*
     # it's expected the db subnets themselves are already created within the VPC
@@ -541,6 +542,23 @@ def render_rds(context, template):
     if lu('rds.encryption'):
         data['StorageEncrypted'] = True
         data['KmsKeyId'] = lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else ''
+
+    # use existing snapshot to create instance:
+    # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html#cfn-rds-dbinstance-dbsnapshotidentifier
+    if lu('rds.snapshot-id', None):
+        data['DBSnapshotIdentifier'] = lu('rds.snapshot-id')
+        delete_these = [
+            # used by builder.
+            # even though `rds_dbname` is preserved in the buildvars, `DBName` won't be available in the template and
+            # possibly not even consistent with the database name used in the snapshot.
+            "DBName", "MasterUsername",
+            # not used builder.
+            "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId", "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
+        ]
+        removed = {key: data.pop(key) for key in delete_these if key in data}
+        LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s" % removed)
+        LOG.warning("removing the 'snapshot-id' value will cause a new database to be created on update.")
+        LOG.warning("changing the 'snapshot-id' value will cause the database to be replaced.")
 
     rdbi = rds.DBInstance(RDS_TITLE, **data)
     lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
