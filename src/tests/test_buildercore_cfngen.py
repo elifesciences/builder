@@ -74,6 +74,13 @@ def test_docdb_config_cluster(test_projects):
     del context['docdb']['master-user-password']
     assert expected == context['docdb']
 
+def test_rds_config__snapshot(test_projects):
+    context = cfngen.build_context('project-with-rds-snapshot', stackname='project-with-rds-snapshot--test')
+    assert context['rds_dbname'] == 'lax-prod'
+    assert context['rds']['snapshot-id'] == 'arn:aws:rds:us-east-1:512686554592:snapshot:rds:lax-prod-2022-04-05-07-39'
+    # todo: revisit when rds_dbname is migrated under 'rds'
+    assert not context['rds'].get('db-name')
+
 class TestBuildercoreCfngen():
     # note: this requires pytest, but provides great introspection
     # on which project_name is failing

@@ -235,13 +235,14 @@ def build_vars(context, node):
     that will be encoded and stored on the ec2 instance at /etc/build-vars.json.b64"""
     buildvars = deepcopy(context)
 
-    # preseve some of the project data. all of it is too much
+    # preseve some of the project data. all of it is too much.
     keepers = [
         'formula-repo',
         'formula-dependencies'
     ]
     buildvars['project'] = subdict(buildvars['project'], keepers)
 
+    # per-node buildvars/context.
     buildvars['node'] = node
     buildvars['nodename'] = "%s--%s" % (context['stackname'], node) # "journal--prod--1"
 
@@ -547,9 +548,11 @@ def render_rds(context, template):
     if lu('rds.snapshot-id', None):
         data['DBSnapshotIdentifier'] = lu('rds.snapshot-id')
         delete_these = [
-            # in use
+            # used by builder.
+            # even though `rds_dbname` is preserved in the buildvars, `DBName` won't be available in the template and
+            # possibly not even consistent with the database name used in the snapshot.
             "DBName", "MasterUsername",
-            # not in use
+            # not used builder.
             "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId", "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
         ]
         removed = {key: data.pop(key) for key in delete_these if key in data}
