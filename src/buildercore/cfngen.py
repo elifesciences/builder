@@ -386,11 +386,7 @@ def build_context_rds(pdata, context, existing_context):
     auto_rds_dbname = slugify(stackname, separator="") # lax--prod => laxprod
     existing_rds_dbname = existing_context.get('rds_dbname')
     override = lookup(pdata, 'aws.rds.db-name', None)
-
     rds_dbname = override or existing_rds_dbname or auto_rds_dbname
-    rds_instance_id = core.rds_iid(stackname)
-
-    # ---
 
     updating = True if existing_context else False
     replacing = False
@@ -408,7 +404,8 @@ def build_context_rds(pdata, context, existing_context):
         # if the AttachedDB is to be replaced, it needs a new custom name.
         num_replacements = lu(existing_context, 'rds.num-replacements', 0)
         num_replacements += 1
-        rds_instance_id = rds_instance_id + "-" + str(num_replacements) # lax-prod-1, lax-rdstest3-2
+
+    rds_instance_id = core.rds_iid(stackname, num_replacements)
 
     context['rds'] = pdata['aws']['rds']
     context['rds'].update({

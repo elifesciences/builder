@@ -8,6 +8,7 @@ from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
 from contextlib import contextmanager
+from . import context_handler
 from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
 from slugify import slugify
 import logging
@@ -232,18 +233,25 @@ def _all_nodes_filter(stackname, node_ids):
 #
 #
 
-def rds_iid(stackname):
+def rds_iid(stackname, replacement_number=None):
     max_rds_iid = 63 # https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options
     # the rds iid needs to be deterministic, or, we need to find an attached rds db without knowing it's name
     slug = slugify(stackname)
-    ensure(len(slug) <= max_rds_iid, "a database instance identifier must be less than 64 characters")
+    if replacement_number and replacement_number > 0:
+        slug = "%s-%s" % (slug, replacement_number) # "lax-prod", "lax-prod-1", "lax-prod-2", ...
+    ensure(len(slug) <= max_rds_iid,
+           "a database instance identifier must be less than 64 characters. %r is %s characters long." % (slug, len(slug)))
     return slug
 
 def find_rds_instances(stackname, state='available'):
     "This uses boto3 because it allows to start/stop instances"
     try:
         conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
-        rid = rds_iid(stackname)
+
+        # lsh@2022-05-20: rds instance id can no longer be generated from the stackname alone.
+        # rds instances can now be replaced and the replacement number is incorporated into the rds instance id.
+        context = context_handler.load_context(stackname)
+        rid = rds_iid(stackname, lookup(context, 'rds.num-replacements'))
         if rid:
             # TODO: return the first (and only) result of DBInstances
             return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
