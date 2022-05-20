@@ -766,7 +766,7 @@ REMOVABLE_TITLE_PATTERNS = [
     '^IntDNS.*$',
     '^ElastiCache.*$',
     '^.+Topic$',
-    '^AttachedDB\d*$',
+    '^AttachedDB\\d*$',
     '^AttachedDBSubnet$',
     '^VPCSecurityGroup$',
     '^KeyName$',
