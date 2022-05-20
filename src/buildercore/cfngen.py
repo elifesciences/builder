@@ -368,6 +368,9 @@ def build_context_ec2(pdata, context):
 def build_context_rds(pdata, context, existing_context):
     if 'rds' not in pdata['aws']:
         return context
+
+    lu = utils.lookup
+
     stackname = context['stackname']
 
     # used to give mysql a range of valid ip addresses to connect from
@@ -383,13 +386,35 @@ def build_context_rds(pdata, context, existing_context):
     auto_rds_dbname = slugify(stackname, separator="") # lax--prod => laxprod
     existing_rds_dbname = existing_context.get('rds_dbname')
     override = lookup(pdata, 'aws.rds.db-name', None)
+
     rds_dbname = override or existing_rds_dbname or auto_rds_dbname
+    rds_instance_id = core.rds_iid(stackname)
 
     # ---
 
+    updating = True if existing_context else False
+    replacing = False
+
+    if updating:
+        # what conditions (supported by builder) will cause a db replacement?
+        # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html
+        path_list = ['rds.snapshot-id', 'rds.encryption', 'rds.db-name']
+        replacing = any(lu(context, path, None) != lu(existing_context, path, None) for path in path_list)
+
+    num_replacements = 0
+    if replacing:
+        # has the db been replaced before? if so, we need to increment a number as
+        # the Cloudformation generation (trop.py) doesn't have access to previously generated templates.
+        # if the AttachedDB is to be replaced, it needs a new custom name.
+        num_replacements = lu(existing_context, 'rds.num-replacements', 0)
+        num_replacements += 1
+        rds_instance_id = rds_instance_id + "-" + str(num_replacements) # lax-prod-1, lax-rdstest3-2
+
     context['rds'] = pdata['aws']['rds']
     context['rds'].update({
-        'deletion-policy': lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
+        'deletion-policy': lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot'),
+        'replacing': replacing,
+        'num-replacements': num_replacements,
     })
 
     # don't introduce new 'db-name' field until we've migrated 'rds_dbname'
@@ -402,7 +427,7 @@ def build_context_rds(pdata, context, existing_context):
         'rds_username': 'root',
         'rds_password': rds_password,
         'rds_dbname': rds_dbname,
-        'rds_instance_id': core.rds_iid(stackname), # name of rds instance
+        'rds_instance_id': rds_instance_id,
         'rds_params': pdata['aws']['rds'].get('params', []),
     })
 
