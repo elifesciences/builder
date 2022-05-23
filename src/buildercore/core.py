@@ -255,7 +255,7 @@ def find_rds_instances(stackname, state='available'):
         # lsh@2022-05-20: rds instance id can no longer be generated from the stackname alone.
         # rds instances can now be replaced and the replacement number is incorporated into the rds instance id.
         context = context_handler.load_context(stackname)
-        rid = rds_iid(stackname, lookup(context, 'rds.num-replacements'))
+        rid = rds_iid(stackname, lookup(context, 'rds.num-replacements', None))
         if rid:
             # TODO: return the first (and only) result of DBInstances
             return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
