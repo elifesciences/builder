@@ -254,3 +254,33 @@ def test_stack_exists__bad_state_label():
             core.stack_exists(stackname, state='cursed')
         exc = pytest_exc_info.value
         assert str(exc) == "unsupported state label 'cursed'. supported states: None, active, steady"
+
+def test_rds_iid():
+    cases = [
+        ('a', 'a'),
+        ('laxprod', 'laxprod'),
+        ('lax--prod', 'lax-prod'),
+        ('lax--1--2---3----4', 'lax-1-2-3-4')
+    ]
+    for given, expected in cases:
+        assert core.rds_iid(given) == expected
+
+def test_rds_iid__replacement_num():
+    cases = [
+        ('a', 0, 'a'),
+        ('a', 1, 'a-1'),
+        ('a', 99, 'a-99'),
+        ('1', 1, '1-1'),
+        ('lax--prod', 2, 'lax-prod-2'),
+        ('lax--1---2----3-----4', 5, 'lax-1-2-3-4-5')
+    ]
+    for given, replacement, expected in cases:
+        assert core.rds_iid(given, replacement) == expected
+
+def test_rds_iid__bad_cases():
+    cases = [
+        None, '', '-', {}
+    ]
+    for given in cases:
+        with pytest.raises(AssertionError):
+            core.rds_iid(given)

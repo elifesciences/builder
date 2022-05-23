@@ -85,7 +85,7 @@ defaults:
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
-            # name of the database to be created, *not* the RDS Instance ID.
+            # name of the database to be created and *not* the RDS Instance ID.
             # if null (default) then a database with slugified stackname will be created.
             # if snapshot-id is used, then the name of the database in the snapshot should be used.
             db-name: null
@@ -508,7 +508,7 @@ lax:
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
-    aws-alt:
+    aws-alt:   
         ci:
             ec2:
                 cpu-credits: unlimited

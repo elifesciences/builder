@@ -17,11 +17,12 @@ def rds_snapshots(stackname):
     for row in data:
         print(row)
 
+# TODO: remove, unused
 @echo_output
 def detailed_stack_list(project=None):
     region = utils.find_region()
     results = core.active_aws_stacks(region, formatter=None)
-    all_stacks = dict([(i.stack_name, vars(i)) for i in results])
+    all_stacks = {i['StackName']: i for i in results}
     if project:
         return {k: v for k, v in all_stacks.items() if k.startswith("%s-" % project)}
     return all_stacks

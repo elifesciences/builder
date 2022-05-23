@@ -36,7 +36,6 @@ SECURITY_GROUP_ELB_TITLE = "ELBSecurityGroup"
 EC2_TITLE = 'EC2Instance1'
 EC2_TITLE_NODE = 'EC2Instance%d'
 ELB_TITLE = 'ElasticLoadBalancer'
-RDS_TITLE = "AttachedDB"
 RDS_SG_ID = "DBSecurityGroup"
 RDS_DB_PG = "RDSDBParameterGroup"
 DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
@@ -516,7 +515,9 @@ def render_rds(context, template):
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
-        'DBInstanceIdentifier': lu('rds_instance_id'), # ll: 'lax-2015-12-31' from 'lax--2015-12-31'
+        # "lax--2015-12-31" => "lax-2015-12-31"
+        # "lax--prod" => "lax-prod-1" on first replacement
+        'DBInstanceIdentifier': lu('rds_instance_id'),
         'PubliclyAccessible': False,
         'AllocatedStorage': lu('rds.storage'),
         'StorageType': lu('rds.storage-type'),
@@ -560,12 +561,17 @@ def render_rds(context, template):
         LOG.warning("removing the 'snapshot-id' value will cause a new database to be created on update.")
         LOG.warning("changing the 'snapshot-id' value will cause the database to be replaced.")
 
-    rdbi = rds.DBInstance(RDS_TITLE, **data)
+    # custom name must change if being replaced.
+    rds_title = "AttachedDB"
+    if lu('rds.replacing'):
+        rds_title = 'AttachedDB%s' % lu('rds.num-replacements') # "AttachedDB1"
+
+    rdbi = rds.DBInstance(rds_title, **data)
     lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
 
     outputs = [
-        mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
-        mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),
+        mkoutput("RDSHost", "Connection endpoint for the DB cluster", (rds_title, "Endpoint.Address")),
+        mkoutput("RDSPort", "The port number on which the database accepts connections", (rds_title, "Endpoint.Port")),
     ]
     lmap(template.add_output, outputs)
 
