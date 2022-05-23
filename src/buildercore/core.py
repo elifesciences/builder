@@ -234,11 +234,15 @@ def _all_nodes_filter(stackname, node_ids):
 #
 
 def rds_iid(stackname, replacement_number=None):
-    max_rds_iid = 63 # https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options
-    # the rds iid needs to be deterministic, or, we need to find an attached rds db without knowing it's name
-    slug = slugify(stackname)
+    """generates a suitable RDS instance ID for the given `stackname`.
+    the RDS instance ID needs to be deterministic or we need to find an attached RDS db without knowing it's name.
+    - https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options"""
+    ensure(stackname and isinstance(stackname, str), "given stackname must be a non-empty string.")
+    max_rds_iid = 63
+    slug = slugify(stackname) # "lax--prod" => "lax-prod"
+    ensure(slug, "given stackname cannot slugify to an empty string.")
     if replacement_number and replacement_number > 0:
-        slug = "%s-%s" % (slug, replacement_number) # "lax-prod", "lax-prod-1", "lax-prod-2", ...
+        slug = "%s-%s" % (slug, replacement_number) # "lax-prod" => "lax-prod-1"
     ensure(len(slug) <= max_rds_iid,
            "a database instance identifier must be less than 64 characters. %r is %s characters long." % (slug, len(slug)))
     return slug
