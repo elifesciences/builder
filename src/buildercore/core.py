@@ -248,17 +248,21 @@ def rds_iid(stackname, replacement_number=None):
     return slug
 
 def find_rds_instances(stackname, state='available'):
-    "This uses boto3 because it allows to start/stop instances"
+    """returns a list of RDS instances attached to the given `stackname` in the given `state`.
+    it is possible for multiple RDS instances to be returned if the stack is replacing an RDS instance and is mid-transition."""
     try:
         conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
 
-        # lsh@2022-05-20: rds instance id can no longer be generated from the stackname alone.
+        # lsh@2022-05-20: rds instance id can no longer be generated from the `stackname` alone.
         # rds instances can now be replaced and the replacement number is incorporated into the rds instance id.
         context = context_handler.load_context(stackname)
         rid = rds_iid(stackname, lookup(context, 'rds.num-replacements', None))
-        if rid:
-            # TODO: return the first (and only) result of DBInstances
-            return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+
+        # lsh@2022-05-24: `rds_iid` will either return an ID or raise an AssertionError.
+        # if rid:
+        #    return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+
+        return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
     except AssertionError:
         # invalid dbid. RDS doesn't exist because stack couldn't have been created with this ID
         return []
@@ -267,8 +271,8 @@ def find_rds_instances(stackname, state='available'):
         LOG.info(err.response)
         invalid_dbid = "Invalid database identifier"
         if err.response['Error']['Message'].startswith(invalid_dbid):
-            # what we asked for isn't a valid db id, we probably made a mistake
-            # we definitely couldn't have created a db with that id
+            # what we asked for isn't a valid db id, we probably made a mistake.
+            # we definitely couldn't have created a db with that id.
             return []
 
         if err.response['Error']['Code'] == 'DBInstanceNotFound':

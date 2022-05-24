@@ -293,9 +293,7 @@ def mkdir_p(path):
 
 def json_dumps(obj, dangerous=False, **kwargs):
     """drop-in for json.dumps that handles datetime objects.
-
-    dangerous=True will replace unserializable values with the string '[unserializable]'.
-    you should typically set this to True. it's False for legacy reasons."""
+    dangerous=True will replace unserializable values with the string '[unserializable]'."""
     def json_handler(obj):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
@@ -305,6 +303,8 @@ def json_dumps(obj, dangerous=False, **kwargs):
     return json.dumps(obj, default=json_handler, **kwargs)
 
 def lookup(data, path, default=0xDEADBEEF):
+    """recursively navigates the `data` dict using the given dot-delimited `path`,
+    raising a `KeyError` if a value is not present or `default`."""
     if not isinstance(data, dict):
         raise ValueError("lookup context must be a dictionary")
     if not isstr(path):
