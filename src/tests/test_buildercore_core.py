@@ -1,3 +1,4 @@
+from moto import mock_rds
 import pytest
 from functools import partial
 import json
@@ -256,6 +257,7 @@ def test_stack_exists__bad_state_label():
         assert str(exc) == "unsupported state label 'cursed'. supported states: None, active, steady"
 
 def test_rds_iid():
+    "values are slugified into valid rds iids"
     cases = [
         ('a', 'a'),
         ('laxprod', 'laxprod'),
@@ -266,6 +268,7 @@ def test_rds_iid():
         assert core.rds_iid(given) == expected
 
 def test_rds_iid__replacement_num():
+    "a replacement number can be passed to suffix the generated rds iid"
     cases = [
         ('a', 0, 'a'),
         ('a', 1, 'a-1'),
@@ -278,9 +281,35 @@ def test_rds_iid__replacement_num():
         assert core.rds_iid(given, replacement) == expected
 
 def test_rds_iid__bad_cases():
+    "bad inputs to `rds_iid` raise `AssertionError`s"
     cases = [
         None, '', '-', {}
     ]
     for given in cases:
         with pytest.raises(AssertionError):
             core.rds_iid(given)
+
+
+@mock_rds
+def test_find_rds_instances(test_projects):
+    "an rds instance is found with the correct rds iid."
+    stackname = "dummy1--bar"
+    rds_iid = expected = "dummy1-bar"
+    conn = core.boto_client('rds', 'us-east-1')
+    conn.create_db_instance(DBInstanceIdentifier=rds_iid, DBInstanceClass="db.t2.small", Engine="postgres")
+    context = {}
+    with patch('buildercore.context_handler.load_context', return_value=context):
+        actual = core.find_rds_instances(stackname)
+        assert actual[0]['DBInstanceIdentifier'] == expected
+
+@mock_rds
+def test_find_rds_instances__replacement(test_projects):
+    "the correct rds iid is generated when `rds.num-replacements` is set in project's context."
+    stackname = "dummy1--bar"
+    rds_iid = expected = "dummy1-bar-99"
+    conn = core.boto_client('rds', 'us-east-1')
+    conn.create_db_instance(DBInstanceIdentifier=rds_iid, DBInstanceClass="db.t2.small", Engine="postgres")
+    context = {'rds': {'num-replacements': 99}}
+    with patch('buildercore.context_handler.load_context', return_value=context):
+        actual = core.find_rds_instances(stackname)
+        assert actual[0]['DBInstanceIdentifier'] == expected
