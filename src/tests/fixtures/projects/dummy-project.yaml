@@ -217,7 +217,7 @@ defaults:
             subnets:
                 - subnet-foo
                 - subnet-bar
-            version: "2.8.24" # closest to builder-base-formula redis.sls
+            version: "6.2" # closest to builder-base-formula redis.sls
             configuration:
                 maxmemory-policy: volatile-ttl
             clusters: 1

@@ -1270,7 +1270,7 @@ def elasticache_security_group(context):
 def elasticache_default_parameter_group(context):
     return elasticache.ParameterGroup(
         ELASTICACHE_PARAMETER_GROUP_TITLE,
-        CacheParameterGroupFamily='redis2.8',
+        CacheParameterGroupFamily='redis6.x',
         Description='ElastiCache parameter group for %s' % context['stackname'],
         Properties=context['elasticache']['configuration']
     )
@@ -1278,7 +1278,7 @@ def elasticache_default_parameter_group(context):
 def elasticache_overridden_parameter_group(context, cluster_context, cluster):
     return elasticache.ParameterGroup(
         "%s%d" % (ELASTICACHE_PARAMETER_GROUP_TITLE, cluster),
-        CacheParameterGroupFamily='redis2.8',
+        CacheParameterGroupFamily='redis6.x',
         Description='ElastiCache parameter group for %s cluster %d' % (context['stackname'], cluster),
         Properties=cluster_context['configuration']
     )

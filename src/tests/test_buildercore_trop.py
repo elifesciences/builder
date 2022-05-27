@@ -1031,7 +1031,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'CacheParameterGroupName': {'Ref': 'ElastiCacheParameterGroup'},
                 'CacheSubnetGroupName': {'Ref': 'ElastiCacheSubnetGroup'},
                 'Engine': 'redis',
-                'EngineVersion': '2.8.24',
+                'EngineVersion': '6.2',
                 'PreferredAvailabilityZone': 'us-east-1a',
                 'NumCacheNodes': 1,
                 'Tags': [
@@ -1046,7 +1046,7 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertEqual(
             {
-                'CacheParameterGroupFamily': 'redis2.8',
+                'CacheParameterGroupFamily': 'redis6.x',
                 'Description': 'ElastiCache parameter group for project-with-elasticache-redis--prod',
                 'Properties': {
                     'maxmemory-policy': 'volatile-ttl',
@@ -1104,7 +1104,7 @@ class TestBuildercoreTrop(base.BaseCase):
         # default parameter group
         self.assertEqual(
             {
-                'CacheParameterGroupFamily': 'redis2.8',
+                'CacheParameterGroupFamily': 'redis6.x',
                 'Description': 'ElastiCache parameter group for project-with-multiple-elasticaches--prod',
                 'Properties': {
                     'maxmemory-policy': 'volatile-lru',
@@ -1126,7 +1126,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual('cache.t2.medium', data['Resources']['ElastiCache2']['Properties']['CacheNodeType'])
         self.assertEqual(
             {
-                'CacheParameterGroupFamily': 'redis2.8',
+                'CacheParameterGroupFamily': 'redis6.x',
                 'Description': 'ElastiCache parameter group for project-with-multiple-elasticaches--prod cluster 2',
                 'Properties': {
                     'maxmemory-policy': 'volatile-ttl',
