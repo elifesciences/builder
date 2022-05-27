@@ -280,7 +280,7 @@ defaults:
             subnets:
                 - subnet-20275c68 # elife-cache-subnet-1
                 - subnet-c4033af8 # elife-cache-subnet-2
-            version: "2.8.24" # closest to builder-base-formula redis.sls
+            version: "6.2"
             configuration:
                 maxmemory-policy: volatile-lru
             clusters: 1
