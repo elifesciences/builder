@@ -71,11 +71,12 @@ def all_formulas():
 def all_ec2_projects():
     "returns a list of all project names whose projects have a truthy ec2 section (eg, not {}, None or False)"
     def has_ec2(pname, pdata):
-        if pdata.get('aws') and pdata['aws'].get('ec2'):
+        ec2 = core_utils.lookup(pdata, 'aws.ec2', None)
+        if ec2:
             return pname
         # if evidence of an ec2 section not found directly, check alternate configurations
         for alt_name, alt_data in pdata.get('aws-alt', {}).items():
-            if alt_data.get('ec2'):
+            if has_ec2(pname, alt_data):
                 return pname
     results = [has_ec2(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
