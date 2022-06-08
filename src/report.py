@@ -32,6 +32,16 @@ def sort_by_env(name):
         # delimiter not found in string.
         # by returning the given `name` here we get a basic alphabetical order
         # for lists that don't contain an environment.
+
+        # last ditch effort for things like RDS instance names.
+        for env in order:
+            pos = name.find("-" + env)
+            if pos > -1:
+                env = name[pos + 1:] # "elife-libero-reviewer-prod" => "prod"
+                rest = name[:pos] # "elife-libero-reviewer-prod" => "elife-libero-reviewer"
+                key = "%s%s" % (rest, order.get(env, adhoc)) # "elife-libero-reviewer4"
+                return key
+
         return name
 
 def report(task_fn):
@@ -69,19 +79,22 @@ def all_formulas():
 
 @report
 def all_ec2_projects():
-    "returns a list of all project names whose projects have a truthy ec2 section (eg, not {}, None or False)"
+    "returns a list of all project names that are using EC2 (excluding alt-configs defined in the defaults sections)"
+    alt_black_list = ['fresh', 'snsalt', 's1804', '1804', '2004', 's2004', 'standalone']
+
     def has_ec2(pname, pdata):
-        ec2 = core_utils.lookup(pdata, 'aws.ec2', None)
-        if ec2:
+        if core_utils.lookup(pdata, 'aws.ec2', None):
             return pname
         # if evidence of an ec2 section not found directly, check alternate configurations
         for alt_name, alt_data in pdata.get('aws-alt', {}).items():
-            if has_ec2(pname, alt_data):
+            if alt_name in alt_black_list:
+                continue
+            # we wrap in 'aws' here because we're looking for 'aws.ec2', not the un-nested 'ec2'
+            if has_ec2(pname, {'aws': alt_data}):
                 return pname
     results = [has_ec2(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
     return results
-
 
 def _all_ec2_instances(state):
     return [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state)]
@@ -132,3 +145,26 @@ def all_adhoc_ec2_instances(state='running'):
             return True
     instance_list = [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state)]
     return filter(adhoc_instance, instance_list)
+
+@report
+def all_rds_projects():
+    "returns a list of all project names that are using RDS"
+    key = 'aws.rds'
+
+    def has_(pname, pdata):
+        if core_utils.lookup(pdata, key, None):
+            return pname
+        # if evidence of a 'foo' section not found directly, check alternate configurations
+        for alt_name, alt_data in pdata.get('aws-alt', {}).items():
+            # we wrap in 'aws' here because we're looking for 'aws.foo', not the un-nested 'foo'
+            if has_(pname, {'aws': alt_data}):
+                return pname
+    results = [has_(pname, pdata) for pname, pdata in project.project_map().items()]
+    results = filter(None, results)
+    return results
+
+@report
+def all_rds_instances(**kwargs):
+    """returns a list of all RDS instances.
+    results are sorted by environment where possible."""
+    return [i['DBInstanceIdentifier'] for i in core.find_all_rds_instances()]

@@ -106,6 +106,8 @@ TASK_LIST = [
     report.all_ec2_projects,
     report.all_ec2_instances,
     report.all_ec2_instances_for_salt_upgrade,
+    report.all_rds_projects,
+    report.all_rds_instances,
     report.all_formulas,
     report.all_adhoc_ec2_instances,
 
