@@ -247,6 +247,7 @@ def rds_iid(stackname, replacement_number=None):
            "a database instance identifier must be less than 64 characters. %r is %s characters long." % (slug, len(slug)))
     return slug
 
+# TODO: `state` is unused?
 def find_rds_instances(stackname, state='available'):
     """returns a list of RDS instances attached to the given `stackname` in the given `state`.
     it is possible for multiple RDS instances to be returned if the stack is replacing an RDS instance and is mid-transition."""
@@ -279,6 +280,11 @@ def find_rds_instances(stackname, state='available'):
             return []
 
         raise err
+
+def find_all_rds_instances():
+    "just like `find_rds_instances`, but not filtered by stackname."
+    conn = boto3.client('rds')
+    return conn.describe_db_instances()['DBInstances']
 
 #
 #
