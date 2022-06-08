@@ -165,4 +165,6 @@ def all_rds_projects():
 
 @report
 def all_rds_instances(**kwargs):
+    """returns a list of all RDS instances.
+    results are sorted by environment where possible."""
     return [i['DBInstanceIdentifier'] for i in core.find_all_rds_instances()]

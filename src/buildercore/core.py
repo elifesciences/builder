@@ -281,8 +281,9 @@ def find_rds_instances(stackname):
         raise err
 
 def find_all_rds_instances():
-    "just like `find_rds_instances`, but not filtered by stackname."
-    conn = boto3.client('rds')
+    "returns a list of DBInstance dicts, straight from boto."
+    # warning: not paginated, ~18 results at time of writing.
+    conn = boto3.client('rds', region_name=find_region())
     return conn.describe_db_instances()['DBInstances']
 
 #
