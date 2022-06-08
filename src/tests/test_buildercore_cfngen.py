@@ -81,6 +81,26 @@ def test_rds_config__snapshot(test_projects):
     # todo: revisit when rds_dbname is migrated under 'rds'
     assert not context['rds'].get('db-name')
 
+def test_rds_config__replacement(test_projects):
+    "changes in context may trigger a replacement"
+    stackname = 'project-with-rds-only--test'
+
+    # failure to find values in existing context that would cause replacement doesn't trigger replacement.
+    existing_context = {'rds': {}}
+    context = cfngen.build_context('project-with-rds-only', stackname=stackname, existing_context=existing_context)
+    assert not context['rds']['replacing']
+
+    # finding a value different to the default in the existing context triggers replacement.
+    existing_context = {"rds": {"db-name": "foo"}}
+    context = cfngen.build_context('project-with-rds-only', stackname=stackname, existing_context=existing_context)
+    assert context['rds']['replacing']
+
+    # finding a *similar-but-still-different* value to the default in the existing context triggers a replacement.
+    # be precise! be careful!
+    existing_context = {"rds": {"encryption": None}} # default is False
+    context = cfngen.build_context('project-with-rds-only', stackname=stackname, existing_context=existing_context)
+    assert context['rds']['replacing']
+
 class TestBuildercoreCfngen():
     # note: this requires pytest, but provides great introspection
     # on which project_name is failing
