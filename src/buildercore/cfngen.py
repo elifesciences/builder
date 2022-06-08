@@ -394,8 +394,8 @@ def build_context_rds(pdata, context, existing_context):
     if updating:
         # what conditions (supported by builder) will cause a db replacement?
         # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html
-        path_list = [('rds.snapshot-id', None), 
-                     ('rds.encryption', False), 
+        path_list = [('rds.snapshot-id', None),
+                     ('rds.encryption', False),
                      ('rds.db-name', None)]
         replacing = any(lu(context, path, default) != lu(existing_context, path, default) for path, default in path_list)
 
