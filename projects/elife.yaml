@@ -516,9 +516,8 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
+                version: '11.14'
                 storage: 10
-                type: db.t2.small
-                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 10 # GB
@@ -535,6 +534,7 @@ lax:
             ec2:
                 cluster-size: 3
             rds:
+                version: '11.14'
                 type: db.t2.small
                 storage: 10
                 multi-az: true
@@ -1184,11 +1184,10 @@ journal-cms:
         end2end:
             description: production-like environment. backed by RDS
             rds:
-                type: db.t2.medium
+                type: db.t3.medium
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
-                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 30 # GB
