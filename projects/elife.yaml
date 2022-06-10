@@ -80,10 +80,9 @@ defaults:
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
-            # version: '9.4' # EOL Feb 2020
-            version: '11.14' # EOL Nov 2023
+            version: '11' # EOL Nov 2023
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
-            type: db.t2.small
+            type: db.t3.small
             storage: 5 # GB
             # name of the database to be created and *not* the RDS Instance ID.
             # if null (default) then a database with slugified stackname will be created.
@@ -518,6 +517,7 @@ lax:
                 cluster-size: 2
             rds:
                 storage: 10
+                type: db.t2.small
                 storage-type: Standard
                 backup-retention: 2 # days
             ext:
@@ -535,6 +535,7 @@ lax:
             ec2:
                 cluster-size: 3
             rds:
+                type: db.t2.small
                 storage: 10
                 multi-az: true
             ext:
@@ -898,7 +899,6 @@ elife-metrics:
             description: end2end environment for metrics. RDS backed.
             rds:
                 backup-retention: 2 # days
-                storage-type: Standard
         prod:
             description: production environment for metrics. RDS backed.
             ext:
@@ -1196,11 +1196,9 @@ journal-cms:
         continuumtest:
             description: production-like environment.
             rds:
-                type: db.t2.small
                 engine: MySQL
-                version: '5.7.23'
+                version: '5.7'
                 storage: 48 # GB
-                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 60 # GB
@@ -1242,7 +1240,6 @@ elife-dashboard:
             description: production-like environment.
             rds:
                 storage: 5
-                storage-type: Standard
                 backup-retention: 2 # days
             sqs:
                 # legacy custom name
@@ -1264,6 +1261,7 @@ elife-dashboard:
             rds:
                 storage: 5
                 storage-type: Standard
+                type: db.t2.small
                 multi-az: true
             sqs:
                 # legacy custom name
@@ -1593,12 +1591,13 @@ observer:
         end2end:
             description: production-like environment. RDS backed
             rds:
+                version: '11.14'
                 storage: 10
-                storage-type: Standard
                 backup-retention: 2 # days
         prod:
             description: production environment. RDS backed
             rds:
+                type: db.t2.small
                 storage: 10
                 storage-type: Standard
                 multi-az: true
@@ -1864,7 +1863,6 @@ profiles:
             rds:
                 engine: postgres
                 storage: 5 # GB
-                storage-type: Standard
                 backup-retention: 2 # days
             ec2:
                 ports:
@@ -1876,6 +1874,7 @@ profiles:
                     - 8082 # orcid-dummy https
         prod:
             rds:
+                type: db.t2.small
                 engine: postgres
                 storage: 5 # GB
                 storage-type: Standard
@@ -1893,7 +1892,8 @@ annotations:
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
         ec2:
-            type: t2.small
+            ami: ami-087042c4b376d1888 # GENERATED created from basebox--2004
+                                       # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             ports:
                 - 22
                 - 80:
@@ -1928,19 +1928,16 @@ digests:
     aws-alt:
         end2end:
             rds:
-                engine: postgres
-                type: db.t2.micro
+                type: db.t3.micro
                 storage: 5 # GB
                 backup-retention: 2 # days
         continuumtest:
             rds:
-                engine: postgres
-                type: db.t2.micro
+                type: db.t3.micro
                 storage: 5 # GB
                 backup-retention: 2 # days
         prod:
             rds:
-                engine: postgres
                 type: db.t2.micro
                 storage: 5 # GB
                 multi-az: true
