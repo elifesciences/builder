@@ -906,7 +906,7 @@ elife-metrics:
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
-                version: 11.14
+                version: '11.14'
                 type: db.t3.medium
                 multi-az: true
                 storage: 20
@@ -1920,6 +1920,7 @@ digests:
         continuumtest:
             rds:
                 type: db.t3.micro
+                version: '11.14'
                 backup-retention: 2 # days
         prod:
             rds:
