@@ -561,8 +561,6 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             root:
                 size: 30 # GB
                 type: gp2
@@ -2049,13 +2047,12 @@ bastion:
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
         ec2:
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
     aws-alt:
         prod:
             ec2:
-                type: t2.nano # 500 MB
+                type: t3.nano # 500 MB ram
             # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
