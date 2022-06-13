@@ -56,7 +56,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
+            ami: ami-07a3a418b3085fcfb # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -423,6 +423,7 @@ basebox:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
     aws-alt:
@@ -453,6 +454,7 @@ heavybox:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
@@ -470,6 +472,7 @@ master-server:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 4506: # salt publish port
@@ -497,6 +500,7 @@ lax:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -558,6 +562,7 @@ api-gateway:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             root:
                 size: 30 # GB
                 type: gp2
@@ -633,6 +638,7 @@ journal:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -862,6 +868,7 @@ pattern-library:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -888,6 +895,7 @@ elife-metrics:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -922,6 +930,7 @@ elife-bot:
     aws:
         ec2:
             type: t2.medium
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
@@ -1158,6 +1167,7 @@ journal-cms:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -1227,6 +1237,7 @@ elife-dashboard:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1283,6 +1294,7 @@ elife-libraries:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
@@ -1314,6 +1326,7 @@ containers:
     aws:
         ec2:
             type: t2.medium # 4GB of RAM
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
@@ -1341,6 +1354,7 @@ elife-alfred:
     aws:
         ec2:
             type: t2.large
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -1375,6 +1389,7 @@ elife-alfred-nodes:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             cluster-size: 0
             security-group:
                 ports:
@@ -1436,6 +1451,7 @@ search:
     aws:
         ec2:
             type: t2.medium
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             cpu-credits: unlimited
             ports:
                 - 22
@@ -1506,6 +1522,7 @@ recommendations:
     aws:
         ec2:
             type: t2.medium # 4 GB of RAM, same as search for now.
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1525,6 +1542,7 @@ personalised-covers:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1565,6 +1583,7 @@ observer:
         ec2:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             type: t2.medium
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1633,6 +1652,7 @@ iiif:
     aws:
         ec2:
             type: t2.medium
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1807,6 +1827,7 @@ redirects:
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
         ec2:
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             # lsh@2022-03-14: changed default instance type from a t2.nano to a t2.small.
             # getting freezing behaviour during formula testing
             #type: t2.nano
@@ -1846,6 +1867,7 @@ profiles:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1879,8 +1901,6 @@ annotations:
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
         ec2:
-            ami: ami-087042c4b376d1888 # GENERATED created from basebox--2004
-                                       # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             ports:
                 - 22
                 - 80:
@@ -1908,6 +1928,7 @@ digests:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -2028,6 +2049,7 @@ bastion:
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
         ec2:
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
     aws-alt:
@@ -2137,6 +2159,7 @@ large-repo-wrangler:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
@@ -2157,6 +2180,7 @@ bioprotocol:
     aws:
         ec2:
             type: t2.small
+            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
             ports:
                 - 22
