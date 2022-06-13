@@ -535,7 +535,6 @@ lax:
                 cluster-size: 3
             rds:
                 version: '11.14'
-                type: db.t2.small
                 storage: 10
                 multi-az: true
             ext:
@@ -906,11 +905,11 @@ elife-metrics:
                 type: standard
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
-                # metrics sees a constant > 20% CPU usage and isn't regenerating credits well.
-                type: db.t2.medium
+                # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
+                version: 11.14
+                type: db.t3.medium
                 multi-az: true
                 storage: 20
-                storage-type: Standard
     vagrant:
         ports:
             1240: 80
@@ -1205,12 +1204,13 @@ journal-cms:
         prod:
             description: production environment. backed by RDS
             rds:
-                type: db.t2.medium
+                type: db.t3.medium
                 engine: MySQL
-                version: '5.7.23'
+                version: '5.7'
                 multi-az: true
+                # storage can be increased but not decreased.
+                # journal-cms--prod once needed this amount.
                 storage: 48 # GB
-                storage-type: Standard
             ext:
                 size: 60 # GB
                 type: standard
@@ -1238,7 +1238,6 @@ elife-dashboard:
             unique: true
             description: production-like environment.
             rds:
-                storage: 5
                 backup-retention: 2 # days
             sqs:
                 # legacy custom name
@@ -1258,9 +1257,6 @@ elife-dashboard:
             unique: true
             description: production environment. backed by RDS
             rds:
-                storage: 5
-                storage-type: Standard
-                type: db.t2.small
                 multi-az: true
             sqs:
                 # legacy custom name
@@ -1596,9 +1592,7 @@ observer:
         prod:
             description: production environment. RDS backed
             rds:
-                type: db.t2.small
                 storage: 10
-                storage-type: Standard
                 multi-az: true
     vagrant:
         ports:
@@ -1860,8 +1854,6 @@ profiles:
     aws-alt:
         end2end:
             rds:
-                engine: postgres
-                storage: 5 # GB
                 backup-retention: 2 # days
             ec2:
                 ports:
@@ -1873,10 +1865,6 @@ profiles:
                     - 8082 # orcid-dummy https
         prod:
             rds:
-                type: db.t2.small
-                engine: postgres
-                storage: 5 # GB
-                storage-type: Standard
                 multi-az: true
     vagrant:
         ram: 1024
@@ -1928,17 +1916,14 @@ digests:
         end2end:
             rds:
                 type: db.t3.micro
-                storage: 5 # GB
                 backup-retention: 2 # days
         continuumtest:
             rds:
                 type: db.t3.micro
-                storage: 5 # GB
                 backup-retention: 2 # days
         prod:
             rds:
-                type: db.t2.micro
-                storage: 5 # GB
+                type: db.t3.micro
                 multi-az: true
     vagrant:
         ram: 1024
@@ -1956,10 +1941,7 @@ elife-libero-reviewer:
     aws-alt:
         staging:
             rds:
-                engine: postgres # or 'MySQL'
-                version: '12.3'
-                type: db.t2.small
-                storage: 5 # GB
+                version: '12'
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             s3:
@@ -1968,11 +1950,7 @@ elife-libero-reviewer:
         prod:
             rds:
                 multi-az: true
-                engine: postgres # or 'MySQL'
-                version: '12.3'
-                type: db.t2.small
-                storage: 5 # GB
-                backup-retention: 28 # days
+                version: '12'
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
             s3:
