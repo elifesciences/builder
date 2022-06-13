@@ -1386,7 +1386,6 @@ api-dummy:
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1394,7 +1393,8 @@ api-dummy:
                 - 443
     aws-alt:
         demo:
-            type: t2.micro
+            ec2:
+                type: t3.micro
     vagrant:
         ports:
             1242: 80
