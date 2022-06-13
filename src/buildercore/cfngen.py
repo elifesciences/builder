@@ -391,13 +391,20 @@ def build_context_rds(pdata, context, existing_context):
     updating = True if existing_context else False
     replacing = False
 
+    context['rds'] = pdata['aws']['rds']
+
     if updating:
         # what conditions (supported by builder) will cause a db replacement?
         # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html
         path_list = [('rds.snapshot-id', None),
                      ('rds.encryption', False),
                      ('rds.db-name', None)]
-        replacing = any(lu(context, path, default) != lu(existing_context, path, default) for path, default in path_list)
+        for path, default in path_list:
+            old_val = lu(existing_context, path, default)
+            new_val = lu(context, path, default)
+            if new_val != old_val:
+                #print("%s old %r vs new %r" % (path, old_val, new_val))
+                replacing = True
 
     num_replacements = 0
     if replacing:
@@ -409,7 +416,6 @@ def build_context_rds(pdata, context, existing_context):
 
     rds_instance_id = core.rds_iid(stackname, num_replacements)
 
-    context['rds'] = pdata['aws']['rds']
     context['rds'].update({
         'deletion-policy': lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot'),
         'replacing': replacing,
