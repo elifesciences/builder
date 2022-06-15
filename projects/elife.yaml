@@ -115,7 +115,9 @@ defaults:
             # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
             type: gp2 # standard|gp2|io1|sc1
             size: 10 # GB
-            device: /dev/sdh
+            # lsh@2022-06-15 I suspect this isn't being used. 
+            # see builder-configuration/pillar/elife.sls and elife.external_volume.device
+            device: /dev/sdh 
 
         # alb default only used if an 'alb' section present in project
         # also known as 'Elastic Load Balancer v2'
@@ -927,13 +929,10 @@ elife-bot:
     # ip: 54.164.145.166 # bot.elifesciences.org must be available at this IP
     aws:
         ec2:
-            type: t2.medium
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
             size: 30 # GB
-            type: standard
         s3:
             "{instance}-elife-silent-corrections":
             "{instance}-elife-published":
@@ -1011,6 +1010,11 @@ elife-bot:
                 #"continuumtest-elife-bot":
                 #    deletion-policy: delete
         prod:
+            ec2:
+                type: t2.medium
+                ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
+            ext:
+                type: standard
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
@@ -1925,8 +1929,6 @@ digests:
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -2176,8 +2178,6 @@ bioprotocol:
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
             ports:
                 - 22
