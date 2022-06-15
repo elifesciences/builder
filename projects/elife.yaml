@@ -961,6 +961,7 @@ elife-bot:
                     deletion-policy: retain
         end2end:
             ec2:
+                type: t3.medium
                 ports:
                     - 22
                     - 8020 # exposing FTP contents
