@@ -1239,8 +1239,6 @@ elife-dashboard:
     default-branch: develop
     aws:
         ec2:
-            type: t2.small
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1296,8 +1294,6 @@ elife-libraries:
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
@@ -1307,17 +1303,18 @@ elife-libraries:
             description: running unit tests
         load:
             description: running load tests
-            type: t2.2xlarge
+            ec2:
+                type: t3.2xlarge
         spectrum:
             description: running end2end tests
-            # 2 core, 8 GB of memory
-            type: t2.medium
+            ec2:
+                type: t3.medium # 2 core, 8 GB of memory
             ext:
                 size: 10 # GB
-                type: standard
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
-            type: c4.8xlarge
+            ec2:
+                type: c5.9xlarge
     vagrant:
         ram: 4096
 
