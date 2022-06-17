@@ -894,8 +894,6 @@ elife-metrics:
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -908,6 +906,9 @@ elife-metrics:
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed.
+            ec2:
+                type: t2.small
+                ami: ami-06391297383c61fd3 # GENERATED created from basebox--1804
             ext:
                 size: 10 # GB
                 type: standard
