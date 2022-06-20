@@ -455,13 +455,10 @@ heavybox:
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
             size: 10 # GB
-            type: standard
     aws-alt: {}
     vagrant: {}
 
@@ -906,12 +903,8 @@ elife-metrics:
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed.
-            ec2:
-                type: t2.small
-                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             ext:
                 size: 10 # GB
-                type: standard
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
