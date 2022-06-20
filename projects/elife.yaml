@@ -1013,10 +1013,7 @@ elife-bot:
                 #    deletion-policy: delete
         prod:
             ec2:
-                type: t2.medium
-                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
-            ext:
-                type: standard
+                type: t3.medium
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
