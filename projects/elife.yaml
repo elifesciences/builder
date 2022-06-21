@@ -1160,8 +1160,6 @@ journal-cms:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -1183,7 +1181,6 @@ journal-cms:
         ci:
             ext:
                 size: 5 # GB
-                type: standard
         end2end:
             description: production-like environment. backed by RDS
             rds:
@@ -1194,7 +1191,6 @@ journal-cms:
                 backup-retention: 2 # days
             ext:
                 size: 30 # GB
-                type: standard
         continuumtest:
             description: production-like environment.
             rds:
@@ -1204,9 +1200,11 @@ journal-cms:
                 backup-retention: 2 # days
             ext:
                 size: 60 # GB
-                type: standard
         prod:
             description: production environment. backed by RDS
+            ec2:
+                type: t2.small
+                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             rds:
                 type: db.t3.medium
                 engine: MySQL
