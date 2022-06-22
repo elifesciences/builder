@@ -1562,15 +1562,13 @@ personalised-covers:
             1247: 8080
 
 observer:
-    description: article-level reporting
+    description: article and non-article content reports, including RSS feeds and sitemap.
     subdomain: observer # observer.elifesciences.org
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
         ec2:
-            # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
-            type: t2.medium
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            type: t3.medium
             ports:
                 - 22
                 - 80:
@@ -1590,13 +1588,15 @@ observer:
                     - bus-blog-articles--{instance}
     aws-alt:
         end2end:
-            description: production-like environment. RDS backed
             rds:
                 version: '11.14'
                 storage: 10
                 backup-retention: 2 # days
         prod:
-            description: production environment. RDS backed
+            # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
+            ec2:
+                type: t2.medium
+                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             rds:
                 storage: 10
                 multi-az: true
