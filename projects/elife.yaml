@@ -864,8 +864,6 @@ pattern-library:
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
