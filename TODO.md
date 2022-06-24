@@ -16,6 +16,8 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 
 ## todo (bucket)
 
+* emit a description of the job being run before running it
+
 * update_infrastructure, elide 'UserData' in confirmation
   - it's too large and pointless
 
