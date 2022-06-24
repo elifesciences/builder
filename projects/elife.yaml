@@ -1592,9 +1592,6 @@ observer:
                 backup-retention: 2 # days
         prod:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
-            ec2:
-                type: t2.medium
-                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             rds:
                 storage: 10
                 multi-az: true
