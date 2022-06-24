@@ -1809,10 +1809,9 @@ redirects:
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
         ec2:
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             # lsh@2022-03-14: changed default instance type from a t2.nano to a t2.small.
             # getting freezing behaviour during formula testing
-            #type: t2.nano
+            # lsh@2022-06-25: t2.small has changed to t3.small
             ports:
                 - 22
                 - 80
@@ -1821,6 +1820,7 @@ redirects:
         prod:
             ec2:
                 type: t2.nano
+                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
@@ -1866,6 +1866,9 @@ profiles:
                     - 8081 # orcid-dummy http
                     - 8082 # orcid-dummy https
         prod:
+            ec2:
+                type: t2.small
+                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
             rds:
                 multi-az: true
     vagrant:
