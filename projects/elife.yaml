@@ -362,7 +362,7 @@ defaults:
         #standalone1804:
         #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
         #    ec2:
-        #        ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+        #        ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
         #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
         #        masterless: true
         #        type: t2.small
@@ -370,7 +370,7 @@ defaults:
         s1804:
             description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
                 # lsh@2022-04-21: disabled, not sure why it was added.
@@ -425,7 +425,7 @@ basebox:
     aws:
         ec2:
             type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
     aws-alt:
@@ -471,7 +471,7 @@ master-server:
     aws:
         ec2:
             type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 4506: # salt publish port
@@ -499,7 +499,7 @@ lax:
     aws:
         ec2:
             type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -635,7 +635,7 @@ journal:
     aws:
         ec2:
             type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -1202,7 +1202,7 @@ journal-cms:
             description: production environment. backed by RDS
             ec2:
                 type: t2.small
-                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             rds:
                 type: db.t3.medium
                 engine: MySQL
@@ -1313,7 +1313,7 @@ containers:
     aws:
         ec2:
             type: t2.medium # 4GB of RAM
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
@@ -1341,7 +1341,7 @@ elife-alfred:
     aws:
         ec2:
             type: t2.large
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -1376,7 +1376,7 @@ elife-alfred-nodes:
     aws:
         ec2:
             type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             cluster-size: 0
             security-group:
                 ports:
@@ -1438,7 +1438,7 @@ search:
     aws:
         ec2:
             type: t2.medium
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             cpu-credits: unlimited
             ports:
                 - 22
@@ -1509,7 +1509,7 @@ recommendations:
     aws:
         ec2:
             type: t2.medium # 4 GB of RAM, same as search for now.
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1634,7 +1634,7 @@ iiif:
     aws:
         ec2:
             type: t2.medium
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 80:
@@ -1820,7 +1820,7 @@ redirects:
         prod:
             ec2:
                 type: t2.nano
-                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
@@ -1868,7 +1868,7 @@ profiles:
         prod:
             ec2:
                 type: t2.small
-                ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             rds:
                 multi-az: true
     vagrant:
@@ -2139,7 +2139,7 @@ large-repo-wrangler:
     aws:
         ec2:
             type: t2.small
-            ami: ami-087dd6b793053d111 # GENERATED created from basebox--1804
+            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:
