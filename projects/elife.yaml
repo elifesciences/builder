@@ -1508,8 +1508,7 @@ recommendations:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.medium # 4 GB of RAM, same as search for now.
-            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
+            type: t3.medium
             ports:
                 - 22
                 - 80:
