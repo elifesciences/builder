@@ -1865,9 +1865,6 @@ profiles:
                     - 8081 # orcid-dummy http
                     - 8082 # orcid-dummy https
         prod:
-            ec2:
-                type: t2.small
-                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             rds:
                 multi-az: true
     vagrant:
