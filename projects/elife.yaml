@@ -66,16 +66,21 @@ defaults:
             security-group: {}
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
+
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
         subnet-cidr: '10.0.2.0/24'
         availability-zone: us-east-1d
-        ## additional value in case of capacity problems: elife-public-subnet-3, us-east-1a
-        # subnet-id: subnet-2116727b
-        # subnet-cidr: '10.0.10.0/24'
-        # necessary for multiple-node EC2 and for ELB
+
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.3.0/24'
         redundant-availability-zone: us-east-1e
+
+        # lsh@2022-06-27: t3.* instance types not available in us-east-1e
+        # - https://aws.amazon.com/premiumsupport/knowledge-center/ec2-instance-type-not-supported-az-error/
+        redundant-subnet-id-2: subnet-2116727b # elife-public-subnet-3, us-east-1a
+        redundant-subnet-cidr-2: '10.0.10.0/24'
+        redundant-availability-zone-2: us-east-1a
+        
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -1175,7 +1180,6 @@ journal-cms:
             description: testing environment. backed by RDS
             ext:
                 size: 10 # GB
-                type: standard
         ci:
             ext:
                 size: 5 # GB
@@ -1200,9 +1204,6 @@ journal-cms:
                 size: 60 # GB
         prod:
             description: production environment. backed by RDS
-            ec2:
-                type: t2.small
-                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             rds:
                 type: db.t3.medium
                 engine: MySQL
@@ -1213,7 +1214,6 @@ journal-cms:
                 storage: 48 # GB
             ext:
                 size: 60 # GB
-                type: standard
     vagrant:
         ports:
             1241: 80
@@ -1632,8 +1632,7 @@ iiif:
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
         ec2:
-            type: t2.medium
-            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
+            type: t3.medium
             ports:
                 - 22
                 - 80:
@@ -1723,17 +1722,9 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
-                overrides:
-                    1:
-                        ext:
-                            type: gp2
-                    2:
-                        ext:
-                            type: gp2
                 cluster-size: 4
             ext:
                 size: 30 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -1749,7 +1740,6 @@ iiif:
                 cluster-size: 2
             ext:
                 size: 30 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -1780,6 +1770,8 @@ iiif:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
             ec2:
+                type: t2.medium
+                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
                 ports:
                     - 22
                     - 80:
