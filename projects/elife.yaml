@@ -1818,8 +1818,8 @@ redirects:
     aws-alt:
         prod:
             ec2:
-                type: t2.nano
-                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
+                # lsh@2022-06-27: changed default instance from t2.nano to t3.micro
+                type: t3.micro
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
