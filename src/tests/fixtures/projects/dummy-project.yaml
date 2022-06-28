@@ -1,6 +1,6 @@
 defaults:
     description: defaults for all projects in this file
-    salt: '2016.3' # the version of salt these project use
+    salt: '3003' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: example.org
     # addressing within VPC
@@ -15,19 +15,33 @@ defaults:
     # repo containing project pillar data (credentials typically)
     # only the master-server will have a copy of this and only the master-server
     # will need permissions to clone it
-    private-repo: ssh://github.com/exampleorg/builder-private-example
-    configuration-repo: ssh://github.com/exampleorg/builder-configuration-example
+    private-repo: git@github.com:exampleorg/builder-private
+    configuration-repo: git@github.com:exampleorg/builder-configuration
     # default branch to use when creating new instances
     default-branch: master
     # in some cases we have formulas requiring the states of other formulas
     formula-dependencies:
-        - https://github.com/example/builder-base-formula
+        - https://github.com/exampleorg/builder-base-formula
     aws:
         account-id: 512686554592
+        # can this configuration be reused or is it unique?
+        # typically it can be reused, but some configurations embed values that are unique to a named instance.
+        # for example: the 'prod' configuration for 'journal' is unique to `journal--prod` and cannot be reused.
         unique: false
         ec2:
-            type: t2.small
+            type: t2.small # ~ $20/mo
+            # ports: {} # no open ports
+            # ports:
+            #    - 22 # open ssh to world
+            #    - 4506: # open 4506 to VPC ip range only
+            #        cidr-ip: 10.0.0.0/16
+            # root partition properties, left undefined, results in a ~7.7GiB EBS root volume
+            #root:
+            #    size:
+            #    type: standard|gp2|ebs # default is 'standard'. t2 'standard' is magnetic, t3 'standard' is gp2.
+            # how many EC2 instance per stack instance
             cluster-size: 1
+            # turn on T2 `unlimited` if necessary
             cpu-credits: standard
             # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
             # only makes sense if cluster-size > 1
@@ -51,16 +65,21 @@ defaults:
             security-group: {}
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
+
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
         subnet-cidr: '10.0.2.0/24'
         availability-zone: us-east-1d
-        ## additional value in case of capacity problems: elife-public-subnet-3, us-east-1a
-        # subnet-id: subnet-2116727b
-        # subnet-cidr: '10.0.10.0/24'
-        # necessary for multiple-node EC2 and for ELB
-        redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
+
+        redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.2.0/24'
         redundant-availability-zone: us-east-1e
+
+        # lsh@2022-06-27: t3.* instance types not available in us-east-1e
+        # - https://aws.amazon.com/premiumsupport/knowledge-center/ec2-instance-type-not-supported-az-error/
+        redundant-subnet-id-2: subnet-2116727b # elife-public-subnet-3, us-east-1a
+        redundant-subnet-cidr-2: '10.0.10.0/24'
+        redundant-availability-zone-2: us-east-1a
+        
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -69,17 +88,19 @@ defaults:
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t2.small
             storage: 5 # GB
-            # name of the database to be created, *not* the RDS Instance ID
+            # name of the database to be created and *not* the RDS Instance ID.
             # if null (default) then a database with slugified stackname will be created.
             # if snapshot-id is used, then the name of the database in the snapshot should be used.
             db-name: null
-            # 'Standard' for backward compatibility
-            # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
-            storage-type: 'standard' # standard|gp2|io1
+            storage-type: gp2 # standard|gp2|io1
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
             encryption: false
+            # create a new RDS instance from the snapshot of another one.
+            # updates to the stack do *not* roll the database back to the snapshot, but the snapshot-id *must* be present,
+            # otherwise a new RDS instance is created.
+            snapshot-id: null # snapshot's ARN
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
@@ -89,13 +110,14 @@ defaults:
                 - subnet-foo
                 - subnet-bar
             # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html
-            #deletion-policy: Snapshot # 'Delete', 'Retain' 'Snapshot' # todo: enable
+            deletion-policy: Snapshot # 'Delete', 'Retain' 'Snapshot'
         ext:
             # EBS 'external' volume
             # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
-            #type: gp2 # standard|gp2|io1|sc1 # todo: enable
+            type: gp2 # standard|gp2|io1|sc1
             size: 10 # GB
             device: /dev/sdh
+
         # alb default only used if an 'alb' section present in project
         # also known as 'Elastic Load Balancer v2'
         alb:
@@ -128,9 +150,13 @@ defaults:
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
             certificate: arn:aws:iam::...:...
+
+        # elb defaults only used if an 'elb' section present in project
         elb:
-            # elb defaults only used if an 'elb' section present in project
             stickiness: false
+            #stickiness:
+            #   type: cookie | browser
+            #   cookie-name: ...
             protocol: http
             additional_listeners: {}
             idle_timeout: 60
@@ -144,18 +170,30 @@ defaults:
                 interval: 5
                 unhealthy_threshold: 2
                 healthy_threshold: 2
+
+        # when both elb and alb are present, the *elb* is the primary load balancer.
+        # change this (per-project) to 'alb' to migrate from one configured lb to the other.
+        primary_lb: elb
+
         sqs: []
+        #   subscriptions:
+        #       - project-sns-name
+        #       - {instance}--project-sns-name
+
         sns: []
-        # e.g.
-        # s3:
+        #   - project-sns-name
+        #   - {instance}--project-sns-name
+
+        s3: []
         #    bucket-name-{instance}:
-        #       sqs-notifications: # not implemented
+        #       not implemented in Cloudformation. see `src.bootstrap.update_s3_stack`
+        #       sqs-notifications:
         #           queue-name:
         #               prefix: 'elife-'
         #               suffix: '.xml'
-        #       deletion-policy: delete|retain
+        #       deletion-policy: delete|retain (default 'delete')
         #       encryption: false
-        s3: []
+
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
@@ -171,8 +209,12 @@ defaults:
                 max-size: 3
                 # (currently fixed) number of EC2 nodes
                 desired-capacity: 3
+                #root:
+                #   size: 20 # GiB, default
             helm: false
             external-dns: false
+                # Route53 hosted zone to create subdomains on
+                #domain-filter: elifesciences.org
             efs: false
             autoscaler-policy: false
         cloudfront:
@@ -201,13 +243,30 @@ defaults:
                     - 127.0.0.1
                     - 127.0.0.2
             gcslogging: false
+            # gcslogging:
+            #   bucket:
+            #   path:
+            #   period:
             bigquerylogging: false
+            # bigquerylogging:
+            #   project:
+            #   dataset:
+            #   table:
             healthcheck: false
             errors: false
             ip-blacklist: false
             vcl-templates: {}
             vcl: []
             surrogate-keys: {}
+            # if no backend specified then a Fastly 'shield' is used.
+            # the Fastly shield PoP to use is mapped to the 'aws.region' value.
+            #backends:
+            #    # first is default
+            #    default:
+            #        hostname: some-bucket.s3.amazonaws.com
+            #    articles:
+            #        hostname: "{instance}-some-bucket.s3.amazonaws.com"
+            #        condition: req.url ~ "^/some-prefix/"
         subdomains: []
         elasticache:
             # elasticache defaults only used if an `rds` section present in project
@@ -238,11 +297,33 @@ defaults:
                 - subnet-bar
         waf:
             description: a Web Application Firewall
+            # a map of IP group-name to ip-group
+            ip-sets: {}
+            # a list of ARNs that should be attached to this WAF. Only tested with ALBs.
             associations: []
-            # default action for requests that don't match any of the rules in the list of below rules
+            # default action for requests that don't match any rule in the list of below rules.
             action: allow # count, block, custom-response
-            custom-rules: {}
+            # custom rule sets, $1/mo each.
+            # the implementation of these is done as snippets of JSON rather than modeling them in Troposphere.
+            # it makes them slightly *brittle* but you can also build rules in the WAF Rule Builder and then drop
+            # them in here with no/little effort.
+            # see `src/buildercore/waf/*.json` for examples.
+            custom-rules: []
+            # managed rule sets, $1/mo, "vendorname/ruleset-name"
+            # a map of vendor->rulesets.
+            # - https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html
             managed-rules: {}
+            #   NS/ManagedRuleSetName:
+            #       # order precedence of this ruleset vs other rules and rule sets
+            #       priority: 5
+            #       # just to illustrate which rules are not being excluded.
+            #       included: []
+            #       # excluded rules in a ruleset are set to 'count' only.
+            #       # requests matching a non-excluded rule will take the rule's action, which is either 'none' or 'block'
+            #       # 'none' will defer to the WebACL's default action (allow).
+            #       excluded:
+            #           - RuleName1
+            #           - RuleName2
     aws-alt:
 
         # note! all aws-alt configurations below will be inherited by *all* projects.
@@ -251,12 +332,12 @@ defaults:
         fresh:
             description: uses a public Ubuntu AMI instead of an elife generated basebox.
             ec2:
-                ami: ami-9eaa1cf6 # Ubuntu 14.04
+                # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
+                ami: ami-9eaa1cf6
     gcp:
         bigquery: false
     vagrant:
-        box: ubuntu/trusty64 # Ubuntu 14.04
-        box-url: null # not needed for boxes hosted on Atlas
+        box: ubuntu/trusty64
         ip: 192.168.33.44
         ram: 1024
         cpus: 2
