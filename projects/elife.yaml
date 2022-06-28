@@ -1770,8 +1770,6 @@ iiif:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
             ec2:
-                type: t2.medium
-                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
                 ports:
                     - 22
                     - 80:
@@ -1779,7 +1777,6 @@ iiif:
                 cluster-size: 3
             ext:
                 size: 30 # GB
-                type: standard
             elb:
                 protocol:
                     - https
