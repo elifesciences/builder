@@ -48,7 +48,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertTrue(isinstance(data['Resources']['AttachedDB']['Properties'], dict))
         properties = data['Resources']['AttachedDB']['Properties']
         self.assertEqual(properties['AllocatedStorage'], 15)
-        self.assertEqual(properties['StorageType'], 'standard')
+        self.assertEqual(properties['StorageType'], 'gp2')
         # "Test that sequence first contains the same elements as second, regardless of their order."
         self.assertCountEqual(
             data['Resources']['AttachedDB']['Properties']['Tags'],
@@ -831,6 +831,7 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         cfn_template = trop.render(context)
         cfn_template = _parse_json(cfn_template)
+        #open('/tmp/foo.json', 'w').write(json.dumps(cfn_template, indent=2))
         fixture = json.loads(base.fixture("cloudformation/project-with-cloudfront-cdn.json"))
         self.assertEqual(fixture, cfn_template)
 

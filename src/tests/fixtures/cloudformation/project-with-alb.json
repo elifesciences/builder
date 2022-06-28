@@ -223,7 +223,8 @@
                 ],
                 "Subnets": [
                     "subnet-1d4eb46a",
-                    "subnet-7a31dd46"
+                    "subnet-7a31dd46",
+                    "subnet-2116727b"
                 ],
                 "Tags": [
                     {

@@ -20,7 +20,7 @@ def test_build_alb_context(test_projects):
                                             'port': 8001,
                                             'protocol': 'https'}},
                 'stickiness': {'cookie-name': 'dummy-cookie', 'type': 'cookie'},
-                'subnets': ['subnet-1d4eb46a', 'subnet-7a31dd46'],
+                'subnets': ['subnet-1d4eb46a', 'subnet-7a31dd46', 'subnet-2116727b'],
                 'target_groups': {'target-group1': {'healthcheck': {'healthy_threshold': 2,
                                                                     'interval': 5,
                                                                     'path': '/ping',

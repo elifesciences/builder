@@ -93,8 +93,6 @@ defaults:
             # if null (default) then a database with slugified stackname will be created.
             # if snapshot-id is used, then the name of the database in the snapshot should be used.
             db-name: null
-            # Standard for backward compatibility
-            # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
             storage-type: gp2 # standard|gp2|io1
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
@@ -120,9 +118,7 @@ defaults:
             # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
             type: gp2 # standard|gp2|io1|sc1
             size: 10 # GB
-            # lsh@2022-06-15 I suspect this isn't being used. 
-            # see builder-configuration/pillar/elife.sls and elife.external_volume.device
-            device: /dev/sdh 
+            device: /dev/sdh
 
         # alb default only used if an 'alb' section present in project
         # also known as 'Elastic Load Balancer v2'
@@ -343,9 +339,6 @@ defaults:
             ec2:
                 # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
                 ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
-                # lsh@2022-04-21: disabled, not sure why it was added.
-                # it was preventing search-formula PRs from using the default t2.medium instances
-                #type: t2.small
 
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
@@ -1770,8 +1763,6 @@ iiif:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
             ec2:
-                type: t2.medium
-                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
                 ports:
                     - 22
                     - 80:
@@ -1779,7 +1770,6 @@ iiif:
                 cluster-size: 3
             ext:
                 size: 30 # GB
-                type: standard
             elb:
                 protocol:
                     - https

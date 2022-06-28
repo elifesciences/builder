@@ -233,12 +233,18 @@ def build_context_aws(pdata, context):
         'region',
         'account-id',
         'vpc-id',
+
         'subnet-id',
         'subnet-cidr',
         'availability-zone',
+
         'redundant-subnet-id',
         'redundant-subnet-cidr',
         'redundant-availability-zone',
+
+        'redundant-subnet-id-2',
+        'redundant-subnet-cidr-2',
+        'redundant-availability-zone-2',
     ]
     context['aws'] = subdict(pdata['aws'], keepers)
     return context
@@ -446,7 +452,8 @@ def build_context_elb(pdata, context):
         context['elb'].update({
             'subnets': [
                 pdata['aws']['subnet-id'],
-                pdata['aws']['redundant-subnet-id']
+                pdata['aws']['redundant-subnet-id'],
+                pdata['aws']['redundant-subnet-id-2'],
             ],
         })
     return context
@@ -456,7 +463,9 @@ def build_context_alb(pdata, context):
         context['alb'] = pdata['aws']['alb']
         context['alb']['idle_timeout'] = str(context['alb']['idle_timeout'])
         context['alb']['subnets'] = [
-            pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
+            pdata['aws']['subnet-id'],
+            pdata['aws']['redundant-subnet-id'],
+            pdata['aws']['redundant-subnet-id-2'],
         ]
     return context
 
