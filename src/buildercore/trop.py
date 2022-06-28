@@ -300,13 +300,20 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
     if node in actual_ec2_instances:
         availability_zone = GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone")
     else:
+        # volume is unattached and needs to get it's AZ from somewhere.
+        # odd nodes are in our AZ-1, even nodes in AZ-2 and even nodes using t3.* are in AZ-3
         odd = node % 2 == 1
         if odd:
-            availability_zone = context['aws']['availability-zone']
+            availability_zone = context['aws']['availability-zone'] # AZ-1
         else:
-            availability_zone = context['aws']['redundant-availability-zone']
+            availability_zone = context['aws']['redundant-availability-zone'] # AZ-2
 
-        # ... 
+        # if the volume exists and we change the AZ, the operation is going to fail.
+        # this logic is for volumes that were created in AZ-3, not for
+        # switching between AZ-2 and AZ-3.
+        # in that situation the volume will have to be destroyed, or an AMI created.
+        if not odd and context['ec2']['type'].startswith('t3'):
+            availability_zone = context['aws']['redundant-availability-zone-2'] # AZ-3
 
     # 2021-10-05: iiif--prod--2 died and the MountPoint failed to attach to the ext Volume during re-creation.
     # I suspected a bad ext Volume and needed CloudFormation to delete it for me.
@@ -322,6 +329,11 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
     }
     ec2v = ec2.Volume(EXT_TITLE % node, **args)
     template.add_resource(ec2v)
+
+    # lsh@2022-06-28: used to also destroy the ext volume while destroying the ec2 instance.
+    # this was necessary as the t3 instance was shifting AZ and volumes can't shift AZs
+    # if node in actual_ec2_instances:
+    #    template.add_resource(ec2v)
 
     if node in actual_ec2_instances:
         args = {

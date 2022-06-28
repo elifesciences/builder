@@ -237,7 +237,7 @@ def build_context_aws(pdata, context):
         'subnet-id',
         'subnet-cidr',
         'availability-zone',
-        
+
         'redundant-subnet-id',
         'redundant-subnet-cidr',
         'redundant-availability-zone',
