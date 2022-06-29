@@ -1426,9 +1426,7 @@ search:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.medium
-            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
-            cpu-credits: unlimited
+            type: t3.medium
             ports:
                 - 22
                 - 80:
@@ -1465,6 +1463,9 @@ search:
                     size: 15 # GB
         prod:
             ec2:
+                type: t2.medium
+                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
+                cpu-credits: unlimited
                 ports:
                     - 22
                     - 80:
