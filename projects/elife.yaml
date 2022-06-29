@@ -496,8 +496,6 @@ lax:
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
@@ -508,10 +506,7 @@ lax:
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
-    aws-alt:   
-        ci:
-            ec2:
-                cpu-credits: unlimited
+    aws-alt:
         end2end:
             description: production-like
             ec2:
@@ -522,7 +517,6 @@ lax:
                 backup-retention: 2 # days
             ext:
                 size: 10 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -533,6 +527,8 @@ lax:
         prod:
             description: RDS backed
             ec2:
+                type: t2.small
+                ami: ami-038f1870427a2fd13 # GENERATED created from basebox--1804
                 cluster-size: 3
             rds:
                 version: '11.14'
