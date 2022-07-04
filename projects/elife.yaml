@@ -1460,9 +1460,6 @@ search:
                     size: 15 # GB
         prod:
             ec2:
-                type: t2.medium
-                ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
-                cpu-credits: unlimited
                 ports:
                     - 22
                     - 80:
@@ -1473,6 +1470,7 @@ search:
                         cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
                     size: 30 # GB
+                    type: gp2
                 cluster-size: 2
                 dns-internal: true
             elb:
