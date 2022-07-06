@@ -60,8 +60,9 @@ defaults:
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
-            # optional: pin a master server for all new instances of a project
-            master_ip: 10.0.2.135
+            # pin a master server for all new instances of a project
+            # (I know, it's no longer an IP, bad name choice)
+            master_ip: prod--master-server.elife.internal
             # optional: specify `ports` to be opened
             security-group: {}
         region: us-east-1
@@ -468,8 +469,6 @@ master-server:
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 4506: # salt publish port
@@ -480,11 +479,21 @@ master-server:
                 - 8080 # chemist, receives Github webhooks for updating formulas
                 - 8200 # Vault, secrets management web UI
     aws-alt:
-        '2018-04-09-2':
+        'prod':
             # unique because: 'subdomains' contains static values.
+            # mutually exclusive with '2018-04-09-2' !
             unique: true
             subdomains:
                 - master-server
+        '2018-04-09-2':
+            # unique because: 'subdomains' contains static values.
+            # mutually exclusive with 'prod' !
+            unique: true
+            subdomains:
+                - master-server
+            ec2:
+                type: t2.small
+                ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
     vagrant:
         ports:
             8200: 8200 # Vault GUI
