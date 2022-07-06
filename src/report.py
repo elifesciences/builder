@@ -110,7 +110,7 @@ def all_ec2_instances_for_salt_upgrade():
     ignore_these = [
         "Elife ALM (alm.svr.*)", # so very dead
         "basebox--1804--1", # ami creation, periodically destroyed and recreated
-        "master-server--2018-04-09-2--1", # updated in separate step
+        "master-server--prod--1", # updated in separate step
         "containers-jenkins-plugin", # there are three of these
         "kubernetes-aws--flux-prod",
         "kubernetes-aws--flux-test",

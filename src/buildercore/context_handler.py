@@ -74,10 +74,6 @@ def load_context(stackname):
 
     return contents
 
-def write_context(stackname, context):
-    write_context_locally(stackname, json.dumps(context))
-    write_context_to_s3(stackname)
-
 def write_context_locally(stackname, contents):
     open(local_context_file(stackname), 'w').write(contents)
 
@@ -86,9 +82,9 @@ def write_context_to_s3(stackname):
     key = s3_context_key(stackname)
     s3.write(key, open(path, 'rb'), overwrite=True)
 
-def delete_context(stackname):
-    delete_context_locally(stackname)
-    delete_context_from_s3(stackname)
+def write_context(stackname, context):
+    write_context_locally(stackname, json.dumps(context))
+    write_context_to_s3(stackname)
 
 def delete_context_from_s3(stackname):
     key = s3_context_key(stackname)
@@ -98,6 +94,10 @@ def delete_context_locally(stackname):
     path = local_context_file(stackname)
     if os.path.exists(path):
         os.unlink(path)
+
+def delete_context(stackname):
+    delete_context_locally(stackname)
+    delete_context_from_s3(stackname)
 
 def only_if(*servicenames):
     """Decorator that only executes an update function if the context contains a particular servicename that would need it"""

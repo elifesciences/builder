@@ -321,10 +321,10 @@ def set_master_address(pdata, context, master_ip=None):
     master_ip = master_ip or context['ec2'].get('master_ip')
     ensure(master_ip, "a master-ip was neither explicitly given nor found in the data provided")
     context['ec2']['master_ip'] = master_ip
-    if 'aws' in pdata:
-        if context['ec2'].get('masterless'):
-            # this is a masterless instance, delete key
-            del context['ec2']['master_ip']
+    # lsh@2022-07-06: what is this 'aws' check for?
+    if 'aws' in pdata and lookup(context, 'ec2.masterless', False):
+        # this is a masterless instance, delete key
+        del context['ec2']['master_ip']
     return context
 
 def build_context_ec2(pdata, context):
@@ -375,8 +375,6 @@ def build_context_rds(pdata, context, existing_context):
     if 'rds' not in pdata['aws']:
         return context
 
-    lu = utils.lookup
-
     stackname = context['stackname']
 
     # used to give mysql a range of valid ip addresses to connect from
@@ -406,8 +404,8 @@ def build_context_rds(pdata, context, existing_context):
                      ('rds.encryption', False),
                      ('rds.db-name', None)]
         for path, default in path_list:
-            old_val = lu(existing_context, path, default)
-            new_val = lu(context, path, default)
+            old_val = lookup(existing_context, path, default)
+            new_val = lookup(context, path, default)
             if new_val != old_val:
                 #print("%s old %r vs new %r" % (path, old_val, new_val))
                 replacing = True
@@ -417,7 +415,7 @@ def build_context_rds(pdata, context, existing_context):
         # has the db been replaced before? if so, we need to increment a number as
         # the Cloudformation generation (trop.py) doesn't have access to previously generated templates.
         # if the AttachedDB is to be replaced, it needs a new custom name.
-        num_replacements = lu(existing_context, 'rds.num-replacements', 0)
+        num_replacements = lookup(existing_context, 'rds.num-replacements', 0)
         num_replacements += 1
 
     rds_instance_id = core.rds_iid(stackname, num_replacements)
