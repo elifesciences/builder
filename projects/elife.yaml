@@ -625,8 +625,6 @@ journal:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
             ports:
                 - 22
                 - 443
