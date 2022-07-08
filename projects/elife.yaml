@@ -1345,21 +1345,6 @@ elife-alfred:
         ports:
             1433: 80
 
-# used in https://alfred.elifesciences.org/configure
-# `Cloud` section
-elife-alfred-nodes:
-    description: supports dynamic creation of EC2 instances from Jenkins
-    domain: false
-    intdomain: false
-    aws:
-        ec2:
-            type: t2.small
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
-            cluster-size: 0
-            security-group:
-                ports:
-                    - 22
-
 api-dummy:
     subdomain: api-dummy
     repo: https://github.com/elifesciences/api-dummy
