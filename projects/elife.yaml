@@ -1296,12 +1296,8 @@ containers:
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
         ec2:
-            type: t2.medium # 4GB of RAM
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
             ports:
                 - 22
-        ext:
-            size: 100 # GB
     aws-alt:
         # AMIs created from here used in
         # https://alfred.elifesciences.org/configure
@@ -1311,7 +1307,6 @@ containers:
             ec2:
                 root:
                     size: 100 # GB
-                    type: gp2
         xlarge:
             ec2:
                 type: t2.xlarge # 4 CPUs
@@ -1324,8 +1319,7 @@ elife-alfred:
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
         ec2:
-            type: t2.large
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
+            type: t3.large
             ports:
                 - 22
                 - 443
