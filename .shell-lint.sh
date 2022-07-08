@@ -3,6 +3,7 @@
 set -e
 if which shellcheck &> /dev/null; then
     # shellcheck is installed! shellcheck is a shell script linter
+    shellcheck --version
     
     checkshell () {
         shell=$1
