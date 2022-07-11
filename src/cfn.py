@@ -42,13 +42,14 @@ def ensure_destroyed(stackname):
 
 @requires_aws_stack
 @timeit
-def update(stackname, autostart="0", concurrency='serial'):
+def update(stackname, autostart="0", concurrency='serial', dry_run=False):
     """Updates the environment within the stack's ec2 instance.
     Does *not* call Cloudformation's `update` command on the stack (see `update_infrastructure`)."""
     instances = _check_want_to_be_running(stackname, utils.strtobool(autostart))
     if not instances:
         return
-    return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
+    dry_run = utils.strtobool(dry_run)
+    return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency, dry_run=dry_run)
 
 @timeit
 def update_infrastructure(stackname, skip=None, start=['ec2']):
