@@ -387,16 +387,15 @@ def update_stack(stackname, service_list=None, **kwargs):
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
     service_update_fns = OrderedDict([
-        ('ec2', (update_ec2_stack, ['concurrency', 'formula_revisions'])),
+        ('ec2', (update_ec2_stack, ['concurrency', 'formula_revisions', 'dry_run'])),
         ('s3', (update_s3_stack, [])),
         ('sqs', (update_sqs_stack, [])),
     ])
     service_list = service_list or service_update_fns.keys()
     ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
     context = context_handler.load_context(stackname)
-    for servicename, delegation in subdict(service_update_fns, service_list).items():
-        fn, additional_arguments_names = delegation
-        actual_arguments = {key: value for key, value in kwargs.items() if key in additional_arguments_names}
+    for servicename, (fn, fn_kwarg_args) in subdict(service_update_fns, service_list).items():
+        actual_arguments = subdict(kwargs, fn_kwarg_args)
         fn(stackname, context, **actual_arguments)
 
 def upload_master_builder_key(key):
@@ -454,7 +453,7 @@ def upload_master_configuration(master_stack, master_configuration_data):
 
 @only_if('ec2')
 @core.requires_active_stack
-def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None):
+def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None, dry_run=False):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
@@ -546,9 +545,9 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             put_script('update-master.sh', '/opt/update-master.sh')
 
         # anything other than '--dry-run' and '--no-color' essentially
-        dry_run = "--no-dry-run"
+        highstate_dry_run = "--dry-run" if dry_run else "--no-dry-run"
         coloured_output = "--no-color" if WHOAMI == CI_USER else "--yes-color"
-        run_script('highstate.sh', dry_run, coloured_output)
+        run_script('highstate.sh', highstate_dry_run, coloured_output)
 
     stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 

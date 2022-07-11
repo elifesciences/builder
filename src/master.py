@@ -66,10 +66,10 @@ def server_access():
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
     return result['succeeded']
 
-@cached
-def _cached_master_ip(master_stackname):
-    "provides a small time saving when remastering many minions"
-    return core.stack_data(master_stackname)[0]['PrivateIpAddress']
+# @cached
+# def _cached_master_ip(master_stackname):
+#    "provides a small time saving when remastering many minions"
+#    return core.stack_data(master_stackname)[0]['PrivateIpAddress']
 
 @requires_aws_stack
 def update_salt(stackname):
@@ -104,14 +104,15 @@ def update_salt_master(region=None):
     return update_salt(current_master_stackname)
 
 @requires_aws_stack
-def remaster(stackname, new_master_stackname="master-server--2018-04-09-2"):
+def remaster(stackname, new_master_stackname="master-server--prod"):
     "tell minion who their new master is. deletes any existing master key on minion"
 
     # start instance if it is stopped
     # acquire a lock from Alfred (if possible) so instance isn't shutdown while being updated
     cfn._check_want_to_be_running(stackname, autostart=True)
 
-    master_ip = _cached_master_ip(new_master_stackname)
+    #master_ip = _cached_master_ip(new_master_stackname)
+    master_ip = "prod--master-server.elife.internal"
     LOG.info('re-mastering %r to %r', stackname, master_ip)
 
     context = context_handler.load_context(stackname)
@@ -143,8 +144,7 @@ def remaster(stackname, new_master_stackname="master-server--2018-04-09-2"):
 
     LOG.info("updating nodes")
 
-    # todo: how to pass in --dry-run to highstate.sh ?
-    bootstrap.update_ec2_stack(stackname, context, concurrency='serial')
+    bootstrap.update_ec2_stack(stackname, context, concurrency='serial', dry_run=True)
     return True
 
 def remaster_all(*pname_list):
@@ -152,7 +152,7 @@ def remaster_all(*pname_list):
 
     # there should only be one master-server instance at a time.
     # multiple masters is bad news. assumptions break and it gets complicated quickly.
-    new_master_stackname = "master-server--2018-04-09-2"
+    new_master_stackname = "master-server--prod"
     LOG.info('new master is: %s', new_master_stackname)
     ec2stacks = project.ec2_projects()
     ignore = [
