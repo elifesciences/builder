@@ -42,6 +42,7 @@ defaults:
             # how many EC2 instance per stack instance
             cluster-size: 1
             # turn on T2 `unlimited` if necessary
+            # lsh@2022-07: all instances run on type T3 now, this option should be removed.
             cpu-credits: standard
             # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
             # only makes sense if cluster-size > 1
@@ -338,8 +339,8 @@ defaults:
         fresh:
             description: uses a public Ubuntu AMI instead of an elife generated basebox.
             ec2:
-                # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
-                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
+                # should be the same as basebox '20.04' aws-alt configurations
+                ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
 
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
@@ -347,55 +348,16 @@ defaults:
                 salt: '3003'
                 masterless: True
 
-        1804:
-            description: Ubuntu 18.04 (Bionic)
-            # todo: explicitly specify an 18.04 AMI when 18.04 is no longer the default (2023?)
-            ec2: {} # means 'use defaults'. don't use 'true'.
-            # lsh@2022-04-21: disabled, not sure why it was added.
-            # it was preventing search-formula PRs from using the default t2.medium instances
-            #ec2:
-            #    type: t2.small
-
-        # lsh@2022-02-23: disabled, unused.
-        # 18.04, deprecated, use s1804
-        #standalone1804:
-        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
-        #    ec2:
-        #        ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
-        #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-        #        masterless: true
-        #        type: t2.small
-
-        s1804:
-            description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
-            ec2:
-                ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-                masterless: true
-                # lsh@2022-04-21: disabled, not sure why it was added.
-                # it was preventing search-formula PRs from using the default t2.medium instances
-                #type: t2.small
-
-        2004:
-            description: Ubuntu 20.04 (Focal)
-            ec2:
-                ami: ami-0154a6cbf4f3c1ad9 # GENERATED created from basebox--2004
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-
+        # lsh@2022-07: remove this alt-config once all formula Jenkinsfiles are updated
         s2004:
             description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-0154a6cbf4f3c1ad9 # GENERATED created from basebox--2004
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
         standalone:
             description: same as default configuration, but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 masterless: true
-                # lsh@2022-04-21: disabled, not sure why it was added.
-                # it was preventing search-formula PRs from using the default t2.medium instances
-                #type: t2.small
     gcp:
         bigquery: false
     vagrant:
@@ -423,30 +385,9 @@ basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
-            type: t2.small
-            ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
+            ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
             ports:
                 - 22
-    aws-alt:
-        # overrides to default aws-alt configurations to use non-basebox AMIs
-        1804:
-            ec2:
-                # should match aws-alt 'fresh'
-                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
-
-        2004:
-            ec2:
-                ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
-
-        # overrides to default aws-alt configurations to use non-basebox AMIs *and* run isolated from master-server
-
-        # lsh@2022-02-23: disabled, unused.
-        # 18.04
-        #standalone1804:
-        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
-        #    ec2:
-        #        # should match aws-alt 'fresh'
-        #        ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
     vagrant: {}
 
 heavybox:
@@ -485,15 +426,6 @@ master-server:
             unique: true
             subdomains:
                 - master-server
-        '2018-04-09-2':
-            # unique because: 'subdomains' contains static values.
-            # mutually exclusive with 'prod' !
-            unique: true
-            subdomains:
-                - master-server
-            ec2:
-                type: t2.small
-                ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
     vagrant:
         ports:
             8200: 8200 # Vault GUI
@@ -593,10 +525,6 @@ api-gateway:
     aws-alt:
         # standalone instances do not have access to Vault secrets via the master-server and it's ext_pillar
         standalone:
-            fastly: false
-        1804:
-            fastly: false
-        s1804:
             fastly: false
         2004:
             fastly: false
@@ -1318,7 +1246,7 @@ containers:
                     size: 100 # GB
         xlarge:
             ec2:
-                type: t2.xlarge # 4 CPUs
+                type: t3.xlarge # 4 CPUs
                 cpu-credits: unlimited
     vagrant:
         ram: 1024
@@ -1769,8 +1697,8 @@ redirects:
     aws:
         ec2:
             # lsh@2022-03-14: changed default instance type from a t2.nano to a t2.small.
-            # getting freezing behaviour during formula testing
             # lsh@2022-06-25: t2.small has changed to t3.small
+            # getting freezing behaviour during formula testing
             ports:
                 - 22
                 - 80
@@ -2086,29 +2014,6 @@ kubernetes-aws:
                 external-dns:
                     domain-filter: "elifesciences.org"
                 autoscaler-policy: true
-
-# lsh@2021-06-18: deprecated. Software Heritage is replacing elifesciences-publications
-large-repo-wrangler:
-    description: when elifesciences-publications requires a large git repository to be wrangled. adhoc instances only.
-    domain: False
-    intdomain: False
-    formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
-    aws:
-        ec2:
-            type: t2.small
-            ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
-            ports:
-                - 22
-        ext:
-            size: 20 # GB
-            device: /dev/sdh
-    aws-alt:
-        quite-large:
-            ec2:
-                type: t2.large
-            ext:
-                size: 50
-    vagrant: {}
 
 bioprotocol:
     subdomain: bp # {instance}--bp.elifesciences.org
