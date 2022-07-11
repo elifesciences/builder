@@ -56,7 +56,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-046b0a41e06d0a1b1 # GENERATED created from basebox--2004
+            ami: ami-0154a6cbf4f3c1ad9 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -361,7 +361,7 @@ defaults:
         #standalone1804:
         #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
         #    ec2:
-        #        ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
+        #        ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
         #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
         #        masterless: true
         #        type: t2.small
@@ -369,7 +369,7 @@ defaults:
         s1804:
             description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
+                ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
                 # lsh@2022-04-21: disabled, not sure why it was added.
@@ -379,13 +379,13 @@ defaults:
         2004:
             description: Ubuntu 20.04 (Focal)
             ec2:
-                ami: ami-046b0a41e06d0a1b1 # GENERATED created from basebox--2004
+                ami: ami-0154a6cbf4f3c1ad9 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
 
         s2004:
             description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-046b0a41e06d0a1b1 # GENERATED created from basebox--2004
+                ami: ami-0154a6cbf4f3c1ad9 # GENERATED created from basebox--2004
                                            # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
@@ -424,7 +424,7 @@ basebox:
     aws:
         ec2:
             type: t2.small
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
+            ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
             ports:
                 - 22
     aws-alt:
@@ -1305,12 +1305,8 @@ containers:
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
         ec2:
-            type: t2.medium # 4GB of RAM
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
             ports:
                 - 22
-        ext:
-            size: 100 # GB
     aws-alt:
         # AMIs created from here used in
         # https://alfred.elifesciences.org/configure
@@ -1320,7 +1316,6 @@ containers:
             ec2:
                 root:
                     size: 100 # GB
-                    type: gp2
         xlarge:
             ec2:
                 type: t2.xlarge # 4 CPUs
@@ -1333,8 +1328,7 @@ elife-alfred:
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
         ec2:
-            type: t2.large
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
+            type: t3.large
             ports:
                 - 22
                 - 443
@@ -1359,21 +1353,6 @@ elife-alfred:
         ram: 4096
         ports:
             1433: 80
-
-# used in https://alfred.elifesciences.org/configure
-# `Cloud` section
-elife-alfred-nodes:
-    description: supports dynamic creation of EC2 instances from Jenkins
-    domain: false
-    intdomain: false
-    aws:
-        ec2:
-            type: t2.small
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
-            cluster-size: 0
-            security-group:
-                ports:
-                    - 22
 
 api-dummy:
     subdomain: api-dummy
@@ -2116,7 +2095,7 @@ large-repo-wrangler:
     aws:
         ec2:
             type: t2.small
-            ami: ami-0f57b80e08a7fa73b # GENERATED created from basebox--1804
+            ami: ami-057c9ba7714f6fe09 # GENERATED created from basebox--1804
             ports:
                 - 22
         ext:

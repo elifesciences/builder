@@ -6,7 +6,7 @@ TAG="${TAG:-local}"
 CUSTOM_SSH_KEY="${CUSTOM_SSH_KEY-$HOME/.ssh/id_rsa}"
 CUSTOM_AWS_CREDENTIALS="${CUSTOM_AWS_CREDENTIALS-$HOME/.aws/credentials}"
 
-DOCKER=$(which docker || true)
+DOCKER=$(command -v docker || true)
 if [ -z "$DOCKER" ]; then
     echo "$0: ERROR: unable to locate Docker! Have you got Docker installed?"
     exit 1

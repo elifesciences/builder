@@ -61,13 +61,13 @@ def dictfilter(func, ddict):
     return {k: v for k, v in ddict.items() if func(k, v)}
 
 def dictmap(fn, ddict):
-    return {key: fn(key, val) for key, val in ddict.items()}
+    return {key: fn(key, val) for key, val in list(ddict.items())}
 
 def nested_dictmap(fn, ddict):
     "`fn` should accept both key and value and return a new key and new value. dictionary values will have `fn` applied to them in turn"
     if not fn:
         return ddict
-    for key, val in ddict.items():
+    for key, val in list(ddict.items()):
         new_key, new_val = fn(key, val)
         if isinstance(new_val, dict):
             new_val = nested_dictmap(fn, new_val)
