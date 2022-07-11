@@ -81,7 +81,7 @@ defaults:
         redundant-subnet-id-2: subnet-2116727b # elife-public-subnet-3, us-east-1a
         redundant-subnet-cidr-2: '10.0.10.0/24'
         redundant-availability-zone-2: us-east-1a
-        
+
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -2072,6 +2072,7 @@ kubernetes-aws:
                 # but not the ExternalDNS chart release
                 external-dns:
                     domain-filter: "elifesciences.org"
+                autoscaler-policy: true
         flux-test:
             ec2: false
             eks:
