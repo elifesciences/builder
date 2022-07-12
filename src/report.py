@@ -134,8 +134,9 @@ def all_adhoc_ec2_instances(state='running'):
     env_list = list(set(filter(None, env_list)))
 
     # extract the names of ec2 instances that are not part of any known environment
-    def adhoc_instance(stackname):
+    def adhoc_instance(ec2_name):
         "predicate, returns True if stackname is *not* in a known environment"
+        stackname = ec2_name # not always true, but close enough
         try:
             iid = core.parse_stackname(stackname, all_bits=True, idx=True)['instance_id']
             return iid not in env_list
