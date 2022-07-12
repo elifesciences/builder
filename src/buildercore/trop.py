@@ -256,19 +256,18 @@ def ec2instance(context, node):
     subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
 
     if not odd and lu('ec2.type').startswith('t3'):
+        # t3.* instances cannot be created in redundant-subnet-id-1 (us-east-1e)
+        # so we use redundant-subnet-id-2 (us-east-1a)
         subnet_id = lu('aws.redundant-subnet-id-2')
 
     clean_server_script = open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment'), 'r').read()
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
-        "InstanceType": lu('ec2.type'), # "t2.small", "m1.medium", etc
+        "InstanceType": lu('ec2.type'),
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
         "SubnetId": subnet_id, # "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
-
-        # send script output to AWS EC2 console, syslog and /var/log/user-data.log
-        # - https://alestic.com/2010/12/ec2-user-data-output/
         "UserData": Base64("""#!/bin/bash
 set -x
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
@@ -284,12 +283,10 @@ echo %s > /etc/build-vars.json.b64
 
     if context['ec2'].get('root'):
         project_ec2['BlockDeviceMappings'] = [{
-            'DeviceName': '/dev/sda1',
+            'DeviceName': context['ec2']['root']['device'],
             'Ebs': {
                 'VolumeSize': context['ec2']['root']['size'],
-                'VolumeType': context['ec2']['root'].get('type', 'standard'),
-                # unfortunately root volumes do not support Tags:
-                # https://blog.cloudability.com/two-solutions-for-tagging-elusive-aws-ebs-volumes/
+                'VolumeType': context['ec2']['root']['type'],
             }
         }]
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
