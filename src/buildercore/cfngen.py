@@ -369,6 +369,12 @@ def build_context_ec2(pdata, context):
     if 'ext' in pdata['aws']:
         context['ext'] = pdata['aws']['ext']
 
+    if 'root' in context['ec2']:
+        if not 'type' in context['ec2']['root']:
+            context['ec2']['root']['type'] = 'gp2'
+        if not 'device' in context['ec2']['root']:
+            context['ec2']['root']['device'] = '/dev/sda1'
+
     return context
 
 def build_context_rds(pdata, context, existing_context):

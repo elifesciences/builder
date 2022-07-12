@@ -494,7 +494,6 @@ api-gateway:
         ec2:
             root:
                 size: 30 # GB
-                type: gp2
             ports:
                 - 22
                 # only internal traffic has access to port 80 and http
@@ -1384,7 +1383,6 @@ search:
                         cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
                     size: 30 # GB
-                    type: gp2
                 cluster-size: 2
                 dns-internal: true
             elb:
