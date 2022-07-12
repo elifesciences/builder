@@ -371,9 +371,9 @@ def build_context_ec2(pdata, context):
 
     if 'root' in context['ec2']:
         if not 'type' in context['ec2']['root']:
-            context['ec2']['root'] = 'gp2'
+            context['ec2']['root']['type'] = 'gp2'
         if not 'device' in context['ec2']['root']:
-            context['ec2']['device'] = '/dev/sda1'
+            context['ec2']['root']['device'] = '/dev/sda1'
 
     return context
 
