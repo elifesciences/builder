@@ -3,7 +3,6 @@
 import os, glob, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .decorators import testme
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
@@ -695,23 +694,11 @@ def find_region(stackname=None):
         raise MultipleRegionsError(region_list)
     return region_list[0]
 
-@testme
-def find_master_servers(stacks):
-    "returns a list of master servers, oldest to newest"
-    msl = lfilter(lambda triple: is_master_server_stack(first(triple)), stacks)
-    msl = lmap(first, msl) # just stack names
-    if len(msl) > 1:
-        LOG.warning("more than one master server found: %s. this state should only ever be temporary.", msl)
-    return sorted(msl, key=parse_stackname) # oldest to newest
-
 def find_master(region):
-    """returns the *oldest* aws master-server it can find.
-
-    Since we are using the oldest, new master-server instances can be provisioned and debugged without being picked up until the older master-server is taken down"""
-    stacks = active_aws_stacks(region)
-    if not stacks:
-        raise NoMasterException("no master servers found in region %r" % region)
-    return first(find_master_servers(stacks))
+    """returns the name of the master-server for the given `region`, which should be the same for all regions.
+    master-server instances used to be datestamped so that one could be brought up while the other would
+    continue to serve the minions and the right master-server (the oldest one) would need to be returned."""
+    return config.MASTER_SERVER_IID
 
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
