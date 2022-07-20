@@ -36,6 +36,8 @@ TEMP_PATH = "/tmp/"
 
 CFN = ".cfn"
 
+MASTER_SERVER_IID = "master-server--prod"
+
 STACK_DIR = join(CFN, "stacks") # ll: ./.cfn/stacks
 CONTEXT_DIR = join(CFN, "contexts") # ll: ./.cfn/stacks
 SCRIPTS_DIR = "scripts"
