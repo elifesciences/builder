@@ -6,6 +6,7 @@ from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR 
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
+import botocore.config
 from contextlib import contextmanager
 from . import context_handler
 from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
@@ -115,7 +116,18 @@ def all_sns_subscriptions(region, stackname=None):
 #
 
 def boto_resource(service, region):
-    return boto3.resource(service, region_name=region)
+    # lsh@2022-07-25: set the retry mode to 'adaptive' (experimental)
+    # - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
+    # this mode may change in features and behaviour, but it already sounds quite clever/magical.
+    kwargs = {'region_name': region}
+    if service == 'ec2':
+        kwargs['config'] = botocore.config.Config(
+            retries={
+                'max_attempts': 10,
+                'mode': 'adaptive'
+            }
+        )
+    return boto3.resource(service, **kwargs)
 
 def boto_client(service, region=None):
     """the boto3 'service' client is a lower-level construct compared to the boto3 'resource' client.
@@ -126,6 +138,7 @@ def boto_client(service, region=None):
     return boto3.client(service, region_name=region)
 
 def boto_conn(pname_or_stackname, service, client=False):
+    "convenience. returns a boto Resource or client for the given project or stack name, using the region found in the project config."
     fn = project_data_for_stackname if '--' in pname_or_stackname else project.project_data
     pdata = fn(pname_or_stackname)
     # prefer resource if possible
