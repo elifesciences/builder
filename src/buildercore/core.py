@@ -6,7 +6,7 @@ from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR 
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
-from botocore.config
+import botocore.config
 from contextlib import contextmanager
 from . import context_handler
 from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
@@ -122,7 +122,7 @@ def boto_resource(service, region):
     kwargs = {'region_name': region}
     if service == 'ec2':
         kwargs['config'] = botocore.config.Config(
-            retries = {
+            retries={
                 'max_attempts': 10,
                 'mode': 'adaptive'
             }
