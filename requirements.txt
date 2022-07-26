@@ -56,7 +56,7 @@ ssh2-python==0.27.0
 toml==0.10.2
 tomli==2.0.1
 tomlkit==0.11.1
-troposphere==3.2.2
+troposphere==3.1.1
 typing_extensions==4.3.0
 Unidecode==1.2.0
 urllib3==1.26.11
