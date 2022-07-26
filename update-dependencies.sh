@@ -5,8 +5,8 @@ set -e
 # create/update existing venv
 rm -rf venv/
 
-# whatever your preferred version of python is, eLife needs to support python3.6 (Ubuntu 18.04)
-python3.6 -m venv venv
+# whatever your preferred version of python is, eLife needs to support python3.8 (Ubuntu 20.04)
+python3.8 -m venv venv
 
 # prefer using wheels to compilation
 source venv/bin/activate
