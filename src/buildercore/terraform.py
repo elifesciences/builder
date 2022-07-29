@@ -12,6 +12,7 @@ only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
 PROVIDER_AWS_VERSION = '2.28.0',
+PROVIDER_TLS_VERSION = '2.2'
 PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
 HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
@@ -1247,6 +1248,11 @@ def init(stackname, context):
                     'aws': {
                         'version': "= %s" % PROVIDER_AWS_VERSION,
                         'region': context['aws']['region'],
+                    },
+                },
+                {
+                    'tls': {
+                        'version': "= %s" % PROVIDER_TLS_VERSION,
                     },
                 },
                 {
