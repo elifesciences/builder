@@ -1474,7 +1474,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_openid_connect_provider']
         )
         self.assertEqual(
-            '${aws_eks_cluster.main.identity.0.oidc_cert.0.issuer}',
+            '${aws_eks_cluster.main.identity.0.oidc.0.issuer}',
             terraform_template['resource']['aws_iam_openid_connect_provider']['default']['url']
         )
         self.assertIn(
@@ -1482,7 +1482,7 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_openid_connect_provider']['default']['client_id_list']
         )
         self.assertIn(
-            '${data.tls_certificate.cert.certificates.0.sha1_fingerprint}',
+            '${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}',
             terraform_template['resource']['aws_iam_openid_connect_provider']['default']['thumbprint_list']
         )
 
