@@ -1001,7 +1001,7 @@ def _render_eks_iam_access(context, template):
 
     template.populate_resource('aws_iam_openid_connect_provider', 'default', block={
         'client_id_list': ['sts.amazonaws.com'],
-        'thumbprint_list': ['$data.tls_certificate.cert.certificates[0].sha1_fingerprint'],
+        'thumbprint_list': ['${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}'],
         'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
     })
 
