@@ -221,6 +221,7 @@ defaults:
                 #domain-filter: elifesciences.org
             efs: false
             autoscaler-policy: false
+            iam-oidc-provider: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []

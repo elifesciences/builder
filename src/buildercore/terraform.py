@@ -633,6 +633,8 @@ def render_eks(context, template):
     _render_eks_workers_role(context, template)
     _render_eks_workers_autoscaling_group(context, template)
     _render_eks_user_access(context, template)
+    if lookup(context, 'eks.iam-oidc-provider', False):
+        _render_eks_iam_access(context, template)
     if context['eks']['helm']:
         _render_helm(context, template)
 
@@ -990,6 +992,17 @@ def _render_eks_user_access(context, template):
         'data': {
             'mapRoles': '${local.config_map_aws_auth}',
         }
+    })
+
+def _render_eks_iam_access(context, template):
+    template.populate_data("tls_certificate", "oidc_cert", {
+        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
+    })
+
+    template.populate_resource('aws_iam_openid_connect_provider', 'default', block={
+        'client_id_list': ['sts.amazonaws.com'],
+        'thumbprint_list': ['$data.tls_certificate.cert.certificates[0].sha1_fingerprint'],
+        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
     })
 
 def _render_helm(context, template):
