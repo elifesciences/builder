@@ -23,9 +23,10 @@ def render_template(context):
     return trop.render(context)
 
 def download_template(stackname):
-    "downloads and returns the cloudformation stack for the given `stackname` from AWS."
+    "downloads and returns the JSON cloudformation stack for the given `stackname` from AWS."
     conn = core.boto_conn(stackname, 'cloudformation', client=True)
-    return conn.get_template(StackName=stackname)['TemplateBody']
+    data = conn.get_template(StackName=stackname)['TemplateBody']
+    return json.dumps(data)
 
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
@@ -34,13 +35,13 @@ def write_template(stackname, contents):
         fp.write(contents)
     return output_fname
 
-def find_stack_path(stackname):
+def find_template_path(stackname):
     """convenience. returns the path to the cloudformation template on the filesystem for the given `stackname`.
     stack template is downloaded and written to disk if not found."""
     try:
-        return stack_path(stackname)
+        return core.stack_path(stackname)
     except ValueError:
-        return write_stack_template(stackname, download_stack(stackname))
+        return write_template(stackname, download_template(stackname))
 
 # ---
 
@@ -121,7 +122,7 @@ def bootstrap(stackname, context):
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_path = find_stack_path(stackname)
+    stack_path = find_template_path(stackname)
     stack_body = open(stack_path, 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         LOG.warning("empty template: %s" % stack_path)
@@ -197,7 +198,7 @@ def outputs_map(stackname):
 def template_outputs_map(stackname):
     """returns a map of a stack template's 'Output' keys to their values.
     requires a stack to exist on the filesystem."""
-    stack = json.load(open(core.find_stack_path(stackname), 'r'))
+    stack = json.load(open(find_template_path(stackname), 'r'))
     output_map = stack.get('Outputs', [])
     return {output_key: output['Value'] for output_key, output in output_map.items()}
 
