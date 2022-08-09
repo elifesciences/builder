@@ -417,3 +417,7 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
     except CommandException as e:
         LOG.error(e)
         exit(2)
+
+def dev(*args, **kwargs):
+    "hook for any development work, don't commit body."
+    pass

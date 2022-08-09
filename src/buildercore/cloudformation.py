@@ -22,6 +22,26 @@ def render_template(context):
     ensure('aws' in context, msg, ValueError)
     return trop.render(context)
 
+def download_template(stackname):
+    "downloads and returns the cloudformation stack for the given `stackname` from AWS."
+    conn = core.boto_conn(stackname, 'cloudformation', client=True)
+    return conn.get_template(StackName=stackname)['TemplateBody']
+
+def write_template(stackname, contents):
+    "writes a json version of the python cloudformation template to the stacks directory"
+    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    with open(output_fname, 'w') as fp:
+        fp.write(contents)
+    return output_fname
+
+def find_stack_path(stackname):
+    """convenience. returns the path to the cloudformation template on the filesystem for the given `stackname`.
+    stack template is downloaded and written to disk if not found."""
+    try:
+        return stack_path(stackname)
+    except ValueError:
+        return write_stack_template(stackname, download_stack(stackname))
+
 # ---
 
 def _give_up_backoff(e):
@@ -101,9 +121,10 @@ def bootstrap(stackname, context):
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_body = open(core.stack_path(stackname), 'r').read()
+    stack_path = find_stack_path(stackname)
+    stack_body = open(stack_path, 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
-        LOG.warning("empty template: %s" % (core.stack_path(stackname),))
+        LOG.warning("empty template: %s" % stack_path)
         return
 
     if core.stack_is_active(stackname):
@@ -176,7 +197,7 @@ def outputs_map(stackname):
 def template_outputs_map(stackname):
     """returns a map of a stack template's 'Output' keys to their values.
     requires a stack to exist on the filesystem."""
-    stack = json.load(open(core.stack_path(stackname), 'r'))
+    stack = json.load(open(core.find_stack_path(stackname), 'r'))
     output_map = stack.get('Outputs', [])
     return {output_key: output['Value'] for output_key, output in output_map.items()}
 
@@ -220,13 +241,6 @@ def _merge_delta(stackname, delta):
     # the source of truth can always be redownloaded from the CloudFormation API
     write_template(stackname, json.dumps(template))
     return template
-
-def write_template(stackname, contents):
-    "writes a json version of the python cloudformation template to the stacks directory"
-    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    with open(output_fname, 'w') as fp:
-        fp.write(contents)
-    return output_fname
 
 def update_template(stackname, delta):
     if delta.non_empty:

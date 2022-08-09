@@ -542,11 +542,10 @@ def stack_files():
     stacks = glob.glob("%s/*.json" % config.STACK_PATH)
     return lmap(parse_stack_file_name, stacks)
 
-def stack_path(stackname, relative=False):
+def stack_path(stackname):
     "returns the full path to a stack JSON file given a stackname"
     if stackname in stack_files():
-        path = config.STACK_DIR if relative else config.STACK_PATH
-        return join(path, stackname) + ".json"
+        return join(config.STACK_PATH, stackname) + ".json"
     raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
 
 #
