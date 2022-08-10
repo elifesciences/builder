@@ -23,16 +23,24 @@ def render_template(context):
     return trop.render(context)
 
 def download_template(stackname):
-    "downloads the JSON cloudformation stack for the given `stackname` from AWS."
-    conn = core.boto_conn(stackname, 'cloudformation', client=True)
-    data = conn.get_template(StackName=stackname)['TemplateBody']
-    return json.dumps(data)
+    """downloads the JSON cloudformation stack for the given `stackname` from AWS.
+    returns `None` if `stackname` does not exist."""
+    try:
+        conn = core.boto_conn(stackname, 'cloudformation', client=True)
+        data = conn.get_template(StackName=stackname)['TemplateBody']
+        return json.dumps(data)
+    except botocore.exceptions.ClientError as exc:
+        not_found_message = "Stack with id %s does not exist" % stackname
+        if exc.response['Error']['Message'] == not_found_message:
+            return
+        raise exc
 
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = core.stack_path(stackname)
     with open(output_fname, 'w') as fp:
         fp.write(contents)
+    LOG.info("wrote cloudformation template for %r to: %s" % (stackname, output_fname))
     return output_fname
 
 def find_template_path(stackname):
@@ -40,7 +48,9 @@ def find_template_path(stackname):
     stack template is downloaded and written to disk if not found."""
     path = core.stack_path(stackname)
     if not os.path.exists(path):
-        return write_template(stackname, download_template(stackname))
+        template_body = download_template(stackname)
+        template_body and write_template(stackname, template_body)
+        return path
     return path
 
 # ---

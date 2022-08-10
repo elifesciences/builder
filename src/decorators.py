@@ -99,10 +99,10 @@ def requires_aws_stack_template(func):
     @wraps(func)
     def call(stackname, *args, **kwargs):
         stack_template_path = cloudformation.find_template_path(stackname)
-        ensure(os.path.exists(stack_template_path), "task requires cloudformation template to exist locally, but template not found: " + stack_template_path)
+        msg = "task requires cloudformation template to exist locally, but template not found and could not be downloaded: " + stack_template_path
+        ensure(os.path.exists(stack_template_path), msg, utils.TaskExit)
         return func(stackname, *args, **kwargs)
     return call
-
 
 def requires_steady_stack(func):
     @wraps(func)
