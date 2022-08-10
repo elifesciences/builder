@@ -23,14 +23,14 @@ def render_template(context):
     return trop.render(context)
 
 def download_template(stackname):
-    "downloads and returns the JSON cloudformation stack for the given `stackname` from AWS."
+    "downloads the JSON cloudformation stack for the given `stackname` from AWS."
     conn = core.boto_conn(stackname, 'cloudformation', client=True)
     data = conn.get_template(StackName=stackname)['TemplateBody']
     return json.dumps(data)
 
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
-    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
+    output_fname = core.stack_path(stackname)
     with open(output_fname, 'w') as fp:
         fp.write(contents)
     return output_fname
@@ -38,10 +38,10 @@ def write_template(stackname, contents):
 def find_template_path(stackname):
     """convenience. returns the path to the cloudformation template on the filesystem for the given `stackname`.
     stack template is downloaded and written to disk if not found."""
-    try:
-        return core.stack_path(stackname)
-    except ValueError:
+    path = core.stack_path(stackname)
+    if not os.path.exists(path):
         return write_template(stackname, download_template(stackname))
+    return path
 
 # ---
 
@@ -111,6 +111,7 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
 
 
 # todo: rename. nothing is being bootstrapped here.
+@core.requires_stack_file
 def bootstrap(stackname, context):
     "called by `bootstrap.create_stack` to generate a cloudformation template."
     parameters = []
@@ -122,7 +123,7 @@ def bootstrap(stackname, context):
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_path = find_template_path(stackname)
+    stack_path = core.stack_path(stackname)
     stack_body = open(stack_path, 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         LOG.warning("empty template: %s" % stack_path)
@@ -195,15 +196,16 @@ def outputs_map(stackname):
         return {}
     return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
 
+@core.requires_stack_file
 def template_outputs_map(stackname):
-    """returns a map of a stack template's 'Output' keys to their values.
-    requires a stack to exist on the filesystem."""
-    stack = json.load(open(find_template_path(stackname), 'r'))
+    """returns a map of a stack template's 'Output' keys to their values."""
+    stack = json.load(open(core.stack_path(stackname), 'r'))
     output_map = stack.get('Outputs', [])
     return {output_key: output['Value'] for output_key, output in output_map.items()}
 
+@core.requires_stack_file
 def template_using_elb_v1(stackname):
-    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)"
+    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)."
     return trop.ELB_TITLE in template_outputs_map(stackname)
 
 def read_output(stackname, key):
