@@ -79,7 +79,7 @@ defaults:
         redundant-subnet-id-2: subnet-2116727b # elife-public-subnet-3, us-east-1a
         redundant-subnet-cidr-2: '10.0.10.0/24'
         redundant-availability-zone-2: us-east-1a
-        
+
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
@@ -421,15 +421,15 @@ just-some-sns:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
         ec2: false
-        sns: 
+        sns:
             - widgets-{instance}
 
 project-with-sqs:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
         ec2: false
-        sqs: 
-            project-with-sqs-incoming-{instance}: 
+        sqs:
+            project-with-sqs-incoming-{instance}:
                 subscriptions:
                     - widgets-{instance}
 
@@ -437,9 +437,9 @@ project-with-s3:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
         ec2: false
-        s3: 
-            widgets-{instance}: 
-            widgets-archive-{instance}: 
+        s3:
+            widgets-{instance}:
+            widgets-archive-{instance}:
                 deletion-policy: retain
             widgets-static-hosting-{instance}:
                 website-configuration:
@@ -456,7 +456,7 @@ project-with-ext:
         ec2:
             ports:
                 - 80
-        ext: 
+        ext:
             size: 200
 
 project-with-cloudfront:
@@ -501,7 +501,7 @@ project-with-cloudfront-error-pages:
         cloudfront:
             subdomains:
                 - "{instance}--cdn-of-www"
-            errors: 
+            errors:
                 domain: "{instance}--example-errors.com"
                 pattern: "???.html"
                 codes:
@@ -673,7 +673,7 @@ project-with-cluster:
             cluster-size: 2
             dns-external-primary: true
             dns-internal: true
-        elb: 
+        elb:
             protocol: http
         subdomains:
             - project.tv
@@ -692,7 +692,7 @@ project-with-cluster-suppressed:
             suppressed: [1]
         ext:
             size: 10
-        elb: 
+        elb:
             protocol: http
 
 project-with-cluster-overrides:
@@ -706,13 +706,13 @@ project-with-cluster-overrides:
                 - 80
             cluster-size: 2
             overrides:
-                1: 
+                1:
                     type: t2.xlarge
-                    ext: 
+                    ext:
                         size: 20
         ext:
             size: 10
-        elb: 
+        elb:
             protocol: http
 
 project-with-cluster-empty:
@@ -737,7 +737,7 @@ project-with-stickiness:
                 - 80
         ec2:
             cluster-size: 2
-        elb: 
+        elb:
             protocol: http
             stickiness:
                 type: cookie
@@ -755,7 +755,7 @@ project-with-multiple-elb-listeners:
                 - 80
                 - 8001
             cluster-size: 2
-        elb: 
+        elb:
             protocol:
                 - http
                 - 25
@@ -825,7 +825,7 @@ project-with-multiple-elasticaches:
                 maxmemory-policy: volatile-lru
             suppressed: [3]
             overrides:
-                2: 
+                2:
                     type: cache.t2.medium
                     configuration:
                         maxmemory-policy: volatile-ttl
@@ -845,7 +845,7 @@ project-with-fully-overridden-elasticaches:
                 1:
                     configuration:
                         maxmemory-policy: volatile-ttl
-                2: 
+                2:
                     configuration:
                         maxmemory-policy: volatile-ttl
 
@@ -976,6 +976,14 @@ project-with-eks-and-autoscaler-policy:
     aws:
         eks:
             autoscaler-policy: true
+
+project-with-eks-and-iam-oidc-provider:
+    description: project managing an EKS cluster with autoscaler support in AWS
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            iam-oidc-provider: true
 
 project-with-docdb:
     description: project managing a single DocumentDB instance

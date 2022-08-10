@@ -11,7 +11,8 @@ MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
-PROVIDER_AWS_VERSION = '2.3.0',
+PROVIDER_AWS_VERSION = '2.28.0',
+PROVIDER_TLS_VERSION = '2.2'
 PROVIDER_FASTLY_VERSION = '0.9.0',
 PROVIDER_VAULT_VERSION = '1.3'
 HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
@@ -633,6 +634,8 @@ def render_eks(context, template):
     _render_eks_workers_role(context, template)
     _render_eks_workers_autoscaling_group(context, template)
     _render_eks_user_access(context, template)
+    if lookup(context, 'eks.iam-oidc-provider', False):
+        _render_eks_iam_access(context, template)
     if context['eks']['helm']:
         _render_helm(context, template)
 
@@ -992,6 +995,17 @@ def _render_eks_user_access(context, template):
         }
     })
 
+def _render_eks_iam_access(context, template):
+    template.populate_data("tls_certificate", "oidc_cert", {
+        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
+    })
+
+    template.populate_resource('aws_iam_openid_connect_provider', 'default', block={
+        'client_id_list': ['sts.amazonaws.com'],
+        'thumbprint_list': ['${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}'],
+        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
+    })
+
 def _render_helm(context, template):
     template.populate_resource('kubernetes_service_account', 'tiller', block={
         'metadata': {
@@ -1234,6 +1248,11 @@ def init(stackname, context):
                     'aws': {
                         'version': "= %s" % PROVIDER_AWS_VERSION,
                         'region': context['aws']['region'],
+                    },
+                },
+                {
+                    'tls': {
+                        'version': "= %s" % PROVIDER_TLS_VERSION,
                     },
                 },
                 {
