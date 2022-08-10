@@ -16,11 +16,10 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 
 ## todo (bucket)
 
+* switch taskrunner.py print statements to error logs
 * emit a description of the job being run before running it
-
 * update_infrastructure, elide 'UserData' in confirmation
   - it's too large and pointless
-
 * change 'call_while' to 'call_until'
     - 'call while ec2 is not running', 'call while file is not present'
         - this negative predicate is awkward

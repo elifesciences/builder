@@ -2,8 +2,8 @@ from time import time
 import os
 from os.path import join
 import utils
-from buildercore import core, project, config
-from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr
+from buildercore import core, project, config, cloudformation
+from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr, ensure
 from functools import wraps
 from pprint import pformat
 import logging
@@ -75,6 +75,7 @@ def requires_aws_project_stack(*plist):
     return wrap1
 
 def requires_aws_stack(func):
+    """requires a stack to exist and will prompt if one was not provided."""
     @wraps(func)
     def call(*args, **kwargs):
         stackname = first(args) or os.environ.get('INSTANCE')
@@ -89,6 +90,17 @@ def requires_aws_stack(func):
         if not stackname or stackname not in asl:
             stackname = utils._pick("stack", asl, default_file=deffile('.active-stack'))
         args = args[1:]
+        return func(stackname, *args, **kwargs)
+    return call
+
+def requires_aws_stack_template(func):
+    """downloads the cloudformation JSON template and writes it to disk before calling wrapped function.
+    assumes first argument to task is a `stackname`."""
+    @wraps(func)
+    def call(stackname, *args, **kwargs):
+        stack_template_path = cloudformation.find_template_path(stackname)
+        msg = "task requires cloudformation template to exist locally, but template not found and could not be downloaded: " + stack_template_path
+        ensure(os.path.exists(stack_template_path), msg, utils.TaskExit)
         return func(stackname, *args, **kwargs)
     return call
 

@@ -1,6 +1,6 @@
 "general logic for the `buildercore` module."
 
-import os, glob, re
+import os, re
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
@@ -528,26 +528,11 @@ def is_master_server_stack(stackname):
 #
 # stack file wrangling
 # stack 'files' are the things on the file system in the `.cfn/stacks/` dir.
-# TODO: consider shifting .cfn/stacks/ to /temp/stacks.
-# rendered files simply accumulate, are never consulted and JSON can be captured from AWS if needs be
 #
 
-def parse_stack_file_name(stack_filename):
-    "given a `/path/to/a/stackname.ext`, returns just the `stackname`, pruning directories and extensions"
-    stack = os.path.basename(stack_filename) # "stackname.ext"
-    return os.path.splitext(stack)[0] # "stackname"
-
-def stack_files():
-    "returns a list of manually created cloudformation stacknames"
-    stacks = glob.glob("%s/*.json" % config.STACK_PATH)
-    return lmap(parse_stack_file_name, stacks)
-
-def stack_path(stackname, relative=False):
-    "returns the full path to a stack JSON file given a stackname"
-    if stackname in stack_files():
-        path = config.STACK_DIR if relative else config.STACK_PATH
-        return join(path, stackname) + ".json"
-    raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
+def stack_path(stackname):
+    "returns the expected path to a stack JSON file given a `stackname`."
+    return join(config.STACK_PATH, stackname) + ".json"
 
 #
 # aws stack wrangling
@@ -723,13 +708,15 @@ def find_master_for_stack(stackname):
 #
 
 def requires_active_stack(func):
-    "requires a stack to exist in a successfully created/updated state"
+    "requires a stack instance to exist in a successfully created/updated state"
     return decorators._requires_fn_stack(func, stack_is_active)
 
 def requires_stack_file(func):
-    "requires a stack template to exist on disk"
-    msg = "I couldn't find a cloudformation stack file for %(stackname)r!"
-    return decorators._requires_fn_stack(func, lambda stackname: stackname in stack_files(), msg)
+    """requires a stack template to exist on disk.
+    see `src.decorators.requires_aws_stack_template` for a task decorator that downloads
+    template and writes it to disk if it doesn't exist."""
+    msg = "failed to find cloudformation stack template for %(stackname)r in: " + config.STACK_PATH
+    return decorators._requires_fn_stack(func, lambda stackname: os.path.exists(stack_path(stackname)), msg)
 
 #
 #

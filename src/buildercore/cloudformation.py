@@ -22,6 +22,37 @@ def render_template(context):
     ensure('aws' in context, msg, ValueError)
     return trop.render(context)
 
+def download_template(stackname):
+    """downloads the JSON cloudformation stack for the given `stackname` from AWS.
+    returns `None` if `stackname` does not exist."""
+    try:
+        conn = core.boto_conn(stackname, 'cloudformation', client=True)
+        data = conn.get_template(StackName=stackname)['TemplateBody']
+        return json.dumps(data)
+    except botocore.exceptions.ClientError as exc:
+        not_found_message = "Stack with id %s does not exist" % stackname
+        if exc.response['Error']['Message'] == not_found_message:
+            return
+        raise exc
+
+def write_template(stackname, contents):
+    "writes a json version of the python cloudformation template to the stacks directory"
+    output_fname = core.stack_path(stackname)
+    with open(output_fname, 'w') as fp:
+        fp.write(contents)
+    LOG.info("wrote cloudformation template for %r to: %s" % (stackname, output_fname))
+    return output_fname
+
+def find_template_path(stackname):
+    """convenience. returns the path to the cloudformation template on the filesystem for the given `stackname`.
+    stack template is downloaded and written to disk if not found."""
+    path = core.stack_path(stackname)
+    if not os.path.exists(path):
+        template_body = download_template(stackname)
+        template_body and write_template(stackname, template_body)
+        return path
+    return path
+
 # ---
 
 def _give_up_backoff(e):
@@ -90,6 +121,7 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
 
 
 # todo: rename. nothing is being bootstrapped here.
+@core.requires_stack_file
 def bootstrap(stackname, context):
     "called by `bootstrap.create_stack` to generate a cloudformation template."
     parameters = []
@@ -101,9 +133,10 @@ def bootstrap(stackname, context):
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_body = open(core.stack_path(stackname), 'r').read()
+    stack_path = core.stack_path(stackname)
+    stack_body = open(stack_path, 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
-        LOG.warning("empty template: %s" % (core.stack_path(stackname),))
+        LOG.warning("empty template: %s" % stack_path)
         return
 
     if core.stack_is_active(stackname):
@@ -173,15 +206,16 @@ def outputs_map(stackname):
         return {}
     return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
 
+@core.requires_stack_file
 def template_outputs_map(stackname):
-    """returns a map of a stack template's 'Output' keys to their values.
-    requires a stack to exist on the filesystem."""
+    """returns a map of a stack template's 'Output' keys to their values."""
     stack = json.load(open(core.stack_path(stackname), 'r'))
     output_map = stack.get('Outputs', [])
     return {output_key: output['Value'] for output_key, output in output_map.items()}
 
+@core.requires_stack_file
 def template_using_elb_v1(stackname):
-    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)"
+    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)."
     return trop.ELB_TITLE in template_outputs_map(stackname)
 
 def read_output(stackname, key):
@@ -220,13 +254,6 @@ def _merge_delta(stackname, delta):
     # the source of truth can always be redownloaded from the CloudFormation API
     write_template(stackname, json.dumps(template))
     return template
-
-def write_template(stackname, contents):
-    "writes a json version of the python cloudformation template to the stacks directory"
-    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    with open(output_fname, 'w') as fp:
-        fp.write(contents)
-    return output_fname
 
 def update_template(stackname, delta):
     if delta.non_empty:
