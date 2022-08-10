@@ -10,4 +10,4 @@ find src/ -name '*.pyc' -delete
 # activate the venv, recreating if neccessary
 . .activate-venv.sh
 
-printf "\\n   ◕ ‿‿ ◕   all done\\n\\n"
+printf "\\nall done\\n\\n"
