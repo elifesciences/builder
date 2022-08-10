@@ -110,6 +110,7 @@ TASK_LIST = [
     report.all_rds_instances,
     report.all_formulas,
     report.all_adhoc_ec2_instances,
+    report.long_running_large_ec2_instances,
 
     checks.stack_exists,
 ]
