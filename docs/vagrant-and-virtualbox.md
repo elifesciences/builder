@@ -27,7 +27,7 @@ Now you can disable the `virtualbox` check when running update.sh and run vagran
 $ ./update.sh --exclude="virtualbox"
 
   ...
-  ◕ ‿‿ ◕   all done
+  all done
 
 $ PROJECT=medium vagrant up
  [info] hostname is medium--vagrant (this affects Salt configuration)
