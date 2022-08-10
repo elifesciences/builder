@@ -13,7 +13,7 @@ def print_list(row_list, checkboxes=True):
     for row in row_list:
         print(template % row)
 
-def print_data(data, output_format='json'):
+def print_data(data, output_format):
     output_format_map = {
         'json': partial(core_utils.json_dumps, dangerous=True, indent=4),
         'yaml': core_utils.yaml_dumps,
@@ -54,7 +54,7 @@ def sort_by_env(name):
 
         return name
 
-def print_report(results, as_list=True, checkboxes=True, ordered=True, *args, **kwargs):
+def print_report(results, as_list=True, checkboxes=True, ordered=True, output_format='json', *args, **kwargs):
     ordered = utils.strtobool(ordered)
     checkboxes = utils.strtobool(checkboxes)
     as_list = utils.strtobool(as_list)
@@ -66,7 +66,7 @@ def print_report(results, as_list=True, checkboxes=True, ordered=True, *args, **
     if as_list:
         print_list(results, checkboxes)
     else:
-        print_data(results)
+        print_data(results, output_format)
 
 def report(task_fn):
     "wraps a task, printing it's results as a sorted list to `stdout`."
@@ -82,7 +82,10 @@ def configured_report(**kwargs):
     def _wrap1(task_fn):
         @wraps(task_fn)
         def _wrap2(*report_args, **report_kwargs):
+            formatting_params = ['as_list', 'checkboxes', 'ordered', 'output_format']
+            formatting_kwargs = {key: report_kwargs.pop(key) for key in formatting_params if key in report_kwargs}
             results = task_fn(*report_args, **report_kwargs)
+            kwargs.update(formatting_kwargs)
             print_report(results, **kwargs)
             return results
         return _wrap2
@@ -203,10 +206,9 @@ def all_rds_instances(**kwargs):
 
 @configured_report(as_list=False)
 def long_running_large_ec2_instances(**kwargs):
-    """returns a list of all ec2 instances that are large (> t3.medium) and that have been running for a long time."""
-    #open('/tmp/output.json', 'w').write(core_utils.json_dumps(core.ec2_instance_list(state=None), dangerous=True))
+    """returns a list of all ec2 instances that are large (> t3.medium) or unknown, and that have been running for a long time."""
+    #open('/tmp/output.json', 'w').write(core_utils.json_dumps(core.ec2_instance_list(state='running'), dangerous=True))
     #result_list = json.load(open('/tmp/output.json', 'r'))
-
     result_list = core.ec2_instance_list(state='running')
 
     known_instance_types = {
