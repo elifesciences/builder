@@ -284,8 +284,8 @@ def build_context_sns_sqs(pdata, context):
 def project_wrangler(pdata, context):
     bits = core.parse_stackname(context['stackname'], all_bits=True, idx=True)
     pname = context['project_name']
-    ensure(bits['project_name'] == pname,
-           "the project name %r derived from the given `stackname` %r doesn't match" % (bits['project_name'], pname))
+    err_msg = "the project name %r derived from the given `stackname` %r doesn't match" % (bits['project_name'], pname)
+    ensure(bits['project_name'] == pname, err_msg)
     # provides 'project_name', 'instance_id', 'cluster_id'
     context.update(bits)
 

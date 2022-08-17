@@ -567,9 +567,10 @@ def master_minion_keys(master_stackname, group_by_stackname=True):
         master_stack_key_paths = remote_listfiles("/etc/salt/pki/master/minions/", use_sudo=True)
     if not group_by_stackname:
         return master_stack_key_paths
-    # group by stackname. stackname is created by stripping node information off the end.
-    # not all keys will have node information! in these case, we just want the first two 'bits'
-    keyfn = lambda p: "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
+    # group by stackname. the stackname is created by stripping node information off the end.
+    # not all keys will have node information! in these case, we just want the first two 'bits'.
+    # lsh@2022-08-17: all keys now have node information but we still don't want the node.
+    keyfn = lambda p: core.stackname_sans_node(os.path.basename(p))
     return utils.mkidx(keyfn, master_stack_key_paths)
 
 # TODO: bootstrap.py may not be best place for this

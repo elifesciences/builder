@@ -63,26 +63,35 @@ class SimpleCases(base.BaseCase):
         # basic
         expected = [
             ('lax--prod', ['lax', 'prod']),
-            ('lax--prod--1', ['lax', 'prod--1']), # is this really what we're expecting?
+            ('lax--prod--1', ['lax', 'prod']),
             ('journal-cms--end2end', ['journal-cms', 'end2end']),
-            ('journal-cms--end2end--2', ['journal-cms', 'end2end--2']), # again, really?
+            ('journal-cms--end2end--2', ['journal-cms', 'end2end']),
         ]
         self.assertAllPairsEqual(core.parse_stackname, expected)
 
+        # basic, as dict
+        expected = [
+            ('lax--prod', {"project_name": 'lax', "instance_id": 'prod'}),
+            ('lax--prod--1', {"project_name": 'lax', "instance_id": 'prod'}),
+            ('journal-cms--end2end', {"project_name": 'journal-cms', "instance_id": 'end2end'}),
+            ('journal-cms--end2end--2', {"project_name": 'journal-cms', "instance_id": 'end2end'}),
+        ]
+        self.assertAllPairsEqual(partial(core.parse_stackname, all_bits=False, idx=True), expected)
+
         # extended
         expected = [
-            ('lax--prod', ['lax', 'prod']),
+            ('lax--prod', ['lax', 'prod', None]),
             ('lax--prod--1', ['lax', 'prod', '1']),
-            ('journal-cms--end2end', ['journal-cms', 'end2end']),
+            ('journal-cms--end2end', ['journal-cms', 'end2end', None]),
             ('journal-cms--end2end--2', ['journal-cms', 'end2end', '2']),
         ]
         self.assertAllPairsEqual(partial(core.parse_stackname, all_bits=True), expected)
 
-        # as dict
+        # extended, as dict
         expected = [
-            ('lax--prod', {"project_name": 'lax', "instance_id": 'prod'}),
+            ('lax--prod', {"project_name": 'lax', "instance_id": 'prod', "cluster_id": None}),
             ('lax--prod--1', {"project_name": 'lax', "instance_id": 'prod', "cluster_id": '1'}),
-            ('journal-cms--end2end', {"project_name": 'journal-cms', "instance_id": 'end2end'}),
+            ('journal-cms--end2end', {"project_name": 'journal-cms', "instance_id": 'end2end', "cluster_id": None}),
             ('journal-cms--end2end--2', {"project_name": 'journal-cms', "instance_id": 'end2end', "cluster_id": '2'}),
         ]
         self.assertAllPairsEqual(partial(core.parse_stackname, all_bits=True, idx=True), expected)

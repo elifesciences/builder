@@ -4,7 +4,6 @@ The primary reason for doing this is to save on costs."""
 
 from datetime import datetime
 import logging
-import re
 import backoff
 from .command import remote_file_exists, CommandException
 import boto # route53 boto2 > route53 boto3
@@ -20,7 +19,9 @@ class EC2Timeout(RuntimeError):
 
 def _node_id(node):
     name = core.tags2dict(node.tags)['Name']
-    nid = core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
+    default_nid = 1
+    _, _, nid = core.parse_stackname(name, all_bits=True)
+    nid = nid or default_nid
     return int(nid)
 
 def start_rds_nodes(stackname):
@@ -313,9 +314,8 @@ def _ec2_nodes_states(stackname, node_ids=None):
         node_index = {}
         for node in ec2_data:
             name = core.tags2dict(node.tags)['Name']
-            # TODO: shift this logic to core.parse_stackname
-            # start legacy name: pattern-library--prod -> pattern-library--prod--1
-            if not re.match(".*--[0-9]+", name):
+            # start legacy name: 'pattern-library--prod' => 'pattern-library--prod--1'
+            if not core.stackname_has_node(name):
                 name = name + "--1"
             # end legacy name
             node_list = node_index.get(name, [])

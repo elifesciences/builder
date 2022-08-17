@@ -499,15 +499,27 @@ def mk_stackname(project_name, instance_id):
     return "%s--%s" % (project_name, instance_id)
 
 def parse_stackname(stackname, all_bits=False, idx=False):
-    "returns a pair of (project, instance-id) by default, optionally returns the cluster (node) id if all_bits=True"
-    if not stackname or not isstr(stackname):
-        raise ValueError("stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % stackname)
-    # https://docs.python.org/2/library/stdtypes.html#str.split
-    bits = stackname.split('--', -1 if all_bits else 1)
+    """returns a pair of (project, instance-id) by default.
+    returns a triple of (project, instance-id, node) if `all_bits` is `True`.
+    returns a map with keys `project_name`, `instance_id` and `cluster_id` (node) if `idx` is `True`."""
+    err_msg = "stackname must look like <pname>--<instance-id>[--<cluster-id>], got: %r" % stackname
+    ensure(stackname and isstr(stackname), err_msg, ValueError)
+    # 'pname--iid' => ['pname', 'iid'], 'pname--iid--node' => ['pname', 'iid', 'node']
+    bits = stackname.split('--', 2)
     ensure(len(bits) > 1, "could not parse given stackname %r" % stackname, ValueError)
+
+    # ensure we always return three values when all_bits is true, even if node is None
+    if all_bits and len(bits) == 2:
+        bits.append(None)
+
+    # ensure we always return two values when all_bits is false
+    if not all_bits and len(bits) == 3:
+        bits = bits[:2]
+
     if idx:
         bit_keys = ['project_name', 'instance_id', 'cluster_id'][:len(bits)]
         bits = dict(zip(bit_keys, bits))
+
     return bits
 
 def stackname_parseable(stackname):
@@ -518,12 +530,23 @@ def stackname_parseable(stackname):
     except ValueError:
         return False
 
+# todo: consider removing
 def project_name_from_stackname(stackname):
     "returns just the project name from the given stackname"
     return first(parse_stackname(stackname))
 
+# todo: consider removing
 def is_master_server_stack(stackname):
     return 'master-server--' in str(stackname)
+
+def stackname_sans_node(stackname):
+    """returns the given `stackname` with any node information stripped off.
+    for example, 'master-server--prod' and 'master-server--prod--1' return 'master-server--prod'."""
+    return mk_stackname(*parse_stackname(stackname))
+
+def stackname_has_node(stackname):
+    "returns True if given stackname has node information"
+    return parse_stackname(stackname, all_bits=True)[2] is not None
 
 #
 # stack file wrangling

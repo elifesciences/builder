@@ -73,7 +73,7 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     skip = skip.split(",") if skip else []
     start = start.split(",") if isinstance(start, str) else start or []
 
-    (pname, _) = core.parse_stackname(stackname)
+    pname, _ = core.parse_stackname(stackname)
     more_context = {}
     context, delta, current_context = cfngen.regenerate_stack(stackname, **more_context)
 
@@ -321,6 +321,11 @@ def _interactive_ssh(username, public_ip, private_key):
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
     "connect to a instance over SSH using the deploy user ('elife') and *your* private key."
+    _, _, _node = core.parse_stackname(stackname, all_bits=True)
+    stackname = core.stackname_sans_node(stackname)
+    if node and _node:
+        LOG.warning("node from parameter %r preferred over node from stackname %r" % (node, _node))
+    node = node or _node
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
@@ -331,6 +336,11 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
 def owner_ssh(stackname, node=None):
     """maintenance ssh.
     connects to an instance over SSH using the bootstrap user ('ubuntu') and the instance's private key"""
+    _, _, _node = core.parse_stackname(stackname, all_bits=True)
+    stackname = core.stackname_sans_node(stackname)
+    if node and _node:
+        LOG.warning("node from parameter %r preferred over node from stackname %r" % (node, _node))
+    node = node or _node
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
