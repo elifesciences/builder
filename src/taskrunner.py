@@ -111,6 +111,7 @@ TASK_LIST = [
     report.all_formulas,
     report.all_adhoc_ec2_instances,
     report.long_running_large_ec2_instances,
+    report.all_amis_to_prune,
 
     checks.stack_exists,
 ]

@@ -1,5 +1,7 @@
+import dateutil.parser
+import json
 from functools import partial
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 import os
 import utils
 from buildercore import core, project, utils as core_utils
@@ -242,7 +244,7 @@ def long_running_large_ec2_instances(**kwargs):
         launch_time = result['LaunchTime']
         if isinstance(launch_time, str):
             launch_time = datetime.fromisoformat(launch_time)
-        now = datetime.now(timezone.utc)
+        now = core_utils.utcnow()
         return (now - launch_time) > timedelta(hours=long_running_duration)
 
     def known_env(result):
@@ -257,3 +259,46 @@ def long_running_large_ec2_instances(**kwargs):
         return {key: core_utils.lookup(result, key, None) for key in key_list}
 
     return list(map(result_item, large_instances))
+
+@configured_report(as_list=False)
+def all_amis_to_prune():
+    """returns a list of AMIs that are known, old and available.
+    output is fed into a Jenkins process to prune old AMIs."""
+
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_images
+    conn = core.boto_client('ec2', core.find_region())
+    image_list = conn.describe_images(Owners=['self'])
+    #open('/tmp/resp.json','w').write(json.dumps(results, indent=2))
+    #image_list = json.load(open('/tmp/resp.json', 'r'))
+
+    old_months = 3
+    old_months = timedelta(days=(28 * old_months))
+    now = core_utils.utcnow()
+
+    def is_known(image):
+        image_name = image['Name']
+        return \
+            image_name.startswith('basebox-') or \
+            image_name.startswith('containers-')
+
+    def is_old(image):
+        image_created = image['CreationDate']
+        image_created = dateutil.parser.parse(image_created)
+        return (now - image_created) > old_months
+
+    def is_available(image):
+        # possible states:
+        # 'pending'|'available'|'invalid'|'deregistered'|'transient'|'failed'|'error'
+        return image['State'] == "available"
+
+    comp = lambda image: is_known(image) and is_old(image) and is_available(image)
+    results = list(filter(comp, image_list['Images']))
+
+    # prune the Image data down to something more readable
+    interesting_keys = ['Name', 'CreationDate', 'ImageId']
+    results = [{key: core_utils.lookup(image, key) for key in interesting_keys} for image in results]
+
+    # sort by date asc (oldest to newest)
+    results = sorted(results, key=lambda image: image['CreationDate'])
+
+    return results
