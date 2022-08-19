@@ -1,5 +1,4 @@
 import dateutil.parser
-import json
 from functools import partial
 from datetime import datetime, timedelta
 import os
