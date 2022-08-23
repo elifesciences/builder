@@ -114,6 +114,7 @@ TASK_LIST = [
     report.all_amis_to_prune,
 
     checks.stack_exists,
+    tasks.delete_all_amis_to_prune,
 ]
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
