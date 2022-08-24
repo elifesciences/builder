@@ -111,8 +111,10 @@ TASK_LIST = [
     report.all_formulas,
     report.all_adhoc_ec2_instances,
     report.long_running_large_ec2_instances,
+    report.all_amis_to_prune,
 
     checks.stack_exists,
+    tasks.delete_all_amis_to_prune,
 ]
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'

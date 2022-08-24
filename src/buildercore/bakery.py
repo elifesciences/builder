@@ -4,6 +4,7 @@ We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
 from buildercore import core, utils, bootstrap, config
+from buildercore.utils import ensure
 
 def ami_name(stackname):
     # elife-api.2015-12-31
@@ -28,3 +29,20 @@ def create_ami(stackname, name=None):
         'Values': ['available'],
     }])
     return str(ami.id) # this should be used to update the stack templates
+
+def delete_ami(image_id):
+    """'deregisters' an AMI and deletes the EBS snapshot backing it.
+    returns a map of the AMI and snapshot data that were deleted."""
+    conn = core.boto_client('ec2', core.find_region())
+    resp = conn.describe_images(Filters=[{'Name': 'image-id', 'Values': [image_id]}])
+    image = resp['Images'][0]
+
+    snapshot_list = [s for s in image['BlockDeviceMappings'] if 'Ebs' in s]
+    ensure(snapshot_list, "AMI has no EBS volumes attached: %s" % image_id)
+    ensure(len(snapshot_list) == 1, "AMI has multiple EBS volumes attached: %s" % image_id)
+    snapshot = snapshot_list[0]
+
+    conn.deregister_image(ImageId=image_id)
+    conn.delete_snapshot(SnapshotId=snapshot['Ebs']['SnapshotId'])
+
+    return {'image': image, 'snapshot': snapshot}

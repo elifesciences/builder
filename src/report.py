@@ -1,8 +1,10 @@
+import dateutil.parser
 from functools import partial
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 import os
 import utils
 from buildercore import core, project, utils as core_utils
+from buildercore.utils import lookup
 from functools import wraps
 
 def print_list(row_list, checkboxes=True):
@@ -117,7 +119,7 @@ def all_ec2_projects():
     alt_black_list = ['fresh', 'snsalt', 's1804', '1804', '2004', 's2004', 'standalone']
 
     def has_ec2(pname, pdata):
-        if core_utils.lookup(pdata, 'aws.ec2', None):
+        if lookup(pdata, 'aws.ec2', None):
             return pname
         # if evidence of an ec2 section not found directly, check alternate configurations
         for alt_name, alt_data in pdata.get('aws-alt', {}).items():
@@ -187,7 +189,7 @@ def all_rds_projects():
     key = 'aws.rds'
 
     def has_(pname, pdata):
-        if core_utils.lookup(pdata, key, None):
+        if lookup(pdata, key, None):
             return pname
         # if evidence of a 'foo' section not found directly, check alternate configurations
         for alt_name, alt_data in pdata.get('aws-alt', {}).items():
@@ -242,11 +244,11 @@ def long_running_large_ec2_instances(**kwargs):
         launch_time = result['LaunchTime']
         if isinstance(launch_time, str):
             launch_time = datetime.fromisoformat(launch_time)
-        now = datetime.now(timezone.utc)
+        now = core_utils.utcnow()
         return (now - launch_time) > timedelta(hours=long_running_duration)
 
     def known_env(result):
-        return core_utils.lookup(result, 'TagsDict.Environment', None) in known_env_list
+        return lookup(result, 'TagsDict.Environment', None) in known_env_list
 
     comp = lambda result: is_large_instance(result) and is_long_running(result) and not known_env(result)
 
@@ -254,6 +256,43 @@ def long_running_large_ec2_instances(**kwargs):
 
     def result_item(result):
         key_list = ['TagsDict.Name', 'LaunchTime', 'InstanceId', 'InstanceType', 'State.Name']
-        return {key: core_utils.lookup(result, key, None) for key in key_list}
+        return {key: lookup(result, key, None) for key in key_list}
 
     return list(map(result_item, large_instances))
+
+@configured_report(as_list=False)
+def all_amis_to_prune():
+    """returns a list of AMIs that are known, old and whose status is 'available'.
+    results are ordered oldest to newest.
+    output is fed into a `tasks.py` task to prune old AMIs."""
+
+    conn = core.boto_client('ec2', core.find_region())
+    image_list = conn.describe_images(Owners=['self'])
+
+    old_months = 3
+    old_months = timedelta(days=(28 * old_months))
+    now = core_utils.utcnow()
+
+    def is_known(image):
+        return \
+            image['Name'].startswith('basebox-') or \
+            image['Name'].startswith('containers-')
+
+    def is_old(image):
+        image_created = dateutil.parser.parse(image['CreationDate'])
+        return (now - image_created) > old_months
+
+    def is_available(image):
+        return image['State'] == "available"
+
+    comp = lambda image: is_known(image) and is_old(image) and is_available(image)
+    results = list(filter(comp, image_list['Images']))
+
+    # prune the Image data down to something more readable
+    interesting_keys = ['Name', 'CreationDate', 'ImageId']
+    results = [{key: lookup(image, key) for key in interesting_keys} for image in results]
+
+    # sort by date asc (oldest to newest)
+    results = sorted(results, key=lambda image: image['CreationDate'])
+
+    return results
