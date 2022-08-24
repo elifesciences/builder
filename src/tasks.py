@@ -28,12 +28,15 @@ def delete_ami(image_id, image_name=None):
     msg = "deleting %s (%r)" % (image_id, image_name)
     if not image_name:
         msg = "deleting %s" % image_id
-    print(msg)
+    errcho(msg)
     bakery.delete_ami(image_id)
 
 def delete_all_amis_to_prune():
     image_list = report.all_amis_to_prune()
     msg = "%s AMIs to delete" % len(image_list)
+    if not image_list:
+        errcho(msg)
+        return
     confirm(msg)
     [delete_ami(image['ImageId'], image['Name']) for image in image_list]
 

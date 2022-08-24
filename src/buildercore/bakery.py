@@ -31,6 +31,8 @@ def create_ami(stackname, name=None):
     return str(ami.id) # this should be used to update the stack templates
 
 def delete_ami(image_id):
+    """'deregisters' an AMI and deletes the EBS snapshot backing it.
+    returns a map of the AMI and snapshot data that were deleted."""
     conn = core.boto_client('ec2', core.find_region())
     resp = conn.describe_images(Filters=[{'Name': 'image-id', 'Values': [image_id]}])
     image = resp['Images'][0]
@@ -42,3 +44,5 @@ def delete_ami(image_id):
 
     conn.deregister_image(ImageId=image_id)
     conn.delete_snapshot(SnapshotId=snapshot['Ebs']['SnapshotId'])
+
+    return {'image': image, 'snapshot': snapshot}

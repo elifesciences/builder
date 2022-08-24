@@ -262,10 +262,10 @@ def long_running_large_ec2_instances(**kwargs):
 
 @configured_report(as_list=False)
 def all_amis_to_prune():
-    """returns a list of AMIs that are known, old and available.
-    output is fed into a Jenkins process to prune old AMIs."""
+    """returns a list of AMIs that are known, old and whose status is 'available'.
+    results are ordered oldest to newest.
+    output is fed into a `tasks.py` task to prune old AMIs."""
 
-    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_images
     conn = core.boto_client('ec2', core.find_region())
     image_list = conn.describe_images(Owners=['self'])
 
