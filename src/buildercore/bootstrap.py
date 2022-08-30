@@ -128,39 +128,52 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
 def unsub_sqs(stackname, new_context, region, dry_run=False):
     sublist = core.all_sns_subscriptions(region, stackname)
 
+    # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them
+    sub_groups = utils.mkidx(lambda sub: sub['Topic'], sublist)
+
     # compare project subscriptions to those actively subscribed to (sublist)
     unsub_map = {}
-    permission_map = {}
     for queue_name, subscriptions in new_context.items():
         unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
-        permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
 
-    if not dry_run:
-        sns = core.boto_client('sns', region)
-        for sub in utils.shallow_flatten(unsub_map.values()):
-            LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
-            sns.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+        # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them
+        for sub in sublist:
+            topic = sub['Topic']
+            if topic in sub_groups and len(sub_groups[topic]) > 1:
+                msg_list = [t['SubscriptionArn'] for t in sub_groups[topic]]
+                LOG.warning("multiple SQS subscriptions to the same SNS topic found: %s" % msg_list)
+                unsub_map[queue_name].append(sub_groups[topic].pop())
 
-        sqs = core.boto_resource('sqs', region)
-        for queue_name, topic_arns in permission_map.items():
-            # not an atomic update, but there's no other way to do it
-            queue = sqs.get_queue_by_name(QueueName=queue_name)
-            policy = json.loads(queue.attributes.get('Policy', '{}'))
-            LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
-            new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
-            if new_policy:
-                new_policy_dump = json.dumps(new_policy)
-            else:
-                new_policy_dump = ''
+    permission_map = {queue_name: [sub['TopicArn'] for sub in sub_list] for queue_name, sub_list in unsub_map.items()}
 
-            try:
-                LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
-                queue.set_attributes(Attributes={'Policy': new_policy_dump})
-            except botocore.exceptions.ClientError as ex:
-                msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
-                # TODO: `extra` are not logged so they are lost
-                LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
-                raise
+    if dry_run:
+        return unsub_map, permission_map
+
+    sns = core.boto_client('sns', region)
+    for sub in utils.shallow_flatten(unsub_map.values()):
+        LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
+        sns.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+
+    sqs = core.boto_resource('sqs', region)
+    for queue_name, topic_arns in permission_map.items():
+        # not an atomic update, but there's no other way to do it
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
+        policy = json.loads(queue.attributes.get('Policy', '{}'))
+        LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
+        new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
+        if new_policy:
+            new_policy_dump = json.dumps(new_policy)
+        else:
+            new_policy_dump = ''
+
+        try:
+            LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
+            queue.set_attributes(Attributes={'Policy': new_policy_dump})
+        except botocore.exceptions.ClientError as ex:
+            msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
+            # TODO: `extra` are not logged so they are lost
+            LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
+            raise
 
     return unsub_map, permission_map
 
