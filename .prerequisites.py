@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
 
-from distutils.version import StrictVersion
 from shlex import split
 import os, re, sys
 
-MINIMUM_VERSION_TERRAFORM = StrictVersion('0.11.13')
-MINIMUM_VERSION_VAULT = StrictVersion('0.11.0')
+try:
+    # the recommended drop-in replacement but requires installation of 'packaging':
+    # - https://packaging.pypa.io/en/latest/index.html
+    from packaging.version import Version
+    # 'setuptools' should also work:
+    # - https://setuptools.pypa.io/en/latest/userguide/distribution.html#specifying-your-project-s-version
+    # but requires installation of 'setuptools':
+    # - https://setuptools.pypa.io/en/latest/userguide/quickstart.html#installation
+except ImportError:
+    # deprecated in Python 3.10, planned removal in Python 3.12, you'll get a warning.
+    from distutils.version import StrictVersion as Version
+
+MINIMUM_VERSION_TERRAFORM = Version('0.11.13')
+MINIMUM_VERSION_VAULT = Version('0.11.0')
 
 def sh(cmd):
     return os.system(cmd) == 0
@@ -29,14 +40,14 @@ def dumb_version_check(cmd):
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
 def terraform_version_checker(_cmd):
-    installed_version = StrictVersion(shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip())
+    installed_version = Version(shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip())
     if not installed_version >= MINIMUM_VERSION_TERRAFORM:
         raise RuntimeError("Installed terraform version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_TERRAFORM))
 
     return str(installed_version)
 
 def vault_version_checker(_cmd):
-    installed_version = StrictVersion(re.match("Vault v([^ ]+)", shs('vault -version')).groups()[0])
+    installed_version = Version(re.match("Vault v([^ ]+)", shs('vault -version')).groups()[0])
     if not installed_version >= MINIMUM_VERSION_VAULT:
         raise RuntimeError("Installed vault version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_VAULT))
 
@@ -48,6 +59,7 @@ both_checks = [
      {'Linux': 'apt-get install build-essential',
       'Mac OS': 'xcode-select --install'}),
 
+    # lsh@2022-08-30: consider removing
     ('virtualenv',
      {'Linux': 'sudo pip install virtualenv',
       'Mac OS': 'brew install python@3.8'}),
@@ -126,6 +138,10 @@ mac_checks = [
 ]
 
 def run_checks(check_list, exclusions=[]):
+
+    if 'all' in exclusions:
+        return 0
+
     failed_checks = 0
     for cmd in check_list:
         installed_checker = dumb_install_check
@@ -157,7 +173,7 @@ def run_checks(check_list, exclusions=[]):
             failed_checks = failed_checks + 1
         sys.stdout.flush()
 
-    exit(failed_checks)
+    return failed_checks
 
 def main():
     checks = both_checks
@@ -173,10 +189,23 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exclude', dest='exclusions', nargs='+', type=str, default=[])
+    choices = [check[0] for check in checks] + ['all']
+    parser.add_argument('--exclude', **{
+        'dest': 'exclusions',
+        'nargs': '+',
+        'type': str,
+        'default': [],
+        #'choices': choices, # good idea, but I want a more lenient check
+        'help': "Exclude specific checks.",
+    })
     args = parser.parse_args()
 
-    run_checks(checks, args.exclusions)
+    unknown_exclusions = set(args.exclusions) - set(choices)
+    if unknown_exclusions:
+        print("WARNING: unknown exclusions will be ignored: %s" % ",".join(sorted(unknown_exclusions)))
+        print("supported exclusions: %s" % ",".join(sorted(choices)))
+
+    return run_checks(checks, args.exclusions)
 
 if __name__ == '__main__':
-    main()
+    exit(main())
