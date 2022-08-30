@@ -1,8 +1,19 @@
 #!/usr/bin/env python3
 
-from packaging.version import Version
 from shlex import split
 import os, re, sys
+
+try:
+    # the recommended drop-in replacement but requires installation of 'packaging':
+    # - https://packaging.pypa.io/en/latest/index.html
+    from packaging.version import Version
+    # 'setuptools' should also work:
+    # - https://setuptools.pypa.io/en/latest/userguide/distribution.html#specifying-your-project-s-version
+    # but requires installation of 'setuptools':
+    # - https://setuptools.pypa.io/en/latest/userguide/quickstart.html#installation
+except ImportError:
+    # deprecated in Python 3.10, planned removal in Python 3.12, you'll get a warning.
+    from distutils.version import StrictVersion as Version
 
 MINIMUM_VERSION_TERRAFORM = Version('0.11.13')
 MINIMUM_VERSION_VAULT = Version('0.11.0')
