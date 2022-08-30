@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+if [ ! -e venv ]; then
+    # install venv but don't bother checking for the extras.
+    ./update.sh --exclude all
+fi 
+source venv/bin/activate
+if [ ! -e venv/bin/ipython ]; then
+    # ipython not found, use rlwrap to get some basic history features.
+    rlwrap ./shell.py
+else
+    # ipython found, do not use rlwrap. it messes with ipython features.
+    ./shell.py
+fi
