@@ -173,7 +173,7 @@ def run_checks(check_list, exclusions=[]):
             failed_checks = failed_checks + 1
         sys.stdout.flush()
 
-    exit(failed_checks)
+    return failed_checks
 
 def main():
     checks = both_checks
@@ -205,7 +205,7 @@ def main():
         print("WARNING: unknown exclusions will be ignored: %s" % ",".join(sorted(unknown_exclusions)))
         print("supported exclusions: %s" % ",".join(sorted(choices)))
 
-    run_checks(checks, args.exclusions)
+    return run_checks(checks, args.exclusions)
 
 if __name__ == '__main__':
-    main()
+    exit(main())
