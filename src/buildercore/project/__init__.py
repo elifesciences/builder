@@ -29,7 +29,7 @@ def _parse_path(project_path):
     path = os.path.abspath(os.path.expanduser(project_path))
     if not os.path.exists(path):
         LOG.warning("project path not found, skipping: %s", path)
-        return
+        return []
     if os.path.isdir(path):
         return utils.listfiles(path, ['.yaml'])
     return [path]
