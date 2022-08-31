@@ -1,0 +1,5 @@
+# user settings for Builder.
+# see `srv/buildercore/config.py` for parsing.
+
+project-files:
+    - ./projects/elife.yaml
