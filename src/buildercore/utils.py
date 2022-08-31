@@ -218,7 +218,7 @@ def random_alphanumeric(length=32):
     rand = random.SystemRandom()
     return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
 
-def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
+def yaml_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
     # pylint: disable=too-many-ancestors
     class OrderedLoader(loader_class):
         pass

@@ -35,7 +35,7 @@ def context(pname, output_format=None):
 def _clone_project_formula(furl):
     """clones a formula to `./cloned-projects/$formulaname`, if it doesn't already exist.
     if it does exist, it attempts to update it with a `git pull`."""
-    destination = config.CLONED_PROJECT_FORMULA_DIR # /path/to/builder/cloned-projects
+    destination = config.CLONED_PROJECT_FORMULA_PATH # /path/to/builder/cloned-projects
     fpath = os.path.join(destination, os.path.basename(furl)) # /path/to/builder/cloned-projects/builder-base-formula
 
     cmd = "cd %s; git clone %s" % (destination, furl)

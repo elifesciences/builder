@@ -47,7 +47,6 @@ def switch_in_test_settings(projects_files=None):
     # lsh@2021-06-22: may not be necessary any more.
     # project_map now returns a deepcopy of cached results.
     project._project_map.cache_clear()
-    config.app.cache_clear()
 
 def switch_out_test_settings():
     # clear any caches and reload the config module

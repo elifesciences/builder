@@ -426,7 +426,7 @@ def download_master_configuration(master_stack):
 
 def expand_master_configuration(master_configuration_template, formulas=None):
     "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"
-    cfg = utils.ordered_load(master_configuration_template)
+    cfg = utils.yaml_load(master_configuration_template)
 
     if not formulas:
         formulas = project.known_formulas() # *all* formulas

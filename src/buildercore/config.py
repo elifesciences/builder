@@ -1,17 +1,21 @@
-"""Configuration file for `buildercore`.
+"""app configuration.
 
-buildercore was originally part of builder, then separated out
-into it's own project 'builder-core' but was eventually re-integrated.
-This transition meant that `src/buildercore/` is still neatly separated
-from the interface logic in `./src/taskrunner.py`.
+Avoid modifying these values during normal usage.
+
+See `settings.yaml` for per-user configuration.
+
+See `config.ENV` for a list of supported envvars and their defaults.
+
+Values in `config.ENV` should override matching values found in `settings.yaml`.
+
+For testing, see `switch_in_test_settings` and `set_config` in `./src/tests/base.py`.
 
 """
 import os
 import getpass
 from os.path import join
 from buildercore import utils
-from buildercore.utils import lmap, lfilter
-from kids.cache import cache
+from buildercore.utils import ensure, lmap
 import logging
 
 # *_DIR are relative
@@ -52,18 +56,19 @@ SRC_PATH = join(PROJECT_PATH, 'src') # "/path/to/elife-builder/src/"
 
 TEMP_PATH = "/tmp/"
 
-CFN = ".cfn"
+CFN_DIR = ".cfn"
 
 MASTER_SERVER_IID = "master-server--prod"
 
-STACK_DIR = join(CFN, "stacks") # "./.cfn/stacks"
-CONTEXT_DIR = join(CFN, "contexts") # "./.cfn/stacks"
+PROJECTS_DIR = "projects"
+STACK_DIR = join(CFN_DIR, "stacks") # "./.cfn/stacks"
+CONTEXT_DIR = join(CFN_DIR, "contexts") # "./.cfn/stacks"
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
-KEYPAIR_DIR = join(CFN, "keypairs") # "./.cfn/keypairs"
+KEYPAIR_DIR = join(CFN_DIR, "keypairs") # "./.cfn/keypairs"
 # the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
 # perhaps a namechange from .cfn to .state or something later
-TERRAFORM_DIR = join(CFN, "terraform")
+TERRAFORM_DIR = join(CFN_DIR, "terraform")
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # "/.../.cfn/stacks/"
 CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # "/.../.cfn/contexts/"
@@ -72,6 +77,16 @@ SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # "/.../scripts/"
 
 # create all necessary paths and ensure they are writable
 lmap(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
+
+# read user config
+
+USER_SETTINGS_FILE = "settings.yaml"
+USER_SETTINGS_PATH = join(PROJECT_PATH, USER_SETTINGS_FILE)
+USER = {
+    'project-files': [join(PROJECTS_DIR, 'elife.yaml')]
+}
+if os.path.exists(USER_SETTINGS_PATH):
+    USER.update(utils.yaml_load(open(USER_SETTINGS_PATH, 'r')))
 
 # logging
 
@@ -92,7 +107,6 @@ ROOTLOG.setLevel(logging.DEBUG) # *default* output level for all LOGs
 CONSOLE_HANDLER = logging.StreamHandler()
 CONSOLE_HANDLER.setLevel(logging.INFO) # output level for *this handler*
 CONSOLE_HANDLER.setFormatter(CONSOLE_FORMAT)
-
 
 # FileHandler sends to a named file
 FILE_HANDLER = logging.FileHandler(LOG_FILE)
@@ -138,14 +152,14 @@ CONTEXT_PREFIX = 'contexts/'
 # these sections *shouldn't* be merged if they *don't* exist in the project
 CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf']
 
-#
-# settings
-# buildercore.config is NOT the place for user config
-#
+PROJECTS_FILES = USER['project-files']
+#PROJECTS_FILES = utils.shallow_flatten(USER['project-files'], ['src/tests/fixtures/projects/'])
+ensure(isinstance(PROJECTS_FILES, list), "'PROJECTS_FILES' must be a list, not a %r. check your settings.yaml file." % type(PROJECTS_FILES))
+# all project files are rooted in the builder project directory. no good reason.
+# todo: rename PROJECTS_PATHS
+PROJECTS_FILES = [join(PROJECT_PATH, f) for f in PROJECTS_FILES]
 
-PROJECTS_FILES = ['projects/elife.yaml']  # , 'src/tests/fixtures/projects/']
-
-CLONED_PROJECT_FORMULA_DIR = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
+CLONED_PROJECT_FORMULA_PATH = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
 
 USER_PRIVATE_KEY = ENV['CUSTOM_SSH_KEY']
 
@@ -153,61 +167,7 @@ USER_PRIVATE_KEY = ENV['CUSTOM_SSH_KEY']
 # testing
 #
 
+# TODO: revisit this
 # 'Test With Instance', see integration_tests.test_with_instance
 TWI_REUSE_STACK = ENV['BLDR_TWI_REUSE_STACK'] == '1' # use existing test stack if exists
 TWI_CLEANUP = ENV['BLDR_TWI_CLEANUP'] == '1' # tear down test stack after testing
-
-#
-# logic
-#
-
-def _parse_path(project_path):
-    "convert a path into a triple of (protocol, hostname, path)"
-    bits = project_path.split('://', 1)
-    if len(bits) == 2:
-        # "http://example.org/path/to/org/file" => (http, example.org, '/path/to/org/file/')
-        protocol, rest = bits
-        host, path = rest.split('/', 1)
-        return (protocol, host, '/' + path)
-
-    # "/path/to/org/somefile" => (file, None, '/path/to/org/somefile')
-    # "/path/to/org/somedir" => (dir, None, '/path/to/org/somedir/')
-    path = os.path.abspath(os.path.expanduser(project_path))
-    protocol = 'file' if os.path.isfile(path) else 'dir'
-    host = None
-    return (protocol, host, path)
-
-def _expand_dir_path(triple):
-    "any yaml files in any given directories will be found and used"
-    protocol, host, path = triple
-    if protocol in ['dir', 'file'] and not os.path.exists(path):
-        LOG.warning("could not resolve %r, skipping", path)
-        return [None]
-    if protocol == 'dir':
-        return lmap(_parse_path, utils.listfiles(path, ['.yaml']))
-    return [triple]
-
-def parse_path_list(path_list):
-    """convert the list of project configuration paths to a list of (protocol, host, path) triples.
-    local paths that point to directories will be expanded to include all project.yaml inside it.
-    duplicate paths and paths that do not exist are removed."""
-
-    # convert a list of paths to a list of triples
-    path_list = lmap(_parse_path, path_list)
-
-    # we don't want dirs, we want files
-    path_list = utils.shallow_flatten(map(_expand_dir_path, path_list))
-
-    # remove any bogus values
-    path_list = lfilter(None, path_list)
-
-    # remove any duplicates. can happen when we expand dir => files
-    path_list = utils.unique(path_list)
-
-    return path_list
-
-@cache
-def app(settings_path=None):
-    return {
-        'project-locations': parse_path_list([join(PROJECT_PATH, f) for f in PROJECTS_FILES]),
-    }

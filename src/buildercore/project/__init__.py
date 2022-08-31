@@ -1,10 +1,12 @@
 # from . import core # DONT import core. this project module should be relatively independent
+import os
 from buildercore import utils, config
 from kids.cache import cache
 from . import files
 import copy
 import logging
 from functools import reduce
+
 LOG = logging.getLogger(__name__)
 
 #
@@ -37,6 +39,52 @@ def find_project(project_location_triple):
         return {}  # OrderedDict({})
     return fnmap[protocol](path, hostname)
 
+def _parse_path(project_path):
+    "convert a path into a triple of (protocol, hostname, path)"
+    bits = project_path.split('://', 1)
+    if len(bits) == 2:
+        # "http://example.org/path/to/org/file" => (http, example.org, '/path/to/org/file/')
+        protocol, rest = bits
+        host, path = rest.split('/', 1)
+        return (protocol, host, '/' + path)
+
+    # "/path/to/org/somefile" => (file, None, '/path/to/org/somefile')
+    # "/path/to/org/somedir" => (dir, None, '/path/to/org/somedir/')
+    path = os.path.abspath(os.path.expanduser(project_path))
+    protocol = 'file' if os.path.isfile(path) else 'dir'
+    host = None
+    return (protocol, host, path)
+
+def _expand_dir_path(triple):
+    "any yaml files in any given directories will be found and used"
+    protocol, host, path = triple
+    if protocol in ['dir', 'file'] and not os.path.exists(path):
+        LOG.warning("could not resolve %r, skipping", path)
+        return [None]
+    if protocol == 'dir':
+        return utils.lmap(_parse_path, utils.listfiles(path, ['.yaml']))
+    return [triple]
+
+def parse_path_list(path_list):
+    """convert the list of project configuration paths to a list of (protocol, host, path) triples.
+    local paths that point to directories will be expanded to include all project.yaml inside it.
+    duplicate paths and paths that do not exist are removed."""
+
+    # convert a list of paths to a list of triples
+    path_list = utils.lmap(_parse_path, path_list)
+
+    # we don't want dirs, we want files
+    path_list = utils.shallow_flatten(map(_expand_dir_path, path_list))
+
+    # remove any bogus values
+    path_list = utils.lfilter(None, path_list)
+
+    # remove any duplicates. can happen when we expand dir => files
+    path_list = utils.unique(path_list)
+
+    return path_list
+
+
 @cache
 def _project_map(project_locations_list=None):
     """returns a single map of all projects and their data"""
@@ -44,7 +92,8 @@ def _project_map(project_locations_list=None):
         orderedDict1.update(orderedDict2)
         return orderedDict1
 
-    project_locations_list = config.app()['project-locations']
+    # [(protocol, host, path), ('file', None, '/path/to/projects.yaml'), ...]
+    project_locations_list = parse_path_list(config.PROJECTS_FILES)
 
     # {'dummy-project1': {'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}},
     #  'dummy-project2': {'example': {}}}
