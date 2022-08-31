@@ -387,7 +387,7 @@ def build_context_rds(pdata, context, existing_context):
     subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
     net = subnet_cidr.network
     mask = subnet_cidr.netmask
-    networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
+    networkmask = "%s/%s" % (net, mask) # "10.0.2.0/255.255.255.0"
 
     # pull password from existing context, if it exists
     generated_password = utils.random_alphanumeric(length=32)

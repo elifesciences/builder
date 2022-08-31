@@ -25,7 +25,7 @@ class TestProject(base.BaseCase):
     def setUp(self):
         self.project_file = join(self.fixtures_dir, 'projects', 'dummy-project.yaml')
         self.parsed_config = {
-            'project-locations': config.parse_loc_list([self.project_file])
+            'project-locations': config.parse_path_list([self.project_file])
         }
 
     def tearDown(self):

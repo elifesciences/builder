@@ -14,12 +14,9 @@ from buildercore.utils import lmap, lfilter
 from kids.cache import cache
 import logging
 
-class ConfigurationError(Exception):
-    pass
-
-# dirs are relative
-# paths are absolute
-# a file is an absolute path to a file
+# *_DIR are relative
+# *_PATH are absolute
+# *_FILE are absolute paths to a file
 # filenames are names of files without any other context
 
 ROOT_USER = 'root'
@@ -29,8 +26,8 @@ CI_USER = 'jenkins'
 
 WHOAMI = getpass.getuser()
 
-PROJECT_PATH = os.getcwd() # ll: /path/to/elife-builder/
-SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
+PROJECT_PATH = os.getcwd() # "/path/to/elife-builder/"
+SRC_PATH = join(PROJECT_PATH, 'src') # "/path/to/elife-builder/src/"
 
 TEMP_PATH = "/tmp/"
 
@@ -38,11 +35,11 @@ CFN = ".cfn"
 
 MASTER_SERVER_IID = "master-server--prod"
 
-STACK_DIR = join(CFN, "stacks") # ll: ./.cfn/stacks
-CONTEXT_DIR = join(CFN, "contexts") # ll: ./.cfn/stacks
+STACK_DIR = join(CFN, "stacks") # "./.cfn/stacks"
+CONTEXT_DIR = join(CFN, "contexts") # "./.cfn/stacks"
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
-KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
+KEYPAIR_DIR = join(CFN, "keypairs") # "./.cfn/keypairs"
 # the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
 # perhaps a namechange from .cfn to .state or something later
 TERRAFORM_DIR = join(CFN, "terraform")
@@ -119,13 +116,6 @@ AWS_POLLING_INTERVAL = 4 # seconds
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 
-PACKER_BOX_PREFIX = "elifesciences" # the 'elifesciences' in 'elifesciences/basebox'
-PACKER_BOX_BUCKET = "builder-boxes"
-PACKER_BOX_KEY = "boxes"
-# ll: s3://elife-builder/boxes
-PACKER_BOX_S3_PATH = "s3://%s" % join(PACKER_BOX_BUCKET, PACKER_BOX_KEY)
-PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PACKER_BOX_KEY)
-
 # these sections *shouldn't* be merged if they *don't* exist in the project
 CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf']
 
@@ -152,45 +142,53 @@ TWI_CLEANUP = os.environ.get('BLDR_TWI_CLEANUP', '1') == '1' # tear down test st
 # logic
 #
 
-def _parse_loc(loc):
-    "turn a project-location path into a triple of (protocol, hostname, path)"
-    bits = loc.split('://', 1)
+def _parse_path(project_path):
+    "convert a path into a triple of (protocol, hostname, path)"
+    bits = project_path.split('://', 1)
     if len(bits) == 2:
-        host, path = bits[1].split('/', 1)
-        # ll: (http, example.org, '/path/to/org/file/')
-        return (bits[0], host, '/' + path)
-    # ll: (file, None, '/path/to/org/file/')
-    path = os.path.abspath(os.path.expanduser(loc))
-    return 'file' if os.path.isfile(path) else 'dir', None, path
+        # "http://example.org/path/to/org/file" => (http, example.org, '/path/to/org/file/')
+        protocol, rest = bits
+        host, path = rest.split('/', 1)
+        return (protocol, host, '/' + path)
 
-def parse_loc_list(loc_list):
-    "wrangle the list of paths the user gave us. expand if they specify a directory, etc"
-    # give the convenient user-form some structure
-    p_loc_list = lmap(_parse_loc, loc_list)
-    # do some post processing
+    # "/path/to/org/somefile" => (file, None, '/path/to/org/somefile')
+    # "/path/to/org/somedir" => (dir, None, '/path/to/org/somedir/')
+    path = os.path.abspath(os.path.expanduser(project_path))
+    protocol = 'file' if os.path.isfile(path) else 'dir'
+    host = None
+    return (protocol, host, path)
 
-    def expand_dirs(triple):
-        protocol, host, path = triple
-        if protocol in ['dir', 'file'] and not os.path.exists(path):
-            LOG.warning("could not resolve %r, skipping", path)
-            return [None]
-        if protocol == 'dir':
-            yaml_files = utils.listfiles(path, ['.yaml'])
-            return [('file', host, ppath) for ppath in yaml_files]
-        return [triple]
+def _expand_dir_path(triple):
+    "any yaml files in any given directories will be found and used"
+    protocol, host, path = triple
+    if protocol in ['dir', 'file'] and not os.path.exists(path):
+        LOG.warning("could not resolve %r, skipping", path)
+        return [None]
+    if protocol == 'dir':
+        return lmap(_parse_path, utils.listfiles(path, ['.yaml']))
+    return [triple]
+
+def parse_path_list(path_list):
+    """convert the list of project configuration paths to a list of (protocol, host, path) triples.
+    local paths that point to directories will be expanded to include all project.yaml inside it.
+    duplicate paths and paths that do not exist are removed."""
+
+    # convert a list of paths to a list of triples
+    path_list = lmap(_parse_path, path_list)
+
     # we don't want dirs, we want files
-    p_loc_list = utils.shallow_flatten(map(expand_dirs, p_loc_list))
+    path_list = utils.shallow_flatten(map(_expand_dir_path, path_list))
 
     # remove any bogus values
-    p_loc_list = lfilter(None, p_loc_list)
+    path_list = lfilter(None, path_list)
 
     # remove any duplicates. can happen when we expand dir => files
-    p_loc_list = utils.unique(p_loc_list)
+    path_list = utils.unique(path_list)
 
-    return p_loc_list
+    return path_list
 
 @cache
 def app(settings_path=None):
     return {
-        'project-locations': parse_loc_list([join(PROJECT_PATH, f) for f in PROJECTS_FILES]),
+        'project-locations': parse_path_list([join(PROJECT_PATH, f) for f in PROJECTS_FILES]),
     }

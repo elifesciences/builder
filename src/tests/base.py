@@ -20,7 +20,7 @@ def generate_environment_name():
        and new builds clashing with older ones"""
     who = check_output('whoami').rstrip().decode()
     now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    return "-".join([who, now, str(randint(1, 1000000))]) # ll: luke-20180420022437-51631
+    return "-".join([who, now, str(randint(1, 1000000))]) # "luke-20180420022437-51631"
 
 this_dir = os.path.realpath(os.path.dirname(__file__))
 fixtures_dir = join(this_dir, 'fixtures')

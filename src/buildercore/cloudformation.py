@@ -304,7 +304,7 @@ def destroy(stackname, context):
         msg = "[%s: %s] %s (request-id: %s)"
         meta = ex.response['ResponseMetadata']
         err = ex.response['Error']
-        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        # "[400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)"
         if "No updates are to be performed" in err['Message']:
             LOG.info("Stack %s does not need updates on CloudFormation", stackname)
             return
@@ -316,7 +316,7 @@ def destroy(stackname, context):
             return
 
         LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
-        # ll: ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-bot--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS
+        # "ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-bot--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS"
         raise
 
 

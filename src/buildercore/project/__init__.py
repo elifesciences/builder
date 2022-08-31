@@ -45,14 +45,16 @@ def _project_map(project_locations_list=None):
         return orderedDict1
 
     project_locations_list = config.app()['project-locations']
-    # ll: {'dummy-project1': {'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}},
-    #      'dummy-project2': {'example': {}}}
+
+    # {'dummy-project1': {'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}},
+    #  'dummy-project2': {'example': {}}}
     data = map(find_project, project_locations_list)
     opm = reduce(merge, data)
-    # ll: [{'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}}], {'example': {}}]
-    data = opm.values()
-    # ll: {'lax': {...}, 'metrics': {...}, 'example': {...}}
 
+    # [{'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}}], {'example': {}}]
+    data = opm.values()
+
+    # {'lax': {...}, 'metrics': {...}, 'example': {...}}
     return reduce(merge, data)
 
 def project_map(project_locations_list=None):
