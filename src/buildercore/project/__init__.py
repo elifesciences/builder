@@ -24,7 +24,7 @@ def set_project_alt(pdata, env, altkey):
 
 def _parse_path(project_path):
     """converts a given path into zero or many paths.
-    if `project_path` does not exist, it will be discarded.
+    if `project_path` does not exist, it will be discarded with a warning.
     if `project_path` is a directory containing `.yaml` files, each `.yaml` file will be returned."""
     path = os.path.abspath(os.path.expanduser(project_path))
     if not os.path.exists(path):
@@ -34,12 +34,12 @@ def _parse_path(project_path):
         return utils.listfiles(path, ['.yaml'])
     return [path]
 
-def parse_path_list(path_list):
+def parse_path_list(project_path_list):
     """convert the list of project configuration paths to a list of (protocol, host, path) triples.
     local paths that point to directories will be expanded to include all project.yaml inside it.
     duplicate paths and paths that do not exist are removed."""
     path_list = []
-    for path in path_list:
+    for path in project_path_list:
         path_list.extend([pp for pp in _parse_path(path) if pp])
 
     # remove any duplicates. may happen when expanding a directory of files.
@@ -75,9 +75,14 @@ def _project_map(project_locations_list=None):
     return reduce(merge, data)
 
 def project_map(project_locations_list=None):
-    """returns a deepcopy of the cached `_project_map` results.
-    `cfngen.build_context` is one of probably many functions that are modifying the project data, unintentionally modifying it for all subsequent accesses, including during tests.
-    this approach should be safer, avoid the speed problems with parsing the project files at the cost of a deepcopy."""
+    """returns a single map of all projects and their data.
+    the returned value is a deepcopy of the cached `_project_map` data.
+
+    `cfngen.build_context` is one of probably many functions modifying the project data,
+    unintentionally modifying it for all subsequent accesses including during tests.
+
+    this approach should be safer and avoid the speed problems with parsing the project
+    files again at the cost of a deepcopy."""
     return utils.deepcopy(_project_map(project_locations_list))
 
 def project_list():
