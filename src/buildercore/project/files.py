@@ -95,7 +95,7 @@ def project_dir_path(project_file):
     return path
 
 def projects_from_file(path_to_file, *args, **kwargs):
-    "returns a map of {org => project data} for a given file"
+    "returns a map of {path_to_file: project data} for given `path_to_file`."
     orgname = project_file_name(path_to_file)
     _, project_list = all_projects(path_to_file)
 

@@ -22,68 +22,30 @@ def set_project_alt(pdata, env, altkey):
     pdata_copy[env] = pdata[env_key][altkey]
     return pdata_copy
 
-def find_project(project_location_triple):
-    "given a triple of (protocol, hostname, path) returns a map of {org => project data}"
-    plt = project_location_triple
-    assert utils.iterable(plt), "given triple must be a collection of three values"
-    assert len(project_location_triple) == 3, "triple must contain three values. got: %r" % project_location_triple
-    protocol, hostname, path = plt
-    fnmap = {
-        # 'file': OrgFileProjects,
-        'file': files.projects_from_file,
-        # 'ssh': RemoteBuilderProjects,
-        # 'https': RemoteBuilderProjects,
-    }
-    if not protocol in fnmap.keys():
-        LOG.info("unhandled protocol %r for %r" % (protocol, plt))
-        return {}  # OrderedDict({})
-    return fnmap[protocol](path, hostname)
-
 def _parse_path(project_path):
-    "convert a path into a triple of (protocol, hostname, path)"
-    bits = project_path.split('://', 1)
-    if len(bits) == 2:
-        # "http://example.org/path/to/org/file" => (http, example.org, '/path/to/org/file/')
-        protocol, rest = bits
-        host, path = rest.split('/', 1)
-        return (protocol, host, '/' + path)
-
-    # "/path/to/org/somefile" => (file, None, '/path/to/org/somefile')
-    # "/path/to/org/somedir" => (dir, None, '/path/to/org/somedir/')
+    """converts a given path into zero or many paths.
+    if `project_path` does not exist, it will be discarded.
+    if `project_path` is a directory containing `.yaml` files, each `.yaml` file will be returned."""
     path = os.path.abspath(os.path.expanduser(project_path))
-    protocol = 'file' if os.path.isfile(path) else 'dir'
-    host = None
-    return (protocol, host, path)
-
-def _expand_dir_path(triple):
-    "any yaml files in any given directories will be found and used"
-    protocol, host, path = triple
-    if protocol in ['dir', 'file'] and not os.path.exists(path):
-        LOG.warning("could not resolve %r, skipping", path)
-        return [None]
-    if protocol == 'dir':
-        return utils.lmap(_parse_path, utils.listfiles(path, ['.yaml']))
-    return [triple]
+    if not os.path.exists(path):
+        LOG.warning("project path not found, skipping: %s", path)
+        return
+    if os.path.isdir(path):
+        return utils.listfiles(path, ['.yaml'])
+    return [path]
 
 def parse_path_list(path_list):
     """convert the list of project configuration paths to a list of (protocol, host, path) triples.
     local paths that point to directories will be expanded to include all project.yaml inside it.
     duplicate paths and paths that do not exist are removed."""
+    path_list = []
+    for path in path_list:
+        path_list.extend([pp for pp in _parse_path(path) if pp])
 
-    # convert a list of paths to a list of triples
-    path_list = utils.lmap(_parse_path, path_list)
-
-    # we don't want dirs, we want files
-    path_list = utils.shallow_flatten(map(_expand_dir_path, path_list))
-
-    # remove any bogus values
-    path_list = utils.lfilter(None, path_list)
-
-    # remove any duplicates. can happen when we expand dir => files
+    # remove any duplicates. may happen when expanding a directory of files.
     path_list = utils.unique(path_list)
 
     return path_list
-
 
 @cache
 def _project_map(project_locations_list=None):
@@ -92,18 +54,24 @@ def _project_map(project_locations_list=None):
         orderedDict1.update(orderedDict2)
         return orderedDict1
 
+    # a list of triples
     # [(protocol, host, path), ('file', None, '/path/to/projects.yaml'), ...]
     project_locations_list = parse_path_list(config.PROJECTS_FILES)
 
-    # {'dummy-project1': {'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}},
-    #  'dummy-project2': {'example': {}}}
-    data = map(find_project, project_locations_list)
-    opm = reduce(merge, data)
+    # a list of parsed project data
+    # [{'/path/to/projects.yaml': {'project1': {...}, 'project2': {...}, ...}, {'/path/to/another-projects.yaml': {...}}, ...]
+    data = [files.projects_from_file(path) for path in project_locations_list]
 
-    # [{'lax': {'aws': ..., 'vagrant': ..., 'salt': ...}, 'metrics': {...}}], {'example': {}}]
-    data = opm.values()
+    # a single map of paths to parsed project data
+    # {'/path/to/projects.yaml': {'project1': {...}, 'project2': {...}, ...}, '/path/to/another-projects.yaml': {...}, ...}
+    data = reduce(merge, data)
 
-    # {'lax': {...}, 'metrics': {...}, 'example': {...}}
+    # a list of parsed project data.
+    # [{'project1': {...}, 'project2': {...}, ...}, {...}, ...]
+    data = data.values()
+
+    # a single map of parsed project data.
+    # {'project1': {...}, 'project2': {...}, ...}
     return reduce(merge, data)
 
 def project_map(project_locations_list=None):
