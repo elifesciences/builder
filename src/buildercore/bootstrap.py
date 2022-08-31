@@ -515,7 +515,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             # the master-builder key
             upload_master_builder_key(master_builder_key)
             envvars = {
-                'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', ''),
+                'BUILDER_TOPFILE': config.ENV['BUILDER_TOPFILE']
             }
 
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'

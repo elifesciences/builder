@@ -15,6 +15,13 @@ import imp
 
 LOG = logging.getLogger(__name__)
 
+def set_config(key, value):
+    """modify configuration values in `buildercore/config.py`.
+    returns a cleanup function to call in `tearDown` that will reset the value."""
+    old_value = getattr(config, key, None)
+    setattr(config, key, value)
+    return lambda: setattr(config, key, old_value)
+
 def generate_environment_name():
     """to avoid multiple people clashing while running their builds
        and new builds clashing with older ones"""
@@ -73,7 +80,6 @@ class BaseCase(TestCase):
             parent.assertCountEqual(*args)
 
     # pyline: disable=invalid-name
-
     def assertAllPairsEqual(self, fn, pair_lst):
         "given a function and a list of (given, expected) asserts all fn(given) == expected"
         for given, expected in pair_lst:

@@ -35,7 +35,7 @@ def requires_filtered_project(filterfn=None):
     def wrap1(func):
         @wraps(func)
         def wrap2(_pname=None, *args, **kwargs):
-            pname = os.environ.get('PROJECT', _pname) # used by Vagrant ...?
+            pname = config.ENV['PROJECT'] or _pname # used by Vagrant ...?
             project_list = project.filtered_projects(filterfn)
             if not pname or not pname.strip() or pname not in project_list:
                 # TODO:
@@ -78,7 +78,7 @@ def requires_aws_stack(func):
     """requires a stack to exist and will prompt if one was not provided."""
     @wraps(func)
     def call(*args, **kwargs):
-        stackname = first(args) or os.environ.get('INSTANCE')
+        stackname = first(args) or config.ENV['INSTANCE']
         region = utils.find_region(stackname)
         if stackname:
             args = args[1:]
@@ -114,7 +114,7 @@ def requires_steady_stack(func):
         if not keys:
             print('\nno AWS stacks *in a steady state* exist, cannot continue.')
             return
-        stackname = first(args) or os.environ.get('INSTANCE')
+        stackname = first(args) or config.ENV['INSTANCE']
         if not stackname or stackname not in keys:
             stackname = utils._pick("stack", sorted(keys), helpfn=helpfn, default_file=deffile('.active-stack'))
         return func(stackname, *args[1:], **kwargs)

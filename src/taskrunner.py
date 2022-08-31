@@ -1,10 +1,10 @@
 # import threadbare early so gevent.monkey_patch can patch everything
-from buildercore import threadbare
+from buildercore import config, threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
 import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks
-import sys, os, traceback
+import sys, traceback
 import utils
 
 # threadbare module is otherwise not used is flagged for linting
@@ -284,7 +284,7 @@ def exec_task(task_str, task_map_list):
         command.network_disconnect_all()
 
 def main(arg_list):
-    show_debug_tasks = os.environ.get("BLDR_ROLE") == "admin"
+    show_debug_tasks = config.ENV["BLDR_ROLE"] == "admin"
     task_map_list = generate_task_list(show_debug_tasks)
 
     if not arg_list or arg_list[1:]:

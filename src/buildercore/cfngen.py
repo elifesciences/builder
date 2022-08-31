@@ -19,13 +19,13 @@ We want to add an external volume to an EC2 instance to increase available space
 
 from slugify import slugify
 import logging
-import os, json
+import json
 import re
 from collections import OrderedDict, namedtuple
 from functools import partial
 import botocore
 import netaddr
-from . import utils, cloudformation, terraform, core, project, context_handler
+from . import config, utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
 
 LOG = logging.getLogger(__name__)
@@ -95,7 +95,8 @@ def build_context(pname, **more_context):
         'project_name': pname,
         # 'project': project_data,
 
-        'author': os.environ.get("LOGNAME") or 'unknown',
+        'author': config.STACK_AUTHOR,
+
         # lsh@2022-02-16: disabled. dates make testing difficult and this value doesn't appear to be used.
         # 'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
 

@@ -19,12 +19,33 @@ import logging
 # *_FILE are absolute paths to a file
 # filenames are names of files without any other context
 
+# prevent the spread of calls to 'os.environ' through the code.
+ENV = {
+    # envvar, default
+    'LOG_LEVEL_FILE': 'INFO',
+    # note: simple presence of this envvar will switch it to True
+    # so 'BUILDER_NON_INTERACTIVE=false ./bldr foo' will see the string 'false' and go `bool('false')` => `True`
+    'BUILDER_NON_INTERACTIVE': None, # interactive by default
+    'BUILDER_TIMEOUT': 600, # seconds, 10 minutes
+    'CUSTOM_SSH_KEY': '~/.ssh/id_rsa',
+    'BLDR_TWI_REUSE_STACK': 0, # False
+    'BLDR_TWI_CLEANUP': 1, # True
+    'BLDR_ROLE': None, # or 'admin', see taskrunner.py
+    'PROJECT': None,
+    'INSTANCE': None,
+    'BLDR_BACKEND': 'threadbare',
+    'BUILDER_TOPFILE': '',
+}
+ENV = {k: os.environ.get(k, default) for k, default in ENV.items()}
+
 ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
 CI_USER = 'jenkins'
 
 WHOAMI = getpass.getuser()
+
+STACK_AUTHOR = WHOAMI # added to context data, see cfngen.py
 
 PROJECT_PATH = os.getcwd() # "/path/to/elife-builder/"
 SRC_PATH = join(PROJECT_PATH, 'src') # "/path/to/elife-builder/src/"
@@ -75,7 +96,7 @@ CONSOLE_HANDLER.setFormatter(CONSOLE_FORMAT)
 
 # FileHandler sends to a named file
 FILE_HANDLER = logging.FileHandler(LOG_FILE)
-_log_level = os.environ.get('LOG_LEVEL_FILE', 'INFO')
+_log_level = ENV['LOG_LEVEL_FILE']
 FILE_HANDLER.setLevel(getattr(logging, _log_level))
 FILE_HANDLER.setFormatter(FORMAT)
 
@@ -104,10 +125,8 @@ def get_logger(name):
 # like ec2 instance keypairs
 BUILDER_BUCKET = 'elife-builder'
 BUILDER_REGION = 'us-east-1'
-BUILDER_NON_INTERACTIVE = 'BUILDER_NON_INTERACTIVE' in os.environ and os.environ['BUILDER_NON_INTERACTIVE']
-BUILDER_TIMEOUT = 600 # seconds, 10 minutes
-if 'BUILDER_TIMEOUT' in os.environ:
-    BUILDER_TIMEOUT = int(os.environ['BUILDER_TIMEOUT'])
+BUILDER_NON_INTERACTIVE = bool(ENV['BUILDER_NON_INTERACTIVE'])
+BUILDER_TIMEOUT = int(ENV['BUILDER_TIMEOUT'])
 
 # how often should we contact the AWS API while polling?
 # a value <=2 and the likelihood of throttling goes up.
@@ -128,15 +147,15 @@ PROJECTS_FILES = ['projects/elife.yaml']  # , 'src/tests/fixtures/projects/']
 
 CLONED_PROJECT_FORMULA_DIR = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
 
-USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
+USER_PRIVATE_KEY = ENV['CUSTOM_SSH_KEY']
 
 #
 # testing
 #
 
 # 'Test With Instance', see integration_tests.test_with_instance
-TWI_REUSE_STACK = os.environ.get('BLDR_TWI_REUSE_STACK', '0') == '1' # use existing test stack if exists
-TWI_CLEANUP = os.environ.get('BLDR_TWI_CLEANUP', '1') == '1' # tear down test stack after testing
+TWI_REUSE_STACK = ENV['BLDR_TWI_REUSE_STACK'] == '1' # use existing test stack if exists
+TWI_CLEANUP = ENV['BLDR_TWI_CLEANUP'] == '1' # tear down test stack after testing
 
 #
 # logic

@@ -6,15 +6,12 @@ import fabric.state
 import fabric.network
 import logging
 from io import BytesIO
-from . import utils, threadbare
+from . import config, utils, threadbare
 
 THREADBARE = 'threadbare'
 FABRIC = 'fabric'
 
-DEFAULT_BACKEND = THREADBARE
-#DEFAULT_BACKEND = FABRIC
-
-BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
+BACKEND = config.ENV['BLDR_BACKEND']
 assert BACKEND in [FABRIC, THREADBARE]
 
 def api(fabric_fn, threadbare_fn):

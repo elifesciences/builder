@@ -1,6 +1,5 @@
 from collections import OrderedDict
-import json  # , yaml
-import os
+import json
 from os.path import join
 import unittest
 from unittest.mock import patch
@@ -26,12 +25,13 @@ def _parse_json(dump):
 
 class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
-        self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
+        # lsh@2022-08-31: unused?
+        #self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
-        os.environ['LOGNAME'] = 'my_user'
+        self.reset_stack_author = base.set_config('STACK_AUTHOR', 'my_user')
 
     def tearDown(self):
-        del os.environ['LOGNAME']
+        self.reset_stack_author()
 
     # --- rds
 

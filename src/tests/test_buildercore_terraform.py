@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import json
-import os
 import re
 import shutil
 import yaml
@@ -199,15 +198,16 @@ class TestTerraformTemplate(TestCase):
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
-        self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
-        os.environ['LOGNAME'] = 'my_user'
+        # lsh@2022-08-31: unused?
+        #self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
+        self.reset_author = base.set_config('STACK_AUTHOR', 'my_user')
         self.environment = base.generate_environment_name()
         test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--%s' % self.environment)
         if exists(test_directory):
             shutil.rmtree(test_directory)
 
     def tearDown(self):
-        del os.environ['LOGNAME']
+        self.reset_author()
 
     def _getProvider(self, providers_file, provider_name, provider_alias=None):
         providers_list = providers_file['provider']
