@@ -47,15 +47,17 @@ def parse_path_list(project_path_list):
 
     return path_list
 
+# TODO: consider removing this cache decorator.
+# the expensive parts are in `buildercore.project.files`
 @cache
 def _project_map(project_locations_list=None):
     """returns a single map of all projects and their data"""
-    def merge(orderedDict1, orderedDict2):
-        orderedDict1.update(orderedDict2)
-        return orderedDict1
+    def merge(d1, d2):
+        d1.update(d2)
+        return d1
 
-    # a list of triples
-    # [(protocol, host, path), ('file', None, '/path/to/projects.yaml'), ...]
+    # a list of paths
+    # ['/path/to/projects.yaml', ...]
     project_locations_list = parse_path_list(config.PROJECTS_FILES)
 
     # a list of parsed project data
@@ -72,6 +74,8 @@ def _project_map(project_locations_list=None):
 
     # a single map of parsed project data.
     # {'project1': {...}, 'project2': {...}, ...}
+    # note: if you have two projects with the same name in different files, one will replace the other.
+    # precedence depends on order of paths in given `project_locations_list`, earlier paths are overridden by later.
     return reduce(merge, data)
 
 def project_map(project_locations_list=None):
@@ -86,7 +90,7 @@ def project_map(project_locations_list=None):
     return utils.deepcopy(_project_map(project_locations_list))
 
 def project_list():
-    "returns a single list of projects, ignoring organization and project data"
+    "returns a single list of project names."
     return list(project_map().keys())
 
 def project_data(pname):
@@ -104,13 +108,6 @@ def project_data(pname):
 def filtered_projects(filterfn, *args, **kwargs):
     "returns a dict of projects filtered by given filterfn)"
     return utils.dictfilter(filterfn, project_map(*args, **kwargs))
-
-def branch_deployable_projects(*args, **kwargs):
-    "returns a pair of (defaults, dict of projects with a repo)"
-    return filtered_projects(lambda pname, pdata: 'repo' in pdata, *args, **kwargs)
-
-def projects_with_formulas(*args, **kwargs):
-    return filtered_projects(lambda pname, pdata: pdata.get('formula-repo'), *args, **kwargs)
 
 def aws_projects(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: 'aws' in pdata, *args, **kwargs)
