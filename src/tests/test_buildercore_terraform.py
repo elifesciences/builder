@@ -1487,7 +1487,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
     def test_irsa_external_dns_permissions(self):
-        pname = 'project-with-irsa-external-dns-role'
+        pname = 'project-with-eks-and-irsa-external-dns-role'
         iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
@@ -1512,7 +1512,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('${aws_iam_role.dummy-external-dns.name}', aws_iam_role_policy_attachment['role'])
 
     def test_irsa_kubernetes_autoscaler_permissions(self):
-        pname = 'project-with-irsa-kubernetes-autoscaler-role'
+        pname = 'project-with-eks-and-irsa-kubernetes-autoscaler-role'
         iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
