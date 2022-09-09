@@ -119,24 +119,26 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
         # u'Version': u'2008-10-17'}
         return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
-    policy['Statement'] = list([s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)])
-    if policy['Statement']:
-        return policy
-    # TODO: unreachable code, policy['Statement'] will always be something
-    return None
+    policy['Statement'] = [s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)]
+    return policy
 
 def unsub_sqs(stackname, new_context, region, dry_run=False):
     sublist = core.all_sns_subscriptions(region, stackname)
 
-    # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them
+    # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
+    # don't know how it happened but we have cases where a project has multiple subscriptions to the same topic.
+    # this would mean multiple duplicate notifications.
+
+    # group subscriptions by Topic so we detect duplicates below.
     sub_groups = utils.mkidx(lambda sub: sub['Topic'], sublist)
 
-    # compare project subscriptions to those actively subscribed to (sublist)
     unsub_map = {}
     for queue_name, subscriptions in new_context.items():
+        # compare project subscriptions to those actively subscribed to (sublist)
         unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
 
-        # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them
+        # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
+        # look for subscription in topic groups with >1 topic and ensure it gets unsubbed.
         for sub in sublist:
             topic = sub['Topic']
             if topic in sub_groups and len(sub_groups[topic]) > 1:
@@ -144,6 +146,8 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
                 LOG.warning("multiple SQS subscriptions to the same SNS topic found: %s" % msg_list)
                 unsub_map[queue_name].append(sub_groups[topic].pop())
 
+    # 'permissions' here is more like 'policy': what to do (send a message) when receiving a message from a source (SNS)
+    # we strip these and re-add them on each update.
     permission_map = {queue_name: [sub['TopicArn'] for sub in sub_list] for queue_name, sub_list in unsub_map.items()}
 
     if dry_run:
@@ -161,17 +165,14 @@ def unsub_sqs(stackname, new_context, region, dry_run=False):
         policy = json.loads(queue.attributes.get('Policy', '{}'))
         LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
         new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
-        if new_policy:
-            new_policy_dump = json.dumps(new_policy)
-        else:
-            new_policy_dump = ''
+        new_policy_json = json.dumps(new_policy) if new_policy else ''
 
         try:
             LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
-            queue.set_attributes(Attributes={'Policy': new_policy_dump})
+            queue.set_attributes(Attributes={'Policy': new_policy_json})
         except botocore.exceptions.ClientError as ex:
-            msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
-            # TODO: `extra` are not logged so they are lost
+            msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_json)
+            # TODO: `extra` is logged but not rendered so are effectively lost
             LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
             raise
 
