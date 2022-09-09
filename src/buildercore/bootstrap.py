@@ -119,48 +119,63 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
         # u'Version': u'2008-10-17'}
         return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
-    policy['Statement'] = list([s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)])
+    policy['Statement'] = [s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)]
     if policy['Statement']:
         return policy
-    # TODO: unreachable code, policy['Statement'] will always be something
-    return None
 
-def unsub_sqs(stackname, new_context, region, dry_run=False):
-    sublist = core.all_sns_subscriptions(region, stackname)
+def unsub_sqs(stackname, context_sqs, region, dry_run=False):
+    all_subscriptions = core.all_sns_subscriptions(region, stackname)
 
-    # compare project subscriptions to those actively subscribed to (sublist)
+    # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
+    # don't know how it happened but we have cases where a project has multiple subscriptions to the same topic.
+    # this would mean multiple duplicate notifications.
+
+    # group subscriptions by Topic so we detect duplicates below.
+    sub_groups = utils.mkidx(lambda sub: sub['Topic'], all_subscriptions)
+
     unsub_map = {}
-    permission_map = {}
-    for queue_name, subscriptions in new_context.items():
-        unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
-        permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
+    for queue_name, ctx_subscription_list in context_sqs.items():
+        # compare project subscriptions to those actively subscribed to (`all_subscriptions`)
+        unsub_map[queue_name] = [sub for sub in all_subscriptions if sub['Topic'] not in ctx_subscription_list]
 
-    if not dry_run:
-        sns = core.boto_client('sns', region)
-        for sub in utils.shallow_flatten(unsub_map.values()):
-            LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
-            sns.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+        # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
+        # look for subscription in sub groups with >1 subs and ensure it gets removed.
+        for sub in all_subscriptions:
+            topic = sub['Topic']
+            if topic in sub_groups and len(sub_groups[topic]) > 1:
+                msg_list = [t['SubscriptionArn'].split(':')[-1] for t in sub_groups[topic]]
+                LOG.warning("multiple SQS subscriptions to the SNS topic %r found: %s" % (topic, msg_list))
+                unsub_map[queue_name].append(sub_groups[topic].pop())
 
-        sqs = core.boto_resource('sqs', region)
-        for queue_name, topic_arns in permission_map.items():
-            # not an atomic update, but there's no other way to do it
-            queue = sqs.get_queue_by_name(QueueName=queue_name)
-            policy = json.loads(queue.attributes.get('Policy', '{}'))
-            LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
-            new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
-            if new_policy:
-                new_policy_dump = json.dumps(new_policy)
-            else:
-                new_policy_dump = ''
+    # 'permissions' here is more like 'policy': what to do (send a message) when receiving a message from a source (SNS)
+    # we strip these and re-add them on each update.
+    permission_map = {queue_name: [sub['TopicArn'] for sub in sub_list] for queue_name, sub_list in unsub_map.items()}
 
-            try:
-                LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
-                queue.set_attributes(Attributes={'Policy': new_policy_dump})
-            except botocore.exceptions.ClientError as ex:
-                msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
-                # TODO: `extra` are not logged so they are lost
-                LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
-                raise
+    if dry_run:
+        return unsub_map, permission_map
+
+    sns = core.boto_client('sns', region)
+    for sub in utils.shallow_flatten(unsub_map.values()):
+        LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
+        sns.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+
+    sqs = core.boto_resource('sqs', region)
+    for queue_name, topic_arns in permission_map.items():
+        # not an atomic update, but there's no other way to do it
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
+        policy = json.loads(queue.attributes.get('Policy', '{}'))
+        LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
+        new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
+        new_policy_json = json.dumps(new_policy) if new_policy else ''
+
+        try:
+            LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
+            queue.set_attributes(Attributes={'Policy': new_policy_json})
+        except botocore.exceptions.ClientError as ex:
+            msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_json)
+            # TODO: `extra` is logged but not rendered so are effectively lost
+            LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
+            raise
 
     return unsub_map, permission_map
 
@@ -175,12 +190,12 @@ def sub_sqs(stackname, context_sqs, region):
     sqs = core.boto_resource('sqs', region)
     sns_client = core.boto_client('sns', region)
 
-    for queue_name, subscriptions in context_sqs.items():
+    for queue_name, subscription_list in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
-        ensure(isinstance(subscriptions, list), "Not a list of topics: %s" % subscriptions)
+        ensure(isinstance(subscription_list, list), "Not a list of topics: %s" % subscription_list)
 
         queue = sqs.get_queue_by_name(QueueName=queue_name)
-        for topic_name in subscriptions:
+        for topic_name in subscription_list:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
 
             # idempotent, works as lookup
@@ -192,8 +207,8 @@ def sub_sqs(stackname, context_sqs, region):
             topic_arn = topic_lookup['TopicArn']
 
             # deals with both subscription and IAM policy
-            # http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
-            # https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
+            # - http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
+            # - https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
             #response = sns.subscribe_sqs_queue(topic_arn, queue)
             # WARN: doesn't do all of the above in boto3
             #response = sns.subscribe(TopicArn=topic_arn, Protocol='sqs', Endpoint=queue.attributes['QueueArn'])
