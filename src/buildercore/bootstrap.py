@@ -123,28 +123,28 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     if policy['Statement']:
         return policy
 
-def unsub_sqs(stackname, new_context, region, dry_run=False):
-    sublist = core.all_sns_subscriptions(region, stackname)
+def unsub_sqs(stackname, context_sqs, region, dry_run=False):
+    all_subscriptions = core.all_sns_subscriptions(region, stackname)
 
     # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
     # don't know how it happened but we have cases where a project has multiple subscriptions to the same topic.
     # this would mean multiple duplicate notifications.
 
     # group subscriptions by Topic so we detect duplicates below.
-    sub_groups = utils.mkidx(lambda sub: sub['Topic'], sublist)
+    sub_groups = utils.mkidx(lambda sub: sub['Topic'], all_subscriptions)
 
     unsub_map = {}
-    for queue_name, subscriptions in new_context.items():
-        # compare project subscriptions to those actively subscribed to (sublist)
-        unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
+    for queue_name, ctx_subscription_list in context_sqs.items():
+        # compare project subscriptions to those actively subscribed to (`all_subscriptions`)
+        unsub_map[queue_name] = [sub for sub in all_subscriptions if sub['Topic'] not in ctx_subscription_list]
 
         # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
-        # look for subscription in topic groups with >1 topic and ensure it gets unsubbed.
-        for sub in sublist:
+        # look for subscription in sub groups with >1 subs and ensure it gets removed.
+        for sub in all_subscriptions:
             topic = sub['Topic']
             if topic in sub_groups and len(sub_groups[topic]) > 1:
-                msg_list = [t['SubscriptionArn'] for t in sub_groups[topic]]
-                LOG.warning("multiple SQS subscriptions to the same SNS topic found: %s" % msg_list)
+                msg_list = [t['SubscriptionArn'].split(':')[-1] for t in sub_groups[topic]]
+                LOG.warning("multiple SQS subscriptions to the SNS topic %r found: %s" % (topic, msg_list))
                 unsub_map[queue_name].append(sub_groups[topic].pop())
 
     # 'permissions' here is more like 'policy': what to do (send a message) when receiving a message from a source (SNS)
@@ -190,12 +190,12 @@ def sub_sqs(stackname, context_sqs, region):
     sqs = core.boto_resource('sqs', region)
     sns_client = core.boto_client('sns', region)
 
-    for queue_name, subscriptions in context_sqs.items():
+    for queue_name, subscription_list in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
-        ensure(isinstance(subscriptions, list), "Not a list of topics: %s" % subscriptions)
+        ensure(isinstance(subscription_list, list), "Not a list of topics: %s" % subscription_list)
 
         queue = sqs.get_queue_by_name(QueueName=queue_name)
-        for topic_name in subscriptions:
+        for topic_name in subscription_list:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
 
             # idempotent, works as lookup
@@ -207,8 +207,8 @@ def sub_sqs(stackname, context_sqs, region):
             topic_arn = topic_lookup['TopicArn']
 
             # deals with both subscription and IAM policy
-            # http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
-            # https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
+            # - http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
+            # - https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
             #response = sns.subscribe_sqs_queue(topic_arn, queue)
             # WARN: doesn't do all of the above in boto3
             #response = sns.subscribe(TopicArn=topic_arn, Protocol='sqs', Endpoint=queue.attributes['QueueArn'])
