@@ -228,7 +228,7 @@ defaults:
             # We also have some prebuilt IRSA permissions templates for services that can be running on the cluster
             # This is a dict with a unique name as key and an object mapping a prebuilt template applied to a role with an inline policy to a cluster service account as value
             # available templates are: kubernetes-autoscaler external-dns
-            iam_roles:
+            iam-roles:
                 # kubernetes-autoscaler:
                 #     policy-template: kubernetes-autoscaler
                 #     service-account: cluster-autoscaler-aws-cluster-autoscaler
