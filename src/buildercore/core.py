@@ -94,8 +94,8 @@ def _all_sns_subscriptions(region):
     return utils.shallow_flatten([page['Subscriptions'] for page in paginator.paginate()])
 
 def all_sns_subscriptions(region, stackname=None):
-    """returns all subscriptions to all sns topics.
-    optionally filtered by subscription endpoints matching given stack"""
+    """returns all SQS subscriptions to all SNS topics.
+    optionally filtered by subscription endpoints matching given `stackname`"""
     subs_list = _all_sns_subscriptions(region)
     if stackname:
         # a subscription looks like:

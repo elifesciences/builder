@@ -54,6 +54,39 @@ pillar_roots:
             )
             self.assertEqual(expected, actual)
 
+    def test_unsub_sqs_detect_multiple_subs(self):
+        "when multiple subscriptions to a single topic exist, unsusbscribe from them"
+        stackname = 'observer--end2end'
+        fixture = json.load(open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r'))
+
+        multiple_sub_same_topic = {
+            "Topic": "bus-articles--end2end",
+            "Endpoint": "arn:aws:sqs:us-east-1:512686554592:observer--end2end",
+            "Protocol": "sqs",
+            "Owner": "512686554592",
+            "TopicArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end",
+            "SubscriptionArn": "arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:foobar"
+        }
+        # order is important, most recent sub loses out
+        #fixture.insert(0, multiple_sub_same_topic)
+        fixture.append(multiple_sub_same_topic)
+
+        with mock.patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
+            context = {stackname: ['bus-articles--end2end', 'bus-metrics--end2end']}
+            actual = bootstrap.unsub_sqs(stackname, context, 'someregion', dry_run=True)
+            expected_unsub_map = {
+                stackname: [
+                    {'Endpoint': 'arn:aws:sqs:us-east-1:512686554592:observer--end2end',
+                     'Owner': '512686554592',
+                     'Protocol': 'sqs',
+                     'SubscriptionArn': 'arn:aws:sns:us-east-1:512686554592:bus-articles--end2end:foobar',
+                     'Topic': 'bus-articles--end2end',
+                     'TopicArn': 'arn:aws:sns:us-east-1:512686554592:bus-articles--end2end'}]}
+            expected_perm_map = {
+                'observer--end2end': ['arn:aws:sns:us-east-1:512686554592:bus-articles--end2end']}
+            expected = (expected_unsub_map, expected_perm_map)
+            assert expected == actual
+
     def test_remove_topics_from_sqs_policy(self):
         original = {
             'Version': '2008-10-17',
