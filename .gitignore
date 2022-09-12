@@ -21,6 +21,7 @@ private/
 downloads
 .coverage.*
 .coverage
+htmlcov/
 scripts/customize.sh
 scripts/salt/*.minion
 /custom-vagrant/salt/
