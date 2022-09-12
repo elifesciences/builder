@@ -22,6 +22,8 @@ def data(pname, output_format=None):
 @requires_project
 @echo_output
 def context(pname, output_format=None):
+    """generates dummy context data for the given project `pname`.
+    optionally `output_format` will print context in `json` or `yaml`."""
     formatters = {
         'json': core_utils.json_dumps,
         'yaml': core_utils.yaml_dumps,

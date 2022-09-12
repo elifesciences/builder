@@ -6,7 +6,7 @@ from buildercore.project import stack_config
 def test_stack():
     fixture = base.fixture_path("stack_config/stacks.yaml")
     expected = {}
-    actual = stack_config.all_stacks_data(fixture)
+    actual = stack_config.all_stack_data(fixture)
 
     #import json
     #print(json.dumps(actual, indent=4))

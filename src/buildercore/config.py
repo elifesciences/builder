@@ -171,3 +171,9 @@ USER_PRIVATE_KEY = ENV['CUSTOM_SSH_KEY']
 # 'Test With Instance', see integration_tests.test_with_instance
 TWI_REUSE_STACK = ENV['BLDR_TWI_REUSE_STACK'] == '1' # use existing test stack if exists
 TWI_CLEANUP = ENV['BLDR_TWI_CLEANUP'] == '1' # tear down test stack after testing
+
+
+# ---
+
+# todo: pull this from the user config
+TEMP_PROJECT_STACK_CONFIG = os.path.join(PROJECT_PATH, "projects/stacks.yaml")

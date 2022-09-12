@@ -1,5 +1,9 @@
 defaults:
-    description: defaults for all projects in this file
+    description: default settings for all projects in *this* file.
+    meta:
+        # distinguishes this data from other types and versions of configuration data
+        type: project
+        version: 1
     salt: '3003' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org

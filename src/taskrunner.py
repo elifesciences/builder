@@ -3,7 +3,7 @@ from buildercore import config, threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks
+import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks, stack
 import sys, traceback
 import utils
 
@@ -87,6 +87,9 @@ TASK_LIST = [
     project.data,
     project.context,
     project.new,
+
+    stack.list,
+    stack.config,
 
     # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.launch,

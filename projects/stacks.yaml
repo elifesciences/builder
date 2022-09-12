@@ -1,0 +1,35 @@
+defaults:
+    description: 
+    meta:
+        # distinguishes this data from other types and versions of configuration data
+        type: stack
+        version: 0
+    resource-list: []
+    resource-map:
+        terraform-project--v1: # resource ID, can be anything so long as it's unique
+            description: a relative path to a directory of terraform JSON.
+            meta:
+                type: builder-project # resource class, used for validation of data
+                version: 1 # resource class version, used for validation of data
+            path: # path/to/terraform/dir/ I suppose
+        builder-project--v1:
+            description: an instance of an project created by builder and configured in projects/elife.yaml
+            meta:
+                type: builder-project
+                version: 1
+                # put these under a 'read-only' section instead of 'meta'?
+                # I fancy these will be fields that are useful at a glance but otherwise not used.
+                created: # project instance created date, populated externally
+                updated: # project instance updated date, populated externally
+            name: # project name
+            instance-id: # project's instance ID
+
+example-stack-identifier:
+    description: |
+        a description for this example stack of resources
+        a resource stack is literally a list of things managed by Cloudformation/Terraform
+        a 'resource' describes some bit of infrastructure 
+        defining it here demonstrates that we know about it and have brought it under configuration control
+    resource-list:
+        - builder-project--v1:
+            key: foo

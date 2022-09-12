@@ -46,22 +46,22 @@ def deep_merge(d1, d2):
 
 # ---
 
-def read_stacks_file(path):
+def read_stack_file(path):
     "reads the contents of the YAML file at `path`."
     return utils.yaml_load(open(path, 'r'))
 
-def parse_stacks_data(stacks_data):
+def parse_stack_map(stack_map):
     "returns a pair of `(stack-defaults, map-of-stackname-to-stackdata)`"
-    if stacks_data is None:
+    if stack_map is None:
         return ({}, {})
-    ensure(isinstance(stacks_data, dict), "stacks data must be a dictionary, not type %r" % type(stacks_data))
-    ensure("defaults" in stacks_data, "stacks data missing a `default` section: %s" % stacks_data.keys())
-    ensure("resource-map" in stacks_data["defaults"], "defaults section is missing a `resource-map` field: %s" % list(stacks_data.keys()))
-    defaults = stacks_data.pop("defaults")
-    return defaults, stacks_data
+    ensure(isinstance(stack_map, dict), "stack data must be a dictionary, not type %r" % type(stack_map))
+    ensure("defaults" in stack_map, "stack data missing a `default` section: %s" % stack_map.keys())
+    ensure("resource-map" in stack_map["defaults"], "defaults section is missing a `resource-map` field: %s" % list(stack_map.keys()))
+    defaults = stack_map.pop("defaults")
+    return defaults, stack_map
 
-def _stack_data(stack_defaults, stack_data):
-    sd = deep_merge(stack_defaults, stack_data)
+def _stack_data(stack_defaults, raw_stack_data):
+    sd = deep_merge(stack_defaults, raw_stack_data)
 
     def deep_merge_resource(resource):
         resource_name, resource_data = list(resource.items())[0]
@@ -71,7 +71,16 @@ def _stack_data(stack_defaults, stack_data):
     del sd['resource-map']
     return sd
 
-def all_stacks_data(path):
-    stacks_data = read_stacks_file(path)
-    stack_defaults, stack_list = parse_stacks_data(stacks_data)
-    return {stackname: _stack_data(stack_defaults, stack_data) for stackname, stack_data in stack_list.items()}
+# ---
+
+def stack_data(stackname, path):
+    "convenience. reads the data for a single stack at the given `path`"
+    stack_map = read_stack_file(path)
+    stack_defaults, stack_map = parse_stack_map(stack_map)
+    return _stack_data(stack_defaults, stack_map.get(stackname, {}))
+
+
+def all_stack_data(path):
+    stack_map = read_stack_file(path)
+    stack_defaults, stack_map = parse_stack_map(stack_map)
+    return {stackname: _stack_data(stack_defaults, stack_data) for stackname, stack_data in stack_map.items()}

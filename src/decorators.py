@@ -3,6 +3,7 @@ import os
 from os.path import join
 import utils
 from buildercore import core, project, config, cloudformation
+from buildercore.project import stack_config
 from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr, ensure
 from functools import wraps
 from pprint import pformat
@@ -132,3 +133,15 @@ def echo_output(func):
             print(pformat(remove_ordereddict(res)))
         return res
     return _wrapper
+
+# ---
+
+def requires_project_stack(func):
+    @wraps(func)
+    def call(*args, **kwargs):
+        stackname = first(args)  # or config.ENV['INSTANCE'] # preserve this? I can't see anything using it.
+        ensure(stackname, "stack name required", utils.TaskExit)
+        stack_list = stack_config.all_stack_data(config.TEMP_PROJECT_STACK_CONFIG)
+        ensure(stackname in stack_list, "stack not found", utils.TaskExit)
+        return func(stackname, *args[1:], **kwargs)
+    return call
