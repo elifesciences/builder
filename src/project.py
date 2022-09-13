@@ -22,6 +22,8 @@ def data(pname, output_format=None):
 @requires_project
 @echo_output
 def context(pname, output_format=None):
+    """generates dummy context data for the given project `pname`.
+    optionally `output_format` will print context in `json` or `yaml`."""
     formatters = {
         'json': core_utils.json_dumps,
         'yaml': core_utils.yaml_dumps,
@@ -35,7 +37,7 @@ def context(pname, output_format=None):
 def _clone_project_formula(furl):
     """clones a formula to `./cloned-projects/$formulaname`, if it doesn't already exist.
     if it does exist, it attempts to update it with a `git pull`."""
-    destination = config.CLONED_PROJECT_FORMULA_DIR # /path/to/builder/cloned-projects
+    destination = config.CLONED_PROJECT_FORMULA_PATH # /path/to/builder/cloned-projects
     fpath = os.path.join(destination, os.path.basename(furl)) # /path/to/builder/cloned-projects/builder-base-formula
 
     cmd = "cd %s; git clone %s" % (destination, furl)

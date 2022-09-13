@@ -2,7 +2,7 @@
 .tox/
 /build/
 /.pytest_cache/
-settings.yml
+settings.yaml
 *~
 builder-private/
 cloned-projects/
@@ -21,6 +21,7 @@ private/
 downloads
 .coverage.*
 .coverage
+htmlcov/
 scripts/customize.sh
 scripts/salt/*.minion
 /custom-vagrant/salt/

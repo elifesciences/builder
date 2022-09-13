@@ -15,7 +15,6 @@ import json, os
 from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
-from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, wafv2
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
@@ -1252,7 +1251,7 @@ def external_dns_fastly(context):
                 TTL="60",
                 ResourceRecords=ip_addresses,
             )
-            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
+            raise ValueError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
 
         hostedzone = context['domain'] + "."
         cname = context['fastly']['dns']['cname']

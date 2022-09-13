@@ -47,9 +47,6 @@ def write(key, something, overwrite=False):
         # the check in isstr above is actually moving it's pointer
         something.seek(0)
         k.put(Body=something) # py3 file
-    # TODO: py2 warning
-    elif isinstance(something, file):
-        k.put(Body=something) # py2 file
     else:
         raise ValueError("boto can't handle value of type %r, just strings and files" % type(something))
 

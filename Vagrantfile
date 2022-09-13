@@ -42,7 +42,6 @@ def runningvms()
         running = v.lines()
         x = []
         running.each do |raw_line|
-            # ll:
             # "builder_elife-lax--vagrant_1436877493449_44526" {4fdd43b7-5732-4d14-8f0d-cef087a5e650}
             bits = raw_line.split("_")
             x.push(bits[1])
@@ -122,7 +121,7 @@ else
                 next
             end
             
-            INSTANCE_NAME = KEYED[opt] # ll: elife-lax--vagrant
+            INSTANCE_NAME = KEYED[opt] # "elife-lax--vagrant"
             break
         end
         
@@ -138,7 +137,7 @@ else
 
 end
 
-PROJECT_NAME = SUPPORTED_PROJECTS[INSTANCE_NAME]  # ll: elife-lax
+PROJECT_NAME = SUPPORTED_PROJECTS[INSTANCE_NAME]  # "elife-lax"
 IS_MASTER = PROJECT_NAME == "master-server"
 
 # necessary because we allow passing a project's name in via an ENV var

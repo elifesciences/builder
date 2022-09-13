@@ -15,12 +15,19 @@ import imp
 
 LOG = logging.getLogger(__name__)
 
+def set_config(key, value):
+    """modify configuration values in `buildercore/config.py`.
+    returns a cleanup function to call in `tearDown` that will reset the value."""
+    old_value = getattr(config, key, None)
+    setattr(config, key, value)
+    return lambda: setattr(config, key, old_value)
+
 def generate_environment_name():
     """to avoid multiple people clashing while running their builds
        and new builds clashing with older ones"""
     who = check_output('whoami').rstrip().decode()
     now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    return "-".join([who, now, str(randint(1, 1000000))]) # ll: luke-20180420022437-51631
+    return "-".join([who, now, str(randint(1, 1000000))]) # "luke-20180420022437-51631"
 
 this_dir = os.path.realpath(os.path.dirname(__file__))
 fixtures_dir = join(this_dir, 'fixtures')
@@ -36,11 +43,10 @@ def fixture(fixture_subpath):
 def switch_in_test_settings(projects_files=None):
     if not projects_files:
         projects_files = ['src/tests/fixtures/projects/']
-    config.PROJECTS_FILES = projects_files
+    config.PROJECTS_PATH_LIST = projects_files
     # lsh@2021-06-22: may not be necessary any more.
     # project_map now returns a deepcopy of cached results.
     project._project_map.cache_clear()
-    config.app.cache_clear()
 
 def switch_out_test_settings():
     # clear any caches and reload the config module
@@ -73,7 +79,6 @@ class BaseCase(TestCase):
             parent.assertCountEqual(*args)
 
     # pyline: disable=invalid-name
-
     def assertAllPairsEqual(self, fn, pair_lst):
         "given a function and a list of (given, expected) asserts all fn(given) == expected"
         for given, expected in pair_lst:

@@ -132,7 +132,7 @@ def refresh(stackname, context=None):
         if not node or not str(node).isdigit():
             # (very) old buildvars. try parsing 'nodename'
             nodename = old_buildvars.get('nodename')
-            if nodename: # ll: "elife-dashboard--prod--1"
+            if nodename: # "elife-dashboard--prod--1"
                 node = nodename.split('--')[-1]
                 if not node.isdigit():
                     LOG.warning("nodename ends in a non-digit node: %s", nodename)

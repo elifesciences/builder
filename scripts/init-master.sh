@@ -13,7 +13,7 @@ export DEBIAN_FRONTEND=noninteractive # no ncurses prompts
 
 echo "-----------------------------"
 
-stackname=$1 # who am I? ll: master-server--2016-01-01
+stackname=$1 # who am I? "master-server--prod"
 pillar_repo=$2 # what secrets do I know?
 configuration_repo=$3 # what configuration do I know?
 formulas=$4 # which formulas will I use?

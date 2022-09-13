@@ -2,7 +2,7 @@ import logging
 import os, sys
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from buildercore import config
-from buildercore.utils import second, last, gtpy2, isint
+from buildercore.utils import second, last, isint
 from buildercore.command import local
 from buildercore import core
 
@@ -52,8 +52,7 @@ def get_input(message):
     # TODO
     # if config.BUILDER_NON_INTERACTIVE:
     #    raise IOError("stdin requested in non-interactive mode.")
-    fn = input if gtpy2() else raw_input
-    return fn(message)
+    return input(message)
 
 def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
     default = None

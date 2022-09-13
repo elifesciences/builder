@@ -1,6 +1,5 @@
 import pytest
 import re
-import os
 import utils
 from . import base
 from buildercore import cfngen, context_handler
@@ -58,10 +57,10 @@ def test_launch_project_with_unique_altconfig(test_projects):
 
 class TestCfn(base.BaseCase):
     def setUp(self):
-        os.environ['LOGNAME'] = 'my_user'
+        self.reset_stack_author = base.set_config('STACK_AUTHOR', 'my_user')
 
     def tearDown(self):
-        del os.environ['LOGNAME']
+        self.reset_stack_author()
 
     # all non-interactive cases
     @patch('buildercore.core.describe_stack')

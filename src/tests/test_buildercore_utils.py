@@ -8,6 +8,24 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+def test_unique():
+    case_list = [
+        # empty collections are supported, but only lists are returned
+        ([], []),
+        ((), []),
+        ({}, []),
+        # no changes if already unique
+        ([1, 2, 3], [1, 2, 3]),
+        # unique items are removed
+        ([1, 1, 2, 3], [1, 2, 3]),
+        # multiple unique items are removed
+        ([1, 1, 1, 1], [1]),
+        # order is preserved
+        ([3, 2, 1, 2, 3], [3, 2, 1])
+    ]
+    for given, expected in case_list:
+        assert utils.unique(given) == expected
+
 class Simple(base.BaseCase):
     def setUp(self):
         pass
