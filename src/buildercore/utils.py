@@ -44,6 +44,7 @@ def shallow_flatten(lst):
 # lsh@2022-08-31: removed more-itertools in favour of:
 # - https://stackoverflow.com/questions/44628186/convert-python-list-to-ordered-unique-values
 def unique(lst):
+    "returns a new list of items from given `lst` with duplicates removed, preserving item order."
     #from more_itertools import unique_everseen
     # return list(unique_everseen(lst))
     seen = set()
@@ -269,7 +270,7 @@ def remove_ordereddict(data, dangerous=True):
     return json.loads(json_dumps(data, dangerous))
 
 def listfiles(path, ext_list=None):
-    """returns a list of absolute paths for given dir.
+    """returns a list of absolute paths for given `path`.
     any file extensions in `ext_list` will filter the list of files returned."""
     path_list = [os.path.abspath(join(path, fname)) for fname in os.listdir(path)]
     if ext_list:

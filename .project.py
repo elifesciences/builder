@@ -26,8 +26,8 @@ from buildercore import project, utils, bootstrap, config
 
 output = None
 
-config.PROJECTS_FILES += ['src/tests/fixtures/projects/dummy-project.yaml',
-                          'src/tests/fixtures/projects/dummy-projec2.yaml']
+config.PROJECTS_PATH_LIST += ['src/tests/fixtures/projects/dummy-project.yaml',
+                              'src/tests/fixtures/projects/dummy-projec2.yaml']
 
 # specific project, specific task
 if args.pname:

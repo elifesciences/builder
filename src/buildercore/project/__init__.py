@@ -2,7 +2,7 @@
 import os
 from buildercore import utils, config
 from kids.cache import cache
-from . import files
+from . import files, stack_config
 import copy
 import logging
 from functools import reduce
@@ -23,7 +23,7 @@ def set_project_alt(pdata, env, altkey):
     return pdata_copy
 
 def _parse_path(project_path):
-    """converts a given path into zero or many paths.
+    """converts the given `project_path` into zero or many paths.
     if `project_path` does not exist, it will be discarded with a warning.
     if `project_path` is a directory containing `.yaml` files, each `.yaml` file will be returned."""
     path = os.path.abspath(os.path.expanduser(project_path))
@@ -56,13 +56,15 @@ def _project_map(project_locations_list=None):
         d1.update(d2)
         return d1
 
+    path_list = project_locations_list or config.PROJECTS_PATH_LIST
+
     # a list of paths
     # ['/path/to/projects.yaml', ...]
-    project_locations_list = parse_path_list(config.PROJECTS_FILES)
+    path_list = parse_path_list(path_list)
 
     # a list of parsed project data
     # [{'/path/to/projects.yaml': {'project1': {...}, 'project2': {...}, ...}, {'/path/to/another-projects.yaml': {...}}, ...]
-    data = [files.projects_from_file(path) for path in project_locations_list]
+    data = [files.projects_from_file(path) for path in path_list]
 
     # a single map of paths to parsed project data
     # {'/path/to/projects.yaml': {'project1': {...}, 'project2': {...}, ...}, '/path/to/another-projects.yaml': {...}, ...}
@@ -131,3 +133,41 @@ def project_formulas():
 def known_formulas():
     "a simple list of all known project formulas"
     return utils.lfilter(None, utils.unique(utils.shallow_flatten(project_formulas().values())))
+
+#
+#
+#
+
+def _stack_map(path_list=None):
+    """returns a single map of all projects and their data"""
+    def merge(d1, d2):
+        d1.update(d2)
+        return d1
+
+    path_list = path_list or config.STACKS_PATH_LIST
+
+    # a list of paths
+    # ['/path/to/projects.yaml', ...]
+    path_list = parse_path_list(path_list)
+
+    # a list of parsed project data
+    # [{'/path/to/stack.yaml': {'stack1': {...}, 'stack2': {...}, ...}, {'/path/to/another-stack.yaml': {...}}, ...]
+    data = [{path: stack_config.all_stack_data(path)} for path in path_list]
+
+    # a single map of paths to parsed project data
+    # {'/path/to/stack.yaml': {'stack1': {...}, 'stack2': {...}, ...}, '/path/to/another-stacks.yaml': {...}, ...}
+    data = reduce(merge, data, {})
+
+    # a list of parsed stack data.
+    # [{'stack1': {...}, 'stack2': {...}, ...}, {...}, ...]
+    data = data.values()
+
+    # a single map of parsed stack data.
+    # {'stack1': {...}, 'stack2': {...}, ...}
+    # note: if you have two stacks with the same name in different files, one will replace the other.
+    # precedence depends on order of paths in given `project_locations_list`, earlier paths are overridden by later.
+    return reduce(merge, data, {})
+
+def stack_map(path_list=None):
+    "returns a single map of all stacks and their data."
+    return utils.deepcopy(_stack_map(path_list))

@@ -1,23 +1,23 @@
 defaults:
-    description: 
+    description: # leave empty so stacks don't inherit a description
     meta:
         # distinguishes this data from other types and versions of configuration data
-        type: stack # or 'project-instance' ?
-        version: 0
+        type: stack
+        version: 0 # '0' just means it's brand new, highly unstable and almost anything goes.
     resource-list: []
     resource-map:
-        terraform-project--v1: # resource ID, can be anything so long as it's unique
-            description: a relative path to a directory of terraform JSON.
+        terraform-project: # resource ID, can be anything so long as it's unique
             meta:
-                type: builder-project # resource class, used for validation of data
-                version: 1 # resource class version, used for validation of data
-            path: # path/to/terraform/dir/ I suppose
-        builder-project--v1:
-            description: an instance of an project created by builder and configured in projects/elife.yaml
+                description: a relative path to a directory of terraform JSON.
+                type: terraform-project # resource class, used for validation of data, not neccessarilyb the same as resource ID
+                version: 0 # resource class version, used for validation of data
+            path: # path/to/terraform/project/config/ I suppose
+        builder-project:
             meta:
+                description: an instance of an project created by builder and configured in projects/elife.yaml
                 type: builder-project
-                version: 1
-                # put these under a 'read-only' section instead of 'meta'?
+                version: 0
+            read-only:
                 # I fancy these will be fields that are useful at a glance but otherwise not used.
                 created: # project instance created date, populated externally
                 updated: # project instance updated date, populated externally
@@ -31,5 +31,6 @@ example-stack-identifier:
         a 'resource' describes some bit of infrastructure 
         defining it here demonstrates that we know about it and have brought it under configuration control
     resource-list:
-        - builder-project--v1:
-            key: foo
+        - builder-project:
+            name: journal
+            instance-id: prod

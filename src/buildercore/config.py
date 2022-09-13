@@ -2,7 +2,7 @@
 
 Avoid modifying these values during normal usage.
 
-See `settings.yaml` for per-user configuration.
+See `settings.yaml.dist` for per-user configuration.
 
 See `config.ENV` for a list of supported envvars and their defaults.
 
@@ -51,8 +51,8 @@ WHOAMI = getpass.getuser()
 
 STACK_AUTHOR = WHOAMI # added to context data, see cfngen.py
 
-PROJECT_PATH = os.getcwd() # "/path/to/elife-builder/"
-SRC_PATH = join(PROJECT_PATH, 'src') # "/path/to/elife-builder/src/"
+PROJECT_PATH = os.getcwd() # "/path/to/builder/"
+SRC_PATH = join(PROJECT_PATH, 'src') # "/path/to/builder/src/"
 
 TEMP_PATH = "/tmp/"
 
@@ -83,7 +83,8 @@ lmap(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_
 USER_SETTINGS_FILE = "settings.yaml"
 USER_SETTINGS_PATH = join(PROJECT_PATH, USER_SETTINGS_FILE)
 USER = {
-    'project-files': [join(PROJECTS_DIR, 'elife.yaml')]
+    'project-files': [join(PROJECTS_DIR, 'elife.yaml')],
+    'stack-files': [],
 }
 if os.path.exists(USER_SETTINGS_PATH):
     USER.update(utils.yaml_load(open(USER_SETTINGS_PATH, 'r')))
@@ -152,12 +153,10 @@ CONTEXT_PREFIX = 'contexts/'
 # these sections *shouldn't* be merged if they *don't* exist in the project
 CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf']
 
-PROJECTS_FILES = USER['project-files']
-#PROJECTS_FILES = utils.shallow_flatten(USER['project-files'], ['src/tests/fixtures/projects/'])
-ensure(isinstance(PROJECTS_FILES, list), "'PROJECTS_FILES' must be a list, not a %r. check your settings.yaml file." % type(PROJECTS_FILES))
-# all project files are rooted in the builder project directory. no good reason.
-# todo: rename PROJECTS_PATHS
-PROJECTS_FILES = [join(PROJECT_PATH, f) for f in PROJECTS_FILES]
+ensure(isinstance(USER['project-files'], list),
+       "'project-files' must be a list, not a %r. check your settings.yaml file." % type(USER['project-files']))
+# all project files are rooted in the builder project directory. no good reason, subject to change.
+PROJECTS_PATH_LIST = [join(PROJECT_PATH, project_file) for project_file in USER['project-files']]
 
 CLONED_PROJECT_FORMULA_PATH = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
 
@@ -175,5 +174,4 @@ TWI_CLEANUP = ENV['BLDR_TWI_CLEANUP'] == '1' # tear down test stack after testin
 
 # ---
 
-# todo: pull this from the user config
-TEMP_PROJECT_STACK_CONFIG = os.path.join(PROJECT_PATH, "projects/stacks.yaml")
+STACKS_PATH_LIST = [join(PROJECT_PATH, stack_file) for stack_file in USER['stack-files']]

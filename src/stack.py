@@ -1,21 +1,19 @@
-from buildercore import config as core_config
-from buildercore.project import stack_config
-from decorators import requires_project_stack, echo_output
+from buildercore import project
+from decorators import requires_stack_config, echo_output
 import utils
 
+@echo_output
 def list(include_resources=True):
     """prints the list of known stacks.
     by default also prints the stack's list of resources."""
     include_resources = utils.strtobool(include_resources)
-    stack_map = stack_config.all_stack_data(core_config.TEMP_PROJECT_STACK_CONFIG)
-    for stackname, stackdata in stack_map.items():
-        print(stackname)
-        if include_resources:
-            for resource in stackdata['resource-list']:
-                print("    -", resource['meta']['type'])
+    stack_map = project.stack_map()
+    if include_resources:
+        return [{stackname: [r['meta']['type'] for r in stackdata['resource-list']]} for stackname, stackdata in stack_map.items()]
+    return stack_map.keys()
 
 @echo_output
-@requires_project_stack
+@requires_stack_config
 def config(stackname):
     "prints the stack configuration for the given `stackname`"
-    return stack_config.stack_data(stackname, core_config.TEMP_PROJECT_STACK_CONFIG)
+    return project.stack_map()[stackname]

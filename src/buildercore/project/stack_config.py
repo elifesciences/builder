@@ -1,11 +1,11 @@
 """
 'stack' configuration deals with *extant* infrastructure - stuff that is out there in the world.
 
-In contrast to 'project' configuration (./projects/elife.yaml) which is a template based.
+In contrast to 'project' configuration (./projects/elife.yaml) which is template based.
 
 Template-based project configuration already muddies the water between 'just a template' and actual infrastructure,
-which is why we have 'unique' alt-configs that can't be used like a template at all (see `journal--prod` or anything
-that is `unique: true`).
+which is why we have 'unique' alt-configs that can't be used like a template at all (see `journal--prod` or any alt-config
+that is marked with `unique: true`).
 
 Once an instance of a project is created it can be added to the stack config (or not) and managed that way.
 
@@ -61,6 +61,12 @@ def parse_stack_map(stack_map):
     return defaults, stack_map
 
 def _stack_data(stack_defaults, raw_stack_data):
+    """merges the `stack_defaults` dict with the abbreviated `raw_stack_data` dict resulting in a 'full' stack.
+    each resource in `resource-list` is merged with it's definition in `resource-map`.
+    `resource-map` definitions are subject to deep-merge as well prior to resource-list being filled out,
+    so it's possible (but not recommended) for you to add or override a per-stack resource definition.
+    `resource-map` definitions are stripped off before being returned.
+    behaves very similarly to project-config."""
     sd = deep_merge(stack_defaults, raw_stack_data)
 
     def deep_merge_resource(resource):
@@ -74,13 +80,13 @@ def _stack_data(stack_defaults, raw_stack_data):
 # ---
 
 def stack_data(stackname, path):
-    "convenience. reads the data for a single stack at the given `path`"
+    "convenience. reads and processes the data for a single stack at the given `path`."
     stack_map = read_stack_file(path)
     stack_defaults, stack_map = parse_stack_map(stack_map)
     return _stack_data(stack_defaults, stack_map.get(stackname, {}))
 
-
 def all_stack_data(path):
+    "reads and processes the data for all stacks at the given `path`."
     stack_map = read_stack_file(path)
     stack_defaults, stack_map = parse_stack_map(stack_map)
     return {stackname: _stack_data(stack_defaults, stack_data) for stackname, stack_data in stack_map.items()}

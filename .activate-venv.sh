@@ -1,11 +1,6 @@
 #!/bin/bash
 set -e
 
-# lsh@2022-8-31: per-user settings in settings.yaml
-if [ ! -e settings.yaml ]; then
-    cp settings.yaml.dist settings.yaml
-fi
-
 # lsh@2022-02-14: threadbare is now the default backend. flag switched to '.use-fabric.flag'
 rm -f .use-threadbare.flag
 
