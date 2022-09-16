@@ -106,9 +106,7 @@ def force(stackname, field, new_value):
     ec2 instances in given `stackname`.
     Can only be used to *replace* an *existing* key and not create new ones.
     `field` can be a dotted path for targeting values inside nested maps.
-    For example: `force("lax--prod", "elb.stickiness", True)`
-    None values, booleans and integers are coerced to their literal types.
-    For example, `"true"` becomes `True`."""
+    For example: `force("lax--prod", "elb.stickiness", True)`"""
 
     new_value = utils.coerce_string_value(new_value)
 

@@ -4,7 +4,7 @@ from functools import reduce
 from decorators import echo_output
 from buildercore import command
 import cfn, lifecycle, masterless, vault, aws, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks, stack
-import aws.rds, aws.cloudformation
+import aws.rds, aws.cloudformation, aws.ec2
 import sys, traceback
 import utils
 
@@ -89,6 +89,8 @@ TASK_LIST = [
 
     stack.list,
     stack.config,
+
+    aws.ec2.restart,
 
     # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.launch,
