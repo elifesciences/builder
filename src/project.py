@@ -52,7 +52,7 @@ def clone_project_formulas(pname):
     [_clone_project_formula(furl) for furl in project.project_formulas()[pname]]
 
 def clone_all_project_formulas():
-    """clones the formulas and formula dependencies of all known projects.
+    """clones formulas and formula dependencies of all known projects.
     does not attempt to clone a repository more than once."""
     [_clone_project_formula(furl) for furl in project.known_formulas()]
 

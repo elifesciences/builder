@@ -101,12 +101,14 @@ def fix(stackname):
 
 @requires_aws_stack
 def force(stackname, field, new_value):
-    """replaces the value of `field` with `new_value` in all buildvars on all ec2 instances in given `stackname`.
-    can only be used to *replace* an *existing* key and not create new ones.
+    """Force a change to a single buildvar.
+    Replaces the value of `field` with `new_value` in all buildvars on all
+    ec2 instances in given `stackname`.
+    Can only be used to *replace* an *existing* key and not create new ones.
     `field` can be a dotted path for targeting values inside nested maps.
     For example: `force("lax--prod", "elb.stickiness", True)`
-    none values, booleans and integers are coerced to their literal types,
-    for example, `"true"` becomes `True`."""
+    None values, booleans and integers are coerced to their literal types.
+    For example, `"true"` becomes `True`."""
 
     new_value = utils.coerce_string_value(new_value)
 

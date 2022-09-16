@@ -58,9 +58,9 @@ def download_keypair(stackname):
 @echo_output
 @cached
 def server_access():
-    """returns True if this builder instance has access to the master server.
-    access may be available through presence of the master-server's bootstrap user's
-    identify file OR current user is in master server's allowed_keys list"""
+    """Prints True if builder has access to the master server.
+    Access may be available via because you created the master-server.
+    Access may be available via master-server's allowed_keys list."""
     stackname = core.find_master(core.find_region())
     public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['PublicIpAddress']
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
@@ -105,7 +105,7 @@ def update_salt_master(region=None):
 
 @requires_aws_stack
 def remaster(stackname, new_master_stackname="master-server--prod", skip_context_check=False):
-    "tell minion who their new master is. deletes any existing master key on minion"
+    "Tell a minion who their new master is."
     skip_context_check = utils.strtobool(skip_context_check)
     # start instance if it is stopped
     # acquire a lock from Alfred (if possible) so instance isn't shutdown while being updated

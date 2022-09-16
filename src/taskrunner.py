@@ -3,7 +3,8 @@ from buildercore import config, threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks, stack
+import cfn, lifecycle, masterless, vault, aws, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks, stack
+import aws.rds, aws.cloudformation
 import sys, traceback
 import utils
 
@@ -62,8 +63,6 @@ UNQUALIFIED_TASK_LIST = [
 # NOTE: these are 'qualified' tasks where the full path to the function must be used.
 # for example: `./bldr buildvars.switch_revision`
 TASK_LIST = [
-    metrics.regenerate_results, # todo: remove
-
     # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     tasks.create_ami,
     tasks.repair_cfn_info,
@@ -127,14 +126,14 @@ UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.highstate,
     cfn.fix_bootstrap,
     cfn.pillar,
-    cfn.aws_stack_list,
+    # cfn.aws_stack_list, # moved to 'aws.cloudformation.stack_list'
 ]
 
 # same as above, but the task name must be fully written out
 # for example: 'BLDR_ROLE=admin ./bldr master.download_keypair'
 DEBUG_TASK_LIST = [
-    aws.rds_snapshots,
-    aws.detailed_stack_list,
+    aws.rds.snapshot_list,
+    aws.cloudformation.stack_list,
 
     deploy.load_balancer_status,
 
@@ -159,13 +158,22 @@ DEBUG_TASK_LIST = [
 def mk_task_map(task, qualified=True):
     """returns a map of information about the given task function.
     when `qualified` is `False`, the path to the task is truncated to just the task name"""
-    path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
+    # lsh@2022-09-16: not sure why I was truncating the module path ('aws.rds' => 'rds'),
+    # but I need the full thing now.
+    #path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
+    path = "%s.%s" % (task.__module__, task.__name__)
     unqualified_path = task.__name__
-    description = (task.__doc__ or '').strip().replace('\n', ' ')
+    #description = (task.__doc__ or '').strip().replace('\n', ' ')
+    docstr = (task.__doc__ or '').replace('  ', '')
+    docstr_bits = docstr.split('\n', 1)
+    short_str = docstr_bits[0]
+    more_str = docstr_bits[1] if len(docstr_bits) > 1 else ''
     return {
         "name": path if qualified else unqualified_path,
         "path": path,
-        "description": description,
+        "description": short_str,
+        "docstr": docstr,
+        "long_description": more_str,
         "fn": task,
     }
 
@@ -302,18 +310,27 @@ def main(arg_list):
 
     if not command_string or command_string in ["-l", "--list"]:
         print("Available commands:\n")
-        indent = 4
+        indent = 2
         max_path_len = reduce(max, [len(tm['name']) for tm in task_map_list])
         task_description_gap = 2
-        max_description_len = 60
+        #max_description_len = 70
         for tm in task_map_list:
             path_len = len(tm['name'])
             offset = (max_path_len - path_len) + task_description_gap
-            offset = ' ' * offset
+            offset_str = ' ' * offset
             task_name = tm['name']
-            description = tm['description'][:max_description_len]
             leading_indent = ' ' * indent
-            print(leading_indent + task_name + offset + description)
+            new_indent = ' ' * (indent + len(task_name) + offset)
+
+            print(leading_indent + task_name + offset_str + tm['description'])
+            for row in tm['long_description'].split('\n'):
+                row = row.strip()
+                if not row:
+                    continue
+                print(new_indent + row)
+
+            if tm['long_description']:
+                print()
 
         # no explicit invocation of help gets you an error code
         return 0 if command_string else 1
