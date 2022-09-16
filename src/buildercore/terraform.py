@@ -1062,13 +1062,13 @@ def _render_eks_iam_access(context, template):
 
     if 'iam-roles' in context['eks']:
         for rolename, role_definition in context['eks']['iam-roles'].items():
-            if not role_definition['policy-template']:
+            if not 'policy-template' in role_definition:
                 raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
 
-            if not IRSA_POLICY_TEMPLATES[role_definition['policy-template']]:
+            if not role_definition['policy-template'] in IRSA_POLICY_TEMPLATES:
                 raise RuntimeError("Could not find policy template with the name %s" % role_definition['policy-template'])
 
-            if not role_definition['service-account'] or not role_definition['namespace']:
+            if not 'service-account' in role_definition or not 'namespace' in role_definition:
                 raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
 
             stackname = context['stackname']
