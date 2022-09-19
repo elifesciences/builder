@@ -15,7 +15,6 @@ def stop(stackname, *services):
     like 'rds' can be passed in"""
     if not services:
         services = ['ec2']
-
     lifecycle.stop(stackname, services)
 
 @requires_aws_stack

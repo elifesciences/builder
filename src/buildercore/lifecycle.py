@@ -81,13 +81,16 @@ def _ec2_nodes_states(stackname, node_ids=None):
 def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_description):
     def some_node_is_still_not_compliant():
         states = source_of_states()
-        LOG.info("states of %s %s nodes (%s): %s", stackname, node_description, node_ids, states)
+        # "waiting for lax--end2end EC2 nodes to be 'stopped': {'i-07244c0d59c74d49c': 'stopping'}
+        LOG.info("waiting for %s %s nodes to be %r: %s", stackname, node_description, state, states)
         return set(states.values()) != {state}
     call_while(
         some_node_is_still_not_compliant,
         interval=config.AWS_POLLING_INTERVAL,
         timeout=config.BUILDER_TIMEOUT,
-        update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
+        # lsh@2022-09-19: replaced in favour of a more informative poll message.
+        #update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
+        update_msg=None,
         done_msg="all nodes in state %s" % state
     )
 
