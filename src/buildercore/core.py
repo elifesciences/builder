@@ -1,6 +1,6 @@
 "general logic for the `buildercore` module."
 
-import os, re
+import os
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
@@ -717,60 +717,6 @@ def requires_stack_file(func):
     template and writes it to disk if it doesn't exist."""
     msg = "failed to find cloudformation stack template for %(stackname)r in: " + config.STACK_PATH
     return decorators._requires_fn_stack(func, lambda stackname: os.path.exists(stack_path(stackname)), msg)
-
-#
-#
-#
-
-def hostname_struct(stackname):
-    "returns a dictionary with convenient domain name information"
-    # wrangle hostname data
-
-    pname, instance_id = parse_stackname(stackname)
-    pdata = project.project_data(pname)
-    domain = pdata.get('domain')
-    intdomain = pdata.get('intdomain')
-    subdomain = pdata.get('subdomain')
-
-    struct = {
-        'domain': domain, # elifesciences.org
-        'int_domain': intdomain, # elife.internal
-
-        'subdomain': subdomain, # gateway
-
-        'hostname': None, # temp.gateway
-
-        'project_hostname': None, # gateway.elifesciences.org
-        'int_project_hostname': None, # gateway.elife.internal
-
-        'full_hostname': None, # gateway--temp.elifesciences.org
-        'int_full_hostname': None, # gateway--temp.elife.internal
-    }
-    if not subdomain:
-        # this project doesn't expect to be addressed
-        # return immediately with what we do have
-        return struct
-
-    # removes any non-alphanumeric or hyphen characters
-    instance_subdomain_fragment = re.sub(r'[^\w\-]', '', instance_id)
-    hostname = instance_subdomain_fragment + "--" + subdomain
-
-    updates = {
-        'hostname': hostname,
-    }
-
-    if domain:
-        updates['project_hostname'] = subdomain + "." + domain
-        updates['full_hostname'] = hostname + "." + domain
-        updates['ext_node_hostname'] = hostname + "--%s." + domain
-
-    if intdomain:
-        updates['int_project_hostname'] = subdomain + "." + intdomain
-        updates['int_full_hostname'] = hostname + "." + intdomain
-        updates['int_node_hostname'] = hostname + "--%s." + intdomain
-
-    struct.update(updates)
-    return struct
 
 #
 #

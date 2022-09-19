@@ -108,6 +108,37 @@ class TestBuildercoreCfngen():
     def test_quick_rendering(self, project_name):
         cfngen.quick_render(project_name)
 
+class TestHostnameStruct(base.BaseCase):
+    def test_hostname_struct_no_subdomain(self):
+        expected = {
+            'domain': "example.org",
+            'int_domain': "example.internal",
+            'subdomain': None,
+            'project_hostname': None,
+            'int_project_hostname': None,
+            'hostname': None,
+            'full_hostname': None,
+            'int_full_hostname': None,
+        }
+        stackname = 'dummy1--test'
+        self.assertEqual(cfngen.hostname_struct(stackname), expected)
+
+    def test_hostname_struct_with_subdomain(self):
+        expected = {
+            'domain': "example.org",
+            'int_domain': "example.internal",
+            'subdomain': 'dummy2',
+            'hostname': 'ci--dummy2',
+            'project_hostname': 'dummy2.example.org',
+            'int_project_hostname': 'dummy2.example.internal',
+            'full_hostname': 'ci--dummy2.example.org',
+            'int_full_hostname': 'ci--dummy2.example.internal',
+            'ext_node_hostname': 'ci--dummy2--%s.example.org',
+            'int_node_hostname': 'ci--dummy2--%s.example.internal',
+        }
+        stackname = 'dummy2--ci'
+        self.assertEqual(cfngen.hostname_struct(stackname), expected)
+
 class TestBuildContext(base.BaseCase):
     def test_existing_alt_config(self):
         stackname = 'dummy2--test'
