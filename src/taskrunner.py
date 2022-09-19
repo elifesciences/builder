@@ -91,6 +91,7 @@ TASK_LIST = [
 
     stack.list,
     stack.config,
+    stack.resource_data,
 
     aws.ec2.start_node,
     aws.ec2.stop_node,
