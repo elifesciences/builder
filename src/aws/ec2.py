@@ -11,7 +11,7 @@ def _find_node(node, node_obj_list):
     return node_obj
 
 def stop_node(stackname, node):
-    """Unsafe. You probably want 'lifecycle.stop'.
+    """Unsafe. You probably want 'stop'.
     Stops an ec2 instance, polling until stopped.
     Does not check current state before attempting to stop.
     Does not care if all of the other nodes are unavailable."""
@@ -23,7 +23,7 @@ def stop_node(stackname, node):
     lifecycle._wait_all_in_state(stackname, 'stopped', node_ids, check_fn, 'EC2')
 
 def start_node(stackname, node):
-    """Unsafe. You probably want 'lifecycle.start'.
+    """Unsafe. You probably want 'start'.
     Starts the ec2 instance, polling until available.
     Does not check current state before attempting to start.
     Does not check for errors booting.
@@ -36,7 +36,7 @@ def start_node(stackname, node):
     lifecycle._wait_all_in_state(stackname, 'running', node_ids, check_fn, 'EC2')
 
 def restart_node(stackname, node):
-    """Unsafe. You probably want 'lifecycle.restart'.
+    """Unsafe. You probably want 'restart'.
     Stops an ec2 instance, polling until stopped, then starts the
     ec2 instance, polling until available.
     Does not check for errors booting.

@@ -24,6 +24,8 @@ def echo(msg, *args, **kwargs):
 
 # NOTE: 'unqualified' tasks are those that can be called just by their function name.
 # for example: `./bldr start` is the unqualified function `lifecycle.start`
+# prefer qualified tasknames.
+
 # NOTE: a task's function signature constitutes it's API, check twice before changing it.
 # the 'see: ...' references below are *not* comprehensive.
 UNQUALIFIED_TASK_LIST = [
