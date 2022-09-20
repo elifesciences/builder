@@ -17,11 +17,3 @@ def list(include_resources=True):
 def config(stackname):
     "prints the stack configuration for the given `stackname`"
     return project.stack_map()[stackname]
-
-@format_output()
-def resource_data(stackname, resource_name=None):
-    """Detailed output for stack's resource list.
-    Use `resource_name` to specify a specific resource."""
-    if resource_name:
-        return {}
-    return []

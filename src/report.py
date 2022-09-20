@@ -6,6 +6,7 @@ import utils
 from buildercore import core, project, utils as core_utils
 from buildercore.utils import lookup
 from functools import wraps
+from decorators import format_output
 
 def print_list(row_list, checkboxes=True):
     "given a list of things, prints a markdown list to `stdout` with optional checkboxes."
@@ -301,3 +302,8 @@ def all_amis_to_prune():
     results = sorted(results, key=lambda image: image['CreationDate'])
 
     return results
+
+@format_output('python')
+def ec2_node_count(stackname):
+    "ec2 node count for given `stackname` derived from Cloudformation."
+    return len(core.ec2_data(stackname))

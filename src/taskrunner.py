@@ -91,7 +91,6 @@ TASK_LIST = [
 
     stack.list,
     stack.config,
-    stack.resource_data,
 
     aws.ec2.start_node,
     aws.ec2.stop_node,
@@ -121,6 +120,7 @@ TASK_LIST = [
     report.all_adhoc_ec2_instances,
     report.long_running_large_ec2_instances,
     report.all_amis_to_prune,
+    report.ec2_node_count,
 
     checks.stack_exists,
     tasks.delete_all_amis_to_prune,
