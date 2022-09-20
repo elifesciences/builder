@@ -4,7 +4,7 @@ import backoff
 from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
 import utils, buildvars
 from utils import TaskExit
-from decorators import requires_project, requires_aws_stack, requires_aws_stack_template, echo_output, setdefault, timeit
+from decorators import requires_project, requires_aws_stack, requires_aws_stack_template, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 # potentially remove to go through buildercore.bootstrap?
 from buildercore import cloudformation, terraform
@@ -43,8 +43,10 @@ def ensure_destroyed(stackname):
 @requires_aws_stack
 @timeit
 def update(stackname, autostart="0", concurrency='serial', dry_run=False):
-    """Updates the environment within the stack's ec2 instance.
-    Does *not* call Cloudformation's `update` command on the stack (see `update_infrastructure`)."""
+    """Update a stack's ec2 environment.
+    Runs the (idempotent) bootstrap script then Salt highstate.
+    Does *not* call Cloudformation's `update` command on the stack,
+    see `update_infrastructure`."""
     instances = _check_want_to_be_running(stackname, utils.strtobool(autostart))
     if not instances:
         return
@@ -225,8 +227,8 @@ def launch(pname, instance_id=None, alt_config=None):
 
 @requires_aws_stack
 def fix_bootstrap(stackname):
-    """uploads the bootstrap script and re-runs the bootstrap process.
-    Used when stack creation succeeds but the bootstrap script failed for some reason."""
+    """Uploads the bootstrap script and re-runs the bootstrap process.
+    Used when stack creation succeeds but the bootstrap script has failed."""
     LOG.info('bootstrapping stack %s', stackname)
     bootstrap.update_stack(stackname)
     setdefault('.active-stack', stackname)
@@ -244,13 +246,6 @@ def pillar(stackname):
     "returns the pillar data a minion is using"
     with stack_conn(stackname, username=BOOTSTRAP_USER):
         remote_sudo('salt-call pillar.items')
-
-# TODO: deletion candidate
-@echo_output
-def aws_stack_list():
-    "returns a list of realized stacks. does not include deleted stacks"
-    region = utils.find_region()
-    return core.active_stack_names(region)
 
 def _pick_node(instance_list, node):
     instance_list = sorted(instance_list, key=lambda n: tags2dict(n.tags)['Name'])
@@ -320,7 +315,7 @@ def _interactive_ssh(username, public_ip, private_key):
 
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
-    "connect to a instance over SSH using the deploy user ('elife') and *your* private key."
+    "connect to a instance over SSH as 'elife' with *your* private key."
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
@@ -330,7 +325,8 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     """maintenance ssh.
-    connects to an instance over SSH using the bootstrap user ('ubuntu') and the instance's private key"""
+    connect to an instance over SSH as 'ubuntu' with
+    the instance's private key."""
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
@@ -339,14 +335,9 @@ def owner_ssh(stackname, node=None):
 
 @requires_aws_stack
 def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):
-    """Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
-
-    If `allow_missing` is "True", a non-existant `path` will be skipped without errors.
-
-    If `use_bootstrap_user` is "True", the owner_ssh user will be used for connecting instead of the standard deploy user.
-
-    Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
-    """
+    """Downloads `path` to the `destination` folder.
+    If `allow_missing`, a non-existant `path` will be skipped without errors.
+    If `use_bootstrap_user`, the 'ubuntu' user will be used for ssh connections."""
     allow_missing, use_bootstrap_user = lmap(utils.strtobool, [allow_missing, use_bootstrap_user])
 
     @backoff.on_exception(backoff.expo, NetworkError, max_time=60)

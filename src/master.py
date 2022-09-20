@@ -6,7 +6,7 @@ import os, time
 import cfn, buildvars, utils
 from buildercore.command import remote_sudo, local
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
-from buildercore.utils import lmap, exsubdict, mkidx
+from buildercore.utils import lmap, exsubdict, mkidx, ensure
 from decorators import echo_output, requires_aws_stack
 from kids.cache import cache as cached
 import logging
@@ -58,18 +58,21 @@ def download_keypair(stackname):
 @echo_output
 @cached
 def server_access():
-    """returns True if this builder instance has access to the master server.
-    access may be available through presence of the master-server's bootstrap user's
-    identify file OR current user is in master server's allowed_keys list"""
+    """Prints True if builder has access to the master server.
+    Access may be available because you created the master-server.
+    Access may be available via master-server's allowed_keys list."""
     stackname = core.find_master(core.find_region())
-    public_ip = core.stack_data(stackname, ensure_single_instance=True)[0]['PublicIpAddress']
+    nodes = core.ec2_data(stackname)
+    ensure(nodes, "no master-server found!")
+    ensure(len(nodes) == 1, "more than one master-server found!")
+    public_ip = nodes[0]['PublicIpAddress']
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
     return result['succeeded']
 
 # @cached
 # def _cached_master_ip(master_stackname):
 #    "provides a small time saving when remastering many minions"
-#    return core.stack_data(master_stackname)[0]['PrivateIpAddress']
+#    return core.ec2_data(master_stackname)[0]['PrivateIpAddress']
 
 @requires_aws_stack
 def update_salt(stackname):
@@ -105,7 +108,7 @@ def update_salt_master(region=None):
 
 @requires_aws_stack
 def remaster(stackname, new_master_stackname="master-server--prod", skip_context_check=False):
-    "tell minion who their new master is. deletes any existing master key on minion"
+    "Tell a minion who their new master is."
     skip_context_check = utils.strtobool(skip_context_check)
     # start instance if it is stopped
     # acquire a lock from Alfred (if possible) so instance isn't shutdown while being updated

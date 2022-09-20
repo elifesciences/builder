@@ -10,42 +10,6 @@ from unittest.mock import patch, Mock
 import botocore
 
 class SimpleCases(base.BaseCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    def test_hostname_struct_no_subdomain(self):
-        expected = {
-            'domain': "example.org",
-            'int_domain': "example.internal",
-            'subdomain': None,
-            'project_hostname': None,
-            'int_project_hostname': None,
-            'hostname': None,
-            'full_hostname': None,
-            'int_full_hostname': None,
-        }
-        stackname = 'dummy1--test'
-        self.assertEqual(core.hostname_struct(stackname), expected)
-
-    def test_hostname_struct_with_subdomain(self):
-        expected = {
-            'domain': "example.org",
-            'int_domain': "example.internal",
-            'subdomain': 'dummy2',
-            'hostname': 'ci--dummy2',
-            'project_hostname': 'dummy2.example.org',
-            'int_project_hostname': 'dummy2.example.internal',
-            'full_hostname': 'ci--dummy2.example.org',
-            'int_full_hostname': 'ci--dummy2.example.internal',
-            'ext_node_hostname': 'ci--dummy2--%s.example.org',
-            'int_node_hostname': 'ci--dummy2--%s.example.internal',
-        }
-        stackname = 'dummy2--ci'
-        self.assertEqual(core.hostname_struct(stackname), expected)
-
     def test_project_name_from_stackname(self):
         expected = [
             ('elife-bot--2015-04-29', 'elife-bot'),

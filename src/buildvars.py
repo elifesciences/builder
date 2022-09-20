@@ -1,13 +1,12 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
 from buildercore.command import remote_sudo, upload
 from io import StringIO
-from decorators import requires_aws_stack
+from decorators import requires_aws_stack, format_output
 from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
 from buildercore import utils as core_utils, trop, keypair
 from buildercore.utils import ensure
-from pprint import pprint
 import utils
 import logging
 from json import JSONDecodeError
@@ -68,14 +67,16 @@ def switch_revision(stackname, revision=None, concurrency=None):
 
     stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
+@format_output('python')
 @requires_aws_stack
 def read(stackname):
     "returns the unencoded build variables found on given instance"
-    return stack_all_ec2_nodes(stackname, lambda: pprint(read_from_current_host()), username=BOOTSTRAP_USER)
+    return stack_all_ec2_nodes(stackname, lambda: read_from_current_host(), username=BOOTSTRAP_USER)
 
+@format_output('python')
 @requires_aws_stack
 def valid(stackname):
-    return stack_all_ec2_nodes(stackname, lambda: pprint(_retrieve_build_vars()), username=BOOTSTRAP_USER)
+    return stack_all_ec2_nodes(stackname, lambda: _retrieve_build_vars(), username=BOOTSTRAP_USER)
 
 @requires_aws_stack
 def fix(stackname):
@@ -101,12 +102,12 @@ def fix(stackname):
 
 @requires_aws_stack
 def force(stackname, field, new_value):
-    """replaces the value of `field` with `new_value` in all buildvars on all ec2 instances in given `stackname`.
-    can only be used to *replace* an *existing* key and not create new ones.
+    """Force a change to a single buildvar.
+    Replaces the value of `field` with `new_value` in all buildvars on all
+    ec2 instances in given `stackname`.
+    Can only be used to *replace* an *existing* key and not create new ones.
     `field` can be a dotted path for targeting values inside nested maps.
-    For example: `force("lax--prod", "elb.stickiness", True)`
-    none values, booleans and integers are coerced to their literal types,
-    for example, `"true"` becomes `True`."""
+    For example: `force("lax--prod", "elb.stickiness", True)`"""
 
     new_value = utils.coerce_string_value(new_value)
 

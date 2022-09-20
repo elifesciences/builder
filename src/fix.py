@@ -163,12 +163,10 @@ def print_problem_list(problem_list):
 
 @requires_aws_stack
 def fix_infrastructure(stackname):
-    """like `update_infrastructure`, but the emphasis is not on changing/upgrading
-    infrastructure but correcting any infrastructure drift and *hopefully* fixing and
-    problems. Fix is not guaranteed.
-
+    """like `update_infrastructure`, but guided recommendations.
+    infrastructure but correcting any infrastructure drift and
+    *hopefully* fixing and problems. Fix is not guaranteed.
     Some actions are a given and cannot be skipped.
-
     This drift may go undetected by `update_infrastructure`."""
 
     problems = []

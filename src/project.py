@@ -1,38 +1,22 @@
 import os
 from buildercore.command import local, settings
-from buildercore import project, utils as core_utils, core, cfngen, config
-from buildercore.utils import ensure
-from decorators import requires_project, echo_output
+from buildercore import project, core, cfngen, config
+from decorators import requires_project, format_output
 import utils
 
 @requires_project
-@echo_output
+@format_output('yaml')
 def data(pname, output_format=None):
     "given a project name, returns the fully realized project description data."
-    formatters = {
-        'json': core_utils.json_dumps,
-        'yaml': core_utils.yaml_dumps,
-        # None: core_utils.remove_ordereddict
-        None: lambda v: v
-    }
-    ensure(output_format in formatters.keys(), "unknown output format %r" % output_format)
-    formatter = formatters.get(output_format)
-    return formatter(project.project_data(pname))
+    return project.project_data(pname)
 
+# todo: candidate for deletion
 @requires_project
-@echo_output
+@format_output('python')
 def context(pname, output_format=None):
     """generates dummy context data for the given project `pname`.
     optionally `output_format` will print context in `json` or `yaml`."""
-    formatters = {
-        'json': core_utils.json_dumps,
-        'yaml': core_utils.yaml_dumps,
-        # None: core_utils.remove_ordereddict
-        None: lambda v: v
-    }
-    ensure(output_format in formatters.keys(), "unknown output format %r" % output_format)
-    formatter = formatters.get(output_format)
-    return formatter(cfngen.build_context(pname, stackname=core.mk_stackname(pname, "test")))
+    return cfngen.build_context(pname, stackname=core.mk_stackname(pname, "test"))
 
 def _clone_project_formula(furl):
     """clones a formula to `./cloned-projects/$formulaname`, if it doesn't already exist.
@@ -52,7 +36,7 @@ def clone_project_formulas(pname):
     [_clone_project_formula(furl) for furl in project.project_formulas()[pname]]
 
 def clone_all_project_formulas():
-    """clones the formulas and formula dependencies of all known projects.
+    """clones formulas and formula dependencies of all known projects.
     does not attempt to clone a repository more than once."""
     [_clone_project_formula(furl) for furl in project.known_formulas()]
 

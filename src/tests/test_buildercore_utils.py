@@ -169,7 +169,7 @@ class Simple(base.BaseCase):
             utils.call_while(check, interval=5, timeout=15, exception_class=OSError)
             self.fail("Should not return normally")
         except OSError as e:
-            self.assertEqual("Reached timeout 15 while waiting ...", str(e))
+            self.assertEqual("Reached timeout 15s while waiting ...", str(e))
 
     @patch('time.sleep')
     def test_call_while_custom_message(self, sleep):
@@ -179,7 +179,17 @@ class Simple(base.BaseCase):
             utils.call_while(check, interval=5, timeout=15, update_msg="waiting for Godot")
             self.fail("Should not return normally")
         except BaseException as e:
-            self.assertEqual("Reached timeout 15 while waiting for Godot", str(e))
+            self.assertEqual("Reached timeout 15s while waiting for Godot", str(e))
+
+    @patch('time.sleep')
+    def test_call_while_no_message(self, sleep):
+        check = MagicMock()
+        check.return_value = True
+        try:
+            utils.call_while(check, interval=5, timeout=15, update_msg=None)
+            self.fail("Should not return normally")
+        except BaseException as e:
+            self.assertEqual("Reached timeout 15s", str(e))
 
     def test_ensure(self):
         utils.ensure(True, "True should allow ensure() to continue")

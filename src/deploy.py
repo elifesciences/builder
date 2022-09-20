@@ -78,7 +78,7 @@ def load_balancer_status(stackname):
 @requires_aws_stack
 @requires_aws_stack_template
 def load_balancer_register_all(stackname):
-    "ensure all ec2 nodes for given `stackname` are registered (added) to the load balancer."
+    "Add all of a stack's ec2 nodes to it's load balancer."
     if cloudformation.template_using_elb_v1(stackname):
         load_balancer_register_all__v1(stackname)
     else:

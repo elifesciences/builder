@@ -2,9 +2,9 @@ from time import time
 import os
 from os.path import join
 import utils
-from buildercore import core, project, config, cloudformation
+from buildercore import core, project, config, cloudformation, utils as core_utils
 from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr, ensure
-from functools import wraps
+from functools import wraps, partial
 from pprint import pformat
 import logging
 
@@ -132,6 +132,29 @@ def echo_output(func):
             print(pformat(remove_ordereddict(res)))
         return res
     return _wrapper
+
+def format_output(default_output_format='json'):
+    """like `echo_output`, but the output can be formatted in different ways, defaults to json.
+    use 'python' to replicate `echo_output` without the leading 'output:' on stderr."""
+    output_format_map = {
+        'json': partial(core_utils.json_dumps, dangerous=True, indent=4),
+        'yaml': core_utils.yaml_dumps,
+        'python': pformat
+    }
+
+    def _wrap1(fn):
+        @wraps(fn)
+        def _wrap2(*args, **kwargs):
+            output_format = default_output_format
+            if 'output_format' in kwargs:
+                output_format = kwargs.pop('output_format')
+            ensure(output_format in output_format_map,
+                   "unsupported output format %r: %s" % (str(output_format), ", ".join(output_format_map)))
+            data = fn(*args, **kwargs)
+            print(output_format_map[output_format](data))
+            return data
+        return _wrap2
+    return _wrap1
 
 # ---
 

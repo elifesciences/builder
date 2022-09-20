@@ -6,6 +6,7 @@ import utils
 from buildercore import core, project, utils as core_utils
 from buildercore.utils import lookup
 from functools import wraps
+from decorators import format_output
 
 def print_list(row_list, checkboxes=True):
     "given a list of things, prints a markdown list to `stdout` with optional checkboxes."
@@ -97,12 +98,12 @@ def configured_report(**kwargs):
 
 @report
 def all_projects():
-    "returns a list of all project names"
+    "All project names"
     return project.project_list()
 
 @report
 def all_formulas():
-    "returns a list of all known formulas"
+    "All known Salt formulas."
     # `project` will give us a map of `project-name: formula-list`
     formula_list = project.project_formulas().values()
     # flatten the list of lists into a single unique list
@@ -115,7 +116,8 @@ def all_formulas():
 
 @report
 def all_ec2_projects():
-    "returns a list of all project names that are using EC2 (excluding alt-configs defined in the defaults sections)"
+    """All project names using ec2.
+    Excludes alt-configs defined in the 'defaults' section."""
     alt_black_list = ['fresh', 'snsalt', 's1804', '1804', '2004', 's2004', 'standalone']
 
     def has_ec2(pname, pdata):
@@ -137,12 +139,13 @@ def _all_ec2_instances(state):
 
 @report
 def all_ec2_instances(state=None):
-    "returns a list of all ec2 instance names. set `state` to `running` to see all running ec2 instances."
+    """All ec2 instance names.
+    Set `state` to `running` to see all running ec2 instances."""
     return _all_ec2_instances(state)
 
 @report
 def all_ec2_instances_for_salt_upgrade():
-    "returns a list of all ec2 instance names suitable for the Salt upgrade"
+    "All ec2 instance names suitable for a Salt upgrade"
     ignore_these = [
         "Elife ALM (alm.svr.*)", # so very dead
         "basebox--1804--1", # ami creation, periodically destroyed and recreated
@@ -156,7 +159,7 @@ def all_ec2_instances_for_salt_upgrade():
 
 @report
 def all_adhoc_ec2_instances(state='running'):
-    "returns a list of all ec2 instance names whose instance ID doesn't match a known environment"
+    "All ec2 names in an unknown environment."
 
     # extract a list of environment names from the project data
     def known_environments(pdata):
@@ -185,7 +188,7 @@ def all_adhoc_ec2_instances(state='running'):
 
 @report
 def all_rds_projects():
-    "returns a list of all project names that are using RDS"
+    "List all projects using RDS."
     key = 'aws.rds'
 
     def has_(pname, pdata):
@@ -202,13 +205,16 @@ def all_rds_projects():
 
 @report
 def all_rds_instances(**kwargs):
-    """returns a list of all RDS instances.
-    results are sorted by environment where possible."""
+    """All RDS instances.
+    Results ordered by environment, where possible."""
     return [i['DBInstanceIdentifier'] for i in core.find_all_rds_instances()]
 
 @configured_report(as_list=False)
 def long_running_large_ec2_instances(**kwargs):
-    """returns a list of all ec2 instances that are large (> t3.medium) or unknown, and that have been running for a long time."""
+    """All large, unknown, long-running ec2 instances.
+    'large' means > t3.medium.
+    'unknown' means non-t3 or non-ci/non-end2end/etc.
+    'long time' is 4hrs."""
     #open('/tmp/output.json', 'w').write(core_utils.json_dumps(core.ec2_instance_list(state='running'), dangerous=True))
     #result_list = json.load(open('/tmp/output.json', 'r'))
     result_list = core.ec2_instance_list(state='running')
@@ -262,9 +268,9 @@ def long_running_large_ec2_instances(**kwargs):
 
 @configured_report(as_list=False)
 def all_amis_to_prune():
-    """returns a list of AMIs that are known, old and whose status is 'available'.
-    results are ordered oldest to newest.
-    output is fed into a `tasks.py` task to prune old AMIs."""
+    """All AMIs that are old and in the 'available' state.
+    Results are ordered oldest to newest.
+    Output is fed into a `tasks.py` task to prune old AMIs."""
 
     conn = core.boto_client('ec2', core.find_region())
     image_list = conn.describe_images(Owners=['self'])
@@ -296,3 +302,8 @@ def all_amis_to_prune():
     results = sorted(results, key=lambda image: image['CreationDate'])
 
     return results
+
+@format_output('python')
+def ec2_node_count(stackname):
+    "ec2 node count for given `stackname`."
+    return len(core.ec2_data(stackname))
