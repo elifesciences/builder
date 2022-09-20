@@ -59,7 +59,7 @@ def download_keypair(stackname):
 @cached
 def server_access():
     """Prints True if builder has access to the master server.
-    Access may be available via because you created the master-server.
+    Access may be available because you created the master-server.
     Access may be available via master-server's allowed_keys list."""
     stackname = core.find_master(core.find_region())
     nodes = core.ec2_data(stackname)

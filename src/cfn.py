@@ -315,7 +315,7 @@ def _interactive_ssh(username, public_ip, private_key):
 
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
-    "connect to a instance over SSH as 'elife' and *your* private key."
+    "connect to a instance over SSH as 'elife' with *your* private key."
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
@@ -325,7 +325,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     """maintenance ssh.
-    connects to an instance over SSH using the 'ubuntu' and
+    connect to an instance over SSH as 'ubuntu' with
     the instance's private key."""
     instances = _check_want_to_be_running(stackname)
     if not instances:

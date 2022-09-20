@@ -174,21 +174,20 @@ def mk_task_map(task, qualified=True):
     docstr = (task.__doc__ or '').replace('  ', '')
     docstr_bits = docstr.split('\n', 1)
     short_str = docstr_bits[0]
-    more_str = docstr_bits[1] if len(docstr_bits) > 1 else ''
+    long_str = docstr_bits[1] if len(docstr_bits) > 1 else ''
     return {
         "name": path if qualified else unqualified_path,
         "path": path,
-        "description": short_str,
-        "docstr": docstr,
-        "long_description": more_str,
+        "short_description": short_str,
+        "long_description": long_str,
         "fn": task,
     }
 
 def generate_task_list(show_debug_tasks=False):
     """returns a collated list of maps with task information.
 
-    [{"name": "ssh", "fn": cfn.ssh, "description": "foobar baz"}, ...]
-     {"name": "cfn.deploy", "fn": cfn.deploy, "description": "bar barbar"}, ...]"""
+    [{"name": "ssh", "fn": cfn.ssh, "short_description": "foobar baz"}, ...]
+     {"name": "cfn.deploy", "fn": cfn.deploy, "short_description": "bar barbar"}, ...]"""
 
     def to_list(task_list, qualified=True):
         return [mk_task_map(task, qualified) for task in task_list]
@@ -329,7 +328,7 @@ def main(arg_list):
             leading_indent = ' ' * indent
             new_indent = ' ' * (indent + len(task_name) + offset)
 
-            print(leading_indent + task_name + offset_str + tm['description'])
+            print(leading_indent + task_name + offset_str + tm['short_description'])
             for row in tm['long_description'].split('\n'):
                 row = row.strip()
                 if not row:

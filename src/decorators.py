@@ -139,7 +139,7 @@ def format_output(default_output_format='json'):
     output_format_map = {
         'json': partial(core_utils.json_dumps, dangerous=True, indent=4),
         'yaml': core_utils.yaml_dumps,
-        'python': lambda d: pformat(d)
+        'python': pformat
     }
 
     def _wrap1(fn):

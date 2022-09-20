@@ -305,5 +305,5 @@ def all_amis_to_prune():
 
 @format_output('python')
 def ec2_node_count(stackname):
-    "ec2 node count for given `stackname` derived from Cloudformation."
+    "ec2 node count for given `stackname`."
     return len(core.ec2_data(stackname))
