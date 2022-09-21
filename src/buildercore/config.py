@@ -33,7 +33,7 @@ ENV = {
     'BUILDER_TIMEOUT': 600, # seconds, 10 minutes
     'CUSTOM_SSH_KEY': '~/.ssh/id_rsa',
     'BLDR_TWI_REUSE_STACK': 0, # False
-    'BLDR_TWI_CLEANUP': 1, # True
+    'BLDR_TWI_CLEANUP': '1', # True
     'BLDR_ROLE': None, # or 'admin', see taskrunner.py
     'PROJECT': None,
     'INSTANCE': None,
