@@ -1459,7 +1459,6 @@ observer:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
-                - 8001 # metabase
                 - 443  # app
         sqs:
             observer--{instance}:
@@ -1486,7 +1485,6 @@ observer:
     vagrant:
         ports:
             1239: 80
-            1240: 8001
 
 error-pages:
     description: static deployment of https://github.com/elifesciences/error-pages
