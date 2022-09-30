@@ -11,12 +11,12 @@ MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
-PROVIDER_AWS_VERSION = '2.28.0',
+PROVIDER_AWS_VERSION = '2.28.0'
 PROVIDER_TLS_VERSION = '2.2'
-PROVIDER_FASTLY_VERSION = '0.9.0',
-PROVIDER_VAULT_VERSION = '1.3'
+PROVIDER_FASTLY_VERSION = '0.9.0' # '0.26.0' last for terraform 0.11.x
+PROVIDER_VAULT_VERSION = '1.3' # '1.9.0' last for terraform 0.11.x
 HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
-HELM_CHART_VERSION_RAW = '0.2.3',
+HELM_CHART_VERSION_RAW = '0.2.3'
 HELM_APP_VERSION_EXTERNAL_DNS = '0.5.16'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
@@ -102,23 +102,165 @@ FASTLY_LOG_UNIQUE_IDENTIFIERS = {
 # https://github.com/terraform-providers/terraform-provider-fastly/issues/7 tracks when snippets could become available in Terraform
 FASTLY_MAIN_VCL_KEY = 'main'
 
-def render(context):
-    template = TerraformTemplate()
-    fn_list = [
-        render_fastly,
-        render_gcs,
-        render_bigquery,
-        render_eks,
-    ]
-    for fn in fn_list:
-        fn(context, template)
+# utils
 
-    generated_template = template.to_dict()
+def _open(stackname, name, extension='tf.json', mode='r'):
+    "`open`s a file in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
+    terraform_directory = join(TERRAFORM_DIR, stackname)
+    mkdir_p(terraform_directory)
 
-    if not generated_template:
-        return EMPTY_TEMPLATE
+    # "./.cfn/journal--prod/generated.tf"
+    # "./.cfn/journal--prod/backend.tf"
+    # "./.cfn/journal--prod/providers.tf"
+    deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
+    if os.path.exists(deprecated_path):
+        os.remove(deprecated_path)
 
-    return json.dumps(generated_template)
+    # "./.cfn/journal--prod/generated.tf.json"
+    # "./.cfn/journal--prod/backend.tf.json"
+    # "./.cfn/journal--prod/providers.tf.json"
+    path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
+    return open(path, mode)
+
+# fastly
+
+def _generate_vcl_file(stackname, content, key, extension='vcl'):
+    """
+    creates a VCL on the filesystem, for Terraform to dynamically load it on apply
+
+    content can be a string or any object that can be casted to a string
+    """
+    with _open(stackname, key, extension=extension, mode='w') as fp:
+        fp.write(str(content))
+        return '${file("%s")}' % os.path.basename(fp.name)
+
+def _render_fastly_vcl_templates(context, template, vcl_templated_snippets):
+    for name, variables in context['fastly']['vcl-templates'].items():
+        vcl_template = fastly.VCL_TEMPLATES[name]
+        vcl_template_file = _generate_vcl_file(
+            context['stackname'],
+            vcl_template.content,
+            vcl_template.name,
+            extension='vcl.tpl'
+        )
+
+        template.populate_data(
+            DATA_TYPE_TEMPLATE,
+            name,
+            {
+                'template': vcl_template_file,
+                'vars': variables,
+            }
+        )
+
+        vcl_templated_snippets[name] = vcl_template.as_inclusion()
+
+def _render_fastly_errors(context, template, vcl_templated_snippets):
+    if context['fastly']['errors']:
+        error_vcl_template = fastly.VCL_TEMPLATES['error-page']
+        error_vcl_template_file = _generate_vcl_file(
+            context['stackname'],
+            error_vcl_template.content,
+            error_vcl_template.name,
+            extension='vcl.tpl'
+        )
+        errors = context['fastly']['errors']
+        codes = errors.get('codes', {})
+        fallbacks = errors.get('fallbacks', {})
+        for code, path in codes.items():
+            template.populate_data(
+                DATA_TYPE_HTTP,
+                'error-page-%d' % code,
+                block={
+                    'url': '%s%s' % (errors['url'], path),
+                }
+            )
+
+            name = 'error-page-vcl-%d' % code
+            template.populate_data(
+                DATA_TYPE_TEMPLATE,
+                name,
+                {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'test': 'obj.status == %s' % code,
+                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
+                    },
+                }
+            )
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+
+        if fallbacks.get('4xx'):
+            template.populate_data(
+                DATA_TYPE_HTTP,
+                'error-page-4xx',
+                {
+                    'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
+                }
+            )
+            name = 'error-page-vcl-4xx'
+            template.populate_data(
+                DATA_TYPE_TEMPLATE,
+                name,
+                {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'test': 'obj.status >= 400 && obj.status <= 499',
+                        'synthetic_response': '${data.http.error-page-4xx.body}',
+                    },
+                }
+            )
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+
+        if fallbacks.get('5xx'):
+            template.populate_data(
+                DATA_TYPE_HTTP,
+                'error-page-5xx',
+                {
+                    'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
+                }
+            )
+            name = 'error-page-vcl-5xx'
+            template.populate_data(
+                DATA_TYPE_TEMPLATE,
+                name,
+                {
+                    'template': error_vcl_template_file,
+                    'vars': {
+                        'test': 'obj.status >= 500 && obj.status <= 599',
+                        'synthetic_response': '${data.http.error-page-5xx.body}',
+                    }
+                }
+            )
+            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
+
+def _fastly_backend(hostname, name, request_condition=None, shield=None):
+    backend_resource = {
+        'address': hostname,
+        'name': name,
+        'port': 443,
+        'use_ssl': True,
+        'ssl_cert_hostname': hostname,
+        'ssl_sni_hostname': hostname,
+        'ssl_check_cert': True,
+    }
+    if request_condition:
+        backend_resource['request_condition'] = request_condition
+    if shield:
+        backend_resource['shield'] = shield
+    return backend_resource
+
+def _fastly_request_setting(override):
+    request_setting_resource = {
+        'name': 'default',
+        # shouldn't need to replicate the defaults
+        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
+        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
+        'timer_support': True,
+        'xff': 'leave',
+    }
+    request_setting_resource.update(override)
+    return request_setting_resource
 
 def render_fastly(context, template):
     if not context['fastly']:
@@ -204,9 +346,10 @@ def render_fastly(context, template):
                 'check_interval': context['fastly']['healthcheck']['check-interval'],
                 'timeout': context['fastly']['healthcheck']['timeout'],
                 # lsh@2021-06-14: while debugging 503 errors from end2end and continuumtest CDNs, Fastly support offered:
-                # > "I would suggest to change your healthcheck configuration .initial value shouldn't be lower than threshold.
-                # > If .initial < .threshold, the backend will be initialized as Unhealthy state until (.threshold - .initial)
-                # > number of healthchecks have happened and they all are pass."
+                # "I would suggest to change your healthcheck configuration
+                # .initial value shouldn't be lower than threshold.
+                # If .initial < .threshold, the backend will be initialized as Unhealthy state until
+                # (.threshold - .initial) > number of healthchecks have happened and they all are pass."
                 'initial': 2, # default is 2
                 'threshold': 2, # default is 3
             }
@@ -397,145 +540,7 @@ def render_fastly(context, template):
 
     return template.to_dict()
 
-
-def _render_fastly_vcl_templates(context, template, vcl_templated_snippets):
-    for name, variables in context['fastly']['vcl-templates'].items():
-        vcl_template = fastly.VCL_TEMPLATES[name]
-        vcl_template_file = _generate_vcl_file(
-            context['stackname'],
-            vcl_template.content,
-            vcl_template.name,
-            extension='vcl.tpl'
-        )
-
-        template.populate_data(
-            DATA_TYPE_TEMPLATE,
-            name,
-            {
-                'template': vcl_template_file,
-                'vars': variables,
-            }
-        )
-
-        vcl_templated_snippets[name] = vcl_template.as_inclusion()
-
-
-def _render_fastly_errors(context, template, vcl_templated_snippets):
-    if context['fastly']['errors']:
-        error_vcl_template = fastly.VCL_TEMPLATES['error-page']
-        error_vcl_template_file = _generate_vcl_file(
-            context['stackname'],
-            error_vcl_template.content,
-            error_vcl_template.name,
-            extension='vcl.tpl'
-        )
-        errors = context['fastly']['errors']
-        codes = errors.get('codes', {})
-        fallbacks = errors.get('fallbacks', {})
-        for code, path in codes.items():
-            template.populate_data(
-                DATA_TYPE_HTTP,
-                'error-page-%d' % code,
-                block={
-                    'url': '%s%s' % (errors['url'], path),
-                }
-            )
-
-            name = 'error-page-vcl-%d' % code
-            template.populate_data(
-                DATA_TYPE_TEMPLATE,
-                name,
-                {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'test': 'obj.status == %s' % code,
-                        'synthetic_response': '${data.http.error-page-%s.body}' % code,
-                    },
-                }
-            )
-            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
-        if fallbacks.get('4xx'):
-            template.populate_data(
-                DATA_TYPE_HTTP,
-                'error-page-4xx',
-                {
-                    'url': '%s%s' % (errors['url'], fallbacks.get('4xx')),
-                }
-            )
-            name = 'error-page-vcl-4xx'
-            template.populate_data(
-                DATA_TYPE_TEMPLATE,
-                name,
-                {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'test': 'obj.status >= 400 && obj.status <= 499',
-                        'synthetic_response': '${data.http.error-page-4xx.body}',
-                    },
-                }
-            )
-            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
-        if fallbacks.get('5xx'):
-            template.populate_data(
-                DATA_TYPE_HTTP,
-                'error-page-5xx',
-                {
-                    'url': '%s%s' % (errors['url'], fallbacks.get('5xx')),
-                }
-            )
-            name = 'error-page-vcl-5xx'
-            template.populate_data(
-                DATA_TYPE_TEMPLATE,
-                name,
-                {
-                    'template': error_vcl_template_file,
-                    'vars': {
-                        'test': 'obj.status >= 500 && obj.status <= 599',
-                        'synthetic_response': '${data.http.error-page-5xx.body}',
-                    }
-                }
-            )
-            vcl_templated_snippets[name] = error_vcl_template.as_inclusion(name)
-
-
-def _fastly_backend(hostname, name, request_condition=None, shield=None):
-    backend_resource = {
-        'address': hostname,
-        'name': name,
-        'port': 443,
-        'use_ssl': True,
-        'ssl_cert_hostname': hostname,
-        'ssl_sni_hostname': hostname,
-        'ssl_check_cert': True,
-    }
-    if request_condition:
-        backend_resource['request_condition'] = request_condition
-    if shield:
-        backend_resource['shield'] = shield
-    return backend_resource
-
-def _fastly_request_setting(override):
-    request_setting_resource = {
-        'name': 'default',
-        # shouldn't need to replicate the defaults
-        # https://github.com/terraform-providers/terraform-provider-fastly/issues/50
-        # https://github.com/terraform-providers/terraform-provider-fastly/issues/67
-        'timer_support': True,
-        'xff': 'leave',
-    }
-    request_setting_resource.update(override)
-    return request_setting_resource
-
-
-def _generate_vcl_file(stackname, content, key, extension='vcl'):
-    """
-    creates a VCL on the filesystem, for Terraform to dynamically load it on apply
-
-    content can be a string or any object that can be casted to a string
-    """
-    with _open(stackname, key, extension=extension, mode='w') as fp:
-        fp.write(str(content))
-        return '${file("%s")}' % os.path.basename(fp.name)
+# GCS, Google Cloud Storage
 
 def render_gcs(context, template):
     if not context['gcs']:
@@ -550,6 +555,8 @@ def render_gcs(context, template):
         })
 
     return template.to_dict()
+
+# Google BigQuery
 
 def render_bigquery(context, template):
     if not context['bigquery']:
@@ -622,136 +629,207 @@ def render_bigquery(context, template):
 
     return template.to_dict()
 
-def render_eks(context, template):
-    "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
-    if not context['eks']:
-        return {}
+# EKS
 
-    _render_eks_master_security_group(context, template)
-    _render_eks_master_role(context, template)
-    _render_eks_master(context, template)
-    _render_eks_workers_security_group(context, template)
-    _render_eks_workers_role(context, template)
-    _render_eks_workers_autoscaling_group(context, template)
-    _render_eks_user_access(context, template)
-    if lookup(context, 'eks.iam-oidc-provider', False):
-        _render_eks_iam_access(context, template)
-    if context['eks']['helm']:
-        _render_helm(context, template)
-
-def _render_eks_master_security_group(context, template):
-    security_group_tags = aws.generic_tags(context)
-    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
-    template.populate_resource('aws_security_group', 'master', block={
-        'name': '%s--master' % context['stackname'],
-        'description': 'Cluster communication with worker nodes',
-        'vpc_id': context['aws']['vpc-id'],
-        'egress': {
-            'from_port': 0,
-            'to_port': 0,
-            'protocol': '-1',
-            'cidr_blocks': ['0.0.0.0/0'],
+def _render_helm(context, template):
+    template.populate_resource('kubernetes_service_account', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+            'namespace': 'kube-system',
         },
-        'tags': security_group_tags,
     })
 
-def _render_eks_master_role(context, template):
-    template.populate_resource('aws_iam_role', 'master', block={
-        'name': '%s--AmazonEKSMasterRole' % context['stackname'],
+    template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
+        'metadata': {
+            'name': 'tiller',
+        },
+        'role_ref': {
+            'api_group': 'rbac.authorization.k8s.io',
+            'kind': 'ClusterRole',
+            'name': 'cluster-admin',
+        },
+        'subject': [
+            {
+                'kind': 'ServiceAccount',
+                'name': '${kubernetes_service_account.tiller.metadata.0.name}',
+                'namespace': 'kube-system',
+            },
+        ],
+    })
+
+    template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
+        'name': 'incubator',
+        'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
+    })
+
+    # creating at least one release is necessary to trigger the Tiller installation
+    template.populate_resource('helm_release', 'common_resources', block={
+        'name': 'common-resources',
+        'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+        'chart': 'incubator/raw',
+        'depends_on': ['kubernetes_cluster_role_binding.tiller'],
+        'values': [
+            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
+        ],
+    })
+
+    if context['eks']['external-dns']:
+        template.populate_resource('helm_release', 'external_dns', block={
+            'name': 'external-dns',
+            # 'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
+            'chart': 'stable/external-dns',
+            'version': HELM_CHART_VERSION_EXTERNAL_DNS,
+            'depends_on': ['helm_release.common_resources'],
+            'set': [
+                {
+                    'name': 'image.tag',
+                    'value': HELM_APP_VERSION_EXTERNAL_DNS,
+                },
+                {
+                    'name': 'sources[0]',
+                    'value': 'service',
+                },
+                {
+                    'name': 'provider',
+                    'value': 'aws',
+                },
+                {
+                    'name': 'domainFilters[0]',
+                    'value': context['eks']['external-dns']['domain-filter'],
+                },
+                {
+                    'name': 'policy',
+                    'value': 'sync',
+                },
+                {
+                    'name': 'aws.zoneType',
+                    'value': 'public', # 'private',
+                },
+                {
+                    'name': 'txtOwnerId',
+                    'value': context['stackname'],
+                },
+                {
+                    'name': 'rbac.create',
+                    'value': 'true',
+                },
+            ],
+        })
+
+def _render_eks_iam_access(context, template):
+    template.populate_data("tls_certificate", "oidc_cert", {
+        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
+    })
+
+    template.populate_resource('aws_iam_openid_connect_provider', 'default', block={
+        'client_id_list': ['sts.amazonaws.com'],
+        'thumbprint_list': ['${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}'],
+        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
+    })
+
+def _render_eks_user_access(context, template):
+    template.populate_resource('aws_iam_role', 'user', block={
+        'name': '%s--AmazonEKSUserRole' % context['stackname'],
         'assume_role_policy': json.dumps({
             "Version": "2012-10-17",
             "Statement": [
                 {
                     "Effect": "Allow",
                     "Principal": {
-                        "Service": "eks.amazonaws.com"
+                        "AWS": "arn:aws:iam::%s:root" % context['aws']['account-id'],
                     },
                     "Action": "sts:AssumeRole"
-                }
-            ]
+                },
+            ],
         }),
     })
 
-    template.populate_resource('aws_iam_role_policy_attachment', 'master_kubernetes', block={
-        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
-        'role': "${aws_iam_role.master.name}",
+    template.populate_local('config_map_aws_auth', """
+- rolearn: ${aws_iam_role.worker.arn}
+  username: system:node:{{EC2PrivateDNSName}}
+  groups:
+    - system:bootstrappers
+    - system:nodes
+- rolearn: ${aws_iam_role.user.arn}
+  groups:
+    - system:masters
+""")
+
+    template.populate_resource('kubernetes_config_map', 'aws_auth', block={
+        'metadata': [{
+            'name': 'aws-auth',
+            'namespace': 'kube-system',
+        }],
+        'data': {
+            'mapRoles': '${local.config_map_aws_auth}',
+        }
     })
 
-    template.populate_resource('aws_iam_role_policy_attachment', 'master_ecs', block={
-        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
-        'role': "${aws_iam_role.master.name}",
-    })
-
-def _render_eks_master(context, template):
-
-    template.populate_resource('aws_eks_cluster', 'main', block={
-        'name': context['stackname'],
-        'version': context['eks']['version'],
-        'role_arn': '${aws_iam_role.master.arn}',
-        'vpc_config': {
-            'security_group_ids': ['${aws_security_group.master.id}'],
-            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
-        },
-        'depends_on': [
-            "aws_iam_role_policy_attachment.master_kubernetes",
-            "aws_iam_role_policy_attachment.master_ecs",
-        ]
-    })
-
-def _render_eks_workers_security_group(context, template):
-    template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
-        'description': 'Allow pods to communicate with the cluster API Server',
-        'from_port': 443,
-        'protocol': 'tcp',
-        'security_group_id': '${aws_security_group.master.id}',
-        'source_security_group_id': '${aws_security_group.worker.id}',
-        'to_port': 443,
-        'type': 'ingress',
-    })
-
-    security_group_tags = aws.generic_tags(context)
-    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
-    template.populate_resource('aws_security_group', 'worker', block={
+def _render_eks_workers_autoscaling_group(context, template):
+    template.populate_resource('aws_iam_instance_profile', 'worker', block={
         'name': '%s--worker' % context['stackname'],
-        'description': 'Security group for all worker nodes in the cluster',
-        'vpc_id': context['aws']['vpc-id'],
-        'egress': {
-            'from_port': 0,
-            'to_port': 0,
-            'protocol': '-1',
-            'cidr_blocks': ['0.0.0.0/0'],
+        'role': '${aws_iam_role.worker.name}'
+    })
+
+    template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
+        'filter': {
+            'name': 'name',
+            'values': ['amazon-eks-node-%s-v*' % context['eks']['version']],
         },
-        'tags': security_group_tags,
+        'most_recent': True,
+        'owners': [aws.ACCOUNT_EKS_AMI],
     })
 
-    template.populate_resource('aws_security_group_rule', 'worker_to_worker', block={
-        'description': 'Allow worker nodes to communicate with each other',
-        'from_port': 0,
-        'protocol': '-1',
-        'security_group_id': '${aws_security_group.worker.id}',
-        'source_security_group_id': '${aws_security_group.worker.id}',
-        'to_port': 65535,
-        'type': 'ingress',
-    })
+    # EKS currently documents this required userdata for EKS worker nodes to
+    # properly configure Kubernetes applications on the EC2 instance.
+    # We utilize a Terraform local here to simplify Base64 encoding this
+    # information into the AutoScaling Launch Configuration.
+    # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+    template.populate_local('worker_userdata', """
+#!/bin/bash
+set -o xtrace
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
 
-    template.populate_resource('aws_security_group_rule', 'master_to_worker', block={
-        'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
-        'from_port': 1025,
-        'protocol': 'tcp',
-        'security_group_id': '${aws_security_group.worker.id}',
-        'source_security_group_id': '${aws_security_group.master.id}',
-        'to_port': 65535,
-        'type': 'ingress',
-    })
+    worker = {
+        'associate_public_ip_address': True,
+        'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
+        'image_id': '${data.aws_ami.worker.id}',
+        'instance_type': context['eks']['worker']['type'],
+        'name_prefix': '%s--worker' % context['stackname'],
+        'security_groups': ['${aws_security_group.worker.id}'],
+        'user_data_base64': '${base64encode(local.worker_userdata)}',
+        'lifecycle': {
+            'create_before_destroy': True,
+        },
+    }
+    root_volume_size = lookup(context, 'eks.worker.root.size', None)
+    if root_volume_size:
+        worker['root_block_device'] = {
+            'volume_size': root_volume_size
+        }
+    template.populate_resource('aws_launch_configuration', 'worker', block=worker)
 
-    template.populate_resource('aws_security_group_rule', 'eks_public_to_worker', block={
-        'description': "Allow worker to expose NodePort services",
-        'from_port': 30000,
-        'protocol': 'tcp',
-        'security_group_id': '${aws_security_group.worker.id}',
-        'to_port': 32767,
-        'type': 'ingress',
-        'cidr_blocks': ["0.0.0.0/0"],
+    autoscaling_group_tags = [
+        {
+            'key': k,
+            'value': v,
+            'propagate_at_launch': True,
+        }
+        for k, v in aws.generic_tags(context).items()
+    ]
+    autoscaling_group_tags.append({
+        'key': 'kubernetes.io/cluster/%s' % context['stackname'],
+        'value': 'owned',
+        'propagate_at_launch': True,
+    })
+    template.populate_resource('aws_autoscaling_group', 'worker', block={
+        'name': '%s--worker' % context['stackname'],
+        'launch_configuration': '${aws_launch_configuration.worker.id}',
+        'min_size': context['eks']['worker']['min-size'],
+        'max_size': context['eks']['worker']['max-size'],
+        'desired_capacity': context['eks']['worker']['desired-capacity'],
+        'vpc_zone_identifier': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+        'tags': autoscaling_group_tags,
     })
 
 def _render_eks_workers_role(context, template):
@@ -890,218 +968,138 @@ def _render_eks_workers_role(context, template):
             'role': "${aws_iam_role.worker.name}",
         })
 
-def _render_eks_workers_autoscaling_group(context, template):
-    template.populate_resource('aws_iam_instance_profile', 'worker', block={
+def _render_eks_workers_security_group(context, template):
+    template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
+        'description': 'Allow pods to communicate with the cluster API Server',
+        'from_port': 443,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.master.id}',
+        'source_security_group_id': '${aws_security_group.worker.id}',
+        'to_port': 443,
+        'type': 'ingress',
+    })
+
+    security_group_tags = aws.generic_tags(context)
+    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
+    template.populate_resource('aws_security_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
-        'role': '${aws_iam_role.worker.name}'
-    })
-
-    template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
-        'filter': {
-            'name': 'name',
-            'values': ['amazon-eks-node-%s-v*' % context['eks']['version']],
+        'description': 'Security group for all worker nodes in the cluster',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
         },
-        'most_recent': True,
-        'owners': [aws.ACCOUNT_EKS_AMI],
+        'tags': security_group_tags,
     })
 
-    # EKS currently documents this required userdata for EKS worker nodes to
-    # properly configure Kubernetes applications on the EC2 instance.
-    # We utilize a Terraform local here to simplify Base64 encoding this
-    # information into the AutoScaling Launch Configuration.
-    # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-    template.populate_local('worker_userdata', """
-#!/bin/bash
-set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
+    template.populate_resource('aws_security_group_rule', 'worker_to_worker', block={
+        'description': 'Allow worker nodes to communicate with each other',
+        'from_port': 0,
+        'protocol': '-1',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'source_security_group_id': '${aws_security_group.worker.id}',
+        'to_port': 65535,
+        'type': 'ingress',
+    })
 
-    worker = {
-        'associate_public_ip_address': True,
-        'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
-        'image_id': '${data.aws_ami.worker.id}',
-        'instance_type': context['eks']['worker']['type'],
-        'name_prefix': '%s--worker' % context['stackname'],
-        'security_groups': ['${aws_security_group.worker.id}'],
-        'user_data_base64': '${base64encode(local.worker_userdata)}',
-        'lifecycle': {
-            'create_before_destroy': True,
+    template.populate_resource('aws_security_group_rule', 'master_to_worker', block={
+        'description': 'Allow worker Kubelets and pods to receive communication from the cluster control plane',
+        'from_port': 1025,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'source_security_group_id': '${aws_security_group.master.id}',
+        'to_port': 65535,
+        'type': 'ingress',
+    })
+
+    template.populate_resource('aws_security_group_rule', 'eks_public_to_worker', block={
+        'description': "Allow worker to expose NodePort services",
+        'from_port': 30000,
+        'protocol': 'tcp',
+        'security_group_id': '${aws_security_group.worker.id}',
+        'to_port': 32767,
+        'type': 'ingress',
+        'cidr_blocks': ["0.0.0.0/0"],
+    })
+
+def _render_eks_master(context, template):
+    template.populate_resource('aws_eks_cluster', 'main', block={
+        'name': context['stackname'],
+        'version': context['eks']['version'],
+        'role_arn': '${aws_iam_role.master.arn}',
+        'vpc_config': {
+            'security_group_ids': ['${aws_security_group.master.id}'],
+            'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
-    }
-    root_volume_size = lookup(context, 'eks.worker.root.size', None)
-    if root_volume_size:
-        worker['root_block_device'] = {
-            'volume_size': root_volume_size
-        }
-    template.populate_resource('aws_launch_configuration', 'worker', block=worker)
-
-    autoscaling_group_tags = [
-        {
-            'key': k,
-            'value': v,
-            'propagate_at_launch': True,
-        }
-        for k, v in aws.generic_tags(context).items()
-    ]
-    autoscaling_group_tags.append({
-        'key': 'kubernetes.io/cluster/%s' % context['stackname'],
-        'value': 'owned',
-        'propagate_at_launch': True,
-    })
-    template.populate_resource('aws_autoscaling_group', 'worker', block={
-        'name': '%s--worker' % context['stackname'],
-        'launch_configuration': '${aws_launch_configuration.worker.id}',
-        'min_size': context['eks']['worker']['min-size'],
-        'max_size': context['eks']['worker']['max-size'],
-        'desired_capacity': context['eks']['worker']['desired-capacity'],
-        'vpc_zone_identifier': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
-        'tags': autoscaling_group_tags,
+        'depends_on': [
+            "aws_iam_role_policy_attachment.master_kubernetes",
+            "aws_iam_role_policy_attachment.master_ecs",
+        ]
     })
 
-def _render_eks_user_access(context, template):
-    template.populate_resource('aws_iam_role', 'user', block={
-        'name': '%s--AmazonEKSUserRole' % context['stackname'],
+def _render_eks_master_role(context, template):
+    template.populate_resource('aws_iam_role', 'master', block={
+        'name': '%s--AmazonEKSMasterRole' % context['stackname'],
         'assume_role_policy': json.dumps({
             "Version": "2012-10-17",
             "Statement": [
                 {
                     "Effect": "Allow",
                     "Principal": {
-                        "AWS": "arn:aws:iam::%s:root" % context['aws']['account-id'],
+                        "Service": "eks.amazonaws.com"
                     },
                     "Action": "sts:AssumeRole"
-                },
-            ],
+                }
+            ]
         }),
     })
 
-    template.populate_local('config_map_aws_auth', """
-- rolearn: ${aws_iam_role.worker.arn}
-  username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-- rolearn: ${aws_iam_role.user.arn}
-  groups:
-    - system:masters
-""")
-
-    template.populate_resource('kubernetes_config_map', 'aws_auth', block={
-        'metadata': [{
-            'name': 'aws-auth',
-            'namespace': 'kube-system',
-        }],
-        'data': {
-            'mapRoles': '${local.config_map_aws_auth}',
-        }
+    template.populate_resource('aws_iam_role_policy_attachment', 'master_kubernetes', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+        'role': "${aws_iam_role.master.name}",
     })
 
-def _render_eks_iam_access(context, template):
-    template.populate_data("tls_certificate", "oidc_cert", {
-        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
+    template.populate_resource('aws_iam_role_policy_attachment', 'master_ecs', block={
+        'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
+        'role': "${aws_iam_role.master.name}",
     })
 
-    template.populate_resource('aws_iam_openid_connect_provider', 'default', block={
-        'client_id_list': ['sts.amazonaws.com'],
-        'thumbprint_list': ['${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}'],
-        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
-    })
-
-def _render_helm(context, template):
-    template.populate_resource('kubernetes_service_account', 'tiller', block={
-        'metadata': {
-            'name': 'tiller',
-            'namespace': 'kube-system',
+def _render_eks_master_security_group(context, template):
+    security_group_tags = aws.generic_tags(context)
+    security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
+    template.populate_resource('aws_security_group', 'master', block={
+        'name': '%s--master' % context['stackname'],
+        'description': 'Cluster communication with worker nodes',
+        'vpc_id': context['aws']['vpc-id'],
+        'egress': {
+            'from_port': 0,
+            'to_port': 0,
+            'protocol': '-1',
+            'cidr_blocks': ['0.0.0.0/0'],
         },
+        'tags': security_group_tags,
     })
 
-    template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
-        'metadata': {
-            'name': 'tiller',
-        },
-        'role_ref': {
-            'api_group': 'rbac.authorization.k8s.io',
-            'kind': 'ClusterRole',
-            'name': 'cluster-admin',
-        },
-        'subject': [
-            {
-                'kind': 'ServiceAccount',
-                'name': '${kubernetes_service_account.tiller.metadata.0.name}',
-                'namespace': 'kube-system',
-            },
-        ],
-    })
+def render_eks(context, template):
+    "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
+    if not context['eks']:
+        return {}
 
-    template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
-        'name': 'incubator',
-        'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
-    })
+    _render_eks_master_security_group(context, template)
+    _render_eks_master_role(context, template)
+    _render_eks_master(context, template)
+    _render_eks_workers_security_group(context, template)
+    _render_eks_workers_role(context, template)
+    _render_eks_workers_autoscaling_group(context, template)
+    _render_eks_user_access(context, template)
+    if lookup(context, 'eks.iam-oidc-provider', False):
+        _render_eks_iam_access(context, template)
+    if context['eks']['helm']:
+        _render_helm(context, template)
 
-    # creating at least one release is necessary to trigger the Tiller installation
-    template.populate_resource('helm_release', 'common_resources', block={
-        'name': 'common-resources',
-        'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-        'chart': 'incubator/raw',
-        'depends_on': ['kubernetes_cluster_role_binding.tiller'],
-        'values': [
-            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
-        ],
-    })
-
-    if context['eks']['external-dns']:
-        template.populate_resource('helm_release', 'external_dns', block={
-            'name': 'external-dns',
-            # 'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-            'chart': 'stable/external-dns',
-            'version': HELM_CHART_VERSION_EXTERNAL_DNS,
-            'depends_on': ['helm_release.common_resources'],
-            'set': [
-                {
-                    'name': 'image.tag',
-                    'value': HELM_APP_VERSION_EXTERNAL_DNS,
-                },
-                {
-                    'name': 'sources[0]',
-                    'value': 'service',
-                },
-                {
-                    'name': 'provider',
-                    'value': 'aws',
-                },
-                {
-                    'name': 'domainFilters[0]',
-                    'value': context['eks']['external-dns']['domain-filter'],
-                },
-                {
-                    'name': 'policy',
-                    'value': 'sync',
-                },
-                {
-                    'name': 'aws.zoneType',
-                    'value': 'public', # 'private',
-                },
-                {
-                    'name': 'txtOwnerId',
-                    'value': context['stackname'],
-                },
-                {
-                    'name': 'rbac.create',
-                    'value': 'true',
-                },
-            ],
-        })
-
-def write_template(stackname, contents):
-    "optionally, store a terraform configuration file for the stack"
-    # if the template isn't empty ...?
-    if json.loads(contents):
-        with _open(stackname, 'generated', mode='w') as fp:
-            fp.write(contents)
-            return fp.name
-
-def read_template(stackname):
-    with _open(stackname, 'generated', mode='r') as fp:
-        return fp.read()
+# ---
 
 class TerraformTemplateError(RuntimeError):
     pass
@@ -1167,7 +1165,6 @@ class TerraformTemplate():
             result['locals'] = self.locals_
         return result
 
-
 class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
     """represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed.
 
@@ -1175,6 +1172,38 @@ class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
 
     def __str__(self):
         return self.plan_output
+
+# ---
+
+def write_template(stackname, contents):
+    "optionally, store a terraform configuration file for the stack"
+    # if the template isn't empty ...?
+    if json.loads(contents):
+        with _open(stackname, 'generated', mode='w') as fp:
+            fp.write(contents)
+            return fp.name
+
+def read_template(stackname):
+    with _open(stackname, 'generated', mode='r') as fp:
+        return fp.read()
+
+def render(context):
+    template = TerraformTemplate()
+    fn_list = [
+        render_fastly,
+        render_gcs,
+        render_bigquery,
+        render_eks,
+    ]
+    for fn in fn_list:
+        fn(context, template)
+
+    generated_template = template.to_dict()
+
+    if not generated_template:
+        return EMPTY_TEMPLATE
+
+    return json.dumps(generated_template)
 
 def generate_delta(new_context):
     # simplification: unless Fastly is involved, the TerraformDelta will be empty
@@ -1187,11 +1216,6 @@ def generate_delta(new_context):
     new_template = render(new_context)
     write_template(new_context['stackname'], new_template)
     return plan(new_context)
-
-@only_if_managed_services_are_present
-def bootstrap(stackname, context):
-    plan(context)
-    update(stackname, context)
 
 def plan(context):
     terraform = init(context['stackname'], context)
@@ -1344,20 +1368,7 @@ def destroy(stackname, context):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
-def _open(stackname, name, extension='tf.json', mode='r'):
-    "`open`s a file in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
-    terraform_directory = join(TERRAFORM_DIR, stackname)
-    mkdir_p(terraform_directory)
-
-    # "./.cfn/journal--prod/generated.tf"
-    # "./.cfn/journal--prod/backend.tf"
-    # "./.cfn/journal--prod/providers.tf"
-    deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
-    if os.path.exists(deprecated_path):
-        os.remove(deprecated_path)
-
-    # "./.cfn/journal--prod/generated.tf.json"
-    # "./.cfn/journal--prod/backend.tf.json"
-    # "./.cfn/journal--prod/providers.tf.json"
-    path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
-    return open(path, mode)
+@only_if_managed_services_are_present
+def bootstrap(stackname, context):
+    plan(context)
+    update(stackname, context)

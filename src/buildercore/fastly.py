@@ -58,12 +58,9 @@ class FastlyVCLInclusion(namedtuple('FastlyVCLInclusion', ['name', 'type', 'hook
             ]
         )
 
-
 class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type', 'hook'])):
     """VCL snippets that can be used to augment the default VCL
-
     Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
-
     Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
 
     def as_inclusion(self):
