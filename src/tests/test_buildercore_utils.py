@@ -290,18 +290,14 @@ def test_visit_pred():
         ([], []),
         ({}, {}),
         ([None, 1], [None, "1"]),
-        ({None: 1, 2: 3}, {None: "1", 2: "3"}),
+        ({None: 0, 1: 1, 2: 3}, {None: "0", 1: "1", 2: "3"}),
     ]
 
-    def f(v):
-        return str(v)
-
     def p(v):
-        ignore_these = [None]
-        return v not in ignore_these
+        return not (v in [None])
 
     for given, expected in cases:
-        assert utils.visit(given, f, p) == expected, "failed case: %r" % given
+        assert utils.visit(given, str, p) == expected, "failed case: %r" % given
 
 def test_visit_pred_2():
     "real life example. under very specific circumstances, don't transform a map of data."

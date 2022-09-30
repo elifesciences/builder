@@ -182,7 +182,7 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
 
     lsh@2022-09-30: a case where string-booleans need to be kept as such:
     - https://github.com/elifesciences/issues/issues/7443
-    in this case, a list of [{'Key': 'SomeKey', 'Value': 'true'}, ...] needs to be preserved as strings."""
+    in this case, a list of [{'Key': 'SomeKey', 'Value': 'true'}, ...] needs it's string-bools preserved."""
     def convert_string_bools(v):
         if v == 'true':
             LOG.warning("found string 'true' in Cloudformation template, converting to boolean True")
@@ -193,7 +193,7 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
         return v
 
     def predicate(v):
-        "only visit and transform `v` when this returns `True`"
+        "don't descend in to or transform a map that looks like an AWS Key+Value pair"
         return not (isinstance(v, dict) and 'Key' in v and 'Value' in v)
 
     return utils.visit(template_data, convert_string_bools, predicate)
