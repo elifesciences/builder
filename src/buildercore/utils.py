@@ -381,10 +381,15 @@ def http_responses():
     import http.client
     return http.client.responses
 
-def visit(d, f):
-    "visits each value in `d` and applies function `f` to it"
-    if isinstance(d, dict):
-        return {k: visit(v, f) for k, v in d.items()}
-    if isinstance(d, list):
-        return [visit(v, f) for v in d]
-    return f(d)
+def visit(d, f, p=None):
+    """visits each value in `d` and applies function `f` to it.
+    if predicate `p` is given and `p(d)` is false-y, do not visit `d`."""
+    if p is None:
+        p = lambda _: True
+    if isinstance(d, dict) and p(d):
+        return {k: visit(v, f, p) for k, v in d.items()}
+    if isinstance(d, list) and p(d):
+        return [visit(v, f, p) for v in d]
+    if p(d):
+        return f(d)
+    return d

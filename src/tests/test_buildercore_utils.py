@@ -279,6 +279,57 @@ def test_visit__modify():
     for given, expected in cases:
         assert utils.visit(given, f) == expected, "failed case: %r" % given
 
+def test_visit_pred():
+    "`visit` can skip updating values if given a predicate and the predicate function returns true"
+    cases = [
+        (None, None),
+        ("", ""),
+        (1, "1"),
+        (2, "2"),
+        # the visit fn is not applied to collections, just their values
+        ([], []),
+        ({}, {}),
+        ([None, 1], [None, "1"]),
+        ({None: 1, 2: 3}, {None: "1", 2: "3"}),
+    ]
+
+    def f(v):
+        return str(v)
+
+    def p(v):
+        ignore_these = [None]
+        return v not in ignore_these
+
+    for given, expected in cases:
+        assert utils.visit(given, f, p) == expected, "failed case: %r" % given
+
+def test_visit_pred_2():
+    "real life example. under very specific circumstances, don't transform a map of data."
+
+    given = {"Properties":
+             {"LoadBalancerAttributes": [
+                 {"Key": "waf.fail_open.enabled", "Value": "true"},
+                 {"Key": "idle_timeout.timeout_seconds", "Value": "60"}],
+              "SomeBoolean": "true",
+              "SomeBoolean2": "false"}}
+
+    expected = {"Properties":
+                {"LoadBalancerAttributes": [
+                    {"Key": "waf.fail_open.enabled", "Value": "true"},
+                    {"Key": "idle_timeout.timeout_seconds", "Value": "60"}],
+                 "SomeBoolean": True,
+                 "SomeBoolean2": "false"}}
+
+    def f(v):
+        if v == 'true':
+            return True
+        return v
+
+    def p(v):
+        return not (isinstance(v, dict) and 'Key' in v and 'Value' in v)
+
+    assert utils.visit(given, f, p) == expected
+
 def test_updatein__no_create():
     cases = [
         (({}, '', "foo"), {'': "foo"}),
