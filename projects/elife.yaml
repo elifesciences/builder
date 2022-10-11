@@ -1317,6 +1317,7 @@ bus:
             - bus-metrics--{instance}
             - bus-profiles--{instance}
             - bus-digests--{instance}
+            - bus-reviewed-preprints--{instance}
 
 search:
     domain: false
@@ -1343,6 +1344,7 @@ search:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
+                    - bus-reviewed-preprints--{instance}
     aws-alt:
         end2end:
             ec2:
