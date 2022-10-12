@@ -16,6 +16,12 @@ if [ "$arg2" = "--no-color" ]; then
     force_color=""
 fi
 
+# lsh@2022-10-12: temporary downgrade of a lib that salt installs during bootstrap.
+# remove once salt fixes issue with importlib>=5.0.0
+# - https://github.com/elifesciences/issues/issues/7782
+# - https://github.com/python/importlib_metadata/issues/409
+sudo pip3 install 'importlib_metadata==4.13.0'
+
 if $dry_run; then
     echo "Executing salt highstate (testing)"
     # shellcheck disable=SC2086
