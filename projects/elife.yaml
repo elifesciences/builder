@@ -413,7 +413,7 @@ master-server:
             ports:
                 - 22
                 - 4506: # salt publish port
-                    # CIDR of subnet this master will server
+                    # CIDR of subnet this master will serve
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
                 - 4505: # salt return port
                     cidr-ip: 10.0.0.0/16
