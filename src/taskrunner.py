@@ -85,6 +85,8 @@ TASK_LIST = [
     # see: journal/Jenkinsfile.prod
     deploy.load_balancer_register_all,
 
+    lifecycle.start_many,
+
     project.data,
     project.context,
     project.new,

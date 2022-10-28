@@ -518,6 +518,10 @@ def stackname_parseable(stackname):
     except ValueError:
         return False
 
+def short_stackname_from_long_stackname(long_stackname):
+    "trims any node IDs from a stackname"
+    return mk_stackname(*parse_stackname(long_stackname, all_bits=True)[:2])
+
 def project_name_from_stackname(stackname):
     "returns just the project name from the given stackname"
     return first(parse_stackname(stackname))

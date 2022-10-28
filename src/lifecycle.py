@@ -1,4 +1,6 @@
-from buildercore import lifecycle
+import re
+import report, utils
+from buildercore import core, lifecycle
 from decorators import requires_aws_stack, timeit, echo_output
 
 @requires_aws_stack
@@ -6,6 +8,13 @@ from decorators import requires_aws_stack, timeit, echo_output
 def start(stackname):
     "Starts the nodes of 'stackname'. Idempotent"
     lifecycle.start(stackname)
+
+def start_many(pattern):
+    if not pattern:
+        raise utils.TaskExit("a regular expression matching ec2 names is required.")
+    ec2_list = report._all_ec2_instances(state=None)
+    filtered_ec2_list = filter(lambda ec2_name: re.match(pattern, ec2_name), ec2_list)
+    [start(core.short_stackname_from_long_stackname(ec2)) for ec2 in filtered_ec2_list]
 
 @requires_aws_stack
 @timeit
