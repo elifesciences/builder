@@ -42,6 +42,7 @@ def put_script(script_filename, remote_script):
 @backoff.on_exception(backoff.expo, command.NetworkError, max_time=60)
 def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for `config.SCRIPTS_PATH` and executes it in the /tmp dir with given params.
+    script is run as the root user via sudo.
     WARN: assumes you are connected to a stack"""
     start = datetime.now()
     remote_script = _put_temporary_script(script_filename)
