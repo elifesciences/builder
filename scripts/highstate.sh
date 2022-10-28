@@ -1,5 +1,10 @@
 #!/bin/bash
+# run as root
 set -e
+
+# lsh@2022-10-28: PATH copied from the /etc/sudoers 'secure_path' value.
+# script would otherwise rely on it's execution environment to succeed.
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 arg1=$1 # --dry-run
 arg2=$2 # --no-color
@@ -20,25 +25,25 @@ fi
 # remove once salt fixes issue with importlib>=5.0.0
 # - https://github.com/elifesciences/issues/issues/7782
 # - https://github.com/python/importlib_metadata/issues/409
-sudo pip3 install 'importlib_metadata==4.13.0'
+pip3 install 'importlib_metadata==4.13.0'
 
 if $dry_run; then
     echo "Executing salt highstate (testing)"
     # shellcheck disable=SC2086
-    sudo salt-call $force_color state.highstate -l info test=True --retcode-passthrough
+    salt-call $force_color state.highstate -l info test=True --retcode-passthrough
 else
     echo "Executing salt highstate"
     log_file=/var/log/salt/salt-highstate-$(date "+%Y-%m-%dT%H:%M:%S").log
     set -o pipefail
     # shellcheck disable=SC2086
-    sudo salt-call $force_color state.highstate -l info --retcode-passthrough | tee "$log_file" || {
+    salt-call $force_color state.highstate -l info --retcode-passthrough | tee "$log_file" || {
         status=$?
 
         # we can't guarantee '/etc/build-vars.json.b64', 'jq' or the 'build_vars' script exists when this script is run. 
         # It may be a vagrant machine or the first highstate.
         # However, we can test for the build vars and we can guarantee that base64 and python exist (see bootstrap.sh).
         # "elife-alfred--prod--1" or "prod--alfred.elifesciences.org"
-        node_name=$( (test -f /etc/build-vars.json.b64 && sudo cat /etc/build-vars.json.b64 | base64 -d - | python3 -c 'import json; import sys; print(json.loads(sys.stdin.read())["nodename"])') || hostname)
+        node_name=$( (test -f /etc/build-vars.json.b64 && cat /etc/build-vars.json.b64 | base64 -d - | python3 -c 'import json; import sys; print(json.loads(sys.stdin.read())["nodename"])') || hostname)
 
         echo "Error provisioning, state.highstate returned: ${status}"
         logger "Salt highstate failure: $log_file on $node_name"
