@@ -3,8 +3,8 @@
 set -e
 
 # lsh@2022-10-28: PATH copied from the /etc/sudoers 'secure_path' value.
-# script would otherwise rely on it's execution environment to succeed.
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# script would otherwise rely on caller's execution environment to succeed.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 arg1=$1 # --dry-run
 arg2=$2 # --no-color
