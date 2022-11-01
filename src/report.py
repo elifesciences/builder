@@ -143,6 +143,42 @@ def all_ec2_instances(state=None):
     Set `state` to `running` to see all running ec2 instances."""
     return _all_ec2_instances(state)
 
+def all_ec2_instances_for_project_security_update(state=None):
+    "All ec2 instance names suitable for the Jenkins 'process-project-security-updates-all' job"
+    results = sorted(_all_ec2_instances(state), key=sort_by_env)
+    stack = []
+    project_blacklist = [
+        'basebox',
+        'containers',
+    ]
+    env_blacklist = [
+        'prod' # temporary
+    ]
+    for stackname in results:
+        try:
+            pname, iid, nid = core.parse_stackname(stackname, all_bits=True)
+
+            if pname in project_blacklist:
+                continue
+
+            if iid in env_blacklist:
+                continue
+
+            if not stack or stack[-1][0] != pname:
+                stack.append((pname, []))
+
+            if not stack[-1][1] or stack[-1][1][-1] != iid:
+                stack[-1][1].append(iid)
+
+        except ValueError: # as exc:
+            #print('skipping %s: %s' % (stackname, exc))
+            continue
+
+    print("project_envlist = [")
+    for pname, envlist in stack:
+        print('    ["%s", "%s"],' % (pname, ",".join(envlist)))
+    print("]")
+
 @report
 def all_ec2_instances_for_salt_upgrade():
     "All ec2 instance names suitable for a Salt upgrade"
