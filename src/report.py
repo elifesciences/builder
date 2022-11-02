@@ -143,6 +143,46 @@ def all_ec2_instances(state=None):
     Set `state` to `running` to see all running ec2 instances."""
     return _all_ec2_instances(state)
 
+def process_project_security_updates():
+    "Project and environment data for the selfsame Jenkins job."
+    results = sorted(_all_ec2_instances(state=None), key=sort_by_env)
+    project_blacklist = [
+        'basebox',
+        'containers',
+    ]
+    env_blacklist = [
+        'prod'
+    ]
+    stack = [] # [(stackname, [env1,env2,env3]), ...]
+    for stackname in results:
+        try:
+            pname, iid, nid = core.parse_stackname(stackname, all_bits=True)
+            if pname in project_blacklist:
+                print('skipping %s: project %r in blacklist' % (stackname, pname))
+                continue
+
+            if iid in env_blacklist:
+                print('skipping %s: env %r in blacklist' % (stackname, iid))
+                continue
+
+            # add project to stack because stack is empty, or because the project has changed.
+            if not stack or stack[-1][0] != pname:
+                stack.append((pname, []))
+
+            # add env to project's list of envs if list of envs is empty or,
+            # the last env seen is different to this one.
+            if not stack[-1][1] or stack[-1][1][-1] != iid:
+                stack[-1][1].append(iid)
+
+        except Exception as exc:
+            print('skipping %s: unhandled exception %r' % (stackname, exc))
+            continue
+
+    print("project_envlist = [")
+    for pname, envlist in stack:
+        print('    ["%s", "%s"],' % (pname, ",".join(envlist)))
+    print("]")
+
 @report
 def all_ec2_instances_for_salt_upgrade():
     "All ec2 instance names suitable for a Salt upgrade"

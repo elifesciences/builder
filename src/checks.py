@@ -2,7 +2,7 @@ from buildercore import core
 from utils import TaskExit
 
 def stack_exists(stackname, state=None):
-    """`True` if the stack exists.
+    """Prints `True` if the stack exists, accepts `state` param.
     if `state` is 'steady', stack must not be transitioning between states.
     if `state` is 'active', stack must be in healthy state (no failed updates)."""
     if not core.stack_exists(stackname, state):
