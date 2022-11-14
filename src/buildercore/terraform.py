@@ -6,7 +6,6 @@ from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, lookup
 from . import aws, fastly
-from collections import OrderedDict
 
 MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
