@@ -89,8 +89,9 @@ TASK_LIST = [
     project.context,
     project.new,
 
-    stack.list,
-    stack.config,
+    stack.list_stacks,
+    stack.stack_config,
+    stack.generate_stacks,
 
     aws.ec2.start_node,
     aws.ec2.stop_node,

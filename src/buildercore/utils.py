@@ -1,3 +1,4 @@
+from ruamel.yaml import YAML
 from pprint import pformat
 import pytz
 import os, sys, json, time, random, string
@@ -260,11 +261,11 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 def yaml_dumps(data):
-    "like json.dumps, returns a YAML string. alias for `ordered_dump`"
+    "returns a YAML string, like `json.dumps`. alias for `ordered_dump`."
     return ordered_dump(data)
 
 def yaml_dump(data, stream):
-    "like json.dump, writes output to given file-like object. returns nothing"
+    "like json.dump, writes output to given file-like object. returns None."
     ordered_dump(data, stream)
 
 def remove_ordereddict(data, dangerous=True):
@@ -393,3 +394,43 @@ def visit(d, f, p=None):
     if p(d):
         return f(d)
     return d
+
+# ---
+
+def yaml_load_2(stream):
+    yml = YAML(typ='rt') # 'rt' ('round trip') ??
+    return yml.load(stream)
+
+def _top_level_separators(s):
+    retval = ''
+    open = None
+    for line in s.splitlines():
+        if line and line[0] == ' ':
+            open = True
+        else:
+            if open is True and line:
+                #print('starting %r' % line)
+                retval += '\n'
+            open = False
+
+        retval += line
+        retval += '\n'
+
+    return retval
+
+def yaml_dump_2(data, stream):
+    "takes python `data` "
+    yml = YAML()
+    yml.default_flow_style = False
+    yml.indent = 4
+    yml.width = 4096
+    return yml.dump(data, stream, transform=_top_level_separators)
+
+def yaml_dumps_2(data):
+    "dumps python `data` to a YAML string"
+    # bit of a rant:
+    # - https://yaml.readthedocs.io/en/latest/example.html#output-of-dump-as-a-string
+    from io import StringIO
+    stream = StringIO()
+    _ = yaml_dump_2(data, stream)
+    return stream.getvalue()

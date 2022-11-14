@@ -1,5 +1,5 @@
 defaults:
-    description: 
+    description:
     meta:
         # distinguishes this data from other types and versions of configuration data
         type: stack
@@ -30,7 +30,8 @@ example-stack-identifier:
         a resource stack is literally a list of things managed by Cloudformation/Terraform
         a 'resource' describes some bit of infrastructure 
         defining it here demonstrates that we know about it and have brought it under configuration control
+    random-property: some-value # important comment that should be preserved!
     resource-list:
-        - builder-project:
+    -   builder-project:
             name: journal
-            instance-id: prod
+            instance-id: prod # foo!

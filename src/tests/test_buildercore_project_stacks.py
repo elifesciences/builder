@@ -31,6 +31,7 @@ def test_all_stack_data():
                 "type": "stack",
                 "version": 0
             },
+            "random-property": "some-value",
             "resource-list": [
                 {
                     "meta": {
@@ -49,3 +50,28 @@ def test_all_stack_data():
         }
     }
     assert actual == expected
+
+def test__dumps_stack_file():
+    "a stack config file can be read, parsed as YAML into Python and dumped back to YAML without changes."
+    fixture = base.fixture_path('stacks/stacks.yaml')
+    expected = open(fixture, 'r').read()
+    config = stack_config.read_stack_file(fixture)
+    actual = stack_config._dumps_stack_file(config)
+    assert actual == expected
+
+# note: list items are currently being replaced during deep merge, how to preserve comments there?
+# perhaps special-case 'resource-items' in the dict-merge strategy
+# or when updating resources in a list, update each one individually rather than the list as a whole
+def test__dumps_stack_file__updated_data():
+    "a stack config can be read, parsed as YAML into Python, updated with new data and dumped back to YAML with changes preserved."
+    fixture = base.fixture_path('stacks/stacks.yaml')
+    config = stack_config.read_stack_file(fixture)
+
+    update = {'example-stack-identifier': {"random-property": "some-new-value"}}
+    config = stack_config.deep_merge(config, update)
+
+    actual = stack_config._dumps_stack_file(config)
+
+    # (pretty rough)
+    expected = "    random-property: some-new-value # important comment that should be preserved!"
+    assert expected in actual.splitlines()

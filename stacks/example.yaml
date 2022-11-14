@@ -4,7 +4,7 @@ defaults:
         # distinguishes this data from other types and versions of configuration data
         type: stack
         version: 0 # '0' just means it's brand new, highly unstable and almost anything goes.
-    resource-list: []
+    resource-list: [] # leave empty so stacks don't inherit a list of resources
     resource-map:
         terraform-project: # resource ID, can be anything so long as it's unique
             meta:

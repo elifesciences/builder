@@ -26,29 +26,25 @@ stack configuration is *not*:
 
 from buildercore import utils
 from buildercore.utils import ensure
+from deepmerge import Merger
 
-# https://stackoverflow.com/questions/7204805/how-to-merge-dictionaries-of-dictionaries/7205107#answer-24088493
 def deep_merge(d1, d2):
-    """Update two dicts of dicts recursively,
-    if either mapping has leaves that are non-dicts,
-    the second's leaf overwrites the first's.
-
-    non-destructive."""
-    for k, v in d1.items():
-        if k in d2:
-            if all(isinstance(e, dict) for e in (v, d2[k])):
-                d2[k] = deep_merge(v, d2[k])
-            # further type checks and merge as appropriate here.
-            # ...
-    d3 = d1.copy()
-    d3.update(d2)
-    return d3
+    custom_merger = Merger(
+        [(list, ["override"]),
+         (dict, ["merge"]),
+         (set, ["union"])],
+        # fallback strategies applied to all other types
+        ["override"],
+        # strategies in the case where the types conflict
+        ["override"]
+    )
+    return custom_merger.merge(d1, d2)
 
 # ---
 
 def read_stack_file(path):
     "reads the contents of the YAML file at `path`."
-    return utils.yaml_load(open(path, 'r'))
+    return utils.yaml_load_2(open(path, 'r'))
 
 def parse_stack_map(stack_map):
     "returns a pair of `(stack-defaults, map-of-stackname-to-stackdata)`"
@@ -59,6 +55,21 @@ def parse_stack_map(stack_map):
     ensure("resource-map" in stack_map["defaults"], "defaults section is missing a `resource-map` field: %s" % list(stack_map.keys()))
     defaults = stack_map.pop("defaults")
     return defaults, stack_map
+
+def _dumps_stack_file(data):
+    return utils.yaml_dumps_2(data)
+
+def write_stack_file(data, path):
+    open(path, 'w').write(_dumps_stack_file(data))
+
+def write_stack_file_updates(data, path):
+    "reads stack config, replacing the stack configuration with `data` and writes the changes back to file."
+    # todo: how to ignore default values?
+    # for example, `data` may contain values present in the definition of the stack that don't need to be present.
+    # we need a sort of deep-merge-set-exclusion where deeply identical values are removed instead of ignored
+    stack_map = read_stack_file(path)
+    new_stack_map = deep_merge(stack_map, data)
+    write_stack_file(new_stack_map, path)
 
 def _stack_data(stack_defaults, raw_stack_data):
     """merges the `stack_defaults` dict with the abbreviated `raw_stack_data` dict resulting in a 'full' stack.
