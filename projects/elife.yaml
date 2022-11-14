@@ -1,5 +1,9 @@
 defaults:
-    description: defaults for all projects in this file
+    description: default settings for all projects in *this* file.
+    meta:
+        # distinguishes this data from other types and versions of configuration data
+        type: project
+        version: 1
     salt: '3003' # the version of salt these project use
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
@@ -45,10 +49,11 @@ defaults:
             # lsh@2022-07: all instances run on type T3 now, this option should be removed.
             cpu-credits: standard
             # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
-            # only makes sense if cluster-size > 1
+            # only makes sense if cluster-size > 1 with no load balancer.
+            # lsh@2022-09: unused feature, not sure which project it was built for.
             dns-external-primary: false
             # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
-            # only makes sense if cluster-size > 1
+            # only makes sense if cluster-size > 1 with no load balancer (see 'search' project).
             dns-internal: false
             # override 'ext' (only supported key)
             # for some EC2 instances
@@ -57,7 +62,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0ed4b2976ec96c29f # GENERATED created from basebox--2004
+            ami: ami-0f6bde9a2cccbaca7 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -423,7 +428,7 @@ master-server:
             ports:
                 - 22
                 - 4506: # salt publish port
-                    # CIDR of subnet this master will server
+                    # CIDR of subnet this master will serve
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
                 - 4505: # salt return port
                     cidr-ip: 10.0.0.0/16
@@ -1327,6 +1332,7 @@ bus:
             - bus-metrics--{instance}
             - bus-profiles--{instance}
             - bus-digests--{instance}
+            - bus-reviewed-preprints--{instance}
 
 search:
     domain: false
@@ -1353,6 +1359,7 @@ search:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
+                    - bus-reviewed-preprints--{instance}
     aws-alt:
         end2end:
             ec2:
@@ -1469,7 +1476,6 @@ observer:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
-                - 8001 # metabase
                 - 443  # app
         sqs:
             observer--{instance}:
@@ -1496,7 +1502,6 @@ observer:
     vagrant:
         ports:
             1239: 80
-            1240: 8001
 
 error-pages:
     description: static deployment of https://github.com/elifesciences/error-pages
@@ -1750,7 +1755,6 @@ profiles:
             rds:
                 multi-az: true
     vagrant:
-        ram: 1024
         ports:
             1265: 80
 
@@ -1988,8 +1992,8 @@ kubernetes-aws:
                 version: '1.21'
                 worker:
                     type: t3.large
-                    max-size: 12
-                    desired-capacity: 11
+                    max-size: 14
+                    desired-capacity: 12
                 # since helm: is not installed, this will only add AWS resources
                 # but not the ExternalDNS chart release
                 external-dns:

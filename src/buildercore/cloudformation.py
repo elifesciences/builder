@@ -178,7 +178,11 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
     this function looks for the strings "true" and "false" and converts them to True and False, emitting
     a warning if it finds any.
 
-    I don't know if there are string-booleans that need to be kept as such."""
+    I don't know if there are string-booleans that need to be kept as such.
+
+    lsh@2022-09-30: a case where string-booleans need to be kept as such:
+    - https://github.com/elifesciences/issues/issues/7443
+    in this case, a list of [{'Key': 'SomeKey', 'Value': 'true'}, ...] needs it's string-bools preserved."""
     def convert_string_bools(v):
         if v == 'true':
             LOG.warning("found string 'true' in Cloudformation template, converting to boolean True")
@@ -187,7 +191,12 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
             LOG.warning("found string 'false' in Cloudformation template, converting to boolean False")
             return False
         return v
-    return utils.visit(template_data, convert_string_bools)
+
+    def predicate(v):
+        "don't descend in to or transform a map that looks like an AWS Key+Value pair"
+        return not (isinstance(v, dict) and 'Key' in v and 'Value' in v)
+
+    return utils.visit(template_data, convert_string_bools, predicate)
 
 def _read_template(path_to_template):
     template_data = json.load(open(path_to_template, 'r'))
@@ -304,7 +313,7 @@ def destroy(stackname, context):
         msg = "[%s: %s] %s (request-id: %s)"
         meta = ex.response['ResponseMetadata']
         err = ex.response['Error']
-        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        # "[400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)"
         if "No updates are to be performed" in err['Message']:
             LOG.info("Stack %s does not need updates on CloudFormation", stackname)
             return
@@ -316,7 +325,7 @@ def destroy(stackname, context):
             return
 
         LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
-        # ll: ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-bot--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS
+        # "ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-bot--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS"
         raise
 
 

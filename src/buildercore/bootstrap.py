@@ -42,6 +42,7 @@ def put_script(script_filename, remote_script):
 @backoff.on_exception(backoff.expo, command.NetworkError, max_time=60)
 def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for `config.SCRIPTS_PATH` and executes it in the /tmp dir with given params.
+    script is run as the root user via sudo.
     WARN: assumes you are connected to a stack"""
     start = datetime.now()
     remote_script = _put_temporary_script(script_filename)
@@ -441,7 +442,7 @@ def download_master_configuration(master_stack):
 
 def expand_master_configuration(master_configuration_template, formulas=None):
     "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"
-    cfg = utils.ordered_load(master_configuration_template)
+    cfg = utils.yaml_load(master_configuration_template)
 
     if not formulas:
         formulas = project.known_formulas() # *all* formulas
@@ -512,7 +513,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         if alt_salt_version and is_masterless:
             salt_version = alt_salt_version
 
-        install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
+        install_master_flag = str(is_master or is_masterless).lower() # "true"
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
@@ -530,7 +531,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             # the master-builder key
             upload_master_builder_key(master_builder_key)
             envvars = {
-                'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', ''),
+                'BUILDER_TOPFILE': config.ENV['BUILDER_TOPFILE']
             }
 
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
@@ -591,7 +592,7 @@ def master_minion_keys(master_stackname, group_by_stackname=True):
 def orphaned_keys(master_stackname):
     "returns a list of paths to keys on the master server that have no corresponding *active* cloudformation stack"
     region = core.find_region(master_stackname)
-    # ll: ['annotations--continuumtest', 'annotations--end2end', 'annotations--prod', 'anonymous--continuum', 'api-gateway--continuumtest', ...]
+    # ['annotations--continuumtest', 'annotations--end2end', 'annotations--prod', 'anonymous--continuum', 'api-gateway--continuumtest', ...]
     active_cfn_stack_names = core.active_stack_names(region)
     grouped_key_files = master_minion_keys(master_stackname)
     missing_stacks = set(grouped_key_files.keys()).difference(active_cfn_stack_names)

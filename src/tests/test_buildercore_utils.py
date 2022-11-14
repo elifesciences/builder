@@ -8,6 +8,24 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+def test_unique():
+    case_list = [
+        # empty collections are supported, but only lists are returned
+        ([], []),
+        ((), []),
+        ({}, []),
+        # no changes if already unique
+        ([1, 2, 3], [1, 2, 3]),
+        # unique items are removed
+        ([1, 1, 2, 3], [1, 2, 3]),
+        # multiple unique items are removed
+        ([1, 1, 1, 1], [1]),
+        # order is preserved
+        ([3, 2, 1, 2, 3], [3, 2, 1])
+    ]
+    for given, expected in case_list:
+        assert utils.unique(given) == expected
+
 class Simple(base.BaseCase):
     def setUp(self):
         pass
@@ -151,7 +169,7 @@ class Simple(base.BaseCase):
             utils.call_while(check, interval=5, timeout=15, exception_class=OSError)
             self.fail("Should not return normally")
         except OSError as e:
-            self.assertEqual("Reached timeout 15 while waiting ...", str(e))
+            self.assertEqual("Reached timeout 15s while waiting ...", str(e))
 
     @patch('time.sleep')
     def test_call_while_custom_message(self, sleep):
@@ -161,7 +179,17 @@ class Simple(base.BaseCase):
             utils.call_while(check, interval=5, timeout=15, update_msg="waiting for Godot")
             self.fail("Should not return normally")
         except BaseException as e:
-            self.assertEqual("Reached timeout 15 while waiting for Godot", str(e))
+            self.assertEqual("Reached timeout 15s while waiting for Godot", str(e))
+
+    @patch('time.sleep')
+    def test_call_while_no_message(self, sleep):
+        check = MagicMock()
+        check.return_value = True
+        try:
+            utils.call_while(check, interval=5, timeout=15, update_msg=None)
+            self.fail("Should not return normally")
+        except BaseException as e:
+            self.assertEqual("Reached timeout 15s", str(e))
 
     def test_ensure(self):
         utils.ensure(True, "True should allow ensure() to continue")
@@ -250,6 +278,53 @@ def test_visit__modify():
 
     for given, expected in cases:
         assert utils.visit(given, f) == expected, "failed case: %r" % given
+
+def test_visit_pred():
+    "`visit` can skip updating values if given a predicate and the predicate function returns true"
+    cases = [
+        (None, None),
+        ("", ""),
+        (1, "1"),
+        (2, "2"),
+        # the visit fn is not applied to collections, just their values
+        ([], []),
+        ({}, {}),
+        ([None, 1], [None, "1"]),
+        ({None: 0, 1: 1, 2: 3}, {None: "0", 1: "1", 2: "3"}),
+    ]
+
+    def p(v):
+        return not (v in [None])
+
+    for given, expected in cases:
+        assert utils.visit(given, str, p) == expected, "failed case: %r" % given
+
+def test_visit_pred_2():
+    "real life example. under very specific circumstances, don't transform a map of data."
+
+    given = {"Properties":
+             {"LoadBalancerAttributes": [
+                 {"Key": "waf.fail_open.enabled", "Value": "true"},
+                 {"Key": "idle_timeout.timeout_seconds", "Value": "60"}],
+              "SomeBoolean": "true",
+              "SomeBoolean2": "false"}}
+
+    expected = {"Properties":
+                {"LoadBalancerAttributes": [
+                    {"Key": "waf.fail_open.enabled", "Value": "true"},
+                    {"Key": "idle_timeout.timeout_seconds", "Value": "60"}],
+                 "SomeBoolean": True,
+                 "SomeBoolean2": "false"}}
+
+    def f(v):
+        if v == 'true':
+            return True
+        return v
+
+    def p(v):
+        return not (isinstance(v, dict) and 'Key' in v and 'Value' in v)
+
+    assert utils.visit(given, f, p) == expected
 
 def test_updatein__no_create():
     cases = [

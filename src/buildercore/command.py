@@ -6,15 +6,12 @@ import fabric.state
 import fabric.network
 import logging
 from io import BytesIO
-from . import utils, threadbare
+from . import config, utils, threadbare
 
 THREADBARE = 'threadbare'
 FABRIC = 'fabric'
 
-DEFAULT_BACKEND = THREADBARE
-#DEFAULT_BACKEND = FABRIC
-
-BACKEND = os.environ.get('BLDR_BACKEND', DEFAULT_BACKEND)
+BACKEND = config.ENV['BLDR_BACKEND']
 assert BACKEND in [FABRIC, THREADBARE]
 
 def api(fabric_fn, threadbare_fn):
@@ -178,5 +175,5 @@ def fab_put_data(data, remote_path, use_sudo=False):
     utils.ensure(isinstance(data, bytes) or utils.isstr(data), "data must be bytes or a string that can be encoded to bytes")
     data = data if isinstance(data, bytes) else data.encode()
     bytestream = BytesIO(data)
-    label = "%s bytes" % bytestream.getbuffer().nbytes if utils.gtpy2() else "? bytes"
+    label = "%s bytes" % bytestream.getbuffer().nbytes
     return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)

@@ -1,10 +1,11 @@
 # import threadbare early so gevent.monkey_patch can patch everything
-from buildercore import threadbare
+from buildercore import config, threadbare
 from functools import reduce
 from decorators import echo_output
 from buildercore import command
-import cfn, lifecycle, masterless, vault, aws, metrics, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks
-import sys, os, traceback
+import cfn, lifecycle, masterless, vault, aws, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks, stack
+import aws.rds, aws.cloudformation, aws.ec2
+import sys, traceback
 import utils
 
 # threadbare module is otherwise not used is flagged for linting
@@ -23,6 +24,8 @@ def echo(msg, *args, **kwargs):
 
 # NOTE: 'unqualified' tasks are those that can be called just by their function name.
 # for example: `./bldr start` is the unqualified function `lifecycle.start`
+# prefer qualified tasknames.
+
 # NOTE: a task's function signature constitutes it's API, check twice before changing it.
 # the 'see: ...' references below are *not* comprehensive.
 UNQUALIFIED_TASK_LIST = [
@@ -62,8 +65,6 @@ UNQUALIFIED_TASK_LIST = [
 # NOTE: these are 'qualified' tasks where the full path to the function must be used.
 # for example: `./bldr buildvars.switch_revision`
 TASK_LIST = [
-    metrics.regenerate_results, # todo: remove
-
     # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.ec2-plugin-ami-update
     tasks.create_ami,
     tasks.repair_cfn_info,
@@ -87,6 +88,13 @@ TASK_LIST = [
     project.data,
     project.context,
     project.new,
+
+    stack.list,
+    stack.config,
+
+    aws.ec2.start_node,
+    aws.ec2.stop_node,
+    aws.ec2.restart_node,
 
     # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.launch,
@@ -112,6 +120,9 @@ TASK_LIST = [
     report.all_adhoc_ec2_instances,
     report.long_running_large_ec2_instances,
     report.all_amis_to_prune,
+    report.ec2_node_count,
+    # see: https://alfred.elifesciences.org/job/process/job/process-project-security-updates/
+    report.process_project_security_updates,
 
     checks.stack_exists,
     tasks.delete_all_amis_to_prune,
@@ -124,14 +135,14 @@ UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.highstate,
     cfn.fix_bootstrap,
     cfn.pillar,
-    cfn.aws_stack_list,
+    # cfn.aws_stack_list, # moved to 'aws.cloudformation.stack_list'
 ]
 
 # same as above, but the task name must be fully written out
 # for example: 'BLDR_ROLE=admin ./bldr master.download_keypair'
 DEBUG_TASK_LIST = [
-    aws.rds_snapshots,
-    aws.detailed_stack_list,
+    aws.rds.snapshot_list,
+    aws.cloudformation.stack_list,
 
     deploy.load_balancer_status,
 
@@ -156,21 +167,29 @@ DEBUG_TASK_LIST = [
 def mk_task_map(task, qualified=True):
     """returns a map of information about the given task function.
     when `qualified` is `False`, the path to the task is truncated to just the task name"""
-    path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
+    # lsh@2022-09-16: not sure why I was truncating the module path ('aws.rds' => 'rds'),
+    # but I need the full thing now.
+    #path = "%s.%s" % (task.__module__.split('.')[-1], task.__name__)
+    path = "%s.%s" % (task.__module__, task.__name__)
     unqualified_path = task.__name__
-    description = (task.__doc__ or '').strip().replace('\n', ' ')
+    #description = (task.__doc__ or '').strip().replace('\n', ' ')
+    docstr = (task.__doc__ or '').replace('  ', '')
+    docstr_bits = docstr.split('\n', 1)
+    short_str = docstr_bits[0]
+    long_str = docstr_bits[1] if len(docstr_bits) > 1 else ''
     return {
         "name": path if qualified else unqualified_path,
         "path": path,
-        "description": description,
+        "short_description": short_str,
+        "long_description": long_str,
         "fn": task,
     }
 
 def generate_task_list(show_debug_tasks=False):
     """returns a collated list of maps with task information.
 
-    [{"name": "ssh", "fn": cfn.ssh, "description": "foobar baz"}, ...]
-     {"name": "cfn.deploy", "fn": cfn.deploy, "description": "bar barbar"}, ...]"""
+    [{"name": "ssh", "fn": cfn.ssh, "short_description": "foobar baz"}, ...]
+     {"name": "cfn.deploy", "fn": cfn.deploy, "short_description": "bar barbar"}, ...]"""
 
     def to_list(task_list, qualified=True):
         return [mk_task_map(task, qualified) for task in task_list]
@@ -284,7 +303,7 @@ def exec_task(task_str, task_map_list):
         command.network_disconnect_all()
 
 def main(arg_list):
-    show_debug_tasks = os.environ.get("BLDR_ROLE") == "admin"
+    show_debug_tasks = config.ENV["BLDR_ROLE"] == "admin"
     task_map_list = generate_task_list(show_debug_tasks)
 
     if not arg_list or arg_list[1:]:
@@ -299,18 +318,27 @@ def main(arg_list):
 
     if not command_string or command_string in ["-l", "--list"]:
         print("Available commands:\n")
-        indent = 4
+        indent = 2
         max_path_len = reduce(max, [len(tm['name']) for tm in task_map_list])
         task_description_gap = 2
-        max_description_len = 60
+        #max_description_len = 70
         for tm in task_map_list:
             path_len = len(tm['name'])
             offset = (max_path_len - path_len) + task_description_gap
-            offset = ' ' * offset
+            offset_str = ' ' * offset
             task_name = tm['name']
-            description = tm['description'][:max_description_len]
             leading_indent = ' ' * indent
-            print(leading_indent + task_name + offset + description)
+            new_indent = ' ' * (indent + len(task_name) + offset)
+
+            print(leading_indent + task_name + offset_str + tm['short_description'])
+            for row in tm['long_description'].split('\n'):
+                row = row.strip()
+                if not row:
+                    continue
+                print(new_indent + row)
+
+            if tm['long_description']:
+                print()
 
         # no explicit invocation of help gets you an error code
         return 0 if command_string else 1

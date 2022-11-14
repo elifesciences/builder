@@ -6,7 +6,6 @@ from datetime import datetime
 import yaml
 from collections import OrderedDict
 from os.path import join
-from more_itertools import unique_everseen
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
@@ -42,8 +41,14 @@ def shallow_flatten(lst):
     "flattens a single level of nesting [[1] [2] [3]] => [1 2 3]"
     return [item for sublist in list(lst) for item in sublist]
 
+# lsh@2022-08-31: removed more-itertools in favour of:
+# - https://stackoverflow.com/questions/44628186/convert-python-list-to-ordered-unique-values
 def unique(lst):
-    return list(unique_everseen(lst))
+    "returns a new list of items from given `lst` with duplicates removed, preserving item order."
+    #from more_itertools import unique_everseen
+    # return list(unique_everseen(lst))
+    seen = set()
+    return [x for x in lst if x not in seen and seen.add(x) is None]
 
 def iterable(x):
     return isinstance(x, Iterable)
@@ -160,21 +165,25 @@ def firstnn(x):
 # pylint: disable=too-many-arguments
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
     """calls the given function `fn` every `interval` seconds until it returns False.
-
     An `exception_class` will be raised if `timeout` is reached (default `RuntimeError`).
-
     Any exception objects returned from `fn` will be raised."""
     if not exception_class:
         exception_class = RuntimeError
     elapsed = 0
     while True:
-        LOG.info(update_msg)
+        if update_msg:
+            LOG.info(update_msg)
         result = fn()
         if not result:
             break
         if elapsed >= timeout:
-            message = "Reached timeout %d while %s" % (timeout, update_msg)
+            # "Reached timeout 120s"
+            message = "Reached timeout %ds" % timeout
+            if update_msg:
+                # "Reached timeout 120s while waiting ..."
+                message += " while %s" % update_msg
             if isinstance(result, BaseException):
+                # "Reached timeout 120s while waiting ... (some useful error message)"
                 message = message + (" (%s)" % result)
             raise exception_class(message)
         time.sleep(interval)
@@ -214,7 +223,7 @@ def random_alphanumeric(length=32):
     rand = random.SystemRandom()
     return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
 
-def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
+def yaml_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
     # pylint: disable=too-many-ancestors
     class OrderedLoader(loader_class):
         pass
@@ -227,17 +236,13 @@ def ordered_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
 
-def gtpy2():
-    "predicate: greater than python 2?"
-    return sys.version_info[:2] > (2, 7)
-
 def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
     "wrapper around the yaml.dump function with sensible defaults for formatting"
     indent = 4
     line_break = '\n'
     # pylint: disable=too-many-ancestors
 
-    if gtpy2() and isinstance(data, bytes):
+    if isinstance(data, bytes):
         # simple bytestrings are treated as regular (utf-8) strings and not binary data in python3+
         # this doesn't apply to bytestrings used as keys or values in a list
         data = data.decode()
@@ -269,7 +274,8 @@ def remove_ordereddict(data, dangerous=True):
     return json.loads(json_dumps(data, dangerous))
 
 def listfiles(path, ext_list=None):
-    "returns a list of absolute paths for given dir"
+    """returns a list of absolute paths for given `path`.
+    any file extensions in `ext_list` will filter the list of files returned."""
     path_list = [os.path.abspath(join(path, fname)) for fname in os.listdir(path)]
     if ext_list:
         path_list = filter(lambda path: os.path.splitext(path)[1] in ext_list, path_list)
@@ -375,10 +381,15 @@ def http_responses():
     import http.client
     return http.client.responses
 
-def visit(d, f):
-    "visits each value in `d` and applies function `f` to it"
-    if isinstance(d, dict):
-        return {k: visit(v, f) for k, v in d.items()}
-    if isinstance(d, list):
-        return [visit(v, f) for v in d]
-    return f(d)
+def visit(d, f, p=None):
+    """visits each value in `d` and applies function `f` to it.
+    if predicate `p` is given and `p(d)` is false-y, do not visit `d`."""
+    if p is None:
+        p = lambda _: True
+    if isinstance(d, dict) and p(d):
+        return {k: visit(v, f, p) for k, v in d.items()}
+    if isinstance(d, list) and p(d):
+        return [visit(v, f, p) for v in d]
+    if p(d):
+        return f(d)
+    return d

@@ -19,13 +19,13 @@ We want to add an external volume to an EC2 instance to increase available space
 
 from slugify import slugify
 import logging
-import os, json
+import json
 import re
 from collections import OrderedDict, namedtuple
 from functools import partial
 import botocore
 import netaddr
-from . import utils, cloudformation, terraform, core, project, context_handler
+from . import config, utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
 
 LOG = logging.getLogger(__name__)
@@ -65,6 +65,60 @@ def parameterize(context):
         return string.format(**placeholders)
     return wrapper
 
+def hostname_struct(stackname):
+    "returns a dictionary with convenient domain name information"
+
+    pname, instance_id = core.parse_stackname(stackname)
+
+    # lsh@2022-09-19: err, watch out here, boundaries between project and instance context
+    # data have become blurry. func signature needs a stackname, implying a project *instance*,
+    # but then we immediately load the raw project data and start pulling from there.
+
+    pdata = project.project_data(pname)
+    domain = pdata.get('domain')
+    intdomain = pdata.get('intdomain')
+    subdomain = pdata.get('subdomain')
+
+    struct = {
+        'domain': domain, # elifesciences.org
+        'int_domain': intdomain, # elife.internal
+
+        'subdomain': subdomain, # gateway
+
+        'hostname': None, # temp.gateway
+
+        'project_hostname': None, # gateway.elifesciences.org
+        'int_project_hostname': None, # gateway.elife.internal
+
+        'full_hostname': None, # gateway--temp.elifesciences.org
+        'int_full_hostname': None, # gateway--temp.elife.internal
+    }
+    if not subdomain:
+        # this project doesn't expect to be addressed
+        # return immediately with what we do have
+        return struct
+
+    # removes any non-alphanumeric or hyphen characters
+    instance_subdomain_fragment = re.sub(r'[^\w\-]', '', instance_id)
+    hostname = instance_subdomain_fragment + "--" + subdomain
+
+    updates = {
+        'hostname': hostname,
+    }
+
+    if domain:
+        updates['project_hostname'] = subdomain + "." + domain
+        updates['full_hostname'] = hostname + "." + domain
+        updates['ext_node_hostname'] = hostname + "--%s." + domain
+
+    if intdomain:
+        updates['int_project_hostname'] = subdomain + "." + intdomain
+        updates['int_full_hostname'] = hostname + "." + intdomain
+        updates['int_node_hostname'] = hostname + "--%s." + intdomain
+
+    struct.update(updates)
+    return struct
+
 def build_context(pname, **more_context):
     """builds a dictionary called the `context` that is used when rendering the final cloudformation/terraform template.
     `more_context` is used to provide additional runtime data that can tweak the final dictionary.
@@ -95,7 +149,8 @@ def build_context(pname, **more_context):
         'project_name': pname,
         # 'project': project_data,
 
-        'author': os.environ.get("LOGNAME") or 'unknown',
+        'author': config.STACK_AUTHOR,
+
         # lsh@2022-02-16: disabled. dates make testing difficult and this value doesn't appear to be used.
         # 'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
 
@@ -293,7 +348,7 @@ def project_wrangler(pdata, context):
     # provides: 'domain', 'int_domain', 'subdomain',
     #           'hostname', 'project_hostname', 'int_project_hostname',
     #           'full_hostname', 'int_full_hostname'
-    context.update(core.hostname_struct(context['stackname']))
+    context.update(hostname_struct(context['stackname']))
 
     # project data
     # preseve some of the project data. all of it is too much
@@ -387,7 +442,7 @@ def build_context_rds(pdata, context, existing_context):
     subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
     net = subnet_cidr.network
     mask = subnet_cidr.netmask
-    networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
+    networkmask = "%s/%s" % (net, mask) # "10.0.2.0/255.255.255.0"
 
     # pull password from existing context, if it exists
     generated_password = utils.random_alphanumeric(length=32)
@@ -866,7 +921,7 @@ def template_delta(context):
 
     # TODO: investigate if this is still necessary
     # start backward compatibility code
-    # back for when EC2Instance was the title rather than EC2Instance1
+    # back for when 'EC2Instance' was the title rather than 'EC2Instance1'
     if 'EC2Instance' in old_template['Resources']:
         if 'ExtraStorage' in template['Resources']:
             template['Resources']['ExtraStorage']['Properties']['AvailabilityZone']['Fn::GetAtt'][0] = 'EC2Instance'

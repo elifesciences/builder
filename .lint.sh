@@ -3,11 +3,11 @@ set -e
 
 echo "[-] .lint.sh"
 
-echo "scrubbing"
-. .scrub.sh
-
 echo "pyflakes"
 .ci/pyflakes
+
+echo "scrubbing"
+. .scrub.sh
 
 echo "pylint"
 .ci/pylint
