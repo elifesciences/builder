@@ -211,10 +211,7 @@ defaults:
                 desired-capacity: 3
                 #root:
                 #   size: 20 # GiB, default
-            helm: false
             external-dns: false
-                # Route53 hosted zone to create subdomains on
-                #domain-filter: elifesciences.org
             efs: false
             autoscaler-policy: false
         cloudfront:
@@ -943,23 +940,13 @@ project-with-eks:
                 root:
                     size: 40
 
-project-with-eks-helm:
-    description: project managing an EKS cluster with Helm for chart installation
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            helm: true
-
 project-with-eks-external-dns:
     description: project managing an EKS cluster with external-dns for Route53 entries creation
     domain: False
     intdomain: False
     aws:
         eks:
-            helm: true  # required
-            external-dns:
-                domain-filter: "elifesciences.net"
+            external-dns: true
 
 project-with-eks-efs:
     description: project managing an EKS cluster with EFS support
