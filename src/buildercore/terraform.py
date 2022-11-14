@@ -781,6 +781,59 @@ def _render_eks_iam_access(context, template):
         'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
     })
 
+    if 'iam-roles' in context['eks'] and context['eks']['iam-roles']:
+        for rolename, role_definition in context['eks']['iam-roles'].items():
+            if not 'policy-template' in role_definition:
+                raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
+
+            if not role_definition['policy-template'] in IRSA_POLICY_TEMPLATES:
+                raise RuntimeError("Could not find policy template with the name %s" % role_definition['policy-template'])
+
+            if not 'service-account' in role_definition or not 'namespace' in role_definition:
+                raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
+
+            stackname = context['stackname']
+            accountid = context['aws']['account-id']
+            serviceaccount = role_definition['service-account']
+            namespace = role_definition['namespace']
+
+            policy = json.dumps(IRSA_POLICY_TEMPLATES[role_definition['policy-template']](stackname, accountid))
+
+            assume_policy = json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Federated": "arn:aws:iam::%s::oidc-provider/${aws_eks_cluster.main.identity.0.oidc.0.issuer}" % accountid,
+                        },
+                        "Action": "sts:AssumeRoleWithWebIdentity",
+                        "Condition": {
+                            "ForAllValues:StringLike": {
+                                "${aws_eks_cluster.main.identity.0.oidc.0.issuer}:aud": ["sts.amazonaws.com"],
+                                "${aws_eks_cluster.main.identity.0.oidc.0.issuer}:sub": ["system:serviceaccount:%s:%s" % (namespace, serviceaccount)]
+                            }
+                        }
+                    }
+                ]
+            })
+
+            template.populate_resource('aws_iam_role', rolename, block={
+                'name': '%s--%s' % (stackname, rolename),
+                'assume_role_policy': assume_policy,
+            })
+
+            template.populate_resource('aws_iam_policy', rolename, block={
+                'name': '%s--%s' % (stackname, rolename),
+                'path': '/',
+                'policy': policy,
+            })
+
+            template.populate_resource('aws_iam_role_policy_attachment', rolename, block={
+                'policy_arn': "${aws_iam_policy.%s.arn}" % rolename,
+                'role': "${aws_iam_role.%s.name}" % rolename,
+            })
+
 def _render_eks_user_access(context, template):
     template.populate_resource('aws_iam_role', 'user', block={
         'name': '%s--AmazonEKSUserRole' % context['stackname'],
@@ -1119,65 +1172,6 @@ def _render_eks_master_role(context, template):
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
         'role': "${aws_iam_role.master.name}",
     })
-
-    template.populate_resource('aws_iam_openid_connect_provider', 'default', block={
-        'client_id_list': ['sts.amazonaws.com'],
-        'thumbprint_list': ['${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}'],
-        'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
-    })
-
-    if 'iam-roles' in context['eks']:
-        for rolename, role_definition in context['eks']['iam-roles'].items():
-            if not 'policy-template' in role_definition:
-                raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
-
-            if not role_definition['policy-template'] in IRSA_POLICY_TEMPLATES:
-                raise RuntimeError("Could not find policy template with the name %s" % role_definition['policy-template'])
-
-            if not 'service-account' in role_definition or not 'namespace' in role_definition:
-                raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
-
-            stackname = context['stackname']
-            accountid = context['aws']['account-id']
-            serviceaccount = role_definition['service-account']
-            namespace = role_definition['namespace']
-
-            policy = json.dumps(IRSA_POLICY_TEMPLATES[role_definition['policy-template']](stackname, accountid))
-
-            assume_policy = json.dumps({
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Federated": "arn:aws:iam::%s::oidc-provider/${aws_eks_cluster.main.identity.0.oidc.0.issuer}" % accountid,
-                        },
-                        "Action": "sts:AssumeRoleWithWebIdentity",
-                        "Condition": {
-                            "ForAllValues:StringLike": {
-                                "${aws_eks_cluster.main.identity.0.oidc.0.issuer}:aud": ["sts.amazonaws.com"],
-                                "${aws_eks_cluster.main.identity.0.oidc.0.issuer}:sub": ["system:serviceaccount:%s:%s" % (namespace, serviceaccount)]
-                            }
-                        }
-                    }
-                ]
-            })
-
-            template.populate_resource('aws_iam_role', rolename, block={
-                'name': '%s--%s' % (stackname, rolename),
-                'assume_role_policy': assume_policy,
-            })
-
-            template.populate_resource('aws_iam_policy', rolename, block={
-                'name': '%s--%s' % (stackname, rolename),
-                'path': '/',
-                'policy': policy,
-            })
-
-            template.populate_resource('aws_iam_role_policy_attachment', rolename, block={
-                'policy_arn': "${aws_iam_policy.%s.arn}" % rolename,
-                'role': "${aws_iam_role.%s.name}" % rolename,
-            })
 
 def _render_eks_master_security_group(context, template):
     security_group_tags = aws.generic_tags(context)
