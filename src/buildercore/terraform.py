@@ -6,6 +6,7 @@ from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, lookup
 from . import aws, fastly
+from collections import OrderedDict
 
 MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
@@ -781,7 +782,7 @@ def _render_eks_iam_access(context, template):
         'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
     })
 
-    if 'iam-roles' in context['eks'] and isinstance(context['eks']['iam-roles'], list):
+    if 'iam-roles' in context['eks'] and isinstance(context['eks']['iam-roles'], OrderedDict):
         for rolename, role_definition in context['eks']['iam-roles'].items():
             if not 'policy-template' in role_definition:
                 raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
