@@ -116,11 +116,12 @@ def all_sns_subscriptions(region, stackname=None):
 #
 
 def boto_resource(service, region):
-    # lsh@2022-07-25: set the retry mode to 'adaptive' (experimental)
-    # - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
-    # this mode may change in features and behaviour, but it already sounds quite clever/magical.
-    kwargs = {'region_name': region}
+    kwargs = {}
+    if region:
+        kwargs['region_name'] = region
     if service == 'ec2':
+        # lsh@2022-07-25: set the retry mode to 'adaptive' (experimental)
+        # - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
         kwargs['config'] = botocore.config.Config(
             retries={
                 'max_attempts': 10,
@@ -132,7 +133,7 @@ def boto_resource(service, region):
 def boto_client(service, region=None):
     """the boto3 'service' client is a lower-level construct compared to the boto3 'resource' client.
     it excludes some convenient functionality, like automatic pagination."""
-    exceptions = ['route53']
+    exceptions = ['route53', 's3']
     if service not in exceptions:
         ensure(region, "'region' is a required parameter for all services except: %s" % (', '.join(exceptions),))
     return boto3.client(service, region_name=region)
