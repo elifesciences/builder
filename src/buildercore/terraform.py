@@ -1189,7 +1189,6 @@ def _render_eks_master_security_group(context, template):
         'tags': security_group_tags,
     })
 
-
 def render_eks(context, template):
     "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
     if not context['eks']:
