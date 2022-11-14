@@ -781,7 +781,7 @@ def _render_eks_iam_access(context, template):
         'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
     })
 
-    if 'iam-roles' in context['eks'] and context['eks']['iam-roles']:
+    if 'iam-roles' in context['eks'] and isinstance(context['eks']['iam-roles'], list):
         for rolename, role_definition in context['eks']['iam-roles'].items():
             if not 'policy-template' in role_definition:
                 raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
