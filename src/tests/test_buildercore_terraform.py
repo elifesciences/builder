@@ -1486,6 +1486,56 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_openid_connect_provider']['default']['thumbprint_list']
         )
 
+    def test_irsa_external_dns_permissions(self):
+        pname = 'project-with-eks-and-irsa-external-dns-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-external-dns']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-external-dns', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-infra', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-external-dns']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-external-dns']
+        self.assertEqual('${aws_iam_policy.dummy-external-dns.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-external-dns.name}', aws_iam_role_policy_attachment['role'])
+
+    def test_irsa_kubernetes_autoscaler_permissions(self):
+        pname = 'project-with-eks-and-irsa-kubernetes-autoscaler-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-kubernetes-autoscaler']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-kubernetes-autoscaler', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-autoscaler', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-kubernetes-autoscaler']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-kubernetes-autoscaler']
+        self.assertEqual('${aws_iam_policy.dummy-kubernetes-autoscaler.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-kubernetes-autoscaler.name}', aws_iam_role_policy_attachment['role'])
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

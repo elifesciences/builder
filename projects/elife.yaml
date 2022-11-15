@@ -62,7 +62,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0f3f5a5d9b85732bb # GENERATED created from basebox--2004
+            ami: ami-0f6bde9a2cccbaca7 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -92,7 +92,7 @@ defaults:
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
-            version: '11' # EOL Nov 2023
+            version: '12' # EOL Nov 14 2024
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t3.small
             storage: 5 # GB
@@ -226,7 +226,22 @@ defaults:
                 #domain-filter: elifesciences.org
             efs: false
             autoscaler-policy: false
+
+            # this configures IAM roles for service accounts (IRSA).
             iam-oidc-provider: false
+
+            # We also have some prebuilt IRSA permissions templates for services that can be running on the cluster
+            # This is a dict with a unique name as key and an object mapping a prebuilt template applied to a role with an inline policy to a cluster service account as value
+            # available templates are: kubernetes-autoscaler external-dns
+            iam-roles:
+                # kubernetes-autoscaler:
+                #     policy-template: kubernetes-autoscaler
+                #     service-account: cluster-autoscaler-aws-cluster-autoscaler
+                #     namespace: autoscaler
+                # external-dns:
+                #     policy-template: external-dns
+                #     service-account: infra-external-dns
+                #     namespace: infra
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -453,7 +468,6 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
-                version: '11.14'
                 storage: 10
                 backup-retention: 2 # days
             ext:
@@ -470,7 +484,6 @@ lax:
             ec2:
                 cluster-size: 3
             rds:
-                version: '11.14'
                 storage: 10
                 multi-az: true
             ext:
@@ -829,7 +842,6 @@ elife-metrics:
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
-                version: '11.14'
                 type: db.t3.medium
                 multi-az: true
                 storage: 20
@@ -1476,7 +1488,6 @@ observer:
     aws-alt:
         end2end:
             rds:
-                version: '11.14'
                 storage: 10
                 backup-retention: 2 # days
         prod:
@@ -1789,7 +1800,6 @@ digests:
         continuumtest:
             rds:
                 type: db.t3.micro
-                version: '11.14'
                 backup-retention: 2 # days
         prod:
             rds:
@@ -1811,7 +1821,6 @@ elife-libero-reviewer:
     aws-alt:
         staging:
             rds:
-                version: '12'
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             s3:
@@ -1820,7 +1829,6 @@ elife-libero-reviewer:
         prod:
             rds:
                 multi-az: true
-                version: '12'
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
             s3:
