@@ -805,12 +805,11 @@ def _render_eks_iam_access(context, template):
                     {
                         "Effect": "Allow",
                         "Principal": {
-                            "Federated": "arn:aws:iam::%s::oidc-provider/${aws_eks_cluster.main.identity.0.oidc.0.issuer}" % accountid,
+                            "Federated": "${aws_iam_openid_connect_provider.default.arn}",
                         },
                         "Action": "sts:AssumeRoleWithWebIdentity",
                         "Condition": {
-                            "ForAllValues:StringLike": {
-                                "${aws_eks_cluster.main.identity.0.oidc.0.issuer}:aud": ["sts.amazonaws.com"],
+                            "StringEquals": {
                                 "${aws_eks_cluster.main.identity.0.oidc.0.issuer}:sub": ["system:serviceaccount:%s:%s" % (namespace, serviceaccount)]
                             }
                         }
