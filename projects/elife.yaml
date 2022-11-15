@@ -2005,6 +2005,16 @@ kubernetes-aws:
                 external-dns:
                     domain-filter: "elifesciences.org"
                 autoscaler-policy: true
+                iam-oidc-provider: true
+                iam-roles:
+                    kubernetes-autoscaler:
+                        policy-template: kubernetes-autoscaler
+                        service-account: cluster-autoscaler-aws-cluster-autoscaler
+                        namespace: autoscaler
+                    external-dns:
+                        policy-template: external-dns
+                        service-account: infra-external-dns
+                        namespace: infra
 
 bioprotocol:
     subdomain: bp # {instance}--bp.elifesciences.org
