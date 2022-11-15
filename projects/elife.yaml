@@ -468,7 +468,6 @@ lax:
             ec2:
                 cluster-size: 2
             rds:
-                version: '11.14'
                 storage: 10
                 backup-retention: 2 # days
             ext:
@@ -485,7 +484,6 @@ lax:
             ec2:
                 cluster-size: 3
             rds:
-                version: '11.14'
                 storage: 10
                 multi-az: true
             ext:
@@ -836,7 +834,6 @@ elife-metrics:
         end2end:
             description: end2end environment for metrics. RDS backed.
             rds:
-                version: '11'
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed.
@@ -845,7 +842,6 @@ elife-metrics:
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
-                version: '11.14'
                 type: db.t3.medium
                 multi-az: true
                 storage: 20
@@ -1165,7 +1161,6 @@ elife-dashboard:
             unique: true
             description: production-like environment.
             rds:
-                version: '11'
                 backup-retention: 2 # days
             sqs:
                 # legacy custom name
@@ -1185,7 +1180,6 @@ elife-dashboard:
             unique: true
             description: production environment. backed by RDS
             rds:
-                version: '11'
                 multi-az: true
             sqs:
                 # legacy custom name
@@ -1494,13 +1488,11 @@ observer:
     aws-alt:
         end2end:
             rds:
-                version: '11.14'
                 storage: 10
                 backup-retention: 2 # days
         prod:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             rds:
-                version: '11'
                 storage: 10
                 multi-az: true
     vagrant:
@@ -1746,7 +1738,6 @@ profiles:
     aws-alt:
         end2end:
             rds:
-                version: '11'
                 backup-retention: 2 # days
             ec2:
                 ports:
@@ -1758,7 +1749,6 @@ profiles:
                     - 8082 # orcid-dummy https
         prod:
             rds:
-                version: '11'
                 multi-az: true
     vagrant:
         ports:
@@ -1805,17 +1795,14 @@ digests:
     aws-alt:
         end2end:
             rds:
-                version: '11'
                 type: db.t3.micro
                 backup-retention: 2 # days
         continuumtest:
             rds:
                 type: db.t3.micro
-                version: '11.14'
                 backup-retention: 2 # days
         prod:
             rds:
-                version: '11'
                 type: db.t3.micro
                 multi-az: true
     vagrant:
