@@ -92,7 +92,7 @@ defaults:
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
-            version: '11' # EOL Nov 2023
+            version: '12' # EOL Nov 14 2024
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
             type: db.t3.small
             storage: 5 # GB
@@ -836,6 +836,7 @@ elife-metrics:
         end2end:
             description: end2end environment for metrics. RDS backed.
             rds:
+                version: '11'
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed.
@@ -1164,6 +1165,7 @@ elife-dashboard:
             unique: true
             description: production-like environment.
             rds:
+                version: '11'
                 backup-retention: 2 # days
             sqs:
                 # legacy custom name
@@ -1183,6 +1185,7 @@ elife-dashboard:
             unique: true
             description: production environment. backed by RDS
             rds:
+                version: '11'
                 multi-az: true
             sqs:
                 # legacy custom name
@@ -1497,6 +1500,7 @@ observer:
         prod:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             rds:
+                version: '11'
                 storage: 10
                 multi-az: true
     vagrant:
@@ -1742,6 +1746,7 @@ profiles:
     aws-alt:
         end2end:
             rds:
+                version: '11'
                 backup-retention: 2 # days
             ec2:
                 ports:
@@ -1753,6 +1758,7 @@ profiles:
                     - 8082 # orcid-dummy https
         prod:
             rds:
+                version: '11'
                 multi-az: true
     vagrant:
         ports:
@@ -1799,6 +1805,7 @@ digests:
     aws-alt:
         end2end:
             rds:
+                version: '11'
                 type: db.t3.micro
                 backup-retention: 2 # days
         continuumtest:
@@ -1808,6 +1815,7 @@ digests:
                 backup-retention: 2 # days
         prod:
             rds:
+                version: '11'
                 type: db.t3.micro
                 multi-az: true
     vagrant:
@@ -1826,7 +1834,6 @@ elife-libero-reviewer:
     aws-alt:
         staging:
             rds:
-                version: '12'
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             s3:
@@ -1835,7 +1842,6 @@ elife-libero-reviewer:
         prod:
             rds:
                 multi-az: true
-                version: '12'
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
             s3:
