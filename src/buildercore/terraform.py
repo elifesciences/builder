@@ -810,7 +810,7 @@ def _render_eks_iam_access(context, template):
                         "Action": "sts:AssumeRoleWithWebIdentity",
                         "Condition": {
                             "StringEquals": {
-                                "${aws_eks_cluster.main.identity.0.oidc.0.issuer}:sub": ["system:serviceaccount:%s:%s" % (namespace, serviceaccount)]
+                                "${aws_iam_openid_connect_provider.default.url}:sub": ["system:serviceaccount:%s:%s" % (namespace, serviceaccount)]
                             }
                         }
                     }
