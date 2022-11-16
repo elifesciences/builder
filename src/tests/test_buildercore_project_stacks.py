@@ -12,7 +12,7 @@ def test_deepmerge():
         # here is where rules get fuzzy. should lists be merged?
         # should only a set of unique items from both lists exist?
         # this behaviour hasn't been touched yet, so we'll leave it
-        # on 'replace' until we need to revisit it.
+        # on 'replace' ('override') until we need to revisit it.
         ({"a": {"b": [1, 2, 3]}}, {"a": {"b": []}}, {"a": {"b": []}}),
 
         # same again for merging different types. last one wins.
@@ -22,6 +22,7 @@ def test_deepmerge():
         assert stack_config.deep_merge(a, b) == expected
 
 def test_all_stack_data():
+    "a stack config file can be read and the data returned"
     fixture = base.fixture_path("stacks/stacks.yaml")
     actual = stack_config.all_stack_data(fixture)
     expected = {

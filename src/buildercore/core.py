@@ -115,7 +115,7 @@ def all_sns_subscriptions(region, stackname=None):
 #
 #
 
-def boto_resource(service, region):
+def boto_resource(service, region=None):
     kwargs = {}
     if region:
         kwargs['region_name'] = region

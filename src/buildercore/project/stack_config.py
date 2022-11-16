@@ -78,11 +78,13 @@ def _stack_data(stack_defaults, raw_stack_data):
     so it's possible (but not recommended) for you to add or override a per-stack resource definition.
     `resource-map` definitions are stripped off before being returned.
     behaves very similarly to project-config."""
+    stack_defaults = utils.deepcopy(stack_defaults)
     sd = deep_merge(stack_defaults, raw_stack_data)
 
     def deep_merge_resource(resource):
         resource_name, resource_data = list(resource.items())[0]
-        return deep_merge(stack_defaults["resource-map"][resource_name], resource_data)
+        resource_defaults = utils.deepcopy(stack_defaults["resource-map"][resource_name])
+        return deep_merge(resource_defaults, resource_data)
 
     sd['resource-list'] = [deep_merge_resource(r) for r in sd['resource-list']]
     del sd['resource-map']

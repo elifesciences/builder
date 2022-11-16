@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 import json
 import logging
@@ -39,6 +40,16 @@ def fixture_path(fixture_subpath):
 def fixture(fixture_subpath):
     "returns contents of given fixture as a string"
     return open(fixture_path(fixture_subpath), 'r').read()
+
+def json_fixture(fixture_subpath):
+    return json.loads(fixture(fixture_subpath))
+
+def copy_fixture(fixture_subpath, destination_path):
+    if os.path.isdir(destination_path):
+        # /tmp => /tmp/foo.bar
+        destination_path = os.path.join(destination_path, os.path.basename(fixture_subpath))
+    shutil.copyfile(fixture_path(fixture_subpath), destination_path)
+    return destination_path
 
 def switch_in_test_settings(projects_files=None):
     if not projects_files:

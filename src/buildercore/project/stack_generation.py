@@ -2,49 +2,78 @@
 
 '''
 
-import os, json
-from buildercore import core, project
+import os, tempfile, json
+from buildercore import core, utils, project
 from buildercore.utils import ensure
 from buildercore.project import stack_config as project_config
 from botocore.exceptions import ClientError
 
-def json_path(unique_name):
-    return "/tmp/" + unique_name + ".json"
+import logging
 
-def json_output(unique_name):
-    path = json_path(unique_name)
+LOG = logging.getLogger(__name__)
+
+# ---
+
+def cache_path(unique_name):
+    # "/tmp/foo.json"
+    return os.path.join(tempfile.gettempdir(), unique_name + ".json")
+
+def cached_output(unique_name):
+    "returns the contents of a json cache file for the given `unique_name`, or None if it doesn't exist."
+    path = cache_path(unique_name)
     if not os.path.exists(path):
-        # execute body, assuming json will be written
-        print('path not found:', path)
+        LOG.info("cache miss, path not found: %s", path)
     else:
-        print('path FOUND', path)
+        LOG.info("cache hit, path found: %s", path)
         return json.load(open(path, 'r'))
 
+def cache_output(output, unique_name):
+    open(cache_path(unique_name), 'w').write(utils.json_dumps(output, indent=4))
+
+# ---
+
+def _s3_bucket_data(name):
+    """talks to AWS and returns a dict of s3 bucket data for the given `name`.
+    does minimal processing, it's job is to capture side effects."""
+    assert False
+    client = core.boto_client('s3', region=None)
+    versioning_resp = client.get_bucket_versioning(Bucket=name)
+    try:
+        tag_resp = client.get_bucket_tagging(Bucket=name)
+    except ClientError:
+        tag_resp = {}
+    return {
+        'versioning': versioning_resp.get('Status'),
+        'tag-list': tag_resp.get('TagSet') or []
+    }
+
+def _s3_bucket_list():
+    """talks to AWS and returns a list of s3 buckets.
+    does minimal processing, it's job is to capture side effects."""
+    #bucket_list = core.boto_client('s3').list_buckets().get('Buckets') or []
+    assert False
+    s3 = core.boto_resource('s3')
+    bucket_list = list(map(lambda b: b.meta.data, s3.buckets.limit(10)))
+    return {
+        'Buckets': bucket_list
+    }
+
 def _regenerate_resource__s3_bucket(old_resource):
-    "each resource must contain the neccessary information to fetch any updates"
-
+    """fetches and processes the data from AWS for the given `old_resource`.
+    each resource must contain the neccessary data to fetch any updates."""
     name = old_resource['name']
-
-    output = json_output(name)
+    output = cached_output(name)
     if not output:
-        client = core.boto_client('s3', region=None)
+        output = _s3_bucket_data(name)
+        cache_output(output, name)
 
-        resp = client.get_bucket_versioning(Bucket=name)
-        old_resource['versioning'] = resp.get('Status') == 'Enabled'
+    old_resource['versioning'] = output['versioning'] == 'Enabled'
 
-        tag_list = {}
-        try:
-            resp = client.get_bucket_tagging(Bucket=name)
-            tag_list = [(t['Key'], t['Value']) for t in resp['TagSet']]
-            tag_list = {k: v for k, v in sorted(tag_list, key=lambda x: x[0])}
-        except ClientError:
-            pass
-        old_resource['tag-list'] = tag_list if tag_list else None
+    tag_list = [(t['Key'], t['Value']) for t in output['tag-list']]
+    tag_list = {k: v for k, v in sorted(tag_list, key=lambda x: x[0])}
+    old_resource['tag-list'] = tag_list or {}
 
-        json.dump(old_resource, open(json_path(name), 'w'))
-        output = old_resource
-
-    return output
+    return old_resource
 
 def _regenerate_resource(old_resource):
     dispatch = {
@@ -64,16 +93,13 @@ def _generate_stack__s3(config_path):
     stack_map = project_config.read_stack_file(config_path)
     defaults, _ = project_config.parse_stack_map(stack_map)
 
-    # todo: paginate!
+    name = 'aws-bucket-list'
+    output = cached_output(name)
+    if not output:
+        output = _s3_bucket_list()
+        cache_output(output, name)
 
-    aws_resp = json.load(open('/home/luke/dev/python/builder-private-stack-config/bucket-list.json', 'r'))
-    bucket_list = aws_resp['Buckets']
-
-    # conn = core.boto_client('s3', None) #defaults['aws']['region'])
-    #import json
-    #bucket_list = conn.list_buckets()
-    #json_bucket_list = json_dumps(bucket_list, indent=4)
-    #open('/tmp/bucket-list.json', 'w').write(json_bucket_list)
+    bucket_list = output['Buckets'][:5]
 
     def s3_resource(bucket):
         return {'name': bucket['Name'],
@@ -90,7 +116,6 @@ def _generate_stack__s3(config_path):
                                    'resource-list': [{'s3-bucket': resource}]}}
 
     return [s3_stack(resource) for resource in resource_item_list]
-
 
 # ---
 
