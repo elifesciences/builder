@@ -13,5 +13,5 @@ def test_generate_stacks__unknown_config_file():
         stack.generate_stacks('s3-bucket', '/foo/bar/baz')
 
 # see: src/tests/test_buildercore_project_stack_generation.py
-#def test_generate_stacks():
+# def test_generate_stacks():
 #    stack.generate_stacks('s3-bucket', ...
