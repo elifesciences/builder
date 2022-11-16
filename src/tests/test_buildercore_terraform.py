@@ -1173,98 +1173,11 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-    @patch('buildercore.terraform.Terraform')
-    def test_helm_provider(self, Terraform):
-        terraform_binary = MagicMock()
-        Terraform.return_value = terraform_binary
-        stackname = 'project-with-eks-helm--%s' % self.environment
-        context = cfngen.build_context('project-with-eks-helm', stackname=stackname)
-        terraform.init(stackname, context)
-        providers = self._load_terraform_file(stackname, 'providers')
-        self.assertEqual(
-            {
-                'version': "= %s" % '0.9.0',
-                'kubernetes': {
-                    'host': '${data.aws_eks_cluster.main.endpoint}',
-                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                    'token': '${data.aws_eks_cluster_auth.main.token}',
-                    'load_config_file': False,
-                },
-                'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
-            },
-            self._getProvider(providers, 'helm')
-        )
-
-    def test_eks_and_helm(self):
-        pname = 'project-with-eks-helm'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('tiller', terraform_template['resource']['kubernetes_service_account'])
-        self.assertEqual(
-            terraform_template['resource']['kubernetes_service_account']['tiller'],
-            {
-                'metadata': {
-                    'name': 'tiller',
-                    'namespace': 'kube-system',
-                },
-            }
-        )
-
-        self.assertIn('tiller', terraform_template['resource']['kubernetes_cluster_role_binding'])
-        self.assertEqual(
-            terraform_template['resource']['kubernetes_cluster_role_binding']['tiller'],
-            {
-                'metadata': {
-                    'name': 'tiller',
-                },
-                'role_ref': {
-                    'api_group': 'rbac.authorization.k8s.io',
-                    'kind': 'ClusterRole',
-                    'name': 'cluster-admin',
-                },
-                'subject': [
-                    {
-                        'kind': 'ServiceAccount',
-                        'name': '${kubernetes_service_account.tiller.metadata.0.name}',
-                        'namespace': 'kube-system',
-                    },
-                ],
-            }
-        )
-
-        self.assertIn('incubator', terraform_template['data']['helm_repository'])
-        self.assertEqual(
-            terraform_template['data']['helm_repository']['incubator'],
-            {
-                'name': 'incubator',
-                'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
-            }
-        )
-
-        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
-        self.assertEqual(
-            terraform_template['resource']['helm_release']['common_resources'],
-            {
-                'name': 'common-resources',
-                'repository': "${data.helm_repository.incubator.metadata.0.name}",
-                'chart': 'incubator/raw',
-                'depends_on': ['kubernetes_cluster_role_binding.tiller'],
-                'values': [
-                    "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
-                ],
-            }
-        )
-
     def test_eks_and_external_dns(self):
         pname = 'project-with-eks-external-dns'
         iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
-
-        # Helm is a dependency
-        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
 
         self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
         self.assertEqual(
@@ -1310,51 +1223,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'role': "${aws_iam_role.worker.name}",
             },
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
-        )
-
-        self.assertIn('external_dns', terraform_template['resource']['helm_release'])
-        self.assertEqual(
-            {
-                'name': 'external-dns',
-                'chart': 'stable/external-dns',
-                'version': '2.6.1',
-                'depends_on': ['helm_release.common_resources'],
-                'set': [
-                    {
-                        'name': 'image.tag',
-                        'value': '0.5.16',
-                    },
-                    {
-                        'name': 'sources[0]',
-                        'value': 'service',
-                    },
-                    {
-                        'name': 'provider',
-                        'value': 'aws',
-                    },
-                    {
-                        'name': 'domainFilters[0]',
-                        'value': 'elifesciences.net',
-                    },
-                    {
-                        'name': 'policy',
-                        'value': 'sync',
-                    },
-                    {
-                        'name': 'aws.zoneType',
-                        'value': 'public', # 'private',
-                    },
-                    {
-                        'name': 'txtOwnerId',
-                        'value': context['stackname'],
-                    },
-                    {
-                        'name': 'rbac.create',
-                        'value': 'true',
-                    }
-                ],
-            },
-            terraform_template['resource']['helm_release']['external_dns']
         )
 
     def test_eks_and_efs(self):

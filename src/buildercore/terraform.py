@@ -15,9 +15,6 @@ PROVIDER_AWS_VERSION = '2.28.0'
 PROVIDER_TLS_VERSION = '2.2'
 PROVIDER_FASTLY_VERSION = '0.9.0' # '0.26.0' last for terraform 0.11.x
 PROVIDER_VAULT_VERSION = '1.3' # '1.9.0' last for terraform 0.11.x
-HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
-HELM_CHART_VERSION_RAW = '0.2.3'
-HELM_APP_VERSION_EXTERNAL_DNS = '0.5.16'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -26,13 +23,11 @@ DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_TYPE_TEMPLATE = 'template_file'
 DATA_TYPE_AWS_AMI = 'aws_ami'
-DATA_TYPE_HELM_REPOSITORY = 'helm_repository'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 DATA_NAME_VAULT_GCP_API_KEY = 'gcp'
 DATA_NAME_VAULT_GITHUB = 'github'
-DATA_NAME_HELM_INCUBATOR = 'incubator'
 
 # keys to lookup in Vault
 # cannot modify these without putting new values inside Vault:
@@ -685,91 +680,6 @@ def render_bigquery(context, template):
 
 # EKS
 
-def _render_helm(context, template):
-    template.populate_resource('kubernetes_service_account', 'tiller', block={
-        'metadata': {
-            'name': 'tiller',
-            'namespace': 'kube-system',
-        },
-    })
-
-    template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
-        'metadata': {
-            'name': 'tiller',
-        },
-        'role_ref': {
-            'api_group': 'rbac.authorization.k8s.io',
-            'kind': 'ClusterRole',
-            'name': 'cluster-admin',
-        },
-        'subject': [
-            {
-                'kind': 'ServiceAccount',
-                'name': '${kubernetes_service_account.tiller.metadata.0.name}',
-                'namespace': 'kube-system',
-            },
-        ],
-    })
-
-    template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
-        'name': 'incubator',
-        'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
-    })
-
-    # creating at least one release is necessary to trigger the Tiller installation
-    template.populate_resource('helm_release', 'common_resources', block={
-        'name': 'common-resources',
-        'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-        'chart': 'incubator/raw',
-        'depends_on': ['kubernetes_cluster_role_binding.tiller'],
-        'values': [
-            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
-        ],
-    })
-
-    if context['eks']['external-dns']:
-        template.populate_resource('helm_release', 'external_dns', block={
-            'name': 'external-dns',
-            # 'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-            'chart': 'stable/external-dns',
-            'version': HELM_CHART_VERSION_EXTERNAL_DNS,
-            'depends_on': ['helm_release.common_resources'],
-            'set': [
-                {
-                    'name': 'image.tag',
-                    'value': HELM_APP_VERSION_EXTERNAL_DNS,
-                },
-                {
-                    'name': 'sources[0]',
-                    'value': 'service',
-                },
-                {
-                    'name': 'provider',
-                    'value': 'aws',
-                },
-                {
-                    'name': 'domainFilters[0]',
-                    'value': context['eks']['external-dns']['domain-filter'],
-                },
-                {
-                    'name': 'policy',
-                    'value': 'sync',
-                },
-                {
-                    'name': 'aws.zoneType',
-                    'value': 'public', # 'private',
-                },
-                {
-                    'name': 'txtOwnerId',
-                    'value': context['stackname'],
-                },
-                {
-                    'name': 'rbac.create',
-                    'value': 'true',
-                },
-            ],
-        })
-
 def _render_eks_iam_access(context, template):
     template.populate_data("tls_certificate", "oidc_cert", {
         'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
@@ -1202,8 +1112,6 @@ def render_eks(context, template):
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
-    if context['eks']['helm']:
-        _render_helm(context, template)
 
 # ---
 
@@ -1443,17 +1351,6 @@ def init(stackname, context):
                     'name': '${aws_eks_cluster.main.name}',
                 },
             }
-            if context['eks']['helm']:
-                providers['provider'].append({'helm': {
-                    'version': '= 0.9.0',
-                    'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
-                    'kubernetes': {
-                        'host': '${data.aws_eks_cluster.main.endpoint}',
-                        'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                        'token': '${data.aws_eks_cluster_auth.main.token}',
-                        'load_config_file': False,
-                    },
-                }})
         fp.write(json.dumps(providers, indent=2))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
