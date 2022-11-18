@@ -21,7 +21,7 @@ def test_deepmerge():
     for a, b, expected in case_list:
         assert stack_config.deep_merge(a, b) == expected
 
-def test_all_stack_data():
+def test_all_stack_data(datadir):
     "a stack config file can be read and the data returned"
     fixture = base.fixture_path("stacks/stacks.yaml")
     actual = stack_config.all_stack_data(fixture)
@@ -30,23 +30,25 @@ def test_all_stack_data():
             "description": "a description for this example stack of resources\na resource stack is literally a list of things managed by Cloudformation/Terraform\na 'resource' describes some bit of infrastructure \ndefining it here demonstrates that we know about it and have brought it under configuration control\n",
             "meta": {
                 "type": "stack",
-                "version": 0
+                "version": 0,
+                "path": fixture
             },
             "random-property": "some-value",
             "resource-list": [
-                {
-                    "meta": {
-                        "description": "an instance of an project created by builder and configured in projects/elife.yaml",
-                        "type": "builder-project",
-                        "version": 0
-                    },
-                    "read-only": {
-                        "created": None,
-                        "updated": None
-                    },
-                    "name": "journal",
-                    "instance-id": "prod"
-                }
+                {'builder-project':
+                 {
+                     "meta": {
+                         "description": "an instance of an project created by builder and configured in projects/elife.yaml",
+                         "type": "builder-project",
+                         "version": 0
+                     },
+                     "read-only": {
+                         "created": None,
+                         "updated": None
+                     },
+                     "name": "journal",
+                     "instance-id": "prod"
+                 }}
             ]
         }
     }
