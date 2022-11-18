@@ -27,7 +27,7 @@ def cached_output(unique_name):
     if not os.path.exists(path):
         LOG.info("cache miss, path not found: %s", path)
     else:
-        LOG.info("cache hit, path found: %s", path)
+        LOG.debug("cache hit, path found: %s", path)
         return json.load(open(path, 'r'))
 
 def cache_output(output, unique_name):
@@ -53,10 +53,10 @@ def _s3_bucket_data(name):
 def _s3_bucket_list():
     """talks to AWS and returns a list of s3 buckets.
     does minimal processing, it's job is to capture side effects."""
-    #bucket_list = core.boto_client('s3').list_buckets().get('Buckets') or []
     #assert False
-    s3 = core.boto_resource('s3')
-    bucket_list = list(map(lambda b: b.meta.data, s3.buckets.limit(10)))
+    bucket_list = core.boto_client('s3').list_buckets().get('Buckets') or []
+    #s3 = core.boto_resource('s3')
+    #bucket_list = list(map(lambda b: b.meta.data, s3.buckets.limit(10)))
     return {
         'Buckets': bucket_list
     }
@@ -115,7 +115,7 @@ def _generate_stack__s3(config_path):
         output = _s3_bucket_list()
         cache_output(output, name)
 
-    bucket_list = output['Buckets'][:5]
+    bucket_list = output['Buckets']
 
     def s3_resource(bucket):
         return {'s3-bucket':
@@ -134,7 +134,23 @@ def _generate_stack__s3(config_path):
                 {'description': None,
                  'resource-list': [resource]}}
 
-    return [s3_stack(resource) for resource in resource_item_list]
+    s3_stack_list = [s3_stack(resource) for resource in resource_item_list]
+
+    def not_cloudformation_tagged(stack):
+        tag = 'aws:cloudformation:stack-id'
+        stackname, stack = parse_resource(stack)
+        for resource in stack['resource-list']:
+            resource_name, resource_data = parse_resource(resource)
+            if tag in resource_data.get('tag-list', {}):
+                print("excluding %r, it belongs to: %s" %
+                      (resource_data['name'], resource_data['tag-list']['aws:cloudformation:stack-name']))
+                return False
+        return True
+
+    s3_stack_list = filter(not_cloudformation_tagged, s3_stack_list)
+
+    return list(s3_stack_list)
+
 
 # ---
 

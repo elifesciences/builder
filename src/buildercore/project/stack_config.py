@@ -67,11 +67,21 @@ def parse_stack_map(stack_map):
     return defaults, stack_map
 
 def _dumps_stack_file(data):
-    # bit of a hack, but prune the 'meta.path' value if it exists.
-    # this might be part of a larger pattern of post-processing in future
-    for toplevel, stack in data.items():
-        if stack_has_path(stack):
-            del stack['meta']['path']
+
+    def prune_path(toplevel, data):
+        if stack_has_path(data):
+            del data['meta']['path']
+        return data
+    data = utils.dictmap(prune_path, data)
+
+    order = ['id', 'name', 'description', 'meta', 'read-only']
+    order = dict(zip(order, range(0, len(order))))
+
+    def order_keys(toplevel, data):
+        return {key: data[key] for key in sorted(data, key=lambda n: order.get(n) or 99)}
+    # works, but destroys comments as it replaces the ruamel.ordereddict with a regular dict
+    #data = utils.dictmap(order_keys, data)
+
     return utils.yaml_dumps_2(data)
 
 def write_stack_file(data, path):
