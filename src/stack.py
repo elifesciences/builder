@@ -1,6 +1,6 @@
 from buildercore import project
 from buildercore.project import stack_generation
-from decorators import requires_stack_config, format_output
+from decorators import format_output  # , requires_stack_config
 import utils
 
 @format_output()
@@ -14,10 +14,11 @@ def list_stacks(include_resources=True):
     return stack_map.keys()
 
 @format_output()
-@requires_stack_config
+# @requires_stack_config # calls `project.stack_map()`, revisit
 def stack_config(stackname):
     "prints the stack configuration for the given `stackname`"
-    return project.stack_map()[stackname]
+    # return project.stack_map()[stackname] # naive but not as slow as you might think.
+    return project.stack(stackname)
 
 def generate_stacks(resource_type, config_path):
     """generate new stacks with a single resource of the given `resource_type`.
@@ -26,3 +27,10 @@ def generate_stacks(resource_type, config_path):
         stack_generation.generate_stacks(resource_type, config_path)
     except AssertionError as ae:
         raise utils.TaskExit(ae)
+
+def regenerate_stack(stackname):
+    "updates all of the resources for the given stackname"
+    stack = stack_config(stackname)
+    config_path = stack['meta']['path']
+    print('this file may be modified:', config_path)
+    stack_generation.regenerate(stackname, config_path)

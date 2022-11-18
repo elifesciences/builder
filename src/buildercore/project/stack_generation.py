@@ -1,9 +1,9 @@
 '''logic to generate and refresh the configuration of stacks and their list of resources.
 
 '''
-
+from pprint import pprint as _pprint
 import os, tempfile, json
-from buildercore import core, utils, project
+from buildercore import core, utils
 from buildercore.utils import ensure
 from buildercore.project import stack_config as project_config
 from botocore.exceptions import ClientError
@@ -13,6 +13,9 @@ import logging
 LOG = logging.getLogger(__name__)
 
 # ---
+
+def pprint(*args):
+    list(map(_pprint, args))
 
 def cache_path(unique_name):
     # "/tmp/foo.json"
@@ -35,7 +38,7 @@ def cache_output(output, unique_name):
 def _s3_bucket_data(name):
     """talks to AWS and returns a dict of s3 bucket data for the given `name`.
     does minimal processing, it's job is to capture side effects."""
-    assert False
+    #assert False
     client = core.boto_client('s3', region=None)
     versioning_resp = client.get_bucket_versioning(Bucket=name)
     try:
@@ -51,7 +54,7 @@ def _s3_bucket_list():
     """talks to AWS and returns a list of s3 buckets.
     does minimal processing, it's job is to capture side effects."""
     #bucket_list = core.boto_client('s3').list_buckets().get('Buckets') or []
-    assert False
+    #assert False
     s3 = core.boto_resource('s3')
     bucket_list = list(map(lambda b: b.meta.data, s3.buckets.limit(10)))
     return {
@@ -75,16 +78,29 @@ def _regenerate_resource__s3_bucket(old_resource):
 
     return old_resource
 
-def _regenerate_resource(old_resource):
+def parse_resource(resource):
+    """{'resource-name': {'meta': {...}, 'name': ..., ...}" => ('resource-name', {'meta': {...}, 'name': ..., ...})"""
+    ensure(isinstance(resource, dict), 'given resource is not a dictionary')
+    keys = list(resource.keys())
+    ensure(len(keys) == 1, 'given resource has an unexpected number of keys. it should be precisely one')
+    resource_name = keys[0]
+    return resource_name, resource[resource_name]
+
+def _regenerate_resource(resource):
+    resource_name, resource_data = parse_resource(resource)
     dispatch = {
         's3-bucket': _regenerate_resource__s3_bucket,
     }
-    dispatch_fn = dispatch.get(old_resource['meta']['type'])
-    return dispatch_fn(old_resource)
+    dispatch_fn = dispatch.get(resource_data['meta']['type'])
+    return {resource_name: dispatch_fn(resource_data)}
 
 def regenerate(stackname, config_path):
     """update each of the resources for the given `stackname` in stack config file `config_path`."""
-    stack = project.stack_map()[stackname]
+    stack_map = project_config.read_stack_file(config_path)
+    defaults, stack_map = project_config.parse_stack_map(stack_map)
+    ensure(stackname in stack_map, "stack %r not found. known stacks: %s" % (stackname, ", ".join(stack_map.keys())))
+    stack = stack_map[stackname]
+
     new_resource_list = [_regenerate_resource(resource) for resource in stack['resource-list']]
     stack['resource-list'] = new_resource_list
     project_config.write_stack_file_updates({stackname: stack}, config_path)
@@ -102,18 +118,21 @@ def _generate_stack__s3(config_path):
     bucket_list = output['Buckets'][:5]
 
     def s3_resource(bucket):
-        return {'name': bucket['Name'],
-                'meta': {
-                    'type': 's3-bucket'},
-                'read-only': {
-                    'created': bucket['CreationDate']}}
+        return {'s3-bucket':
+                {'name': bucket['Name'],
+                 'meta': {
+                     'type': 's3-bucket'},
+                 'read-only': {
+                     'created': bucket['CreationDate']}}}
 
     resource_item_list = [s3_resource(bucket) for bucket in bucket_list]
     resource_item_list = [_regenerate_resource(resource) for resource in resource_item_list]
 
     def s3_stack(resource):
-        return {resource['name']: {'description': None,  # 'a helpful description of this bucket',
-                                   'resource-list': [{'s3-bucket': resource}]}}
+        resource_name, resource_data = parse_resource(resource)
+        return {resource_data['name']:
+                {'description': None,
+                 'resource-list': [resource]}}
 
     return [s3_stack(resource) for resource in resource_item_list]
 
@@ -133,7 +152,7 @@ def generate_stacks(resource_type, config_path):
     generated_stack_list = dispatch_fn(config_path)
 
     # sanity check, make sure each generated stack looks like:
-    # {"s3-bucket": {"name": "foo-bucket", ...}}
+    # {"foo-bucket": {"name": "foo-bucket", "meta": {...}, ...}}
     for stack in generated_stack_list:
         ensure(len(stack.keys()) == 1, "bad stack, expected exactly 1 key: %r" % stack)
 

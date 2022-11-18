@@ -42,9 +42,19 @@ def deep_merge(d1, d2):
 
 # ---
 
+def stack_has_path(data):
+    "returns true if the stack data (or 'defaults' data) has a non-nil 'path' property under 'meta'"
+    return bool(utils.lookup(data, 'meta.path', None))
+
 def read_stack_file(path):
     "reads the contents of the YAML file at `path`."
-    return utils.yaml_load_2(open(path, 'r'))
+    data = utils.yaml_load_2(open(path, 'r'))
+    # elaborate to check before `parse_stack_map` is called to insert a reference to where this data originated.
+    # this is necessary so we know where to update a stack in future.
+    # it also means we can't rely on this value being present if we're not parsing stack data from a file.
+    if bool(utils.lookup(data, 'defaults.meta.type', None)):
+        data['defaults']['meta']['path'] = path
+    return data
 
 def parse_stack_map(stack_map):
     "returns a pair of `(stack-defaults, map-of-stackname-to-stackdata)`"
@@ -57,6 +67,11 @@ def parse_stack_map(stack_map):
     return defaults, stack_map
 
 def _dumps_stack_file(data):
+    # bit of a hack, but prune the 'meta.path' value if it exists.
+    # this might be part of a larger pattern of post-processing in future
+    for toplevel, stack in data.items():
+        if stack_has_path(stack):
+            del stack['meta']['path']
     return utils.yaml_dumps_2(data)
 
 def write_stack_file(data, path):
@@ -84,7 +99,7 @@ def _stack_data(stack_defaults, raw_stack_data):
     def deep_merge_resource(resource):
         resource_name, resource_data = list(resource.items())[0]
         resource_defaults = utils.deepcopy(stack_defaults["resource-map"][resource_name])
-        return deep_merge(resource_defaults, resource_data)
+        return {resource_name: deep_merge(resource_defaults, resource_data)}
 
     sd['resource-list'] = [deep_merge_resource(r) for r in sd['resource-list']]
     del sd['resource-map']

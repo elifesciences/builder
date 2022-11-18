@@ -91,6 +91,7 @@ TASK_LIST = [
 
     stack.list_stacks,
     stack.stack_config,
+    stack.regenerate_stack,
     stack.generate_stacks,
 
     aws.ec2.start_node,

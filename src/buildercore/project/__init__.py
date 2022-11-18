@@ -138,7 +138,7 @@ def known_formulas():
 #
 #
 
-def _stack_map(path_list=None):
+def _stack_map(path_list=None, stackname=None):
     """returns a single map of all projects and their data"""
     def merge(d1, d2):
         d1.update(d2)
@@ -152,7 +152,10 @@ def _stack_map(path_list=None):
 
     # a list of parsed project data
     # [{'/path/to/stack.yaml': {'stack1': {...}, 'stack2': {...}, ...}, {'/path/to/another-stack.yaml': {...}}, ...]
-    data = [{path: stack_config.all_stack_data(path)} for path in path_list]
+    if stackname:
+        data = [{path: stack_config.stack_data(stackname, path)} for path in path_list]
+    else:
+        data = [{path: stack_config.all_stack_data(path)} for path in path_list]
 
     # a single map of paths to parsed project data
     # {'/path/to/stack.yaml': {'stack1': {...}, 'stack2': {...}, ...}, '/path/to/another-stacks.yaml': {...}, ...}
@@ -170,4 +173,10 @@ def _stack_map(path_list=None):
 
 def stack_map(path_list=None):
     "returns a single map of all stacks and their data."
-    return utils.deepcopy(_stack_map(path_list))
+    # return utils.deepcopy(_stack_map(path_list))
+    return _stack_map(path_list)
+
+def stack(stackname, path_list=None):
+    "returns a single map of a single stack and it's data."
+    # return utils.deepcopy(_stack_map(path_list, stackname))
+    return _stack_map(path_list, stackname)
