@@ -43,15 +43,15 @@ def deep_merge(d1, d2):
 # ---
 
 def stack_has_path(data):
-    "returns true if the stack data (or 'defaults' data) has a non-nil 'path' property under 'meta'"
-    return bool(utils.lookup(data, 'meta.path', None))
+    "returns `True` if the given stack `data` (or 'defaults' data) has a non-nil 'path' property under 'meta'"
+    return isinstance(data, dict) and bool(utils.lookup(data, 'meta.path', None))
 
 def read_stack_file(path):
-    "reads the contents of the YAML file at `path`."
-    data = utils.yaml_load_2(open(path, 'r'))
-    # elaborate check before `parse_stack_map` is called to insert a reference to where this data originated.
-    # this is necessary so we know where to update an individual stack in future (blergh, convenience).
-    # it also means we can't rely on this value being present if we're not parsing stack data from a file.
+    "reads the contents of the YAML file at `path`, returning Python data."
+    data = utils.ruamel_load(open(path, 'r'))
+    # a check before `parse_stack_map` to insert a reference to where this data originated.
+    # it's necessary so we know where to update an individual stack in future during stack regeneration.
+    # the 'defaults.meta.type' path is simply to test that `meta` is a dict.
     if bool(utils.lookup(data, 'defaults.meta.type', None)):
         data['defaults']['meta']['path'] = path
     return data
@@ -67,6 +67,10 @@ def parse_stack_map(stack_map):
     return defaults, stack_map
 
 def _dumps_stack_file(data):
+    """processes the given stack data and then returns a YAML string.
+    any 'meta.path' values are removed, stack keys are ordered, 'defaults' must be present."""
+    ensure(isinstance(data, dict), "expecting a dictionary")
+    ensure('defaults' in data, "no 'defaults' section found")
 
     def prune_path(toplevel, data):
         if stack_has_path(data):
@@ -85,9 +89,10 @@ def _dumps_stack_file(data):
     # comments for 'defaults' can be guaranteed but not for resources.
     data = utils.dictmap(order_keys, data)
 
-    return utils.yaml_dumps_2(data)
+    return utils.ruamel_dumps(data)
 
 def write_stack_file(data, path):
+    "same as `_dumps_stack_file`, but the result is written to `path`"
     open(path, 'w').write(_dumps_stack_file(data))
 
 def write_stack_file_updates(data, path):

@@ -1,5 +1,5 @@
 {
-    "Buckets": [
+    "bucket-list": [
         {
             "Name": "foo",
             "CreationDate": "2013-01-01T12:46:40+00:00"

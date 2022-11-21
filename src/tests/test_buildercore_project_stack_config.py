@@ -1,4 +1,3 @@
-import unittest
 from . import base
 from buildercore.project import stack_config
 
@@ -13,7 +12,7 @@ def test_deepmerge():
         # here is where rules get fuzzy. should lists be merged?
         # should only a set of unique items from both lists exist?
         # this behaviour hasn't been touched yet, so we'll leave it
-        # on 'replace' ('override') until we need to revisit it.
+        # on 'replace' ('override' deepmerge strategy) until we need to revisit it.
         ({"a": {"b": [1, 2, 3]}}, {"a": {"b": []}}, {"a": {"b": []}}),
 
         # same again for merging different types. last one wins.
@@ -62,17 +61,28 @@ def test__dumps_stack_file():
     actual = stack_config._dumps_stack_file(config)
     assert actual == expected
 
-@unittest.skip("comments are now only preserved in the 'defaults' section.")
 def test__dumps_stack_file__updated_data():
     "a stack config can be read, parsed as YAML into Python, updated with new data and dumped back to YAML with changes preserved."
     fixture = base.fixture_path('stacks/stacks.yaml')
     config = stack_config.read_stack_file(fixture)
 
-    update = {'example-stack-identifier': {"random-property": "some-new-value"}}
-    config = stack_config.deep_merge(config, update)
+    # preserving comments against stacks became too fiddly and time consuming to debug.
+    # I've settled for just preserving comments in the 'defaults' section.
+    #update = {'example-stack-identifier': {"random-property": "some-new-value"}}
+    #config = stack_config.deep_merge(config, update)
 
     actual = stack_config._dumps_stack_file(config)
 
-    # (pretty rough)
-    expected = "    random-property: some-new-value # important comment that should be preserved!"
+    expected = "            instance-id: # project's instance ID"
     assert expected in actual.splitlines()
+
+def test_stack_has_path():
+    cases = [
+        (None, False),
+        ('', False),
+        ({}, False),
+        ({'foo': 'bar'}, False),
+        ({'meta': {'path': 'foo'}}, True)
+    ]
+    for given, expected in cases:
+        assert expected == stack_config.stack_has_path(given)

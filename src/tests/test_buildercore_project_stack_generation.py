@@ -28,7 +28,7 @@ def test_regenerate(tempdir, datadir):
     fixture_list = [
         base.json_fixture("stacks/data/s3-bucket-foo.json"),
     ]
-    with mock.patch("buildercore.project.stack_generation._s3_bucket_data", side_effect=fixture_list):
+    with mock.patch("buildercore.project.stack_generation__s3_bucket._s3_bucket_data", side_effect=fixture_list):
         stack_generation.regenerate(stackname, config_path)
 
     after = before
@@ -50,12 +50,12 @@ def test_generate_stacks(tempdir, datadir):
     config_path = base.copy_fixture("stacks/s3-stacks.yaml", datadir)
 
     bucket_list_fixture = base.json_fixture("stacks/data/aws-bucket-list.json")
-    with mock.patch("buildercore.project.stack_generation._s3_bucket_list", return_value=bucket_list_fixture):
+    with mock.patch("buildercore.project.stack_generation__s3_bucket._s3_bucket_list", return_value=bucket_list_fixture):
         fixture_list = [
             base.json_fixture("stacks/data/s3-bucket-foo.json"),
             base.json_fixture("stacks/data/s3-bucket-bar.json"),
         ]
-        with mock.patch("buildercore.project.stack_generation._s3_bucket_data", side_effect=fixture_list):
+        with mock.patch("buildercore.project.stack_generation__s3_bucket._s3_bucket_data", side_effect=fixture_list):
             stack_generation.generate_stacks(resource_type, config_path)
 
     actual = stack_config.all_stack_data(config_path)

@@ -13,6 +13,8 @@ defaults:
                 version: 0 # resource class version, used for validation of data
             path: # path/to/terraform/project/config/ I suppose
         builder-project:
+            name: # project name
+            instance-id: # project's instance ID
             meta:
                 description: an instance of an project created by builder and configured in projects/elife.yaml
                 type: builder-project
@@ -21,8 +23,6 @@ defaults:
                 # I fancy these will be fields that are useful at a glance but otherwise not used.
                 created: # project instance created date, populated externally
                 updated: # project instance updated date, populated externally
-            name: # project name
-            instance-id: # project's instance ID
 
 example-stack-identifier:
     description: |
