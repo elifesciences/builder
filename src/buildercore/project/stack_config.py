@@ -49,8 +49,8 @@ def stack_has_path(data):
 def read_stack_file(path):
     "reads the contents of the YAML file at `path`."
     data = utils.yaml_load_2(open(path, 'r'))
-    # elaborate to check before `parse_stack_map` is called to insert a reference to where this data originated.
-    # this is necessary so we know where to update a stack in future.
+    # elaborate check before `parse_stack_map` is called to insert a reference to where this data originated.
+    # this is necessary so we know where to update an individual stack in future (blergh, convenience).
     # it also means we can't rely on this value being present if we're not parsing stack data from a file.
     if bool(utils.lookup(data, 'defaults.meta.type', None)):
         data['defaults']['meta']['path'] = path
