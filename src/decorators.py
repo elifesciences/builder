@@ -163,8 +163,8 @@ def requires_stack_config(func):
     @wraps(func)
     def call(*args, **kwargs):
         stackname = first(args)  # or config.ENV['INSTANCE'] # preserve this? I can't see anything using it.
-        ensure(stackname, "stack-config name required", utils.TaskExit)
-        stack_list = project.stack_map()
-        ensure(stackname in stack_list, "stack-config with name %r not found" % stackname, utils.TaskExit)
+        ensure(stackname, "stackname required", utils.TaskExit)
+        stack = project.stack(stackname)
+        ensure(stack, "stack %r not found" % stackname, utils.TaskExit)
         return func(stackname, *args[1:], **kwargs)
     return call

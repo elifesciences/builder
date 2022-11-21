@@ -1,0 +1,12 @@
+{
+    "bucket-list": [
+        {
+            "Name": "foo",
+            "CreationDate": "2013-01-01T12:46:40+00:00"
+        },
+        {
+            "Name": "bar",
+            "CreationDate": "2015-02-02T20:45:52+00:00"
+        }
+    ]
+}

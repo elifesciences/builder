@@ -26,29 +26,35 @@ stack configuration is *not*:
 
 from buildercore import utils
 from buildercore.utils import ensure
+from deepmerge import Merger
 
-# https://stackoverflow.com/questions/7204805/how-to-merge-dictionaries-of-dictionaries/7205107#answer-24088493
 def deep_merge(d1, d2):
-    """Update two dicts of dicts recursively,
-    if either mapping has leaves that are non-dicts,
-    the second's leaf overwrites the first's.
-
-    non-destructive."""
-    for k, v in d1.items():
-        if k in d2:
-            if all(isinstance(e, dict) for e in (v, d2[k])):
-                d2[k] = deep_merge(v, d2[k])
-            # further type checks and merge as appropriate here.
-            # ...
-    d3 = d1.copy()
-    d3.update(d2)
-    return d3
+    custom_merger = Merger(
+        [(list, ["override"]),
+         (dict, ["merge"]),
+         (set, ["union"])],
+        # fallback strategies applied to all other types
+        ["override"],
+        # strategies in the case where the types conflict
+        ["override"]
+    )
+    return custom_merger.merge(d1, d2)
 
 # ---
 
+def stack_has_path(data):
+    "returns `True` if the given stack `data` (or 'defaults' data) has a non-nil 'path' property under 'meta'"
+    return isinstance(data, dict) and bool(utils.lookup(data, 'meta.path', None))
+
 def read_stack_file(path):
-    "reads the contents of the YAML file at `path`."
-    return utils.yaml_load(open(path, 'r'))
+    "reads the contents of the YAML file at `path`, returning Python data."
+    data = utils.ruamel_load(open(path, 'r'))
+    # a check before `parse_stack_map` to insert a reference to where this data originated.
+    # it's necessary so we know where to update an individual stack in future during stack regeneration.
+    # the 'defaults.meta.type' path is simply to test that `meta` is a dict.
+    if bool(utils.lookup(data, 'defaults.meta.type', None)):
+        data['defaults']['meta']['path'] = path
+    return data
 
 def parse_stack_map(stack_map):
     "returns a pair of `(stack-defaults, map-of-stackname-to-stackdata)`"
@@ -60,6 +66,44 @@ def parse_stack_map(stack_map):
     defaults = stack_map.pop("defaults")
     return defaults, stack_map
 
+def _dumps_stack_file(data):
+    """processes the given stack data and then returns a YAML string.
+    any 'meta.path' values are removed, stack keys are ordered, 'defaults' must be present."""
+    ensure(isinstance(data, dict), "expecting a dictionary")
+    ensure('defaults' in data, "no 'defaults' section found")
+
+    def prune_path(toplevel, data):
+        if stack_has_path(data):
+            del data['meta']['path']
+        return data
+    data = utils.dictmap(prune_path, data)
+
+    order = ['name', 'description', 'meta']
+    order = dict(zip(order, range(0, len(order)))) # {'id': 0, 'name': 1, ...}
+
+    def order_keys(toplevel, data):
+        if toplevel == 'defaults':
+            return data
+        return {key: data[key] for key in sorted(data, key=lambda n: order.get(n) or 99)}
+    # this destroys comments as it replaces the ruamel.ordereddict with a regular dict.
+    # comments for 'defaults' can be guaranteed but not for resources.
+    data = utils.dictmap(order_keys, data)
+
+    return utils.ruamel_dumps(data)
+
+def write_stack_file(data, path):
+    "same as `_dumps_stack_file`, but the result is written to `path`"
+    open(path, 'w').write(_dumps_stack_file(data))
+
+def write_stack_file_updates(data, path):
+    "reads stack config, replacing the stack configuration with `data` and writes the changes back to file."
+    # todo: how to ignore default values?
+    # for example, `data` may contain values present in the definition of the stack that don't need to be present.
+    # we need a sort of deep-merge-set-exclusion where deeply identical values are removed instead of ignored
+    stack_map = read_stack_file(path)
+    new_stack_map = deep_merge(stack_map, data)
+    write_stack_file(new_stack_map, path)
+
 def _stack_data(stack_defaults, raw_stack_data):
     """merges the `stack_defaults` dict with the abbreviated `raw_stack_data` dict resulting in a 'full' stack.
     each resource in `resource-list` is merged with it's definition in `resource-map`.
@@ -67,11 +111,13 @@ def _stack_data(stack_defaults, raw_stack_data):
     so it's possible (but not recommended) for you to add or override a per-stack resource definition.
     `resource-map` definitions are stripped off before being returned.
     behaves very similarly to project-config."""
+    stack_defaults = utils.deepcopy(stack_defaults)
     sd = deep_merge(stack_defaults, raw_stack_data)
 
     def deep_merge_resource(resource):
-        resource_name, resource_data = list(resource.items())[0]
-        return deep_merge(stack_defaults["resource-map"][resource_name], resource_data)
+        resource_type = resource['meta']['type']
+        resource_defaults = utils.deepcopy(stack_defaults["resource-map"][resource_type])
+        return deep_merge(resource_defaults, resource)
 
     sd['resource-list'] = [deep_merge_resource(r) for r in sd['resource-list']]
     del sd['resource-map']
