@@ -21,24 +21,22 @@ defaults:
 foo:
     description:
     resource-list:
-    -   s3-bucket:
-            name: foo
-            meta:
-                type: s3-bucket
-            read-only:
-                created: '2013-01-01T12:46:40+00:00'
-            versioning: false
-            tag-list: {}
+    -   name: foo
+        meta:
+            type: s3-bucket
+        read-only:
+            created: '2013-01-01T12:46:40+00:00'
+        versioning: false
+        tag-list: {}
 
 bar:
     description:
     resource-list:
-    -   s3-bucket:
-            name: bar
-            meta:
-                type: s3-bucket
-            read-only:
-                created: '2015-02-02T20:45:52+00:00'
-            versioning: false
-            tag-list: {}
+    -   name: bar
+        meta:
+            type: s3-bucket
+        read-only:
+            created: '2015-02-02T20:45:52+00:00'
+        versioning: false
+        tag-list: {}
 

@@ -31,6 +31,5 @@ example-stack-identifier:
         a 'resource' describes some bit of infrastructure 
         defining it here demonstrates that we know about it and have brought it under configuration control
     resource-list:
-        - builder-project:
-            name: journal
-            instance-id: prod
+    -   name: journal
+        instance-id: prod

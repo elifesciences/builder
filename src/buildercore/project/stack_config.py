@@ -74,13 +74,16 @@ def _dumps_stack_file(data):
         return data
     data = utils.dictmap(prune_path, data)
 
-    order = ['id', 'name', 'description', 'meta', 'read-only']
-    order = dict(zip(order, range(0, len(order))))
+    order = ['name', 'description', 'meta', 'read-only']
+    order = dict(zip(order, range(0, len(order)))) # {'id': 0, 'name': 1, ...}
 
     def order_keys(toplevel, data):
+        if toplevel == 'defaults':
+            return data
         return {key: data[key] for key in sorted(data, key=lambda n: order.get(n) or 99)}
-    # works, but destroys comments as it replaces the ruamel.ordereddict with a regular dict
-    #data = utils.dictmap(order_keys, data)
+    # this destroys comments as it replaces the ruamel.ordereddict with a regular dict.
+    # comments for 'defaults' can be guaranteed but not for resources.
+    data = utils.dictmap(order_keys, data)
 
     return utils.yaml_dumps_2(data)
 
@@ -107,9 +110,9 @@ def _stack_data(stack_defaults, raw_stack_data):
     sd = deep_merge(stack_defaults, raw_stack_data)
 
     def deep_merge_resource(resource):
-        resource_name, resource_data = list(resource.items())[0]
-        resource_defaults = utils.deepcopy(stack_defaults["resource-map"][resource_name])
-        return {resource_name: deep_merge(resource_defaults, resource_data)}
+        resource_type = resource['meta']['type']
+        resource_defaults = utils.deepcopy(stack_defaults["resource-map"][resource_type])
+        return deep_merge(resource_defaults, resource)
 
     sd['resource-list'] = [deep_merge_resource(r) for r in sd['resource-list']]
     del sd['resource-map']

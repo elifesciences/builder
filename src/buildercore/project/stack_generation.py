@@ -78,21 +78,12 @@ def _regenerate_resource__s3_bucket(old_resource):
 
     return old_resource
 
-def parse_resource(resource):
-    """{'resource-name': {'meta': {...}, 'name': ..., ...}" => ('resource-name', {'meta': {...}, 'name': ..., ...})"""
-    ensure(isinstance(resource, dict), 'given resource is not a dictionary')
-    keys = list(resource.keys())
-    ensure(len(keys) == 1, 'given resource has an unexpected number of keys. it should be precisely one')
-    resource_name = keys[0]
-    return resource_name, resource[resource_name]
-
 def _regenerate_resource(resource):
-    resource_name, resource_data = parse_resource(resource)
     dispatch = {
         's3-bucket': _regenerate_resource__s3_bucket,
     }
-    dispatch_fn = dispatch.get(resource_data['meta']['type'])
-    return {resource_name: dispatch_fn(resource_data)}
+    dispatch_fn = dispatch[resource['meta']['type']]
+    return dispatch_fn(resource)
 
 def regenerate(stackname, config_path):
     """update each of the resources for the given `stackname` in stack config file `config_path`."""
@@ -118,32 +109,30 @@ def _generate_stack__s3(config_path):
     bucket_list = output['Buckets']
 
     def s3_resource(bucket):
-        return {'s3-bucket':
-                {'name': bucket['Name'],
-                 'meta': {
-                     'type': 's3-bucket'},
-                 'read-only': {
-                     'created': bucket['CreationDate']}}}
+        return {'name': bucket['Name'],
+                'meta': {
+                    'type': 's3-bucket'},
+                'read-only': {
+                    'created': bucket['CreationDate']}}
 
     resource_item_list = [s3_resource(bucket) for bucket in bucket_list]
     resource_item_list = [_regenerate_resource(resource) for resource in resource_item_list]
 
     def s3_stack(resource):
-        resource_name, resource_data = parse_resource(resource)
-        return {resource_data['name']:
-                {'description': None,
-                 'resource-list': [resource]}}
+        "return a top-level 'stack' using the resource's name as the stack's ID."
+        return {resource['name']: {'description': None,
+                                   'resource-list': [resource]}}
 
     s3_stack_list = [s3_stack(resource) for resource in resource_item_list]
 
     def not_cloudformation_tagged(stack):
         tag = 'aws:cloudformation:stack-id'
-        stackname, stack = parse_resource(stack)
-        for resource in stack['resource-list']:
-            resource_name, resource_data = parse_resource(resource)
-            if tag in resource_data.get('tag-list', {}):
-                print("excluding %r, it belongs to: %s" %
-                      (resource_data['name'], resource_data['tag-list']['aws:cloudformation:stack-name']))
+        # {"foo": {"meta": ..., "resource-list": ...}} => {"meta": ..., "resource-list": ...}
+        stack_data = list(stack.values())[0]
+        for resource in stack_data['resource-list']:
+            if tag in resource.get('tag-list', {}):
+                LOG.warning("excluding %r, it belongs to: %s" %
+                            (resource['name'], resource['tag-list']['aws:cloudformation:stack-name']))
                 return False
         return True
 

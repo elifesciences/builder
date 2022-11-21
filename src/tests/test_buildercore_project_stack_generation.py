@@ -13,7 +13,7 @@ def test_regenerate(tempdir, datadir):
                        'type': 'stack',
                        'version': 0},
               'resource-list': [
-                  {'s3-bucket': {
+                  {
                       'description': None,
                       'meta': {'description': 'an AWS S3 bucket',
                                'type': 's3-bucket',
@@ -22,7 +22,7 @@ def test_regenerate(tempdir, datadir):
                       'read-only': {'created': '2013-01-01T12:46:40+00:00',
                                     'region': None},
                       'tag-list': {},
-                      'versioning': False}}]}
+                      'versioning': False}]}
     assert stack_config.stack_data(stackname, config_path) == before
 
     fixture_list = [
@@ -32,7 +32,7 @@ def test_regenerate(tempdir, datadir):
         stack_generation.regenerate(stackname, config_path)
 
     after = before
-    after['resource-list'][0]['s3-bucket']['tag-list'] = {'Foo': 'Oof'}
+    after['resource-list'][0]['tag-list'] = {'Foo': 'Oof'}
 
     assert stack_config.stack_data(stackname, config_path) == after
 
@@ -65,26 +65,28 @@ def test_generate_stacks(tempdir, datadir):
         {'bar': {'description': None,
                  'meta': {'type': 'stack', 'version': 0,
                           'path': datadir + "/s3-stacks.yaml"},
-                 'resource-list': [{'s3-bucket': {'description': None,
-                                                  'meta': {'description': 'an AWS S3 bucket',
-                                                           'type': 's3-bucket',
-                                                           'version': 0},
-                                                  'name': 'bar',
-                                                  'read-only': {'created': '2015-02-02T20:45:52+00:00',
-                                                                'region': None},
-                                                  'tag-list': {},
-                                                  'versioning': True}}]},
+                 'resource-list': [
+                     {'description': None,
+                      'meta': {'description': 'an AWS S3 bucket',
+                                              'type': 's3-bucket',
+                               'version': 0},
+                      'name': 'bar',
+                      'read-only': {'created': '2015-02-02T20:45:52+00:00',
+                                    'region': None},
+                      'tag-list': {},
+                      'versioning': True}]},
          'foo': {'description': None,
                  'meta': {'type': 'stack', 'version': 0,
                           'path': datadir + "/s3-stacks.yaml"},
-                 'resource-list': [{'s3-bucket': {'description': None,
-                                                  'meta': {'description': 'an AWS S3 bucket',
-                                                           'type': 's3-bucket',
-                                                           'version': 0},
-                                                  'name': 'foo',
-                                                  'read-only': {'created': '2013-01-01T12:46:40+00:00',
-                                                                'region': None},
-                                                  'tag-list': {'Foo': 'Oof'},
-                                                  'versioning': False}}]}}
+                 'resource-list': [
+                     {'description': None,
+                      'meta': {'description': 'an AWS S3 bucket',
+                                              'type': 's3-bucket',
+                               'version': 0},
+                      'name': 'foo',
+                      'read-only': {'created': '2013-01-01T12:46:40+00:00',
+                                    'region': None},
+                      'tag-list': {'Foo': 'Oof'},
+                      'versioning': False}]}}
 
     assert actual == expected

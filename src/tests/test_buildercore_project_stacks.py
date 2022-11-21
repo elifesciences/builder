@@ -1,3 +1,4 @@
+import unittest
 from . import base
 from buildercore.project import stack_config
 
@@ -35,20 +36,19 @@ def test_all_stack_data(datadir):
             },
             "random-property": "some-value",
             "resource-list": [
-                {'builder-project':
-                 {
-                     "meta": {
-                         "description": "an instance of an project created by builder and configured in projects/elife.yaml",
-                         "type": "builder-project",
-                         "version": 0
-                     },
-                     "read-only": {
-                         "created": None,
-                         "updated": None
-                     },
-                     "name": "journal",
-                     "instance-id": "prod"
-                 }}
+                {
+                    "meta": {
+                        "description": "an instance of an project created by builder and configured in projects/elife.yaml",
+                        "type": "builder-project",
+                        "version": 0
+                    },
+                    "read-only": {
+                        "created": None,
+                        "updated": None
+                    },
+                    "name": "journal",
+                    "instance-id": "prod"
+                }
             ]
         }
     }
@@ -62,9 +62,7 @@ def test__dumps_stack_file():
     actual = stack_config._dumps_stack_file(config)
     assert actual == expected
 
-# note: list items are currently being replaced during deep merge, how to preserve comments there?
-# perhaps special-case 'resource-items' in the dict-merge strategy
-# or when updating resources in a list, update each one individually rather than the list as a whole
+@unittest.skip("comments are now only preserved in the 'defaults' section.")
 def test__dumps_stack_file__updated_data():
     "a stack config can be read, parsed as YAML into Python, updated with new data and dumped back to YAML with changes preserved."
     fixture = base.fixture_path('stacks/stacks.yaml')

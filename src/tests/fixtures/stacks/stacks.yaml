@@ -30,8 +30,9 @@ example-stack-identifier:
         a resource stack is literally a list of things managed by Cloudformation/Terraform
         a 'resource' describes some bit of infrastructure 
         defining it here demonstrates that we know about it and have brought it under configuration control
-    random-property: some-value # important comment that should be preserved!
+    random-property: some-value
     resource-list:
-    -   builder-project:
-            name: journal
-            instance-id: prod # foo!
+    -   name: journal
+        instance-id: prod
+        meta:
+            type: builder-project
