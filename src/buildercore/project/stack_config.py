@@ -78,7 +78,7 @@ def _dumps_stack_file(data):
         return data
     data = utils.dictmap(prune_path, data)
 
-    order = ['name', 'description', 'meta', 'read-only']
+    order = ['name', 'description', 'meta']
     order = dict(zip(order, range(0, len(order)))) # {'id': 0, 'name': 1, ...}
 
     def order_keys(toplevel, data):

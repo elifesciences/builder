@@ -89,8 +89,7 @@ def generate_stack(config_path):
         return {'name': bucket['Name'],
                 'meta': {
                     'type': 's3-bucket'},
-                'read-only': {
-                    'created': bucket['CreationDate']}}
+                'created': bucket['CreationDate']}
 
     resource_item_list = [s3_resource(bucket) for bucket in bucket_list]
     resource_item_list = [regenerate_resource(resource) for resource in resource_item_list]

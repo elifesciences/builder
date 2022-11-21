@@ -10,9 +10,7 @@ defaults:
                 description: an AWS S3 bucket
                 type: s3-bucket
                 version: 0
-            read-only:
-                created:
-                region:
+            created:
             name:
             description:
             versioning:
@@ -24,8 +22,7 @@ foo:
     -   name: foo
         meta:
             type: s3-bucket
-        read-only:
-            created: '2013-01-01T12:46:40+00:00'
+        created: '2013-01-01T12:46:40+00:00'
         versioning: false
         tag-list: {}
 
@@ -35,8 +32,7 @@ bar:
     -   name: bar
         meta:
             type: s3-bucket
-        read-only:
-            created: '2015-02-02T20:45:52+00:00'
+        created: '2015-02-02T20:45:52+00:00'
         versioning: false
         tag-list: {}
 

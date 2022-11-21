@@ -19,8 +19,7 @@ def test_regenerate(tempdir, datadir):
                                'type': 's3-bucket',
                                'version': 0},
                       'name': 'foo',
-                      'read-only': {'created': '2013-01-01T12:46:40+00:00',
-                                    'region': None},
+                      'created': '2013-01-01T12:46:40+00:00',
                       'tag-list': {},
                       'versioning': False}]}
     assert stack_config.stack_data(stackname, config_path) == before
@@ -71,8 +70,7 @@ def test_generate_stacks(tempdir, datadir):
                                               'type': 's3-bucket',
                                'version': 0},
                       'name': 'bar',
-                      'read-only': {'created': '2015-02-02T20:45:52+00:00',
-                                    'region': None},
+                      'created': '2015-02-02T20:45:52+00:00',
                       'tag-list': {},
                       'versioning': True}]},
          'foo': {'description': None,
@@ -84,8 +82,7 @@ def test_generate_stacks(tempdir, datadir):
                                               'type': 's3-bucket',
                                'version': 0},
                       'name': 'foo',
-                      'read-only': {'created': '2013-01-01T12:46:40+00:00',
-                                    'region': None},
+                      'created': '2013-01-01T12:46:40+00:00',
                       'tag-list': {'Foo': 'Oof'},
                       'versioning': False}]}}
 

@@ -36,17 +36,14 @@ def test_all_stack_data(datadir):
             "random-property": "some-value",
             "resource-list": [
                 {
+                    "name": "journal",
+                    "instance-id": "prod",
                     "meta": {
                         "description": "an instance of an project created by builder and configured in projects/elife.yaml",
                         "type": "builder-project",
                         "version": 0
                     },
-                    "read-only": {
-                        "created": None,
-                        "updated": None
-                    },
-                    "name": "journal",
-                    "instance-id": "prod"
+                    "updated": None,
                 }
             ]
         }

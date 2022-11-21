@@ -19,10 +19,7 @@ defaults:
                 description: an instance of an project created by builder and configured in projects/elife.yaml
                 type: builder-project
                 version: 0
-            read-only:
-                # I fancy these will be fields that are useful at a glance but otherwise not used.
-                created: # project instance created date, populated externally
-                updated: # project instance updated date, populated externally
+            updated: # project instance updated date, populated externally
 
 example-stack-identifier:
     description: |

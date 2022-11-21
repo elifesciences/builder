@@ -10,9 +10,7 @@ defaults:
                 description: an AWS S3 bucket
                 type: s3-bucket
                 version: 0
-            read-only:
-                created:
-                region:
+            created:
             name:
             description:
             versioning:
