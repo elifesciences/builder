@@ -10,8 +10,11 @@ def list_stacks(include_resources=True):
     include_resources = utils.strtobool(include_resources)
     stack_map = project.stack_map()
     if include_resources:
-        return [{stackname: [r['meta']['type'] for r in stackdata['resource-list']]} for stackname, stackdata in stack_map.items()]
-    return stack_map.keys()
+        retval = []
+        for stackname, stackdata in stack_map.items():
+            retval.append({stackname: [r['meta']['type'] for r in stackdata['resource-list']]})
+        return retval
+    return list(stack_map.keys())
 
 @format_output()
 @requires_stack_config
