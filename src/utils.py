@@ -49,9 +49,8 @@ def errcho(x):
     return x
 
 def get_input(message):
-    # TODO
-    # if config.BUILDER_NON_INTERACTIVE:
-    #    raise IOError("stdin requested in non-interactive mode.")
+    if config.BUILDER_NON_INTERACTIVE:
+        raise IOError("stdin requested in non-interactive mode.")
     return input(message)
 
 def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
@@ -65,13 +64,13 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
             # default value doesn't appear in pick list, ignore given default
             default = None
     while True:
-        print("%s (%s)" % (message, name))
+        errcho("%s (%s)" % (message, name))
         for i, pick in enumerate(pick_list):
-            print(i + 1, '-', pick)
+            errcho(i + 1, '-', pick)
             if helpfn:
                 helptext = helpfn(pick)
                 if helptext:
-                    print('    "%s"\n' % str(helptext))
+                    errcho('    "%s"\n' % str(helptext))
         prompt = '> '
         if not default and len(pick_list) == 1:
             default = pick_list[0]
@@ -81,10 +80,10 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
         if not uinput or not uinput.lower().strip():
             if default:
                 return pick_list[pick_list.index(default)]
-            print('input is required\n')
+            errcho('input is required\n')
             continue
         elif not uinput.isdigit() or int(uinput) not in list(range(1, len(pick_list) + 1)):
-            print('a digit within the range of choices is required')
+            errcho('a digit within the range of choices is required')
             continue
         choice = pick_list[int(uinput) - 1]
         if default_file:
@@ -142,7 +141,7 @@ def find_region(stackname=None):
     try:
         return core.find_region(stackname)
     except core.MultipleRegionsError as e:
-        print("many possible regions found!")
+        errcho("many possible regions found!")
         return _pick('region', e.regions())
 
 def coerce_string_value(value_str):

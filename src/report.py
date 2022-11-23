@@ -135,7 +135,7 @@ def all_ec2_projects():
     return results
 
 def _all_ec2_instances(state):
-    return [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state)]
+    return [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state, region=utils.find_region())]
 
 @report
 def all_ec2_instances(state=None):

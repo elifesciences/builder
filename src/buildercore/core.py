@@ -163,14 +163,14 @@ def tags2dict(tags):
         return {}
     return dict((el['Key'], el['Value']) for el in tags)
 
-def ec2_instance_list(state='running'):
+def ec2_instance_list(state='running', region=None):
     """returns a list of all ec2 instances in given `state`.
     default state is `running`. `None` is considered 'any state'."""
     known_states_str = ", ".join(ALL_EC2_STATES)
     err_msg = "unknown ec2 state %r; known states: %s and None (all states)" % (state, known_states_str)
     ensure(state is None or state in ALL_EC2_STATES, err_msg)
 
-    conn = boto_resource('ec2', find_region())
+    conn = boto_resource('ec2', region or find_region())
 
     filters = []
     if state:
