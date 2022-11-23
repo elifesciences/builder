@@ -66,7 +66,7 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
     while True:
         errcho("%s (%s)" % (message, name))
         for i, pick in enumerate(pick_list):
-            errcho(i + 1, '-', pick)
+            errcho("%s - %s" % (i + 1, pick)) # "1 - us-east-1"
             if helpfn:
                 helptext = helpfn(pick)
                 if helptext:
