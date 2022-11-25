@@ -13,9 +13,9 @@ def _find_node(node, node_obj_list):
 def stop_node(stackname, node):
     """Unsafe. You probably want 'stop'.
     Stops an ec2 instance, polling until stopped.
-    Does not check current state before attempting to stop.
+    Does not check current state before attempting to stop (excluding terminated/terminating instances).
     Does not care if all other nodes are also unavailable."""
-    node_obj_list = core.find_ec2_instances(stackname, state=None)
+    node_obj_list = core.find_ec2_instances(stackname, state='pending|running|stopping|stopped')
     node_obj = _find_node(node, node_obj_list)
     node_ids = [node_obj.id]
     lifecycle._ec2_connection(stackname).instances.filter(InstanceIds=node_ids).stop()
@@ -25,10 +25,10 @@ def stop_node(stackname, node):
 def start_node(stackname, node):
     """Unsafe. You probably want 'start'.
     Starts the ec2 instance, polling until available.
-    Does not check current state before attempting to start.
+    Does not check current state before attempting to start (excluding terminated/terminating instances).
     Does not check for errors booting.
     Does not update DNS."""
-    node_obj_list = core.find_ec2_instances(stackname, state=None)
+    node_obj_list = core.find_ec2_instances(stackname, state='pending|running|stopping|stopped')
     node_obj = _find_node(node, node_obj_list)
     node_ids = [node_obj.id]
     lifecycle._ec2_connection(stackname).instances.filter(InstanceIds=node_ids).start()
