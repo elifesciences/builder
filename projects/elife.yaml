@@ -1987,6 +1987,15 @@ kubernetes-aws:
                 external-dns: true
                 autoscaler-policy: true
                 iam-oidc-provider: true
+                iam-roles:
+                    kubernetes-autoscaler:
+                        policy-template: kubernetes-autoscaler
+                        service-account: cluster-autoscaler-aws-cluster-autoscaler
+                        namespace: autoscaler
+                    external-dns:
+                        policy-template: external-dns
+                        service-account: infra-external-dns
+                        namespace: infra
         flux-test:
             ec2: false
             eks:
