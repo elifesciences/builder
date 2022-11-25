@@ -1984,8 +1984,8 @@ kubernetes-aws:
                     type: t3.large
                     max-size: 14
                     desired-capacity: 12
-                external-dns: true
-                autoscaler-policy: true
+                external-dns: false
+                autoscaler-policy: false
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
