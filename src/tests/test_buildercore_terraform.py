@@ -1173,58 +1173,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-    def test_eks_and_external_dns(self):
-        pname = 'project-with-eks-external-dns'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
-        self.assertEqual(
-            '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['path']
-        )
-        self.assertEqual(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ChangeResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "arn:aws:route53:::hostedzone/*",
-                        ],
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ListHostedZones",
-                            "route53:ListResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ]
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['policy'])
-        )
-
-        self.assertIn('worker_external_dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_external_dns.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
-        )
-
     def test_eks_and_efs(self):
         pname = 'project-with-eks-efs'
         iid = pname + '--%s' % self.environment
@@ -1268,61 +1216,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'role': "${aws_iam_role.worker.name}",
             },
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_efs']
-        )
-
-    def test_eks_and_autoscaler_policy(self):
-        pname = 'project-with-eks-and-autoscaler-policy'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('kubernetes_autoscaler', terraform_template['resource']['aws_iam_policy'])
-        self.assertEqual(
-            '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['path']
-        )
-        self.assertEqual(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:DescribeAutoScalingGroups",
-                            "autoscaling:DescribeAutoScalingInstances",
-                            "autoscaling:DescribeLaunchConfigurations",
-                            "autoscaling:DescribeTags",
-                            "ec2:DescribeInstanceTypes",
-                            "ec2:DescribeLaunchTemplateVersions"
-                        ],
-                        "Resource": ["*"]
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:SetDesiredCapacity",
-                            "autoscaling:TerminateInstanceInAutoScalingGroup",
-                        ],
-                        "Resource": [
-                            "${aws_autoscaling_group.worker.arn}",
-                        ],
-                    },
-                ],
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['policy'])
-        )
-
-        self.assertIn('worker_autoscaler', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_autoscaler.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_autoscaler']
         )
 
     def test_eks_and_iam_oidc_provider(self):
