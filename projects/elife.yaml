@@ -1986,6 +1986,7 @@ kubernetes-aws:
                     desired-capacity: 12
                 external-dns: true
                 autoscaler-policy: true
+                iam-oidc-provider: true
         flux-test:
             ec2: false
             eks:
