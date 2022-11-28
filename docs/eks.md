@@ -54,7 +54,6 @@ kubernetes-aws:
                     type: t2.large
                     max-size: 2
                     desired-capacity: 2
-                external-dns: true
 ```
 
 ```

@@ -211,9 +211,7 @@ defaults:
                 desired-capacity: 3
                 #root:
                 #   size: 20 # GiB, default
-            external-dns: false
             efs: false
-            autoscaler-policy: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             #subdomains: [] # todo: enable
@@ -940,14 +938,6 @@ project-with-eks:
                 root:
                     size: 40
 
-project-with-eks-external-dns:
-    description: project managing an EKS cluster with external-dns for Route53 entries creation
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            external-dns: true
-
 project-with-eks-efs:
     description: project managing an EKS cluster with EFS support
     domain: False
@@ -955,14 +945,6 @@ project-with-eks-efs:
     aws:
         eks:
             efs: true
-
-project-with-eks-and-autoscaler-policy:
-    description: project managing an EKS cluster with autoscaler support in AWS
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            autoscaler-policy: true
 
 project-with-eks-and-iam-oidc-provider:
     description: project managing an EKS cluster with it's IAM OIDC provisioned for IRSA
