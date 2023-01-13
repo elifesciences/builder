@@ -304,3 +304,22 @@ class TestUpdates(base.BaseCase):
             template = cloudformation.render_template(context)
             cloudformation.write_template(stackname, template)
         return context
+
+def test_instance_alias():
+    cases = [
+        (None, None),
+        ({}, None),
+        ([], None),
+        ("", None),
+        ("FOO", None),
+
+        # 'pr-*-base-update'
+        ("pr-0-base-update", "pr-0-BU"),
+        ("pr-123-base-update", "pr-123-BU"),
+        ("pr-abc-base-update", None),
+        ("pr-base-update", None),
+
+        # ...
+    ]
+    for given, expected in cases:
+        assert cfngen.instance_alias(given) == expected

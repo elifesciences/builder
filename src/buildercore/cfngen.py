@@ -63,13 +63,19 @@ def instance_alias(instance_id):
         "pr-100-base-update-elife-bot-accepted-submission-cleaning-output"
     that is 64 characters long when the maximum is 63.
     with an alias we can shorten that at the expense of this extra indirection."""
+    if not isinstance(instance_id, str):
+        return None
 
+    # pr-*-base-update
     base_update_alias_regex = re.compile(r"pr-(?P<pr>\d+)-base-update")
     match = re.match(base_update_alias_regex, instance_id)
     if match:
         alias = "BU"
         pr_num = match.group('pr')
         return "pr-%s-%s" % (pr_num, alias) # "pr-123-BU"
+
+    # add further aliases here
+    # ...
 
     return None
 
@@ -81,8 +87,7 @@ def parameterize(context):
     def wrapper(string):
         placeholders = {
             'instance': context['instance_id'],
-            'instance-alias': instance_alias(context['instance_id']),
-            'instance-or-alias': instance_alias(context['instance_id']) or context['instance_id']
+            'instance-alias-or-instance': instance_alias(context['instance_id']) or context['instance_id']
         }
         return string.format(**placeholders)
     return wrapper
