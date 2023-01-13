@@ -864,7 +864,7 @@ elife-bot:
             "{instance}-elife-bot-digests-input":
             "{instance}-elife-bot-decision-letter-input":
             "{instance}-elife-bot-decision-letter-output":
-            "{instance}-elife-bot-accepted-submission-cleaning-output":
+            "{instance-alias-or-instance}-elife-bot-accepted-submission-cleaning-output":
         sqs:
             # gnott@2021-08: poa-incoming-queue was configured to avoid the rigidly timed PoA packaging process.
             # now the S3 notifications go into the queue, and elife-bot reads the messages at four specific times daily
