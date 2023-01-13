@@ -314,8 +314,8 @@ def test_instance_alias():
         ("FOO", None),
 
         # 'pr-*-base-update'
-        ("pr-0-base-update", "pr-0-BU"),
-        ("pr-123-base-update", "pr-123-BU"),
+        ("pr-0-base-update", "pr-0-bu"),
+        ("pr-123-base-update", "pr-123-bu"),
         ("pr-abc-base-update", None),
         ("pr-base-update", None),
 

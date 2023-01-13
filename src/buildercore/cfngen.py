@@ -70,9 +70,9 @@ def instance_alias(instance_id):
     base_update_alias_regex = re.compile(r"pr-(?P<pr>\d+)-base-update")
     match = re.match(base_update_alias_regex, instance_id)
     if match:
-        alias = "BU"
+        alias = "bu"
         pr_num = match.group('pr')
-        return "pr-%s-%s" % (pr_num, alias) # "pr-123-BU"
+        return "pr-%s-%s" % (pr_num, alias) # "pr-123-bu"
 
     # add further aliases here
     # ...
