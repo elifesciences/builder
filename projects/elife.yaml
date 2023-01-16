@@ -1121,6 +1121,25 @@ journal-cms:
                 backup-retention: 2 # days
             ext:
                 size: 60 # GB
+        8032:
+            description: |
+                prod-like environment for issue:
+                https://github.com/elifesciences/issues/issues/8032
+            ec2:
+                masterless: true
+            rds:
+                type: db.t3.medium
+                engine: MySQL
+                version: '5.7'
+                multi-az: true
+                # storage can be increased but not decreased.
+                # journal-cms--prod once needed this amount.
+                storage: 48 # GB
+                db-name: journalcmsprod # ignored or not?
+                snapshot-id: arn:aws:rds:us-east-1:512686554592:snapshot:rds:journal-cms-prod-2022-12-18-05-25
+            ext:
+                size: 60 # GB
+
         prod:
             description: production environment. backed by RDS
             rds:
@@ -2090,6 +2109,7 @@ firewall:
                     # lsh@2021-11-23: disabled https://github.com/elifesciences/issues/issues/7089
                     #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
                 custom-rules:
+                    # ./src/buildercore/waf/...
                     - elife-Whitelist.json
                     - elife-Blacklist.json
                     # lsh@2022-04-08: disabled, aws bot rules were ineffective, undermining this rule.
