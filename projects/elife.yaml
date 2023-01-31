@@ -1216,7 +1216,7 @@ elife-libraries:
             ec2:
                 type: t3.medium # 2 core, 8 GB of memory
             ext:
-                size: 10 # GB
+                size: 50 # GB
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
             ec2:
