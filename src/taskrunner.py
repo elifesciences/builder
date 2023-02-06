@@ -118,6 +118,8 @@ TASK_LIST = [
     report.all_ec2_instances_for_salt_upgrade,
     report.all_rds_projects,
     report.all_rds_instances,
+    report.all_lb_projects,
+    report.all_cloudfront_projects,
     report.all_formulas,
     report.all_adhoc_ec2_instances,
     report.long_running_large_ec2_instances,
