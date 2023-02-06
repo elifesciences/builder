@@ -226,10 +226,8 @@ def all_adhoc_ec2_instances(state='running'):
     instance_list = [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state)]
     return filter(adhoc_instance, instance_list)
 
-@report
-def all_rds_projects():
+def all_projects_using(key):
     "List all projects using RDS."
-    key = 'aws.rds'
 
     def has_(pname, pdata):
         if lookup(pdata, key, None):
@@ -242,6 +240,18 @@ def all_rds_projects():
     results = [has_(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
     return results
+
+@report
+def all_rds_projects():
+    return all_projects_using('aws.rds')
+
+@report
+def all_lb_projects():
+    return list(all_projects_using('aws.elb')) + list(all_projects_using('aws.alb'))
+
+@report
+def all_cloudfront_projects():
+    return all_projects_using('aws.cloudfront')
 
 @report
 def all_rds_instances(**kwargs):
