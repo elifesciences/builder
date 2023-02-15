@@ -47,30 +47,12 @@ def _update_remote_bvars(stackname, buildvars):
     upload(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
     LOG.info("%r updated. backup written to /tmp/build-vars.json.b64.%s", stackname, fid)
 
-#
-
-@requires_aws_stack
-def switch_revision(stackname, revision=None, concurrency=None):
-    if revision is None:
-        revision = utils.uin('revision', None)
-
-    def _switch_revision_single_ec2_node():
-        buildvars = _retrieve_build_vars()
-
-        if 'revision' in buildvars and revision == buildvars['revision']:
-            print('FYI, the instance is already on that revision!')
-            return
-
-        new_data = buildvars
-        new_data['revision'] = revision
-        _update_remote_bvars(stackname, new_data)
-
-    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
+# ---
 
 @format_output('python')
 @requires_aws_stack
 def read(stackname):
-    "returns the unencoded build variables found on given instance"
+    "returns the unencoded build variables found on given `stackname`"
     return stack_all_ec2_nodes(stackname, lambda: read_from_current_host(), username=BOOTSTRAP_USER)
 
 @format_output('python')
@@ -86,10 +68,14 @@ def fix(stackname):
             _retrieve_build_vars()
             LOG.info("valid bvars found, no fix necessary.")
             return
-        except AssertionError:
-            LOG.info("invalid build vars found (AssertionError), regenerating from context")
-        except (ValueError, JSONDecodeError):
-            LOG.info("invalid build vars found (JSONDecodeError), regenerating from context")
+        except AssertionError as ae:
+            LOG.info("invalid build vars found (AssertionError): %s", ae)
+        except JSONDecodeError as jde:
+            LOG.info("invalid build vars found (JSONDecodeError): %s", jde)
+        except ValueError as ve:
+            LOG.info("invalid build vars found (ValueError): %s", ve)
+
+        LOG.info("regenerating buildvars from context")
 
         context = load_context(stackname)
         # some contexts are missing stackname
@@ -99,6 +85,26 @@ def fix(stackname):
         _update_remote_bvars(stackname, new_vars)
 
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
+
+@requires_aws_stack
+def switch_revision(stackname, revision=None, concurrency=None):
+    revision = revision or utils.uin('revision', None)
+    ensure(revision, "a revision is required", utils.TaskExit)
+
+    fix(stackname)
+
+    def _switch_revision_single_ec2_node():
+        buildvars = _retrieve_build_vars()
+
+        if 'revision' in buildvars and revision == buildvars['revision']:
+            print('FYI, the instance is already on that revision!')
+            return
+
+        new_data = buildvars
+        new_data['revision'] = revision
+        _update_remote_bvars(stackname, new_data)
+
+    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
 @requires_aws_stack
 def force(stackname, field, new_value):
