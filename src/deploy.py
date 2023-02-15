@@ -5,7 +5,7 @@ from decorators import requires_aws_stack, requires_aws_stack_template
 from buildercore import core, bootstrap, bluegreen_v2, bluegreen, cloudformation, context_handler, trop
 from buildercore.core import all_node_params
 from buildercore.concurrency import concurrency_for
-import buildvars, utils
+import buildvars
 import logging
 
 LOG = logging.getLogger(__name__)
