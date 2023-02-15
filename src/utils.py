@@ -2,7 +2,7 @@ import logging
 import os, sys
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from buildercore import config
-from buildercore.utils import second, last, isint
+from buildercore.utils import ensure, second, last, isint
 from buildercore.command import local
 from buildercore import core
 
@@ -49,9 +49,7 @@ def errcho(x):
     return x
 
 def get_input(message):
-    # TODO
-    # if config.BUILDER_NON_INTERACTIVE:
-    #    raise IOError("stdin requested in non-interactive mode.")
+    ensure(not config.BUILDER_NON_INTERACTIVE, "stdin requested in non-interactive mode.", IOError)
     return input(message)
 
 def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
@@ -93,6 +91,11 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
         return choice
 
 def uin(param, default=0xDEADBEEF):
+    if config.BUILDER_NON_INTERACTIVE:
+        retval = None if default == 0xDEADBEEF else default
+        LOG.warning('non-interactive mode, returning default %r', default)
+        return retval
+
     while True:
         if default and default != 0xDEADBEEF:
             errcho("%s [%s]: " % (param, default))
