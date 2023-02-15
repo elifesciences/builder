@@ -78,7 +78,7 @@ def load_balancer_register_all(stackname):
         load_balancer_register_all__v2(stackname)
     else:
         LOG.warning("no load balancer found: %s", stackname)
-        
+
 @requires_aws_stack
 @requires_aws_stack_template
 def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
