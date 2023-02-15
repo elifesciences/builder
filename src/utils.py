@@ -49,6 +49,8 @@ def errcho(x):
     return x
 
 def get_input(message):
+    """previously a wrapper around the py2 `raw_input` vs py3 `input` builtins,
+    it now serves as a single place to read from stdin and enforce `config.BUILDER_NON_INTERACTIVE`."""
     ensure(not config.BUILDER_NON_INTERACTIVE, "stdin requested in non-interactive mode.", IOError)
     return input(message)
 
@@ -92,9 +94,9 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
 
 def uin(param, default=0xDEADBEEF):
     if config.BUILDER_NON_INTERACTIVE:
-        retval = None if default == 0xDEADBEEF else default
+        ensure(default != 0xDEADBEEF, "stdin requested in non-interactive mode with no default.")
         LOG.warning('non-interactive mode, returning default %r', default)
-        return retval
+        return default
 
     while True:
         if default and default != 0xDEADBEEF:

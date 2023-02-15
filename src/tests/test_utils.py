@@ -45,18 +45,30 @@ class TestUtils(base.BaseCase):
         value = utils._pick('project', ['lax', 'bot'], '/tmp/cache')
         self.assertEqual('lax', value)
 
+    def test_uin__non_interactive_no_default(self):
+        "requesting input from `uin` in non-interactive mode raises an assertion error."
+        self.assertRaises(AssertionError, utils.uin, 'project')
+
+    def test_uin__non_interactive_with_default(self):
+        "requesting input from `uin` with a default in non-interactive mode returns the default immediately."
+        expected = 'pants'
+        actual = utils.uin('project', default='pants')
+        self.assertEqual(expected, actual)
+
+    @patch('buildercore.config.BUILDER_NON_INTERACTIVE', False)
     @patch('utils.get_input', return_value='lax')
-    def test_uin(self, get_input):
+    def test_uin__interactive(self, get_input):
         value = utils.uin('project')
         self.assertEqual('lax', value)
 
     @patch('utils.get_input', return_value='')
-    def test_uin_default(self, get_input):
-        value = utils.uin('project', default='lax')
-        self.assertEqual('lax', value)
+    def test_uin__interactive_with_default(self, get_input):
+        expected = 'lax'
+        actual = utils.uin('project', default='lax')
+        self.assertEqual(expected, actual)
 
     def test_mkdirp_is_idempotent_on_existing_directories(self):
-        utils.mkdirp(".")
+        utils.mkdirp(".") # todo: wtf is this?
 
     def test_pwd(self):
         self.assertRegex(utils.pwd(), "^/.*/src$")
