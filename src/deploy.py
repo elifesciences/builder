@@ -84,7 +84,7 @@ def load_balancer_register_all(stackname):
 def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
     "changes the revision of the stack's project and then calls highstate."
     buildvars.switch_revision(stackname, revision)
-    # if lb present, ensure all nodes are registered,
+    # if lb present, ensure all nodes are registered.
     # otherwise the blue-green concurrency may timeout waiting for all nodes to be in service:
     # - https://github.com/elifesciences/issues/issues/8057
     load_balancer_register_all(stackname)

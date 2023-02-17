@@ -555,7 +555,6 @@ class NoRunningInstances(Exception):
 
 def ec2_data(stackname, state=None):
     """returns a list of raw boto3 EC2.Instance data for ec2 instances attached to given `stackname`.
-    version 2 of the misleadingly named `stack_data`.
     does not filter by state by default.
     does not enforce single instance checking."""
     try:

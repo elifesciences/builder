@@ -23,7 +23,7 @@ def destroy(stackname):
     "Delete a stack of resources."
     print('this is a BIG DEAL. you cannot recover from this.')
     print('type the name of the stack to continue or anything else to quit')
-    uin = utils.get_input('> ')
+    uin = utils.uin('> ', default='')
     if not uin or not uin.strip().lower() == stackname.lower():
         print('you needed to type "%s" to continue.' % stackname)
         exit(1)
@@ -348,20 +348,17 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     _download(path, destination)
 
 @requires_aws_stack
-def upload_file(stackname, local_path, remote_path=None, overwrite=False, confirm=False, node=1):
+def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1):
     remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
     # todo: use utils.strtobool
     overwrite = str(overwrite).lower() == "true"
-    confirm = str(confirm).lower() == "true"
     node = int(node)
     with stack_conn(stackname, node=node):
         print('stack:', stackname, 'node', node)
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
-        # todo: switch to utils.confirm and remove `confirm` kwarg
-        if not confirm:
-            utils.get_input('continue?')
+        utils.confirm('continue?')
         if remote_file_exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
             exit(1)

@@ -52,7 +52,7 @@ def _update_remote_bvars(stackname, buildvars):
 @format_output('python')
 @requires_aws_stack
 def read(stackname):
-    "returns the unencoded build variables found on given `stackname`"
+    "returns the unencoded build variables found on ec2 nodes for `stackname`."
     return stack_all_ec2_nodes(stackname, lambda: read_from_current_host(), username=BOOTSTRAP_USER)
 
 @format_output('python')
@@ -91,6 +91,11 @@ def switch_revision(stackname, revision=None, concurrency=None):
     revision = revision or utils.uin('revision', None)
     ensure(revision, "a revision is required", utils.TaskExit)
 
+    # an ec2 instance with broken buildvars cannot have `switch_revision` called upon it.
+    # `deploy.switch_revision_update_instance` has become a familiar command to run for users,
+    # and Alfred depends on calling `buildvars.switch_revision` (see `taskrunner.TASK_LIST`).
+    # ensuring the buildvars are valid here is convenient for both humans *and* CI.
+    # - https://github.com/elifesciences/issues/issues/8116
     fix(stackname)
 
     def _switch_revision_single_ec2_node():

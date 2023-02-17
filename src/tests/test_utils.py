@@ -1,3 +1,4 @@
+import os
 from . import base
 from unittest.mock import patch, call
 import utils
@@ -67,9 +68,6 @@ class TestUtils(base.BaseCase):
         actual = utils.uin('project', default='lax')
         self.assertEqual(expected, actual)
 
-    def test_mkdirp_is_idempotent_on_existing_directories(self):
-        utils.mkdirp(".") # todo: wtf is this?
-
     def test_pwd(self):
         self.assertRegex(utils.pwd(), "^/.*/src$")
 
@@ -128,3 +126,11 @@ def test_coerce_string_value():
     ]
     for given, expected in cases:
         assert utils.coerce_string_value(given) == expected
+
+def test_mkdirp_is_idempotent_on_existing_directories(tempdir):
+    path = os.path.join(tempdir, "foo")
+    assert not os.path.exists(path)
+    utils.mkdirp(path)
+    assert os.path.exists(path)
+    utils.mkdirp(path)
+    assert os.path.exists(path)
