@@ -222,7 +222,7 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
                         continue
                     LOG.info("*" * 80)
                     LOG.info("updating: %s" % stackname)
-                    prompt and utils.get_input('continue?')
+                    prompt and utils.confirm('continue?')
                     if not remaster(stackname, new_master_stackname, skip_context_check):
                         LOG.warning("failed to remaster %s, stopping further remasters to project %r", stackname, pname)
                         break
