@@ -20,16 +20,16 @@ def _retrieve_build_vars():
     raises AssertionError on bad data."""
     try:
         buildvars = read_from_current_host()
-        LOG.debug('build vars: %s', buildvars)
+        LOG.debug('buildvars: %s', buildvars)
 
         # buildvars exist
-        ensure(isinstance(buildvars, dict), 'build vars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.' % buildvars)
+        ensure(isinstance(buildvars, dict), 'buildvars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.' % buildvars)
 
         # nothing important is missing
         missing_keys = core_utils.missingkeys(buildvars, ['stackname', 'instance_id', 'branch', 'revision'])
         ensure(
             len(missing_keys) == 0,
-            'build vars are not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys
+            'buildvars not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys
         )
 
         return buildvars
@@ -63,17 +63,20 @@ def valid(stackname):
 @requires_aws_stack
 def fix(stackname):
     def _fix_single_ec2_node(stackname):
-        LOG.info("checking build vars on node %s", current_node_id())
+        LOG.info("checking buildvars on node %s--%s", stackname, current_node_id())
         try:
             _retrieve_build_vars()
-            LOG.info("valid bvars found, no fix necessary.")
+            LOG.info("valid buildvars found, no fix necessary.")
             return
+        except OSError as ose:
+            if str(ose).startswith("remote file does not exist"):
+                LOG.info("buildvars not found: %s", ose)
         except AssertionError as ae:
-            LOG.info("invalid build vars found (AssertionError): %s", ae)
+            LOG.info("invalid buildvars found (AssertionError): %s", ae)
         except JSONDecodeError as jde:
-            LOG.info("invalid build vars found (JSONDecodeError): %s", jde)
+            LOG.info("invalid buildvars found (JSONDecodeError): %s", jde)
         except ValueError as ve:
-            LOG.info("invalid build vars found (ValueError): %s", ve)
+            LOG.info("invalid buildvars found (ValueError): %s", ve)
 
         LOG.info("regenerating buildvars from context")
 
@@ -89,7 +92,7 @@ def fix(stackname):
 @requires_aws_stack
 def switch_revision(stackname, revision=None, concurrency=None):
     revision = revision or utils.uin('revision', None)
-    ensure(revision, "a revision is required", utils.TaskExit)
+    ensure(revision, "a revision is required.", utils.TaskExit)
 
     # an ec2 instance with broken buildvars cannot have `switch_revision` called upon it.
     # `deploy.switch_revision_update_instance` has become a familiar command to run for users,

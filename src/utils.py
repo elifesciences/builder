@@ -96,7 +96,7 @@ def uin(param, default=0xDEADBEEF):
     "a slightly fancier `get_input` that allows a default value and keeps prompting until it has *something*."
     if config.BUILDER_NON_INTERACTIVE:
         ensure(default != 0xDEADBEEF, "stdin requested in non-interactive mode with no default.")
-        LOG.warning('non-interactive mode, returning default %r', default)
+        LOG.warning("non-interactive mode, returning default '%s'.", default)
         return default
 
     while True:

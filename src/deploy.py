@@ -77,7 +77,7 @@ def load_balancer_register_all(stackname):
     elif cloudformation.template_using_elb_v2(stackname):
         load_balancer_register_all__v2(stackname)
     else:
-        LOG.warning("no load balancer found: %s", stackname)
+        LOG.debug("no load balancer found: %s", stackname)
 
 @requires_aws_stack
 @requires_aws_stack_template
