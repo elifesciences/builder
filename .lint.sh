@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "[-] .lint.sh"
-
 echo "pyflakes"
 .ci/pyflakes
 
@@ -11,5 +9,3 @@ echo "pylint"
 
 echo "scrubbing"
 . .scrub.sh
-
-echo "[✓] .lint.sh"

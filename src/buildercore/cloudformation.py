@@ -120,7 +120,6 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
         raise
 
 
-# todo: rename. nothing is being bootstrapped here.
 @core.requires_stack_file
 def bootstrap(stackname, context):
     "called by `bootstrap.create_stack` to generate a cloudformation template."
@@ -224,8 +223,13 @@ def template_outputs_map(stackname):
 
 @core.requires_stack_file
 def template_using_elb_v1(stackname):
-    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)."
+    "returns `True` if template for `stackname` is using an ELBv1 (vs an ELBv2/ALB)."
     return trop.ELB_TITLE in template_outputs_map(stackname)
+
+@core.requires_stack_file
+def template_using_elb_v2(stackname):
+    "returns `True` if template for `stackname` is using an ELBv2 (an ALB)."
+    return trop.ALB_TITLE in template_outputs_map(stackname)
 
 def read_output(stackname, key):
     """finds a literal `Output` from a cloudformation template matching given `key`.

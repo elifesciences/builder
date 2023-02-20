@@ -121,7 +121,7 @@ class SimpleCases(base.BaseCase):
                 self.assertCountEqual(expected_subs, actual_subs)
 
 class Errors(base.BaseCase):
-    @patch('buildercore.core.stack_data')
+    @patch('buildercore.core.ec2_data')
     def test_no_running_instances_found(self, stack_data):
         stack_data.return_value = []
         self.assertEqual(
@@ -129,7 +129,7 @@ class Errors(base.BaseCase):
             {}
         )
 
-    @patch('buildercore.core.stack_data')
+    @patch('buildercore.core.ec2_data')
     def test_no_public_ips_available(self, stack_data):
         stack_data.return_value = [
             {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Tags': []},

@@ -331,10 +331,8 @@ def _ec2_connection_params(stackname, username, **kwargs):
 
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
-    if 'user' in kwargs:
-        LOG.warning("found key 'user' in given kwargs - did you mean 'username' ??")
-
-    data = stack_data(stackname, ensure_single_instance=False)
+    ensure('user' not in kwargs, "found key 'user' in given kwargs - did you mean 'username' ??")
+    data = ec2_data(stackname, state='running')
     ensure(len(data) == 1 or node, "stack is clustered with %s nodes and no specific node provided" % len(data))
     node and ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
     didx = int(node) - 1 if node else 0 # decrement to a zero-based value
@@ -350,7 +348,7 @@ class NoPublicIps(Exception):
 
 def all_node_params(stackname):
     "returns a map of node data"
-    data = stack_data(stackname)
+    data = ec2_data(stackname, state='running')
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {
         ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node'])
@@ -378,7 +376,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     if isinstance(workfn, tuple):
         workfn, work_kwargs = workfn
 
-    data = stack_data(stackname)
+    data = ec2_data(stackname, state='running')
     # TODO: reuse all_node_params?
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
@@ -555,23 +553,8 @@ def describe_stack(stackname, allow_missing=False):
 class NoRunningInstances(Exception):
     pass
 
-# NOTE: misleading name, this returns a list of raw boto3 EC2.Instance data
-def stack_data(stackname, ensure_single_instance=False):
-    """returns a list of raw boto3 EC2.Instance data for ec2 instances attached to given `stackname`.
-    only returns ec2 data for *running* instances.
-    deprecated. use `ec2_data`."""
-    try:
-        ec2_instances = find_ec2_instances(stackname, allow_empty=True)
-        if len(ec2_instances) > 1 and ensure_single_instance:
-            raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
-        return [ec2.meta.data for ec2 in ec2_instances]
-    except Exception:
-        LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
-        raise
-
 def ec2_data(stackname, state=None):
     """returns a list of raw boto3 EC2.Instance data for ec2 instances attached to given `stackname`.
-    version 2 of the misleadingly named `stack_data`.
     does not filter by state by default.
     does not enforce single instance checking."""
     try:

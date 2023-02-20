@@ -2,7 +2,7 @@ import logging
 import os, sys
 from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
 from buildercore import config
-from buildercore.utils import second, last, isint
+from buildercore.utils import ensure, second, last, isint
 from buildercore.command import local
 from buildercore import core
 
@@ -49,9 +49,9 @@ def errcho(x):
     return x
 
 def get_input(message):
-    # TODO
-    # if config.BUILDER_NON_INTERACTIVE:
-    #    raise IOError("stdin requested in non-interactive mode.")
+    """previously a wrapper around the py2 `raw_input` vs py3 `input` builtins,
+    it now serves as a single place to read from stdin and enforce `config.BUILDER_NON_INTERACTIVE`."""
+    ensure(not config.BUILDER_NON_INTERACTIVE, "stdin requested in non-interactive mode.", IOError)
     return input(message)
 
 def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:'):
@@ -65,13 +65,13 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
             # default value doesn't appear in pick list, ignore given default
             default = None
     while True:
-        print("%s (%s)" % (message, name))
+        errcho("%s (%s)" % (message, name))
         for i, pick in enumerate(pick_list):
-            print(i + 1, '-', pick)
+            errcho("%s - %s" % (i + 1, pick))
             if helpfn:
                 helptext = helpfn(pick)
                 if helptext:
-                    print('    "%s"\n' % str(helptext))
+                    errcho('    "%s"\n' % str(helptext))
         prompt = '> '
         if not default and len(pick_list) == 1:
             default = pick_list[0]
@@ -81,10 +81,10 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
         if not uinput or not uinput.lower().strip():
             if default:
                 return pick_list[pick_list.index(default)]
-            print('input is required\n')
+            errcho('input is required\n')
             continue
         elif not uinput.isdigit() or int(uinput) not in list(range(1, len(pick_list) + 1)):
-            print('a digit within the range of choices is required')
+            errcho('a digit within the range of choices is required')
             continue
         choice = pick_list[int(uinput) - 1]
         if default_file:
@@ -93,6 +93,12 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
         return choice
 
 def uin(param, default=0xDEADBEEF):
+    "a slightly fancier `get_input` that allows a default value and keeps prompting until it has *something*."
+    if config.BUILDER_NON_INTERACTIVE:
+        ensure(default != 0xDEADBEEF, "stdin requested in non-interactive mode with no default.")
+        LOG.warning("non-interactive mode, returning default '%s'.", default)
+        return default
+
     while True:
         if default and default != 0xDEADBEEF:
             errcho("%s [%s]: " % (param, default))
@@ -109,7 +115,7 @@ def uin(param, default=0xDEADBEEF):
 
 def confirm(message):
     if config.BUILDER_NON_INTERACTIVE:
-        LOG.info('Non-interactive mode, confirming automatically')
+        LOG.info('non-interactive mode, confirming automatically')
         return
 
     errcho(message)
@@ -142,7 +148,7 @@ def find_region(stackname=None):
     try:
         return core.find_region(stackname)
     except core.MultipleRegionsError as e:
-        print("many possible regions found!")
+        errcho("many possible regions found!")
         return _pick('region', e.regions())
 
 def coerce_string_value(value_str):
