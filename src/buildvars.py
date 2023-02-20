@@ -39,13 +39,14 @@ def _retrieve_build_vars():
         raise
 
 def _update_remote_bvars(stackname, buildvars):
-    LOG.debug('updating %r with new vars %r', stackname, buildvars)
+    node_name = "%s--%s" % (stackname, current_node_id())
+    LOG.debug('updating %r with new vars %r', node_name, buildvars)
     encoded = encode_bvars(buildvars)
     fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
     # make a backup
     remote_sudo('if [ -f /etc/build-vars.json.b64 ]; then cp /etc/build-vars.json.b64 /tmp/build-vars.json.b64.%s; fi;' % fid)
     upload(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
-    LOG.info("%r updated. backup written to /tmp/build-vars.json.b64.%s", stackname, fid)
+    LOG.info("%r updated. backup written to /tmp/build-vars.json.b64.%s", node_name, fid)
 
 # ---
 
@@ -63,20 +64,21 @@ def valid(stackname):
 @requires_aws_stack
 def fix(stackname):
     def _fix_single_ec2_node(stackname):
-        LOG.info("checking buildvars on node %s--%s", stackname, current_node_id())
+        node_name = "%s--%s" % (stackname, current_node_id())
+        LOG.info("checking buildvars on node %r", node_name)
         try:
             _retrieve_build_vars()
-            LOG.info("valid buildvars found, no fix necessary.")
+            LOG.info("valid buildvars found on node %r", node_name)
             return
         except OSError as ose:
             if str(ose).startswith("remote file does not exist"):
-                LOG.info("buildvars not found: %s", ose)
+                LOG.info("missing buildvars on node %r: %s", node_name, ose)
         except AssertionError as ae:
-            LOG.info("invalid buildvars found (AssertionError): %s", ae)
+            LOG.info("invalid buildvars on node %r (AssertionError): %s", node_name, ae)
         except JSONDecodeError as jde:
-            LOG.info("invalid buildvars found (JSONDecodeError): %s", jde)
+            LOG.info("invalid buildvars on node %r (JSONDecodeError): %s", node_name, jde)
         except ValueError as ve:
-            LOG.info("invalid buildvars found (ValueError): %s", ve)
+            LOG.info("invalid buildvars on node %r (ValueError): %s", node_name, ve)
 
         LOG.info("regenerating buildvars from context")
 
@@ -102,10 +104,11 @@ def switch_revision(stackname, revision=None, concurrency=None):
     fix(stackname)
 
     def _switch_revision_single_ec2_node():
+        node_name = "%s--%s" % (stackname, current_node_id())
         buildvars = _retrieve_build_vars()
 
         if 'revision' in buildvars and revision == buildvars['revision']:
-            print('FYI, the instance is already on that revision!')
+            LOG.info('FYI, node %r already on revision %r!' % (node_name, revision))
             return
 
         new_data = buildvars

@@ -65,8 +65,10 @@ def load_balancer_status(stackname):
     "prints the 'health' status of ec2 instances attached to the load balancer."
     if cloudformation.template_using_elb_v1(stackname):
         load_balancer_status__v1(stackname)
-    else:
+    elif cloudformation.template_using_elb_v2(stackname):
         load_balancer_status__v2(stackname)
+    else:
+        LOG.debug("no load balancer found: %s", stackname)
 
 @requires_aws_stack
 @requires_aws_stack_template
