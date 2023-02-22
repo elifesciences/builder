@@ -21,12 +21,12 @@ LOG = logging.getLogger(__name__)
 # @requires_steady_stack
 def destroy(stackname):
     "Delete a stack of resources."
-    print('this is a BIG DEAL. you cannot recover from this.')
-    print('type the name of the stack to continue or anything else to quit')
-    uin = utils.uin('> ', default='')
+    msg = '''this is a BIG DEAL. you cannot recover from this.
+type the name of the stack to continue or anything else to quit:
+> '''
+    uin = utils.get_input(msg)
     if not uin or not uin.strip().lower() == stackname.lower():
-        print('you needed to type "%s" to continue.' % stackname)
-        exit(1)
+        raise TaskExit('you needed to type "%s" to continue.' % stackname)
     return bootstrap.destroy(stackname)
 
 def ensure_destroyed(stackname):
