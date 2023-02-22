@@ -585,7 +585,8 @@ def master_minion_keys(master_stackname, group_by_stackname=True):
         return master_stack_key_paths
     # group by stackname. stackname is created by stripping node information off the end.
     # not all keys will have node information! in these case, we just want the first two 'bits'
-    keyfn = lambda p: "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
+    def keyfn(p):
+        return "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
     return utils.mkidx(keyfn, master_stack_key_paths)
 
 # TODO: bootstrap.py may not be best place for this

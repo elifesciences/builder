@@ -693,13 +693,13 @@ def _render_eks_iam_access(context, template):
 
     if 'iam-roles' in context['eks'] and isinstance(context['eks']['iam-roles'], OrderedDict):
         for rolename, role_definition in context['eks']['iam-roles'].items():
-            if not 'policy-template' in role_definition:
+            if 'policy-template' not in role_definition:
                 raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
 
-            if not role_definition['policy-template'] in IRSA_POLICY_TEMPLATES:
+            if role_definition['policy-template'] not in IRSA_POLICY_TEMPLATES:
                 raise RuntimeError("Could not find policy template with the name %s" % role_definition['policy-template'])
 
-            if not 'service-account' in role_definition or not 'namespace' in role_definition:
+            if 'service-account' not in role_definition or 'namespace' not in role_definition:
                 raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
 
             stackname = context['stackname']
@@ -1057,11 +1057,11 @@ class TerraformTemplate():
 
     # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
     def populate_resource(self, type, name, key=None, block=None):
-        if not type in self.resource:
+        if type not in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]
         if key:
-            if not name in target:
+            if name not in target:
                 target[name] = OrderedDict()
             if key in target[name]:
                 raise TerraformTemplateError(
@@ -1073,17 +1073,17 @@ class TerraformTemplate():
 
     # TODO: optional `key`?
     def populate_resource_element(self, type, name, key, block=None):
-        if not type in self.resource:
+        if type not in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]
-        if not name in target:
+        if name not in target:
             target[name] = OrderedDict()
-        if not key in target[name]:
+        if key not in target[name]:
             target[name][key] = []
         target[name][key].append(block)
 
     def populate_data(self, type, name, block=None):
-        if not type in self.data:
+        if type not in self.data:
             self.data[type] = OrderedDict()
         if name in self.data[type]:
             raise TerraformTemplateError(

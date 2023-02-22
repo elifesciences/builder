@@ -306,7 +306,8 @@ def long_running_large_ec2_instances(**kwargs):
     def known_env(result):
         return lookup(result, 'TagsDict.Environment', None) in known_env_list
 
-    comp = lambda result: is_large_instance(result) and is_long_running(result) and not known_env(result)
+    def comp(result):
+        return is_large_instance(result) and is_long_running(result) and not known_env(result)
 
     large_instances = list(filter(comp, result_list))
 
@@ -341,7 +342,8 @@ def all_amis_to_prune():
     def is_available(image):
         return image['State'] == "available"
 
-    comp = lambda image: is_known(image) and is_old(image) and is_available(image)
+    def comp(image):
+        return is_known(image) and is_old(image) and is_available(image)
     results = list(filter(comp, image_list['Images']))
 
     # prune the Image data down to something more readable

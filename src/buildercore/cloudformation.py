@@ -129,8 +129,10 @@ def bootstrap(stackname, context):
 
     if context['ec2']:
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
-        on_start = lambda: keypair.create_keypair(stackname)
-        on_error = lambda: keypair.delete_keypair(stackname)
+        def on_start():
+            return keypair.create_keypair(stackname)
+        def on_error():
+            return keypair.delete_keypair(stackname)
 
     stack_path = core.stack_path(stackname)
     stack_body = open(stack_path, 'r').read()
@@ -210,7 +212,7 @@ def outputs_map(stackname):
     """returns a map of a stack's 'Output' keys to their values.
     performs a boto API call."""
     data = core.describe_stack(stackname).meta.data # boto3
-    if not 'Outputs' in data:
+    if "Outputs" not in data:
         return {}
     return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
 

@@ -110,7 +110,8 @@ def requires_steady_stack(func):
         ss = core.steady_aws_stacks(utils.find_region())
         keys = lmap(first, ss)
         idx = dict(zip(keys, ss))
-        helpfn = lambda pick: idx[pick][1]
+        def helpfn(pick):
+            return idx[pick][1]
         if not keys:
             print('\nno AWS stacks *in a steady state* exist, cannot continue.')
             return

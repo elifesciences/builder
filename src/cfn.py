@@ -96,17 +96,17 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
 
     # TODO: move inside bootstrap.update_stack
     # EC2
-    if _are_there_existing_servers(context) and not 'ec2' in skip:
+    if _are_there_existing_servers(context) and "ec2" not in skip:
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
         update(stackname)
 
     # SQS
-    if context.get('sqs', {}) and not 'sqs' in skip:
+    if context.get('sqs', {}) and "sqs" not in skip:
         bootstrap.update_stack(stackname, service_list=['sqs'])
 
     # S3
-    if context.get('s3', {}) and not 's3' in skip:
+    if context.get('s3', {}) and "s3" not in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 def check_user_input(pname, instance_id=None, alt_config=None):
@@ -267,7 +267,7 @@ def _pick_node(instance_list, node):
 
 
 def _are_there_existing_servers(context):
-    if not 'ec2' in context:
+    if "ec2" not in context:
         # very old stack, canned response
         return True
 

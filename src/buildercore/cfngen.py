@@ -425,12 +425,12 @@ def build_context_ec2(pdata, context):
     # I suspect the project_data caching oversight was allowing this to pass.
 
     context['ec2'] = pdata['aws'].get('ec2')
-    if context['ec2'] == True:
+    if context["ec2"] is True:
         msg = "'ec2: True' is no longer supported, stack needs it's context refreshed: %s" % stackname
         LOG.warning(msg)
         raise ValueError(msg)
 
-    if context['ec2'] == False:
+    if context["ec2"] is False:
         return context
 
     # we can now assume this will always be a dict
@@ -452,9 +452,9 @@ def build_context_ec2(pdata, context):
         context['ext'] = pdata['aws']['ext']
 
     if 'root' in context['ec2']:
-        if not 'type' in context['ec2']['root']:
+        if "type" not in context["ec2"]["root"]:
             context['ec2']['root']['type'] = 'gp2'
-        if not 'device' in context['ec2']['root']:
+        if "device" not in context["ec2"]["root"]:
             context['ec2']['root']['device'] = '/dev/sda1'
 
     return context
@@ -964,7 +964,7 @@ def template_delta(context):
         if section in old_template:
             # title was there before with a deprecated name, leave it alone
             # e.g. 'EC2Instance' rather than 'EC2Instance1'
-            if not title in old_template[section]:
+            if title not in old_template[section]:
                 return False
         else:
             LOG.warning("section %r not present in old template but is present in new: %s" % (section, title))

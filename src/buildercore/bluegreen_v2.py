@@ -25,8 +25,10 @@ def info(msg, stackname, node_params):
     LOG.info(msg.format(**kwargs))
 
 def divide_by_colour(node_params):
-    is_blue = lambda node: node % 2 == 1
-    is_green = lambda node: node % 2 == 0
+    def is_blue(node):
+        return node % 2 == 1
+    def is_green(node):
+        return node % 2 == 0
 
     def subset(is_subset):
         subset = node_params.copy()

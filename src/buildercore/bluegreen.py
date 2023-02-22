@@ -55,8 +55,10 @@ class BlueGreenConcurrency(object):
         return elb_name
 
     def divide_by_color(self, nodes_params):
-        is_blue = lambda node: node % 2 == 1
-        is_green = lambda node: node % 2 == 0
+        def is_blue(node):
+            return node % 2 == 1
+        def is_green(node):
+            return node % 2 == 0
 
         def subset(is_subset):
             subset = nodes_params.copy()
