@@ -57,6 +57,7 @@ class BlueGreenConcurrency(object):
     def divide_by_color(self, nodes_params):
         def is_blue(node):
             return node % 2 == 1
+
         def is_green(node):
             return node % 2 == 0
 

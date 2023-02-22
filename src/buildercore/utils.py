@@ -11,7 +11,6 @@ from os.path import join
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
-from collections.abc import Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -61,9 +60,6 @@ def unique(lst):
     # return list(unique_everseen(lst))
     seen = set()
     return [x for x in lst if x not in seen and seen.add(x) is None]
-
-def iterable(x):
-    return isinstance(x, Iterable)
 
 def conj(x, y):
     "performs a non-mutating update of dict a with the contents of dict b"

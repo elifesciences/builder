@@ -27,6 +27,7 @@ def info(msg, stackname, node_params):
 def divide_by_colour(node_params):
     def is_blue(node):
         return node % 2 == 1
+
     def is_green(node):
         return node % 2 == 0
 

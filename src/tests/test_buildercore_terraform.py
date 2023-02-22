@@ -50,8 +50,10 @@ class TestTerraformTemplate(TestCase):
         template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
             'project': 'journal',
         })
+
         def overwrite():
             return template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={'project': 'lax'})
+
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
     def test_resource_creation_in_multiple_phases(self):
@@ -179,8 +181,10 @@ class TestTerraformTemplate(TestCase):
         template.populate_data('vault_generic_secret', 'my_credentials', block={
             'username': 'mickey',
         })
+
         def overwrite():
             return template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
+
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
     def test_local_creation(self):

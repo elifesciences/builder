@@ -129,10 +129,8 @@ def bootstrap(stackname, context):
 
     if context['ec2']:
         parameters.append({'ParameterKey': 'KeyName', 'ParameterValue': stackname})
-        def on_start():
-            return keypair.create_keypair(stackname)
-        def on_error():
-            return keypair.delete_keypair(stackname)
+        on_start = lambda: keypair.create_keypair(stackname)
+        on_error = lambda: keypair.delete_keypair(stackname)
 
     stack_path = core.stack_path(stackname)
     stack_body = open(stack_path, 'r').read()

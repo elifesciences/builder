@@ -19,8 +19,10 @@ def stop_node(stackname, node):
     node_obj = _find_node(node, node_obj_list)
     node_ids = [node_obj.id]
     lifecycle._ec2_connection(stackname).instances.filter(InstanceIds=node_ids).stop()
+
     def poll_fn():
         return lifecycle._ec2_nodes_states(stackname, node_ids)
+
     lifecycle._wait_all_in_state(stackname, 'stopped', node_ids, poll_fn, 'EC2')
 
 def start_node(stackname, node):
@@ -33,6 +35,7 @@ def start_node(stackname, node):
     node_obj = _find_node(node, node_obj_list)
     node_ids = [node_obj.id]
     lifecycle._ec2_connection(stackname).instances.filter(InstanceIds=node_ids).start()
+
     def poll_fn():
         return lifecycle._ec2_nodes_states(stackname, node_ids)
     lifecycle._wait_all_in_state(stackname, 'running', node_ids, poll_fn, 'EC2')
