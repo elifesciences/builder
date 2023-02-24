@@ -210,7 +210,7 @@ def outputs_map(stackname):
     """returns a map of a stack's 'Output' keys to their values.
     performs a boto API call."""
     data = core.describe_stack(stackname).meta.data # boto3
-    if not 'Outputs' in data:
+    if "Outputs" not in data:
         return {}
     return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
 

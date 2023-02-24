@@ -103,7 +103,7 @@ def uin(param, default=0xDEADBEEF):
         if default and default != 0xDEADBEEF:
             errcho("%s [%s]: " % (param, default))
         else:
-            errcho(param + ':')
+            errcho("%s: " % param)
         userin = get_input('> ')
         if not userin or not userin.strip():
             if default != 0xDEADBEEF:

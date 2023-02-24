@@ -951,7 +951,10 @@ def _write_bytes_to_temporary_file(local_path):
             if isinstance(data, str) and common.PY3:
                 data = bytes(data, "utf-8")
             fh.write(data)
-        cleanup = lambda: os.unlink(local_path)
+
+        def cleanup():
+            return os.unlink(local_path)
+
         return local_path, cleanup
     return local_path, None
 

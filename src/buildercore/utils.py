@@ -11,7 +11,6 @@ from os.path import join
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
-from collections.abc import Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -21,13 +20,17 @@ def ensure(assertion, msg, exception_class=AssertionError):
     if not assertion:
         raise exception_class(msg)
 
-lmap = lambda func, *iterable: list(map(func, *iterable))
+def lmap(func, *iterable):
+    return list(map(func, *iterable))
 
-lfilter = lambda func, *iterable: list(filter(func, *iterable))
+def lfilter(func, *iterable):
+    return list(filter(func, *iterable))
 
-keys = lambda d: list(d.keys())
+def keys(d):
+    return list(d.keys())
 
-lzip = lambda *iterable: list(zip(*iterable))
+def lzip(*iterable):
+    return list(zip(*iterable))
 
 def merge(d1, d2):
     d0 = {}
@@ -57,9 +60,6 @@ def unique(lst):
     # return list(unique_everseen(lst))
     seen = set()
     return [x for x in lst if x not in seen and seen.add(x) is None]
-
-def iterable(x):
-    return isinstance(x, Iterable)
 
 def conj(x, y):
     "performs a non-mutating update of dict a with the contents of dict b"
@@ -393,7 +393,8 @@ def visit(d, f, p=None):
     """visits each value in `d` and applies function `f` to it.
     if predicate `p` is given and `p(d)` is false-y, do not visit `d`."""
     if p is None:
-        p = lambda _: True
+        def p(_):
+            return True
     if isinstance(d, dict) and p(d):
         return {k: visit(v, f, p) for k, v in d.items()}
     if isinstance(d, list) and p(d):
