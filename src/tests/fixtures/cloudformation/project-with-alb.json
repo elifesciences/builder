@@ -285,7 +285,8 @@
                     "Ref": "ELBv2"
                 },
                 "Port": 443,
-                "Protocol": "HTTPS"
+                "Protocol": "HTTPS",
+                "SslPolicy": "ELBSecurityPolicy-TLS-1-2-2017-01"
             },
             "Type": "AWS::ElasticLoadBalancingV2::Listener"
         },
@@ -308,7 +309,8 @@
                     "Ref": "ELBv2"
                 },
                 "Port": 8001,
-                "Protocol": "HTTPS"
+                "Protocol": "HTTPS",
+                "SslPolicy": "ELBSecurityPolicy-TLS-1-2-2017-01"
             },
             "Type": "AWS::ElasticLoadBalancingV2::Listener"
         },
