@@ -1052,6 +1052,7 @@ def render_alb(context, template, ec2_instances):
         }
         if protocol == 'HTTPS':
             props.update({
+                'SslPolicy': 'ELBSecurityPolicy-TLS-1-2-2017-01',
                 'Certificates': [alb.Certificate(CertificateArn=context['alb']['certificate'])]
             })
         _lb_listener_list.append(alb.Listener(**props))
