@@ -91,7 +91,7 @@ def _wait_all_in_state(stackname, state, node_ids, source_of_states, node_descri
         # lsh@2022-09-19: replaced in favour of a more informative poll message.
         #update_msg=("waiting for states of %s nodes to be %s" % (node_description, state)),
         update_msg=None,
-        done_msg="all nodes in state %s" % state
+        done_msg="all nodes are in state '%s'" % state
     )
 
 def _wait_ec2_all_in_state(stackname, state, node_ids):

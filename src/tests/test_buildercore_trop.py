@@ -596,18 +596,17 @@ class TestBuildercoreTrop(base.BaseCase):
     # --- alb
 
     def test_render_alb(self):
-        fixture = json.loads(base.fixture("cloudformation/project-with-alb.json"))
+        expected = json.loads(base.fixture("cloudformation/project-with-alb.json"))
         context = cfngen.build_context('project-with-alb', stackname='project-with-alb--foo')
-        cfn_template_json = trop.render(context)
-        cfn_template = json.loads(cfn_template_json)
+        actual = json.loads(trop.render(context))
 
         # UserData is identical, but ordering is not preserved in py2 vs py3
-        del fixture['Resources']['EC2Instance1']['Properties']['UserData']
-        del fixture['Resources']['EC2Instance2']['Properties']['UserData']
-        del cfn_template['Resources']['EC2Instance1']['Properties']['UserData']
-        del cfn_template['Resources']['EC2Instance2']['Properties']['UserData']
+        del expected['Resources']['EC2Instance1']['Properties']['UserData']
+        del expected['Resources']['EC2Instance2']['Properties']['UserData']
+        del actual['Resources']['EC2Instance1']['Properties']['UserData']
+        del actual['Resources']['EC2Instance2']['Properties']['UserData']
 
-        self.assertEqual(fixture, cfn_template)
+        self.assertEqual(expected, actual)
 
     # --- dns
 
