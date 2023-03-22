@@ -210,6 +210,8 @@ defaults:
             # two subnets in two different availability zones, both used in master nodes and in worker nodes
             subnet-id: subnet-0c60bc3cb24a2816b
             redundant-subnet-id: subnet-009a04cbefc8e3661
+            worker-subnet-id: subnet-0c60bc3cb24a2816b
+            worker-redundant-subnet-id: subnet-009a04cbefc8e3661
             worker:
                 type: t2.small
                 # autoscaling group will never have fewer than these EC2 nodes

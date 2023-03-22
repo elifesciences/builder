@@ -1111,7 +1111,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'min_size': 1,
                 'max_size': 3,
                 'desired_capacity': 3,
-                'vpc_zone_identifier': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
+                'vpc_zone_identifier': ['subnet-c3c3c3c3', 'subnet-d4d4d4d4'],
                 'tags': [
                     {
                         'key': 'Project',

@@ -201,6 +201,8 @@ defaults:
             # two subnets in two different availability zones, both used in master nodes and in worker nodes
             subnet-id: subnet-a1a1a1a1
             redundant-subnet-id: subnet-b2b2b2b2
+            worker-subnet-id: subnet-c3c3c3c3
+            worker-redundant-subnet-id: subnet-d4d4d4d4
             worker:
                 type: t2.small
                 # autoscaling group will never have fewer than these EC2 nodes
@@ -930,6 +932,8 @@ project-with-eks:
         eks:
             subnet-id: subnet-a1a1a1a1
             redundant-subnet-id: subnet-b2b2b2b2
+            worker-subnet-id: subnet-c3c3c3c3
+            worker-redundant-subnet-id: subnet-d4d4d4d4
             worker:
                 type: t2.small
                 desired-capacity: 3

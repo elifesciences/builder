@@ -844,7 +844,7 @@ set -o xtrace
         'min_size': context['eks']['worker']['min-size'],
         'max_size': context['eks']['worker']['max-size'],
         'desired_capacity': context['eks']['worker']['desired-capacity'],
-        'vpc_zone_identifier': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+        'vpc_zone_identifier': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
         'tags': autoscaling_group_tags,
     })
 
