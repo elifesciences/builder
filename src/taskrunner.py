@@ -91,8 +91,10 @@ TASK_LIST = [
     project.context,
     project.new,
 
-    stack.list,
-    stack.config,
+    stack.list_stacks,
+    stack.stack_config,
+    stack.regenerate_stack,
+    stack.generate_stacks,
 
     aws.ec2.start_node,
     aws.ec2.stop_node,
@@ -118,11 +120,15 @@ TASK_LIST = [
     report.all_ec2_instances_for_salt_upgrade,
     report.all_rds_projects,
     report.all_rds_instances,
+    report.all_lb_projects,
+    report.all_cloudfront_projects,
     report.all_formulas,
     report.all_adhoc_ec2_instances,
     report.long_running_large_ec2_instances,
     report.all_amis_to_prune,
     report.ec2_node_count,
+    # see: https://alfred.elifesciences.org/job/process/job/process-project-security-updates/
+    report.process_project_security_updates,
 
     checks.stack_exists,
     tasks.delete_all_amis_to_prune,

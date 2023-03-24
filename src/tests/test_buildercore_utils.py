@@ -294,7 +294,7 @@ def test_visit_pred():
     ]
 
     def p(v):
-        return not (v in [None])
+        return v not in [None]
 
     for given, expected in cases:
         assert utils.visit(given, str, p) == expected, "failed case: %r" % given

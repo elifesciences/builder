@@ -19,6 +19,7 @@ import backoff
 import botocore
 from kids.cache import cache as cached
 from functools import reduce # pylint:disable=redefined-builtin
+from collections.abc import Iterable
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -408,7 +409,7 @@ def update_stack(stackname, service_list=None, **kwargs):
         ('sqs', (update_sqs_stack, [])),
     ])
     service_list = service_list or service_update_fns.keys()
-    ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
+    ensure(isinstance(service_list, Iterable), "cannot iterate over given service list %r" % service_list)
     context = context_handler.load_context(stackname)
     for servicename, (fn, fn_kwarg_args) in subdict(service_update_fns, service_list).items():
         actual_arguments = subdict(kwargs, fn_kwarg_args)
@@ -585,7 +586,9 @@ def master_minion_keys(master_stackname, group_by_stackname=True):
         return master_stack_key_paths
     # group by stackname. stackname is created by stripping node information off the end.
     # not all keys will have node information! in these case, we just want the first two 'bits'
-    keyfn = lambda p: "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
+
+    def keyfn(p):
+        return "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
     return utils.mkidx(keyfn, master_stack_key_paths)
 
 # TODO: bootstrap.py may not be best place for this

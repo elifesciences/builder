@@ -211,12 +211,7 @@ defaults:
                 desired-capacity: 3
                 #root:
                 #   size: 20 # GiB, default
-            helm: false
-            external-dns: false
-                # Route53 hosted zone to create subdomains on
-                #domain-filter: elifesciences.org
             efs: false
-            autoscaler-policy: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             #subdomains: [] # todo: enable
@@ -943,24 +938,6 @@ project-with-eks:
                 root:
                     size: 40
 
-project-with-eks-helm:
-    description: project managing an EKS cluster with Helm for chart installation
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            helm: true
-
-project-with-eks-external-dns:
-    description: project managing an EKS cluster with external-dns for Route53 entries creation
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            helm: true  # required
-            external-dns:
-                domain-filter: "elifesciences.net"
-
 project-with-eks-efs:
     description: project managing an EKS cluster with EFS support
     domain: False
@@ -969,21 +946,39 @@ project-with-eks-efs:
         eks:
             efs: true
 
-project-with-eks-and-autoscaler-policy:
-    description: project managing an EKS cluster with autoscaler support in AWS
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            autoscaler-policy: true
-
 project-with-eks-and-iam-oidc-provider:
-    description: project managing an EKS cluster with autoscaler support in AWS
+    description: project managing an EKS cluster with it's IAM OIDC provisioned for IRSA
     domain: False
     intdomain: False
     aws:
         eks:
             iam-oidc-provider: true
+
+project-with-eks-and-irsa-external-dns-role:
+    description: project managing an EKS cluster with additional serviceaccounts granted permission for external-dns for Route53 entries creation
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            iam-oidc-provider: true
+            iam-roles:
+                dummy-external-dns:
+                    policy-template: external-dns
+                    service-account: dummy-external-dns
+                    namespace: dummy-infra
+
+project-with-eks-and-irsa-kubernetes-autoscaler-role:
+    description: project managing an EKS cluster with additional serviceaccounts granted permission for ASG controler using kubernetes-autoscaler
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            iam-oidc-provider: true
+            iam-roles:
+                dummy-kubernetes-autoscaler:
+                    policy-template: kubernetes-autoscaler
+                    service-account: dummy-kubernetes-autoscaler
+                    namespace: dummy-autoscaler
 
 project-with-docdb:
     description: project managing a single DocumentDB instance

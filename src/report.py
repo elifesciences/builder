@@ -143,6 +143,46 @@ def all_ec2_instances(state=None):
     Set `state` to `running` to see all running ec2 instances."""
     return _all_ec2_instances(state)
 
+def process_project_security_updates():
+    "Project and environment data for the selfsame Jenkins job."
+    results = sorted(_all_ec2_instances(state=None), key=sort_by_env)
+    project_blacklist = [
+        'basebox',
+        'containers',
+    ]
+    env_blacklist = [
+        'prod'
+    ]
+    stack = [] # [(stackname, [env1,env2,env3]), ...]
+    for stackname in results:
+        try:
+            pname, iid, nid = core.parse_stackname(stackname, all_bits=True)
+            if pname in project_blacklist:
+                print('skipping %s: project %r in blacklist' % (stackname, pname))
+                continue
+
+            if iid in env_blacklist:
+                print('skipping %s: env %r in blacklist' % (stackname, iid))
+                continue
+
+            # add project to stack because stack is empty, or because the project has changed.
+            if not stack or stack[-1][0] != pname:
+                stack.append((pname, []))
+
+            # add env to project's list of envs if list of envs is empty or,
+            # the last env seen is different to this one.
+            if not stack[-1][1] or stack[-1][1][-1] != iid:
+                stack[-1][1].append(iid)
+
+        except Exception as exc:
+            print('skipping %s: unhandled exception %r' % (stackname, exc))
+            continue
+
+    print("project_envlist = [")
+    for pname, envlist in stack:
+        print('    ["%s", "%s"],' % (pname, ",".join(envlist)))
+    print("]")
+
 @report
 def all_ec2_instances_for_salt_upgrade():
     "All ec2 instance names suitable for a Salt upgrade"
@@ -186,10 +226,8 @@ def all_adhoc_ec2_instances(state='running'):
     instance_list = [ec2['TagsDict']['Name'] for ec2 in core.ec2_instance_list(state=state)]
     return filter(adhoc_instance, instance_list)
 
-@report
-def all_rds_projects():
+def all_projects_using(key):
     "List all projects using RDS."
-    key = 'aws.rds'
 
     def has_(pname, pdata):
         if lookup(pdata, key, None):
@@ -202,6 +240,18 @@ def all_rds_projects():
     results = [has_(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
     return results
+
+@report
+def all_rds_projects():
+    return all_projects_using('aws.rds')
+
+@report
+def all_lb_projects():
+    return list(all_projects_using('aws.elb')) + list(all_projects_using('aws.alb'))
+
+@report
+def all_cloudfront_projects():
+    return all_projects_using('aws.cloudfront')
 
 @report
 def all_rds_instances(**kwargs):
@@ -256,7 +306,8 @@ def long_running_large_ec2_instances(**kwargs):
     def known_env(result):
         return lookup(result, 'TagsDict.Environment', None) in known_env_list
 
-    comp = lambda result: is_large_instance(result) and is_long_running(result) and not known_env(result)
+    def comp(result):
+        return is_large_instance(result) and is_long_running(result) and not known_env(result)
 
     large_instances = list(filter(comp, result_list))
 
@@ -291,7 +342,8 @@ def all_amis_to_prune():
     def is_available(image):
         return image['State'] == "available"
 
-    comp = lambda image: is_known(image) and is_old(image) and is_available(image)
+    def comp(image):
+        return is_known(image) and is_old(image) and is_available(image)
     results = list(filter(comp, image_list['Images']))
 
     # prune the Image data down to something more readable
@@ -306,4 +358,4 @@ def all_amis_to_prune():
 @format_output('python')
 def ec2_node_count(stackname):
     "ec2 node count for given `stackname`."
-    return len(core.ec2_data(stackname))
+    return len(core.ec2_data(stackname, state='pending|running|stopping|stopped'))

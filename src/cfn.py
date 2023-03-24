@@ -21,12 +21,12 @@ LOG = logging.getLogger(__name__)
 # @requires_steady_stack
 def destroy(stackname):
     "Delete a stack of resources."
-    print('this is a BIG DEAL. you cannot recover from this.')
-    print('type the name of the stack to continue or anything else to quit')
-    uin = utils.get_input('> ')
+    msg = '''this is a BIG DEAL. you cannot recover from this.
+type the name of the stack to continue or anything else to quit:
+> '''
+    uin = utils.get_input(msg)
     if not uin or not uin.strip().lower() == stackname.lower():
-        print('you needed to type "%s" to continue.' % stackname)
-        exit(1)
+        raise TaskExit('you needed to type "%s" to continue.' % stackname)
     return bootstrap.destroy(stackname)
 
 def ensure_destroyed(stackname):
@@ -96,17 +96,17 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
 
     # TODO: move inside bootstrap.update_stack
     # EC2
-    if _are_there_existing_servers(context) and not 'ec2' in skip:
+    if _are_there_existing_servers(context) and "ec2" not in skip:
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
         update(stackname)
 
     # SQS
-    if context.get('sqs', {}) and not 'sqs' in skip:
+    if context.get('sqs', {}) and "sqs" not in skip:
         bootstrap.update_stack(stackname, service_list=['sqs'])
 
     # S3
-    if context.get('s3', {}) and not 's3' in skip:
+    if context.get('s3', {}) and "s3" not in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 def check_user_input(pname, instance_id=None, alt_config=None):
@@ -267,7 +267,7 @@ def _pick_node(instance_list, node):
 
 
 def _are_there_existing_servers(context):
-    if not 'ec2' in context:
+    if "ec2" not in context:
         # very old stack, canned response
         return True
 
@@ -348,20 +348,17 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     _download(path, destination)
 
 @requires_aws_stack
-def upload_file(stackname, local_path, remote_path=None, overwrite=False, confirm=False, node=1):
+def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1):
     remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
     # todo: use utils.strtobool
     overwrite = str(overwrite).lower() == "true"
-    confirm = str(confirm).lower() == "true"
     node = int(node)
     with stack_conn(stackname, node=node):
         print('stack:', stackname, 'node', node)
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
-        # todo: switch to utils.confirm and remove `confirm` kwarg
-        if not confirm:
-            utils.get_input('continue?')
+        utils.confirm('continue?')
         if remote_file_exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
             exit(1)

@@ -50,7 +50,10 @@ class TestTerraformTemplate(TestCase):
         template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
             'project': 'journal',
         })
-        overwrite = lambda: template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={'project': 'lax', })
+
+        def overwrite():
+            return template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={'project': 'lax'})
+
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
     def test_resource_creation_in_multiple_phases(self):
@@ -178,7 +181,10 @@ class TestTerraformTemplate(TestCase):
         template.populate_data('vault_generic_secret', 'my_credentials', block={
             'username': 'mickey',
         })
-        overwrite = lambda: template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
+
+        def overwrite():
+            return template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
+
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
     def test_local_creation(self):
@@ -1173,190 +1179,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-    @patch('buildercore.terraform.Terraform')
-    def test_helm_provider(self, Terraform):
-        terraform_binary = MagicMock()
-        Terraform.return_value = terraform_binary
-        stackname = 'project-with-eks-helm--%s' % self.environment
-        context = cfngen.build_context('project-with-eks-helm', stackname=stackname)
-        terraform.init(stackname, context)
-        providers = self._load_terraform_file(stackname, 'providers')
-        self.assertEqual(
-            {
-                'version': "= %s" % '0.9.0',
-                'kubernetes': {
-                    'host': '${data.aws_eks_cluster.main.endpoint}',
-                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                    'token': '${data.aws_eks_cluster_auth.main.token}',
-                    'load_config_file': False,
-                },
-                'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
-            },
-            self._getProvider(providers, 'helm')
-        )
-
-    def test_eks_and_helm(self):
-        pname = 'project-with-eks-helm'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('tiller', terraform_template['resource']['kubernetes_service_account'])
-        self.assertEqual(
-            terraform_template['resource']['kubernetes_service_account']['tiller'],
-            {
-                'metadata': {
-                    'name': 'tiller',
-                    'namespace': 'kube-system',
-                },
-            }
-        )
-
-        self.assertIn('tiller', terraform_template['resource']['kubernetes_cluster_role_binding'])
-        self.assertEqual(
-            terraform_template['resource']['kubernetes_cluster_role_binding']['tiller'],
-            {
-                'metadata': {
-                    'name': 'tiller',
-                },
-                'role_ref': {
-                    'api_group': 'rbac.authorization.k8s.io',
-                    'kind': 'ClusterRole',
-                    'name': 'cluster-admin',
-                },
-                'subject': [
-                    {
-                        'kind': 'ServiceAccount',
-                        'name': '${kubernetes_service_account.tiller.metadata.0.name}',
-                        'namespace': 'kube-system',
-                    },
-                ],
-            }
-        )
-
-        self.assertIn('incubator', terraform_template['data']['helm_repository'])
-        self.assertEqual(
-            terraform_template['data']['helm_repository']['incubator'],
-            {
-                'name': 'incubator',
-                'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
-            }
-        )
-
-        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
-        self.assertEqual(
-            terraform_template['resource']['helm_release']['common_resources'],
-            {
-                'name': 'common-resources',
-                'repository': "${data.helm_repository.incubator.metadata.0.name}",
-                'chart': 'incubator/raw',
-                'depends_on': ['kubernetes_cluster_role_binding.tiller'],
-                'values': [
-                    "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
-                ],
-            }
-        )
-
-    def test_eks_and_external_dns(self):
-        pname = 'project-with-eks-external-dns'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        # Helm is a dependency
-        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
-
-        self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
-        self.assertEqual(
-            '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['path']
-        )
-        self.assertEqual(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ChangeResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "arn:aws:route53:::hostedzone/*",
-                        ],
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ListHostedZones",
-                            "route53:ListResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ]
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['policy'])
-        )
-
-        self.assertIn('worker_external_dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_external_dns.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
-        )
-
-        self.assertIn('external_dns', terraform_template['resource']['helm_release'])
-        self.assertEqual(
-            {
-                'name': 'external-dns',
-                'chart': 'stable/external-dns',
-                'version': '2.6.1',
-                'depends_on': ['helm_release.common_resources'],
-                'set': [
-                    {
-                        'name': 'image.tag',
-                        'value': '0.5.16',
-                    },
-                    {
-                        'name': 'sources[0]',
-                        'value': 'service',
-                    },
-                    {
-                        'name': 'provider',
-                        'value': 'aws',
-                    },
-                    {
-                        'name': 'domainFilters[0]',
-                        'value': 'elifesciences.net',
-                    },
-                    {
-                        'name': 'policy',
-                        'value': 'sync',
-                    },
-                    {
-                        'name': 'aws.zoneType',
-                        'value': 'public', # 'private',
-                    },
-                    {
-                        'name': 'txtOwnerId',
-                        'value': context['stackname'],
-                    },
-                    {
-                        'name': 'rbac.create',
-                        'value': 'true',
-                    }
-                ],
-            },
-            terraform_template['resource']['helm_release']['external_dns']
-        )
-
     def test_eks_and_efs(self):
         pname = 'project-with-eks-efs'
         iid = pname + '--%s' % self.environment
@@ -1402,61 +1224,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_efs']
         )
 
-    def test_eks_and_autoscaler_policy(self):
-        pname = 'project-with-eks-and-autoscaler-policy'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('kubernetes_autoscaler', terraform_template['resource']['aws_iam_policy'])
-        self.assertEqual(
-            '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['path']
-        )
-        self.assertEqual(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:DescribeAutoScalingGroups",
-                            "autoscaling:DescribeAutoScalingInstances",
-                            "autoscaling:DescribeLaunchConfigurations",
-                            "autoscaling:DescribeTags",
-                            "ec2:DescribeInstanceTypes",
-                            "ec2:DescribeLaunchTemplateVersions"
-                        ],
-                        "Resource": ["*"]
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:SetDesiredCapacity",
-                            "autoscaling:TerminateInstanceInAutoScalingGroup",
-                        ],
-                        "Resource": [
-                            "${aws_autoscaling_group.worker.arn}",
-                        ],
-                    },
-                ],
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['policy'])
-        )
-
-        self.assertIn('worker_autoscaler', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_autoscaler.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_autoscaler']
-        )
-
     def test_eks_and_iam_oidc_provider(self):
         pname = 'project-with-eks-and-iam-oidc-provider'
         iid = pname + '--%s' % self.environment
@@ -1485,6 +1252,56 @@ class TestBuildercoreTerraform(base.BaseCase):
             '${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}',
             terraform_template['resource']['aws_iam_openid_connect_provider']['default']['thumbprint_list']
         )
+
+    def test_irsa_external_dns_permissions(self):
+        pname = 'project-with-eks-and-irsa-external-dns-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-external-dns']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-external-dns', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-infra', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-external-dns']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-external-dns']
+        self.assertEqual('${aws_iam_policy.dummy-external-dns.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-external-dns.name}', aws_iam_role_policy_attachment['role'])
+
+    def test_irsa_kubernetes_autoscaler_permissions(self):
+        pname = 'project-with-eks-and-irsa-kubernetes-autoscaler-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-kubernetes-autoscaler']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-kubernetes-autoscaler', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-autoscaler', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-kubernetes-autoscaler']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-kubernetes-autoscaler']
+        self.assertEqual('${aws_iam_policy.dummy-kubernetes-autoscaler.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-kubernetes-autoscaler.name}', aws_iam_role_policy_attachment['role'])
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():

@@ -1,3 +1,5 @@
+from io import StringIO
+from ruamel.yaml import YAML
 from pprint import pformat
 import pytz
 import os, sys, json, time, random, string
@@ -9,7 +11,6 @@ from os.path import join
 import logging
 from kids.cache import cache as cached
 import tempfile, shutil, copy
-from collections.abc import Iterable
 
 LOG = logging.getLogger(__name__)
 
@@ -19,13 +20,23 @@ def ensure(assertion, msg, exception_class=AssertionError):
     if not assertion:
         raise exception_class(msg)
 
-lmap = lambda func, *iterable: list(map(func, *iterable))
+def lmap(func, *iterable):
+    return list(map(func, *iterable))
 
-lfilter = lambda func, *iterable: list(filter(func, *iterable))
+def lfilter(func, *iterable):
+    return list(filter(func, *iterable))
 
-keys = lambda d: list(d.keys())
+def keys(d):
+    return list(d.keys())
 
-lzip = lambda *iterable: list(zip(*iterable))
+def lzip(*iterable):
+    return list(zip(*iterable))
+
+def merge(d1, d2):
+    d0 = {}
+    d0.update(d1)
+    d0.update(d2)
+    return d0
 
 def deepcopy(x):
     # return pickle.loads(pickle.dumps(x, -1))
@@ -49,9 +60,6 @@ def unique(lst):
     # return list(unique_everseen(lst))
     seen = set()
     return [x for x in lst if x not in seen and seen.add(x) is None]
-
-def iterable(x):
-    return isinstance(x, Iterable)
 
 def conj(x, y):
     "performs a non-mutating update of dict a with the contents of dict b"
@@ -260,11 +268,11 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 def yaml_dumps(data):
-    "like json.dumps, returns a YAML string. alias for `ordered_dump`"
+    "returns a YAML string like `json.dumps`. alias for `ordered_dump`."
     return ordered_dump(data)
 
 def yaml_dump(data, stream):
-    "like json.dump, writes output to given file-like object. returns nothing"
+    "like json.dump, writes output to given file-like object. returns None."
     ordered_dump(data, stream)
 
 def remove_ordereddict(data, dangerous=True):
@@ -385,7 +393,8 @@ def visit(d, f, p=None):
     """visits each value in `d` and applies function `f` to it.
     if predicate `p` is given and `p(d)` is false-y, do not visit `d`."""
     if p is None:
-        p = lambda _: True
+        def p(_):
+            return True
     if isinstance(d, dict) and p(d):
         return {k: visit(v, f, p) for k, v in d.items()}
     if isinstance(d, list) and p(d):
@@ -393,3 +402,42 @@ def visit(d, f, p=None):
     if p(d):
         return f(d)
     return d
+
+# ---
+
+def ruamel_load(stream):
+    "reads YAML data from given `stream` using the ruamel library."
+    yml = YAML(typ='rt') # 'rt' ('round trip') ??
+    return yml.load(stream)
+
+def _top_level_separators(s):
+    """a YAML string pre-processor applied prior to being written to file by ruamel.
+    it adds a newline between top-level entries."""
+    retval = ''
+    open = None
+    for line in s.splitlines():
+        if line and line[0] == ' ':
+            open = True
+        else:
+            if open is True and line:
+                retval += '\n'
+            open = False
+        retval += line
+        retval += '\n'
+    return retval
+
+def ruamel_dump(data, stream):
+    "writes a YAML representation of the given `data` to the given `stream` using the ruamel library."
+    yml = YAML()
+    yml.default_flow_style = False
+    yml.indent = 4
+    yml.width = 4096
+    return yml.dump(data, stream, transform=_top_level_separators)
+
+def ruamel_dumps(data):
+    "returns a YAML representation of the given `data` using the ruamel library."
+    # bit of a rant:
+    # - https://yaml.readthedocs.io/en/latest/example.html#output-of-dump-as-a-string
+    stream = StringIO()
+    ruamel_dump(data, stream)
+    return stream.getvalue()

@@ -15,9 +15,6 @@ PROVIDER_AWS_VERSION = '2.28.0'
 PROVIDER_TLS_VERSION = '2.2'
 PROVIDER_FASTLY_VERSION = '0.9.0' # '0.26.0' last for terraform 0.11.x
 PROVIDER_VAULT_VERSION = '1.3' # '1.9.0' last for terraform 0.11.x
-HELM_CHART_VERSION_EXTERNAL_DNS = '2.6.1'
-HELM_CHART_VERSION_RAW = '0.2.3'
-HELM_APP_VERSION_EXTERNAL_DNS = '0.5.16'
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -26,13 +23,11 @@ DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
 DATA_TYPE_HTTP = 'http'
 DATA_TYPE_TEMPLATE = 'template_file'
 DATA_TYPE_AWS_AMI = 'aws_ami'
-DATA_TYPE_HELM_REPOSITORY = 'helm_repository'
 DATA_NAME_VAULT_GCS_LOGGING = 'fastly-gcs-logging'
 DATA_NAME_VAULT_GCP_LOGGING = 'fastly-gcp-logging'
 DATA_NAME_VAULT_FASTLY_API_KEY = 'fastly'
 DATA_NAME_VAULT_GCP_API_KEY = 'gcp'
 DATA_NAME_VAULT_GITHUB = 'github'
-DATA_NAME_HELM_INCUBATOR = 'incubator'
 
 # keys to lookup in Vault
 # cannot modify these without putting new values inside Vault:
@@ -74,6 +69,60 @@ FASTLY_LOG_FORMAT = """{
   "response_status": "%>s",
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
+
+IRSA_POLICY_TEMPLATES = {
+    "kubernetes-autoscaler": lambda stackname, accountid: {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "autoscaling:DescribeAutoScalingGroups",
+                    "autoscaling:DescribeAutoScalingInstances",
+                    "autoscaling:DescribeLaunchConfigurations",
+                    "autoscaling:DescribeTags",
+                    "ec2:DescribeInstanceTypes",
+                    "ec2:DescribeLaunchTemplateVersions"
+                ],
+                "Resource": ["*"]
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "autoscaling:SetDesiredCapacity",
+                    "autoscaling:TerminateInstanceInAutoScalingGroup"
+                ],
+                "Resource": [
+                    "${aws_autoscaling_group.worker.arn}",
+                ],
+            },
+        ],
+    },
+    "external-dns": lambda stackname, accountid: {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "route53:ChangeResourceRecordSets",
+                ],
+                "Resource": [
+                    "arn:aws:route53:::hostedzone/*",
+                ],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "route53:ListHostedZones",
+                    "route53:ListResourceRecordSets",
+                ],
+                "Resource": [
+                    "*",
+                ],
+            },
+        ],
+    },
+}
 
 # Fastly proprietary evolutions of the standard Apache log format
 # https://docs.fastly.com/guides/streaming-logs/custom-log-formats#advantages-of-using-the-version-2-custom-log-format
@@ -631,91 +680,6 @@ def render_bigquery(context, template):
 
 # EKS
 
-def _render_helm(context, template):
-    template.populate_resource('kubernetes_service_account', 'tiller', block={
-        'metadata': {
-            'name': 'tiller',
-            'namespace': 'kube-system',
-        },
-    })
-
-    template.populate_resource('kubernetes_cluster_role_binding', 'tiller', block={
-        'metadata': {
-            'name': 'tiller',
-        },
-        'role_ref': {
-            'api_group': 'rbac.authorization.k8s.io',
-            'kind': 'ClusterRole',
-            'name': 'cluster-admin',
-        },
-        'subject': [
-            {
-                'kind': 'ServiceAccount',
-                'name': '${kubernetes_service_account.tiller.metadata.0.name}',
-                'namespace': 'kube-system',
-            },
-        ],
-    })
-
-    template.populate_data(DATA_TYPE_HELM_REPOSITORY, DATA_NAME_HELM_INCUBATOR, block={
-        'name': 'incubator',
-        'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
-    })
-
-    # creating at least one release is necessary to trigger the Tiller installation
-    template.populate_resource('helm_release', 'common_resources', block={
-        'name': 'common-resources',
-        'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-        'chart': 'incubator/raw',
-        'depends_on': ['kubernetes_cluster_role_binding.tiller'],
-        'values': [
-            "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
-        ],
-    })
-
-    if context['eks']['external-dns']:
-        template.populate_resource('helm_release', 'external_dns', block={
-            'name': 'external-dns',
-            # 'repository': "${data.helm_repository.%s.metadata.0.name}" % DATA_NAME_HELM_INCUBATOR,
-            'chart': 'stable/external-dns',
-            'version': HELM_CHART_VERSION_EXTERNAL_DNS,
-            'depends_on': ['helm_release.common_resources'],
-            'set': [
-                {
-                    'name': 'image.tag',
-                    'value': HELM_APP_VERSION_EXTERNAL_DNS,
-                },
-                {
-                    'name': 'sources[0]',
-                    'value': 'service',
-                },
-                {
-                    'name': 'provider',
-                    'value': 'aws',
-                },
-                {
-                    'name': 'domainFilters[0]',
-                    'value': context['eks']['external-dns']['domain-filter'],
-                },
-                {
-                    'name': 'policy',
-                    'value': 'sync',
-                },
-                {
-                    'name': 'aws.zoneType',
-                    'value': 'public', # 'private',
-                },
-                {
-                    'name': 'txtOwnerId',
-                    'value': context['stackname'],
-                },
-                {
-                    'name': 'rbac.create',
-                    'value': 'true',
-                },
-            ],
-        })
-
 def _render_eks_iam_access(context, template):
     template.populate_data("tls_certificate", "oidc_cert", {
         'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
@@ -726,6 +690,58 @@ def _render_eks_iam_access(context, template):
         'thumbprint_list': ['${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}'],
         'url': '${aws_eks_cluster.main.identity.0.oidc.0.issuer}'
     })
+
+    if 'iam-roles' in context['eks'] and isinstance(context['eks']['iam-roles'], OrderedDict):
+        for rolename, role_definition in context['eks']['iam-roles'].items():
+            if 'policy-template' not in role_definition:
+                raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
+
+            if role_definition['policy-template'] not in IRSA_POLICY_TEMPLATES:
+                raise RuntimeError("Could not find policy template with the name %s" % role_definition['policy-template'])
+
+            if 'service-account' not in role_definition or 'namespace' not in role_definition:
+                raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
+
+            stackname = context['stackname']
+            accountid = context['aws']['account-id']
+            serviceaccount = role_definition['service-account']
+            namespace = role_definition['namespace']
+
+            policy = json.dumps(IRSA_POLICY_TEMPLATES[role_definition['policy-template']](stackname, accountid))
+
+            assume_policy = json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Federated": "${aws_iam_openid_connect_provider.default.arn}",
+                        },
+                        "Action": "sts:AssumeRoleWithWebIdentity",
+                        "Condition": {
+                            "StringEquals": {
+                                "${aws_iam_openid_connect_provider.default.url}:sub": ["system:serviceaccount:%s:%s" % (namespace, serviceaccount)]
+                            }
+                        }
+                    }
+                ]
+            })
+
+            template.populate_resource('aws_iam_role', rolename, block={
+                'name': '%s--%s' % (stackname, rolename),
+                'assume_role_policy': assume_policy,
+            })
+
+            template.populate_resource('aws_iam_policy', rolename, block={
+                'name': '%s--%s' % (stackname, rolename),
+                'path': '/',
+                'policy': policy,
+            })
+
+            template.populate_resource('aws_iam_role_policy_attachment', rolename, block={
+                'policy_arn': "${aws_iam_policy.%s.arn}" % rolename,
+                'role': "${aws_iam_role.%s.name}" % rolename,
+            })
 
 def _render_eks_user_access(context, template):
     template.populate_resource('aws_iam_role', 'user', block={
@@ -863,81 +879,6 @@ def _render_eks_workers_role(context, template):
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
         'role': "${aws_iam_role.worker.name}",
     })
-
-    if context['eks']['external-dns']:
-        template.populate_resource('aws_iam_policy', 'kubernetes_external_dns', block={
-            'name': '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
-            'path': '/',
-            'description': 'Allows management of DNS entries on Route53',
-            'policy': json.dumps({
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ChangeResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "arn:aws:route53:::hostedzone/*",
-                        ],
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ListHostedZones",
-                            "route53:ListResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ],
-            }),
-        })
-
-        template.populate_resource('aws_iam_role_policy_attachment', 'worker_external_dns', block={
-            'policy_arn': "${aws_iam_policy.kubernetes_external_dns.arn}",
-            'role': "${aws_iam_role.worker.name}",
-        })
-
-    if lookup(context, 'eks.autoscaler-policy', False):
-        # kubernetes autoscaler needs to have permission to query and alter the autoscaling group from the worker nodes
-        template.populate_resource('aws_iam_policy', 'kubernetes_autoscaler', block={
-            'name': '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
-            'path': '/',
-            'description': 'Allows management of ASGs based on cluster requested workload from within the cluster',
-            'policy': json.dumps({
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:DescribeAutoScalingGroups",
-                            "autoscaling:DescribeAutoScalingInstances",
-                            "autoscaling:DescribeLaunchConfigurations",
-                            "autoscaling:DescribeTags",
-                            "ec2:DescribeInstanceTypes",
-                            "ec2:DescribeLaunchTemplateVersions"
-                        ],
-                        "Resource": ["*"]
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:SetDesiredCapacity",
-                            "autoscaling:TerminateInstanceInAutoScalingGroup"
-                        ],
-                        "Resource": [
-                            "${aws_autoscaling_group.worker.arn}",
-                        ],
-                    },
-                ],
-            }),
-        })
-        template.populate_resource('aws_iam_role_policy_attachment', 'worker_autoscaler', block={
-            'policy_arn': "${aws_iam_policy.kubernetes_autoscaler.arn}",
-            'role': "${aws_iam_role.worker.name}",
-        })
 
     if context['eks']['efs']:
         template.populate_resource('aws_iam_policy', 'kubernetes_efs', block={
@@ -1096,8 +1037,6 @@ def render_eks(context, template):
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
-    if context['eks']['helm']:
-        _render_helm(context, template)
 
 # ---
 
@@ -1118,11 +1057,11 @@ class TerraformTemplate():
 
     # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
     def populate_resource(self, type, name, key=None, block=None):
-        if not type in self.resource:
+        if type not in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]
         if key:
-            if not name in target:
+            if name not in target:
                 target[name] = OrderedDict()
             if key in target[name]:
                 raise TerraformTemplateError(
@@ -1134,17 +1073,17 @@ class TerraformTemplate():
 
     # TODO: optional `key`?
     def populate_resource_element(self, type, name, key, block=None):
-        if not type in self.resource:
+        if type not in self.resource:
             self.resource[type] = OrderedDict()
         target = self.resource[type]
-        if not name in target:
+        if name not in target:
             target[name] = OrderedDict()
-        if not key in target[name]:
+        if key not in target[name]:
             target[name][key] = []
         target[name][key].append(block)
 
     def populate_data(self, type, name, block=None):
-        if not type in self.data:
+        if type not in self.data:
             self.data[type] = OrderedDict()
         if name in self.data[type]:
             raise TerraformTemplateError(
@@ -1337,17 +1276,6 @@ def init(stackname, context):
                     'name': '${aws_eks_cluster.main.name}',
                 },
             }
-            if context['eks']['helm']:
-                providers['provider'].append({'helm': {
-                    'version': '= 0.9.0',
-                    'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
-                    'kubernetes': {
-                        'host': '${data.aws_eks_cluster.main.endpoint}',
-                        'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                        'token': '${data.aws_eks_cluster_auth.main.token}',
-                        'load_config_file': False,
-                    },
-                }})
         fp.write(json.dumps(providers, indent=2))
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform

@@ -41,7 +41,7 @@ def token_lookup_accessor(accessor):
 
 def token_create():
     _warning_root_token()
-    token = utils.get_input('token display name: ')
+    token = utils.uin('token display name: ', default='')
     if not token or not token.strip():
         print("a token display name is required")
         sys.exit(1)

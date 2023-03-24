@@ -20,16 +20,16 @@ def _retrieve_build_vars():
     raises AssertionError on bad data."""
     try:
         buildvars = read_from_current_host()
-        LOG.debug('build vars: %s', buildvars)
+        LOG.debug('buildvars: %s', buildvars)
 
         # buildvars exist
-        ensure(isinstance(buildvars, dict), 'build vars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.' % buildvars)
+        ensure(isinstance(buildvars, dict), 'buildvars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.' % buildvars)
 
         # nothing important is missing
         missing_keys = core_utils.missingkeys(buildvars, ['stackname', 'instance_id', 'branch', 'revision'])
         ensure(
             len(missing_keys) == 0,
-            'build vars are not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys
+            'buildvars not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys
         )
 
         return buildvars
@@ -39,38 +39,21 @@ def _retrieve_build_vars():
         raise
 
 def _update_remote_bvars(stackname, buildvars):
-    LOG.debug('updating %r with new vars %r', stackname, buildvars)
+    node_name = "%s--%s" % (stackname, current_node_id())
+    LOG.debug('updating %r with new vars %r', node_name, buildvars)
     encoded = encode_bvars(buildvars)
     fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
     # make a backup
     remote_sudo('if [ -f /etc/build-vars.json.b64 ]; then cp /etc/build-vars.json.b64 /tmp/build-vars.json.b64.%s; fi;' % fid)
     upload(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
-    LOG.info("%r updated. backup written to /tmp/build-vars.json.b64.%s", stackname, fid)
+    LOG.info("%r updated. backup written to /tmp/build-vars.json.b64.%s", node_name, fid)
 
-#
-
-@requires_aws_stack
-def switch_revision(stackname, revision=None, concurrency=None):
-    if revision is None:
-        revision = utils.uin('revision', None)
-
-    def _switch_revision_single_ec2_node():
-        buildvars = _retrieve_build_vars()
-
-        if 'revision' in buildvars and revision == buildvars['revision']:
-            print('FYI, the instance is already on that revision!')
-            return
-
-        new_data = buildvars
-        new_data['revision'] = revision
-        _update_remote_bvars(stackname, new_data)
-
-    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
+# ---
 
 @format_output('python')
 @requires_aws_stack
 def read(stackname):
-    "returns the unencoded build variables found on given instance"
+    "returns the unencoded build variables found on ec2 nodes for `stackname`."
     return stack_all_ec2_nodes(stackname, lambda: read_from_current_host(), username=BOOTSTRAP_USER)
 
 @format_output('python')
@@ -81,15 +64,23 @@ def valid(stackname):
 @requires_aws_stack
 def fix(stackname):
     def _fix_single_ec2_node(stackname):
-        LOG.info("checking build vars on node %s", current_node_id())
+        node_name = "%s--%s" % (stackname, current_node_id())
+        LOG.info("checking buildvars on node %r", node_name)
         try:
             _retrieve_build_vars()
-            LOG.info("valid bvars found, no fix necessary.")
+            LOG.info("valid buildvars found on node %r", node_name)
             return
-        except AssertionError:
-            LOG.info("invalid build vars found (AssertionError), regenerating from context")
-        except (ValueError, JSONDecodeError):
-            LOG.info("invalid build vars found (JSONDecodeError), regenerating from context")
+        except OSError as ose:
+            if str(ose).startswith("remote file does not exist"):
+                LOG.info("missing buildvars on node %r: %s", node_name, ose)
+        except AssertionError as ae:
+            LOG.info("invalid buildvars on node %r (AssertionError): %s", node_name, ae)
+        except JSONDecodeError as jde:
+            LOG.info("invalid buildvars on node %r (JSONDecodeError): %s", node_name, jde)
+        except ValueError as ve:
+            LOG.info("invalid buildvars on node %r (ValueError): %s", node_name, ve)
+
+        LOG.info("regenerating buildvars from context")
 
         context = load_context(stackname)
         # some contexts are missing stackname
@@ -99,6 +90,32 @@ def fix(stackname):
         _update_remote_bvars(stackname, new_vars)
 
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
+
+@requires_aws_stack
+def switch_revision(stackname, revision=None, concurrency=None):
+    revision = revision or utils.uin('revision', None)
+    ensure(revision, "a revision is required.", utils.TaskExit)
+
+    # an ec2 instance with broken buildvars cannot have `switch_revision` called upon it.
+    # `deploy.switch_revision_update_instance` has become a familiar command to run for users,
+    # and Alfred depends on calling `buildvars.switch_revision` (see `taskrunner.TASK_LIST`).
+    # ensuring the buildvars are valid here is convenient for both humans *and* CI.
+    # - https://github.com/elifesciences/issues/issues/8116
+    fix(stackname)
+
+    def _switch_revision_single_ec2_node():
+        node_name = "%s--%s" % (stackname, current_node_id())
+        buildvars = _retrieve_build_vars()
+
+        if 'revision' in buildvars and revision == buildvars['revision']:
+            LOG.info('FYI, node %r already on revision %r!' % (node_name, revision))
+            return
+
+        new_data = buildvars
+        new_data['revision'] = revision
+        _update_remote_bvars(stackname, new_data)
+
+    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
 @requires_aws_stack
 def force(stackname, field, new_value):

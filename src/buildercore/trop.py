@@ -738,6 +738,12 @@ def _elb_healthcheck_target(context):
 
 def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
+    elb_policy_list = [
+        elb.Policy(**{
+            'PolicyName': 'Improved-TLS-Policy',
+            'PolicyType': 'SSLNegotiationPolicyType',
+            'Attributes': [{'Name': 'Reference-Security-Policy', 'Value': 'ELBSecurityPolicy-TLS-1-2-2017-01'}]})
+    ]
     listeners_policy_names = []
 
     app_cookie_stickiness_policy = []
@@ -774,6 +780,7 @@ def render_elb(context, template, ec2_instances):
             ))
             elb_ports.append(80)
         elif protocol == 'https':
+            listeners_policy_names.append("Improved-TLS-Policy")
             listeners.append(elb.Listener(
                 InstanceProtocol='HTTP',
                 InstancePort='80',
@@ -818,10 +825,6 @@ def render_elb(context, template, ec2_instances):
             IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
-        Instances=lmap(Ref, ec2_instances.values()),
-        # TODO: from configuration
-        Listeners=listeners,
-        LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
         HealthCheck=elb.HealthCheck(
             Target=_elb_healthcheck_target(context),
             HealthyThreshold=str(context['elb']['healthcheck'].get('healthy_threshold', 10)),
@@ -829,6 +832,10 @@ def render_elb(context, template, ec2_instances):
             Interval=str(context['elb']['healthcheck'].get('interval', 30)),
             Timeout=str(context['elb']['healthcheck'].get('timeout', 30)),
         ),
+        Instances=lmap(Ref, ec2_instances.values()),
+        Listeners=listeners,
+        LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
+        Policies=elb_policy_list,
         SecurityGroups=[Ref(SECURITY_GROUP_ELB_TITLE)],
         Scheme='internet-facing' if elb_is_public else 'internal',
         Subnets=context['elb']['subnets'],
@@ -1045,6 +1052,7 @@ def render_alb(context, template, ec2_instances):
         }
         if protocol == 'HTTPS':
             props.update({
+                'SslPolicy': 'ELBSecurityPolicy-TLS-1-2-2017-01',
                 'Certificates': [alb.Certificate(CertificateArn=context['alb']['certificate'])]
             })
         _lb_listener_list.append(alb.Listener(**props))
