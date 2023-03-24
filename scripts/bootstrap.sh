@@ -179,7 +179,9 @@ touch /root/.ssh/known_hosts
 # after bootstrap.sh and before salt's highstate, we may need to talk to github
 
 # ensure salt can talk to github without host verification failures
-ssh-keygen -R github.com # removes any existing keys
+# remove any existing keys for github.com
+ssh-keygen -R github.com
+ssh-keygen -R 192.30.252.128
 # append this to the global known hosts file
 # - https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
 echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> /etc/ssh/ssh_known_hosts
