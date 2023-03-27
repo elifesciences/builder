@@ -1316,7 +1316,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-aws-ebs-csi-driver']
         self.assertIn('name', iam_role_template)
         self.assertIn('assume_role_policy', iam_role_template)
-        self.assertIn('dummy-aws-ebs-csi-driver', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-ebs-csi-controller-sa', iam_role_template['assume_role_policy'])
         self.assertIn('dummy-kube-system', iam_role_template['assume_role_policy'])
 
         iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-aws-ebs-csi-driver']
