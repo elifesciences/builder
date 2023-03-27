@@ -230,7 +230,7 @@ defaults:
 
             # We also have some prebuilt IRSA permissions templates for services that can be running on the cluster
             # This is a dict with a unique name as key and an object mapping a prebuilt template applied to a role with an inline policy to a cluster service account as value
-            # available templates are: kubernetes-autoscaler external-dns
+            # available templates are: kubernetes-autoscaler external-dns aws-ebs-csi-driver
             iam-roles:
                 # kubernetes-autoscaler:
                 #     policy-template: kubernetes-autoscaler
@@ -240,6 +240,10 @@ defaults:
                 #     policy-template: external-dns
                 #     service-account: infra-external-dns
                 #     namespace: infra
+                # aws-ebs-csi-driver:
+                #     policy-template: aws-ebs-csi-driver
+                #     service-account: ebs-csi-controller-sa
+                #     namespace: kube-system
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -2013,6 +2017,10 @@ kubernetes-aws:
                         policy-template: external-dns
                         service-account: infra-external-dns
                         namespace: infra
+                    aws-ebs-csi-driver:
+                        policy-template: aws-ebs-csi-driver
+                        service-account: ebs-csi-controller-sa
+                        namespace: kube-system
 
 bioprotocol:
     subdomain: bp # {instance}--bp.elifesciences.org
