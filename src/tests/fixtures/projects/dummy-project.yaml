@@ -984,6 +984,19 @@ project-with-eks-and-irsa-kubernetes-autoscaler-role:
                     service-account: dummy-kubernetes-autoscaler
                     namespace: dummy-autoscaler
 
+project-with-eks-and-irsa-csi-ebs-role:
+    description: project managing an EKS cluster with additional serviceaccounts granted permission for CSI EBS CSI driver
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            iam-oidc-provider: true
+            iam-roles:
+                dummy-aws-ebs-csi-driver:
+                    policy-template: aws-ebs-csi-driver
+                    service-account: dummy-ebs-csi-controller-sa
+                    namespace: dummy-kube-system
+
 project-with-docdb:
     description: project managing a single DocumentDB instance
     aws:
