@@ -1303,6 +1303,31 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('${aws_iam_policy.dummy-kubernetes-autoscaler.arn}', aws_iam_role_policy_attachment['policy_arn'])
         self.assertEqual('${aws_iam_role.dummy-kubernetes-autoscaler.name}', aws_iam_role_policy_attachment['role'])
 
+    def test_irsa_ebs_csi_permissions(self):
+        pname = 'project-with-eks-and-irsa-csi-ebs-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-aws-ebs-csi-driver', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-aws-ebs-csi-driver', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-aws-ebs-csi-driver', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-aws-ebs-csi-driver']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-aws-ebs-csi-driver', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-kube-system', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-aws-ebs-csi-driver']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-aws-ebs-csi-driver']
+        self.assertEqual('${aws_iam_policy.dummy-aws-ebs-csi-driver.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-aws-ebs-csi-driver.name}', aws_iam_role_policy_attachment['role'])
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(
