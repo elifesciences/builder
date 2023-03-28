@@ -3,7 +3,6 @@ import json
 import re
 import shutil
 import yaml
-import base64
 from os.path import exists, join
 from unittest.mock import patch, MagicMock
 from unittest import TestCase
