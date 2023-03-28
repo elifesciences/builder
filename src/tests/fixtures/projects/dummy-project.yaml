@@ -942,6 +942,14 @@ project-with-eks:
                 root:
                     size: 40
 
+project-with-eks-efs:
+    description: project managing an EKS cluster with EFS support
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            efs: true
+
 project-with-v1.23-select-container-runtime:
     description: Project using EKS 1.23 that switches to using containerd
     domain: False
@@ -957,14 +965,6 @@ project-with-v1.24-default-runtime:
     aws:
         eks:
             version: 1.24
-
-project-with-eks-efs:
-    description: project managing an EKS cluster with EFS support
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            efs: true
 
 project-with-eks-and-iam-oidc-provider:
     description: project managing an EKS cluster with it's IAM OIDC provisioned for IRSA
