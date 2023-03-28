@@ -1315,8 +1315,8 @@ class TestBuildercoreTerraform(base.BaseCase):
         context_v1_24 = cfngen.build_context(pname_v1_24, stackname=iid_v1_24)
         terraform_template_v1_24 = json.loads(terraform.render(context_v1_24))
 
-        self.assertIn('--container-runtime containerd', base64.b64decode(terraform_template_v1_23['locals']['worker_userdata']).decode("utf-8"))
-        self.assertNotIn('--container-runtime containerd', base64.b64decode(terraform_template_v1_24['locals']['worker_userdata']).decode("utf-8"))
+        self.assertIn('--container-runtime containerd', base64.b64decode(terraform_template_v1_23['locals']['worker_userdata']).decode("ascii"))
+        self.assertNotIn('--container-runtime containerd', base64.b64decode(terraform_template_v1_24['locals']['worker_userdata']).decode("ascii"))
 
     def test_irsa_ebs_csi_permissions(self):
         pname = 'project-with-eks-and-irsa-csi-ebs-role'
