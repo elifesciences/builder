@@ -1304,7 +1304,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('${aws_iam_policy.dummy-kubernetes-autoscaler.arn}', aws_iam_role_policy_attachment['policy_arn'])
         self.assertEqual('${aws_iam_role.dummy-kubernetes-autoscaler.name}', aws_iam_role_policy_attachment['role'])
 
-
     def test_eks_runtime_selector(self):
         pname_v1_23 = 'project-with-v1.23-select-container-runtime'
         iid_v1_23 = pname + '--%s' % self.environment
