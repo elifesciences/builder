@@ -956,7 +956,7 @@ project-with-v1.23-select-container-runtime:
     intdomain: False
     aws:
         eks:
-            version: 1.23
+            version: '1.23'
 
 project-with-v1.24-default-runtime:
     description: Project using EKS 1.24 that uses default runtime (no flag)
@@ -964,7 +964,7 @@ project-with-v1.24-default-runtime:
     intdomain: False
     aws:
         eks:
-            version: 1.24
+            version: '1.24'
 
 project-with-eks-and-iam-oidc-provider:
     description: project managing an EKS cluster with it's IAM OIDC provisioned for IRSA
