@@ -940,7 +940,7 @@ def _render_eks_workers_autoscaling_group(context, template):
     template.populate_local('worker_userdata', """
 #!/bin/bash
 set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' ${container_runtime_flag} '${aws_eks_cluster.main.name}'""")
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' %s '${aws_eks_cluster.main.name}'""" % container_runtime_flag)
 
     worker = {
         'associate_public_ip_address': True,
