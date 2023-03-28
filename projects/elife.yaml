@@ -1999,6 +1999,10 @@ kubernetes-aws:
                         policy-template: external-dns
                         service-account: infra-external-dns
                         namespace: infra
+                    aws-ebs-csi-driver:
+                        policy-template: aws-ebs-csi-driver
+                        service-account: ebs-csi-controller-sa
+                        namespace: kube-system
         flux-test:
             ec2: false
             eks:
