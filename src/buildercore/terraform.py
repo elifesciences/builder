@@ -934,10 +934,13 @@ def _render_eks_workers_autoscaling_group(context, template):
     # We utilize a Terraform local here to simplify Base64 encoding this
     # information into the AutoScaling Launch Configuration.
     # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
+    #
+    # SA: Update prior to the dockershim removal: optionally add the container runtime flag
+    container_runtime_flag = " --container-runtime containerd" if context['eks']['version'] == "1.23" else ""
     template.populate_local('worker_userdata', """
 #!/bin/bash
 set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' ${container_runtime_flag} '${aws_eks_cluster.main.name}'""")
 
     worker = {
         'associate_public_ip_address': True,

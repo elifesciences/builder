@@ -3,6 +3,7 @@ import json
 import re
 import shutil
 import yaml
+import base64
 from os.path import exists, join
 from unittest.mock import patch, MagicMock
 from unittest import TestCase
@@ -1302,6 +1303,21 @@ class TestBuildercoreTerraform(base.BaseCase):
         aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-kubernetes-autoscaler']
         self.assertEqual('${aws_iam_policy.dummy-kubernetes-autoscaler.arn}', aws_iam_role_policy_attachment['policy_arn'])
         self.assertEqual('${aws_iam_role.dummy-kubernetes-autoscaler.name}', aws_iam_role_policy_attachment['role'])
+
+
+    def test_eks_runtime_selector(self):
+        pname_v1_23 = 'project-with-v1.23-select-container-runtime'
+        iid_v1_23 = pname + '--%s' % self.environment
+        context_v1_23 = cfngen.build_context(pname_v1_23, stackname=iid_v1_23)
+        terraform_template_v1_23 = json.loads(terraform.render(context_v1_23))
+
+        pname_v1_24 = 'project-with-v1.24-default-runtime'
+        iid_v1_24 = pname + '--%s' % self.environment
+        context_v1_24 = cfngen.build_context(pname_v1_24, stackname=iid_v1_24)
+        terraform_template_v1_24 = json.loads(terraform.render(context_v1_24))
+
+        self.assertIn('--container-runtime containerd', base64.b64decode(terraform_template_v1_23['local']['worker_userdata']))
+        self.assertNotIn('--container-runtime containerd', base64.b64decode(terraform_template_v1_24['local']['worker_userdata']))
 
     def test_irsa_ebs_csi_permissions(self):
         pname = 'project-with-eks-and-irsa-csi-ebs-role'
