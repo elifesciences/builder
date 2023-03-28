@@ -1306,12 +1306,12 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_eks_runtime_selector(self):
         pname_v1_23 = 'project-with-v1.23-select-container-runtime'
-        iid_v1_23 = pname + '--%s' % self.environment
+        iid_v1_23 = pname_v1_23 + '--%s' % self.environment
         context_v1_23 = cfngen.build_context(pname_v1_23, stackname=iid_v1_23)
         terraform_template_v1_23 = json.loads(terraform.render(context_v1_23))
 
         pname_v1_24 = 'project-with-v1.24-default-runtime'
-        iid_v1_24 = pname + '--%s' % self.environment
+        iid_v1_24 = pname_v1_24 + '--%s' % self.environment
         context_v1_24 = cfngen.build_context(pname_v1_24, stackname=iid_v1_24)
         terraform_template_v1_24 = json.loads(terraform.render(context_v1_24))
 
