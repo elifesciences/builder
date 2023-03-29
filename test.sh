@@ -6,4 +6,4 @@
 set -e
 
 . .activate-venv.sh
-. .tests.sh
+. .test.sh
