@@ -2,7 +2,7 @@ from collections import namedtuple, OrderedDict
 import os, re, shutil, json
 from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
+from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, TERRAFORM_BIN_PATH, PROJECT_PATH
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, lookup
 from . import aws, fastly
@@ -1316,7 +1316,7 @@ def _clean_stdout(stdout):
 
 def init(stackname, context):
     working_dir = join(TERRAFORM_DIR, stackname) # "./.cfn/terraform/project--prod/"
-    terraform = Terraform(working_dir=working_dir)
+    terraform = Terraform(working_dir=working_dir, terraform_bin_path=TERRAFORM_BIN_PATH)
     with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
             'terraform': {

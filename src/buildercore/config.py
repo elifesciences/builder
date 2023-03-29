@@ -66,6 +66,10 @@ CONTEXT_DIR = join(CFN_DIR, "contexts") # "./.cfn/stacks"
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
 KEYPAIR_DIR = join(CFN_DIR, "keypairs") # "./.cfn/keypairs"
+
+# lsh@2023-03-29: projects can now specify specfic versions of Terraform to use.
+# this is possible using 'tfenv': https://github.com/tfutils/tfenv
+TERRAFORM_BIN_PATH = join(PROJECT_PATH, ".tfenv", "bin")
 # the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
 # perhaps a namechange from .cfn to .state or something later
 TERRAFORM_DIR = join(CFN_DIR, "terraform")

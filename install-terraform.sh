@@ -14,5 +14,9 @@ if [ ! -d .tfenv ]; then
     rm tfenv.tar.gz
 fi
 
-.tfenv/bin/tfenv install 0.11.15 # current version
+.tfenv/bin/tfenv install 0.11.15 # current, default, version
 .tfenv/bin/tfenv install 0.13.7  # next version
+
+# activate the default version.
+# this is used when not overridden by ".terraform-version" or "TFENV_TERRAFORM_VERSION"
+.tfenv/bin/tfenv use 0.11.15
