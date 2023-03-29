@@ -7,6 +7,9 @@ from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, lookup
 from . import aws, fastly
 import contextlib
+import logging
+
+LOG = logging.getLogger(__name__)
 
 MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
@@ -293,17 +296,22 @@ def _open(stackname, name, extension='tf.json', mode='r'):
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
-    # "./.cfn/journal--prod/generated.tf"
-    # "./.cfn/journal--prod/backend.tf"
-    # "./.cfn/journal--prod/providers.tf"
+    # "./.cfn/terraform/journal--prod/generated.tf"
+    # "./.cfn/terraform/journal--prod/backend.tf"
+    # "./.cfn/terraform/journal--prod/providers.tf"
     deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
     if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
 
-    # "./.cfn/journal--prod/generated.tf.json"
-    # "./.cfn/journal--prod/backend.tf.json"
-    # "./.cfn/journal--prod/providers.tf.json"
-    path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
+    if extension:
+        # "./.cfn/terraform/journal--prod/generated.tf.json"
+        # "./.cfn/terraform/journal--prod/backend.tf.json"
+        # "./.cfn/terraform/journal--prod/providers.tf.json"
+        path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
+    else:
+        # "./.cfn/terraform/journal--prod/.terraform-version"
+        path = join(TERRAFORM_DIR, stackname, '%s' % name)
+
     # lsh@2023-03-29: behaviour changed to resemble what you'd typically expect
     # when you `with open(...) as foo:`.
     # there haven't been any problems with files not being closed as far as I can tell.
@@ -1322,14 +1330,23 @@ def _clean_stdout(stdout):
     return stdout
 
 def init(stackname, context):
+    # ensure tfenv knows which version of Terraform to use:
+    # - https://github.com/tfutils/tfenv#terraform-version-file
+    with _open(stackname, '.terraform-version', extension=None, mode='w') as fp:
+        fp.write(context['terraform']['version'])
+
     terraform = Terraform(**{
         'working_dir': join(TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--prod/"
         'terraform_bin_path': TERRAFORM_BIN_PATH})
 
-    # ensures tfenv knows which version of Terraform to use:
-    # - https://github.com/tfutils/tfenv#terraform-version-file
-    with _open(stackname, '.terraform-version', mode='w') as fp:
-        fp.write(context['terraform']['version'])
+    try:
+        return_code, stdout, _ = terraform.cmd("version")
+        ensure(return_code == 0, "failed to query terraform for it's version.")
+        LOG.info("\n-----------\n" + stdout + "---------")
+    except ValueError:
+        # "ValueError: not enough values to unpack (expected 3, got 0)"
+        # we're almost certainly testing and the `Terraform` object has been mocked.
+        pass
 
     with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
