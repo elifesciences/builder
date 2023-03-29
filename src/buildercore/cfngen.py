@@ -223,6 +223,7 @@ def build_context(pname, **more_context):
     wrangler_list = [
         partial(build_context_rds, existing_context=existing_context),
         build_context_aws,
+        build_context_terraform,
         build_context_ec2,
         build_context_elb,
         build_context_alb,
@@ -304,6 +305,11 @@ def build_context_docdb(pdata, context, existing_context=None):
         'master-user-password': current_master_password or generated_password,
         'storage-encrypted': False
     })
+    return context
+
+def build_context_terraform(pdata, context):
+    """adds the commonly used Terraform fields to the context under `terraform`."""
+    context['terraform'] = pdata['terraform']
     return context
 
 def build_context_aws(pdata, context):

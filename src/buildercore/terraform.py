@@ -6,15 +6,16 @@ from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, TERRAFORM_BIN
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, lookup
 from . import aws, fastly
+import contextlib
 
 MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
-PROVIDER_AWS_VERSION = '2.28.0'
-PROVIDER_TLS_VERSION = '2.2'
-PROVIDER_FASTLY_VERSION = '0.9.0' # '0.26.0' last for terraform 0.11.x
-PROVIDER_VAULT_VERSION = '1.3' # '1.9.0' last for terraform 0.11.x
+#PROVIDER_AWS_VERSION = '2.28.0'
+#PROVIDER_TLS_VERSION = '2.2'
+# PROVIDER_FASTLY_VERSION = '0.9.0' # '0.26.0' last for terraform 0.11.x
+# PROVIDER_VAULT_VERSION = '1.3' # '1.9.0' last for terraform 0.11.x
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -286,8 +287,9 @@ FASTLY_MAIN_VCL_KEY = 'main'
 
 # utils
 
+@contextlib.contextmanager
 def _open(stackname, name, extension='tf.json', mode='r'):
-    "`open`s a file in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
+    "opens a file `name` in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
@@ -302,7 +304,12 @@ def _open(stackname, name, extension='tf.json', mode='r'):
     # "./.cfn/journal--prod/backend.tf.json"
     # "./.cfn/journal--prod/providers.tf.json"
     path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
-    return open(path, mode)
+    # lsh@2023-03-29: behaviour changed to resemble what you'd typically expect
+    # when you `with open(...) as foo:`.
+    # there haven't been any problems with files not being closed as far as I can tell.
+    # return open(path, mode)
+    with open(path, mode) as fh:
+        yield fh
 
 # fastly
 
@@ -1315,8 +1322,15 @@ def _clean_stdout(stdout):
     return stdout
 
 def init(stackname, context):
-    working_dir = join(TERRAFORM_DIR, stackname) # "./.cfn/terraform/project--prod/"
-    terraform = Terraform(working_dir=working_dir, terraform_bin_path=TERRAFORM_BIN_PATH)
+    terraform = Terraform(**{
+        'working_dir': join(TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--prod/"
+        'terraform_bin_path': TERRAFORM_BIN_PATH})
+
+    # ensures tfenv knows which version of Terraform to use:
+    # - https://github.com/tfutils/tfenv#terraform-version-file
+    with _open(stackname, '.terraform-version', mode='w') as fp:
+        fp.write(context['terraform']['version'])
+
     with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
             'terraform': {
@@ -1329,6 +1343,12 @@ def init(stackname, context):
                 },
             },
         }))
+
+    provider_fastly_version = context['terraform']['provider-fastly']['version']
+    provider_aws_version = context['terraform']['provider-aws']['version']
+    provider_tls_version = context['terraform']['provider-tls']['version']
+    provider_vault_version = context['terraform']['provider-vault']['version']
+
     with _open(stackname, 'providers', mode='w') as fp:
         # TODO: possibly remove unused providers
         # Terraform already prunes them when running, but would
@@ -1339,19 +1359,19 @@ def init(stackname, context):
                 {
                     'fastly': {
                         # exact version constraint
-                        'version': "= %s" % PROVIDER_FASTLY_VERSION,
+                        'version': "= %s" % provider_fastly_version,
                         'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
                     },
                 },
                 {
                     'aws': {
-                        'version': "= %s" % PROVIDER_AWS_VERSION,
+                        'version': "= %s" % provider_aws_version,
                         'region': context['aws']['region'],
                     },
                 },
                 {
                     'tls': {
-                        'version': "= %s" % PROVIDER_TLS_VERSION,
+                        'version': "= %s" % provider_tls_version,
                     },
                 },
                 {
@@ -1365,7 +1385,7 @@ def init(stackname, context):
                     'vault': {
                         'address': context['vault']['address'],
                         # exact version constraint
-                        'version': "= %s" % PROVIDER_VAULT_VERSION,
+                        'version': "= %s" % provider_vault_version,
                     },
                 },
             ],
@@ -1399,7 +1419,7 @@ def init(stackname, context):
             providers['provider'].append({
                 'aws': {
                     'region': context['aws']['region'],
-                    'version': '= %s' % PROVIDER_AWS_VERSION,
+                    'version': '= %s' % provider_aws_version,
                     'alias': 'eks_assume_role',
                     'assume_role': {
                         'role_arn': '${aws_iam_role.user.arn}'
