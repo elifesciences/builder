@@ -6,15 +6,47 @@ Test using:
 
 This looks in the `src/tests/` directory and runs anything it can find.
 
-To test a specific module within `src/tests/`, use:
+To test a specific file, use:
 
-    ./test.sh modulename
+    ./test.sh path/to/test/file.py
 
-for example:
+For example:
 
-    ./test.sh test_buildercore_core
+    ./test.sh ./src/tests/test_utils.py
 
-That will run all tests it can find inside `src/tests/test_buildercore_core.py`.
+That will run all tests it can find inside `src/tests/test_utils.py`.
+
+To test a specific *test* within a specific file, use:
+
+    ./test.sh path/to/test/file.py::function_name
+    
+For example:
+
+    ./test.sh ./src/tests/test_utils.py::test_coerce_string_value
+
+## Testing during development
+
+Once builder has been installed with:
+
+    ./update.sh
+    
+and the virtual environment activated with:
+
+    source .activate-venv.sh
+
+the tests can be run directly with:
+
+    ./.test.sh
+
+## Integration tests
+
+'Integration' tests create actual AWS infrastructure and test against that.
+
+They take longer and require more permissions and are typically only run during CI.
+
+To run the integration tests:
+
+    BUILDER_INTEGRATION_TESTS=1 ./test.sh
 
 ## Code coverage
 
@@ -25,27 +57,6 @@ The report can still be displayed if any tests failed with:
     coverage report
 
 This report is generated from the results stored in the `.coverage` file
-
-## Slow! So slow!
-
-The `test.sh` script is designed to be run by a CI and does several things,
-like creating/activating/populating a virtualenv and project linting before
-running the unittests. This is unbearably slow, after the first run
-you can load the virtualenv with:
-
-    source venv/bin/activate
-
-Then, the test runner can be called directly with:
-
-    PYTHONPATH=src green tests
-
-or:
-
-    PYTHONPATH=src green tests.test_buildercore_trop
-
-or:
-
-    PYTHONPATH=src green tests.test_buildercore_trop.TestBuildercoreTrop.test_method_name
 
 ## Filter single integration tests
 
