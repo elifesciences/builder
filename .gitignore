@@ -12,7 +12,7 @@ builder-configuration/
 .vagrant-error
 *.orig
 *.log
-.venv/
+venv/
 *.swp
 .cfn/
 logs/
