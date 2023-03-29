@@ -15,7 +15,7 @@ except ImportError:
     # deprecated in Python 3.10, planned removal in Python 3.12, you'll get a warning.
     from distutils.version import StrictVersion as Version
 
-MINIMUM_VERSION_TERRAFORM = Version('0.11.13')
+#MINIMUM_VERSION_TERRAFORM = Version('0.11.13')
 MINIMUM_VERSION_VAULT = Version('0.11.0')
 
 def sh(cmd):
@@ -39,12 +39,12 @@ def dumb_version_check(cmd):
 
 ssh_key = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
 
-def terraform_version_checker(_cmd):
-    installed_version = Version(shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip())
-    if not installed_version >= MINIMUM_VERSION_TERRAFORM:
-        raise RuntimeError("Installed terraform version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_TERRAFORM))
-
-    return str(installed_version)
+#def terraform_version_checker(_cmd):
+#    installed_version = Version(shs('terraform --version').splitlines()[0].replace('Terraform v', '').strip())
+#    if not installed_version >= MINIMUM_VERSION_TERRAFORM:
+#        raise RuntimeError("Installed terraform version %s does not satisfy the minimum version requirement %s" % (installed_version, MINIMUM_VERSION_TERRAFORM))
+#
+#    return str(installed_version)
 
 def vault_version_checker(_cmd):
     installed_version = Version(re.match("Vault v([^ ]+)", shs('vault -version')).groups()[0])
@@ -96,10 +96,10 @@ both_checks = [
      lambda x: sh('test -f ~/.aws/credentials || test -f ~/.boto'),
      None),
 
-    ('terraform',
-     {'all': 'download from https://www.terraform.io/downloads.html'},
-     lambda x: shs('which terraform'),
-     terraform_version_checker),
+    #('terraform',
+    # {'all': 'download from https://www.terraform.io/downloads.html'},
+    # lambda x: shs('which terraform'),
+    # terraform_version_checker),
 
     ('vault',
      {'all': 'download from https://www.vaultproject.io/downloads.html'},
