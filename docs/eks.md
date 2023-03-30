@@ -57,8 +57,8 @@ kubernetes-aws:
 ```
 
 ```
-bldr launch:kubernetes-aws,flux-prod  # to create, note elife issue #5928
-bldr update_infrastructure:kubernetes-aws--flux-prod  # to update/change
+./bldr launch:kubernetes-aws,flux-prod  # to create, note elife issue #5928
+./bldr update_infrastructure:kubernetes-aws--flux-prod  # to update/change
 ```
 
 ### Delete a cluster
@@ -77,7 +77,7 @@ Checklist to go through before destruction:
 builder generates Terraform templates that describe the set of EKS and EC2 resources that are created inside an `eks`-enabling stack.
 
 ```
-bldr update_infrastructure:kubernetes-aws--test  # will generate Terraform templates, they should have no change to apply
+./bldr update_infrastructure:kubernetes-aws--test  # will generate Terraform templates, they should have no change to apply
 cat .cfn/terraform/kubernetes-aws--test.json | jq .
 ```
 
