@@ -45,6 +45,12 @@ curl https://releases.hashicorp.com/vault/0.11.6/vault_0.11.6_darwin_amd64.zip -
 export PATH="$(PWD)/.bin:$PATH"
 ```
 
+Then activate the venv:
+
+```
+source ./venv/bin/activate
+```
+
 Then run the `./update.sh` script, which overrides a few of the build paths via Environment Variables to build correctly from homebrew installed libraries (to match libraries Python was built against)
 
 ```
