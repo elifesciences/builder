@@ -4,7 +4,7 @@ from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, TERRAFORM_BIN_PATH, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, lookup
+from .utils import ensure, mkdir_p, lookup, updatein
 from . import aws, fastly
 import contextlib
 import logging
@@ -1366,20 +1366,40 @@ def init(stackname, context):
     provider_tls_version = context['terraform']['provider-tls']['version']
     provider_vault_version = context['terraform']['provider-vault']['version']
 
-    with _open(stackname, 'providers', mode='w') as fp:
-        # TODO: possibly remove unused providers
-        # Terraform already prunes them when running, but would
-        # simplify the .cfn/terraform/$stackname/ files
-        # TODO: use TerraformTemplate?
-        providers = {
-            'provider': [
-                {
-                    'fastly': {
-                        # exact version constraint
-                        'version': "= %s" % provider_fastly_version,
-                        'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
-                    },
+    # Terraform prunes unused providers when running but conditionally adding them
+    # here simplifies the `.cfn/terraform/$stackname/` files.
+
+    providers = {'provider': [], 'data': {}}
+
+    vault_projects = ['fastly']
+    need_vault = any(context.get(key) for key in vault_projects)
+    if need_vault:
+        providers['provider'].append(
+            {
+                'vault': {
+                    'address': context['vault']['address'],
+                    # exact version constraint
+                    'version': "= %s" % provider_vault_version,
                 },
+            },
+        )
+
+    if context.get('fastly'):
+        providers['provider'].append({
+            'fastly': {
+                # exact version constraint
+                'version': "= %s" % provider_fastly_version,
+                'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
+            },
+        })
+        path = 'data.' + DATA_TYPE_VAULT_GENERIC_SECRET + '.' + DATA_NAME_VAULT_FASTLY_API_KEY
+        updatein(providers, path, {'path': VAULT_PATH_FASTLY}, create=True)
+
+    terraform_gcp_projects = ['bigquery', 'gcs'] # 'eks' ?
+    need_gcp = any(context.get(key) for key in terraform_gcp_projects)
+    if need_gcp:
+        providers['provider'].extend(
+            [
                 {
                     'aws': {
                         'version': "= %s" % provider_aws_version,
@@ -1398,58 +1418,45 @@ def init(stackname, context):
                         'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
                     },
                 },
-                {
-                    'vault': {
-                        'address': context['vault']['address'],
-                        # exact version constraint
-                        'version': "= %s" % provider_vault_version,
-                    },
-                },
-            ],
-            'data': {
-                DATA_TYPE_VAULT_GENERIC_SECRET: {
-                    # TODO: this should not be used unless Fastly is involved
-                    DATA_NAME_VAULT_FASTLY_API_KEY: {
-                        'path': VAULT_PATH_FASTLY,
-                    },
-                    # TODO: this should not be used unless GCP is involved
-                    DATA_NAME_VAULT_GCP_API_KEY: {
-                        'path': VAULT_PATH_GCP,
-                    },
-                },
+            ]
+        )
+        path = 'data.' + DATA_TYPE_VAULT_GENERIC_SECRET + '.' + DATA_NAME_VAULT_GCP_API_KEY
+        updatein(providers, path, {'path': VAULT_PATH_GCP}, create=True)
+
+    if context.get('eks'):
+        providers['provider'].append({'kubernetes': {
+            'version': "= %s" % '1.5.2',
+            'host': '${data.aws_eks_cluster.main.endpoint}',
+            'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+            'token': '${data.aws_eks_cluster_auth.main.token}',
+            'load_config_file': False,
+        }})
+        providers['data']['aws_eks_cluster'] = {
+            'main': {
+                'name': '${aws_eks_cluster.main.name}',
             },
         }
-        if context.get('eks'):
-            providers['provider'].append({'kubernetes': {
-                'version': "= %s" % '1.5.2',
-                'host': '${data.aws_eks_cluster.main.endpoint}',
-                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                'token': '${data.aws_eks_cluster_auth.main.token}',
-                'load_config_file': False,
-            }})
-            providers['data']['aws_eks_cluster'] = {
-                'main': {
-                    'name': '${aws_eks_cluster.main.name}',
-                },
-            }
-            # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
-            providers['provider'].append({
-                'aws': {
-                    'region': context['aws']['region'],
-                    'version': '= %s' % provider_aws_version,
-                    'alias': 'eks_assume_role',
-                    'assume_role': {
-                        'role_arn': '${aws_iam_role.user.arn}'
-                    }
+        # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
+        providers['provider'].append({
+            'aws': {
+                'region': context['aws']['region'],
+                'version': '= %s' % provider_aws_version,
+                'alias': 'eks_assume_role',
+                'assume_role': {
+                    'role_arn': '${aws_iam_role.user.arn}'
                 }
-            })
-            providers['data']['aws_eks_cluster_auth'] = {
-                'main': {
-                    'provider': 'aws.eks_assume_role',
-                    'name': '${aws_eks_cluster.main.name}',
-                },
             }
+        })
+        providers['data']['aws_eks_cluster_auth'] = {
+            'main': {
+                'provider': 'aws.eks_assume_role',
+                'name': '${aws_eks_cluster.main.name}',
+            },
+        }
+
+    with _open(stackname, 'providers', mode='w') as fp:
         fp.write(json.dumps(providers, indent=2))
+
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
