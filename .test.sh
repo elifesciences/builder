@@ -5,31 +5,31 @@
 set -e
 args="$*"
 
-# holdover from py2/py3/tox days.
-envname="py3"
-
-# prevent any stdin prompts still hanging around in tests.
-# lsh@2023-03-29: these should all be fixed now but haven't tested.
-export BUILDER_NON_INTERACTIVE=1
-
-# if the environment variable BUILDER_INTEGRATION_TESTS has a value, turn integration tests on.
+# turn integration tests on when BUILDER_INTEGRATION_TESTS has a value.
 integration_tests=false
 if [ -n "$BUILDER_INTEGRATION_TESTS" ]; then
     integration_tests=true
 fi
 
+coverage_threshold=70
+coverage_err="\nFAILED coverage test: $coverage_threshold%% required but exiting successfully with this warning.\n"
+
 # `patched_pytest` is a copy of 'pytest' but with gevent monkey patching.
 # see `venv/bin/pytest` and `src/buildercore/threadbare/__init__.py`
 
 if [ -n "$args" ]; then 
-    # a path or custom pytest arguments have been given, use those.
+    # custom pytest arguments have been given, use those.
     ./patched_pytest -vv "$args"
-    exit 0
 
 elif ! $integration_tests; then
-    # run the regular project project tests when called without args.
-    ./patched_pytest -vv src/tests/
-    exit 0
+    # run the regular project tests when called without args.
+    ./patched_pytest \
+        -vv \
+        --cov-config=.coveragerc --cov-report= --cov=src \
+        src/tests/
+
+    echo "Checking coverage report"
+    coverage report --fail-under="$coverage_threshold" || printf "$coverage_err"
 
 else
     # run all tests
@@ -37,13 +37,9 @@ else
         -vv \
         --cov-config=.coveragerc --cov-report= --cov=src \
         --capture=no \
-        --junitxml="build/pytest-$envname.xml" \
+        --junitxml="build/pytest-py3.xml" \
         src/tests src/integration_tests
 
     echo "Checking coverage report"
-    threshold=70
-    coverage report --fail-under="$threshold" || (
-        echo "FAILED coverage test of $threshold%, but exiting successfully with this warning."
-    )
-
+    coverage report --fail-under="$coverage_threshold" || printf "$coverage_err"
 fi

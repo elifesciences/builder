@@ -42,7 +42,7 @@ the tests can be run directly with:
 
 'Integration' tests create actual AWS infrastructure and test against that.
 
-They take longer and require more permissions and are typically only run during CI.
+They take longer, require more permissions and are typically only run during CI.
 
 To run the integration tests:
 
