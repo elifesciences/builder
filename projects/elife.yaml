@@ -5,8 +5,10 @@ defaults:
         type: project
         version: 1
     salt: "3003" # the version of Salt to install on ec2 instances
-    terraform: 
-        version: "0.11.15" # the version of Terraform this project requires
+    terraform:
+        # the version of Terraform this project requires
+        version: "0.11.15" # next version is "0.13.7" see `install-terraform.sh`
+        # the version of Terraform providers (plugins) required.
         provider-aws: 
             version: "2.28.0"
         provider-tls:

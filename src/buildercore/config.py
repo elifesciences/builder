@@ -155,7 +155,9 @@ KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 
 # these sections *shouldn't* be merged if they *don't* exist in the project
-CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf']
+CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = [
+    'rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf'
+]
 
 ensure(isinstance(USER['project-files'], list),
        "'project-files' must be a list, not a %r. check your settings.yaml file." % type(USER['project-files']))

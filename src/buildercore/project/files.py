@@ -41,6 +41,7 @@ def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
         orig_defaults = copy.deepcopy(global_cloud)
 
         utils.deepmerge(orig_defaults, project_cloud, CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT)
+        # alt-names may be integers in some cases! for example, 1804. stringify them here.
         cloud_alt[str(altname)] = orig_defaults
 
     return cloud_alt
@@ -48,13 +49,18 @@ def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
 # TODO: have this accept a map of defaults and a list of project data maps,
 # rather than read from `all_projects`.
 def project_data(pname, project_file):
-    "does a deep merge of defaults+project data with a few exceptions"
+    "does a deep merge of defaults+project data and any alt-configs."
 
     global_defaults, project_list = all_projects(project_file)
 
-    # exceptions.
+    # this first pass is doing two things:
+    # 1. deep-merging the 'regular' data and ignoring the 'alternate' data.
+    # 2. pruning any sections that shouldn't be present by default.
+    # for example, 'aws.rds' shouldn't be present if a project has no rds config.
+    # this prevents them appearing in aws-alt overrides later.
+    # this data then serves as a base for the second pass.
+
     excluding = [
-        'aws',
         'vagrant',
         'aws-alt',
         'gcp-alt',
@@ -63,7 +69,7 @@ def project_data(pname, project_file):
     pdata = copy.deepcopy(global_defaults)
     utils.deepmerge(pdata, project_list[pname], excluding)
 
-    # handle the alternate configurations
+    # second pass, expand the 'aws' and 'gcp' alternate configurations.
     pdata['aws-alt'] = project_cloud_alt(
         pdata.get('aws-alt', {}),
         pdata.get('aws', {}),
