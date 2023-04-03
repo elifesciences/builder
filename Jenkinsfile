@@ -8,7 +8,6 @@ elifePipeline {
 
     stage 'Update', {
         sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault'
-        sh 'rm -rf .tox'
     }
 
     stage 'Scrub', {
@@ -28,7 +27,7 @@ elifePipeline {
         actions["Test ${python}"] = {
             withCommitStatus({
                 try {
-                    sh "tox -e ${python}"
+                    sh "BUILDER_INTEGRATION_TESTS=1 ./test.sh"
                 } finally {
                     // https://issues.jenkins-ci.org/browse/JENKINS-27395?focusedCommentId=345589&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-345589
                     junit testResults: "build/pytest-${python}.xml"

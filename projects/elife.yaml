@@ -2004,7 +2004,7 @@ kubernetes-aws:
         flux-prod:
             ec2: false
             eks:
-                version: '1.23'
+                version: '1.24'
                 worker:
                     type: t3.large
                     max-size: 16
@@ -2026,7 +2026,7 @@ kubernetes-aws:
         flux-test:
             ec2: false
             eks:
-                version: '1.23'
+                version: '1.24'
                 worker:
                     type: t3.large
                     max-size: 6

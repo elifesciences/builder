@@ -58,6 +58,8 @@ def switch_in_test_settings(projects_files=None):
     if not projects_files:
         projects_files = ['src/tests/fixtures/projects/']
     config.PROJECTS_PATH_LIST = projects_files
+    # lsh@2023-03-31: set as default. see the `test_utils.test_uin__*` tests on how to override this.
+    config.BUILDER_NON_INTERACTIVE = True
     # lsh@2021-06-22: may not be necessary any more.
     # project_map now returns a deepcopy of cached results.
     project._project_map.cache_clear()

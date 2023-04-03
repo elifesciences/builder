@@ -50,6 +50,10 @@ rm ./vault.zip
 export PATH="$(PWD)/.bin:$PATH"
 ```
 
+Activate the Python virtualenv:
+
+    source ./venv/bin/activate
+
 Then run the `./update.sh` script, which overrides a few of the build paths via environment variables to build correctly 
 from Homebrew installed libraries (to match libraries Python was built against).
 
