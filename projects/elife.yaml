@@ -17,6 +17,10 @@ defaults:
             version: "0.9.0" # '0.26.0' last version to support terraform 0.11.x
         provider-vault:
             version: "1.3" # # '1.9.0' last version to support terraform 0.11.x
+        provider-google:
+            version: "1.20.0"
+        provider-eks:
+            version: "1.5.2"
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -584,6 +588,8 @@ journal:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
+    terraform:
+        version: "0.13.7"
     aws:
         ec2:
             ports:
@@ -1990,6 +1996,8 @@ kubernetes-aws:
     description: project managing an EKS cluster
     domain: False
     intdomain: False
+    terraform:
+        version: "0.13.7"
     aws:
         ec2: false
     aws-alt:

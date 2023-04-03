@@ -15,10 +15,6 @@ MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
-#PROVIDER_AWS_VERSION = '2.28.0'
-#PROVIDER_TLS_VERSION = '2.2'
-# PROVIDER_FASTLY_VERSION = '0.9.0' # '0.26.0' last for terraform 0.11.x
-# PROVIDER_VAULT_VERSION = '1.3' # '1.9.0' last for terraform 0.11.x
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -292,7 +288,11 @@ FASTLY_MAIN_VCL_KEY = 'main'
 
 @contextlib.contextmanager
 def _open(stackname, name, extension='tf.json', mode='r'):
-    "opens a file `name` in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
+    """opens a file `name` in the `conf.TERRAFORM_DIR` belonging to given `stackname`.
+    for example:
+      ./.cfn/terraform/$stackname/$name.$extension
+      ./.cfn/terraform/$stackname/$name
+    """
     terraform_directory = join(TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
@@ -1336,16 +1336,16 @@ def init(stackname, context):
         fp.write(context['terraform']['version'])
 
     terraform = Terraform(**{
-        'working_dir': join(TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--prod/"
+        'working_dir': join(TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
         'terraform_bin_path': TERRAFORM_BIN_PATH})
 
     try:
-        return_code, stdout, _ = terraform.cmd("version")
-        ensure(return_code == 0, "failed to query terraform for it's version.")
+        rc, stdout, _ = terraform.cmd("version")
+        ensure(rc == 0, "failed to query terraform for it's version.")
         LOG.info("\n-----------\n" + stdout + "---------")
     except ValueError:
         # "ValueError: not enough values to unpack (expected 3, got 0)"
-        # we're almost certainly testing and the `Terraform` object has been mocked.
+        # we're probably testing and the Terraform object has been mocked.
         pass
 
     with _open(stackname, 'backend', mode='w') as fp:
@@ -1361,13 +1361,8 @@ def init(stackname, context):
             },
         }))
 
-    provider_fastly_version = context['terraform']['provider-fastly']['version']
-    provider_aws_version = context['terraform']['provider-aws']['version']
-    provider_tls_version = context['terraform']['provider-tls']['version']
-    provider_vault_version = context['terraform']['provider-vault']['version']
-
     # Terraform prunes unused providers when running but conditionally adding them
-    # here simplifies the `.cfn/terraform/$stackname/` files.
+    # here simplifies the `.cfn/terraform/$stackname/` files and any Terraform upgrades.
 
     providers = {'provider': [], 'data': {}}
 
@@ -1379,7 +1374,7 @@ def init(stackname, context):
                 'vault': {
                     'address': context['vault']['address'],
                     # exact version constraint
-                    'version': "= %s" % provider_vault_version,
+                    'version': "= %s" % context['terraform']['provider-vault']['version'],
                 },
             },
         )
@@ -1388,12 +1383,13 @@ def init(stackname, context):
         providers['provider'].append({
             'fastly': {
                 # exact version constraint
-                'version': "= %s" % provider_fastly_version,
+                'version': "= %s" % context['terraform']['provider-fastly']['version'],
                 'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
             },
         })
-        path = 'data.' + DATA_TYPE_VAULT_GENERIC_SECRET + '.' + DATA_NAME_VAULT_FASTLY_API_KEY
-        updatein(providers, path, {'path': VAULT_PATH_FASTLY}, create=True)
+        path = f"data.{DATA_TYPE_VAULT_GENERIC_SECRET}.{DATA_NAME_VAULT_FASTLY_API_KEY}.path"
+        # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
+        updatein(providers, path, VAULT_PATH_FASTLY, create=True)
 
     terraform_gcp_projects = ['bigquery', 'gcs'] # 'eks' ?
     need_gcp = any(context.get(key) for key in terraform_gcp_projects)
@@ -1402,30 +1398,31 @@ def init(stackname, context):
             [
                 {
                     'aws': {
-                        'version': "= %s" % provider_aws_version,
+                        'version': "= %s" % context['terraform']['provider-aws']['version'],
                         'region': context['aws']['region'],
                     },
                 },
                 {
                     'tls': {
-                        'version': "= %s" % provider_tls_version,
+                        'version': "= %s" % context['terraform']['provider-tls']['version'],
                     },
                 },
                 {
                     'google': {
-                        'version': "= %s" % '1.20.0',
+                        'version': "= %s" % context['terraform']['provider-google']['version'],
                         'region': 'us-east4',
                         'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
                     },
                 },
             ]
         )
-        path = 'data.' + DATA_TYPE_VAULT_GENERIC_SECRET + '.' + DATA_NAME_VAULT_GCP_API_KEY
-        updatein(providers, path, {'path': VAULT_PATH_GCP}, create=True)
+        path = f"data.{DATA_TYPE_VAULT_GENERIC_SECRET}.{DATA_NAME_VAULT_GCP_API_KEY}.path"
+        # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
+        updatein(providers, path, VAULT_PATH_GCP, create=True)
 
     if context.get('eks'):
         providers['provider'].append({'kubernetes': {
-            'version': "= %s" % '1.5.2',
+            'version': "= %s" % context['terraform']['provider-eks']['version'],
             'host': '${data.aws_eks_cluster.main.endpoint}',
             'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
             'token': '${data.aws_eks_cluster_auth.main.token}',
@@ -1440,7 +1437,7 @@ def init(stackname, context):
         providers['provider'].append({
             'aws': {
                 'region': context['aws']['region'],
-                'version': '= %s' % provider_aws_version,
+                'version': '= %s' % context['terraform']['provider-aws']['version'],
                 'alias': 'eks_assume_role',
                 'assume_role': {
                     'role_arn': '${aws_iam_role.user.arn}'

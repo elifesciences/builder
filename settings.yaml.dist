@@ -1,4 +1,4 @@
-# user settings for Builder.
+# user settings for builder.
 # copy to `settings.yaml` to start using.
 # see `srv/buildercore/config.py` for parsing.
 
