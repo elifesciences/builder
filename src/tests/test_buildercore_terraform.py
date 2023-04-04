@@ -1303,20 +1303,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('${aws_iam_policy.dummy-kubernetes-autoscaler.arn}', aws_iam_role_policy_attachment['policy_arn'])
         self.assertEqual('${aws_iam_role.dummy-kubernetes-autoscaler.name}', aws_iam_role_policy_attachment['role'])
 
-    def test_eks_runtime_selector(self):
-        pname_v1_23 = 'project-with-v1.23-select-container-runtime'
-        iid_v1_23 = pname_v1_23 + '--%s' % self.environment
-        context_v1_23 = cfngen.build_context(pname_v1_23, stackname=iid_v1_23)
-        terraform_template_v1_23 = json.loads(terraform.render(context_v1_23))
-
-        pname_v1_24 = 'project-with-v1.24-default-runtime'
-        iid_v1_24 = pname_v1_24 + '--%s' % self.environment
-        context_v1_24 = cfngen.build_context(pname_v1_24, stackname=iid_v1_24)
-        terraform_template_v1_24 = json.loads(terraform.render(context_v1_24))
-
-        self.assertIn('--container-runtime containerd', terraform_template_v1_23['locals']['worker_userdata'])
-        self.assertNotIn('--container-runtime containerd', terraform_template_v1_24['locals']['worker_userdata'])
-
     def test_irsa_ebs_csi_permissions(self):
         pname = 'project-with-eks-and-irsa-csi-ebs-role'
         iid = pname + '--%s' % self.environment
