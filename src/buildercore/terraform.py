@@ -2,10 +2,9 @@ from collections import namedtuple, OrderedDict
 import os, re, shutil, json
 from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, TERRAFORM_BIN_PATH, PROJECT_PATH
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, lookup, updatein
-from . import aws, fastly
+from . import aws, fastly, config
 import contextlib
 import logging
 
@@ -293,13 +292,14 @@ def _open(stackname, name, extension='tf.json', mode='r'):
       ./.cfn/terraform/$stackname/$name.$extension
       ./.cfn/terraform/$stackname/$name
     """
-    terraform_directory = join(TERRAFORM_DIR, stackname)
+    terraform_directory = join(config.TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
     # "./.cfn/terraform/journal--prod/generated.tf"
     # "./.cfn/terraform/journal--prod/backend.tf"
     # "./.cfn/terraform/journal--prod/providers.tf"
-    deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
+    # lsh@2023-04-04: '.tf' was deprecated in favour of '.tf.json'
+    deprecated_path = join(config.TERRAFORM_DIR, stackname, '%s.tf' % name)
     if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
 
@@ -307,10 +307,10 @@ def _open(stackname, name, extension='tf.json', mode='r'):
         # "./.cfn/terraform/journal--prod/generated.tf.json"
         # "./.cfn/terraform/journal--prod/backend.tf.json"
         # "./.cfn/terraform/journal--prod/providers.tf.json"
-        path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
+        path = join(config.TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
     else:
         # "./.cfn/terraform/journal--prod/.terraform-version"
-        path = join(TERRAFORM_DIR, stackname, '%s' % name)
+        path = join(config.TERRAFORM_DIR, stackname, '%s' % name)
 
     # lsh@2023-03-29: behaviour changed to resemble what you'd typically expect
     # when you `with open(...) as foo:`.
@@ -796,9 +796,9 @@ def render_bigquery(context, template):
             )
         else:
             # local schema. the `schema` is relative to `PROJECT_PATH`
-            schema_path = join(PROJECT_PATH, schema)
+            schema_path = join(config.PROJECT_PATH, schema)
             schema_file = os.path.basename(schema)
-            terraform_working_dir = join(TERRAFORM_DIR, stackname)
+            terraform_working_dir = join(config.TERRAFORM_DIR, stackname)
             mkdir_p(terraform_working_dir)
             shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
             schema_ref = '${file("%s")}' % schema_file
@@ -1336,8 +1336,8 @@ def init(stackname, context):
         fp.write(context['terraform']['version'])
 
     terraform = Terraform(**{
-        'working_dir': join(TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
-        'terraform_bin_path': TERRAFORM_BIN_PATH})
+        'working_dir': join(config.TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
+        'terraform_bin_path': config.TERRAFORM_BIN_PATH})
 
     try:
         rc, stdout, _ = terraform.cmd("version")
@@ -1353,9 +1353,9 @@ def init(stackname, context):
             'terraform': {
                 'backend': {
                     's3': {
-                        'bucket': BUILDER_BUCKET,
+                        'bucket': config.BUILDER_BUCKET,
                         'key': 'terraform/%s.tfstate' % stackname,
-                        'region': BUILDER_REGION,
+                        'region': config.BUILDER_REGION,
                     },
                 },
             },
@@ -1470,7 +1470,7 @@ def update(stackname, context):
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
-    terraform_directory = join(TERRAFORM_DIR, stackname)
+    terraform_directory = join(config.TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
 @only_if_managed_services_are_present
