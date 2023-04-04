@@ -78,7 +78,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0c82829673569b124 # GENERATED created from basebox--2004
+            ami: ami-029f29d212b8ca2fa # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -1231,7 +1231,9 @@ elife-libraries:
             size: 30 # GB
     aws-alt:
         ci:
-            description: running unit tests
+            description: |
+                running unit tests.
+                running tasks that require a builder installation but can't be run on `elife-alfred--prod`.
         load:
             description: running load tests
             ec2:
@@ -2004,7 +2006,7 @@ kubernetes-aws:
         flux-prod:
             ec2: false
             eks:
-                version: '1.24'
+                version: '1.25'
                 worker:
                     type: t3.large
                     max-size: 16
@@ -2026,7 +2028,7 @@ kubernetes-aws:
         flux-test:
             ec2: false
             eks:
-                version: '1.24'
+                version: '1.25'
                 worker:
                     type: t3.large
                     max-size: 6
