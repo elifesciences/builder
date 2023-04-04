@@ -1,9 +1,8 @@
 from collections import OrderedDict
 import json
 import re
-import shutil
 import yaml
-from os.path import exists, join
+from os.path import join
 from unittest.mock import patch, MagicMock
 from unittest import TestCase
 from . import base
@@ -207,7 +206,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.environment = base.generate_environment_name()
         temp_dir, self.rm_temp_dir = utils.tempdir()
         self.reset_terraform_dir = base.set_config('TERRAFORM_DIR', temp_dir)
-        test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--%s' % self.environment)
 
     def tearDown(self):
         self.reset_author()
