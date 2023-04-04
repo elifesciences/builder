@@ -1363,7 +1363,7 @@ def init(stackname, context):
 
     providers = {'provider': [], 'data': {}}
 
-    vault_projects = ['fastly']
+    vault_projects = ['fastly', 'bigquery']
     need_vault = any(context.get(key) for key in vault_projects)
     if need_vault:
         providers['provider'].append(
@@ -1388,9 +1388,9 @@ def init(stackname, context):
         # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
         updatein(providers, path, VAULT_PATH_FASTLY, create=True)
 
-    terraform_gcp_projects = ['bigquery', 'gcs'] # 'eks' ?
-    need_gcp = any(context.get(key) for key in terraform_gcp_projects)
-    if need_gcp:
+    aws_projects = ['eks']
+    need_aws = any(context.get(key) for key in aws_projects)
+    if need_aws:
         providers['provider'].extend(
             [
                 {
@@ -1399,11 +1399,14 @@ def init(stackname, context):
                         'region': context['aws']['region'],
                     },
                 },
-                {
-                    'tls': {
-                        'version': "= %s" % context['terraform']['provider-tls']['version'],
-                    },
-                },
+            ]
+        )
+
+    gcp_projects = ['bigquery', 'gcs']
+    need_gcp = any(context.get(key) for key in gcp_projects)
+    if need_gcp:
+        providers['provider'].extend(
+            [
                 {
                     'google': {
                         'version': "= %s" % context['terraform']['provider-google']['version'],
@@ -1418,6 +1421,9 @@ def init(stackname, context):
         updatein(providers, path, VAULT_PATH_GCP, create=True)
 
     if context.get('eks'):
+        providers['provider'].append({'tls': {
+            'version': "= %s" % context['terraform']['provider-tls']['version']
+        }})
         providers['provider'].append({'kubernetes': {
             'version': "= %s" % context['terraform']['provider-eks']['version'],
             'host': '${data.aws_eks_cluster.main.endpoint}',
