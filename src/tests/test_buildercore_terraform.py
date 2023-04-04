@@ -7,8 +7,7 @@ from os.path import exists, join
 from unittest.mock import patch, MagicMock
 from unittest import TestCase
 from . import base
-from buildercore import cfngen, terraform
-
+from buildercore import cfngen, terraform, utils
 
 class TestTerraformTemplate(TestCase):
     def test_resource_creation(self):
@@ -204,16 +203,16 @@ class TestTerraformTemplate(TestCase):
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
-        # lsh@2022-08-31: unused?
-        #self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         self.reset_author = base.set_config('STACK_AUTHOR', 'my_user')
         self.environment = base.generate_environment_name()
+        temp_dir, self.rm_temp_dir = utils.tempdir()
+        self.reset_terraform_dir = base.set_config('TERRAFORM_DIR', temp_dir)
         test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--%s' % self.environment)
-        if exists(test_directory):
-            shutil.rmtree(test_directory)
 
     def tearDown(self):
         self.reset_author()
+        self.reset_terraform_dir()
+        self.rm_temp_dir()
 
     def _getProvider(self, providers_file, provider_name, provider_alias=None):
         providers_list = providers_file['provider']
