@@ -412,6 +412,7 @@ defaults:
 
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
+    aws: {}
     vagrant: {}
 
 basebox:
@@ -1214,6 +1215,7 @@ elife-dashboard:
 elife-reporting:
     description: an environment for development of 'eLife-Reporting-SQL', integrated with lax.
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
+    aws: {}
     vagrant:
         ram: 1024
         ports:
