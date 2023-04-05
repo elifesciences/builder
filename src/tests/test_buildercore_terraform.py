@@ -1375,7 +1375,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(log_sample.get('geo_city'), '42')
 
     def test_generated_template_file_storage(self):
-        contents = '{"key":"value"}'
+        contents = '{\n    "key": "value"\n}'
         stackname = 'dummy1--%s' % self.environment
         filename = terraform.write_template(stackname, contents)
         # lsh@2023-04-04: switched to a temp dir during testing
