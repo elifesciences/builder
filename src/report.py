@@ -359,3 +359,7 @@ def all_amis_to_prune():
 def ec2_node_count(stackname):
     "ec2 node count for given `stackname`."
     return len(core.ec2_data(stackname, state='pending|running|stopping|stopped'))
+
+@report
+def all_cloudformation_instances():
+    return [stack[0] for stack in core.active_aws_stacks(core.find_region())]

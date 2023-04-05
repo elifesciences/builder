@@ -113,6 +113,7 @@ TASK_LIST = [
     vault.token_revoke,
 
     report.all_projects,
+    report.all_projects_using,
     report.all_ec2_projects,
     report.all_ec2_instances,
     report.all_ec2_instances_for_salt_upgrade,
@@ -120,6 +121,7 @@ TASK_LIST = [
     report.all_rds_instances,
     report.all_lb_projects,
     report.all_cloudfront_projects,
+    report.all_cloudformation_instances,
     report.all_formulas,
     report.all_adhoc_ec2_instances,
     report.long_running_large_ec2_instances,
