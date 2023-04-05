@@ -293,7 +293,7 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_delta(self, Terraform):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
-        terraform_binary.plan.return_value = (0, 'Plan output: ...', '')
+        terraform_binary.show.return_value = (0, 'Plan output: ...', '')
         stackname = 'project-with-fastly-minimal--%s' % self.environment
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
