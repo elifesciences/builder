@@ -1424,13 +1424,21 @@ def init(stackname, context):
         providers['provider'].append({'tls': {
             'version': "= %s" % context['terraform']['provider-tls']['version']
         }})
-        providers['provider'].append({'kubernetes': {
+        kubernetes_provider = {
             'version': "= %s" % context['terraform']['provider-eks']['version'],
             'host': '${data.aws_eks_cluster.main.endpoint}',
             'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
             'token': '${data.aws_eks_cluster_auth.main.token}',
-            'load_config_file': False,
-        }})
+        }
+        if context['terraform']['provider-eks']['version'].startswith('1.'):
+            provider = {'kubernetes': {
+                **kubernetes_provider,
+                'load_config_file': False,
+            }}
+        else:
+            provider = {'kubernetes': kubernetes_provider}
+
+        providers['provider'].append(provider)
         providers['data']['aws_eks_cluster'] = {
             'main': {
                 'name': '${aws_eks_cluster.main.name}',
