@@ -1327,36 +1327,6 @@ def _clean_stdout(stdout):
     return stdout
 
 def init(stackname, context):
-    # ensure tfenv knows which version of Terraform to use:
-    # - https://github.com/tfutils/tfenv#terraform-version-file
-    with _open(stackname, '.terraform-version', extension=None, mode='w') as fp:
-        fp.write(context['terraform']['version'])
-
-    terraform = Terraform(**{
-        'working_dir': join(config.TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
-        'terraform_bin_path': config.TERRAFORM_BIN_PATH})
-
-    try:
-        rc, stdout, _ = terraform.cmd("version")
-        ensure(rc == 0, "failed to query terraform for it's version.")
-        LOG.info("\n-----------\n" + stdout + "---------")
-    except ValueError:
-        # "ValueError: not enough values to unpack (expected 3, got 0)"
-        # we're probably testing and the Terraform object has been mocked.
-        pass
-
-    with _open(stackname, 'backend', mode='w') as fp:
-        fp.write(json.dumps({
-            'terraform': {
-                'backend': {
-                    's3': {
-                        'bucket': config.BUILDER_BUCKET,
-                        'key': 'terraform/%s.tfstate' % stackname,
-                        'region': config.BUILDER_REGION,
-                    },
-                },
-            },
-        }))
 
     # Terraform prunes unused providers when running but conditionally adding them
     # here simplifies the `.cfn/terraform/$stackname/` files and any Terraform upgrades.
@@ -1454,8 +1424,64 @@ def init(stackname, context):
             },
         }
 
+    backend = {
+        'terraform': {
+            # 'required_providers': {
+            #    'fastly': {
+            #        'source': 'fastly/fastly',
+            #    }
+            # },
+            'backend': {
+                's3': {
+                    'bucket': config.BUILDER_BUCKET,
+                    'key': 'terraform/%s.tfstate' % stackname,
+                    'region': config.BUILDER_REGION,
+                },
+            },
+        },
+    }
+
+    # 0.11.x => 0.13 transformations
+    if context['terraform']['version'] == '0.13.7':
+        # 'providers' now relies on a 'required_providers' block under 'terraform'
+        # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
+        def provider_to_required_provider(provider_dict):
+            provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
+            # I regret not going with terraform.providers.foo now :(
+            provider_context_key = "provider-" + provider_name # "provider-aws"
+            default_source = 'hashicorp/' + provider_name # "hashicorp/aws"
+            source = context['terraform'][provider_context_key].get('source', default_source)
+            return (provider_name, {'source': source,
+                                    # TODO: can we/should we exclude 'version' from 'providers' now?
+                                    'version': provider_dict[provider_name]['version']})
+        required_providers = dict(map(provider_to_required_provider, providers['provider']))
+        backend['terraform']['required_providers'] = required_providers
+
+    # ---
+
+    # ensure tfenv knows which version of Terraform to use:
+    # - https://github.com/tfutils/tfenv#terraform-version-file
+    with _open(stackname, '.terraform-version', extension=None, mode='w') as fp:
+        fp.write(context['terraform']['version'])
+
+    terraform = Terraform(**{
+        'working_dir': join(config.TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
+        'terraform_bin_path': config.TERRAFORM_BIN_PATH})
+
+    try:
+        rc, stdout, _ = terraform.cmd("version")
+        ensure(rc == 0, "failed to query terraform for it's version.")
+        LOG.info("\n-----------\n" + stdout + "---------")
+    except ValueError:
+        # "ValueError: not enough values to unpack (expected 3, got 0)"
+        # we're probably testing and the Terraform object has been mocked.
+        pass
+
+    with _open(stackname, 'backend', mode='w') as fp:
+        fp.write(json.dumps(backend, indent=4))
+
     with _open(stackname, 'providers', mode='w') as fp:
-        fp.write(json.dumps(providers, indent=2))
+        fp.write(json.dumps(providers, indent=4))
 
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
