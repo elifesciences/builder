@@ -1265,9 +1265,10 @@ class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
 def write_template(stackname, contents):
     "optionally, store a terraform configuration file for the stack"
     # if the template isn't empty ...?
-    if json.loads(contents):
+    json_contents = json.loads(contents)
+    if json_contents:
         with _open(stackname, 'generated', mode='w') as fp:
-            fp.write(contents)
+            fp.write(json.dumps(json_contents, indent=4))
             return fp.name
 
 def read_template(stackname):
