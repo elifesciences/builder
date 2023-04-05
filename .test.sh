@@ -26,6 +26,8 @@ elif ! $integration_tests; then
     ./patched_pytest \
         -vv \
         --cov-config=.coveragerc --cov-report= --cov=src \
+        --capture=sys \
+        --show-capture=all \
         src/tests/
 
     echo "Checking coverage report"

@@ -4,7 +4,23 @@ defaults:
         # distinguishes this data from other types and versions of configuration data
         type: project
         version: 1
-    salt: '3003' # the version of salt these project use
+    salt: "3003" # the version of Salt to install on ec2 instances
+    terraform:
+        # the version of Terraform this project requires
+        version: "0.11.15" # next version is "0.13.7" see `install-terraform.sh`
+        # the version of Terraform providers (plugins) required.
+        provider-aws: 
+            version: "2.28.0"
+        provider-tls:
+            version: "2.2"
+        provider-fastly:
+            version: "0.9.0" # '0.26.0' last version to support terraform 0.11.x
+        provider-vault:
+            version: "1.3" # # '1.9.0' last version to support terraform 0.11.x
+        provider-google:
+            version: "1.20.0"
+        provider-eks:
+            version: "1.5.2"
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -572,6 +588,8 @@ journal:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
+    terraform:
+        version: "0.13.7"
     aws:
         ec2:
             ports:
@@ -1980,6 +1998,8 @@ kubernetes-aws:
     description: project managing an EKS cluster
     domain: False
     intdomain: False
+    terraform:
+        version: "0.13.7"
     aws:
         ec2: false
     aws-alt:

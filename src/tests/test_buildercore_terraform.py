@@ -1,14 +1,13 @@
+import os
 from collections import OrderedDict
 import json
 import re
-import shutil
 import yaml
-from os.path import exists, join
+from os.path import join
 from unittest.mock import patch, MagicMock
 from unittest import TestCase
 from . import base
-from buildercore import cfngen, terraform
-
+from buildercore import cfngen, terraform, utils
 
 class TestTerraformTemplate(TestCase):
     def test_resource_creation(self):
@@ -204,16 +203,17 @@ class TestTerraformTemplate(TestCase):
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
-        # lsh@2022-08-31: unused?
-        #self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         self.reset_author = base.set_config('STACK_AUTHOR', 'my_user')
         self.environment = base.generate_environment_name()
-        test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--%s' % self.environment)
-        if exists(test_directory):
-            shutil.rmtree(test_directory)
+        self.temp_dir, self.rm_temp_dir = utils.tempdir()
+        self.reset_terraform_dir = base.set_config('TERRAFORM_DIR', self.temp_dir)
 
     def tearDown(self):
         self.reset_author()
+        self.reset_terraform_dir()
+        self.rm_temp_dir()
+
+    # --- utils
 
     def _getProvider(self, providers_file, provider_name, provider_alias=None):
         providers_list = providers_file['provider']
@@ -224,6 +224,35 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertGreater(len(matching_providers), 0, "%s not found in %s" % (provider_name, providers_list))
         return matching_providers[0][provider_name]
 
+    def _parse_template(self, terraform_template):
+        """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
+        https://stackoverflow.com/a/16373377/91590"""
+        return yaml.safe_load(terraform_template)
+
+    def _load_terraform_file(self, stackname, filename):
+        with open(join(self.temp_dir, stackname, '%s.tf.json' % filename), 'r') as fp:
+            return self._parse_template(fp.read())
+
+    # ---
+
+    def test__open(self):
+        """_open creates a directory for terraform files to be written,
+        returns a handle to a terraform file within that directory,
+        and can optionally not use the terraform extensions."""
+        stackname = "foo--" + self.environment
+        filename = "somefile"
+        expected_file = join(self.temp_dir, stackname, filename) + ".tf.json"
+        with terraform._open(stackname, filename, mode="w") as fh:
+            fh.write("baz")
+        self.assertTrue(os.path.exists(expected_file))
+        self.assertEqual(open(expected_file, "r").read(), "baz")
+
+        expected_file_2 = join(self.temp_dir, stackname, filename) # + ".tf.json"
+        with terraform._open(stackname, filename, extension=None, mode="w") as fh:
+            fh.write("boo")
+        self.assertTrue(os.path.exists(expected_file_2))
+        self.assertEqual(open(expected_file_2, "r").read(), "boo")
+
     @patch('buildercore.terraform.Terraform')
     def test_init_providers(self, Terraform):
         terraform_binary = MagicMock()
@@ -231,6 +260,12 @@ class TestBuildercoreTerraform(base.BaseCase):
         stackname = 'project-with-fastly-minimal--%s' % self.environment
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
+
+        # ensure tfenv file created
+        tfenv_file = join(self.temp_dir, stackname, ".terraform-version")
+        self.assertTrue(os.path.exists(tfenv_file))
+        self.assertEqual(open(tfenv_file, "r").read(), context['terraform']['version'])
+
         terraform_binary.init.assert_called_once()
         for configuration in self._load_terraform_file(stackname, 'providers').get('provider'):
             self.assertIn('version', list(configuration.values())[0])
@@ -1341,15 +1376,10 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     def test_generated_template_file_storage(self):
         contents = '{"key":"value"}'
-        filename = terraform.write_template('dummy1--%s' % self.environment, contents)
-        self.assertEqual(filename, '.cfn/terraform/dummy1--%s/generated.tf.json' % self.environment)
-        self.assertEqual(terraform.read_template('dummy1--%s' % self.environment), contents)
-
-    def _parse_template(self, terraform_template):
-        """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
-        https://stackoverflow.com/a/16373377/91590"""
-        return yaml.safe_load(terraform_template)
-
-    def _load_terraform_file(self, stackname, filename):
-        with open(join(terraform.TERRAFORM_DIR, stackname, '%s.tf.json' % filename), 'r') as fp:
-            return self._parse_template(fp.read())
+        stackname = 'dummy1--%s' % self.environment
+        filename = terraform.write_template(stackname, contents)
+        # lsh@2023-04-04: switched to a temp dir during testing
+        # expected_filename = '.cfn/terraform/%s/generated.tf.json' % stackname)
+        expected_filename = join(self.temp_dir, stackname, "generated.tf.json")
+        self.assertEqual(filename, expected_filename)
+        self.assertEqual(terraform.read_template(stackname), contents)

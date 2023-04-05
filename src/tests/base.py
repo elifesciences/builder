@@ -18,7 +18,14 @@ LOG = logging.getLogger(__name__)
 
 def set_config(key, value):
     """modify configuration values in `buildercore/config.py`.
-    returns a cleanup function to call in `tearDown` that will reset the value."""
+    returns a cleanup function to call in `tearDown` that will reset the value.
+    IMPORTANT! modules have to do:
+      `import config`
+    and then:
+      `config.SOME_VAR`
+    and not:
+      `from config import SOME_VAR`
+    or this magic won't work."""
     old_value = getattr(config, key, None)
     setattr(config, key, value)
     return lambda: setattr(config, key, old_value)

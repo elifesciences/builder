@@ -2,19 +2,18 @@ from collections import namedtuple, OrderedDict
 import os, re, shutil, json
 from os.path import join
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .config import BUILDER_BUCKET, BUILDER_REGION, TERRAFORM_DIR, PROJECT_PATH
 from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, lookup
-from . import aws, fastly
+from .utils import ensure, mkdir_p, lookup, updatein
+from . import aws, fastly, config
+import contextlib
+import logging
+
+LOG = logging.getLogger(__name__)
 
 MANAGED_SERVICES = ['fastly', 'gcs', 'bigquery', 'eks']
 only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
-PROVIDER_AWS_VERSION = '2.28.0'
-PROVIDER_TLS_VERSION = '2.2'
-PROVIDER_FASTLY_VERSION = '0.9.0' # '0.26.0' last for terraform 0.11.x
-PROVIDER_VAULT_VERSION = '1.3' # '1.9.0' last for terraform 0.11.x
 
 RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
@@ -286,23 +285,39 @@ FASTLY_MAIN_VCL_KEY = 'main'
 
 # utils
 
+@contextlib.contextmanager
 def _open(stackname, name, extension='tf.json', mode='r'):
-    "`open`s a file in the `conf.TERRAFORM_DIR` belonging to given `stackname` (./.cfn/terraform/$stackname/)"
-    terraform_directory = join(TERRAFORM_DIR, stackname)
+    """opens a file `name` in the `conf.TERRAFORM_DIR` belonging to given `stackname`.
+    for example:
+      ./.cfn/terraform/$stackname/$name.$extension
+      ./.cfn/terraform/$stackname/$name
+    """
+    terraform_directory = join(config.TERRAFORM_DIR, stackname)
     mkdir_p(terraform_directory)
 
-    # "./.cfn/journal--prod/generated.tf"
-    # "./.cfn/journal--prod/backend.tf"
-    # "./.cfn/journal--prod/providers.tf"
-    deprecated_path = join(TERRAFORM_DIR, stackname, '%s.tf' % name)
+    # "./.cfn/terraform/journal--prod/generated.tf"
+    # "./.cfn/terraform/journal--prod/backend.tf"
+    # "./.cfn/terraform/journal--prod/providers.tf"
+    # lsh@2023-04-04: '.tf' was deprecated in favour of '.tf.json'
+    deprecated_path = join(config.TERRAFORM_DIR, stackname, '%s.tf' % name)
     if os.path.exists(deprecated_path):
         os.remove(deprecated_path)
 
-    # "./.cfn/journal--prod/generated.tf.json"
-    # "./.cfn/journal--prod/backend.tf.json"
-    # "./.cfn/journal--prod/providers.tf.json"
-    path = join(TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
-    return open(path, mode)
+    if extension:
+        # "./.cfn/terraform/journal--prod/generated.tf.json"
+        # "./.cfn/terraform/journal--prod/backend.tf.json"
+        # "./.cfn/terraform/journal--prod/providers.tf.json"
+        path = join(config.TERRAFORM_DIR, stackname, '%s.%s' % (name, extension))
+    else:
+        # "./.cfn/terraform/journal--prod/.terraform-version"
+        path = join(config.TERRAFORM_DIR, stackname, '%s' % name)
+
+    # lsh@2023-03-29: behaviour changed to resemble what you'd typically expect
+    # when you `with open(...) as foo:`.
+    # there haven't been any problems with files not being closed as far as I can tell.
+    # return open(path, mode)
+    with open(path, mode) as fh:
+        yield fh
 
 # fastly
 
@@ -781,9 +796,9 @@ def render_bigquery(context, template):
             )
         else:
             # local schema. the `schema` is relative to `PROJECT_PATH`
-            schema_path = join(PROJECT_PATH, schema)
+            schema_path = join(config.PROJECT_PATH, schema)
             schema_file = os.path.basename(schema)
-            terraform_working_dir = join(TERRAFORM_DIR, stackname)
+            terraform_working_dir = join(config.TERRAFORM_DIR, stackname)
             mkdir_p(terraform_working_dir)
             shutil.copyfile(schema_path, join(terraform_working_dir, schema_file))
             schema_ref = '${file("%s")}' % schema_file
@@ -1312,104 +1327,136 @@ def _clean_stdout(stdout):
     return stdout
 
 def init(stackname, context):
-    working_dir = join(TERRAFORM_DIR, stackname) # "./.cfn/terraform/project--prod/"
-    terraform = Terraform(working_dir=working_dir)
+    # ensure tfenv knows which version of Terraform to use:
+    # - https://github.com/tfutils/tfenv#terraform-version-file
+    with _open(stackname, '.terraform-version', extension=None, mode='w') as fp:
+        fp.write(context['terraform']['version'])
+
+    terraform = Terraform(**{
+        'working_dir': join(config.TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
+        'terraform_bin_path': config.TERRAFORM_BIN_PATH})
+
+    try:
+        rc, stdout, _ = terraform.cmd("version")
+        ensure(rc == 0, "failed to query terraform for it's version.")
+        LOG.info("\n-----------\n" + stdout + "---------")
+    except ValueError:
+        # "ValueError: not enough values to unpack (expected 3, got 0)"
+        # we're probably testing and the Terraform object has been mocked.
+        pass
+
     with _open(stackname, 'backend', mode='w') as fp:
         fp.write(json.dumps({
             'terraform': {
                 'backend': {
                     's3': {
-                        'bucket': BUILDER_BUCKET,
+                        'bucket': config.BUILDER_BUCKET,
                         'key': 'terraform/%s.tfstate' % stackname,
-                        'region': BUILDER_REGION,
+                        'region': config.BUILDER_REGION,
                     },
                 },
             },
         }))
-    with _open(stackname, 'providers', mode='w') as fp:
-        # TODO: possibly remove unused providers
-        # Terraform already prunes them when running, but would
-        # simplify the .cfn/terraform/$stackname/ files
-        # TODO: use TerraformTemplate?
-        providers = {
-            'provider': [
-                {
-                    'fastly': {
-                        # exact version constraint
-                        'version': "= %s" % PROVIDER_FASTLY_VERSION,
-                        'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
-                    },
+
+    # Terraform prunes unused providers when running but conditionally adding them
+    # here simplifies the `.cfn/terraform/$stackname/` files and any Terraform upgrades.
+
+    providers = {'provider': [], 'data': {}}
+
+    vault_projects = ['fastly', 'bigquery']
+    need_vault = any(context.get(key) for key in vault_projects)
+    if need_vault:
+        providers['provider'].append(
+            {
+                'vault': {
+                    'address': context['vault']['address'],
+                    # exact version constraint
+                    'version': "= %s" % context['terraform']['provider-vault']['version'],
                 },
+            },
+        )
+
+    if context.get('fastly'):
+        providers['provider'].append({
+            'fastly': {
+                # exact version constraint
+                'version': "= %s" % context['terraform']['provider-fastly']['version'],
+                'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
+            },
+        })
+        path = f"data.{DATA_TYPE_VAULT_GENERIC_SECRET}.{DATA_NAME_VAULT_FASTLY_API_KEY}.path"
+        # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
+        updatein(providers, path, VAULT_PATH_FASTLY, create=True)
+
+    aws_projects = ['eks']
+    need_aws = any(context.get(key) for key in aws_projects)
+    if need_aws:
+        providers['provider'].extend(
+            [
                 {
                     'aws': {
-                        'version': "= %s" % PROVIDER_AWS_VERSION,
+                        'version': "= %s" % context['terraform']['provider-aws']['version'],
                         'region': context['aws']['region'],
                     },
                 },
-                {
-                    'tls': {
-                        'version': "= %s" % PROVIDER_TLS_VERSION,
-                    },
-                },
+            ]
+        )
+
+    gcp_projects = ['bigquery', 'gcs']
+    need_gcp = any(context.get(key) for key in gcp_projects)
+    if need_gcp:
+        providers['provider'].extend(
+            [
                 {
                     'google': {
-                        'version': "= %s" % '1.20.0',
+                        'version': "= %s" % context['terraform']['provider-google']['version'],
                         'region': 'us-east4',
                         'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
                     },
                 },
-                {
-                    'vault': {
-                        'address': context['vault']['address'],
-                        # exact version constraint
-                        'version': "= %s" % PROVIDER_VAULT_VERSION,
-                    },
-                },
-            ],
-            'data': {
-                DATA_TYPE_VAULT_GENERIC_SECRET: {
-                    # TODO: this should not be used unless Fastly is involved
-                    DATA_NAME_VAULT_FASTLY_API_KEY: {
-                        'path': VAULT_PATH_FASTLY,
-                    },
-                    # TODO: this should not be used unless GCP is involved
-                    DATA_NAME_VAULT_GCP_API_KEY: {
-                        'path': VAULT_PATH_GCP,
-                    },
-                },
+            ]
+        )
+        path = f"data.{DATA_TYPE_VAULT_GENERIC_SECRET}.{DATA_NAME_VAULT_GCP_API_KEY}.path"
+        # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
+        updatein(providers, path, VAULT_PATH_GCP, create=True)
+
+    if context.get('eks'):
+        providers['provider'].append({'tls': {
+            'version': "= %s" % context['terraform']['provider-tls']['version']
+        }})
+        providers['provider'].append({'kubernetes': {
+            'version': "= %s" % context['terraform']['provider-eks']['version'],
+            'host': '${data.aws_eks_cluster.main.endpoint}',
+            'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
+            'token': '${data.aws_eks_cluster_auth.main.token}',
+            'load_config_file': False,
+        }})
+        providers['data']['aws_eks_cluster'] = {
+            'main': {
+                'name': '${aws_eks_cluster.main.name}',
             },
         }
-        if context.get('eks'):
-            providers['provider'].append({'kubernetes': {
-                'version': "= %s" % '1.5.2',
-                'host': '${data.aws_eks_cluster.main.endpoint}',
-                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                'token': '${data.aws_eks_cluster_auth.main.token}',
-                'load_config_file': False,
-            }})
-            providers['data']['aws_eks_cluster'] = {
-                'main': {
-                    'name': '${aws_eks_cluster.main.name}',
-                },
-            }
-            # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
-            providers['provider'].append({
-                'aws': {
-                    'region': context['aws']['region'],
-                    'version': '= %s' % PROVIDER_AWS_VERSION,
-                    'alias': 'eks_assume_role',
-                    'assume_role': {
-                        'role_arn': '${aws_iam_role.user.arn}'
-                    }
+        # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
+        providers['provider'].append({
+            'aws': {
+                'region': context['aws']['region'],
+                'version': '= %s' % context['terraform']['provider-aws']['version'],
+                'alias': 'eks_assume_role',
+                'assume_role': {
+                    'role_arn': '${aws_iam_role.user.arn}'
                 }
-            })
-            providers['data']['aws_eks_cluster_auth'] = {
-                'main': {
-                    'provider': 'aws.eks_assume_role',
-                    'name': '${aws_eks_cluster.main.name}',
-                },
             }
+        })
+        providers['data']['aws_eks_cluster_auth'] = {
+            'main': {
+                'provider': 'aws.eks_assume_role',
+                'name': '${aws_eks_cluster.main.name}',
+            },
+        }
+
+    with _open(stackname, 'providers', mode='w') as fp:
         fp.write(json.dumps(providers, indent=2))
+
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
@@ -1426,7 +1473,7 @@ def update(stackname, context):
 def destroy(stackname, context):
     terraform = init(stackname, context)
     terraform.destroy(input=False, capture_output=False, raise_on_error=True)
-    terraform_directory = join(TERRAFORM_DIR, stackname)
+    terraform_directory = join(config.TERRAFORM_DIR, stackname)
     shutil.rmtree(terraform_directory)
 
 @only_if_managed_services_are_present

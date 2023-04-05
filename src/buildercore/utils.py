@@ -127,10 +127,14 @@ def deepmerge(into, from_here, excluding=None):
             del into[key]
 
     for key, val in from_here.items():
-        if key in into and isinstance(into[key], dict) \
-                and isinstance(val, dict):
+        if key in into and \
+           isinstance(into[key], dict) and \
+           isinstance(val, dict):
+            # matching dictionaries,
+            # recurse, passing any child-level exclusion lists down.
             deepmerge(into[key], from_here[key], child_exclude.get(key, []))
         else:
+            # mismatched types. `from_here` overwrites `key` in `into`.
             into[key] = val
 
 def errcho(x):

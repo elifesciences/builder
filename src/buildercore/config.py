@@ -66,6 +66,10 @@ CONTEXT_DIR = join(CFN_DIR, "contexts") # "./.cfn/stacks"
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
 KEYPAIR_DIR = join(CFN_DIR, "keypairs") # "./.cfn/keypairs"
+
+# lsh@2023-03-29: projects can now specify specfic versions of Terraform to use.
+# this is possible using 'tfenv': https://github.com/tfutils/tfenv
+TERRAFORM_BIN_PATH = join(PROJECT_PATH, ".tfenv", "bin", "terraform")
 # the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
 # perhaps a namechange from .cfn to .state or something later
 TERRAFORM_DIR = join(CFN_DIR, "terraform")
@@ -151,7 +155,9 @@ KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 
 # these sections *shouldn't* be merged if they *don't* exist in the project
-CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf']
+CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = [
+    'rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf'
+]
 
 ensure(isinstance(USER['project-files'], list),
        "'project-files' must be a list, not a %r. check your settings.yaml file." % type(USER['project-files']))
