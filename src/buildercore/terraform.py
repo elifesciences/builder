@@ -1070,16 +1070,27 @@ def _render_eks_workers_security_group(context, template):
 
     security_group_tags = aws.generic_tags(context)
     security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
+
+    egress = {
+        'from_port': 0,
+        'to_port': 0,
+        'protocol': '-1',
+        'cidr_blocks': ['0.0.0.0/0'],
+    }
+    if not context['terraform']['version'].startswith('0.11'):
+        egress = [{
+            **egress,
+            'description': None,
+            'ipv6_cidr_blocks': None,
+            'prefix_list_ids': None,
+            'security_groups': None,
+            'self': None,
+        }]
     template.populate_resource('aws_security_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'description': 'Security group for all worker nodes in the cluster',
         'vpc_id': context['aws']['vpc-id'],
-        'egress': {
-            'from_port': 0,
-            'to_port': 0,
-            'protocol': '-1',
-            'cidr_blocks': ['0.0.0.0/0'],
-        },
+        'egress': egress,
         'tags': security_group_tags,
     })
 
@@ -1158,16 +1169,28 @@ def _render_eks_master_role(context, template):
 def _render_eks_master_security_group(context, template):
     security_group_tags = aws.generic_tags(context)
     security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
+
+    egress = {
+        'from_port': 0,
+        'to_port': 0,
+        'protocol': '-1',
+        'cidr_blocks': ['0.0.0.0/0'],
+    }
+    if not context['terraform']['version'].startswith('0.11'):
+        egress = [{
+            **egress,
+            'description': None,
+            'ipv6_cidr_blocks': None,
+            'prefix_list_ids': None,
+            'security_groups': None,
+            'self': None,
+        }]
+
     template.populate_resource('aws_security_group', 'master', block={
         'name': '%s--master' % context['stackname'],
         'description': 'Cluster communication with worker nodes',
         'vpc_id': context['aws']['vpc-id'],
-        'egress': {
-            'from_port': 0,
-            'to_port': 0,
-            'protocol': '-1',
-            'cidr_blocks': ['0.0.0.0/0'],
-        },
+        'egress': egress,
         'tags': security_group_tags,
     })
 
