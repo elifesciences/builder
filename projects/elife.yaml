@@ -2009,8 +2009,8 @@ kubernetes-aws:
                 version: '1.25'
                 worker:
                     type: t3.large
-                    max-size: 16
-                    desired-capacity: 15
+                    max-size: 18
+                    desired-capacity: 16
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
