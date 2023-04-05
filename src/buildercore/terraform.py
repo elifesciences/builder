@@ -1312,7 +1312,7 @@ def plan(context):
         return 'out.plan'
 
     def _explain_plan(plan_filename):
-        return_code, stdout, stderr = terraform.show(plan_filename, no_color=IsFlagged)
+        return_code, stdout, stderr = terraform.show(plan_filename, input=False, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
         ensure(return_code == 0, "Exit code of `terraform show out.plan` should be 0, not %s" % return_code)
         # TODO: may not be empty if TF_LOG is used
         ensure(stderr == '', "Stderr of `terraform show out.plan` should be empty:\n%s" % stderr)
