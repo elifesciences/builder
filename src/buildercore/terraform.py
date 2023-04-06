@@ -1393,6 +1393,22 @@ def init(stackname, context):
                 'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
             },
         })
+        # transitional code. cdn resource needs to have been removed prior to terraform upgrade, see:
+        # - https://registry.terraform.io/providers/fastly/fastly/latest/docs/guides/1.0.0
+        # when terraform is upgraded a fastly/fastly provider should be added alongside the hashicorp provider.
+        # this will let us regenerate without errors.
+        # we then import the old resource (that was deleted) under it's new name.
+        # once we have an upgrade plan, replace 'provider-fastly' (hashicorp) with 'provider-fastly-fastly' and rename it 'provider-fastly'
+        if context['terraform']['version'] == '0.13.7' and \
+           'provider-fastly-fastly' in context['terraform']:
+            providers['provider'].append({
+                'fastly-fastly': {
+                    # exact version constraint
+                    'version': "= %s" % context['terraform']['provider-fastly-fastly']['version'],
+                    'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
+                },
+            })
+
         path = f"data.{DATA_TYPE_VAULT_GENERIC_SECRET}.{DATA_NAME_VAULT_FASTLY_API_KEY}.path"
         # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
         updatein(providers, path, VAULT_PATH_FASTLY, create=True)

@@ -530,6 +530,13 @@ api-gateway:
             source: fastly/fastly
             # https://github.com/fastly/terraform-provider-fastly/blob/main/CHANGELOG.md#114-april-28-2022
             version: "1.1.4"
+        # part of the upgrade involves transitioning from hashicorp/fastly to fastly/fastly
+        #provider-fastly-fastly:
+        #    source: fastly/fastly
+        #    version: "1.1.4"
+        #provider-fastly:
+        #    source: "-/fastly"
+        #    version: "0.9.0" # '0.26.0' last version to support terraform 0.11.x
         provider-vault:
             version: "3.14.0" # # '1.9.0' last version to support terraform 0.11.x
         provider-google:
