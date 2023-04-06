@@ -1487,14 +1487,14 @@ def init(stackname, context):
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
-def update_template(stackname):
-    context = load_context(stackname)
-    update(stackname, context)
-
 @only_if_managed_services_are_present
 def update(stackname, context):
     terraform = init(stackname, context)
-    terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
+    terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True, var=None)
+
+def update_template(stackname):
+    context = load_context(stackname)
+    update(stackname, context)
 
 @only_if_managed_services_are_present
 def destroy(stackname, context):
