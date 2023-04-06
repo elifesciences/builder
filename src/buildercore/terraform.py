@@ -68,7 +68,32 @@ FASTLY_LOG_FORMAT = """{
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
 
-FASTLY_LOG_FORMAT_ESCAPED = FASTLY_LOG_FORMAT.replace('%', '%%')
+# breaks 'timestamp' and 'response_status'
+#FASTLY_LOG_FORMAT_ESCAPED = FASTLY_LOG_FORMAT.replace('%', '%%')
+FASTLY_LOG_FORMAT_ESCAPED = """{
+  "timestamp":"%%{begin:%Y-%m-%dT%H:%M:%S}t",
+  "time_elapsed":%%{time.elapsed.usec}V,
+  "object_hits": %%{obj.hits}V,
+  "object_lastuse": "%%{obj.lastuse}V",
+  "is_tls":%%{if(req.is_ssl, "true", "false")}V,
+  "client_ip":"%%{req.http.Fastly-Client-IP}V",
+  "forwarded_for": "%%{req.http.X-Forwarded-For}V",
+  "geo_city":"%%{client.geo.city}V",
+  "geo_country_code":"%%{client.geo.country_code}V",
+  "pop_datacenter": "%%{server.datacenter}V",
+  "pop_region": "%%{server.region}V",
+  "request":"%%{req.request}V",
+  "original_host":"%%{req.http.X-Forwarded-Host}V",
+  "host":"%%{req.http.Host}V",
+  "url":"%%{cstr_escape(req.url)}V",
+  "request_referer":"%%{cstr_escape(req.http.Referer)}V",
+  "request_user_agent":"%%{cstr_escape(req.http.User-Agent)}V",
+  "request_accept":"%%{cstr_escape(req.http.Accept)}V",
+  "request_accept_language":"%%{cstr_escape(req.http.Accept-Language)}V",
+  "request_accept_charset":"%%{cstr_escape(req.http.Accept-Charset)}V",
+  "response_status": "%>s",
+  "cache_status":"%%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
+}"""
 
 IRSA_POLICY_TEMPLATES = {
     "kubernetes-autoscaler": lambda stackname, accountid: {
@@ -1541,15 +1566,15 @@ def init(stackname, context):
     terraform.init(input=False, capture_output=False, raise_on_error=True)
     return terraform
 
-def update_template(stackname):
-    context = load_context(stackname)
-    update(stackname, context)
-
 @only_if_managed_services_are_present
 def update(stackname, context):
     terraform = init(stackname, context)
-    terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True)
+    terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True, var=None)
 
+def update_template(stackname):
+    context = load_context(stackname)
+    update(stackname, context)
+    
 @only_if_managed_services_are_present
 def destroy(stackname, context):
     terraform = init(stackname, context)
