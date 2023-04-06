@@ -1574,7 +1574,7 @@ def update(stackname, context):
 def update_template(stackname):
     context = load_context(stackname)
     update(stackname, context)
-    
+
 @only_if_managed_services_are_present
 def destroy(stackname, context):
     terraform = init(stackname, context)
