@@ -1569,6 +1569,8 @@ def init(stackname, context):
 @only_if_managed_services_are_present
 def update(stackname, context):
     terraform = init(stackname, context)
+    # lsh@2023-04-06: `var=None` to fix known bug in `python-terraform` with versions of terraform >0.11
+    # - https://github.com/beelit94/python-terraform/issues/67
     terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True, var=None)
 
 def update_template(stackname):
