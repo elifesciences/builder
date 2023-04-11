@@ -15,7 +15,6 @@ only_if_managed_services_are_present = only_if(*MANAGED_SERVICES)
 
 EMPTY_TEMPLATE = '{}'
 
-RESOURCE_TYPE_FASTLY = 'fastly_service_v1'
 RESOURCE_NAME_FASTLY = 'fastly-cdn'
 
 DATA_TYPE_VAULT_GENERIC_SECRET = 'vault_generic_secret'
@@ -67,6 +66,33 @@ FASTLY_LOG_FORMAT = """{
   "request_accept_charset":"%{cstr_escape(req.http.Accept-Charset)}V",
   "response_status": "%>s",
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
+}"""
+
+# required by Terraform versions >0.11
+# TODO: replace `FASTLY_LOG_FORMAT` once upgraded to Terraform 0.13+
+FASTLY_LOG_FORMAT_ESCAPED = """{
+  "timestamp":"%%{begin:%Y-%m-%dT%H:%M:%S}t",
+  "time_elapsed":%%{time.elapsed.usec}V,
+  "object_hits": %%{obj.hits}V,
+  "object_lastuse": "%%{obj.lastuse}V",
+  "is_tls":%%{if(req.is_ssl, "true", "false")}V,
+  "client_ip":"%%{req.http.Fastly-Client-IP}V",
+  "forwarded_for": "%%{req.http.X-Forwarded-For}V",
+  "geo_city":"%%{client.geo.city}V",
+  "geo_country_code":"%%{client.geo.country_code}V",
+  "pop_datacenter": "%%{server.datacenter}V",
+  "pop_region": "%%{server.region}V",
+  "request":"%%{req.request}V",
+  "original_host":"%%{req.http.X-Forwarded-Host}V",
+  "host":"%%{req.http.Host}V",
+  "url":"%%{cstr_escape(req.url)}V",
+  "request_referer":"%%{cstr_escape(req.http.Referer)}V",
+  "request_user_agent":"%%{cstr_escape(req.http.User-Agent)}V",
+  "request_accept":"%%{cstr_escape(req.http.Accept)}V",
+  "request_accept_language":"%%{cstr_escape(req.http.Accept-Language)}V",
+  "request_accept_charset":"%%{cstr_escape(req.http.Accept-Charset)}V",
+  "response_status": "%>s",
+  "cache_status":"%%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
 
 IRSA_POLICY_TEMPLATES = {
@@ -259,13 +285,18 @@ IRSA_POLICY_TEMPLATES = {
 # Fastly proprietary evolutions of the standard Apache log format
 # https://docs.fastly.com/guides/streaming-logs/custom-log-formats#advantages-of-using-the-version-2-custom-log-format
 # It's in the API:
-# https://docs.fastly.com/api/logging#logging_gcs
+# - https://docs.fastly.com/api/logging#logging_gcs
 # Not supported yet by Terraform however:
-# https://www.terraform.io/docs/providers/fastly/r/service_v1.html#name-12
-# FASTLY_LOG_FORMAT_VERSION = 2
+# - https://www.terraform.io/docs/providers/fastly/r/service_v1.html#name-12
+#FASTLY_LOG_FORMAT_VERSION = 2
 
-# what to prefix lines with, syslog heritage
-# see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
+# lsh@2023-04-05: default in `fastly/fastly` provider 1.0.0+ is now format version 2.
+# this only affects logging to a bucket (gcslogging) and not logging to a database (bigquery),
+# and is only set in Terraform versions >0.13
+FASTLY_LOG_FORMAT_VERSION = 2
+
+# what to prefix lines with, syslog heritage:
+# - https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
 # keeps different logging configurations unique in the syslog implementation
@@ -440,6 +471,10 @@ def _fastly_backend(hostname, name, request_condition=None, shield=None):
         'ssl_cert_hostname': hostname,
         'ssl_sni_hostname': hostname,
         'ssl_check_cert': True,
+        # 2023-04-11: "pre-1.0.0, the terraform provider set `auto_loadbalance` to true by default,
+        # which was inconsistent [with the web UI] and often unexpected. The default is now false."
+        # - https://registry.terraform.io/providers/fastly/fastly/latest/docs/guides/1.0.0
+        'auto_loadbalance': True
     }
     if request_condition:
         backend_resource['request_condition'] = request_condition
@@ -462,6 +497,12 @@ def _fastly_request_setting(override):
 def render_fastly(context, template):
     if not context['fastly']:
         return {}
+
+    resource_type_fastly = 'fastly_service_v1'
+
+    # TODO: integrate section after Fastly projects updated to Terraform 0.13
+    if context['terraform']['version'] == '0.13.7':
+        resource_type_fastly = 'fastly_service_vcl'
 
     backends = []
     conditions = []
@@ -509,7 +550,7 @@ def render_fastly(context, template):
         ))
 
     template.populate_resource(
-        RESOURCE_TYPE_FASTLY,
+        resource_type_fastly,
         RESOURCE_NAME_FASTLY,
         block={
             'name': context['stackname'],
@@ -533,7 +574,7 @@ def render_fastly(context, template):
     # https://registry.terraform.io/providers/fastly/fastly/latest/docs/resources/service_v1#nested-schema-for-healthcheck
     if context['fastly']['healthcheck']:
         template.populate_resource(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'healthcheck',
             block={
@@ -551,7 +592,7 @@ def render_fastly(context, template):
                 'threshold': 2, # default is 3
             }
         )
-        for b in template.resource[RESOURCE_TYPE_FASTLY][RESOURCE_NAME_FASTLY]['backend']:
+        for b in template.resource[resource_type_fastly][RESOURCE_NAME_FASTLY]['backend']:
             b['healthcheck'] = 'default'
 
     _render_fastly_vcl_templates(context, template, vcl_templated_snippets)
@@ -559,23 +600,36 @@ def render_fastly(context, template):
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
+        resource_type_gcslogging = 'gcslogging'
+        gcslogging = {
+            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
+            'bucket_name': gcslogging['bucket'],
+            # TODO: validate it starts with /
+            'path': gcslogging['path'],
+            'period': gcslogging.get('period', 3600),
+            'format': FASTLY_LOG_FORMAT,
+            # not supported yet
+            # 'format_version': FASTLY_LOG_FORMAT_VERSION,
+            'message_type': FASTLY_LOG_LINE_PREFIX,
+            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+        }
+        # TODO: integrate section after Fastly projects updated to Terraform 0.13
+        if context['terraform']['version'] == '0.13.7':
+            resource_type_gcslogging = 'logging_gcs'
+            # "The Fastly API was updated with a new `user` field to replace `email`."
+            # "user, string, Your Google Cloud Platform service account email address.
+            #  The client_email field in your service account authentication JSON. Not required if account_name is specified."
+            del gcslogging['email']
+            gcslogging['user'] = "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING)
+            gcslogging['format'] = FASTLY_LOG_FORMAT_ESCAPED
+            gcslogging['format_version'] = FASTLY_LOG_FORMAT_VERSION
+
         template.populate_resource(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
-            'gcslogging',
-            block={
-                'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
-                'bucket_name': gcslogging['bucket'],
-                # TODO: validate it starts with /
-                'path': gcslogging['path'],
-                'period': gcslogging.get('period', 3600),
-                'format': FASTLY_LOG_FORMAT,
-                # not supported yet
-                # 'format_version': FASTLY_LOG_FORMAT_VERSION,
-                'message_type': FASTLY_LOG_LINE_PREFIX,
-                'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-                'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
-            }
+            resource_type_gcslogging,
+            block=gcslogging
         )
         template.populate_data(
             DATA_TYPE_VAULT_GENERIC_SECRET,
@@ -587,19 +641,26 @@ def render_fastly(context, template):
 
     if context['fastly']['bigquerylogging']:
         bigquerylogging = context['fastly']['bigquerylogging']
+        resource_type_bigquerylogging = 'bigquerylogging'
+        bigquery_logging = {
+            'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
+            'project_id': bigquerylogging['project'],
+            'dataset': bigquerylogging['dataset'],
+            'table': bigquerylogging['table'],
+            'format': FASTLY_LOG_FORMAT,
+            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+            'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
+        }
+        # TODO: integrate section after Fastly projects updated to Terraform 0.13
+        if context['terraform']['version'] == '0.13.7':
+            resource_type_bigquerylogging = 'logging_bigquery'
+            bigquery_logging['format'] = FASTLY_LOG_FORMAT_ESCAPED
+
         template.populate_resource(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
-            'bigquerylogging',
-            block={
-                'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
-                'project_id': bigquerylogging['project'],
-                'dataset': bigquerylogging['dataset'],
-                'table': bigquerylogging['table'],
-                'format': FASTLY_LOG_FORMAT,
-                'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
-                'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
-            }
+            resource_type_bigquerylogging,
+            block=bigquery_logging
         )
         template.populate_data(
             DATA_TYPE_VAULT_GENERIC_SECRET,
@@ -628,7 +689,7 @@ def render_fastly(context, template):
         }
 
         template.populate_resource_element(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'acl',
             block=ip_blacklist_acl,
@@ -637,7 +698,7 @@ def render_fastly(context, template):
         conditions.append(ip_blacklist_condition)
 
         template.populate_resource_element(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'response_object',
             block=ip_blacklist_response_object,
@@ -646,7 +707,7 @@ def render_fastly(context, template):
     if vcl_constant_snippets or vcl_templated_snippets:
         # constant snippets
         [template.populate_resource_element(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'vcl',
             {
@@ -656,7 +717,7 @@ def render_fastly(context, template):
 
         # templated snippets
         [template.populate_resource_element(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'vcl',
             {
@@ -672,7 +733,7 @@ def render_fastly(context, template):
             linked_main_vcl = i.insert_include(linked_main_vcl)
 
         template.populate_resource_element(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'vcl',
             block={
@@ -713,7 +774,7 @@ def render_fastly(context, template):
 
     if conditions:
         template.populate_resource(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'condition',
             block=conditions
@@ -721,7 +782,7 @@ def render_fastly(context, template):
 
     if headers:
         template.populate_resource(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'header',
             block=headers
@@ -729,7 +790,7 @@ def render_fastly(context, template):
 
     if request_settings:
         template.populate_resource(
-            RESOURCE_TYPE_FASTLY,
+            resource_type_fastly,
             RESOURCE_NAME_FASTLY,
             'request_setting',
             block=request_settings
@@ -1443,14 +1504,14 @@ def init(stackname, context):
     }
 
     # 0.11.x => 0.13 transformations
+    # TODO: integrate section after Fastly projects updated to Terraform 0.13
     if context['terraform']['version'] == '0.13.7':
         # 'providers' now relies on a 'required_providers' block under 'terraform'
         # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
         def provider_to_required_provider(provider_dict):
             provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
-            # I regret not going with terraform.providers.foo now :(
             provider_context_key = "provider-" + provider_name # "provider-aws"
-            default_source = 'hashicorp/' + provider_name # "hashicorp/aws"
+            default_source = '-/' + provider_name # "-/aws", "-/vault"
             source = context['terraform'][provider_context_key].get('source', default_source)
             return (provider_name, {'source': source,
                                     # TODO: can we/should we exclude 'version' from 'providers' now?
@@ -1471,7 +1532,7 @@ def init(stackname, context):
 
     try:
         rc, stdout, _ = terraform.cmd("version")
-        ensure(rc == 0, "failed to query terraform for it's version.")
+        ensure(rc == 0, "failed to query Terraform for it's version.")
         LOG.info("\n-----------\n" + stdout + "---------")
     except ValueError:
         # "ValueError: not enough values to unpack (expected 3, got 0)"

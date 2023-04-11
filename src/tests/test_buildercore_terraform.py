@@ -319,6 +319,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             }],
                             'backend': [{
                                 'address': '%s--www.example.org' % self.environment,
+                                'auto_loadbalance': True,
                                 'name': 'project-with-fastly-minimal--%s' % self.environment,
                                 'port': 443,
                                 'use_ssl': True,
@@ -439,6 +440,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'backend': [
                                 {
                                     'address': 'default.example.org',
+                                    'auto_loadbalance': True,
                                     'name': 'default',
                                     'port': 443,
                                     'use_ssl': True,
@@ -449,6 +451,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles',
                                     'port': 443,
                                     'use_ssl': True,
@@ -461,6 +464,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special2.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles2',
                                     'port': 443,
                                     'use_ssl': True,
@@ -473,6 +477,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special3.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles3',
                                     'port': 443,
                                     'use_ssl': True,
