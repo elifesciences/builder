@@ -1508,8 +1508,10 @@ def init(stackname, context):
         def provider_to_required_provider(provider_dict):
             provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
             provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
-            default_source = '-/' + provider_name # "-/aws", "-/vault"
-            source = context['terraform'][provider_context_key].get('source', default_source)
+            source = context['terraform'][provider_context_key].get('source')
+            if not source:
+                return (provider_name, {'version': provider_dict[provider_name]['version']})
+
             return (provider_name, {'source': source,
                                     # TODO: can we/should we exclude 'version' from 'providers' now?
                                     'version': provider_dict[provider_name]['version']})
