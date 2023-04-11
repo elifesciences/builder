@@ -68,8 +68,8 @@ FASTLY_LOG_FORMAT = """{
   "cache_status":"%{regsub(fastly_info.state, "^(HIT-(SYNTH)|(HITPASS|HIT|MISS|PASS|ERROR|PIPE)).*", "\\\\2\\\\3") }V"
 }"""
 
-# breaks 'timestamp' and 'response_status'
-#FASTLY_LOG_FORMAT_ESCAPED = FASTLY_LOG_FORMAT.replace('%', '%%')
+# required by Terraform versions >0.11
+# TODO: replace `FASTLY_LOG_FORMAT` once upgraded to Terraform 0.13+
 FASTLY_LOG_FORMAT_ESCAPED = """{
   "timestamp":"%%{begin:%Y-%m-%dT%H:%M:%S}t",
   "time_elapsed":%%{time.elapsed.usec}V,
@@ -282,22 +282,21 @@ IRSA_POLICY_TEMPLATES = {
     },
 }
 
-# TODO: update comment, this may no longer be correct:
-# -https://registry.terraform.io/providers/fastly/fastly/latest/docs/guides/1.0.0
-
 # Fastly proprietary evolutions of the standard Apache log format
 # https://docs.fastly.com/guides/streaming-logs/custom-log-formats#advantages-of-using-the-version-2-custom-log-format
 # It's in the API:
-# https://docs.fastly.com/api/logging#logging_gcs
+# - https://docs.fastly.com/api/logging#logging_gcs
 # Not supported yet by Terraform however:
-# https://www.terraform.io/docs/providers/fastly/r/service_v1.html#name-12
-# FASTLY_LOG_FORMAT_VERSION = 2
-# lsh@2023-04-05: default in fastly/fastly provider 1.0.0+ is now format version 2.
-# this only affects gcslogging and not bigquery logging
+# - https://www.terraform.io/docs/providers/fastly/r/service_v1.html#name-12
+#FASTLY_LOG_FORMAT_VERSION = 2
+
+# lsh@2023-04-05: default in `fastly/fastly` provider 1.0.0+ is now format version 2.
+# this only affects logging to a bucket (gcslogging) and not logging to a database (bigquery),
+# and is only set in Terraform versions >0.13
 FASTLY_LOG_FORMAT_VERSION = 2
 
-# what to prefix lines with, syslog heritage
-# see https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
+# what to prefix lines with, syslog heritage:
+# - https://docs.fastly.com/guides/streaming-logs/changing-log-line-formats#available-message-formats
 FASTLY_LOG_LINE_PREFIX = 'blank' # no prefix
 
 # keeps different logging configurations unique in the syslog implementation
@@ -472,7 +471,7 @@ def _fastly_backend(hostname, name, request_condition=None, shield=None):
         'ssl_cert_hostname': hostname,
         'ssl_sni_hostname': hostname,
         'ssl_check_cert': True,
-        # "pre-1.0.0, the terraform provider set `auto_loadbalance` to true by default,
+        # 2023-04-11: "pre-1.0.0, the terraform provider set `auto_loadbalance` to true by default,
         # which was inconsistent [with the web UI] and often unexpected. The default is now false."
         # - https://registry.terraform.io/providers/fastly/fastly/latest/docs/guides/1.0.0
         'auto_loadbalance': True
@@ -500,6 +499,8 @@ def render_fastly(context, template):
         return {}
 
     resource_type_fastly = 'fastly_service_v1'
+
+    # TODO: integrate section after Fastly projects updated to Terraform 0.13
     if context['terraform']['version'] == '0.13.7':
         resource_type_fastly = 'fastly_service_vcl'
 
@@ -613,6 +614,7 @@ def render_fastly(context, template):
             'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         }
+        # TODO: integrate section after Fastly projects updated to Terraform 0.13
         if context['terraform']['version'] == '0.13.7':
             resource_type_gcslogging = 'logging_gcs'
             # "The Fastly API was updated with a new `user` field to replace `email`."
@@ -649,14 +651,10 @@ def render_fastly(context, template):
             'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
         }
+        # TODO: integrate section after Fastly projects updated to Terraform 0.13
         if context['terraform']['version'] == '0.13.7':
             resource_type_bigquerylogging = 'logging_bigquery'
-            # applies to gcslogging only apparently
-            #del bigquery_logging['email']
-            #bigquery_logging['user'] = "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING)
             bigquery_logging['format'] = FASTLY_LOG_FORMAT_ESCAPED
-            # getting an error: No argument or block type is named "format_version"
-            #bigquery_logging['format_version'] = FASTLY_LOG_FORMAT_VERSION
 
         template.populate_resource(
             resource_type_fastly,
@@ -1506,12 +1504,12 @@ def init(stackname, context):
     }
 
     # 0.11.x => 0.13 transformations
+    # TODO: integrate section after Fastly projects updated to Terraform 0.13
     if context['terraform']['version'] == '0.13.7':
         # 'providers' now relies on a 'required_providers' block under 'terraform'
         # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
         def provider_to_required_provider(provider_dict):
             provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
-            # I regret not going with terraform.providers.foo now :(
             provider_context_key = "provider-" + provider_name # "provider-aws"
             default_source = '-/' + provider_name # "-/aws", "-/vault"
             source = context['terraform'][provider_context_key].get('source', default_source)
