@@ -319,6 +319,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             }],
                             'backend': [{
                                 'address': '%s--www.example.org' % self.environment,
+                                'auto_loadbalance': True,
                                 'name': 'project-with-fastly-minimal--%s' % self.environment,
                                 'port': 443,
                                 'use_ssl': True,
@@ -439,6 +440,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'backend': [
                                 {
                                     'address': 'default.example.org',
+                                    'auto_loadbalance': True,
                                     'name': 'default',
                                     'port': 443,
                                     'use_ssl': True,
@@ -449,6 +451,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles',
                                     'port': 443,
                                     'use_ssl': True,
@@ -461,6 +464,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special2.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles2',
                                     'port': 443,
                                     'use_ssl': True,
@@ -473,6 +477,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special3.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles3',
                                     'port': 443,
                                     'use_ssl': True,
@@ -1375,7 +1380,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(log_sample.get('geo_city'), '42')
 
     def test_generated_template_file_storage(self):
-        contents = '{"key":"value"}'
+        contents = '{\n    "key": "value"\n}'
         stackname = 'dummy1--%s' % self.environment
         filename = terraform.write_template(stackname, contents)
         # lsh@2023-04-04: switched to a temp dir during testing

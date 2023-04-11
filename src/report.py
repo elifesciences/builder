@@ -359,3 +359,11 @@ def all_amis_to_prune():
 def ec2_node_count(stackname):
     "ec2 node count for given `stackname`."
     return len(core.ec2_data(stackname, state='pending|running|stopping|stopped'))
+
+# TODO: this report isn't precious or being used, it should probably filter the
+# list of stacks to anything that isn't deleted or in the process of being deleted.
+# the logic in buildercore/core.py doesn't exist for it though.
+@report
+def all_cloudformation_instances():
+    "All (steady) Cloudformation stacks."
+    return [stack[0] for stack in core.steady_aws_stacks(core.find_region())]

@@ -14,7 +14,9 @@ defaults:
         provider-tls:
             version: "2.2"
         provider-fastly:
-            version: "0.9.0" # '0.26.0' last version to support terraform 0.11.x
+            # source: fastly/fastly # provider changes from "-/fastly" (Hashicorp) for provider versions >1.0.0
+            # version: "1.1.4"
+            version: "0.9.0"
         provider-vault:
             version: "1.3" # # '1.9.0' last version to support terraform 0.11.x
         provider-google:
@@ -412,6 +414,7 @@ defaults:
 
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
+    aws: {}
     vagrant: {}
 
 basebox:
@@ -521,6 +524,13 @@ lax:
 api-gateway:
     subdomain: gateway # "gateway.elifesciences.org"
     formula-repo: https://github.com/elifesciences/api-gateway-formula
+    terraform:
+        version: "0.13.7"
+        provider-fastly:
+            source: fastly/fastly
+            version: "1.1.4"
+        provider-vault:
+            version: "3.14.0"
     aws:
         ec2:
             root:
@@ -1214,6 +1224,7 @@ elife-dashboard:
 elife-reporting:
     description: an environment for development of 'eLife-Reporting-SQL', integrated with lax.
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
+    aws: {}
     vagrant:
         ram: 1024
         ports:
