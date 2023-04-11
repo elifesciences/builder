@@ -525,16 +525,12 @@ api-gateway:
     subdomain: gateway # "gateway.elifesciences.org"
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     terraform:
-        # the version of Terraform this project requires
-        version: "0.13.7" # next version is "0.13.7" see `install-terraform.sh`
-        # the version of Terraform providers (plugins) required.
+        version: "0.13.7"
         provider-fastly:
             source: fastly/fastly
             version: "1.1.4"
         provider-vault:
-            version: "3.14.0" # # '1.9.0' last version to support terraform 0.11.x
-        provider-google:
-            version: "1.20.0"
+            version: "3.14.0"
     aws:
         ec2:
             root:

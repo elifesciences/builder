@@ -291,8 +291,8 @@ IRSA_POLICY_TEMPLATES = {
 #FASTLY_LOG_FORMAT_VERSION = 2
 
 # lsh@2023-04-05: default in `fastly/fastly` provider 1.0.0+ is now format version 2.
-# this only affects logging to a bucket (gcslogging) and not logging to a database (bigquery),
-# and is only set in Terraform versions >0.13
+# this only affects logging to a bucket (gcslogging), not logging to a database (bigquery),
+# and is only set in Terraform versions >0.11.
 FASTLY_LOG_FORMAT_VERSION = 2
 
 # what to prefix lines with, syslog heritage:
@@ -1488,11 +1488,8 @@ def init(stackname, context):
 
     backend = {
         'terraform': {
-            # 'required_providers': {
-            #    'fastly': {
-            #        'source': 'fastly/fastly',
-            #    }
-            # },
+            # Terraform will manage where and when to pull it's state.
+            # Cloudformation state is managed by builder and goes to the same bucket.
             'backend': {
                 's3': {
                     'bucket': config.BUILDER_BUCKET,
@@ -1503,14 +1500,14 @@ def init(stackname, context):
         },
     }
 
-    # 0.11.x => 0.13 transformations
+    # 0.11 => 0.13 transformations
     # TODO: integrate section after Fastly projects updated to Terraform 0.13
     if context['terraform']['version'] == '0.13.7':
         # 'providers' now relies on a 'required_providers' block under 'terraform'
         # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
         def provider_to_required_provider(provider_dict):
             provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
-            provider_context_key = "provider-" + provider_name # "provider-aws"
+            provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
             default_source = '-/' + provider_name # "-/aws", "-/vault"
             source = context['terraform'][provider_context_key].get('source', default_source)
             return (provider_name, {'source': source,
@@ -1528,7 +1525,8 @@ def init(stackname, context):
 
     terraform = Terraform(**{
         'working_dir': join(config.TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
-        'terraform_bin_path': config.TERRAFORM_BIN_PATH})
+        'terraform_bin_path': config.TERRAFORM_BIN_PATH, # "/path/to/builder/.tfenv/bin/terraform"
+    })
 
     try:
         rc, stdout, _ = terraform.cmd("version")
