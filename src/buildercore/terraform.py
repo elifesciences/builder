@@ -1533,7 +1533,7 @@ def init(stackname, context):
     try:
         rc, stdout, _ = terraform.cmd("version")
         ensure(rc == 0, "failed to query Terraform for it's version.")
-        LOG.info("\n-----------\n" + stdout + "---------")
+        LOG.info("\n-----------\n" + stdout + "-----------")
     except ValueError:
         # "ValueError: not enough values to unpack (expected 3, got 0)"
         # we're probably testing and the Terraform object has been mocked.

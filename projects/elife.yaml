@@ -1575,6 +1575,13 @@ iiif:
     intdomain: null
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
+    terraform:
+        version: "0.13.7"
+        provider-fastly:
+            source: fastly/fastly
+            version: "1.1.4"
+        provider-vault:
+            version: "3.14.0"
     aws:
         ec2:
             type: t3.medium
