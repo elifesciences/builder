@@ -1540,6 +1540,8 @@ def init(stackname, context):
             provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
             provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
             default_source = '-/' + provider_name # "-/aws", "-/vault"
+            if not 'provider_context_key' in context['terraform']:
+                return (provider_name, {'version': provider_dict[provider_name]['version']})
             source = context['terraform'][provider_context_key].get('source', default_source)
             if not source:
                 return (provider_name, {'version': provider_dict[provider_name]['version']})
