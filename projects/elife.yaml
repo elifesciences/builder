@@ -1973,6 +1973,13 @@ bastion:
 reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
+    terraform:
+        version: "0.13.7"
+        provider-fastly:
+            source: fastly/fastly
+            version: "1.1.4"
+        provider-vault:
+            version: "3.14.0"
     aws:
         # unique because: 'fastly.bigquerylogging.table' contains a static value.
         unique: true
