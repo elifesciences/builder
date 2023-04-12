@@ -1510,6 +1510,8 @@ def init(stackname, context):
             provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
             default_source = '-/' + provider_name # "-/aws", "-/vault"
             source = context['terraform'][provider_context_key].get('source', default_source)
+            if not source:
+                return (provider_name, {'version': provider_dict[provider_name]['version']})
             return (provider_name, {'source': source,
                                     # TODO: can we/should we exclude 'version' from 'providers' now?
                                     'version': provider_dict[provider_name]['version']})
