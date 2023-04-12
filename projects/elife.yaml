@@ -600,6 +600,11 @@ journal:
         - https://github.com/elifesciences/api-dummy-formula
     terraform:
         version: "0.13.7"
+        provider-fastly:
+            source: fastly/fastly
+            version: "1.1.4"
+        provider-vault:
+            version: "3.14.0"
     aws:
         ec2:
             ports:
@@ -1011,6 +1016,13 @@ generic-cdn:
     description: generic CDN for content like PDF, images
     default-branch: null
     intdomain: null
+    terraform:
+        version: "0.13.7"
+        provider-fastly:
+            source: fastly/fastly
+            version: "1.1.4"
+        provider-vault:
+            version: "3.14.0"
     aws:
         ec2: false
         fastly:
@@ -1563,6 +1575,13 @@ iiif:
     intdomain: null
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
+    terraform:
+        version: "0.13.7"
+        provider-fastly:
+            source: fastly/fastly
+            version: "1.1.4"
+        provider-vault:
+            version: "3.14.0"
     aws:
         ec2:
             type: t3.medium
@@ -1954,6 +1973,13 @@ bastion:
 reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
+    terraform:
+        version: "0.13.7"
+        provider-fastly:
+            source: fastly/fastly
+            version: "1.1.4"
+        provider-vault:
+            version: "3.14.0"
     aws:
         # unique because: 'fastly.bigquerylogging.table' contains a static value.
         unique: true

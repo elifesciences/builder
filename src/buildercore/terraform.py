@@ -1541,6 +1541,8 @@ def init(stackname, context):
             provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
             default_source = '-/' + provider_name # "-/aws", "-/vault"
             source = context['terraform'][provider_context_key].get('source', default_source)
+            if not source:
+                return (provider_name, {'version': provider_dict[provider_name]['version']})
             return (provider_name, {'source': source,
                                     # TODO: can we/should we exclude 'version' from 'providers' now?
                                     'version': provider_dict[provider_name]['version']})
@@ -1562,7 +1564,7 @@ def init(stackname, context):
     try:
         rc, stdout, _ = terraform.cmd("version")
         ensure(rc == 0, "failed to query Terraform for it's version.")
-        LOG.info("\n-----------\n" + stdout + "---------")
+        LOG.info("\n-----------\n" + stdout + "-----------")
     except ValueError:
         # "ValueError: not enough values to unpack (expected 3, got 0)"
         # we're probably testing and the Terraform object has been mocked.
