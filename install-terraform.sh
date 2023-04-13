@@ -14,9 +14,12 @@ if [ ! -d .tfenv ]; then
     rm tfenv.tar.gz
 fi
 
+
+.tfenv/bin/tfenv uninstall 0.11.15 || true
+
 # note: values should match `projects/elife.yaml` under 'defaults.terraform.version'.
 .tfenv/bin/tfenv install 0.13.7  # current version
-.tfenv/bin/tfenv install 0.14.12 # next version
+.tfenv/bin/tfenv install 0.14.11 # next version
 
 # activate the default version.
 # "this is used when not overridden by '.terraform-version' or 'TFENV_TERRAFORM_VERSION'"

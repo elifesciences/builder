@@ -3,7 +3,7 @@ defaults:
     salt: '3003' # the version of salt these project use
     terraform:
         # the version of Terraform this project requires
-        version: "0.13.7" # next version is "0.14.12" see `install-terraform.sh`
+        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "-/aws"
