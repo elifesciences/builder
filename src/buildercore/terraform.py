@@ -976,6 +976,7 @@ def _render_eks_user_access(context, template):
     - system:bootstrappers
     - system:nodes
 - rolearn: ${aws_iam_role.user.arn}
+  username: ${aws_iam_role.user.name}:{{SessionName}}
   groups:
     - system:masters
 """)
