@@ -15,10 +15,10 @@ if [ ! -d .tfenv ]; then
 fi
 
 # note: values should match `projects/elife.yaml` under 'defaults.terraform.version'.
-.tfenv/bin/tfenv install 0.11.15 # current, default, version
-.tfenv/bin/tfenv install 0.13.7  # next version
+.tfenv/bin/tfenv install 0.13.7  # current version
+.tfenv/bin/tfenv install 0.14.12 # next version
 
 # activate the default version.
 # "this is used when not overridden by '.terraform-version' or 'TFENV_TERRAFORM_VERSION'"
 # - https://github.com/tfutils/tfenv#tfenv-install-version
-.tfenv/bin/tfenv use 0.11.15
+.tfenv/bin/tfenv use 0.13.7

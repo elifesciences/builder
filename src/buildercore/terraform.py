@@ -498,11 +498,7 @@ def render_fastly(context, template):
     if not context['fastly']:
         return {}
 
-    resource_type_fastly = 'fastly_service_v1'
-
-    # TODO: integrate section after Fastly projects updated to Terraform 0.13
-    if context['terraform']['version'] == '0.13.7':
-        resource_type_fastly = 'fastly_service_vcl'
+    resource_type_fastly = 'fastly_service_vcl'
 
     backends = []
     conditions = []
@@ -600,31 +596,19 @@ def render_fastly(context, template):
 
     if context['fastly']['gcslogging']:
         gcslogging = context['fastly']['gcslogging']
-        resource_type_gcslogging = 'gcslogging'
+        resource_type_gcslogging = 'logging_gcs'
         gcslogging = {
             'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['gcs'],
             'bucket_name': gcslogging['bucket'],
             # TODO: validate it starts with /
             'path': gcslogging['path'],
             'period': gcslogging.get('period', 3600),
-            'format': FASTLY_LOG_FORMAT,
-            # not supported yet
-            # 'format_version': FASTLY_LOG_FORMAT_VERSION,
+            'format': FASTLY_LOG_FORMAT_ESCAPED,
+            'format_version': FASTLY_LOG_FORMAT_VERSION,
             'message_type': FASTLY_LOG_LINE_PREFIX,
-            'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
+            'user': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING),
         }
-        # TODO: integrate section after Fastly projects updated to Terraform 0.13
-        if context['terraform']['version'] == '0.13.7':
-            resource_type_gcslogging = 'logging_gcs'
-            # "The Fastly API was updated with a new `user` field to replace `email`."
-            # "user, string, Your Google Cloud Platform service account email address.
-            #  The client_email field in your service account authentication JSON. Not required if account_name is specified."
-            del gcslogging['email']
-            gcslogging['user'] = "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCS_LOGGING)
-            gcslogging['format'] = FASTLY_LOG_FORMAT_ESCAPED
-            gcslogging['format_version'] = FASTLY_LOG_FORMAT_VERSION
-
         template.populate_resource(
             resource_type_fastly,
             RESOURCE_NAME_FASTLY,
@@ -641,20 +625,16 @@ def render_fastly(context, template):
 
     if context['fastly']['bigquerylogging']:
         bigquerylogging = context['fastly']['bigquerylogging']
-        resource_type_bigquerylogging = 'bigquerylogging'
+        resource_type_bigquerylogging = 'logging_bigquery'
         bigquery_logging = {
             'name': FASTLY_LOG_UNIQUE_IDENTIFIERS['bigquery'],
             'project_id': bigquerylogging['project'],
             'dataset': bigquerylogging['dataset'],
             'table': bigquerylogging['table'],
-            'format': FASTLY_LOG_FORMAT,
+            'format': FASTLY_LOG_FORMAT_ESCAPED,
             'email': "${data.%s.%s.data[\"email\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
             'secret_key': "${data.%s.%s.data[\"secret_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_LOGGING),
         }
-        # TODO: integrate section after Fastly projects updated to Terraform 0.13
-        if context['terraform']['version'] == '0.13.7':
-            resource_type_bigquerylogging = 'logging_bigquery'
-            bigquery_logging['format'] = FASTLY_LOG_FORMAT_ESCAPED
 
         template.populate_resource(
             resource_type_fastly,
@@ -1132,21 +1112,17 @@ def _render_eks_workers_security_group(context, template):
     security_group_tags = aws.generic_tags(context)
     security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
 
-    egress = {
+    egress = [{
         'from_port': 0,
         'to_port': 0,
         'protocol': '-1',
         'cidr_blocks': ['0.0.0.0/0'],
-    }
-    if not context['terraform']['version'].startswith('0.11'):
-        egress = [{
-            **egress,
-            'description': None,
-            'ipv6_cidr_blocks': None,
-            'prefix_list_ids': None,
-            'security_groups': None,
-            'self': None,
-        }]
+        'description': None,
+        'ipv6_cidr_blocks': None,
+        'prefix_list_ids': None,
+        'security_groups': None,
+        'self': None,
+    }]
     template.populate_resource('aws_security_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'description': 'Security group for all worker nodes in the cluster',
@@ -1231,21 +1207,17 @@ def _render_eks_master_security_group(context, template):
     security_group_tags = aws.generic_tags(context)
     security_group_tags['kubernetes.io/cluster/%s' % context['stackname']] = 'owned'
 
-    egress = {
+    egress = [{
         'from_port': 0,
         'to_port': 0,
         'protocol': '-1',
         'cidr_blocks': ['0.0.0.0/0'],
-    }
-    if not context['terraform']['version'].startswith('0.11'):
-        egress = [{
-            **egress,
-            'description': None,
-            'ipv6_cidr_blocks': None,
-            'prefix_list_ids': None,
-            'security_groups': None,
-            'self': None,
-        }]
+        'description': None,
+        'ipv6_cidr_blocks': None,
+        'prefix_list_ids': None,
+        'security_groups': None,
+        'self': None,
+    }]
 
     template.populate_resource('aws_security_group', 'master', block={
         'name': '%s--master' % context['stackname'],
@@ -1432,13 +1404,12 @@ def init(stackname, context):
         )
 
     if context.get('fastly'):
-        providers['provider'].append({
-            'fastly': {
-                # exact version constraint
-                'version': "= %s" % context['terraform']['provider-fastly']['version'],
-                'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
-            },
-        })
+        fastly_provider = {
+            # exact version constraint
+            'version': "= %s" % context['terraform']['provider-fastly']['version'],
+            'api_key': "${data.%s.%s.data[\"api_key\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_FASTLY_API_KEY),
+        }
+        providers['provider'].append({'fastly': fastly_provider})
         path = f"data.{DATA_TYPE_VAULT_GENERIC_SECRET}.{DATA_NAME_VAULT_FASTLY_API_KEY}.path"
         # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
         updatein(providers, path, VAULT_PATH_FASTLY, create=True)
@@ -1446,70 +1417,52 @@ def init(stackname, context):
     aws_projects = ['eks']
     need_aws = any(context.get(key) for key in aws_projects)
     if need_aws:
-        providers['provider'].extend(
-            [
-                {
-                    'aws': {
-                        'version': "= %s" % context['terraform']['provider-aws']['version'],
-                        'region': context['aws']['region'],
-                    },
-                },
-            ]
-        )
+        aws_provider = {
+            'version': "= %s" % context['terraform']['provider-aws']['version'],
+            'region': context['aws']['region'],
+        }
+        providers['provider'].append({'aws': aws_provider})
 
     gcp_projects = ['bigquery', 'gcs']
     need_gcp = any(context.get(key) for key in gcp_projects)
     if need_gcp:
-        providers['provider'].extend(
-            [
-                {
-                    'google': {
-                        'version': "= %s" % context['terraform']['provider-google']['version'],
-                        'region': 'us-east4',
-                        'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
-                    },
-                },
-            ]
-        )
+        gcp_provider = {
+            'version': "= %s" % context['terraform']['provider-google']['version'],
+            'region': 'us-east4',
+            'credentials': "${data.%s.%s.data[\"credentials\"]}" % (DATA_TYPE_VAULT_GENERIC_SECRET, DATA_NAME_VAULT_GCP_API_KEY),
+        }
+        providers['provider'].append({'google': gcp_provider})
         path = f"data.{DATA_TYPE_VAULT_GENERIC_SECRET}.{DATA_NAME_VAULT_GCP_API_KEY}.path"
         # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
         updatein(providers, path, VAULT_PATH_GCP, create=True)
 
     if context.get('eks'):
-        providers['provider'].append({'tls': {
+        tls_provider = {
             'version': "= %s" % context['terraform']['provider-tls']['version']
-        }})
+        }
+        providers['provider'].append({'tls': tls_provider})
         kubernetes_provider = {
             'version': "= %s" % context['terraform']['provider-eks']['version'],
             'host': '${data.aws_eks_cluster.main.endpoint}',
             'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
             'token': '${data.aws_eks_cluster_auth.main.token}',
         }
-        if context['terraform']['provider-eks']['version'].startswith('1.'):
-            provider = {'kubernetes': {
-                **kubernetes_provider,
-                'load_config_file': False,
-            }}
-        else:
-            provider = {'kubernetes': kubernetes_provider}
-
-        providers['provider'].append(provider)
+        providers['provider'].append({'kubernetes': kubernetes_provider})
         providers['data']['aws_eks_cluster'] = {
             'main': {
                 'name': '${aws_eks_cluster.main.name}',
             },
         }
         # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
-        providers['provider'].append({
-            'aws': {
-                'region': context['aws']['region'],
-                'version': '= %s' % context['terraform']['provider-aws']['version'],
-                'alias': 'eks_assume_role',
-                'assume_role': {
-                    'role_arn': '${aws_iam_role.user.arn}'
-                }
+        aws_provider = {
+            'region': context['aws']['region'],
+            'version': '= %s' % context['terraform']['provider-aws']['version'],
+            'alias': 'eks_assume_role',
+            'assume_role': {
+                'role_arn': '${aws_iam_role.user.arn}'
             }
-        })
+        }
+        providers['provider'].append({'aws': aws_provider})
         providers['data']['aws_eks_cluster_auth'] = {
             'main': {
                 'provider': 'aws.eks_assume_role',
@@ -1517,8 +1470,26 @@ def init(stackname, context):
             },
         }
 
+    # in 0.13 'providers' relies on a 'required_providers' block under 'terraform'
+    # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
+    def provider_to_required_provider(provider_dict):
+        aliases = {'kubernetes': 'provider-eks'} # TODO: hack, fix this properly
+        provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
+        provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
+        key = aliases.get(provider_name, provider_context_key)
+        source_path = "terraform." + key + ".source" # "terraform.provider-aws.source"
+        source = lookup(context, source_path, default=None)
+        # TODO: migrate providers from "-/foo" to "hashicorp/foo"
+        # it requires this: https://github.com/hashicorp/terraform/issues/25702#issuecomment-666426977-permalink
+        ensure(source, "'source' value at path %r missing in provider: %s" % (source_path, context['terraform']))
+        return (provider_name, {
+            'source': source,
+            # TODO: 'version' in 'providers' section is now properly deprecated in 0.14.x
+            'version': provider_dict[provider_name]['version']})
+
     backend = {
         'terraform': {
+            'required_providers': dict(map(provider_to_required_provider, providers['provider'])),
             # Terraform will manage where and when to pull it's state.
             # Cloudformation state is managed by builder and goes to the same bucket.
             'backend': {
@@ -1530,26 +1501,6 @@ def init(stackname, context):
             },
         },
     }
-
-    # 0.11 => 0.13 transformations
-    # TODO: integrate section after Fastly projects updated to Terraform 0.13
-    if context['terraform']['version'] == '0.13.7':
-        # 'providers' now relies on a 'required_providers' block under 'terraform'
-        # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
-        def provider_to_required_provider(provider_dict):
-            provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
-            provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
-            default_source = '-/' + provider_name # "-/aws", "-/vault"
-            if not 'provider_context_key' in context['terraform']:
-                return (provider_name, {'version': provider_dict[provider_name]['version']})
-            source = context['terraform'][provider_context_key].get('source', default_source)
-            if not source:
-                return (provider_name, {'version': provider_dict[provider_name]['version']})
-            return (provider_name, {'source': source,
-                                    # TODO: can we/should we exclude 'version' from 'providers' now?
-                                    'version': provider_dict[provider_name]['version']})
-        required_providers = dict(map(provider_to_required_provider, providers['provider']))
-        backend['terraform']['required_providers'] = required_providers
 
     # ---
 
