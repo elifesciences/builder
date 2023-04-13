@@ -1911,6 +1911,12 @@ fastly-logs:
     description: Fastly CDN access logs
     domain: false
     intdomain: false
+    terraform:
+        version: "0.13.7"
+        provider-google:
+            version: "2.20.3"
+        provider-vault:
+            version: "3.14.0"
     aws:
         # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
@@ -1930,6 +1936,9 @@ fastly-logs:
                     generic_cdn:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     journal:
+                        time-partitioning:
+                            field: timestamp
+                            type: DAY
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
