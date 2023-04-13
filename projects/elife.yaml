@@ -1948,6 +1948,12 @@ fastly-logs:
 
 data-pipeline:
     description: Data consolidation project
+    terraform:
+        version: "0.13.7"
+        provider-google:
+            version: "2.20.3"
+        provider-vault:
+            version: "3.14.0"
     aws:
         ec2: false
         s3:
