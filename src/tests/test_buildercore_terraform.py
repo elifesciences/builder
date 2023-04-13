@@ -310,7 +310,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(
             {
                 'resource': {
-                    'fastly_service_v1': {
+                    'fastly_service_vcl': {
                         # must be unique but only in a certain context like this, use some constants
                         'fastly-cdn': {
                             'name': 'project-with-fastly-minimal--%s' % self.environment,
@@ -416,7 +416,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     },
                 },
                 'resource': {
-                    'fastly_service_v1': {
+                    'fastly_service_vcl': {
                         # must be unique but only in a certain context like this, use some constants
                         'fastly-cdn': {
                             'name': 'project-with-fastly-complex--%s' % self.environment,
@@ -633,7 +633,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-shield', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'iad-va-us')
         self.assertIn('domain', service)
 
@@ -644,7 +644,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-shield-pop', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'london-uk')
         self.assertIn('domain', service)
 
@@ -655,7 +655,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-shield-aws-region', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'frankfurt-de')
 
     def test_fastly_template_gcs_logging(self):
@@ -665,17 +665,17 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-gcs', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
-        self.assertIn('gcslogging', service)
-        self.assertEqual(service['gcslogging'].get('name'), 'default')
-        self.assertEqual(service['gcslogging'].get('bucket_name'), 'my-bucket')
-        self.assertEqual(service['gcslogging'].get('path'), 'my-project/')
-        self.assertEqual(service['gcslogging'].get('period'), 1800)
-        self.assertEqual(service['gcslogging'].get('message_type'), 'blank')
-        self.assertEqual(service['gcslogging'].get('email'), '${data.vault_generic_secret.fastly-gcs-logging.data["email"]}')
-        self.assertEqual(service['gcslogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcs-logging.data["secret_key"]}')
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
+        self.assertIn('logging_gcs', service)
+        self.assertEqual(service['logging_gcs'].get('name'), 'default')
+        self.assertEqual(service['logging_gcs'].get('bucket_name'), 'my-bucket')
+        self.assertEqual(service['logging_gcs'].get('path'), 'my-project/')
+        self.assertEqual(service['logging_gcs'].get('period'), 1800)
+        self.assertEqual(service['logging_gcs'].get('message_type'), 'blank')
+        self.assertEqual(service['logging_gcs'].get('user'), '${data.vault_generic_secret.fastly-gcs-logging.data["email"]}')
+        self.assertEqual(service['logging_gcs'].get('secret_key'), '${data.vault_generic_secret.fastly-gcs-logging.data["secret_key"]}')
 
-        log_format = service['gcslogging'].get('format')
+        log_format = service['logging_gcs'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
         self.assertRegex(log_format, r"\{.*\}")
@@ -690,16 +690,16 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-bigquery', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
-        self.assertIn('bigquerylogging', service)
-        self.assertEqual(service['bigquerylogging'].get('name'), 'bigquery')
-        self.assertEqual(service['bigquerylogging'].get('project_id'), 'my-project')
-        self.assertEqual(service['bigquerylogging'].get('dataset'), 'my_dataset')
-        self.assertEqual(service['bigquerylogging'].get('table'), 'my_table')
-        self.assertEqual(service['bigquerylogging'].get('email'), '${data.vault_generic_secret.fastly-gcp-logging.data["email"]}')
-        self.assertEqual(service['bigquerylogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcp-logging.data["secret_key"]}')
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
+        self.assertIn('logging_bigquery', service)
+        self.assertEqual(service['logging_bigquery'].get('name'), 'bigquery')
+        self.assertEqual(service['logging_bigquery'].get('project_id'), 'my-project')
+        self.assertEqual(service['logging_bigquery'].get('dataset'), 'my_dataset')
+        self.assertEqual(service['logging_bigquery'].get('table'), 'my_table')
+        self.assertEqual(service['logging_bigquery'].get('email'), '${data.vault_generic_secret.fastly-gcp-logging.data["email"]}')
+        self.assertEqual(service['logging_bigquery'].get('secret_key'), '${data.vault_generic_secret.fastly-gcp-logging.data["secret_key"]}')
 
-        log_format = service['bigquerylogging'].get('format')
+        log_format = service['logging_bigquery'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
         self.assertRegex(log_format, r"\{.*\}")
@@ -837,11 +837,10 @@ class TestBuildercoreTerraform(base.BaseCase):
         providers = self._load_terraform_file(stackname, 'providers')
         self.assertEqual(
             {
-                'version': "= %s" % '1.5.2',
+                'version': "= %s" % '2.19.0',
                 'host': '${data.aws_eks_cluster.main.endpoint}',
                 'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
                 'token': '${data.aws_eks_cluster_auth.main.token}',
-                'load_config_file': False,
             },
             self._getProvider(providers, 'kubernetes')
         )
@@ -954,12 +953,17 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'name': 'project-with-eks--%s--master' % self.environment,
                 'description': 'Cluster communication with worker nodes',
                 'vpc_id': 'vpc-78a2071d',
-                'egress': {
+                'egress': [{
                     'from_port': 0,
                     'to_port': 0,
                     'protocol': '-1',
                     'cidr_blocks': ['0.0.0.0/0'],
-                },
+                    'description': None,
+                    'ipv6_cidr_blocks': None,
+                    'prefix_list_ids': None,
+                    'security_groups': None,
+                    'self': None,
+                }],
                 'tags': {
                     'Project': 'project-with-eks',
                     'Environment': self.environment,
@@ -991,12 +995,17 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'name': 'project-with-eks--%s--worker' % self.environment,
                 'description': 'Security group for all worker nodes in the cluster',
                 'vpc_id': 'vpc-78a2071d',
-                'egress': {
+                'egress': [{
                     'from_port': 0,
                     'to_port': 0,
                     'protocol': '-1',
                     'cidr_blocks': ['0.0.0.0/0'],
-                },
+                    'description': None,
+                    'ipv6_cidr_blocks': None,
+                    'prefix_list_ids': None,
+                    'security_groups': None,
+                    'self': None,
+                }],
                 'tags': {
                     'Project': 'project-with-eks',
                     'Environment': self.environment,

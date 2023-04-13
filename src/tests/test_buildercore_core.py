@@ -157,7 +157,7 @@ class TestCoreNewProjectData(base.BaseCase):
         for pname, expected_path in expected:
             expected_data = json.load(open(expected_path, 'r'))
             project_data = project.project_data(pname)
-            #json.dump(project_data, open('/tmp/foo.json', 'w'), indent=4)
+            #json.dump(project_data, open('/tmp/' + pname + '.json', 'w'), indent=4)
             project_data = utils.remove_ordereddict(project_data)
             self.assertEqual(expected_data, project_data)
 
