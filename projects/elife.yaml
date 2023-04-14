@@ -7,22 +7,26 @@ defaults:
     salt: "3003" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
-        version: "0.11.15" # next version is "0.13.7" see `install-terraform.sh`
+        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
         # the version of Terraform providers (plugins) required.
         provider-aws:
+            source: "-/aws"
             version: "2.28.0"
         provider-tls:
+            source: "-/tls"
             version: "2.2"
         provider-fastly:
-            # source: fastly/fastly # provider changes from "-/fastly" (Hashicorp) for provider versions >1.0.0
-            # version: "1.1.4"
-            version: "0.9.0"
+            source: "fastly/fastly"
+            version: "1.1.4"
         provider-vault:
-            version: "1.3" # # '1.9.0' last version to support terraform 0.11.x
+            source: "-/vault"
+            version: "3.14.0"
         provider-google:
-            version: "1.20.0"
-        provider-eks:
-            version: "1.5.2"
+            source: "-/google"
+            version: "2.20.3"
+        provider-kubernetes:
+            source: "-/kubernetes"
+            version: "2.19.0"
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -524,13 +528,6 @@ lax:
 api-gateway:
     subdomain: gateway # "gateway.elifesciences.org"
     formula-repo: https://github.com/elifesciences/api-gateway-formula
-    terraform:
-        version: "0.13.7"
-        provider-fastly:
-            source: fastly/fastly
-            version: "1.1.4"
-        provider-vault:
-            version: "3.14.0"
     aws:
         ec2:
             root:
@@ -598,13 +595,6 @@ journal:
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
         - https://github.com/elifesciences/api-dummy-formula
-    terraform:
-        version: "0.13.7"
-        provider-fastly:
-            source: fastly/fastly
-            version: "1.1.4"
-        provider-vault:
-            version: "3.14.0"
     aws:
         ec2:
             ports:
@@ -1016,13 +1006,6 @@ generic-cdn:
     description: generic CDN for content like PDF, images
     default-branch: null
     intdomain: null
-    terraform:
-        version: "0.13.7"
-        provider-fastly:
-            source: fastly/fastly
-            version: "1.1.4"
-        provider-vault:
-            version: "3.14.0"
     aws:
         ec2: false
         fastly:
@@ -1575,13 +1558,6 @@ iiif:
     intdomain: null
     repo: https://github.com/elifesciences/loris
     formula-repo: https://github.com/elifesciences/iiif-formula
-    terraform:
-        version: "0.13.7"
-        provider-fastly:
-            source: fastly/fastly
-            version: "1.1.4"
-        provider-vault:
-            version: "3.14.0"
     aws:
         ec2:
             type: t3.medium
@@ -1911,12 +1887,6 @@ fastly-logs:
     description: Fastly CDN access logs
     domain: false
     intdomain: false
-    terraform:
-        version: "0.13.7"
-        provider-google:
-            version: "2.20.3"
-        provider-vault:
-            version: "3.14.0"
     aws:
         # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
@@ -1948,12 +1918,6 @@ fastly-logs:
 
 data-pipeline:
     description: Data consolidation project
-    terraform:
-        version: "0.13.7"
-        provider-google:
-            version: "2.20.3"
-        provider-vault:
-            version: "3.14.0"
     aws:
         ec2: false
         s3:
@@ -1988,13 +1952,6 @@ bastion:
 reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
-    terraform:
-        version: "0.13.7"
-        provider-fastly:
-            source: fastly/fastly
-            version: "1.1.4"
-        provider-vault:
-            version: "3.14.0"
     aws:
         # unique because: 'fastly.bigquerylogging.table' contains a static value.
         unique: true
@@ -2050,14 +2007,6 @@ kubernetes-aws:
     description: project managing an EKS cluster
     domain: False
     intdomain: False
-    terraform:
-        version: "0.13.7"
-        provider-aws:
-            version: "2.28.0"
-        provider-tls:
-            version: "2.2"
-        provider-eks:
-            version: "2.19.0"
     aws:
         ec2: false
     aws-alt:
