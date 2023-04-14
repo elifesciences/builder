@@ -16,7 +16,7 @@ defaults:
             source: "-/tls"
             version: "2.2"
         provider-fastly:
-            source: fastly/fastly
+            source: "fastly/fastly"
             version: "1.1.4"
         provider-vault:
             source: "-/vault"
@@ -24,7 +24,7 @@ defaults:
         provider-google:
             source: "-/google"
             version: "2.20.3"
-        provider-eks:
+        provider-kubernetes:
             source: "-/kubernetes"
             version: "2.19.0"
     # use false with a subdomain to assign internal addresses only

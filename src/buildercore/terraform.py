@@ -1442,7 +1442,7 @@ def init(stackname, context):
         }
         providers['provider'].append({'tls': tls_provider})
         kubernetes_provider = {
-            'version': "= %s" % context['terraform']['provider-eks']['version'],
+            'version': "= %s" % context['terraform']['provider-kubernetes']['version'],
             'host': '${data.aws_eks_cluster.main.endpoint}',
             'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
             'token': '${data.aws_eks_cluster_auth.main.token}',
@@ -1473,11 +1473,9 @@ def init(stackname, context):
     # in 0.13 'providers' relies on a 'required_providers' block under 'terraform'
     # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
     def provider_to_required_provider(provider_dict):
-        aliases = {'kubernetes': 'provider-eks'} # TODO: hack, fix this properly
         provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
         provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
-        key = aliases.get(provider_name, provider_context_key)
-        source_path = "terraform." + key + ".source" # "terraform.provider-aws.source"
+        source_path = "terraform." + provider_context_key + ".source" # "terraform.provider-aws.source"
         source = lookup(context, source_path, default=None)
         # TODO: migrate providers from "-/foo" to "hashicorp/foo"
         # it requires this: https://github.com/hashicorp/terraform/issues/25702#issuecomment-666426977-permalink
