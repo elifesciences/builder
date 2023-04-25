@@ -1887,6 +1887,15 @@ fastly-logs:
     description: Fastly CDN access logs
     domain: false
     intdomain: false
+    terraform:
+        # lsh@2023-04-25: got an esoteric error about missing credentials attempting to use 
+        # "-/google" instead of "hashicorp/google".
+        # fixing providers part is part of this ticket:
+        # - https://github.com/elifesciences/issues/issues/8256
+        provider-vault:
+            source: "hashicorp/vault"
+        provider-google:
+            source: "hashicorp/google"
     aws:
         # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
@@ -1912,9 +1921,24 @@ fastly-logs:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
-                    reproducible_document_stack:
-                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
+                    # lsh@2023-04-25: unused in prod
+                    # - https://github.com/elifesciences/issues/issues/8246
+                    #reproducible_document_stack:
+                    #    schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
     aws-alt: {}
+    gcp-alt:
+        staging:
+            bigquery:
+                "{instance}":
+                    tables:
+                        reproducible_document_stack:
+                            schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
+        end2end:
+            bigquery:
+                "{instance}":
+                    tables:
+                        reproducible_document_stack:
+                            schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
 
 data-pipeline:
     description: Data consolidation project
