@@ -408,15 +408,18 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     # TODO: candidate for a @backoff decorator
     def single_node_work_fn():
+        last_exc = None
         for attempt in range(0, 6):
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
                 if str(err).startswith('Timed out trying to connect'):
                     LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
+                    last_exc = err
                     continue
                 if str(err).startswith('Low level socket error connecting to host'):
                     LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
+                    last_exc = err
                     continue
 
                 raise err
@@ -424,6 +427,9 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 LOG.error(str(err).replace("\n", "    "))
                 # available as 'results' to fabric.tasks.error
                 raise err
+
+        if last_exc:
+            raise last_exc
 
     # something less stateful like a context manager?
     # lsh@2019-10: unlike other parameters passed to the `settings` context manager, these values are not reverted until program exit
