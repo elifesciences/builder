@@ -370,8 +370,8 @@ def all_node_params(stackname):
     return params
 
 def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, **kwargs):
-    """Executes work on all the EC2 nodes of stackname.
-    Optionally connects with the specified username"""
+    """Executes `workfn` on all EC2 nodes of `stackname`.
+    Optionally connects with the specified `username`."""
     work_kwargs = {}
     if isinstance(workfn, tuple):
         workfn, work_kwargs = workfn
@@ -387,6 +387,11 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         nodes = {k: v for k, v in nodes.items() if k in instance_ids}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
 
+    if not public_ips:
+        LOG.info("No EC2 nodes to execute on")
+        # should be a dictionary mapping ip address to result
+        return {}
+
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
 
@@ -396,11 +401,6 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         'public_ips': public_ips,
         'nodes': nodes
     })
-
-    if not public_ips:
-        LOG.info("No EC2 nodes to execute on")
-        # should be a dictionary mapping ip address to result
-        return {}
 
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
@@ -418,8 +418,8 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 if str(err).startswith('Low level socket error connecting to host'):
                     LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
                     continue
-                else:
-                    raise err
+
+                raise err
             except CommandException as err:
                 LOG.error(str(err).replace("\n", "    "))
                 # available as 'results' to fabric.tasks.error

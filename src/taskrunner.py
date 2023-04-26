@@ -29,7 +29,7 @@ def echo(msg, *args, **kwargs):
 # NOTE: a task's function signature constitutes it's API, check twice before changing it.
 # the 'see: ...' references below are *not* comprehensive.
 UNQUALIFIED_TASK_LIST = [
-    ping, echo, cfn.dev,
+    ping, echo,
 
     cfn.destroy,
     # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
