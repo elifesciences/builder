@@ -284,23 +284,29 @@ def test_find_rds_instances__replacement(test_projects):
     {'InstanceId': 'foo', 'PublicIpAddress': '0', 'Tags': []}
 ])
 def test_stack_all_ec2_nodes__network_retry_logic(_):
-    "NetworkErrors are caught and retried N times"
+    "NetworkErrors are caught and retried N times before finally failing with the last raised exception"
     expected = 6
     retried = 0
 
+    exc = pssh.exceptions.ConnectionErrorException("foo")
+    expected_exc = command.NetworkError(exc)
+
     def raiser(*args, **kwargs):
-        nonlocal retried
+        nonlocal retried, exc
         retried += 1
-        raise pssh.exceptions.ConnectionErrorException("foo")
+        raise exc
+
     m = Mock()
     m.run_command = raiser
     stackname = "foo--bar"
     with patch('buildercore.threadbare.operations._ssh_client', return_value=m):
-        core.stack_all_ec2_nodes(
-            stackname,
-            (command.remote, {'command': "echo 'hello world'"}),
-            abort_on_prompts=True,
-            # 'retried' isn't updated on our thread when run using 'parallel'
-            concurrency='serial'
-        )
+        with pytest.raises(command.NetworkError) as last_exc:
+            core.stack_all_ec2_nodes(
+                stackname,
+                (command.remote, {'command': "echo 'hello world'"}),
+                abort_on_prompts=True,
+                # 'retried' isn't updated on our thread when run using 'parallel'
+                concurrency='serial'
+            )
+            assert last_exc == expected_exc
         assert retried == expected
