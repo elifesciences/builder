@@ -1,10 +1,11 @@
+import pssh.exceptions
 from moto import mock_rds
 import pytest
 from functools import partial
 import json
 from os.path import join
 from . import base
-from buildercore import core, utils, project
+from buildercore import core, utils, project, command
 from unittest import skip
 from unittest.mock import patch, Mock
 import botocore
@@ -278,3 +279,28 @@ def test_find_rds_instances__replacement(test_projects):
     with patch('buildercore.context_handler.load_context', return_value=context):
         actual = core.find_rds_instances(stackname)
         assert actual[0]['DBInstanceIdentifier'] == expected
+
+@patch('buildercore.core.ec2_data', return_value=[
+    {'InstanceId': 'foo', 'PublicIpAddress': '0', 'Tags': []}
+])
+def test_stack_all_ec2_nodes__network_retry_logic(_):
+    "NetworkErrors are caught and retried N times"
+    expected = 6
+    retried = 0
+
+    def raiser(*args, **kwargs):
+        nonlocal retried
+        retried += 1
+        raise pssh.exceptions.ConnectionErrorException("foo")
+    m = Mock()
+    m.run_command = raiser
+    stackname = "foo--bar"
+    with patch('buildercore.threadbare.operations._ssh_client', return_value=m):
+        core.stack_all_ec2_nodes(
+            stackname,
+            (command.remote, {'command': "echo 'hello world'"}),
+            abort_on_prompts=True,
+            # 'retried' isn't updated on our thread when run using 'parallel'
+            concurrency='serial'
+        )
+        assert retried == expected
