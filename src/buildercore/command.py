@@ -34,13 +34,15 @@ class CommandException(Exception):
     pass
 
 if BACKEND == FABRIC:
+    NetworkError = fab_exceptions.NetworkError
+
     # no un-catchable errors from Fabric
     fab_api.env['abort_exception'] = CommandException
 else:
+    NetworkError = threadbare.operations.NetworkError
+
     threadbare.state.set_defaults({"abort_exception": CommandException,
                                    "key_filename": os.path.expanduser("~/.ssh/id_rsa")})
-
-NetworkError = fab_exceptions.NetworkError
 
 #
 # api

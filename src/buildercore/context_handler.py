@@ -47,7 +47,6 @@ def _load_context_from_s3(stackname):
 def load_context(stackname):
     """Returns the store context data structure for 'stackname'.
     Downloads from S3 if missing on the local builder instance"""
-    #path = local_context_file(stackname)
 
     # giorgio@2018-11-03: "Current situation is you may have a old context around on your local disk.
     # This applies to `elife-alfred--prod` as well. Making the context always downloaded from S3 avoids this stale copy
@@ -61,6 +60,8 @@ def load_context(stackname):
     #
     # if not download_from_s3(stackname, refresh=True):
     #    raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+
+    #path = local_context_file(stackname)
     #contents = json.load(open(path, 'r'))
 
     # lsh@2021-06-22: broke the above logic into two parts so I can swap out s3 during testing
