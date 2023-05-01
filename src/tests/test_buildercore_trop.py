@@ -722,15 +722,26 @@ class TestBuildercoreTrop(base.BaseCase):
                     'Bucket': 'widgets-static-hosting-prod',
                     'PolicyDocument': {
                         "Version": "2012-10-17",
-                        "Statement": [{
-                            "Sid": "AddPerm",
-                            "Effect": "Allow",
-                            "Principal": "*",
-                            "Action": ["s3:GetObject"],
-                            "Resource":[
-                                "arn:aws:s3:::widgets-static-hosting-prod/*",
-                            ]
-                        }]
+                        "Statement": [
+                            {
+                                "Sid": "AddPerm",
+                                "Effect": "Allow",
+                                "Principal": "*",
+                                "Action": ["s3:GetObject"],
+                                "Resource":[
+                                    "arn:aws:s3:::widgets-static-hosting-prod/*",
+                                ]
+                            },
+                            {
+                                "Sid": "AddPerm",
+                                "Effect": "Allow",
+                                "Principal": "*",
+                                "Action": ["s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
+                                "Resource":[
+                                    "arn:aws:s3:::widgets-static-hosting-prod",
+                                ]
+                            }
+                        ]
                     }
                 },
             },
@@ -742,8 +753,9 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Delete',
                 'Properties': {
-                    'AccessControl': 'PublicRead',
                     'BucketName': 'widgets-just-access-prod',
+                    'OwnershipControls': {'Rules': [{'ObjectOwnership': 'BucketOwnerEnforced'}]},
+                    'PublicAccessBlockConfiguration': {'RestrictPublicBuckets': False},
                     'Tags': [
                         {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
                         {'Key': 'Environment', 'Value': 'prod'},
@@ -762,15 +774,26 @@ class TestBuildercoreTrop(base.BaseCase):
                     'Bucket': 'widgets-just-access-prod',
                     'PolicyDocument': {
                         "Version": "2012-10-17",
-                        "Statement": [{
-                            "Sid": "AddPerm",
-                            "Effect": "Allow",
-                            "Principal": "*",
-                            "Action": ["s3:GetObject"],
-                            "Resource":[
-                                "arn:aws:s3:::widgets-just-access-prod/*",
-                            ]
-                        }]
+                        "Statement": [
+                            {
+                                "Sid": "AddPerm",
+                                "Effect": "Allow",
+                                "Principal": "*",
+                                "Action": ["s3:GetObject"],
+                                "Resource":[
+                                    "arn:aws:s3:::widgets-just-access-prod/*",
+                                ]
+                            },
+                            {
+                                "Sid": "AddPerm",
+                                "Effect": "Allow",
+                                "Principal": "*",
+                                "Action": ["s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
+                                "Resource":[
+                                    "arn:aws:s3:::widgets-just-access-prod",
+                                ]
+                            }
+                        ]
                     }
                 },
             },
