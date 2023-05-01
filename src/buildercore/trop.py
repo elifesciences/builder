@@ -637,16 +637,30 @@ def render_s3(context, template):
                     )
                 ]
             )
+
         if context['s3'][bucket_name]['website-configuration']:
             index_document = context['s3'][bucket_name]['website-configuration'].get('index-document', 'index.html')
             props['WebsiteConfiguration'] = s3.WebsiteConfiguration(
                 IndexDocument=index_document
             )
-            _add_bucket_policy(template, bucket_title, bucket_name)
+            _add_public_bucket_policy(template, bucket_title, bucket_name)
 
         if context['s3'][bucket_name]['public']:
-            _add_bucket_policy(template, bucket_title, bucket_name)
-            props['AccessControl'] = s3.PublicRead
+            _add_public_bucket_policy(template, bucket_title, bucket_name)
+            # lsh@2023-05-01: disabled by AWS
+            #props['AccessControl'] = s3.PublicRead
+            props['PublicAccessBlockConfiguration'] = s3.PublicAccessBlockConfiguration(
+                #BlockPublicAcls = False,
+                #BlockPublicPolicy = False,
+                #IgnorePublicAcls = False,
+                RestrictPublicBuckets=False,
+            )
+            props['OwnershipControls'] = s3.OwnershipControls(
+                Rules=[s3.OwnershipControlsRule(ObjectOwnership="BucketOwnerEnforced")]
+            )
+            # props['OwnershipControls'] = s3.OwnershipControls(
+            #    Rules=[s3.OwnershipControlsRule(ObjectOwnership = "ObjectWriter")]
+            # )
 
         if context['s3'][bucket_name]['encryption']:
             props['BucketEncryption'] = _bucket_kms_encryption(context['s3'][bucket_name]['encryption'])
@@ -657,22 +671,39 @@ def render_s3(context, template):
             **props
         ))
 
-def _add_bucket_policy(template, bucket_title, bucket_name):
-    template.add_resource(s3.BucketPolicy(
-        "%sPolicy" % bucket_title,
-        Bucket=bucket_name,
-        PolicyDocument={
-            "Version": "2012-10-17",
-            "Statement": [{
+def _add_public_bucket_policy(template, bucket_title, bucket_name):
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
                 "Sid": "AddPerm",
                 "Effect": "Allow",
                 "Principal": "*",
                 "Action": ["s3:GetObject"],
-                "Resource":[
+                "Resource": [
+                    # "arn:aws:s3:::foo-elife-published/*"
                     "arn:aws:s3:::%s/*" % bucket_name
                 ]
-            }]
-        }
+            },
+            # lsh@2023-05-01: ACLs have been turned off. This new statement
+            # maps the lost 'PublicRead' permissions on *objects*.
+            # - https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#acl-access-policy-permission-mapping
+            {
+                "Sid": "AddPerm",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": ["s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
+                "Resource": [
+                    # "arn:aws:s3:::foo-elife-published"
+                    "arn:aws:s3:::%s" % bucket_name
+                ]
+            }
+        ]
+    }
+    template.add_resource(s3.BucketPolicy(
+        "%sPolicy" % bucket_title, # "foo-elife-published" => "FooElifePublishedPolicy"
+        Bucket=bucket_name,
+        PolicyDocument=policy
     ))
 
 def _bucket_kms_encryption(key_arn):
