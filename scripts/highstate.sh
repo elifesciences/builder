@@ -25,7 +25,10 @@ fi
 # remove once salt fixes issue with importlib>=5.0.0
 # - https://github.com/elifesciences/issues/issues/7782
 # - https://github.com/python/importlib_metadata/issues/409
-pip3 install 'importlib_metadata==4.13.0'
+#pip3 install 'importlib_metadata==4.13.0'
+# lsh@2023-05-01: downgraded again after new issue with importlib-metadata.
+# - https://alfred.elifesciences.org/job/process/job/process-ec2-plugin-ami-update/105/console
+pip3 install 'importlib_metadata==4.12.0'
 
 if $dry_run; then
     echo "Executing salt highstate (testing)"
