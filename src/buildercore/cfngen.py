@@ -1074,7 +1074,7 @@ def regenerate_stack(stackname, **more_context):
     # 2. edit the `alt-config` key
     # 3. $ aws s3 cp kubernetes-aws--test.json s3://elife-builder/contexts/kubernetes-aws--test.json
 
-    more_context['alt-config'] = current_context['alt-config']
+    more_context['alt-config'] = current_context.get('alt-config', None)
     context = build_context(pname, existing_context=current_context, **more_context)
     delta = template_delta(context)
     return context, delta, current_context

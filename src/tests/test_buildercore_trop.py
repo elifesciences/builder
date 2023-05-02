@@ -701,6 +701,8 @@ class TestBuildercoreTrop(base.BaseCase):
                             },
                         ],
                     },
+                    'OwnershipControls': {'Rules': [{'ObjectOwnership': 'BucketOwnerEnforced'}]},
+                    'PublicAccessBlockConfiguration': {'RestrictPublicBuckets': False},
                     'WebsiteConfiguration': {
                         'IndexDocument': 'index.html',
                     },
@@ -730,15 +732,6 @@ class TestBuildercoreTrop(base.BaseCase):
                                 "Action": ["s3:GetObject"],
                                 "Resource":[
                                     "arn:aws:s3:::widgets-static-hosting-prod/*",
-                                ]
-                            },
-                            {
-                                "Sid": "AddPerm",
-                                "Effect": "Allow",
-                                "Principal": "*",
-                                "Action": ["s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
-                                "Resource":[
-                                    "arn:aws:s3:::widgets-static-hosting-prod",
                                 ]
                             }
                         ]
