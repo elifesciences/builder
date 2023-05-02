@@ -1537,6 +1537,8 @@ error-pages:
         s3:
             "{instance}-elife-error-pages":
                 website-configuration:
+                    # lsh@2023-05-02: index.html doesn't exist in repo. You'll get a 404 if you visit this website at:
+                    # http://continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     index-document: index.html
                 cors: true
 
@@ -2018,7 +2020,7 @@ reproducible-document-stack:
                 table: "reproducible_document_stack"
     aws-alt:
         prod:
-            # unique because:
+            # (still) unique because:
             # - 'fastly.bigquerylogging.table' contains a static value.
             # - 'fastly.subdomains' contains a static value.
             unique: true

@@ -643,24 +643,28 @@ def render_s3(context, template):
             props['WebsiteConfiguration'] = s3.WebsiteConfiguration(
                 IndexDocument=index_document
             )
-            _add_public_bucket_policy(template, bucket_title, bucket_name)
-
-        if context['s3'][bucket_name]['public']:
-            _add_public_bucket_policy(template, bucket_title, bucket_name)
-            # lsh@2023-05-01: disabled by AWS
-            #props['AccessControl'] = s3.PublicRead
+            # disable to allow public IAM policies to work
+            # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket-publicaccessblockconfiguration.html#cfn-s3-bucket-publicaccessblockconfiguration-restrictpublicbuckets
             props['PublicAccessBlockConfiguration'] = s3.PublicAccessBlockConfiguration(
-                #BlockPublicAcls = False,
-                #BlockPublicPolicy = False,
-                #IgnorePublicAcls = False,
                 RestrictPublicBuckets=False,
             )
+            # disables ACLs
             props['OwnershipControls'] = s3.OwnershipControls(
                 Rules=[s3.OwnershipControlsRule(ObjectOwnership="BucketOwnerEnforced")]
             )
-            # props['OwnershipControls'] = s3.OwnershipControls(
-            #    Rules=[s3.OwnershipControlsRule(ObjectOwnership = "ObjectWriter")]
-            # )
+            _add_public_read_only_bucket_policy(template, bucket_title, bucket_name)
+
+        if context['s3'][bucket_name]['public']:
+            _add_public_read_list_bucket_policy(template, bucket_title, bucket_name)
+            # disable to allow public IAM policies to work
+            # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket-publicaccessblockconfiguration.html#cfn-s3-bucket-publicaccessblockconfiguration-restrictpublicbuckets
+            props['PublicAccessBlockConfiguration'] = s3.PublicAccessBlockConfiguration(
+                RestrictPublicBuckets=False,
+            )
+            # disables ACLs
+            props['OwnershipControls'] = s3.OwnershipControls(
+                Rules=[s3.OwnershipControlsRule(ObjectOwnership="BucketOwnerEnforced")]
+            )
 
         if context['s3'][bucket_name]['encryption']:
             props['BucketEncryption'] = _bucket_kms_encryption(context['s3'][bucket_name]['encryption'])
@@ -671,7 +675,7 @@ def render_s3(context, template):
             **props
         ))
 
-def _add_public_bucket_policy(template, bucket_title, bucket_name):
+def _add_public_read_list_bucket_policy(template, bucket_title, bucket_name):
     policy = {
         "Version": "2012-10-17",
         "Statement": [
@@ -696,6 +700,28 @@ def _add_public_bucket_policy(template, bucket_title, bucket_name):
                 "Resource": [
                     # "arn:aws:s3:::foo-elife-published"
                     "arn:aws:s3:::%s" % bucket_name
+                ]
+            }
+        ]
+    }
+    template.add_resource(s3.BucketPolicy(
+        "%sPolicy" % bucket_title, # "foo-elife-published" => "FooElifePublishedPolicy"
+        Bucket=bucket_name,
+        PolicyDocument=policy
+    ))
+
+def _add_public_read_only_bucket_policy(template, bucket_title, bucket_name):
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "AddPerm",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": ["s3:GetObject"],
+                "Resource": [
+                    # "arn:aws:s3:::foo-elife-published/*"
+                    "arn:aws:s3:::%s/*" % bucket_name
                 ]
             }
         ]
