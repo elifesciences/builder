@@ -325,13 +325,15 @@ def _ec2_connection_params(stackname, username, **kwargs):
         if os.path.exists(pem):
             params['key_filename'] = pem
         else:
-            LOG.info("private key for the bootstrap user for this host is not present locally (%s); will not override ~/.ssh with it." % pem)
+            msg = "Attempting to connect to %s as the BOOTSTRAP_USER (%s) but the private key is missing (%s). Any remote operation will fail if the public key for this user (%s) is not in the remote host's '/home/%s/.ssh/authorized_keys' file." % (
+                stackname, config.BOOTSTRAP_USER, pem, config.WHOAMI, config.BOOTSTRAP_USER)
+            LOG.warning(msg)
     params.update(kwargs)
     return params
 
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
-    ensure('user' not in kwargs, "found key 'user' in given kwargs - did you mean 'username' ??")
+    ensure('user' not in kwargs, "found key 'user' in given kwargs - did you mean 'username'?")
     data = ec2_data(stackname, state='running')
     ensure(len(data) == 1 or node, "stack is clustered with %s nodes and no specific node provided" % len(data))
     node and ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
@@ -408,18 +410,19 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     # TODO: candidate for a @backoff decorator
     def single_node_work_fn():
-        last_exc = None
+        #last_exc = None
         for attempt in range(0, 6):
+            # time.sleep(attempt + 1)
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
                 if str(err).startswith('Timed out trying to connect'):
                     LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
-                    last_exc = err
+                    #last_exc = err
                     continue
                 if str(err).startswith('Low level socket error connecting to host'):
                     LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
-                    last_exc = err
+                    #last_exc = err
                     continue
 
                 raise err
@@ -428,8 +431,11 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 # available as 'results' to fabric.tasks.error
                 raise err
 
-        if last_exc:
-            raise last_exc
+        # lsh@2023-05-03: recent change but temporarily disabled.
+        # this is the correct behaviour but I've uncovered cases that depend on this failing silently.
+        # - https://github.com/elifesciences/issues/issues/8274
+        # if last_exc:
+        #    raise last_exc
 
     # something less stateful like a context manager?
     # lsh@2019-10: unlike other parameters passed to the `settings` context manager, these values are not reverted until program exit
