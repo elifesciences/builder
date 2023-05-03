@@ -18,7 +18,6 @@ from .command import remote_sudo, remote_file_exists, remote_listfiles, fab_get,
 import backoff
 import botocore
 from kids.cache import cache as cached
-from functools import reduce # pylint:disable=redefined-builtin
 from collections.abc import Iterable
 
 import logging
@@ -354,44 +353,6 @@ def master_data(region):
 def master(region, key):
     return master_data(region)[key]
 
-# TODO: move to buildercore.cloudformation?
-@core.requires_active_stack
-def template_info(stackname):
-    "returns some useful information about the given stackname as a map"
-    # data = core.describe_stack(stackname).__dict__ # original boto2 approach, never officially supported
-    data = core.describe_stack(stackname).meta.data # boto3
-
-    # looking at the entire set of formulas, all usage is cfn.outputs, cfn.stack_id and cfn.stack_name
-    # in the interests of being explicit on what is supported, I'm changing what this now returns
-    keepers = OrderedDict([
-        ('StackName', 'stack_name'),
-        ('StackId', 'stack_id'),
-        ('Outputs', 'outputs')
-    ])
-
-    # preserve the lowercase+underscore formatting of original struct
-    utils.renkeys(data, keepers.items()) # in-place changes
-
-    # replaces the standand list-of-dicts 'outputs' with a simpler dict
-    # TODO: outputs may be empty in the input `data` here
-    data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
-
-    return subdict(data, keepers.values())
-
-def write_environment_info(stackname, overwrite=False):
-    """Looks for /etc/cfn-info.json and writes one if not found.
-    Must be called with an active stack connection.
-
-    This gives Salt the outputs available at stack creation, but that were not
-    available at template compilation time.
-    """
-    if not remote_file_exists("/etc/cfn-info.json") or overwrite:
-        LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
-        infr_config = utils.json_dumps(template_info(stackname))
-        return fab_put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
-    LOG.debug('cfn outputs found, skipping')
-    return []
-
 #
 #
 #
@@ -468,6 +429,7 @@ def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
+# TODO: investigate any non-bootstrap tasks that are calling this
 @only_if('ec2')
 @core.requires_active_stack
 def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None, dry_run=False):
@@ -503,7 +465,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
 
     def _update_ec2_node():
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
-        write_environment_info(stackname, overwrite=True)
+        core.write_environment_info(stackname, overwrite=True)
 
         # bit of a hack, but project config merging doesn't apply to top-level values
         # in this case we look for an alternate salt version under a project's 'ec2' section
@@ -568,14 +530,6 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
 
     stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
-def remove_minion_key(stackname):
-    "removes all keys for all nodes of the given stackname from the master server"
-    pdata = project_data_for_stackname(stackname)
-    region = pdata['aws']['region']
-    master_stack = core.find_master(region)
-    with stack_conn(master_stack):
-        remote_sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
-
 # TODO: bootstrap.py may not be best place for this
 def master_minion_keys(master_stackname, group_by_stackname=True):
     "returns a list of paths to minion keys on given master stack, optionally grouped by stackname"
@@ -609,6 +563,9 @@ def remove_all_orphaned_keys(master_stackname):
             fname = os.path.basename(path) # prevent accidental deletion of anything not a key
             remote_sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
+# TODO what does stack destruction have to do with ec2 bootstrap?
+# it can't be moved to core because of the `cloudformation` module dependency.
+# we need something in buildercore/ that ties all these disparate things together
 def destroy(stackname):
     # TODO: if context does not exist anymore on S3,
     # we could exit idempotently
@@ -618,7 +575,7 @@ def destroy(stackname):
     cloudformation.destroy(stackname, context)
 
     # don't do this. requires master server access and would prevent regular users deleting stacks
-    # remove_minion_key(stackname)
+    # core.remove_minion_key(stackname)
     delete_dns(stackname)
 
     context_handler.delete_context(stackname)

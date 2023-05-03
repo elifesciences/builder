@@ -138,9 +138,7 @@ TASK_LIST = [
 # this list of debug tasks don't require the full path to be used
 # for example: 'BLDR_ROLE=admin ./bldr highstate' will execute the 'highstate' task
 UNQUALIFIED_DEBUG_TASK_LIST = [
-    cfn.highstate,
     cfn.fix_bootstrap,
-    cfn.pillar,
     # cfn.aws_stack_list, # moved to 'aws.cloudformation.stack_list'
 ]
 

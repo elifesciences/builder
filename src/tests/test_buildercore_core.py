@@ -280,7 +280,6 @@ def test_find_rds_instances__replacement(test_projects):
         actual = core.find_rds_instances(stackname)
         assert actual[0]['DBInstanceIdentifier'] == expected
 
-@skip("disabled until a fix is found for tasks that depend on this failing silently")
 @patch('buildercore.core.ec2_data', return_value=[
     {'InstanceId': 'foo', 'PublicIpAddress': '0', 'Tags': []}
 ])

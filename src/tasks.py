@@ -3,7 +3,7 @@
 If you find certain 'types' of tasks accumulating, they might be
 better off in their own module. This module really is for stuff
 that has no home."""
-from buildercore import core, bootstrap, bakery
+from buildercore import core, bakery
 from utils import confirm, errcho
 from decorators import requires_aws_stack
 from buildercore.core import stack_conn
@@ -43,7 +43,7 @@ def delete_all_amis_to_prune():
 @requires_aws_stack
 def repair_cfn_info(stackname):
     with stack_conn(stackname):
-        bootstrap.write_environment_info(stackname, overwrite=True)
+        core.write_environment_info(stackname, overwrite=True)
 
 @requires_aws_stack
 def repair_context(stackname):
@@ -52,4 +52,4 @@ def repair_context(stackname):
 
 @requires_aws_stack
 def remove_minion_key(stackname):
-    bootstrap.remove_minion_key(stackname)
+    core.remove_minion_key(stackname)
