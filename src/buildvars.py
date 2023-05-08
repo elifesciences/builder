@@ -54,13 +54,11 @@ def _update_remote_bvars(stackname, buildvars):
 @requires_aws_stack
 def read(stackname):
     "returns the unencoded build variables found on ec2 nodes for `stackname`."
-    # TODO: revisit. is this being used? why bootstrap user?
     return stack_all_ec2_nodes(stackname, lambda: read_from_current_host(), username=BOOTSTRAP_USER)
 
 @format_output('python')
 @requires_aws_stack
 def valid(stackname):
-    # TODO: revisit. is this being used? why bootstrap user?
     return stack_all_ec2_nodes(stackname, lambda: _retrieve_build_vars(), username=BOOTSTRAP_USER)
 
 @requires_aws_stack
@@ -91,7 +89,6 @@ def fix(stackname):
         new_vars = trop.build_vars(context, node_id)
         _update_remote_bvars(stackname, new_vars)
 
-    # TODO: revisit. why bootstrap user?
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
 @requires_aws_stack
@@ -118,7 +115,6 @@ def switch_revision(stackname, revision=None, concurrency=None):
         new_data['revision'] = revision
         _update_remote_bvars(stackname, new_data)
 
-    # TODO: how is alfred running buildvars.switch_revision as the bootstrap user?
     stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
 
 @requires_aws_stack

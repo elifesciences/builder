@@ -320,14 +320,16 @@ def _ec2_connection_params(stackname, username, **kwargs):
     "returns a dictionary of settings to be used with `command.settings` context manager"
     # http://docs.fabfile.org/en/1.14/usage/env.html
     params = {'user': username}
+    pem = stack_pem(stackname)
     # handles cases where we want to establish a connection to run a task
     # when machine has failed to provision correctly.
     if username == config.BOOTSTRAP_USER:
-        pem = stack_pem(stackname)
-        msg = "Attempted to connect to %s as the 'BOOTSTRAP_USER' (%s) but it's private key is missing (%s)." % (
-            stackname, config.BOOTSTRAP_USER, pem)
-        ensure(os.path.exists(pem), msg)
-        params['key_filename'] = pem
+        if os.path.exists(pem):
+            params['key_filename'] = pem
+        else:
+            msg = "Attempting to connect to %s as the BOOTSTRAP_USER (%s) but the private key is missing (%s). Remote operations may fail if the public key for this user (%s) is not in the remote user's '/home/%s/.ssh/authorized_keys' file." % (
+                stackname, config.BOOTSTRAP_USER, pem, config.WHOAMI, config.BOOTSTRAP_USER)
+            LOG.info(msg)
     params.update(kwargs)
     return params
 
@@ -420,6 +422,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                     last_exc = err
                     continue
                 if str(err).startswith('Low level socket error connecting to host'):
+                    # "Cannot connect to a 'journal--prod' node (connection refused) during attempt 2, retrying on this node"
                     LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
                     last_exc = err
                     continue

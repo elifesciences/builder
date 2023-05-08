@@ -129,7 +129,6 @@ def _daemons_ready():
         LOG.debug("failed to connect to %s...", node_id)
         return False
 
-# TODO: we can't hardcode the bootstrap user here
 def _some_node_is_not_ready(stackname, **kwargs):
     try:
         ip_to_ready = stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)

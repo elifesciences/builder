@@ -136,7 +136,7 @@ TASK_LIST = [
 
 # 'debug' tasks are those that are available when the environment variable BLDR_ROLE is set to 'admin'
 # this list of debug tasks don't require the full path to be used
-# for example: 'BLDR_ROLE=admin ./bldr highstate' will execute the 'highstate' task
+# for example: 'BLDR_ROLE=admin ./bldr fix_bootstrap' will execute the 'fix_bootstrap' task
 UNQUALIFIED_DEBUG_TASK_LIST = [
     cfn.fix_bootstrap,
     # cfn.aws_stack_list, # moved to 'aws.cloudformation.stack_list'
