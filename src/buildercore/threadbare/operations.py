@@ -64,10 +64,10 @@ class NetworkError(BaseException):
             pssh_exceptions.SSHException: "Low level socket error connecting to host.",
             pssh_exceptions.SessionError: "Low level socket error connecting to host.",
             # lsh@2023-05-08: changed in 2.9.0 and deprecated, pssh uses the builtin now
-            #pssh_exceptions.ConnectionErrorException: "Low level socket error connecting to host.",
+            # pssh_exceptions.ConnectionErrorException: "Low level socket error connecting to host.",
             ConnectionError: "Low level socket error connecting to host.",
             # lsh@2023-05-08: introduced in 2.9.0, we have to capture this and retry it ourselves.
-            pssh_exceptions.ConnectionRefused: "Low level socket error connecting to host."
+            ConnectionRefusedError: "Low level socket error connecting to host."
         }
         new_error = custom_error_prefixes.get(type(self.wrapped)) or ""
         original_error = str(self.wrapped)

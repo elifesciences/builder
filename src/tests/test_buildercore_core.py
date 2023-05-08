@@ -1,4 +1,3 @@
-import pssh.exceptions
 from moto import mock_rds
 import pytest
 from functools import partial
@@ -288,7 +287,7 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
     expected = 6
     retried = 0
 
-    exc = pssh.exceptions.ConnectionErrorException("foo")
+    exc = ConnectionRefusedError("foo")
     expected_exc = command.NetworkError(exc)
 
     def raiser(*args, **kwargs):
