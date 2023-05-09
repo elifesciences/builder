@@ -1,4 +1,3 @@
-import pssh.exceptions
 from moto import mock_rds
 import pytest
 from functools import partial
@@ -280,7 +279,6 @@ def test_find_rds_instances__replacement(test_projects):
         actual = core.find_rds_instances(stackname)
         assert actual[0]['DBInstanceIdentifier'] == expected
 
-@skip("disabled until a fix is found for tasks that depend on this failing silently")
 @patch('buildercore.core.ec2_data', return_value=[
     {'InstanceId': 'foo', 'PublicIpAddress': '0', 'Tags': []}
 ])
@@ -289,7 +287,7 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
     expected = 6
     retried = 0
 
-    exc = pssh.exceptions.ConnectionErrorException("foo")
+    exc = ConnectionRefusedError("foo")
     expected_exc = command.NetworkError(exc)
 
     def raiser(*args, **kwargs):

@@ -1,14 +1,15 @@
 "general logic for the `buildercore` module."
 
-import os
+import os, time
+from collections import OrderedDict
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
+from .utils import subdict, ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
 import botocore.config
 from contextlib import contextmanager
-from . import context_handler
+from . import command, context_handler
 from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
 from slugify import slugify
 import logging
@@ -325,7 +326,7 @@ def _ec2_connection_params(stackname, username, **kwargs):
         if os.path.exists(pem):
             params['key_filename'] = pem
         else:
-            msg = "Attempting to connect to %s as the BOOTSTRAP_USER (%s) but the private key is missing (%s). Any remote operation will fail if the public key for this user (%s) is not in the remote host's '/home/%s/.ssh/authorized_keys' file." % (
+            msg = "Attempting to connect to %s as the BOOTSTRAP_USER (%s) but the private key is missing (%s). Remote operations may fail if the public key for this user (%s) is not in the remote user's '/home/%s/.ssh/authorized_keys' file." % (
                 stackname, config.BOOTSTRAP_USER, pem, config.WHOAMI, config.BOOTSTRAP_USER)
             LOG.warning(msg)
     params.update(kwargs)
@@ -408,21 +409,21 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
-    # TODO: candidate for a @backoff decorator
     def single_node_work_fn():
-        #last_exc = None
+        last_exc = None
         for attempt in range(0, 6):
-            # time.sleep(attempt + 1)
+            time.sleep(attempt / 2)
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
                 if str(err).startswith('Timed out trying to connect'):
                     LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
-                    #last_exc = err
+                    last_exc = err
                     continue
                 if str(err).startswith('Low level socket error connecting to host'):
+                    # "Cannot connect to a 'journal--prod' node (connection refused) during attempt 2, retrying on this node"
                     LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
-                    #last_exc = err
+                    last_exc = err
                     continue
 
                 raise err
@@ -431,11 +432,8 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 # available as 'results' to fabric.tasks.error
                 raise err
 
-        # lsh@2023-05-03: recent change but temporarily disabled.
-        # this is the correct behaviour but I've uncovered cases that depend on this failing silently.
-        # - https://github.com/elifesciences/issues/issues/8274
-        # if last_exc:
-        #    raise last_exc
+        if last_exc:
+            raise last_exc
 
     # something less stateful like a context manager?
     # lsh@2019-10: unlike other parameters passed to the `settings` context manager, these values are not reverted until program exit
@@ -766,3 +764,51 @@ def drift_check(stackname):
     result = conn.describe_stack_resource_drifts(StackName=stackname)
     drifted = [resource for resource in result["StackResourceDrifts"] if resource["StackResourceDriftStatus"] != "IN_SYNC"]
     return drifted or None
+
+
+# migrated from bootstrap.py
+# might need a better home
+
+
+# TODO: move to buildercore.cloudformation?
+@requires_active_stack
+def template_info(stackname):
+    "returns some useful information about the given stackname as a map"
+    data = describe_stack(stackname).meta.data
+
+    # limit what this function returns in the interests of being explicit on what is supported.
+    keepers = OrderedDict([
+        ('StackName', 'stack_name'),
+        ('StackId', 'stack_id'),
+        ('Outputs', 'outputs')
+    ])
+
+    # preserve the lowercase+underscore formatting of original boto2 struct now that we're using boto3
+    utils.renkeys(data, keepers.items())
+
+    # replaces the standand 'list-of-dicts' outputs with a simpler dict
+    data['outputs'] = {o['OutputKey']: o['OutputValue'] for o in data.get('outputs', [])}
+
+    return subdict(data, keepers.values())
+
+def remove_minion_key(stackname):
+    "removes all keys for all nodes of the given stackname from the master server"
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    master_stack = find_master(region)
+    with stack_conn(master_stack):
+        command.remote_sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
+
+def write_environment_info(stackname, overwrite=False):
+    """Looks for /etc/cfn-info.json and writes one if not found.
+    Must be called with an active stack connection.
+
+    This gives Salt the outputs available at stack creation, but that were not
+    available at template compilation time.
+    """
+    if not command.remote_file_exists("/etc/cfn-info.json") or overwrite:
+        LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
+        infr_config = utils.json_dumps(template_info(stackname))
+        return command.fab_put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
+    LOG.debug('cfn outputs found, skipping.')
+    return []

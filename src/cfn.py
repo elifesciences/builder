@@ -1,7 +1,7 @@
 import os, json
 from pprint import pformat
 import backoff
-from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
+from buildercore.command import local, remote, upload, download, settings, remote_file_exists, CommandException, NetworkError
 import utils, buildvars
 from utils import TaskExit
 from decorators import requires_project, requires_aws_stack, requires_aws_stack_template, setdefault, timeit
@@ -12,7 +12,7 @@ from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY
-from buildercore.utils import lmap, ensure
+from buildercore.utils import ensure
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -231,20 +231,6 @@ def fix_bootstrap(stackname):
     bootstrap.update_stack(stackname)
     setdefault('.active-stack', stackname)
 
-
-@requires_aws_stack
-def highstate(stackname, node=1):
-    "a fast update with many caveats. prefer `update` instead"
-    with stack_conn(stackname, node=node, username=BOOTSTRAP_USER):
-        bootstrap.run_script('highstate.sh')
-
-# TODO: deletion candidate
-@requires_aws_stack
-def pillar(stackname):
-    "returns the pillar data a minion is using"
-    with stack_conn(stackname, username=BOOTSTRAP_USER):
-        remote_sudo('salt-call pillar.items')
-
 def _pick_node(instance_list, node):
     instance_list = sorted(instance_list, key=lambda n: tags2dict(n.tags)['Name'])
     info = [n for n in instance_list] #
@@ -336,7 +322,8 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     """Downloads `path` to the `destination` folder.
     If `allow_missing`, a non-existant `path` will be skipped without errors.
     If `use_bootstrap_user`, the 'ubuntu' user will be used for ssh connections."""
-    allow_missing, use_bootstrap_user = lmap(utils.strtobool, [allow_missing, use_bootstrap_user])
+    allow_missing = utils.strtobool(allow_missing)
+    use_bootstrap_user = utils.strtobool(use_bootstrap_user)
 
     @backoff.on_exception(backoff.expo, NetworkError, max_time=60)
     def _download(path, destination):
