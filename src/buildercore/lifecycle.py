@@ -9,7 +9,7 @@ import backoff
 from .command import remote_file_exists, CommandException
 import boto # route53 boto2 > route53 boto3
 from . import config, core, command
-from .core import boto_conn, find_ec2_instances, find_rds_instances, stack_all_ec2_nodes, current_ec2_node_id, NoPublicIps, NoRunningInstances
+from .core import boto_conn, find_ec2_instances, find_rds_instances, current_ec2_node_id, NoPublicIps, NoRunningInstances
 from .utils import call_while, ensure, lmap
 from .context_handler import load_context
 
@@ -131,7 +131,7 @@ def _daemons_ready():
 
 def _some_node_is_not_ready(stackname, **kwargs):
     try:
-        ip_to_ready = stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)
+        ip_to_ready = core.stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)
         LOG.info("_some_node_is_not_ready: %s", ip_to_ready)
         return len(ip_to_ready) == 0 or False in ip_to_ready.values()
     except NoPublicIps as e:
