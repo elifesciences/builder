@@ -2,7 +2,6 @@
 
 import os, time
 from collections import OrderedDict
-from functools import reduce
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
 from .utils import subdict, ensure, first, lookup, lmap, lfilter, unique, isstr
@@ -329,7 +328,7 @@ def _ec2_connection_params(stackname, username, **kwargs):
         else:
             msg = "Attempting to connect to %s as the BOOTSTRAP_USER (%s) but the private key is missing (%s). Remote operations may fail if the public key for this user (%s) is not in the remote user's '/home/%s/.ssh/authorized_keys' file." % (
                 stackname, config.BOOTSTRAP_USER, pem, config.WHOAMI, config.BOOTSTRAP_USER)
-            LOG.info(msg)
+            LOG.warning(msg)
     params.update(kwargs)
     return params
 
@@ -775,23 +774,20 @@ def drift_check(stackname):
 @requires_active_stack
 def template_info(stackname):
     "returns some useful information about the given stackname as a map"
-    # data = core.describe_stack(stackname).__dict__ # original boto2 approach, never officially supported
-    data = describe_stack(stackname).meta.data # boto3
+    data = describe_stack(stackname).meta.data
 
-    # looking at the entire set of formulas, all usage is cfn.outputs, cfn.stack_id and cfn.stack_name
-    # in the interests of being explicit on what is supported, I'm changing what this now returns
+    # limit what this function returns in the interests of being explicit on what is supported.
     keepers = OrderedDict([
         ('StackName', 'stack_name'),
         ('StackId', 'stack_id'),
         ('Outputs', 'outputs')
     ])
 
-    # preserve the lowercase+underscore formatting of original struct
-    utils.renkeys(data, keepers.items()) # in-place changes
+    # preserve the lowercase+underscore formatting of original boto2 struct now that we're using boto3
+    utils.renkeys(data, keepers.items())
 
-    # replaces the standand list-of-dicts 'outputs' with a simpler dict
-    # TODO: outputs may be empty in the input `data` here
-    data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
+    # replaces the standand 'list-of-dicts' outputs with a simpler dict
+    data['outputs'] = {o['OutputKey']: o['OutputValue'] for o in data.get('outputs', [])}
 
     return subdict(data, keepers.values())
 

@@ -429,7 +429,6 @@ def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
-# TODO: investigate any non-bootstrap tasks that are calling this
 @only_if('ec2')
 @core.requires_active_stack
 def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None, dry_run=False):

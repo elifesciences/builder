@@ -63,10 +63,10 @@ class NetworkError(BaseException):
             # pssh: https://github.com/ParallelSSH/parallel-ssh/blob/2e9668cf4b58b38316b1d515810d7e6c595c76f3/pssh/exceptions.py
             pssh_exceptions.SSHException: "Low level socket error connecting to host.",
             pssh_exceptions.SessionError: "Low level socket error connecting to host.",
-            # lsh@2023-05-08: changed in 2.9.0 and deprecated, pssh uses the builtin now
+            # lsh@2023-05-08: changed in pssh 2.9.0 and deprecated, pssh uses the builtin now
             # pssh_exceptions.ConnectionErrorException: "Low level socket error connecting to host.",
             ConnectionError: "Low level socket error connecting to host.",
-            # lsh@2023-05-08: introduced in 2.9.0, we have to capture this and retry it ourselves.
+            # lsh@2023-05-08: introduced in pssh 2.9.0, we have to capture this and retry it ourselves.
             ConnectionRefusedError: "Low level socket error connecting to host."
         }
         new_error = custom_error_prefixes.get(type(self.wrapped)) or ""
