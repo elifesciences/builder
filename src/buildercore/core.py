@@ -14,6 +14,7 @@ from .command import settings, execute, parallel, serial, env, CommandException,
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
+import pssh.exceptions
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
@@ -427,6 +428,13 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                     continue
 
                 raise err
+
+            # lsh@2023-05-09: the NetworkError wrapper above is not working in all cases. investigate
+            except (ConnectionError, ConnectionRefusedError, pssh.exceptions.ConnectionErrorException) as err:
+                LOG.exception("programming error, failed to capture exception in a `operations.NetworkError`.")
+                last_exc = err
+                continue
+
             except CommandException as err:
                 LOG.error(str(err).replace("\n", "    "))
                 # available as 'results' to fabric.tasks.error
