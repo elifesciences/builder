@@ -1,3 +1,4 @@
+import os
 from . import base
 from unittest.mock import patch, call
 import utils
@@ -45,18 +46,27 @@ class TestUtils(base.BaseCase):
         value = utils._pick('project', ['lax', 'bot'], '/tmp/cache')
         self.assertEqual('lax', value)
 
+    def test_uin__non_interactive_no_default(self):
+        "requesting input from `uin` in non-interactive mode raises an assertion error."
+        self.assertRaises(AssertionError, utils.uin, 'project')
+
+    def test_uin__non_interactive_with_default(self):
+        "requesting input from `uin` with a default in non-interactive mode returns the default immediately."
+        expected = 'pants'
+        actual = utils.uin('project', default='pants')
+        self.assertEqual(expected, actual)
+
+    @patch('buildercore.config.BUILDER_NON_INTERACTIVE', False)
     @patch('utils.get_input', return_value='lax')
-    def test_uin(self, get_input):
+    def test_uin__interactive(self, get_input):
         value = utils.uin('project')
         self.assertEqual('lax', value)
 
     @patch('utils.get_input', return_value='')
-    def test_uin_default(self, get_input):
-        value = utils.uin('project', default='lax')
-        self.assertEqual('lax', value)
-
-    def test_mkdirp_is_idempotent_on_existing_directories(self):
-        utils.mkdirp(".")
+    def test_uin__interactive_with_default(self, get_input):
+        expected = 'lax'
+        actual = utils.uin('project', default='lax')
+        self.assertEqual(expected, actual)
 
     def test_pwd(self):
         self.assertRegex(utils.pwd(), "^/.*/src$")
@@ -91,3 +101,36 @@ class TestUtils(base.BaseCase):
             self.assertEqual(False, utils.strtobool(false_case))
 
         self.assertRaises(ValueError, utils.strtobool, "this value is neither true nor false")
+
+def test_coerce_string_value():
+    cases = [
+        (None, None),
+        (1, 1),
+        (-1, -1),
+        ({}, {}),
+        ("1.1", "1.1"),
+
+        ("1", 1),
+        ("0", 0),
+        ("-1", -1),
+
+        ("None", None),
+        ("Null", None),
+        ("null", None),
+        ("nil", None),
+
+        ("True", True),
+        ("False", False),
+        ("true", True),
+        ("false", False)
+    ]
+    for given, expected in cases:
+        assert utils.coerce_string_value(given) == expected
+
+def test_mkdirp_is_idempotent_on_existing_directories(tempdir):
+    path = os.path.join(tempdir, "foo")
+    assert not os.path.exists(path)
+    utils.mkdirp(path)
+    assert os.path.exists(path)
+    utils.mkdirp(path)
+    assert os.path.exists(path)

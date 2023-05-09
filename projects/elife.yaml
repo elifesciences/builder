@@ -1,6 +1,32 @@
 defaults:
-    description: defaults for all projects in this file
-    salt: '3003' # the version of salt these project use
+    description: default settings for all projects in *this* file.
+    meta:
+        # distinguishes this data from other types and versions of configuration data
+        type: project
+        version: 1
+    salt: "3003" # the version of Salt to install on ec2 instances
+    terraform:
+        # the version of Terraform this project requires
+        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
+        # the version of Terraform providers (plugins) required.
+        provider-aws:
+            source: "-/aws"
+            version: "2.28.0"
+        provider-tls:
+            source: "-/tls"
+            version: "2.2"
+        provider-fastly:
+            source: "fastly/fastly"
+            version: "1.1.4"
+        provider-vault:
+            source: "-/vault"
+            version: "3.14.0"
+        provider-google:
+            source: "-/google"
+            version: "2.20.3"
+        provider-kubernetes:
+            source: "-/kubernetes"
+            version: "2.19.0"
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -24,7 +50,7 @@ defaults:
         - https://github.com/elifesciences/builder-base-formula
     aws:
         account-id: 512686554592
-        # can this configuration be reused or is it unique? 
+        # can this configuration be reused or is it unique?
         # typically it can be reused, but some configurations embed values that are unique to a named instance.
         # for example: the 'prod' configuration for 'journal' is unique to `journal--prod` and cannot be reused.
         unique: false
@@ -42,12 +68,14 @@ defaults:
             # how many EC2 instance per stack instance
             cluster-size: 1
             # turn on T2 `unlimited` if necessary
+            # lsh@2022-07: all instances run on type T3 now, this option should be removed.
             cpu-credits: standard
             # whether the first EC2 node should get an external DNS entry such as env--project--1.elifesciences.org
-            # only makes sense if cluster-size > 1
+            # only makes sense if cluster-size > 1 with no load balancer.
+            # lsh@2022-09: unused feature, not sure which project it was built for.
             dns-external-primary: false
             # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
-            # only makes sense if cluster-size > 1
+            # only makes sense if cluster-size > 1 with no load balancer (see 'search' project).
             dns-internal: false
             # override 'ext' (only supported key)
             # for some EC2 instances
@@ -56,42 +84,53 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-04186590d925474ca # GENERATED created from basebox--1804
+            ami: ami-098883a939acf7b53 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
-            # optional: pin a master server for all new instances of a project
-            master_ip: 10.0.2.135
+            # pin a master server for all new instances of a project
+            # (I know, it's no longer an IP, bad name choice)
+            master_ip: prod--master-server.elife.internal
             # optional: specify `ports` to be opened
             security-group: {}
         region: us-east-1
         vpc-id: vpc-78a2071d  # vpc-id + subnet-id are peculiar to AWS account + region
+
         subnet-id: subnet-1d4eb46a # elife-public-subnet, us-east-1d
         subnet-cidr: '10.0.2.0/24'
         availability-zone: us-east-1d
-        ## additional value in case of capacity problems: elife-public-subnet-3, us-east-1a
-        # subnet-id: subnet-2116727b
-        # subnet-cidr: '10.0.10.0/24'
-        # necessary for multiple-node EC2 and for ELB
+
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2, us-east-1e
         redundant-subnet-cidr: '10.0.3.0/24'
         redundant-availability-zone: us-east-1e
+
+        # lsh@2022-06-27: t3.* instance types not available in us-east-1e
+        # - https://aws.amazon.com/premiumsupport/knowledge-center/ec2-instance-type-not-supported-az-error/
+        redundant-subnet-id-2: subnet-2116727b # elife-public-subnet-3, us-east-1a
+        redundant-subnet-cidr-2: '10.0.10.0/24'
+        redundant-availability-zone-2: us-east-1a
+
         rds:
             multi-az: false
             engine: postgres # or 'MySQL'
             # ensure this matches the version of Postgres you install on server!
-            # version: '9.4' # EOL Feb 2020
-            version: '11.14' # EOL Nov 2023
+            version: '12' # EOL Nov 14 2024
             allow-major-version-upgrade: False # do not alter unless you're doing a major version upgrade
-            type: db.t2.small
+            type: db.t3.small
             storage: 5 # GB
-            # Standard for backward compatibility
-            # https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
+            # name of the database to be created and *not* the RDS Instance ID.
+            # if null (default) then a database with slugified stackname will be created.
+            # if snapshot-id is used, then the name of the database in the snapshot should be used.
+            db-name: null
             storage-type: gp2 # standard|gp2|io1
             backup-retention: 28 # days
             # if rds.params are specified, a custom db parameter group is created
             params: []
             encryption: false
+            # create a new RDS instance from the snapshot of another one.
+            # updates to the stack do *not* roll the database back to the snapshot, but the snapshot-id *must* be present,
+            # otherwise a new RDS instance is created.
+            snapshot-id: null # snapshot's ARN
             # two subnets are required in two different availability zones
             # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbsubnet-group.html
             subnets:
@@ -141,7 +180,7 @@ defaults:
                         healthy_threshold: 2
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2022-02-22.wildcard.elifesciences.org
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2023-02-06.wildcard.elifesciences.org
 
         # elb defaults only used if an 'elb' section present in project
         elb:
@@ -153,7 +192,7 @@ defaults:
             additional_listeners: {}
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2022-02-22.wildcard.elifesciences.org
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2023-02-06.wildcard.elifesciences.org
             healthcheck:
                 protocol: http
                 port: 80
@@ -163,29 +202,39 @@ defaults:
                 unhealthy_threshold: 2
                 healthy_threshold: 2
 
-        # when both elb and alb are present, the elb is the primary load balancer.
-        # change this (per-project) to 'alb' to migrate from one lb to the other.
+        # when both elb and alb are present, the *elb* is the primary load balancer.
+        # change this (per-project) to 'alb' to migrate from one configured lb to the other.
         primary_lb: elb
 
         sqs: []
+        #   subscriptions:
+        #       - project-sns-name
+        #       - {instance}--project-sns-name
+
         sns: []
-        # e.g.
-        # s3:
+        #   - project-sns-name
+        #   - {instance}--project-sns-name
+
+        s3: []
         #    bucket-name-{instance}:
-        #       sqs-notifications: # not implemented
+        #       not implemented in Cloudformation. see `src.bootstrap.update_s3_stack`
+        #       sqs-notifications:
         #           queue-name:
         #               prefix: 'elife-'
         #               suffix: '.xml'
         #       deletion-policy: delete|retain (default 'delete')
         #       encryption: false
-        s3: []
+
         eks:
             # eks defaults only used if a 'eks' section present in project
             #https://docs.aws.amazon.com/eks/latest/userguide/platform-versions.html
             version: '1.17'
-            # two subnets in two different availability zones, both used in master nodes and in worker nodes
+            # two subnets in two different availability zones, both used in master nodes
             subnet-id: subnet-0c60bc3cb24a2816b
             redundant-subnet-id: subnet-009a04cbefc8e3661
+            # two subnets in two different availability zones, both used in worker nodes
+            worker-subnet-id: subnet-07e912335040a0866
+            worker-redundant-subnet-id: subnet-0110e7685debdb5eb
             worker:
                 type: t2.small
                 # autoscaling group will never have fewer than these EC2 nodes
@@ -196,12 +245,27 @@ defaults:
                 desired-capacity: 1
                 #root:
                 #   size: 20 # GiB, default
-            helm: false
-            external-dns: false
-                # Route53 hosted zone to create subdomains on
-                #domain-filter: elifesciences.org
             efs: false
-            autoscaler-policy: false
+
+            # this configures IAM roles for service accounts (IRSA).
+            iam-oidc-provider: false
+
+            # We also have some prebuilt IRSA permissions templates for services that can be running on the cluster
+            # This is a dict with a unique name as key and an object mapping a prebuilt template applied to a role with an inline policy to a cluster service account as value
+            # available templates are: kubernetes-autoscaler external-dns aws-ebs-csi-driver
+            iam-roles:
+                # kubernetes-autoscaler:
+                #     policy-template: kubernetes-autoscaler
+                #     service-account: cluster-autoscaler-aws-cluster-autoscaler
+                #     namespace: autoscaler
+                # external-dns:
+                #     policy-template: external-dns
+                #     service-account: infra-external-dns
+                #     namespace: infra
+                # aws-ebs-csi-driver:
+                #     policy-template: aws-ebs-csi-driver
+                #     service-account: ebs-csi-controller-sa
+                #     namespace: kube-system
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             subdomains: []
@@ -209,8 +273,8 @@ defaults:
             domains: []
             origins: {}
             # maintained through `aws iam upload-server-certificate`
-            # arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2022-02-22.wildcard.elifesciences.org
-            certificate_id: ASCAXOXT77XQIYT7U4CQM
+            # arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2023-02-06.wildcard.elifesciences.org
+            certificate_id: ASCAXOXT77XQDKWEEYGJH
             cookies: []
             compress: true
             headers: []
@@ -232,13 +296,13 @@ defaults:
                     - 151.101.194.217
             gcslogging: false
             # gcslogging:
-            #   bucket: 
-            #   path: 
-            #   period: 
+            #   bucket:
+            #   path:
+            #   period:
             bigquerylogging: false
             # bigquerylogging:
             #   project:
-            #   dataset: 
+            #   dataset:
             #   table:
             healthcheck: false
             errors: false
@@ -265,7 +329,7 @@ defaults:
             subnets:
                 - subnet-20275c68 # elife-cache-subnet-1
                 - subnet-c4033af8 # elife-cache-subnet-2
-            version: "2.8.24" # closest to builder-base-formula redis.sls
+            version: "6.2"
             configuration:
                 maxmemory-policy: volatile-lru
             clusters: 1
@@ -293,7 +357,7 @@ defaults:
             action: allow # count, block, custom-response
             # custom rule sets, $1/mo each.
             # the implementation of these is done as snippets of JSON rather than modeling them in Troposphere.
-            # it makes them slightly *brittle* but you can also build rules in the WAF Rule Builder and then drop 
+            # it makes them slightly *brittle* but you can also build rules in the WAF Rule Builder and then drop
             # them in here with no/little effort.
             # see `src/buildercore/waf/*.json` for examples.
             custom-rules: []
@@ -320,9 +384,8 @@ defaults:
         fresh:
             description: uses a public Ubuntu AMI instead of an elife generated basebox.
             ec2:
-                # should be the same as basebox '18.04' and 'standalone18.04' aws-alt configurations
-                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
-                type: t2.small
+                # should be the same as basebox '20.04' aws-alt configurations
+                ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
 
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
@@ -330,53 +393,20 @@ defaults:
                 salt: '3003'
                 masterless: True
 
-        1804:
-            description: Ubuntu 18.04 (Bionic)
-            # todo: explicitly specify an 18.04 AMI when 18.04 is no longer the default (2023?)
-            #ec2: {} # means 'use defaults'. don't use 'true'.
-            ec2:
-                type: t2.small
-
-        # lsh@2022-02-23: disabled, unused.
-        # 18.04, deprecated, use s1804
-        #standalone1804:
-        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
-        #    ec2:
-        #        ami: ami-04186590d925474ca # GENERATED created from basebox--1804
-        #                                   # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-        #        masterless: true
-        #        type: t2.small
-
-        s1804:
-            description: Ubuntu 18.04 (Bionic) but isolated from the master-server and any external pillar data (Vault)
-            ec2:
-                ami: ami-04186590d925474ca # GENERATED created from basebox--1804
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-                masterless: true
-                type: t2.small
-
-        2004:
-            description: Ubuntu 20.04 (Focal)
-            ec2:
-                ami: ami-04fea192b677fb252 # GENERATED created from basebox--2004
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
-
+        # lsh@2022-07: remove this alt-config once all formula Jenkinsfiles are updated
         s2004:
             description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
             ec2:
-                ami: ami-04fea192b677fb252 # GENERATED created from basebox--2004
-                                           # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
                 masterless: true
 
         standalone:
             description: same as default configuration, but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 masterless: true
-                type: t2.small
     gcp:
         bigquery: false
     vagrant:
-        box: ubuntu/focal64
+        box: ubuntu/focal64 # 20.04
         ip: 192.168.56.44
         ram: 2048
         cpus: 2
@@ -386,43 +416,18 @@ defaults:
         #    1239: 80
         #    1240: 8001
 
-    # support for vagrant-alt was removed apparently, so this doesn't do anything.
-    vagrant-alt:
-        1804:
-            # why 'bento' provider and not 'ubuntu'? https://bugs.launchpad.net/cloud-images/+bug/1569237
-            box: bento/ubuntu-18.04
-
 builder:
     formula-repo: https://github.com/elifesciences/builder-formula
+    aws: {}
     vagrant: {}
 
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
-            type: t2.small
+            ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
             ports:
                 - 22
-    aws-alt:
-        # overrides to default aws-alt configurations to use non-basebox AMIs
-        1804:
-            ec2:
-                # should match aws-alt 'fresh'
-                ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
-
-        2004:
-            ec2:
-                ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
-
-        # overrides to default aws-alt configurations to use non-basebox AMIs *and* run isolated from master-server
-
-        # lsh@2022-02-23: disabled, unused.
-        # 18.04
-        #standalone1804:
-        #    description: isolated from the master-server and uses Ubuntu 18.04 (Bionic)
-        #    ec2:
-        #        # should match aws-alt 'fresh'
-        #        ami: ami-0b425589c7bb7663d # bionic, build 20180814, hvm:ebs-ssd
     vagrant: {}
 
 heavybox:
@@ -430,12 +435,10 @@ heavybox:
     formula-repo: https://github.com/elifesciences/heavybox-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
         ext:
             size: 10 # GB
-            type: standard
     aws-alt: {}
     vagrant: {}
 
@@ -447,24 +450,23 @@ master-server:
     formula-repo: https://github.com/elifesciences/master-server-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 4506: # salt publish port
-                    # CIDR of subnet this master will server
+                    # CIDR of subnet this master will serve
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
                 - 4505: # salt return port
                     cidr-ip: 10.0.0.0/16
                 - 8080 # chemist, receives Github webhooks for updating formulas
                 - 8200 # Vault, secrets management web UI
     aws-alt:
-        '2018-04-09-2':
+        'prod':
             # unique because: 'subdomains' contains static values.
+            # mutually exclusive with '2018-04-09-2' !
             unique: true
             subdomains:
                 - master-server
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             8200: 8200 # Vault GUI
 
@@ -475,32 +477,26 @@ lax:
     formula-repo: https://github.com/elifesciences/lax-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 443
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 # bot-lax web UI to upload/validate/transform XML and article-json
-                - 8001 
+                - 8001
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
-        ci:
-            ec2:
-                cpu-credits: unlimited
         end2end:
             description: production-like
             ec2:
                 cluster-size: 2
             rds:
                 storage: 10
-                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 10 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -508,19 +504,15 @@ lax:
                     bot_lax_adaptor:
                         protocol: https
                         port: 8001
-                healthcheck:
-                    path: /api/v2/ping
         prod:
             description: RDS backed
             ec2:
                 cluster-size: 3
             rds:
                 storage: 10
-                storage-type: Standard
                 multi-az: true
             ext:
                 size: 10 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -528,10 +520,7 @@ lax:
                     bot_lax_adaptor:
                         protocol: https
                         port: 8001
-                healthcheck:
-                    path: /api/v2/ping
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1239: 80
             1240: 8001
@@ -541,10 +530,8 @@ api-gateway:
     formula-repo: https://github.com/elifesciences/api-gateway-formula
     aws:
         ec2:
-            type: t2.small
             root:
                 size: 30 # GB
-                type: gp2
             ports:
                 - 22
                 # only internal traffic has access to port 80 and http
@@ -576,18 +563,12 @@ api-gateway:
         # standalone instances do not have access to Vault secrets via the master-server and it's ext_pillar
         standalone:
             fastly: false
-        1804:
-            fastly: false
-        s1804:
-            fastly: false
-        2004:
-            fastly: false
         s2004:
             fastly: false
         snsalt:
             fastly: false
         continuumtest:
-            # unique because: 
+            # unique because:
             # - 'fastly.bigquerylogging.dataset' is static.
             unique: true
             fastly:
@@ -603,7 +584,6 @@ api-gateway:
                     - "{instance}--cdn-gateway"
                     - api
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1323: 80
 
@@ -617,7 +597,6 @@ journal:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 443
@@ -836,7 +815,6 @@ journal:
                     dataset: "{instance}"
                     table: "journal"
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1240: 80
@@ -847,7 +825,6 @@ pattern-library:
     formula-repo: https://github.com/elifesciences/pattern-library-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 443
@@ -863,7 +840,6 @@ pattern-library:
             subdomains:
                 - ui-patterns
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1340: 80
 
@@ -874,7 +850,6 @@ elife-metrics:
     formula-repo: https://github.com/elifesciences/elife-metrics-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -885,21 +860,17 @@ elife-metrics:
             description: end2end environment for metrics. RDS backed.
             rds:
                 backup-retention: 2 # days
-                storage-type: Standard
         prod:
             description: production environment for metrics. RDS backed.
             ext:
                 size: 10 # GB
-                type: standard
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
-                # metrics sees a constant > 20% CPU usage and isn't regenerating credits well.
-                type: db.t2.medium
+                # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
+                type: db.t3.medium
                 multi-az: true
                 storage: 20
-                storage-type: Standard
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1240: 80
 
@@ -910,23 +881,20 @@ elife-bot:
     # ip: 54.164.145.166 # bot.elifesciences.org must be available at this IP
     aws:
         ec2:
-            type: t2.medium
             ports:
                 - 22
         ext:
             size: 30 # GB
-            type: standard
         s3:
             "{instance}-elife-silent-corrections":
             "{instance}-elife-published":
-                deletion-policy: retain
                 public: true
                 cors: true
             "{instance}-elife-bot-sessions":
             "{instance}-elife-bot-digests-input":
             "{instance}-elife-bot-decision-letter-input":
             "{instance}-elife-bot-decision-letter-output":
-            "{instance}-elife-bot-accepted-submission-cleaning-output":
+            "{instance-alias-or-instance}-elife-bot-accepted-submission-cleaning-output":
         sqs:
             # gnott@2021-08: poa-incoming-queue was configured to avoid the rigidly timed PoA packaging process.
             # now the S3 notifications go into the queue, and elife-bot reads the messages at four specific times daily
@@ -939,85 +907,21 @@ elife-bot:
         sns:
             - elife-bot-event-property--{instance}
     aws-alt:
-        # lsh@2022-02-23: 
-        # * why are there no overrides for the other alt-configs?
-        # * if the default deletion-policy is to 'delete' why are we repeating ourselves over and over in the alt-configs?
-        snsalt:
+        ci:
             s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
                 "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
-        s1804:
-            s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
-                "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
-        s2004:
-            s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
-                "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
-        standalone:
-            s3:
-                "{instance}-elife-silent-corrections":
-                    deletion-policy: delete
-                "{instance}-elife-published":
-                    deletion-policy: delete
-                "{instance}-elife-bot-sessions":
-                    deletion-policy: delete
-                "{instance}-elife-bot-digests-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-input":
-                    deletion-policy: delete
-                "{instance}-elife-bot-decision-letter-output":
-                    deletion-policy: delete
-                # commented out because buckets already exist outside of CloudFormation:
-                #"{instance}-elife-bot":
-                #    deletion-policy: delete
+                    deletion-policy: retain
         end2end:
             ec2:
+                type: t3.medium
                 ports:
                     - 22
                     - 8020 # exposing FTP contents
                     - 8021 # exposing FTP contents, HTTPS
                     - 1080 # exposing mailcatcher API
             s3:
+                "{instance}-elife-published":
+                    deletion-policy: retain
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
                         end2end-incoming-queue: {}
@@ -1031,14 +935,18 @@ elife-bot:
                     sqs-notifications:
                         end2end-poa-incoming-queue: {}
                     deletion-policy: delete
-            #    end2end-elife-production-final:
-            #        sqs-notifications:
-            #            end2end-incoming-queue: {}
-            #               #prefix: null
-            #               #suffix: null
-            #
+                # commented out because bucket already exists outside of CloudFormation:
+                #"end2end-elife-bot":
+                #    deletion-policy: delete
+                #end2end-elife-production-final:
+                #    sqs-notifications:
+                #        end2end-incoming-queue: {}
+                #           #prefix: null
+                #           #suffix: null
         continuumtest:
             s3:
+                "{instance}-elife-published":
+                    deletion-policy: retain
                 "{instance}-elife-silent-corrections":
                     sqs-notifications:
                         ct-incoming-queue: {}
@@ -1048,36 +956,51 @@ elife-bot:
                 "{instance}-elife-bot-decision-letter-input":
                     sqs-notifications:
                         ct-incoming-queue: {}
-                "{instance}-elife-bot":
-                    deletion-policy: delete
                 "{instance}-elife-ejp-poa-delivery":
                     sqs-notifications:
                         continuumtest-poa-incoming-queue: {}
-                    deletion-policy: delete
+                # commented out because bucket exists outside of CloudFormation:
+                #"continuumtest-elife-bot":
+                #    deletion-policy: delete
         prod:
+            ec2:
+                type: t3.medium
             s3:
+                "{instance}-elife-published":
+                    deletion-policy: retain
                 "{instance}-elife-silent-corrections":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-digests-input":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-decision-letter-input":
+                    deletion-policy: retain
                     sqs-notifications:
                         incoming-queue: {}
                 "{instance}-elife-bot-accepted-submission-cleaning-output":
                     deletion-policy: retain
-                # already existing bucket, do not uncomment
-                #"{instance}-elife-ejp-poa-delivery":
+                # buckets needed by *elife-bot--prod* but not under configuration control:
+                # - https://github.com/elifesciences/issues/issues/7246
+                #"elife-ejp-poa-delivery":
                 #    sqs-notifications:
                 #        prod-poa-incoming-queue: {}
                 #    deletion-policy: retain
+                #elife-bot
+                #elife-ejp-ftp
+                #elife-ejp-poa-delivery
+                #elife-lens # should probably belong to a 'lens' project
+                #elife-poa-packaging
+                #elife-publishing-archive
+                #elife-publishing-expanded
+
             sqs:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
                         - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
-    vagrant:
-        box: bento/ubuntu-18.04
+    vagrant: {}
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -1143,18 +1066,12 @@ generic-cdn:
         # won't see the ec2: false in `aws:` and test_validation.py will fail for all of them.
         fresh:
             ec2: false
-        1804:
-            ec2: false
-        s1804:
-            ec2: false
-        2004:
-            ec2: false
         s2004:
             ec2: false
         standalone:
             ec2: false
         end2end:
-            # unique because: 
+            # unique because:
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
             fastly:
@@ -1163,7 +1080,7 @@ generic-cdn:
                     path: generic-cdn--end2end/
                     period: 600
         continuumtest:
-            # unique because: 
+            # unique because:
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
             fastly:
@@ -1174,7 +1091,7 @@ generic-cdn:
                 bigquerylogging:
                     dataset: "staging"
         prod:
-            # unique because: 
+            # unique because:
             # - 'fastly.subdomains' contains static values.
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
@@ -1195,7 +1112,6 @@ journal-cms:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 443
@@ -1213,49 +1129,41 @@ journal-cms:
             description: testing environment. backed by RDS
             ext:
                 size: 10 # GB
-                type: standard
         ci:
             ext:
                 size: 5 # GB
-                type: standard
         end2end:
             description: production-like environment. backed by RDS
             rds:
-                type: db.t2.medium
+                type: db.t3.medium
                 engine: MySQL
                 version: '5.7'
                 storage: 12 # GB
-                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 30 # GB
-                type: standard
         continuumtest:
             description: production-like environment.
             rds:
-                type: db.t2.small
                 engine: MySQL
-                version: '5.7.23'
+                version: '5.7'
                 storage: 48 # GB
-                storage-type: Standard
                 backup-retention: 2 # days
             ext:
                 size: 60 # GB
-                type: standard
         prod:
             description: production environment. backed by RDS
             rds:
-                type: db.t2.medium
+                type: db.t3.medium
                 engine: MySQL
-                version: '5.7.23'
+                version: '5.7'
                 multi-az: true
+                # storage can be increased but not decreased.
+                # journal-cms--prod once needed this amount.
                 storage: 48 # GB
-                storage-type: Standard
             ext:
                 size: 60 # GB
-                type: standard
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1241: 80
 
@@ -1267,7 +1175,6 @@ elife-dashboard:
     default-branch: develop
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1279,8 +1186,6 @@ elife-dashboard:
             unique: true
             description: production-like environment.
             rds:
-                storage: 5
-                storage-type: Standard
                 backup-retention: 2 # days
             sqs:
                 # legacy custom name
@@ -1300,8 +1205,6 @@ elife-dashboard:
             unique: true
             description: production environment. backed by RDS
             rds:
-                storage: 5
-                storage-type: Standard
                 multi-az: true
             sqs:
                 # legacy custom name
@@ -1309,7 +1212,6 @@ elife-dashboard:
                     subscriptions:
                         - elife-bot-event-property--prod
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
@@ -1317,8 +1219,8 @@ elife-dashboard:
 elife-reporting:
     description: an environment for development of 'eLife-Reporting-SQL', integrated with lax.
     formula-repo: https://github.com/elifesciences/elife-reporting-formula
+    aws: {}
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1333: 80
@@ -1329,30 +1231,31 @@ elife-libraries:
     formula-repo: https://github.com/elifesciences/elife-libraries-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
         ext:
             size: 30 # GB
     aws-alt:
         ci:
-            description: running unit tests
+            description: |
+                running unit tests.
+                running tasks that require a builder installation but can't be run on `elife-alfred--prod`.
         load:
             description: running load tests
-            type: t2.2xlarge
+            ec2:
+                type: t3.2xlarge
         spectrum:
             description: running end2end tests
-            # 2 core, 8 GB of memory
-            type: t2.medium
+            ec2:
+                type: t3.medium # 2 core, 8 GB of memory
             ext:
-                size: 10 # GB
-                type: standard
+                size: 50 # GB
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
-            type: c4.8xlarge
+            ec2:
+                type: c5.9xlarge
     vagrant:
-        box: bento/ubuntu-18.04
-        ram: 1024
+        ram: 4096
 
 containers:
     description: run any Docker-based workload
@@ -1361,11 +1264,8 @@ containers:
     formula-repo: https://github.com/elifesciences/containers-formula
     aws:
         ec2:
-            type: t2.medium # 4GB of RAM
             ports:
                 - 22
-        ext:
-            size: 100 # GB
     aws-alt:
         # AMIs created from here used in
         # https://alfred.elifesciences.org/configure
@@ -1375,13 +1275,11 @@ containers:
             ec2:
                 root:
                     size: 100 # GB
-                    type: gp2
         xlarge:
             ec2:
-                type: t2.xlarge # 4 CPUs
+                type: t3.xlarge # 4 CPUs
                 cpu-credits: unlimited
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
 
 elife-alfred:
@@ -1389,7 +1287,7 @@ elife-alfred:
     formula-repo: https://github.com/elifesciences/elife-alfred-formula
     aws:
         ec2:
-            type: t2.large
+            type: t3.large
             ports:
                 - 22
                 - 443
@@ -1411,24 +1309,9 @@ elife-alfred:
                 "{instance}-elife-alfred":
                     deletion-policy: retain
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 4096
         ports:
             1433: 80
-
-# used in https://alfred.elifesciences.org/configure
-# `Cloud` section
-elife-alfred-nodes:
-    description: supports dynamic creation of EC2 instances from Jenkins
-    domain: false
-    intdomain: false
-    aws:
-        ec2:
-            type: t2.small
-            cluster-size: 0
-            security-group:
-                ports:
-                    - 22
 
 api-dummy:
     subdomain: api-dummy
@@ -1436,7 +1319,6 @@ api-dummy:
     formula-repo: https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1444,9 +1326,9 @@ api-dummy:
                 - 443
     aws-alt:
         demo:
-            type: t2.micro
+            ec2:
+                type: t3.micro
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1242: 80
 
@@ -1475,6 +1357,7 @@ bus:
             - bus-metrics--{instance}
             - bus-profiles--{instance}
             - bus-digests--{instance}
+            - bus-reviewed-preprints--{instance}
 
 search:
     domain: false
@@ -1486,8 +1369,7 @@ search:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.medium
-            cpu-credits: unlimited
+            type: t3.medium
             ports:
                 - 22
                 - 80:
@@ -1502,6 +1384,7 @@ search:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
                     - bus-labs-posts--{instance}
+                    - bus-reviewed-preprints--{instance}
     aws-alt:
         end2end:
             ec2:
@@ -1540,7 +1423,7 @@ search:
                 protocol:
                     - http
     vagrant:
-        box: bento/ubuntu-18.04
+        ram: 4096
         ports:
             1244: 80
             1245: 8080
@@ -1556,14 +1439,13 @@ recommendations:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.medium # 4 GB of RAM, same as search for now.
+            type: t3.medium
             ports:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1254: 80
 
@@ -1576,7 +1458,6 @@ personalised-covers:
         - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1604,25 +1485,22 @@ personalised-covers:
                 "{instance}-elife-personalised-covers":
                     deletion-policy: retain
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1246: 80
             1247: 8080
 
 observer:
-    description: article-level reporting
+    description: article and non-article content reports, including RSS feeds and sitemap.
     subdomain: observer # observer.elifesciences.org
     repo: https://github.com/elifesciences/observer
     formula-repo: https://github.com/elifesciences/observer-formula
     aws:
         ec2:
-            # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
-            type: t2.medium
+            type: t3.medium
             ports:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
-                - 8001 # metabase
                 - 443  # app
         sqs:
             observer--{instance}:
@@ -1637,22 +1515,17 @@ observer:
                     - bus-blog-articles--{instance}
     aws-alt:
         end2end:
-            description: production-like environment. RDS backed
             rds:
                 storage: 10
-                storage-type: Standard
                 backup-retention: 2 # days
         prod:
-            description: production environment. RDS backed
+            # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             rds:
                 storage: 10
-                storage-type: Standard
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1239: 80
-            1240: 8001
 
 error-pages:
     description: static deployment of https://github.com/elifesciences/error-pages
@@ -1664,6 +1537,8 @@ error-pages:
         s3:
             "{instance}-elife-error-pages":
                 website-configuration:
+                    # lsh@2023-05-02: index.html doesn't exist in repo. You'll get a 404 if you visit this website at:
+                    # http://continuumtest-elife-error-pages.s3-website-us-east-1.amazonaws.com
                     index-document: index.html
                 cors: true
 
@@ -1687,7 +1562,7 @@ iiif:
     formula-repo: https://github.com/elifesciences/iiif-formula
     aws:
         ec2:
-            type: t2.medium
+            type: t3.medium
             ports:
                 - 22
                 - 80:
@@ -1760,12 +1635,6 @@ iiif:
     aws-alt:
         standalone:
             fastly: false
-        1804:
-            fastly: false
-        2004:
-            fastly: false
-        s1804:
-            fastly: false
         s2004:
             fastly: false
         snsalt:
@@ -1777,17 +1646,9 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
-                overrides:
-                    1:
-                        ext:
-                            type: gp2
-                    2:
-                        ext:
-                            type: gp2
                 cluster-size: 4
             ext:
                 size: 30 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -1803,7 +1664,6 @@ iiif:
                 cluster-size: 2
             ext:
                 size: 30 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -1811,7 +1671,7 @@ iiif:
                     path: /
         # manual tests
         continuumtest:
-            # unique because: 
+            # unique because:
             # - 'fastly.bigquerylogging.dataset' is using a static value.
             unique: true
             ec2:
@@ -1841,7 +1701,6 @@ iiif:
                 cluster-size: 3
             ext:
                 size: 30 # GB
-                type: standard
             elb:
                 protocol:
                     - https
@@ -1852,7 +1711,6 @@ iiif:
                     - "{instance}--cdn-iiif"
                     - iiif
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1261: 80
 
@@ -1863,21 +1721,23 @@ redirects:
     formula-repo: https://github.com/elifesciences/redirects-formula
     aws:
         ec2:
-            type: t2.nano
+            # lsh@2022-03-14: changed default instance type from a t2.nano to a t2.small.
+            # lsh@2022-06-25: t2.small has changed to t3.small
+            # getting freezing behaviour during formula testing
             ports:
                 - 22
                 - 80
                 - 443
     aws-alt:
-        s1804:
-            ec2:
-                type: t2.small
         prod:
+            ec2:
+                # lsh@2022-06-27: changed default instance from t2.nano to t3.micro
+                type: t3.micro
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
-                certificate_id: ASCAXOXT77XQCNEIRLCUH
+                certificate_id: ASCAXOXT77XQGU2AG3ROF
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
@@ -1890,7 +1750,6 @@ redirects:
                 headers:
                     - Host
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 512
         ports:
             1262: 80
@@ -1901,7 +1760,6 @@ profiles:
     formula-repo: https://github.com/elifesciences/profiles-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1910,9 +1768,6 @@ profiles:
     aws-alt:
         end2end:
             rds:
-                engine: postgres
-                storage: 5 # GB
-                storage-type: Standard
                 backup-retention: 2 # days
             ec2:
                 ports:
@@ -1924,13 +1779,8 @@ profiles:
                     - 8082 # orcid-dummy https
         prod:
             rds:
-                engine: postgres
-                storage: 5 # GB
-                storage-type: Standard
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-18.04
-        ram: 1024
         ports:
             1265: 80
 
@@ -1942,7 +1792,6 @@ annotations:
     formula-repo: https://github.com/elifesciences/annotations-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1958,7 +1807,6 @@ annotations:
                     # bucket policy has been added:
                     # http://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html#receiving-email-permissions-s3
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1248: 80
@@ -1970,7 +1818,6 @@ digests:
     formula-repo: https://github.com/elifesciences/digests-formula
     aws:
         ec2:
-            type: t2.small
             ports:
                 - 22
                 - 80:
@@ -1978,24 +1825,17 @@ digests:
     aws-alt:
         end2end:
             rds:
-                engine: postgres
-                type: db.t2.micro
-                storage: 5 # GB
+                type: db.t3.micro
                 backup-retention: 2 # days
         continuumtest:
             rds:
-                engine: postgres
-                type: db.t2.micro
-                storage: 5 # GB
+                type: db.t3.micro
                 backup-retention: 2 # days
         prod:
             rds:
-                engine: postgres
-                type: db.t2.micro
-                storage: 5 # GB
+                type: db.t3.micro
                 multi-az: true
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 1024
         ports:
             1290: 80
@@ -2011,10 +1851,6 @@ elife-libero-reviewer:
     aws-alt:
         staging:
             rds:
-                engine: postgres # or 'MySQL'
-                version: '12.3'
-                type: db.t2.small
-                storage: 5 # GB
                 backup-retention: 2 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
             s3:
@@ -2023,43 +1859,11 @@ elife-libero-reviewer:
         prod:
             rds:
                 multi-az: true
-                engine: postgres # or 'MySQL'
-                version: '12.3'
-                type: db.t2.small
-                storage: 5 # GB
-                backup-retention: 28 # days
                 encryption: arn:aws:kms:us-east-1:512686554592:key/b626157a-1e5b-4bf6-8799-211505efe072
                 deletion-policy: Snapshot
             s3:
                 "{instance}-elife-libero-reviewer":
                     encryption: arn:aws:kms:us-east-1:512686554592:key/b6f44e77-46d8-41bb-a2e5-75c0588a2b20
-
-# deployed via EKS, not EC2
-elife-libero-editor:
-    aws:
-        ec2: false
-        s3:
-            "{instance}-elife-libero-editor": {}
-        sqs:
-            # Monitor the production process bucket for new deposits from Exeter.
-            elife-libero-editor-import--{instance}:
-                subscriptions:
-                    - elife-production-processes-events
-        docdb: {}
-    aws-alt: 
-        staging:
-            # unique because: 'sns' contains static values.
-            unique: true
-            # This bucket is required by editor but was created manually pre-editor so can't be configured via builder.
-            # It should also notify the bus-elife-libero-editor on Put events
-            # s3:
-            #   "elife-production-processes":
-            sns:
-                - "elife-production-processes-events"
-        prod: 
-            s3:
-                "{instance}-elife-libero-editor":
-                    deletion-policy: delete
 
 task-adept:
     description: production data dumps from TaskAdept
@@ -2085,8 +1889,17 @@ fastly-logs:
     description: Fastly CDN access logs
     domain: false
     intdomain: false
+    terraform:
+        # lsh@2023-04-25: got an esoteric error about missing credentials attempting to use 
+        # "-/google" instead of "hashicorp/google".
+        # fixing providers part is part of this ticket:
+        # - https://github.com/elifesciences/issues/issues/8256
+        provider-vault:
+            source: "hashicorp/vault"
+        provider-google:
+            source: "hashicorp/google"
     aws:
-        # unique because: 
+        # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
         # - 'gcp.bigquery.{instance}.tables' contains static values.
         unique: true
@@ -2104,12 +1917,30 @@ fastly-logs:
                     generic_cdn:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     journal:
+                        time-partitioning:
+                            field: timestamp
+                            type: DAY
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
-                    reproducible_document_stack:
-                        schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
+                    # lsh@2023-04-25: unused in prod
+                    # - https://github.com/elifesciences/issues/issues/8246
+                    #reproducible_document_stack:
+                    #    schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
     aws-alt: {}
+    gcp-alt:
+        staging:
+            bigquery:
+                "{instance}":
+                    tables:
+                        reproducible_document_stack:
+                            schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
+        end2end:
+            bigquery:
+                "{instance}":
+                    tables:
+                        reproducible_document_stack:
+                            schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
 
 data-pipeline:
     description: Data consolidation project
@@ -2131,17 +1962,17 @@ bastion:
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
         ec2:
-            type: t2.nano # 500 MB
             ports:
                 - 22
     aws-alt:
         prod:
+            ec2:
+                type: t3.nano # 500 MB ram
             # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
                 - bastion
     vagrant:
-        box: bento/ubuntu-18.04
         ram: 512
 
 reproducible-document-stack:
@@ -2189,7 +2020,7 @@ reproducible-document-stack:
                 table: "reproducible_document_stack"
     aws-alt:
         prod:
-            # unique because: 
+            # (still) unique because:
             # - 'fastly.bigquerylogging.table' contains a static value.
             # - 'fastly.subdomains' contains a static value.
             unique: true
@@ -2208,52 +2039,47 @@ kubernetes-aws:
         flux-prod:
             ec2: false
             eks:
-                version: '1.19'
+                version: '1.25'
                 worker:
                     type: t3.large
-                    max-size: 9
-                    desired-capacity: 9
-                # since helm: is not installed, this will only add AWS resources
-                # but not the ExternalDNS chart release
-                external-dns:
-                    domain-filter: "elifesciences.org"
+                    max-size: 18
+                    desired-capacity: 16
+                iam-oidc-provider: true
+                iam-roles:
+                    kubernetes-autoscaler:
+                        policy-template: kubernetes-autoscaler
+                        service-account: cluster-autoscaler-aws-cluster-autoscaler
+                        namespace: autoscaler
+                    external-dns:
+                        policy-template: external-dns
+                        service-account: infra-external-dns
+                        namespace: infra
+                    aws-ebs-csi-driver:
+                        policy-template: aws-ebs-csi-driver
+                        service-account: ebs-csi-controller-sa
+                        namespace: kube-system
         flux-test:
             ec2: false
             eks:
-                version: '1.19'
+                version: '1.25'
                 worker:
                     type: t3.large
                     max-size: 6
-                    desired-capacity: 3
-                    root:
-                        size: 40 # GiB    
-                # since helm: is not installed, this will only add AWS resources
-                # but not the ExternalDNS chart release
-                external-dns:
-                    domain-filter: "elifesciences.org"
-                autoscaler-policy: true
-
-# lsh@2021-06-18: deprecated. Software Heritage is replacing elifesciences-publications
-large-repo-wrangler:
-    description: when elifesciences-publications requires a large git repository to be wrangled. adhoc instances only.
-    domain: False
-    intdomain: False
-    formula-repo: https://github.com/elifesciences/large-repo-wrangler-formula
-    aws:
-        ec2:
-            type: t2.small
-            ports:
-                - 22
-        ext:
-            size: 20 # GB
-            device: /dev/sdh
-    aws-alt:
-        quite-large:
-            ec2:
-                type: t2.large
-            ext:
-                size: 50
-    vagrant: {}
+                    desired-capacity: 2
+                iam-oidc-provider: true
+                iam-roles:
+                    kubernetes-autoscaler:
+                        policy-template: kubernetes-autoscaler
+                        service-account: cluster-autoscaler-aws-cluster-autoscaler
+                        namespace: autoscaler
+                    external-dns:
+                        policy-template: external-dns
+                        service-account: infra-external-dns
+                        namespace: infra
+                    aws-ebs-csi-driver:
+                        policy-template: aws-ebs-csi-driver
+                        service-account: ebs-csi-controller-sa
+                        namespace: kube-system
 
 bioprotocol:
     subdomain: bp # {instance}--bp.elifesciences.org
@@ -2261,7 +2087,6 @@ bioprotocol:
     formula-repo: https://github.com/elifesciences/bioprotocol-formula
     aws:
         ec2:
-            type: t2.small
             # ip: 52.200.243.108 # required by BP to whitelist our interactions with their API
             ports:
                 - 22
@@ -2275,7 +2100,6 @@ bioprotocol:
                     - bus-articles--{instance}
     aws-alt: {}
     vagrant:
-        box: bento/ubuntu-18.04
         ports:
             1280: 80
 
@@ -2301,12 +2125,6 @@ firewall:
 
     aws-alt:
         fresh:
-            ec2: false
-        1804:
-            ec2: false
-        s1804:
-            ec2: false
-        2004:
             ec2: false
         s2004:
             ec2: false
@@ -2344,7 +2162,8 @@ firewall:
                 custom-rules:
                     - elife-Whitelist.json
                     - elife-Blacklist.json
-                    - elife-DistributedSlowBot.json
+                    # lsh@2022-04-08: disabled, aws bot rules were ineffective, undermining this rule.
+                    #- elife-DistributedSlowBot.json
                     - elife-RateLimitExcessiveBotTraffic.json
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:

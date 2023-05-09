@@ -19,4 +19,4 @@ if [ -f .use-fabric.flag ]; then
     export BLDR_BACKEND=fabric
 fi
 
-python src/taskrunner.py "$*"
+python3 src/taskrunner.py "$*"

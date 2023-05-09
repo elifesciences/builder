@@ -2,9 +2,9 @@ from time import time
 import os
 from os.path import join
 import utils
-from buildercore import core, project, config
-from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr
-from functools import wraps
+from buildercore import core, project, config, cloudformation, utils as core_utils
+from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr, ensure
+from functools import wraps, partial
 from pprint import pformat
 import logging
 
@@ -35,7 +35,7 @@ def requires_filtered_project(filterfn=None):
     def wrap1(func):
         @wraps(func)
         def wrap2(_pname=None, *args, **kwargs):
-            pname = os.environ.get('PROJECT', _pname) # used by Vagrant ...?
+            pname = config.ENV['PROJECT'] or _pname # used by Vagrant ...?
             project_list = project.filtered_projects(filterfn)
             if not pname or not pname.strip() or pname not in project_list:
                 # TODO:
@@ -75,9 +75,10 @@ def requires_aws_project_stack(*plist):
     return wrap1
 
 def requires_aws_stack(func):
+    """requires a stack to exist and will prompt if one was not provided."""
     @wraps(func)
     def call(*args, **kwargs):
-        stackname = first(args) or os.environ.get('INSTANCE')
+        stackname = first(args) or config.ENV['INSTANCE']
         region = utils.find_region(stackname)
         if stackname:
             args = args[1:]
@@ -92,17 +93,31 @@ def requires_aws_stack(func):
         return func(stackname, *args, **kwargs)
     return call
 
+def requires_aws_stack_template(func):
+    """downloads the cloudformation JSON template and writes it to disk before calling wrapped function.
+    assumes first argument to task is a `stackname`."""
+    @wraps(func)
+    def call(stackname, *args, **kwargs):
+        stack_template_path = cloudformation.find_template_path(stackname)
+        msg = "task requires cloudformation template to exist locally, but template not found and could not be downloaded: " + stack_template_path
+        ensure(os.path.exists(stack_template_path), msg, utils.TaskExit)
+        return func(stackname, *args, **kwargs)
+    return call
+
 def requires_steady_stack(func):
     @wraps(func)
     def call(*args, **kwargs):
         ss = core.steady_aws_stacks(utils.find_region())
         keys = lmap(first, ss)
         idx = dict(zip(keys, ss))
-        helpfn = lambda pick: idx[pick][1]
+
+        def helpfn(pick):
+            return idx[pick][1]
+
         if not keys:
             print('\nno AWS stacks *in a steady state* exist, cannot continue.')
             return
-        stackname = first(args) or os.environ.get('INSTANCE')
+        stackname = first(args) or config.ENV['INSTANCE']
         if not stackname or stackname not in keys:
             stackname = utils._pick("stack", sorted(keys), helpfn=helpfn, default_file=deffile('.active-stack'))
         return func(stackname, *args[1:], **kwargs)
@@ -120,3 +135,39 @@ def echo_output(func):
             print(pformat(remove_ordereddict(res)))
         return res
     return _wrapper
+
+def format_output(default_output_format='json'):
+    """like `echo_output`, but the output can be formatted in different ways, defaults to json.
+    use 'python' to replicate `echo_output` without the leading 'output:' on stderr."""
+    output_format_map = {
+        'json': partial(core_utils.json_dumps, dangerous=True, indent=4),
+        'yaml': core_utils.yaml_dumps,
+        'python': pformat
+    }
+
+    def _wrap1(fn):
+        @wraps(fn)
+        def _wrap2(*args, **kwargs):
+            output_format = default_output_format
+            if 'output_format' in kwargs:
+                output_format = kwargs.pop('output_format')
+            ensure(output_format in output_format_map,
+                   "unsupported output format %r: %s" % (str(output_format), ", ".join(output_format_map)))
+            data = fn(*args, **kwargs)
+            print(output_format_map[output_format](data))
+            return data
+        return _wrap2
+    return _wrap1
+
+# ---
+
+def requires_stack_config(func):
+    "ensures the given `stackname` exists in the known stack config"
+    @wraps(func)
+    def call(*args, **kwargs):
+        stackname = first(args)  # or config.ENV['INSTANCE'] # preserve this? I can't see anything using it.
+        ensure(stackname, "stackname required", utils.TaskExit)
+        stack = project.stack(stackname)
+        ensure(stack, "stack %r not found" % stackname, utils.TaskExit)
+        return func(stackname, *args[1:], **kwargs)
+    return call

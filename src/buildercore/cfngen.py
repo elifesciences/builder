@@ -17,14 +17,15 @@ We want to add an external volume to an EC2 instance to increase available space
 
 """
 
+from slugify import slugify
 import logging
-import os, json
+import json
 import re
 from collections import OrderedDict, namedtuple
 from functools import partial
 import botocore
 import netaddr
-from . import utils, cloudformation, terraform, core, project, context_handler
+from . import config, utils, cloudformation, terraform, core, project, context_handler
 from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
 
 LOG = logging.getLogger(__name__)
@@ -52,6 +53,32 @@ FASTLY_AWS_REGION_SHIELDS = {
     'sa-east-1': 'gig-riodejaneiro-br', # Rio de Janeiro
 }
 
+def instance_alias(instance_id):
+    """if an instance called FOO has an alias BAR, return BAR else `None`.
+
+    Used in cases where the resource names generated with the `instance_id` are too long!
+    for example, the `instance_id`:
+        "pr-100-base-update"
+    may generate an S3 bucket name of:
+        "pr-100-base-update-elife-bot-accepted-submission-cleaning-output"
+    that is 64 characters long when the maximum is 63.
+    with an alias we can shorten that at the expense of this extra indirection."""
+    if not isinstance(instance_id, str):
+        return None
+
+    # pr-*-base-update
+    base_update_alias_regex = re.compile(r"pr-(?P<pr>\d+)-base-update")
+    match = re.match(base_update_alias_regex, instance_id)
+    if match:
+        alias = "bu"
+        pr_num = match.group('pr')
+        return "pr-%s-%s" % (pr_num, alias) # "pr-123-bu"
+
+    # add further aliases here
+    # ...
+
+    return None
+
 def parameterize(context):
     """certain property values in the project file are placeholders and are replaced with
     actual values from the *project instance context* at render time.
@@ -59,10 +86,65 @@ def parameterize(context):
     For example: "{placeholder}" becomes "{placeholder}".format(placeholder=context['placeholder'])"""
     def wrapper(string):
         placeholders = {
-            'instance': context['instance_id']
+            'instance': context['instance_id'],
+            'instance-alias-or-instance': instance_alias(context['instance_id']) or context['instance_id']
         }
         return string.format(**placeholders)
     return wrapper
+
+def hostname_struct(stackname):
+    "returns a dictionary with convenient domain name information"
+
+    pname, instance_id = core.parse_stackname(stackname)
+
+    # lsh@2022-09-19: err, watch out here, boundaries between project and instance context
+    # data have become blurry. func signature needs a stackname, implying a project *instance*,
+    # but then we immediately load the raw project data and start pulling from there.
+
+    pdata = project.project_data(pname)
+    domain = pdata.get('domain')
+    intdomain = pdata.get('intdomain')
+    subdomain = pdata.get('subdomain')
+
+    struct = {
+        'domain': domain, # elifesciences.org
+        'int_domain': intdomain, # elife.internal
+
+        'subdomain': subdomain, # gateway
+
+        'hostname': None, # temp.gateway
+
+        'project_hostname': None, # gateway.elifesciences.org
+        'int_project_hostname': None, # gateway.elife.internal
+
+        'full_hostname': None, # gateway--temp.elifesciences.org
+        'int_full_hostname': None, # gateway--temp.elife.internal
+    }
+    if not subdomain:
+        # this project doesn't expect to be addressed
+        # return immediately with what we do have
+        return struct
+
+    # removes any non-alphanumeric or hyphen characters
+    instance_subdomain_fragment = re.sub(r'[^\w\-]', '', instance_id)
+    hostname = instance_subdomain_fragment + "--" + subdomain
+
+    updates = {
+        'hostname': hostname,
+    }
+
+    if domain:
+        updates['project_hostname'] = subdomain + "." + domain
+        updates['full_hostname'] = hostname + "." + domain
+        updates['ext_node_hostname'] = hostname + "--%s." + domain
+
+    if intdomain:
+        updates['int_project_hostname'] = subdomain + "." + intdomain
+        updates['int_full_hostname'] = hostname + "." + intdomain
+        updates['int_node_hostname'] = hostname + "--%s." + intdomain
+
+    struct.update(updates)
+    return struct
 
 def build_context(pname, **more_context):
     """builds a dictionary called the `context` that is used when rendering the final cloudformation/terraform template.
@@ -94,7 +176,8 @@ def build_context(pname, **more_context):
         'project_name': pname,
         # 'project': project_data,
 
-        'author': os.environ.get("LOGNAME") or 'unknown',
+        'author': config.STACK_AUTHOR,
+
         # lsh@2022-02-16: disabled. dates make testing difficult and this value doesn't appear to be used.
         # 'date_rendered': utils.ymd(), # TODO: if this value is used at all, more precision might be nice
 
@@ -140,6 +223,7 @@ def build_context(pname, **more_context):
     wrangler_list = [
         partial(build_context_rds, existing_context=existing_context),
         build_context_aws,
+        build_context_terraform,
         build_context_ec2,
         build_context_elb,
         build_context_alb,
@@ -223,6 +307,11 @@ def build_context_docdb(pdata, context, existing_context=None):
     })
     return context
 
+def build_context_terraform(pdata, context):
+    """adds the commonly used Terraform fields to the context under `terraform`."""
+    context['terraform'] = pdata['terraform']
+    return context
+
 def build_context_aws(pdata, context):
     """adds the commonly used AWS fields to the context under `aws`.
     these are fields that are common to many resources such as `account-id` and `availability-zone`."""
@@ -232,12 +321,18 @@ def build_context_aws(pdata, context):
         'region',
         'account-id',
         'vpc-id',
+
         'subnet-id',
         'subnet-cidr',
         'availability-zone',
+
         'redundant-subnet-id',
         'redundant-subnet-cidr',
         'redundant-availability-zone',
+
+        'redundant-subnet-id-2',
+        'redundant-subnet-cidr-2',
+        'redundant-availability-zone-2',
     ]
     context['aws'] = subdict(pdata['aws'], keepers)
     return context
@@ -286,7 +381,7 @@ def project_wrangler(pdata, context):
     # provides: 'domain', 'int_domain', 'subdomain',
     #           'hostname', 'project_hostname', 'int_project_hostname',
     #           'full_hostname', 'int_full_hostname'
-    context.update(core.hostname_struct(context['stackname']))
+    context.update(hostname_struct(context['stackname']))
 
     # project data
     # preseve some of the project data. all of it is too much
@@ -314,10 +409,10 @@ def set_master_address(pdata, context, master_ip=None):
     master_ip = master_ip or context['ec2'].get('master_ip')
     ensure(master_ip, "a master-ip was neither explicitly given nor found in the data provided")
     context['ec2']['master_ip'] = master_ip
-    if 'aws' in pdata:
-        if context['ec2'].get('masterless'):
-            # this is a masterless instance, delete key
-            del context['ec2']['master_ip']
+    # lsh@2022-07-06: what is this 'aws' check for?
+    if 'aws' in pdata and lookup(context, 'ec2.masterless', False):
+        # this is a masterless instance, delete key
+        del context['ec2']['master_ip']
     return context
 
 def build_context_ec2(pdata, context):
@@ -336,12 +431,12 @@ def build_context_ec2(pdata, context):
     # I suspect the project_data caching oversight was allowing this to pass.
 
     context['ec2'] = pdata['aws'].get('ec2')
-    if context['ec2'] == True:
+    if context["ec2"] is True:
         msg = "'ec2: True' is no longer supported, stack needs it's context refreshed: %s" % stackname
         LOG.warning(msg)
         raise ValueError(msg)
 
-    if context['ec2'] == False:
+    if context["ec2"] is False:
         return context
 
     # we can now assume this will always be a dict
@@ -362,41 +457,82 @@ def build_context_ec2(pdata, context):
     if 'ext' in pdata['aws']:
         context['ext'] = pdata['aws']['ext']
 
+    if 'root' in context['ec2']:
+        if "type" not in context["ec2"]["root"]:
+            context['ec2']['root']['type'] = 'gp2'
+        if "device" not in context["ec2"]["root"]:
+            context['ec2']['root']['device'] = '/dev/sda1'
+
     return context
 
 def build_context_rds(pdata, context, existing_context):
     if 'rds' not in pdata['aws']:
         return context
-    stackname = context['stackname']
 
-    # deletion policy
-    deletion_policy = lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot')
+    stackname = context['stackname']
 
     # used to give mysql a range of valid ip addresses to connect from
     subnet_cidr = netaddr.IPNetwork(pdata['aws']['subnet-cidr'])
     net = subnet_cidr.network
     mask = subnet_cidr.netmask
-    networkmask = "%s/%s" % (net, mask) # ll: 10.0.2.0/255.255.255.0
+    networkmask = "%s/%s" % (net, mask) # "10.0.2.0/255.255.255.0"
 
     # pull password from existing context, if it exists
     generated_password = utils.random_alphanumeric(length=32)
-    rds_password = existing_context.get('rds_password')
-    if not rds_password:
-        # may be present but None
-        rds_password = generated_password
+    rds_password = existing_context.get('rds_password') or generated_password
 
-    # TODO: shift the below under a 'rds' key
+    auto_rds_dbname = slugify(stackname, separator="") # lax--prod => laxprod
+    existing_rds_dbname = existing_context.get('rds_dbname')
+    override = lookup(pdata, 'aws.rds.db-name', None)
+    rds_dbname = override or existing_rds_dbname or auto_rds_dbname
+
+    updating = True if existing_context else False
+    replacing = False
+
+    context['rds'] = pdata['aws']['rds']
+
+    if updating:
+        # what conditions (supported by builder) will cause a db replacement?
+        # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html
+        path_list = [('rds.snapshot-id', None),
+                     ('rds.encryption', False),
+                     ('rds.db-name', None)]
+        for path, default in path_list:
+            old_val = lookup(existing_context, path, default)
+            new_val = lookup(context, path, default)
+            if new_val != old_val:
+                #print("%s old %r vs new %r" % (path, old_val, new_val))
+                replacing = True
+
+    num_replacements = 0
+    if replacing:
+        # has the db been replaced before? if so, we need to increment a number as
+        # the Cloudformation generation (trop.py) doesn't have access to previously generated templates.
+        # if the AttachedDB is to be replaced, it needs a new custom name.
+        num_replacements = lookup(existing_context, 'rds.num-replacements', 0)
+        num_replacements += 1
+
+    rds_instance_id = core.rds_iid(stackname, num_replacements)
+
+    context['rds'].update({
+        'deletion-policy': lookup(pdata, 'aws.rds.deletion-policy', 'Snapshot'),
+        'replacing': replacing,
+        'num-replacements': num_replacements,
+    })
+
+    # don't introduce new 'db-name' field until we've migrated 'rds_dbname'
+    if 'db-name' in context['rds']:
+        del context['rds']['db-name']
+
+    # TODO: shift the below under the 'rds' key
     context.update({
         'netmask': networkmask,
         'rds_username': 'root',
         'rds_password': rds_password,
-        # alpha-numeric only
-        'rds_dbname': core.rds_dbname(stackname, context), # name of default application db
-        'rds_instance_id': core.rds_iid(stackname), # name of rds instance
+        'rds_dbname': rds_dbname,
+        'rds_instance_id': rds_instance_id,
         'rds_params': pdata['aws']['rds'].get('params', []),
-        'rds': pdata['aws']['rds'],
     })
-    context['rds']['deletion-policy'] = deletion_policy
 
     return context
 
@@ -408,7 +544,8 @@ def build_context_elb(pdata, context):
         context['elb'].update({
             'subnets': [
                 pdata['aws']['subnet-id'],
-                pdata['aws']['redundant-subnet-id']
+                pdata['aws']['redundant-subnet-id'],
+                pdata['aws']['redundant-subnet-id-2'],
             ],
         })
     return context
@@ -418,7 +555,9 @@ def build_context_alb(pdata, context):
         context['alb'] = pdata['aws']['alb']
         context['alb']['idle_timeout'] = str(context['alb']['idle_timeout'])
         context['alb']['subnets'] = [
-            pdata['aws']['subnet-id'], pdata['aws']['redundant-subnet-id']
+            pdata['aws']['subnet-id'],
+            pdata['aws']['redundant-subnet-id'],
+            pdata['aws']['redundant-subnet-id-2'],
         ]
     return context
 
@@ -736,7 +875,7 @@ REMOVABLE_TITLE_PATTERNS = [
     '^IntDNS.*$',
     '^ElastiCache.*$',
     '^.+Topic$',
-    '^AttachedDB$',
+    '^AttachedDB\\d*$',
     '^AttachedDBSubnet$',
     '^VPCSecurityGroup$',
     '^KeyName$',
@@ -815,7 +954,7 @@ def template_delta(context):
 
     # TODO: investigate if this is still necessary
     # start backward compatibility code
-    # back for when EC2Instance was the title rather than EC2Instance1
+    # back for when 'EC2Instance' was the title rather than 'EC2Instance1'
     if 'EC2Instance' in old_template['Resources']:
         if 'ExtraStorage' in template['Resources']:
             template['Resources']['ExtraStorage']['Properties']['AvailabilityZone']['Fn::GetAtt'][0] = 'EC2Instance'
@@ -831,7 +970,7 @@ def template_delta(context):
         if section in old_template:
             # title was there before with a deprecated name, leave it alone
             # e.g. 'EC2Instance' rather than 'EC2Instance1'
-            if not title in old_template[section]:
+            if title not in old_template[section]:
                 return False
         else:
             LOG.warning("section %r not present in old template but is present in new: %s" % (section, title))
@@ -935,7 +1074,7 @@ def regenerate_stack(stackname, **more_context):
     # 2. edit the `alt-config` key
     # 3. $ aws s3 cp kubernetes-aws--test.json s3://elife-builder/contexts/kubernetes-aws--test.json
 
-    more_context['alt-config'] = current_context['alt-config']
+    more_context['alt-config'] = current_context.get('alt-config', None)
     context = build_context(pname, existing_context=current_context, **more_context)
     delta = template_delta(context)
     return context, delta, current_context

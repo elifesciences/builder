@@ -1,0 +1,9 @@
+# user settings for builder.
+# copy to `settings.yaml` to start using.
+# see `srv/buildercore/config.py` for parsing.
+
+project-files:
+    - ./projects/elife.yaml
+    
+#stack-files:
+#    - ./stacks/example.yaml

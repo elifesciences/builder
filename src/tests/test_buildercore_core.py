@@ -1,50 +1,15 @@
+from moto import mock_rds
 import pytest
 from functools import partial
 import json
 from os.path import join
 from . import base
-from buildercore import core, utils, project
+from buildercore import core, utils, project, command
 from unittest import skip
 from unittest.mock import patch, Mock
 import botocore
 
 class SimpleCases(base.BaseCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    def test_hostname_struct_no_subdomain(self):
-        expected = {
-            'domain': "example.org",
-            'int_domain': "example.internal",
-            'subdomain': None,
-            'project_hostname': None,
-            'int_project_hostname': None,
-            'hostname': None,
-            'full_hostname': None,
-            'int_full_hostname': None,
-        }
-        stackname = 'dummy1--test'
-        self.assertEqual(core.hostname_struct(stackname), expected)
-
-    def test_hostname_struct_with_subdomain(self):
-        expected = {
-            'domain': "example.org",
-            'int_domain': "example.internal",
-            'subdomain': 'dummy2',
-            'hostname': 'ci--dummy2',
-            'project_hostname': 'dummy2.example.org',
-            'int_project_hostname': 'dummy2.example.internal',
-            'full_hostname': 'ci--dummy2.example.org',
-            'int_full_hostname': 'ci--dummy2.example.internal',
-            'ext_node_hostname': 'ci--dummy2--%s.example.org',
-            'int_node_hostname': 'ci--dummy2--%s.example.internal',
-        }
-        stackname = 'dummy2--ci'
-        self.assertEqual(core.hostname_struct(stackname), expected)
-
     def test_project_name_from_stackname(self):
         expected = [
             ('elife-bot--2015-04-29', 'elife-bot'),
@@ -156,7 +121,7 @@ class SimpleCases(base.BaseCase):
                 self.assertCountEqual(expected_subs, actual_subs)
 
 class Errors(base.BaseCase):
-    @patch('buildercore.core.stack_data')
+    @patch('buildercore.core.ec2_data')
     def test_no_running_instances_found(self, stack_data):
         stack_data.return_value = []
         self.assertEqual(
@@ -164,7 +129,7 @@ class Errors(base.BaseCase):
             {}
         )
 
-    @patch('buildercore.core.stack_data')
+    @patch('buildercore.core.ec2_data')
     def test_no_public_ips_available(self, stack_data):
         stack_data.return_value = [
             {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Tags': []},
@@ -192,7 +157,8 @@ class TestCoreNewProjectData(base.BaseCase):
         for pname, expected_path in expected:
             expected_data = json.load(open(expected_path, 'r'))
             project_data = project.project_data(pname)
-            #json.dump(project_data, open('/tmp/foo.json', 'w'), indent=4)
+            # cp /tmp/dummy*-project.json src/tests/fixtures/
+            #json.dump(project_data, open('/tmp/%s-project.json' % pname, 'w'), indent=4)
             project_data = utils.remove_ordereddict(project_data)
             self.assertEqual(expected_data, project_data)
 
@@ -254,3 +220,92 @@ def test_stack_exists__bad_state_label():
             core.stack_exists(stackname, state='cursed')
         exc = pytest_exc_info.value
         assert str(exc) == "unsupported state label 'cursed'. supported states: None, active, steady"
+
+def test_rds_iid():
+    "values are slugified into valid rds iids"
+    cases = [
+        ('a', 'a'),
+        ('laxprod', 'laxprod'),
+        ('lax--prod', 'lax-prod'),
+        ('lax--1--2---3----4', 'lax-1-2-3-4')
+    ]
+    for given, expected in cases:
+        assert core.rds_iid(given) == expected
+
+def test_rds_iid__replacement_num():
+    "a replacement number can be passed to suffix the generated rds iid"
+    cases = [
+        ('a', 0, 'a'),
+        ('a', 1, 'a-1'),
+        ('a', 99, 'a-99'),
+        ('1', 1, '1-1'),
+        ('lax--prod', 2, 'lax-prod-2'),
+        ('lax--1---2----3-----4', 5, 'lax-1-2-3-4-5')
+    ]
+    for given, replacement, expected in cases:
+        assert core.rds_iid(given, replacement) == expected
+
+def test_rds_iid__bad_cases():
+    "bad inputs to `rds_iid` raise `AssertionError`s"
+    cases = [
+        None, '', '-', {}
+    ]
+    for given in cases:
+        with pytest.raises(AssertionError):
+            core.rds_iid(given)
+
+
+@mock_rds
+def test_find_rds_instances(test_projects):
+    "an rds instance is found with the correct rds iid."
+    stackname = "dummy1--bar"
+    rds_iid = expected = "dummy1-bar"
+    conn = core.boto_client('rds', 'us-east-1')
+    conn.create_db_instance(DBInstanceIdentifier=rds_iid, DBInstanceClass="db.t2.small", Engine="postgres")
+    context = {}
+    with patch('buildercore.context_handler.load_context', return_value=context):
+        actual = core.find_rds_instances(stackname)
+        assert actual[0]['DBInstanceIdentifier'] == expected
+
+@mock_rds
+def test_find_rds_instances__replacement(test_projects):
+    "the correct rds iid is generated when `rds.num-replacements` is set in project's context."
+    stackname = "dummy1--bar"
+    rds_iid = expected = "dummy1-bar-99"
+    conn = core.boto_client('rds', 'us-east-1')
+    conn.create_db_instance(DBInstanceIdentifier=rds_iid, DBInstanceClass="db.t2.small", Engine="postgres")
+    context = {'rds': {'num-replacements': 99}}
+    with patch('buildercore.context_handler.load_context', return_value=context):
+        actual = core.find_rds_instances(stackname)
+        assert actual[0]['DBInstanceIdentifier'] == expected
+
+@patch('buildercore.core.ec2_data', return_value=[
+    {'InstanceId': 'foo', 'PublicIpAddress': '0', 'Tags': []}
+])
+def test_stack_all_ec2_nodes__network_retry_logic(_):
+    "NetworkErrors are caught and retried N times before finally failing with the last raised exception"
+    expected = 6
+    retried = 0
+
+    exc = ConnectionRefusedError("foo")
+    expected_exc = command.NetworkError(exc)
+
+    def raiser(*args, **kwargs):
+        nonlocal retried, exc
+        retried += 1
+        raise exc
+
+    m = Mock()
+    m.run_command = raiser
+    stackname = "foo--bar"
+    with patch('buildercore.threadbare.operations._ssh_client', return_value=m):
+        with pytest.raises(command.NetworkError) as last_exc:
+            core.stack_all_ec2_nodes(
+                stackname,
+                (command.remote, {'command': "echo 'hello world'"}),
+                abort_on_prompts=True,
+                # 'retried' isn't updated on our thread when run using 'parallel'
+                concurrency='serial'
+            )
+            assert last_exc == expected_exc
+        assert retried == expected

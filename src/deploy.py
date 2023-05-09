@@ -1,7 +1,7 @@
 """module concerns itself with tasks involving branch deployments of projects."""
 
 from pprint import pformat
-from decorators import requires_aws_stack
+from decorators import requires_aws_stack, requires_aws_stack_template
 from buildercore import core, bootstrap, bluegreen_v2, bluegreen, cloudformation, context_handler, trop
 from buildercore.core import all_node_params
 from buildercore.concurrency import concurrency_for
@@ -58,25 +58,36 @@ def load_balancer_register_all__v2(stackname):
 
 # --- api
 
-@requires_aws_stack
-def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
-    "changes the revision of the stack's project and then calls highstate."
-    buildvars.switch_revision(stackname, revision)
-    bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency_for(stackname, concurrency))
-
 # todo: what is using this? consider moving to `report.py`, it has nothing to do with deploying things
 @requires_aws_stack
+@requires_aws_stack_template
 def load_balancer_status(stackname):
     "prints the 'health' status of ec2 instances attached to the load balancer."
     if cloudformation.template_using_elb_v1(stackname):
         load_balancer_status__v1(stackname)
-    else:
+    elif cloudformation.template_using_elb_v2(stackname):
         load_balancer_status__v2(stackname)
+    else:
+        LOG.debug("no load balancer found: %s", stackname)
 
 @requires_aws_stack
+@requires_aws_stack_template
 def load_balancer_register_all(stackname):
-    "ensure all ec2 nodes for given `stackname` are registered (added) to the load balancer."
+    "Add all of a stack's ec2 nodes to it's load balancer."
     if cloudformation.template_using_elb_v1(stackname):
         load_balancer_register_all__v1(stackname)
-    else:
+    elif cloudformation.template_using_elb_v2(stackname):
         load_balancer_register_all__v2(stackname)
+    else:
+        LOG.debug("no load balancer found: %s", stackname)
+
+@requires_aws_stack
+@requires_aws_stack_template
+def switch_revision_update_instance(stackname, revision=None, concurrency='serial'):
+    "changes the revision of the stack's project and then calls highstate."
+    buildvars.switch_revision(stackname, revision)
+    # if lb present, ensure all nodes are registered.
+    # otherwise the blue-green concurrency may timeout waiting for all nodes to be in service:
+    # - https://github.com/elifesciences/issues/issues/8057
+    load_balancer_register_all(stackname)
+    bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency_for(stackname, concurrency))

@@ -1,26 +1,46 @@
-"""Configuration file for `buildercore`.
+"""app configuration.
 
-buildercore was originally part of builder, then separated out
-into it's own project 'builder-core' but was eventually re-integrated.
-This transition meant that `src/buildercore/` is still neatly separated
-from the interface logic in `./src/taskrunner.py`.
+Avoid modifying these values during normal usage.
+
+See `settings.yaml.dist` for per-user configuration.
+
+See `config.ENV` for a list of supported envvars and their defaults.
+
+Values in `config.ENV` should override matching values found in `settings.yaml`.
+
+For testing, see `switch_in_test_settings` and `set_config` in `./src/tests/base.py`.
 
 """
 import os
 import getpass
 from os.path import join
 from buildercore import utils
-from buildercore.utils import lmap, lfilter
-from kids.cache import cache
+from buildercore.utils import ensure, lmap
 import logging
 
-class ConfigurationError(Exception):
-    pass
-
-# dirs are relative
-# paths are absolute
-# a file is an absolute path to a file
+# *_DIR are relative
+# *_PATH are absolute
+# *_FILE are absolute paths to a file
 # filenames are names of files without any other context
+
+# prevent the spread of calls to 'os.environ' through the code.
+ENV = {
+    # envvar, default
+    'LOG_LEVEL_FILE': 'INFO',
+    # note: simple presence of this envvar will switch it to True
+    # so 'BUILDER_NON_INTERACTIVE=false ./bldr foo' will see the string 'false' and go `bool('false')` => `True`
+    'BUILDER_NON_INTERACTIVE': None, # interactive by default
+    'BUILDER_TIMEOUT': 600, # seconds, 10 minutes
+    'CUSTOM_SSH_KEY': '~/.ssh/id_rsa',
+    'BLDR_TWI_REUSE_STACK': 0, # False
+    'BLDR_TWI_CLEANUP': '1', # True
+    'BLDR_ROLE': None, # or 'admin', see taskrunner.py
+    'PROJECT': None,
+    'INSTANCE': None,
+    'BLDR_BACKEND': 'threadbare',
+    'BUILDER_TOPFILE': '',
+}
+ENV = {k: os.environ.get(k, default) for k, default in ENV.items()}
 
 ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
@@ -29,21 +49,30 @@ CI_USER = 'jenkins'
 
 WHOAMI = getpass.getuser()
 
-PROJECT_PATH = os.getcwd() # ll: /path/to/elife-builder/
-SRC_PATH = join(PROJECT_PATH, 'src') # ll: /path/to/elife-builder/src/
+STACK_AUTHOR = WHOAMI # added to context data, see cfngen.py
+
+PROJECT_PATH = os.getcwd() # "/path/to/builder/"
+SRC_PATH = join(PROJECT_PATH, 'src') # "/path/to/builder/src/"
 
 TEMP_PATH = "/tmp/"
 
-CFN = ".cfn"
+CFN_DIR = ".cfn"
 
-STACK_DIR = join(CFN, "stacks") # ll: ./.cfn/stacks
-CONTEXT_DIR = join(CFN, "contexts") # ll: ./.cfn/stacks
+MASTER_SERVER_IID = "master-server--prod"
+
+PROJECTS_DIR = "projects"
+STACK_DIR = join(CFN_DIR, "stacks") # "./.cfn/stacks"
+CONTEXT_DIR = join(CFN_DIR, "contexts") # "./.cfn/stacks"
 SCRIPTS_DIR = "scripts"
 PRIVATE_DIR = "private"
-KEYPAIR_DIR = join(CFN, "keypairs") # ll: ./.cfn/keypairs
+KEYPAIR_DIR = join(CFN_DIR, "keypairs") # "./.cfn/keypairs"
+
+# lsh@2023-03-29: projects can now specify specfic versions of Terraform to use.
+# this is possible using 'tfenv': https://github.com/tfutils/tfenv
+TERRAFORM_BIN_PATH = join(PROJECT_PATH, ".tfenv", "bin", "terraform")
 # the .cfn dir was for cloudformation stuff, but we keep keypairs in there too, so this can't hurt
 # perhaps a namechange from .cfn to .state or something later
-TERRAFORM_DIR = join(CFN, "terraform")
+TERRAFORM_DIR = join(CFN_DIR, "terraform")
 
 STACK_PATH = join(PROJECT_PATH, STACK_DIR) # "/.../.cfn/stacks/"
 CONTEXT_PATH = join(PROJECT_PATH, CONTEXT_DIR) # "/.../.cfn/contexts/"
@@ -52,6 +81,17 @@ SCRIPTS_PATH = join(PROJECT_PATH, SCRIPTS_DIR) # "/.../scripts/"
 
 # create all necessary paths and ensure they are writable
 lmap(utils.mkdir_p, [TEMP_PATH, STACK_PATH, CONTEXT_PATH, SCRIPTS_PATH, KEYPAIR_PATH])
+
+# read user config
+
+USER_SETTINGS_FILE = "settings.yaml"
+USER_SETTINGS_PATH = join(PROJECT_PATH, USER_SETTINGS_FILE)
+USER = {
+    'project-files': [join(PROJECTS_DIR, 'elife.yaml')],
+    'stack-files': [],
+}
+if os.path.exists(USER_SETTINGS_PATH):
+    USER.update(utils.yaml_load(open(USER_SETTINGS_PATH, 'r')))
 
 # logging
 
@@ -73,10 +113,9 @@ CONSOLE_HANDLER = logging.StreamHandler()
 CONSOLE_HANDLER.setLevel(logging.INFO) # output level for *this handler*
 CONSOLE_HANDLER.setFormatter(CONSOLE_FORMAT)
 
-
 # FileHandler sends to a named file
 FILE_HANDLER = logging.FileHandler(LOG_FILE)
-_log_level = os.environ.get('LOG_LEVEL_FILE', 'INFO')
+_log_level = ENV['LOG_LEVEL_FILE']
 FILE_HANDLER.setLevel(getattr(logging, _log_level))
 FILE_HANDLER.setFormatter(FORMAT)
 
@@ -105,86 +144,40 @@ def get_logger(name):
 # like ec2 instance keypairs
 BUILDER_BUCKET = 'elife-builder'
 BUILDER_REGION = 'us-east-1'
-BUILDER_NON_INTERACTIVE = 'BUILDER_NON_INTERACTIVE' in os.environ and os.environ['BUILDER_NON_INTERACTIVE']
-if 'BUILDER_TIMEOUT' in os.environ:
-    BUILDER_TIMEOUT = int(os.environ['BUILDER_TIMEOUT'])
-else:
-    BUILDER_TIMEOUT = 600 # seconds/10 minutes
+BUILDER_NON_INTERACTIVE = bool(ENV['BUILDER_NON_INTERACTIVE'])
+BUILDER_TIMEOUT = int(ENV['BUILDER_TIMEOUT'])
+
+# how often should we contact the AWS API while polling?
+# a value <=2 and the likelihood of throttling goes up.
+AWS_POLLING_INTERVAL = 4 # seconds
+
 KEYPAIR_PREFIX = 'keypairs/'
 CONTEXT_PREFIX = 'contexts/'
 
-PACKER_BOX_PREFIX = "elifesciences" # the 'elifesciences' in 'elifesciences/basebox'
-PACKER_BOX_BUCKET = "builder-boxes"
-PACKER_BOX_KEY = "boxes"
-# ll: s3://elife-builder/boxes
-PACKER_BOX_S3_PATH = "s3://%s" % join(PACKER_BOX_BUCKET, PACKER_BOX_KEY)
-PACKER_BOX_S3_HTTP_PATH = join("https://s3.amazonaws.com", PACKER_BOX_BUCKET, PACKER_BOX_KEY)
-
 # these sections *shouldn't* be merged if they *don't* exist in the project
-CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = ['rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf']
+CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT = [
+    'rds', 'ext', 'elb', 'alb', 'cloudfront', 'elasticache', 'fastly', 'eks', 'docdb', 'waf'
+]
 
-#
-# settings
-# buildercore.config is NOT the place for user config
-#
+ensure(isinstance(USER['project-files'], list),
+       "'project-files' must be a list, not a %r. check your settings.yaml file." % type(USER['project-files']))
+# all project files are rooted in the builder project directory. no good reason, subject to change.
+PROJECTS_PATH_LIST = [join(PROJECT_PATH, project_file) for project_file in USER['project-files']]
 
-PROJECTS_FILES = ['projects/elife.yaml']  # , 'src/tests/fixtures/projects/']
+CLONED_PROJECT_FORMULA_PATH = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
 
-CLONED_PROJECT_FORMULA_DIR = os.path.join(PROJECT_PATH, 'cloned-projects') # same path as used by Vagrant
-
-USER_PRIVATE_KEY = os.environ.get('CUSTOM_SSH_KEY', '~/.ssh/id_rsa')
+USER_PRIVATE_KEY = ENV['CUSTOM_SSH_KEY']
 
 #
 # testing
 #
 
+# TODO: revisit this
 # 'Test With Instance', see integration_tests.test_with_instance
-TWI_REUSE_STACK = os.environ.get('BLDR_TWI_REUSE_STACK', '0') == '1' # use existing test stack if exists
-TWI_CLEANUP = os.environ.get('BLDR_TWI_CLEANUP', '1') == '1' # tear down test stack after testing
+TWI_REUSE_STACK = ENV['BLDR_TWI_REUSE_STACK'] == '1' # use existing test stack if exists
+TWI_CLEANUP = ENV['BLDR_TWI_CLEANUP'] == '1' # tear down test stack after testing
 
-#
-# logic
-#
 
-def _parse_loc(loc):
-    "turn a project-location path into a triple of (protocol, hostname, path)"
-    bits = loc.split('://', 1)
-    if len(bits) == 2:
-        host, path = bits[1].split('/', 1)
-        # ll: (http, example.org, '/path/to/org/file/')
-        return (bits[0], host, '/' + path)
-    # ll: (file, None, '/path/to/org/file/')
-    path = os.path.abspath(os.path.expanduser(loc))
-    return 'file' if os.path.isfile(path) else 'dir', None, path
+# ---
 
-def parse_loc_list(loc_list):
-    "wrangle the list of paths the user gave us. expand if they specify a directory, etc"
-    # give the convenient user-form some structure
-    p_loc_list = lmap(_parse_loc, loc_list)
-    # do some post processing
-
-    def expand_dirs(triple):
-        protocol, host, path = triple
-        if protocol in ['dir', 'file'] and not os.path.exists(path):
-            LOG.warning("could not resolve %r, skipping", path)
-            return [None]
-        if protocol == 'dir':
-            yaml_files = utils.listfiles(path, ['.yaml'])
-            return [('file', host, ppath) for ppath in yaml_files]
-        return [triple]
-    # we don't want dirs, we want files
-    p_loc_list = utils.shallow_flatten(map(expand_dirs, p_loc_list))
-
-    # remove any bogus values
-    p_loc_list = lfilter(None, p_loc_list)
-
-    # remove any duplicates. can happen when we expand dir => files
-    p_loc_list = utils.unique(p_loc_list)
-
-    return p_loc_list
-
-@cache
-def app(settings_path=None):
-    return {
-        'project-locations': parse_loc_list([join(PROJECT_PATH, f) for f in PROJECTS_FILES]),
-    }
+STACKS_PATH_LIST = [join(PROJECT_PATH, stack_file) for stack_file in USER['stack-files']]

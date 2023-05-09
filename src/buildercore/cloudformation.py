@@ -22,6 +22,37 @@ def render_template(context):
     ensure('aws' in context, msg, ValueError)
     return trop.render(context)
 
+def download_template(stackname):
+    """downloads the JSON cloudformation stack for the given `stackname` from AWS.
+    returns `None` if `stackname` does not exist."""
+    try:
+        conn = core.boto_conn(stackname, 'cloudformation', client=True)
+        data = conn.get_template(StackName=stackname)['TemplateBody']
+        return json.dumps(data)
+    except botocore.exceptions.ClientError as exc:
+        not_found_message = "Stack with id %s does not exist" % stackname
+        if exc.response['Error']['Message'] == not_found_message:
+            return
+        raise exc
+
+def write_template(stackname, contents):
+    "writes a json version of the python cloudformation template to the stacks directory"
+    output_fname = core.stack_path(stackname)
+    with open(output_fname, 'w') as fp:
+        fp.write(contents)
+    LOG.info("wrote cloudformation template for %r to: %s" % (stackname, output_fname))
+    return output_fname
+
+def find_template_path(stackname):
+    """convenience. returns the path to the cloudformation template on the filesystem for the given `stackname`.
+    stack template is downloaded and written to disk if not found."""
+    path = core.stack_path(stackname)
+    if not os.path.exists(path):
+        template_body = download_template(stackname)
+        template_body and write_template(stackname, template_body)
+        return path
+    return path
+
 # ---
 
 def _give_up_backoff(e):
@@ -89,7 +120,7 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
         raise
 
 
-# todo: rename. nothing is being bootstrapped here.
+@core.requires_stack_file
 def bootstrap(stackname, context):
     "called by `bootstrap.create_stack` to generate a cloudformation template."
     parameters = []
@@ -101,9 +132,10 @@ def bootstrap(stackname, context):
         on_start = lambda: keypair.create_keypair(stackname)
         on_error = lambda: keypair.delete_keypair(stackname)
 
-    stack_body = open(core.stack_path(stackname), 'r').read()
+    stack_path = core.stack_path(stackname)
+    stack_body = open(stack_path, 'r').read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
-        LOG.warning("empty template: %s" % (core.stack_path(stackname),))
+        LOG.warning("empty template: %s" % stack_path)
         return
 
     if core.stack_is_active(stackname):
@@ -145,7 +177,11 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
     this function looks for the strings "true" and "false" and converts them to True and False, emitting
     a warning if it finds any.
 
-    I don't know if there are string-booleans that need to be kept as such."""
+    I don't know if there are string-booleans that need to be kept as such.
+
+    lsh@2022-09-30: a case where string-booleans need to be kept as such:
+    - https://github.com/elifesciences/issues/issues/7443
+    in this case, a list of [{'Key': 'SomeKey', 'Value': 'true'}, ...] needs it's string-bools preserved."""
     def convert_string_bools(v):
         if v == 'true':
             LOG.warning("found string 'true' in Cloudformation template, converting to boolean True")
@@ -154,7 +190,12 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
             LOG.warning("found string 'false' in Cloudformation template, converting to boolean False")
             return False
         return v
-    return utils.visit(template_data, convert_string_bools)
+
+    def predicate(v):
+        "don't descend in to or transform a map that looks like an AWS Key+Value pair"
+        return not (isinstance(v, dict) and 'Key' in v and 'Value' in v)
+
+    return utils.visit(template_data, convert_string_bools, predicate)
 
 def _read_template(path_to_template):
     template_data = json.load(open(path_to_template, 'r'))
@@ -169,20 +210,26 @@ def outputs_map(stackname):
     """returns a map of a stack's 'Output' keys to their values.
     performs a boto API call."""
     data = core.describe_stack(stackname).meta.data # boto3
-    if not 'Outputs' in data:
+    if "Outputs" not in data:
         return {}
     return {o['OutputKey']: o.get('OutputValue') for o in data['Outputs']}
 
+@core.requires_stack_file
 def template_outputs_map(stackname):
-    """returns a map of a stack template's 'Output' keys to their values.
-    requires a stack to exist on the filesystem."""
+    """returns a map of a stack template's 'Output' keys to their values."""
     stack = json.load(open(core.stack_path(stackname), 'r'))
     output_map = stack.get('Outputs', [])
     return {output_key: output['Value'] for output_key, output in output_map.items()}
 
+@core.requires_stack_file
 def template_using_elb_v1(stackname):
-    "returns `True` if the stack template file is using an ELB v1 (vs an ALB v2)"
+    "returns `True` if template for `stackname` is using an ELBv1 (vs an ELBv2/ALB)."
     return trop.ELB_TITLE in template_outputs_map(stackname)
+
+@core.requires_stack_file
+def template_using_elb_v2(stackname):
+    "returns `True` if template for `stackname` is using an ELBv2 (an ALB)."
+    return trop.ALB_TITLE in template_outputs_map(stackname)
 
 def read_output(stackname, key):
     """finds a literal `Output` from a cloudformation template matching given `key`.
@@ -221,13 +268,6 @@ def _merge_delta(stackname, delta):
     write_template(stackname, json.dumps(template))
     return template
 
-def write_template(stackname, contents):
-    "writes a json version of the python cloudformation template to the stacks directory"
-    output_fname = os.path.join(config.STACK_DIR, stackname + ".json")
-    with open(output_fname, 'w') as fp:
-        fp.write(contents)
-    return output_fname
-
 def update_template(stackname, delta):
     if delta.non_empty:
         new_template = _merge_delta(stackname, delta)
@@ -256,7 +296,7 @@ def _update_template(stackname, template):
 
     waiting = "waiting for template of %s to be updated" % stackname
     done = "template of %s is in state UPDATE_COMPLETE" % stackname
-    call_while(stack_is_updating, interval=2, timeout=7200, update_msg=waiting, done_msg=done)
+    call_while(stack_is_updating, interval=config.AWS_POLLING_INTERVAL, timeout=7200, update_msg=waiting, done_msg=done)
 
 def destroy(stackname, context):
     try:
@@ -277,7 +317,7 @@ def destroy(stackname, context):
         msg = "[%s: %s] %s (request-id: %s)"
         meta = ex.response['ResponseMetadata']
         err = ex.response['Error']
-        # ll: [400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)
+        # "[400: ValidationError] No updates are to be performed (request-id: dc28fd8f-4456-11e8-8851-d9346a742012)"
         if "No updates are to be performed" in err['Message']:
             LOG.info("Stack %s does not need updates on CloudFormation", stackname)
             return
@@ -289,7 +329,7 @@ def destroy(stackname, context):
             return
 
         LOG.exception(msg, meta['HTTPStatusCode'], err['Code'], err['Message'], meta['RequestId'], extra={'response': ex.response})
-        # ll: ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-bot--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS
+        # "ClientError: An error occurred (ValidationError) when calling the DeleteStack operation: Stack [arn:aws:cloudformation:us-east-1:512686554592:stack/elife-bot--prod/a0b1af 60-793f-11e8-bd5a-5044763dbb7b] cannot be deleted while in status UPDATE_COMPLETE_CLEANUP_IN_PROGRESS"
         raise
 
 

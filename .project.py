@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # renders a project's final configuration as YAML
 # if run without any arguments, returns a list of known projects
 # requires the builder venv
@@ -26,13 +26,13 @@ from buildercore import project, utils, bootstrap, config
 
 output = None
 
-config.PROJECTS_FILES += ['src/tests/fixtures/projects/dummy-project.yaml',
-                          'src/tests/fixtures/projects/dummy-projec2.yaml']
+config.PROJECTS_PATH_LIST += ['src/tests/fixtures/projects/dummy-project.yaml',
+                              'src/tests/fixtures/projects/dummy-projec2.yaml']
 
 # specific project, specific task
 if args.pname:
     pname = args.pname[0] # multiple projects in future?
-    
+
     if args.task == 'project-data':
         output = project.project_data(pname)
 

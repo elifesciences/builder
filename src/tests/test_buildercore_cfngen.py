@@ -20,7 +20,7 @@ def test_build_alb_context(test_projects):
                                             'port': 8001,
                                             'protocol': 'https'}},
                 'stickiness': {'cookie-name': 'dummy-cookie', 'type': 'cookie'},
-                'subnets': ['subnet-1d4eb46a', 'subnet-7a31dd46'],
+                'subnets': ['subnet-1d4eb46a', 'subnet-7a31dd46', 'subnet-2116727b'],
                 'target_groups': {'target-group1': {'healthcheck': {'healthy_threshold': 2,
                                                                     'interval': 5,
                                                                     'path': '/ping',
@@ -43,7 +43,6 @@ def test_docdb_config(test_projects):
         'backup-retention-period': None,
         'deletion-protection': False,
         'cluster-size': 2,
-        'deletion-protection': False,
         'engine-version': '4.0.0',
         'type': 'db.t3.medium',
         'subnets': ['subnet-foo', 'subnet-bar'],
@@ -63,7 +62,6 @@ def test_docdb_config_cluster(test_projects):
         'backup-retention-period': 14,
         'deletion-protection': True,
         'cluster-size': 3,
-        'deletion-protection': True,
         'engine-version': '4.0.0',
         'type': 'db.t3.medium',
         'subnets': ['subnet-foo', 'subnet-bar'],
@@ -74,12 +72,70 @@ def test_docdb_config_cluster(test_projects):
     del context['docdb']['master-user-password']
     assert expected == context['docdb']
 
+def test_rds_config__snapshot(test_projects):
+    context = cfngen.build_context('project-with-rds-snapshot', stackname='project-with-rds-snapshot--test')
+    assert context['rds_dbname'] == 'lax-prod'
+    assert context['rds']['snapshot-id'] == 'arn:aws:rds:us-east-1:512686554592:snapshot:rds:lax-prod-2022-04-05-07-39'
+    # todo: revisit when rds_dbname is migrated under 'rds'
+    assert not context['rds'].get('db-name')
+
+def test_rds_config__replacement(test_projects):
+    "changes in context may trigger a replacement"
+    stackname = 'project-with-rds-only--test'
+
+    # failure to find values in existing context that would cause replacement doesn't trigger replacement.
+    existing_context = {'rds': {}}
+    context = cfngen.build_context('project-with-rds-only', stackname=stackname, existing_context=existing_context)
+    assert not context['rds']['replacing']
+
+    # finding a value different to the default in the existing context triggers replacement.
+    existing_context = {"rds": {"db-name": "foo"}}
+    context = cfngen.build_context('project-with-rds-only', stackname=stackname, existing_context=existing_context)
+    assert context['rds']['replacing']
+
+    # finding a *similar-but-still-different* value to the default in the existing context triggers a replacement.
+    # be precise! be careful!
+    existing_context = {"rds": {"encryption": None}} # default is False
+    context = cfngen.build_context('project-with-rds-only', stackname=stackname, existing_context=existing_context)
+    assert context['rds']['replacing']
+
 class TestBuildercoreCfngen():
     # note: this requires pytest, but provides great introspection
     # on which project_name is failing
     @pytest.mark.parametrize("project_name", base.test_project_list())
     def test_quick_rendering(self, project_name):
         cfngen.quick_render(project_name)
+
+class TestHostnameStruct(base.BaseCase):
+    def test_hostname_struct_no_subdomain(self):
+        expected = {
+            'domain': "example.org",
+            'int_domain': "example.internal",
+            'subdomain': None,
+            'project_hostname': None,
+            'int_project_hostname': None,
+            'hostname': None,
+            'full_hostname': None,
+            'int_full_hostname': None,
+        }
+        stackname = 'dummy1--test'
+        self.assertEqual(cfngen.hostname_struct(stackname), expected)
+
+    def test_hostname_struct_with_subdomain(self):
+        expected = {
+            'domain': "example.org",
+            'int_domain': "example.internal",
+            'subdomain': 'dummy2',
+            'hostname': 'ci--dummy2',
+            'project_hostname': 'dummy2.example.org',
+            'int_project_hostname': 'dummy2.example.internal',
+            'full_hostname': 'ci--dummy2.example.org',
+            'int_full_hostname': 'ci--dummy2.example.internal',
+            'ext_node_hostname': 'ci--dummy2--%s.example.org',
+            'int_node_hostname': 'ci--dummy2--%s.example.internal',
+        }
+        stackname = 'dummy2--ci'
+        self.assertEqual(cfngen.hostname_struct(stackname), expected)
 
 class TestBuildContext(base.BaseCase):
     def test_existing_alt_config(self):
@@ -246,3 +302,22 @@ class TestUpdates(base.BaseCase):
             template = cloudformation.render_template(context)
             cloudformation.write_template(stackname, template)
         return context
+
+def test_instance_alias():
+    cases = [
+        (None, None),
+        ({}, None),
+        ([], None),
+        ("", None),
+        ("FOO", None),
+
+        # 'pr-*-base-update'
+        ("pr-0-base-update", "pr-0-bu"),
+        ("pr-123-base-update", "pr-123-bu"),
+        ("pr-abc-base-update", None),
+        ("pr-base-update", None),
+
+        # ...
+    ]
+    for given, expected in cases:
+        assert cfngen.instance_alias(given) == expected

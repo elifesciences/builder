@@ -18,8 +18,10 @@ https://docs.pytest.org/en/stable/fixture.html#factories-as-fixtures"""
 
 import logging
 import pytest
+from buildercore.utils import tempdir as core_utils_tempdir
 from buildercore.config import get_logger, CONSOLE_HANDLER
 from tests import base
+from unittest import mock
 
 CONSOLE_HANDLER.setLevel(logging.CRITICAL)
 
@@ -41,6 +43,7 @@ def pytest_runtest_setup(item):
 def pytest_runtest_teardown(item, nextitem):
     LOG.info("Tearing down up %s::%s", item.cls, item.name)
 
+# https://docs.pytest.org/en/7.1.x/how-to/fixtures.html#fixture-scopes
 @pytest.yield_fixture(scope='session')
 def test_projects():
     try:
@@ -48,3 +51,22 @@ def test_projects():
         yield
     finally:
         base.switch_out_test_settings()
+
+@pytest.yield_fixture
+def tempdir():
+    "replaces the path to `/tmp` with a unique temp directory for the age of the test."
+    path, cleanup_fn = core_utils_tempdir()
+    try:
+        with mock.patch('tempfile.gettempdir', return_value=path):
+            yield path
+    finally:
+        cleanup_fn()
+
+@pytest.yield_fixture
+def datadir():
+    "returns a path to a unique temp directory for the age of the test."
+    path, cleanup_fn = core_utils_tempdir()
+    try:
+        yield path
+    finally:
+        cleanup_fn()

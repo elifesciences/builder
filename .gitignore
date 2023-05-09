@@ -2,7 +2,7 @@
 .tox/
 /build/
 /.pytest_cache/
-settings.yml
+settings.yaml
 *~
 builder-private/
 cloned-projects/
@@ -13,7 +13,6 @@ builder-configuration/
 *.orig
 *.log
 venv/
-.venv/
 *.swp
 .cfn/
 logs/
@@ -21,11 +20,18 @@ private/
 downloads
 .coverage.*
 .coverage
+htmlcov/
 scripts/customize.sh
 scripts/salt/*.minion
 /custom-vagrant/salt/
 /custom-vagrant/pillar/
 /etc-salt-master.template
 /etc-salt-master
+.vault-token
+
+.tfenv/
+tfenv.tar.gz
 
 .*.flag
+# osx, home of older terraform and vault binaries as versions from homebrew packages are too new.
+.bin/

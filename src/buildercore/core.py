@@ -1,17 +1,20 @@
 "general logic for the `buildercore` module."
 
-import os, glob, re
+import os, time
+from collections import OrderedDict
 from os.path import join
 from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .decorators import testme
-from .utils import ensure, first, lookup, lmap, lfilter, unique, isstr
+from .utils import subdict, ensure, first, lookup, lmap, lfilter, unique, isstr
 import boto3
 import botocore
+import botocore.config
 from contextlib import contextmanager
+from . import command, context_handler
 from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
+import pssh.exceptions
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
@@ -93,8 +96,8 @@ def _all_sns_subscriptions(region):
     return utils.shallow_flatten([page['Subscriptions'] for page in paginator.paginate()])
 
 def all_sns_subscriptions(region, stackname=None):
-    """returns all subscriptions to all sns topics.
-    optionally filtered by subscription endpoints matching given stack"""
+    """returns all SQS subscriptions to all SNS topics.
+    optionally filtered by subscription endpoints matching given `stackname`"""
     subs_list = _all_sns_subscriptions(region)
     if stackname:
         # a subscription looks like:
@@ -114,18 +117,31 @@ def all_sns_subscriptions(region, stackname=None):
 #
 #
 
-def boto_resource(service, region):
-    return boto3.resource(service, region_name=region)
+def boto_resource(service, region=None):
+    kwargs = {}
+    if region:
+        kwargs['region_name'] = region
+    if service == 'ec2':
+        # lsh@2022-07-25: set the retry mode to 'adaptive' (experimental)
+        # - https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
+        kwargs['config'] = botocore.config.Config(
+            retries={
+                'max_attempts': 10,
+                'mode': 'adaptive'
+            }
+        )
+    return boto3.resource(service, **kwargs)
 
 def boto_client(service, region=None):
     """the boto3 'service' client is a lower-level construct compared to the boto3 'resource' client.
     it excludes some convenient functionality, like automatic pagination."""
-    exceptions = ['route53']
+    exceptions = ['route53', 's3']
     if service not in exceptions:
         ensure(region, "'region' is a required parameter for all services except: %s" % (', '.join(exceptions),))
     return boto3.client(service, region_name=region)
 
 def boto_conn(pname_or_stackname, service, client=False):
+    "convenience. returns a boto Resource or client for the given project or stack name, using the region found in the project config."
     fn = project_data_for_stackname if '--' in pname_or_stackname else project.project_data
     pdata = fn(pname_or_stackname)
     # prefer resource if possible
@@ -232,26 +248,36 @@ def _all_nodes_filter(stackname, node_ids):
 #
 #
 
-def rds_dbname(stackname, context=None):
-    # TODO: investigate possibility of ambiguous RDS naming here
-    context = context or {}
-    return context.get('rds_dbname') or slugify(stackname, separator="") # *must* use 'or' here
-
-def rds_iid(stackname):
-    max_rds_iid = 63 # https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options
-    # the rds iid needs to be deterministic, or, we need to find an attached rds db without knowing it's name
-    slug = slugify(stackname)
-    ensure(len(slug) <= max_rds_iid, "a database instance identifier must be less than 64 characters")
+def rds_iid(stackname, replacement_number=None):
+    """generates a suitable RDS instance ID for the given `stackname`.
+    the RDS instance ID needs to be deterministic or we need to find an attached RDS db without knowing it's name.
+    - https://docs.aws.amazon.com/cli/latest/reference/rds/create-db-instance.html#options"""
+    ensure(stackname and isinstance(stackname, str), "given stackname must be a non-empty string.")
+    max_rds_iid = 63
+    slug = slugify(stackname) # "lax--prod" => "lax-prod"
+    ensure(slug, "given stackname cannot slugify to an empty string.")
+    if replacement_number and replacement_number > 0:
+        slug = "%s-%s" % (slug, replacement_number) # "lax-prod" => "lax-prod-1"
+    ensure(len(slug) <= max_rds_iid,
+           "a database instance identifier must be less than 64 characters. %r is %s characters long." % (slug, len(slug)))
     return slug
 
-def find_rds_instances(stackname, state='available'):
-    "This uses boto3 because it allows to start/stop instances"
+def find_rds_instances(stackname):
+    """returns a list of RDS instances attached to the given `stackname`.
+    it is possible for multiple RDS instances to be returned if the stack is replacing an RDS instance and is mid-transition."""
     try:
         conn = boto_conn(stackname, 'rds', client=True) # RDS has no 'resource'
-        rid = rds_iid(stackname)
-        if rid:
-            # TODO: return the first (and only) result of DBInstances
-            return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+
+        # lsh@2022-05-20: rds instance id can no longer be generated from the `stackname` alone.
+        # rds instances can now be replaced and the replacement number is incorporated into the rds instance id.
+        context = context_handler.load_context(stackname)
+        rid = rds_iid(stackname, lookup(context, 'rds.num-replacements', None))
+
+        # lsh@2022-05-24: `rds_iid` will either return an ID or raise an AssertionError.
+        # if rid:
+        #    return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
+
+        return conn.describe_db_instances(DBInstanceIdentifier=rid)['DBInstances']
     except AssertionError:
         # invalid dbid. RDS doesn't exist because stack couldn't have been created with this ID
         return []
@@ -260,14 +286,20 @@ def find_rds_instances(stackname, state='available'):
         LOG.info(err.response)
         invalid_dbid = "Invalid database identifier"
         if err.response['Error']['Message'].startswith(invalid_dbid):
-            # what we asked for isn't a valid db id, we probably made a mistake
-            # we definitely couldn't have created a db with that id
+            # what we asked for isn't a valid db id, we probably made a mistake.
+            # we definitely couldn't have created a db with that id.
             return []
 
         if err.response['Error']['Code'] == 'DBInstanceNotFound':
             return []
 
         raise err
+
+def find_all_rds_instances():
+    "returns a list of DBInstance dicts, straight from boto."
+    # warning: not paginated, ~18 results at time of writing.
+    conn = boto3.client('rds', region_name=find_region())
+    return conn.describe_db_instances()['DBInstances']
 
 #
 #
@@ -295,16 +327,16 @@ def _ec2_connection_params(stackname, username, **kwargs):
         if os.path.exists(pem):
             params['key_filename'] = pem
         else:
-            LOG.info("private key for the bootstrap user for this host is not present locally (%s); will not override ~/.ssh with it." % pem)
+            msg = "Attempting to connect to %s as the BOOTSTRAP_USER (%s) but the private key is missing (%s). Remote operations may fail if the public key for this user (%s) is not in the remote user's '/home/%s/.ssh/authorized_keys' file." % (
+                stackname, config.BOOTSTRAP_USER, pem, config.WHOAMI, config.BOOTSTRAP_USER)
+            LOG.warning(msg)
     params.update(kwargs)
     return params
 
 @contextmanager
 def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
-    if 'user' in kwargs:
-        LOG.warning("found key 'user' in given kwargs - did you mean 'username' ??")
-
-    data = stack_data(stackname, ensure_single_instance=False)
+    ensure('user' not in kwargs, "found key 'user' in given kwargs - did you mean 'username'?")
+    data = ec2_data(stackname, state='running')
     ensure(len(data) == 1 or node, "stack is clustered with %s nodes and no specific node provided" % len(data))
     node and ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
     didx = int(node) - 1 if node else 0 # decrement to a zero-based value
@@ -320,7 +352,7 @@ class NoPublicIps(Exception):
 
 def all_node_params(stackname):
     "returns a map of node data"
-    data = stack_data(stackname)
+    data = ec2_data(stackname, state='running')
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {
         ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node'])
@@ -342,13 +374,13 @@ def all_node_params(stackname):
     return params
 
 def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, **kwargs):
-    """Executes work on all the EC2 nodes of stackname.
-    Optionally connects with the specified username"""
+    """Executes `workfn` on all EC2 nodes of `stackname`.
+    Optionally connects with the specified `username`."""
     work_kwargs = {}
     if isinstance(workfn, tuple):
         workfn, work_kwargs = workfn
 
-    data = stack_data(stackname)
+    data = ec2_data(stackname, state='running')
     # TODO: reuse all_node_params?
     public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
@@ -358,6 +390,11 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     elif instance_ids:
         nodes = {k: v for k, v in nodes.items() if k in instance_ids}
         public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+
+    if not public_ips:
+        LOG.info("No EC2 nodes to execute on")
+        # should be a dictionary mapping ip address to result
+        return {}
 
     params = _ec2_connection_params(stackname, username)
     params.update(kwargs)
@@ -369,33 +406,42 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         'nodes': nodes
     })
 
-    if not public_ips:
-        LOG.info("No EC2 nodes to execute on")
-        # should be a dictionary mapping ip address to result
-        return {}
-
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
     ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
 
-    # TODO: candidate for a @backoff decorator
     def single_node_work_fn():
+        last_exc = None
         for attempt in range(0, 6):
+            time.sleep(attempt / 2)
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
                 if str(err).startswith('Timed out trying to connect'):
                     LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
+                    last_exc = err
                     continue
                 if str(err).startswith('Low level socket error connecting to host'):
+                    # "Cannot connect to a 'journal--prod' node (connection refused) during attempt 2, retrying on this node"
                     LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
+                    last_exc = err
                     continue
-                else:
-                    raise err
+
+                raise err
+
+            # lsh@2023-05-09: the NetworkError wrapper above is not working in all cases. investigate
+            except (ConnectionError, ConnectionRefusedError, pssh.exceptions.ConnectionErrorException) as err:
+                LOG.exception("programming error, failed to capture exception in a `operations.NetworkError`.")
+                last_exc = err
+                continue
+
             except CommandException as err:
                 LOG.error(str(err).replace("\n", "    "))
                 # available as 'results' to fabric.tasks.error
                 raise err
+
+        if last_exc:
+            raise last_exc
 
     # something less stateful like a context manager?
     # lsh@2019-10: unlike other parameters passed to the `settings` context manager, these values are not reverted until program exit
@@ -499,26 +545,11 @@ def is_master_server_stack(stackname):
 #
 # stack file wrangling
 # stack 'files' are the things on the file system in the `.cfn/stacks/` dir.
-# TODO: consider shifting .cfn/stacks/ to /temp/stacks.
-# rendered files simply accumulate, are never consulted and JSON can be captured from AWS if needs be
 #
 
-def parse_stack_file_name(stack_filename):
-    "given a `/path/to/a/stackname.ext`, returns just the `stackname`, pruning directories and extensions"
-    stack = os.path.basename(stack_filename) # "stackname.ext"
-    return os.path.splitext(stack)[0] # "stackname"
-
-def stack_files():
-    "returns a list of manually created cloudformation stacknames"
-    stacks = glob.glob("%s/*.json" % config.STACK_PATH)
-    return lmap(parse_stack_file_name, stacks)
-
-def stack_path(stackname, relative=False):
-    "returns the full path to a stack JSON file given a stackname"
-    if stackname in stack_files():
-        path = config.STACK_DIR if relative else config.STACK_PATH
-        return join(path, stackname) + ".json"
-    raise ValueError("could not find stack %r in %r" % (stackname, config.STACK_PATH))
+def stack_path(stackname):
+    "returns the expected path to a stack JSON file given a `stackname`."
+    return join(config.STACK_PATH, stackname) + ".json"
 
 #
 # aws stack wrangling
@@ -540,16 +571,17 @@ def describe_stack(stackname, allow_missing=False):
 class NoRunningInstances(Exception):
     pass
 
-# TODO: misleading name, this returns a list of raw boto3 EC2.Instance data
-def stack_data(stackname, ensure_single_instance=False):
+def ec2_data(stackname, state=None):
+    """returns a list of raw boto3 EC2.Instance data for ec2 instances attached to given `stackname`.
+    does not filter by state by default.
+    does not enforce single instance checking."""
     try:
-        ec2_instances = find_ec2_instances(stackname, allow_empty=True)
-        if len(ec2_instances) > 1 and ensure_single_instance:
-            raise RuntimeError("talking to multiple EC2 instances is not supported for this task yet: %r" % stackname)
+        ec2_instances = find_ec2_instances(stackname, state=state, allow_empty=True)
         return [ec2.meta.data for ec2 in ec2_instances]
     except Exception:
         LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
         raise
+
 
 # DO NOT CACHE: function is used in polling
 def stack_is(stackname, acceptable_states, terminal_states=None):
@@ -678,23 +710,11 @@ def find_region(stackname=None):
         raise MultipleRegionsError(region_list)
     return region_list[0]
 
-@testme
-def find_master_servers(stacks):
-    "returns a list of master servers, oldest to newest"
-    msl = lfilter(lambda triple: is_master_server_stack(first(triple)), stacks)
-    msl = lmap(first, msl) # just stack names
-    if len(msl) > 1:
-        LOG.warning("more than one master server found: %s. this state should only ever be temporary.", msl)
-    return sorted(msl, key=parse_stackname) # oldest to newest
-
 def find_master(region):
-    """returns the *oldest* aws master-server it can find.
-
-    Since we are using the oldest, new master-server instances can be provisioned and debugged without being picked up until the older master-server is taken down"""
-    stacks = active_aws_stacks(region)
-    if not stacks:
-        raise NoMasterException("no master servers found in region %r" % region)
-    return first(find_master_servers(stacks))
+    """returns the name of the master-server for the given `region`, which should be the same for all regions.
+    master-server instances used to be datestamped so that one could be brought up while the other would
+    continue to serve the minions and the right master-server (the oldest one) would need to be returned."""
+    return config.MASTER_SERVER_IID
 
 def find_master_for_stack(stackname):
     "convenience. finds the master server for the same region as given stack"
@@ -706,67 +726,15 @@ def find_master_for_stack(stackname):
 #
 
 def requires_active_stack(func):
-    "requires a stack to exist in a successfully created/updated state"
+    "requires a stack instance to exist in a successfully created/updated state"
     return decorators._requires_fn_stack(func, stack_is_active)
 
 def requires_stack_file(func):
-    "requires a stack template to exist on disk"
-    msg = "I couldn't find a cloudformation stack file for %(stackname)r!"
-    return decorators._requires_fn_stack(func, lambda stackname: stackname in stack_files(), msg)
-
-#
-#
-#
-
-def hostname_struct(stackname):
-    "returns a dictionary with convenient domain name information"
-    # wrangle hostname data
-
-    pname, instance_id = parse_stackname(stackname)
-    pdata = project.project_data(pname)
-    domain = pdata.get('domain')
-    intdomain = pdata.get('intdomain')
-    subdomain = pdata.get('subdomain')
-
-    struct = {
-        'domain': domain, # elifesciences.org
-        'int_domain': intdomain, # elife.internal
-
-        'subdomain': subdomain, # gateway
-
-        'hostname': None, # temp.gateway
-
-        'project_hostname': None, # gateway.elifesciences.org
-        'int_project_hostname': None, # gateway.elife.internal
-
-        'full_hostname': None, # gateway--temp.elifesciences.org
-        'int_full_hostname': None, # gateway--temp.elife.internal
-    }
-    if not subdomain:
-        # this project doesn't expect to be addressed
-        # return immediately with what we do have
-        return struct
-
-    # removes any non-alphanumeric or hyphen characters
-    instance_subdomain_fragment = re.sub(r'[^\w\-]', '', instance_id)
-    hostname = instance_subdomain_fragment + "--" + subdomain
-
-    updates = {
-        'hostname': hostname,
-    }
-
-    if domain:
-        updates['project_hostname'] = subdomain + "." + domain
-        updates['full_hostname'] = hostname + "." + domain
-        updates['ext_node_hostname'] = hostname + "--%s." + domain
-
-    if intdomain:
-        updates['int_project_hostname'] = subdomain + "." + intdomain
-        updates['int_full_hostname'] = hostname + "." + intdomain
-        updates['int_node_hostname'] = hostname + "--%s." + intdomain
-
-    struct.update(updates)
-    return struct
+    """requires a stack template to exist on disk.
+    see `src.decorators.requires_aws_stack_template` for a task decorator that downloads
+    template and writes it to disk if it doesn't exist."""
+    msg = "failed to find cloudformation stack template for %(stackname)r in: " + config.STACK_PATH
+    return decorators._requires_fn_stack(func, lambda stackname: os.path.exists(stack_path(stackname)), msg)
 
 #
 #
@@ -799,8 +767,56 @@ def drift_check(stackname):
     def is_detecting_drift():
         job = conn.describe_stack_drift_detection_status(StackDriftDetectionId=handle)
         return job.get('DetectionStatus') == 'DETECTION_IN_PROGRESS'
-    utils.call_while(is_detecting_drift, interval=2, update_msg='Waiting for drift results ...')
+    utils.call_while(is_detecting_drift, interval=config.AWS_POLLING_INTERVAL, update_msg='Waiting for drift results ...')
 
     result = conn.describe_stack_resource_drifts(StackName=stackname)
     drifted = [resource for resource in result["StackResourceDrifts"] if resource["StackResourceDriftStatus"] != "IN_SYNC"]
     return drifted or None
+
+
+# migrated from bootstrap.py
+# might need a better home
+
+
+# TODO: move to buildercore.cloudformation?
+@requires_active_stack
+def template_info(stackname):
+    "returns some useful information about the given stackname as a map"
+    data = describe_stack(stackname).meta.data
+
+    # limit what this function returns in the interests of being explicit on what is supported.
+    keepers = OrderedDict([
+        ('StackName', 'stack_name'),
+        ('StackId', 'stack_id'),
+        ('Outputs', 'outputs')
+    ])
+
+    # preserve the lowercase+underscore formatting of original boto2 struct now that we're using boto3
+    utils.renkeys(data, keepers.items())
+
+    # replaces the standand 'list-of-dicts' outputs with a simpler dict
+    data['outputs'] = {o['OutputKey']: o['OutputValue'] for o in data.get('outputs', [])}
+
+    return subdict(data, keepers.values())
+
+def remove_minion_key(stackname):
+    "removes all keys for all nodes of the given stackname from the master server"
+    pdata = project_data_for_stackname(stackname)
+    region = pdata['aws']['region']
+    master_stack = find_master(region)
+    with stack_conn(master_stack):
+        command.remote_sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
+
+def write_environment_info(stackname, overwrite=False):
+    """Looks for /etc/cfn-info.json and writes one if not found.
+    Must be called with an active stack connection.
+
+    This gives Salt the outputs available at stack creation, but that were not
+    available at template compilation time.
+    """
+    if not command.remote_file_exists("/etc/cfn-info.json") or overwrite:
+        LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
+        infr_config = utils.json_dumps(template_info(stackname))
+        return command.fab_put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
+    LOG.debug('cfn outputs found, skipping.')
+    return []

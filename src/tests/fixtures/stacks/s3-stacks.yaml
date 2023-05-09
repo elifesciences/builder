@@ -1,0 +1,17 @@
+defaults:
+    description:
+    meta:
+        type: stack
+        version: 0
+    resource-list: []
+    resource-map:
+        s3-bucket:
+            meta:
+                description: an AWS S3 bucket
+                type: s3-bucket
+                version: 0
+            created:
+            name:
+            description:
+            versioning:
+            tag-list:

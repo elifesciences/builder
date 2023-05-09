@@ -1,10 +1,10 @@
 import os, json
 from pprint import pformat
 import backoff
-from buildercore.command import local, remote, remote_sudo, upload, download, settings, remote_file_exists, CommandException, NetworkError
+from buildercore.command import local, remote, upload, download, settings, remote_file_exists, CommandException, NetworkError
 import utils, buildvars
 from utils import TaskExit
-from decorators import requires_project, requires_aws_stack, echo_output, setdefault, timeit
+from decorators import requires_project, requires_aws_stack, requires_aws_stack_template, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
 # potentially remove to go through buildercore.bootstrap?
 from buildercore import cloudformation, terraform
@@ -12,7 +12,7 @@ from buildercore.concurrency import concurrency_for
 from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
 from buildercore.decorators import PredicateException
 from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY
-from buildercore.utils import lmap, ensure
+from buildercore.utils import ensure
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -21,12 +21,12 @@ LOG = logging.getLogger(__name__)
 # @requires_steady_stack
 def destroy(stackname):
     "Delete a stack of resources."
-    print('this is a BIG DEAL. you cannot recover from this.')
-    print('type the name of the stack to continue or anything else to quit')
-    uin = utils.get_input('> ')
+    msg = '''this is a BIG DEAL. you cannot recover from this.
+type the name of the stack to continue or anything else to quit:
+> '''
+    uin = utils.get_input(msg)
     if not uin or not uin.strip().lower() == stackname.lower():
-        print('you needed to type "%s" to continue.' % stackname)
-        exit(1)
+        raise TaskExit('you needed to type "%s" to continue.' % stackname)
     return bootstrap.destroy(stackname)
 
 def ensure_destroyed(stackname):
@@ -42,13 +42,16 @@ def ensure_destroyed(stackname):
 
 @requires_aws_stack
 @timeit
-def update(stackname, autostart="0", concurrency='serial'):
-    """Updates the environment within the stack's ec2 instance.
-    Does *not* call Cloudformation's `update` command on the stack (see `update_infrastructure`)."""
+def update(stackname, autostart="0", concurrency='serial', dry_run=False):
+    """Update a stack's ec2 environment.
+    Runs the (idempotent) bootstrap script then Salt highstate.
+    Does *not* call Cloudformation's `update` command on the stack,
+    see `update_infrastructure`."""
     instances = _check_want_to_be_running(stackname, utils.strtobool(autostart))
     if not instances:
         return
-    return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency)
+    dry_run = utils.strtobool(dry_run)
+    return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency, dry_run=dry_run)
 
 @timeit
 def update_infrastructure(stackname, skip=None, start=['ec2']):
@@ -93,17 +96,17 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
 
     # TODO: move inside bootstrap.update_stack
     # EC2
-    if _are_there_existing_servers(context) and not 'ec2' in skip:
+    if _are_there_existing_servers(context) and "ec2" not in skip:
         # the /etc/buildvars.json file may need to be updated
         buildvars.refresh(stackname, context)
         update(stackname)
 
     # SQS
-    if context.get('sqs', {}) and not 'sqs' in skip:
+    if context.get('sqs', {}) and "sqs" not in skip:
         bootstrap.update_stack(stackname, service_list=['sqs'])
 
     # S3
-    if context.get('s3', {}) and not 's3' in skip:
+    if context.get('s3', {}) and "s3" not in skip:
         bootstrap.update_stack(stackname, service_list=['s3'])
 
 def check_user_input(pname, instance_id=None, alt_config=None):
@@ -216,40 +219,17 @@ def launch(pname, instance_id=None, alt_config=None):
     bootstrap.create_stack(stackname)
 
     LOG.info('updating stack %s', stackname)
-    # TODO: highstate.sh (think it's run inside here) doesn't detect:
-    # [34.234.95.137] out: [CRITICAL] The Salt Master has rejected this minion's public key!
     bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'])
     setdefault('.active-stack', stackname)
 
 
 @requires_aws_stack
 def fix_bootstrap(stackname):
-    """uploads the bootstrap script and re-runs the bootstrap process.
-    Used when stack creation succeeds but the bootstrap script failed for some reason."""
+    """Uploads the bootstrap script and re-runs the bootstrap process.
+    Used when stack creation succeeds but the bootstrap script has failed."""
     LOG.info('bootstrapping stack %s', stackname)
     bootstrap.update_stack(stackname)
     setdefault('.active-stack', stackname)
-
-
-@requires_aws_stack
-def highstate(stackname, node=1):
-    "a fast update with many caveats. prefer `update` instead"
-    with stack_conn(stackname, node=node, username=BOOTSTRAP_USER):
-        bootstrap.run_script('highstate.sh')
-
-# TODO: deletion candidate
-@requires_aws_stack
-def pillar(stackname):
-    "returns the pillar data a minion is using"
-    with stack_conn(stackname, username=BOOTSTRAP_USER):
-        remote_sudo('salt-call pillar.items')
-
-# TODO: deletion candidate
-@echo_output
-def aws_stack_list():
-    "returns a list of realized stacks. does not include deleted stacks"
-    region = utils.find_region()
-    return core.active_stack_names(region)
 
 def _pick_node(instance_list, node):
     instance_list = sorted(instance_list, key=lambda n: tags2dict(n.tags)['Name'])
@@ -273,7 +253,7 @@ def _pick_node(instance_list, node):
 
 
 def _are_there_existing_servers(context):
-    if not 'ec2' in context:
+    if "ec2" not in context:
         # very old stack, canned response
         return True
 
@@ -319,7 +299,7 @@ def _interactive_ssh(username, public_ip, private_key):
 
 @requires_aws_stack
 def ssh(stackname, node=None, username=DEPLOY_USER):
-    "connect to a instance over SSH using the deploy user ('elife') and *your* private key."
+    "connect to a instance over SSH as 'elife' with *your* private key."
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
@@ -329,7 +309,8 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     """maintenance ssh.
-    connects to an instance over SSH using the bootstrap user ('ubuntu') and the instance's private key"""
+    connect to an instance over SSH as 'ubuntu' with
+    the instance's private key."""
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
@@ -338,15 +319,11 @@ def owner_ssh(stackname, node=None):
 
 @requires_aws_stack
 def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):
-    """Downloads `path` from `stackname` putting it into the `destination` folder, or the `destination` file if it exists and it is a file.
-
-    If `allow_missing` is "True", a non-existant `path` will be skipped without errors.
-
-    If `use_bootstrap_user` is "True", the owner_ssh user will be used for connecting instead of the standard deploy user.
-
-    Boolean arguments are expressed as strings as this is the idiomatic way of passing them from the command line.
-    """
-    allow_missing, use_bootstrap_user = lmap(utils.strtobool, [allow_missing, use_bootstrap_user])
+    """Downloads `path` to the `destination` folder.
+    If `allow_missing`, a non-existant `path` will be skipped without errors.
+    If `use_bootstrap_user`, the 'ubuntu' user will be used for ssh connections."""
+    allow_missing = utils.strtobool(allow_missing)
+    use_bootstrap_user = utils.strtobool(use_bootstrap_user)
 
     @backoff.on_exception(backoff.expo, NetworkError, max_time=60)
     def _download(path, destination):
@@ -358,20 +335,17 @@ def download_file(stackname, path, destination='.', node=None, allow_missing="Fa
     _download(path, destination)
 
 @requires_aws_stack
-def upload_file(stackname, local_path, remote_path=None, overwrite=False, confirm=False, node=1):
+def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1):
     remote_path = remote_path or os.path.join("/tmp", os.path.basename(local_path))
     # todo: use utils.strtobool
     overwrite = str(overwrite).lower() == "true"
-    confirm = str(confirm).lower() == "true"
     node = int(node)
     with stack_conn(stackname, node=node):
         print('stack:', stackname, 'node', node)
         print('local:', local_path)
         print('remote:', remote_path)
         print('overwrite:', overwrite)
-        # todo: switch to utils.confirm and remove `confirm` kwarg
-        if not confirm:
-            utils.get_input('continue?')
+        utils.confirm('continue?')
         if remote_file_exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
             exit(1)
@@ -382,6 +356,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, confir
 #
 
 @requires_aws_stack
+@requires_aws_stack_template
 # pylint: disable-msg=too-many-arguments
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
     if command is None:

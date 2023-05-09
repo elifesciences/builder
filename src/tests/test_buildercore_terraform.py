@@ -1,15 +1,13 @@
+import os
 from collections import OrderedDict
 import json
-import os
 import re
-import shutil
 import yaml
-from os.path import exists, join
+from os.path import join
 from unittest.mock import patch, MagicMock
 from unittest import TestCase
 from . import base
-from buildercore import cfngen, terraform
-
+from buildercore import cfngen, terraform, utils
 
 class TestTerraformTemplate(TestCase):
     def test_resource_creation(self):
@@ -51,7 +49,10 @@ class TestTerraformTemplate(TestCase):
         template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={
             'project': 'journal',
         })
-        overwrite = lambda: template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={'project': 'lax', })
+
+        def overwrite():
+            return template.populate_resource('google_bigquery_dataset', 'my_dataset', key='labels', block={'project': 'lax'})
+
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
     def test_resource_creation_in_multiple_phases(self):
@@ -179,7 +180,10 @@ class TestTerraformTemplate(TestCase):
         template.populate_data('vault_generic_secret', 'my_credentials', block={
             'username': 'mickey',
         })
-        overwrite = lambda: template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
+
+        def overwrite():
+            return template.populate_data('vault_generic_secret', 'my_credentials', block={'username': 'minnie'})
+
         self.assertRaises(terraform.TerraformTemplateError, overwrite)
 
     def test_local_creation(self):
@@ -199,15 +203,17 @@ class TestTerraformTemplate(TestCase):
 
 class TestBuildercoreTerraform(base.BaseCase):
     def setUp(self):
-        self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
-        os.environ['LOGNAME'] = 'my_user'
+        self.reset_author = base.set_config('STACK_AUTHOR', 'my_user')
         self.environment = base.generate_environment_name()
-        test_directory = join(terraform.TERRAFORM_DIR, 'dummy1--%s' % self.environment)
-        if exists(test_directory):
-            shutil.rmtree(test_directory)
+        self.temp_dir, self.rm_temp_dir = utils.tempdir()
+        self.reset_terraform_dir = base.set_config('TERRAFORM_DIR', self.temp_dir)
 
     def tearDown(self):
-        del os.environ['LOGNAME']
+        self.reset_author()
+        self.reset_terraform_dir()
+        self.rm_temp_dir()
+
+    # --- utils
 
     def _getProvider(self, providers_file, provider_name, provider_alias=None):
         providers_list = providers_file['provider']
@@ -218,6 +224,35 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertGreater(len(matching_providers), 0, "%s not found in %s" % (provider_name, providers_list))
         return matching_providers[0][provider_name]
 
+    def _parse_template(self, terraform_template):
+        """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
+        https://stackoverflow.com/a/16373377/91590"""
+        return yaml.safe_load(terraform_template)
+
+    def _load_terraform_file(self, stackname, filename):
+        with open(join(self.temp_dir, stackname, '%s.tf.json' % filename), 'r') as fp:
+            return self._parse_template(fp.read())
+
+    # ---
+
+    def test__open(self):
+        """_open creates a directory for terraform files to be written,
+        returns a handle to a terraform file within that directory,
+        and can optionally not use the terraform extensions."""
+        stackname = "foo--" + self.environment
+        filename = "somefile"
+        expected_file = join(self.temp_dir, stackname, filename) + ".tf.json"
+        with terraform._open(stackname, filename, mode="w") as fh:
+            fh.write("baz")
+        self.assertTrue(os.path.exists(expected_file))
+        self.assertEqual(open(expected_file, "r").read(), "baz")
+
+        expected_file_2 = join(self.temp_dir, stackname, filename) # + ".tf.json"
+        with terraform._open(stackname, filename, extension=None, mode="w") as fh:
+            fh.write("boo")
+        self.assertTrue(os.path.exists(expected_file_2))
+        self.assertEqual(open(expected_file_2, "r").read(), "boo")
+
     @patch('buildercore.terraform.Terraform')
     def test_init_providers(self, Terraform):
         terraform_binary = MagicMock()
@@ -225,6 +260,12 @@ class TestBuildercoreTerraform(base.BaseCase):
         stackname = 'project-with-fastly-minimal--%s' % self.environment
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
+
+        # ensure tfenv file created
+        tfenv_file = join(self.temp_dir, stackname, ".terraform-version")
+        self.assertTrue(os.path.exists(tfenv_file))
+        self.assertEqual(open(tfenv_file, "r").read(), context['terraform']['version'])
+
         terraform_binary.init.assert_called_once()
         for configuration in self._load_terraform_file(stackname, 'providers').get('provider'):
             self.assertIn('version', list(configuration.values())[0])
@@ -252,7 +293,7 @@ class TestBuildercoreTerraform(base.BaseCase):
     def test_delta(self, Terraform):
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
-        terraform_binary.plan.return_value = (0, 'Plan output: ...', '')
+        terraform_binary.show.return_value = (0, 'Plan output: ...', '')
         stackname = 'project-with-fastly-minimal--%s' % self.environment
         context = cfngen.build_context('project-with-fastly-minimal', stackname=stackname)
         terraform.init(stackname, context)
@@ -269,7 +310,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(
             {
                 'resource': {
-                    'fastly_service_v1': {
+                    'fastly_service_vcl': {
                         # must be unique but only in a certain context like this, use some constants
                         'fastly-cdn': {
                             'name': 'project-with-fastly-minimal--%s' % self.environment,
@@ -278,6 +319,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             }],
                             'backend': [{
                                 'address': '%s--www.example.org' % self.environment,
+                                'auto_loadbalance': True,
                                 'name': 'project-with-fastly-minimal--%s' % self.environment,
                                 'port': 443,
                                 'use_ssl': True,
@@ -374,7 +416,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                     },
                 },
                 'resource': {
-                    'fastly_service_v1': {
+                    'fastly_service_vcl': {
                         # must be unique but only in a certain context like this, use some constants
                         'fastly-cdn': {
                             'name': 'project-with-fastly-complex--%s' % self.environment,
@@ -398,6 +440,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                             'backend': [
                                 {
                                     'address': 'default.example.org',
+                                    'auto_loadbalance': True,
                                     'name': 'default',
                                     'port': 443,
                                     'use_ssl': True,
@@ -408,6 +451,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles',
                                     'port': 443,
                                     'use_ssl': True,
@@ -420,6 +464,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special2.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles2',
                                     'port': 443,
                                     'use_ssl': True,
@@ -432,6 +477,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                                 },
                                 {
                                     'address': '%s-special3.example.org' % self.environment,
+                                    'auto_loadbalance': True,
                                     'name': 'articles3',
                                     'port': 443,
                                     'use_ssl': True,
@@ -587,7 +633,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-shield', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'iad-va-us')
         self.assertIn('domain', service)
 
@@ -598,7 +644,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-shield-pop', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'london-uk')
         self.assertIn('domain', service)
 
@@ -609,7 +655,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-shield-aws-region', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
         self.assertEqual(service['backend'][0].get('shield'), 'frankfurt-de')
 
     def test_fastly_template_gcs_logging(self):
@@ -619,17 +665,17 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-gcs', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
-        self.assertIn('gcslogging', service)
-        self.assertEqual(service['gcslogging'].get('name'), 'default')
-        self.assertEqual(service['gcslogging'].get('bucket_name'), 'my-bucket')
-        self.assertEqual(service['gcslogging'].get('path'), 'my-project/')
-        self.assertEqual(service['gcslogging'].get('period'), 1800)
-        self.assertEqual(service['gcslogging'].get('message_type'), 'blank')
-        self.assertEqual(service['gcslogging'].get('email'), '${data.vault_generic_secret.fastly-gcs-logging.data["email"]}')
-        self.assertEqual(service['gcslogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcs-logging.data["secret_key"]}')
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
+        self.assertIn('logging_gcs', service)
+        self.assertEqual(service['logging_gcs'].get('name'), 'default')
+        self.assertEqual(service['logging_gcs'].get('bucket_name'), 'my-bucket')
+        self.assertEqual(service['logging_gcs'].get('path'), 'my-project/')
+        self.assertEqual(service['logging_gcs'].get('period'), 1800)
+        self.assertEqual(service['logging_gcs'].get('message_type'), 'blank')
+        self.assertEqual(service['logging_gcs'].get('user'), '${data.vault_generic_secret.fastly-gcs-logging.data["email"]}')
+        self.assertEqual(service['logging_gcs'].get('secret_key'), '${data.vault_generic_secret.fastly-gcs-logging.data["secret_key"]}')
 
-        log_format = service['gcslogging'].get('format')
+        log_format = service['logging_gcs'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
         self.assertRegex(log_format, r"\{.*\}")
@@ -644,16 +690,16 @@ class TestBuildercoreTerraform(base.BaseCase):
         context = cfngen.build_context('project-with-fastly-bigquery', **extra)
         terraform_template = terraform.render(context)
         template = self._parse_template(terraform_template)
-        service = template['resource']['fastly_service_v1']['fastly-cdn']
-        self.assertIn('bigquerylogging', service)
-        self.assertEqual(service['bigquerylogging'].get('name'), 'bigquery')
-        self.assertEqual(service['bigquerylogging'].get('project_id'), 'my-project')
-        self.assertEqual(service['bigquerylogging'].get('dataset'), 'my_dataset')
-        self.assertEqual(service['bigquerylogging'].get('table'), 'my_table')
-        self.assertEqual(service['bigquerylogging'].get('email'), '${data.vault_generic_secret.fastly-gcp-logging.data["email"]}')
-        self.assertEqual(service['bigquerylogging'].get('secret_key'), '${data.vault_generic_secret.fastly-gcp-logging.data["secret_key"]}')
+        service = template['resource']['fastly_service_vcl']['fastly-cdn']
+        self.assertIn('logging_bigquery', service)
+        self.assertEqual(service['logging_bigquery'].get('name'), 'bigquery')
+        self.assertEqual(service['logging_bigquery'].get('project_id'), 'my-project')
+        self.assertEqual(service['logging_bigquery'].get('dataset'), 'my_dataset')
+        self.assertEqual(service['logging_bigquery'].get('table'), 'my_table')
+        self.assertEqual(service['logging_bigquery'].get('email'), '${data.vault_generic_secret.fastly-gcp-logging.data["email"]}')
+        self.assertEqual(service['logging_bigquery'].get('secret_key'), '${data.vault_generic_secret.fastly-gcp-logging.data["secret_key"]}')
 
-        log_format = service['bigquerylogging'].get('format')
+        log_format = service['logging_bigquery'].get('format')
         # the non-rendered log_format is not even valid JSON
         self.assertIsNotNone(log_format)
         self.assertRegex(log_format, r"\{.*\}")
@@ -791,11 +837,10 @@ class TestBuildercoreTerraform(base.BaseCase):
         providers = self._load_terraform_file(stackname, 'providers')
         self.assertEqual(
             {
-                'version': "= %s" % '1.5.2',
+                'version': "= %s" % '2.19.0',
                 'host': '${data.aws_eks_cluster.main.endpoint}',
                 'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
                 'token': '${data.aws_eks_cluster_auth.main.token}',
-                'load_config_file': False,
             },
             self._getProvider(providers, 'kubernetes')
         )
@@ -908,12 +953,17 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'name': 'project-with-eks--%s--master' % self.environment,
                 'description': 'Cluster communication with worker nodes',
                 'vpc_id': 'vpc-78a2071d',
-                'egress': {
+                'egress': [{
                     'from_port': 0,
                     'to_port': 0,
                     'protocol': '-1',
                     'cidr_blocks': ['0.0.0.0/0'],
-                },
+                    'description': None,
+                    'ipv6_cidr_blocks': None,
+                    'prefix_list_ids': None,
+                    'security_groups': None,
+                    'self': None,
+                }],
                 'tags': {
                     'Project': 'project-with-eks',
                     'Environment': self.environment,
@@ -945,12 +995,17 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'name': 'project-with-eks--%s--worker' % self.environment,
                 'description': 'Security group for all worker nodes in the cluster',
                 'vpc_id': 'vpc-78a2071d',
-                'egress': {
+                'egress': [{
                     'from_port': 0,
                     'to_port': 0,
                     'protocol': '-1',
                     'cidr_blocks': ['0.0.0.0/0'],
-                },
+                    'description': None,
+                    'ipv6_cidr_blocks': None,
+                    'prefix_list_ids': None,
+                    'security_groups': None,
+                    'self': None,
+                }],
                 'tags': {
                     'Project': 'project-with-eks',
                     'Environment': self.environment,
@@ -1105,7 +1160,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'min_size': 1,
                 'max_size': 3,
                 'desired_capacity': 3,
-                'vpc_zone_identifier': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
+                'vpc_zone_identifier': ['subnet-c3c3c3c3', 'subnet-d4d4d4d4'],
                 'tags': [
                     {
                         'key': 'Project',
@@ -1173,190 +1228,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-    @patch('buildercore.terraform.Terraform')
-    def test_helm_provider(self, Terraform):
-        terraform_binary = MagicMock()
-        Terraform.return_value = terraform_binary
-        stackname = 'project-with-eks-helm--%s' % self.environment
-        context = cfngen.build_context('project-with-eks-helm', stackname=stackname)
-        terraform.init(stackname, context)
-        providers = self._load_terraform_file(stackname, 'providers')
-        self.assertEqual(
-            {
-                'version': "= %s" % '0.9.0',
-                'kubernetes': {
-                    'host': '${data.aws_eks_cluster.main.endpoint}',
-                    'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                    'token': '${data.aws_eks_cluster_auth.main.token}',
-                    'load_config_file': False,
-                },
-                'service_account': '${kubernetes_cluster_role_binding.tiller.subject.0.name}',
-            },
-            self._getProvider(providers, 'helm')
-        )
-
-    def test_eks_and_helm(self):
-        pname = 'project-with-eks-helm'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('tiller', terraform_template['resource']['kubernetes_service_account'])
-        self.assertEqual(
-            terraform_template['resource']['kubernetes_service_account']['tiller'],
-            {
-                'metadata': {
-                    'name': 'tiller',
-                    'namespace': 'kube-system',
-                },
-            }
-        )
-
-        self.assertIn('tiller', terraform_template['resource']['kubernetes_cluster_role_binding'])
-        self.assertEqual(
-            terraform_template['resource']['kubernetes_cluster_role_binding']['tiller'],
-            {
-                'metadata': {
-                    'name': 'tiller',
-                },
-                'role_ref': {
-                    'api_group': 'rbac.authorization.k8s.io',
-                    'kind': 'ClusterRole',
-                    'name': 'cluster-admin',
-                },
-                'subject': [
-                    {
-                        'kind': 'ServiceAccount',
-                        'name': '${kubernetes_service_account.tiller.metadata.0.name}',
-                        'namespace': 'kube-system',
-                    },
-                ],
-            }
-        )
-
-        self.assertIn('incubator', terraform_template['data']['helm_repository'])
-        self.assertEqual(
-            terraform_template['data']['helm_repository']['incubator'],
-            {
-                'name': 'incubator',
-                'url': 'https://kubernetes-charts-incubator.storage.googleapis.com',
-            }
-        )
-
-        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
-        self.assertEqual(
-            terraform_template['resource']['helm_release']['common_resources'],
-            {
-                'name': 'common-resources',
-                'repository': "${data.helm_repository.incubator.metadata.0.name}",
-                'chart': 'incubator/raw',
-                'depends_on': ['kubernetes_cluster_role_binding.tiller'],
-                'values': [
-                    "templates:\n- |\n  apiVersion: v1\n  kind: ConfigMap\n  metadata:\n    name: hello-world\n",
-                ],
-            }
-        )
-
-    def test_eks_and_external_dns(self):
-        pname = 'project-with-eks-external-dns'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        # Helm is a dependency
-        self.assertIn('common_resources', terraform_template['resource']['helm_release'])
-
-        self.assertIn('kubernetes_external_dns', terraform_template['resource']['aws_iam_policy'])
-        self.assertEqual(
-            '%s--AmazonRoute53KubernetesExternalDNS' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['path']
-        )
-        self.assertEqual(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ChangeResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "arn:aws:route53:::hostedzone/*",
-                        ],
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "route53:ListHostedZones",
-                            "route53:ListResourceRecordSets",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ]
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_external_dns']['policy'])
-        )
-
-        self.assertIn('worker_external_dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_external_dns.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_external_dns']
-        )
-
-        self.assertIn('external_dns', terraform_template['resource']['helm_release'])
-        self.assertEqual(
-            {
-                'name': 'external-dns',
-                'chart': 'stable/external-dns',
-                'version': '2.6.1',
-                'depends_on': ['helm_release.common_resources'],
-                'set': [
-                    {
-                        'name': 'image.tag',
-                        'value': '0.5.16',
-                    },
-                    {
-                        'name': 'sources[0]',
-                        'value': 'service',
-                    },
-                    {
-                        'name': 'provider',
-                        'value': 'aws',
-                    },
-                    {
-                        'name': 'domainFilters[0]',
-                        'value': 'elifesciences.net',
-                    },
-                    {
-                        'name': 'policy',
-                        'value': 'sync',
-                    },
-                    {
-                        'name': 'aws.zoneType',
-                        'value': 'public', # 'private',
-                    },
-                    {
-                        'name': 'txtOwnerId',
-                        'value': context['stackname'],
-                    },
-                    {
-                        'name': 'rbac.create',
-                        'value': 'true',
-                    }
-                ],
-            },
-            terraform_template['resource']['helm_release']['external_dns']
-        )
-
     def test_eks_and_efs(self):
         pname = 'project-with-eks-efs'
         iid = pname + '--%s' % self.environment
@@ -1402,60 +1273,109 @@ class TestBuildercoreTerraform(base.BaseCase):
             terraform_template['resource']['aws_iam_role_policy_attachment']['worker_efs']
         )
 
-    def test_eks_and_autoscaler_policy(self):
-        pname = 'project-with-eks-and-autoscaler-policy'
+    def test_eks_and_iam_oidc_provider(self):
+        pname = 'project-with-eks-and-iam-oidc-provider'
         iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
         terraform_template = json.loads(terraform.render(context))
 
-        self.assertIn('kubernetes_autoscaler', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('oidc_cert', terraform_template['data']['tls_certificate'])
         self.assertEqual(
-            '%s--KubernetesAutoScalingGroupsAutoscaler' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['path']
-        )
-        self.assertEqual(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:DescribeAutoScalingGroups",
-                            "autoscaling:DescribeAutoScalingInstances",
-                            "autoscaling:DescribeLaunchConfigurations",
-                            "autoscaling:DescribeTags",
-                            "ec2:DescribeInstanceTypes",
-                            "ec2:DescribeLaunchTemplateVersions"
-                        ],
-                        "Resource": ["*"]
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "autoscaling:SetDesiredCapacity",
-                            "autoscaling:TerminateInstanceInAutoScalingGroup",
-                        ],
-                        "Resource": [
-                            "${aws_autoscaling_group.worker.arn}",
-                        ],
-                    },
-                ],
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_autoscaler']['policy'])
+            '${aws_eks_cluster.main.identity.0.oidc.0.issuer}',
+            terraform_template['data']['tls_certificate']['oidc_cert']['url']
         )
 
-        self.assertIn('worker_autoscaler', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_autoscaler.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_autoscaler']
+        self.assertIn(
+            'default',
+            terraform_template['resource']['aws_iam_openid_connect_provider']
         )
+        self.assertEqual(
+            '${aws_eks_cluster.main.identity.0.oidc.0.issuer}',
+            terraform_template['resource']['aws_iam_openid_connect_provider']['default']['url']
+        )
+        self.assertIn(
+            'sts.amazonaws.com',
+            terraform_template['resource']['aws_iam_openid_connect_provider']['default']['client_id_list']
+        )
+        self.assertIn(
+            '${data.tls_certificate.oidc_cert.certificates.0.sha1_fingerprint}',
+            terraform_template['resource']['aws_iam_openid_connect_provider']['default']['thumbprint_list']
+        )
+
+    def test_irsa_external_dns_permissions(self):
+        pname = 'project-with-eks-and-irsa-external-dns-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-external-dns', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-external-dns']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-external-dns', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-infra', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-external-dns']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-external-dns']
+        self.assertEqual('${aws_iam_policy.dummy-external-dns.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-external-dns.name}', aws_iam_role_policy_attachment['role'])
+
+    def test_irsa_kubernetes_autoscaler_permissions(self):
+        pname = 'project-with-eks-and-irsa-kubernetes-autoscaler-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-kubernetes-autoscaler', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-kubernetes-autoscaler']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-kubernetes-autoscaler', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-autoscaler', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-kubernetes-autoscaler']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-kubernetes-autoscaler']
+        self.assertEqual('${aws_iam_policy.dummy-kubernetes-autoscaler.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-kubernetes-autoscaler.name}', aws_iam_role_policy_attachment['role'])
+
+    def test_irsa_ebs_csi_permissions(self):
+        pname = 'project-with-eks-and-irsa-csi-ebs-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('dummy-aws-ebs-csi-driver', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('dummy-aws-ebs-csi-driver', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('dummy-aws-ebs-csi-driver', terraform_template['resource']['aws_iam_role_policy_attachment'])
+
+        iam_role_template = terraform_template['resource']['aws_iam_role']['dummy-aws-ebs-csi-driver']
+        self.assertIn('name', iam_role_template)
+        self.assertIn('assume_role_policy', iam_role_template)
+        self.assertIn('dummy-ebs-csi-controller-sa', iam_role_template['assume_role_policy'])
+        self.assertIn('dummy-kube-system', iam_role_template['assume_role_policy'])
+
+        iam_policy_template = terraform_template['resource']['aws_iam_policy']['dummy-aws-ebs-csi-driver']
+        self.assertIn('name', iam_policy_template)
+        self.assertEqual('/', iam_policy_template['path'])
+        self.assertIn('policy', iam_policy_template)
+
+        aws_iam_role_policy_attachment = terraform_template['resource']['aws_iam_role_policy_attachment']['dummy-aws-ebs-csi-driver']
+        self.assertEqual('${aws_iam_policy.dummy-aws-ebs-csi-driver.arn}', aws_iam_role_policy_attachment['policy_arn'])
+        self.assertEqual('${aws_iam_role.dummy-aws-ebs-csi-driver.name}', aws_iam_role_policy_attachment['role'])
 
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
@@ -1469,16 +1389,11 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(log_sample.get('geo_city'), '42')
 
     def test_generated_template_file_storage(self):
-        contents = '{"key":"value"}'
-        filename = terraform.write_template('dummy1--%s' % self.environment, contents)
-        self.assertEqual(filename, '.cfn/terraform/dummy1--%s/generated.tf.json' % self.environment)
-        self.assertEqual(terraform.read_template('dummy1--%s' % self.environment), contents)
-
-    def _parse_template(self, terraform_template):
-        """use yaml module to load JSON to avoid large u'foo' vs 'foo' string diffs
-        https://stackoverflow.com/a/16373377/91590"""
-        return yaml.safe_load(terraform_template)
-
-    def _load_terraform_file(self, stackname, filename):
-        with open(join(terraform.TERRAFORM_DIR, stackname, '%s.tf.json' % filename), 'r') as fp:
-            return self._parse_template(fp.read())
+        contents = '{\n    "key": "value"\n}'
+        stackname = 'dummy1--%s' % self.environment
+        filename = terraform.write_template(stackname, contents)
+        # lsh@2023-04-04: switched to a temp dir during testing
+        # expected_filename = '.cfn/terraform/%s/generated.tf.json' % stackname)
+        expected_filename = join(self.temp_dir, stackname, "generated.tf.json")
+        self.assertEqual(filename, expected_filename)
+        self.assertEqual(terraform.read_template(stackname), contents)

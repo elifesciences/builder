@@ -1,13 +1,12 @@
 from buildercore.bvars import encode_bvars, read_from_current_host
 from buildercore.command import remote_sudo, upload
 from io import StringIO
-from decorators import requires_aws_stack
+from decorators import requires_aws_stack, format_output
 from buildercore.config import BOOTSTRAP_USER
 from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
 from buildercore import utils as core_utils, trop, keypair
 from buildercore.utils import ensure
-from pprint import pprint
 import utils
 import logging
 from json import JSONDecodeError
@@ -21,16 +20,16 @@ def _retrieve_build_vars():
     raises AssertionError on bad data."""
     try:
         buildvars = read_from_current_host()
-        LOG.debug('build vars: %s', buildvars)
+        LOG.debug('buildvars: %s', buildvars)
 
         # buildvars exist
-        ensure(isinstance(buildvars, dict), 'build vars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.' % buildvars)
+        ensure(isinstance(buildvars, dict), 'buildvars not found (%s). use `./bldr buildvars.fix` to attempt to fix this.' % buildvars)
 
         # nothing important is missing
         missing_keys = core_utils.missingkeys(buildvars, ['stackname', 'instance_id', 'branch', 'revision'])
         ensure(
             len(missing_keys) == 0,
-            'build vars are not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys
+            'buildvars not valid: missing keys %s. use `./bldr buildvars.fix` to attempt to fix this.' % missing_keys
         )
 
         return buildvars
@@ -40,55 +39,48 @@ def _retrieve_build_vars():
         raise
 
 def _update_remote_bvars(stackname, buildvars):
-    LOG.info('updating %r with new vars %r', stackname, buildvars)
+    node_name = "%s--%s" % (stackname, current_node_id())
+    LOG.debug('updating %r with new vars %r', node_name, buildvars)
     encoded = encode_bvars(buildvars)
     fid = core_utils.ymd(fmt='%Y%m%d%H%M%S')
     # make a backup
     remote_sudo('if [ -f /etc/build-vars.json.b64 ]; then cp /etc/build-vars.json.b64 /tmp/build-vars.json.b64.%s; fi;' % fid)
     upload(StringIO(encoded), "/etc/build-vars.json.b64", use_sudo=True)
-    LOG.info("%r updated. backup written to /tmp/build-vars.json.b64.%s", stackname, fid)
+    LOG.info("%r updated. backup written to /tmp/build-vars.json.b64.%s", node_name, fid)
 
-#
+# ---
 
-@requires_aws_stack
-def switch_revision(stackname, revision=None, concurrency=None):
-    if revision is None:
-        revision = utils.uin('revision', None)
-
-    def _switch_revision_single_ec2_node():
-        buildvars = _retrieve_build_vars()
-
-        if 'revision' in buildvars and revision == buildvars['revision']:
-            print('FYI, the instance is already on that revision!')
-            return
-
-        new_data = buildvars
-        new_data['revision'] = revision
-        _update_remote_bvars(stackname, new_data)
-
-    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
-
+@format_output('python')
 @requires_aws_stack
 def read(stackname):
-    "returns the unencoded build variables found on given instance"
-    return stack_all_ec2_nodes(stackname, lambda: pprint(read_from_current_host()), username=BOOTSTRAP_USER)
+    "returns the unencoded build variables found on ec2 nodes for `stackname`."
+    return stack_all_ec2_nodes(stackname, lambda: read_from_current_host(), username=BOOTSTRAP_USER)
 
+@format_output('python')
 @requires_aws_stack
 def valid(stackname):
-    return stack_all_ec2_nodes(stackname, lambda: pprint(_retrieve_build_vars()), username=BOOTSTRAP_USER)
+    return stack_all_ec2_nodes(stackname, lambda: _retrieve_build_vars(), username=BOOTSTRAP_USER)
 
 @requires_aws_stack
 def fix(stackname):
     def _fix_single_ec2_node(stackname):
-        LOG.info("checking build vars on node %s", current_node_id())
+        node_name = "%s--%s" % (stackname, current_node_id())
+        LOG.info("checking buildvars on node %r", node_name)
         try:
-            buildvars = _retrieve_build_vars()
-            LOG.info("valid bvars found, no fix necessary: %s", buildvars)
+            _retrieve_build_vars()
+            LOG.info("valid buildvars found on node %r", node_name)
             return
-        except AssertionError:
-            LOG.info("invalid build vars found, regenerating from context")
-        except (ValueError, JSONDecodeError):
-            LOG.info("bad JSON data found, regenerating from context")
+        except OSError as ose:
+            if str(ose).startswith("remote file does not exist"):
+                LOG.info("missing buildvars on node %r: %s", node_name, ose)
+        except AssertionError as ae:
+            LOG.info("invalid buildvars on node %r (AssertionError): %s", node_name, ae)
+        except JSONDecodeError as jde:
+            LOG.info("invalid buildvars on node %r (JSONDecodeError): %s", node_name, jde)
+        except ValueError as ve:
+            LOG.info("invalid buildvars on node %r (ValueError): %s", node_name, ve)
+
+        LOG.info("regenerating buildvars from context")
 
         context = load_context(stackname)
         # some contexts are missing stackname
@@ -99,20 +91,49 @@ def fix(stackname):
 
     stack_all_ec2_nodes(stackname, (_fix_single_ec2_node, {'stackname': stackname}), username=BOOTSTRAP_USER)
 
-# TODO: deletion candidate. can only ever do a shallow update
 @requires_aws_stack
-def force(stackname, field, value):
-    "replace a specific key with a new value in the buildvars for all ec2 instances in stack"
-    def _force_single_ec2_node():
-        # do not validate build vars.
-        # this way it can be used to repair buildvars when they are missing some field.
-        #buildvars = _validate()
-        buildvars = read_from_current_host()
+def switch_revision(stackname, revision=None, concurrency=None):
+    revision = revision or utils.uin('revision', None)
+    ensure(revision, "a revision is required.", utils.TaskExit)
 
-        new_vars = buildvars.copy()
-        new_vars[field] = value
-        _update_remote_bvars(stackname, new_vars)
-        LOG.info("updated bvars %s", new_vars)
+    # an ec2 instance with broken buildvars cannot have `switch_revision` called upon it.
+    # `deploy.switch_revision_update_instance` has become a familiar command to run for users,
+    # and Alfred depends on calling `buildvars.switch_revision` (see `taskrunner.TASK_LIST`).
+    # ensuring the buildvars are valid here is convenient for both humans *and* CI.
+    # - https://github.com/elifesciences/issues/issues/8116
+    fix(stackname)
+
+    def _switch_revision_single_ec2_node():
+        node_name = "%s--%s" % (stackname, current_node_id())
+        buildvars = _retrieve_build_vars()
+
+        if 'revision' in buildvars and revision == buildvars['revision']:
+            LOG.info('FYI, node %r already on revision %r!' % (node_name, revision))
+            return
+
+        new_data = buildvars
+        new_data['revision'] = revision
+        _update_remote_bvars(stackname, new_data)
+
+    stack_all_ec2_nodes(stackname, _switch_revision_single_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
+
+@requires_aws_stack
+def force(stackname, field, new_value):
+    """Force a change to a single buildvar.
+    Replaces the value of `field` with `new_value` in all buildvars on all
+    ec2 instances in given `stackname`.
+    Can only be used to *replace* an *existing* key and not create new ones.
+    `field` can be a dotted path for targeting values inside nested maps.
+    For example: `force("lax--prod", "elb.stickiness", True)`"""
+
+    new_value = utils.coerce_string_value(new_value)
+
+    def _force_single_ec2_node():
+        buildvars = read_from_current_host()
+        new_buildvars = core_utils.deepcopy(buildvars)
+        new_buildvars = core_utils.updatein(buildvars, field, new_value, create=False)
+        _update_remote_bvars(stackname, new_buildvars)
+        LOG.debug("updated bvars %s", new_buildvars)
 
     stack_all_ec2_nodes(stackname, _force_single_ec2_node, username=BOOTSTRAP_USER)
 
@@ -129,7 +150,7 @@ def refresh(stackname, context=None):
         if not node or not str(node).isdigit():
             # (very) old buildvars. try parsing 'nodename'
             nodename = old_buildvars.get('nodename')
-            if nodename: # ll: "elife-dashboard--prod--1"
+            if nodename: # "elife-dashboard--prod--1"
                 node = nodename.split('--')[-1]
                 if not node.isdigit():
                     LOG.warning("nodename ends in a non-digit node: %s", nodename)

@@ -63,7 +63,7 @@ def parse_validate_repolist(fdata, *repolist):
 
     # test given revisions actually exist in formulas
     for name, _, revision in arglist:
-        path = join(config.PROJECT_PATH, "cloned-projects", name)
+        path = join(config.CLONED_PROJECT_FORMULA_PATH, name)
         if not os.path.exists(path):
             LOG.warning("couldn't find formula %r locally, revision check skipped", path)
             continue
@@ -116,8 +116,9 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
 @requires_master_server_access
 @requires_masterless
 def set_versions(stackname, *repolist):
-    """updates the cloned formulas on a masterless stack to a specific revision.
-    call with formula name and a revision, like: builder-private@ab87af78asdf2321431f31"""
+    """Updates formulas on a masterless stack to a specific revision.
+    call with formula name and a revision, like:
+    'builder-private@ab87af78asdf2321431f31'"""
 
     context = context_handler.load_context(stackname)
     fkeys = ['formula-repo', 'formula-dependencies', 'private-repo', 'configuration-repo']

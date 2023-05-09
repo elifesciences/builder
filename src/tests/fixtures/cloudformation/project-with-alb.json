@@ -223,7 +223,8 @@
                 ],
                 "Subnets": [
                     "subnet-1d4eb46a",
-                    "subnet-7a31dd46"
+                    "subnet-7a31dd46",
+                    "subnet-2116727b"
                 ],
                 "Tags": [
                     {
@@ -284,7 +285,8 @@
                     "Ref": "ELBv2"
                 },
                 "Port": 443,
-                "Protocol": "HTTPS"
+                "Protocol": "HTTPS",
+                "SslPolicy": "ELBSecurityPolicy-TLS-1-2-2017-01"
             },
             "Type": "AWS::ElasticLoadBalancingV2::Listener"
         },
@@ -307,7 +309,8 @@
                     "Ref": "ELBv2"
                 },
                 "Port": 8001,
-                "Protocol": "HTTPS"
+                "Protocol": "HTTPS",
+                "SslPolicy": "ELBSecurityPolicy-TLS-1-2-2017-01"
             },
             "Type": "AWS::ElasticLoadBalancingV2::Listener"
         },

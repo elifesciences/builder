@@ -15,7 +15,6 @@ import json, os
 from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
-from .config import ConfigurationError
 from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, wafv2
 from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
@@ -36,7 +35,6 @@ SECURITY_GROUP_ELB_TITLE = "ELBSecurityGroup"
 EC2_TITLE = 'EC2Instance1'
 EC2_TITLE_NODE = 'EC2Instance%d'
 ELB_TITLE = 'ElasticLoadBalancer'
-RDS_TITLE = "AttachedDB"
 RDS_SG_ID = "DBSecurityGroup"
 RDS_DB_PG = "RDSDBParameterGroup"
 DBSUBNETGROUP_TITLE = 'AttachedDBSubnet'
@@ -235,13 +233,14 @@ def build_vars(context, node):
     that will be encoded and stored on the ec2 instance at /etc/build-vars.json.b64"""
     buildvars = deepcopy(context)
 
-    # preseve some of the project data. all of it is too much
+    # preseve some of the project data. all of it is too much.
     keepers = [
         'formula-repo',
         'formula-dependencies'
     ]
     buildvars['project'] = subdict(buildvars['project'], keepers)
 
+    # per-node buildvars/context.
     buildvars['node'] = node
     buildvars['nodename'] = "%s--%s" % (context['stackname'], node) # "journal--prod--1"
 
@@ -254,17 +253,20 @@ def ec2instance(context, node):
 
     odd = node % 2 == 1
     subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
+
+    if not odd and lu('ec2.type').startswith('t3'):
+        # t3.* instances cannot be created in redundant-subnet-id-1 (us-east-1e)
+        # so we use redundant-subnet-id-2 (us-east-1a)
+        subnet_id = lu('aws.redundant-subnet-id-2')
+
     clean_server_script = open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment'), 'r').read()
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
-        "InstanceType": lu('ec2.type'), # "t2.small", "m1.medium", etc
+        "InstanceType": lu('ec2.type'),
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
         "SubnetId": subnet_id, # "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
-
-        # send script output to AWS EC2 console, syslog and /var/log/user-data.log
-        # - https://alestic.com/2010/12/ec2-user-data-output/
         "UserData": Base64("""#!/bin/bash
 set -x
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
@@ -280,12 +282,10 @@ echo %s > /etc/build-vars.json.b64
 
     if context['ec2'].get('root'):
         project_ec2['BlockDeviceMappings'] = [{
-            'DeviceName': '/dev/sda1',
+            'DeviceName': context['ec2']['root']['device'],
             'Ebs': {
                 'VolumeSize': context['ec2']['root']['size'],
-                'VolumeType': context['ec2']['root'].get('type', 'standard'),
-                # unfortunately root volumes do not support Tags:
-                # https://blog.cloudability.com/two-solutions-for-tagging-elusive-aws-ebs-volumes/
+                'VolumeType': context['ec2']['root']['type'],
             }
         }]
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
@@ -296,7 +296,20 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
     if node in actual_ec2_instances:
         availability_zone = GetAtt(EC2_TITLE_NODE % node, "AvailabilityZone")
     else:
-        availability_zone = context['aws']['availability-zone'] if node % 2 == 1 else context['aws']['redundant-availability-zone']
+        # volume is unattached and needs to get it's AZ from somewhere.
+        # odd nodes are in our AZ-1, even nodes in AZ-2 and even nodes using t3.* are in AZ-3
+        odd = node % 2 == 1
+        if odd:
+            availability_zone = context['aws']['availability-zone'] # AZ-1
+        else:
+            availability_zone = context['aws']['redundant-availability-zone'] # AZ-2
+
+        # if the volume exists and we change the AZ, the operation is going to fail.
+        # this logic is for volumes that were created in AZ-3, not for
+        # switching between AZ-2 and AZ-3.
+        # in that situation the volume will have to be destroyed, or an AMI created.
+        if not odd and context['ec2']['type'].startswith('t3'):
+            availability_zone = context['aws']['redundant-availability-zone-2'] # AZ-3
 
     # 2021-10-05: iiif--prod--2 died and the MountPoint failed to attach to the ext Volume during re-creation.
     # I suspected a bad ext Volume and needed CloudFormation to delete it for me.
@@ -312,6 +325,11 @@ def render_ext_volume(context, context_ext, template, actual_ec2_instances, node
     }
     ec2v = ec2.Volume(EXT_TITLE % node, **args)
     template.add_resource(ec2v)
+
+    # lsh@2022-06-28: used to also destroy the ext volume while destroying the ec2 instance.
+    # this was necessary as the t3 instance was shifting AZ and volumes can't shift AZs
+    # if node in actual_ec2_instances:
+    #    template.add_resource(ec2v)
 
     if node in actual_ec2_instances:
         args = {
@@ -329,7 +347,7 @@ def render_ext(context, template, cluster_size, actual_ec2_instances):
         overridden_context = deepcopy(context)
         overridden_context['ext'].update(overrides.get('ext', {}))
         # TODO: extract `allowed` variable
-        node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'])
+        node_context = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext', 'ami'])
         render_ext_volume(overridden_context, node_context.get('ext', {}), template, actual_ec2_instances, node)
 
 def external_dns_ec2_single(context):
@@ -385,7 +403,7 @@ def render_ec2(context, template):
             continue
 
         overridden_context = deepcopy(context)
-        overridden_ec2 = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext'], interesting=['type'])
+        overridden_ec2 = overridden_component(context, 'ec2', index=node, allowed=['type', 'ext', 'ami'], interesting=['type', 'ami'])
         overridden_context['ec2'] = overridden_ec2
 
         instance = ec2instance(overridden_context, node)
@@ -494,7 +512,7 @@ def rds_security(context):
                           "RDS DB security group")
 
 def render_rds(context, template):
-    lu = partial(utils.lu, context)
+    lu = partial(utils.lookup, context)
 
     # db subnet *group*
     # it's expected the db subnets themselves are already created within the VPC
@@ -515,7 +533,9 @@ def render_rds(context, template):
     # db instance
     data = {
         'DBName': lu('rds_dbname'), # dbname generated from instance id.
-        'DBInstanceIdentifier': lu('rds_instance_id'), # ll: 'lax-2015-12-31' from 'lax--2015-12-31'
+        # "lax--2015-12-31" => "lax-2015-12-31"
+        # "lax--prod" => "lax-prod-1" on first replacement
+        'DBInstanceIdentifier': lu('rds_instance_id'),
         'PubliclyAccessible': False,
         'AllocatedStorage': lu('rds.storage'),
         'StorageType': lu('rds.storage-type'),
@@ -542,12 +562,34 @@ def render_rds(context, template):
         data['StorageEncrypted'] = True
         data['KmsKeyId'] = lu('rds.encryption') if isinstance(lu('rds.encryption'), str) else ''
 
-    rdbi = rds.DBInstance(RDS_TITLE, **data)
+    # use existing snapshot to create instance:
+    # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html#cfn-rds-dbinstance-dbsnapshotidentifier
+    if lu('rds.snapshot-id', None):
+        data['DBSnapshotIdentifier'] = lu('rds.snapshot-id')
+        delete_these = [
+            # used by builder.
+            # even though `rds_dbname` is preserved in the buildvars, `DBName` won't be available in the template and
+            # possibly not even consistent with the database name used in the snapshot.
+            "DBName", "MasterUsername",
+            # not used builder.
+            "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId", "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
+        ]
+        removed = {key: data.pop(key) for key in delete_these if key in data}
+        LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s" % removed)
+        LOG.warning("removing the 'snapshot-id' value will cause a new database to be created on update.")
+        LOG.warning("changing the 'snapshot-id' value will cause the database to be replaced.")
+
+    # custom name must change if being replaced.
+    rds_title = "AttachedDB"
+    if lu('rds.replacing'):
+        rds_title = 'AttachedDB%s' % lu('rds.num-replacements') # "AttachedDB1"
+
+    rdbi = rds.DBInstance(rds_title, **data)
     lmap(template.add_resource, [rsn, rdbi, vpcdbsg])
 
     outputs = [
-        mkoutput("RDSHost", "Connection endpoint for the DB cluster", (RDS_TITLE, "Endpoint.Address")),
-        mkoutput("RDSPort", "The port number on which the database accepts connections", (RDS_TITLE, "Endpoint.Port")),
+        mkoutput("RDSHost", "Connection endpoint for the DB cluster", (rds_title, "Endpoint.Address")),
+        mkoutput("RDSPort", "The port number on which the database accepts connections", (rds_title, "Endpoint.Port")),
     ]
     lmap(template.add_output, outputs)
 
@@ -595,16 +637,34 @@ def render_s3(context, template):
                     )
                 ]
             )
+
         if context['s3'][bucket_name]['website-configuration']:
             index_document = context['s3'][bucket_name]['website-configuration'].get('index-document', 'index.html')
             props['WebsiteConfiguration'] = s3.WebsiteConfiguration(
                 IndexDocument=index_document
             )
-            _add_bucket_policy(template, bucket_title, bucket_name)
+            # disable to allow public IAM policies to work
+            # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket-publicaccessblockconfiguration.html#cfn-s3-bucket-publicaccessblockconfiguration-restrictpublicbuckets
+            props['PublicAccessBlockConfiguration'] = s3.PublicAccessBlockConfiguration(
+                RestrictPublicBuckets=False,
+            )
+            # disables ACLs
+            props['OwnershipControls'] = s3.OwnershipControls(
+                Rules=[s3.OwnershipControlsRule(ObjectOwnership="BucketOwnerEnforced")]
+            )
+            _add_public_read_only_bucket_policy(template, bucket_title, bucket_name)
 
         if context['s3'][bucket_name]['public']:
-            _add_bucket_policy(template, bucket_title, bucket_name)
-            props['AccessControl'] = s3.PublicRead
+            _add_public_read_list_bucket_policy(template, bucket_title, bucket_name)
+            # disable to allow public IAM policies to work
+            # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket-publicaccessblockconfiguration.html#cfn-s3-bucket-publicaccessblockconfiguration-restrictpublicbuckets
+            props['PublicAccessBlockConfiguration'] = s3.PublicAccessBlockConfiguration(
+                RestrictPublicBuckets=False,
+            )
+            # disables ACLs
+            props['OwnershipControls'] = s3.OwnershipControls(
+                Rules=[s3.OwnershipControlsRule(ObjectOwnership="BucketOwnerEnforced")]
+            )
 
         if context['s3'][bucket_name]['encryption']:
             props['BucketEncryption'] = _bucket_kms_encryption(context['s3'][bucket_name]['encryption'])
@@ -615,22 +675,61 @@ def render_s3(context, template):
             **props
         ))
 
-def _add_bucket_policy(template, bucket_title, bucket_name):
-    template.add_resource(s3.BucketPolicy(
-        "%sPolicy" % bucket_title,
-        Bucket=bucket_name,
-        PolicyDocument={
-            "Version": "2012-10-17",
-            "Statement": [{
+def _add_public_read_list_bucket_policy(template, bucket_title, bucket_name):
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
                 "Sid": "AddPerm",
                 "Effect": "Allow",
                 "Principal": "*",
                 "Action": ["s3:GetObject"],
-                "Resource":[
+                "Resource": [
+                    # "arn:aws:s3:::foo-elife-published/*"
                     "arn:aws:s3:::%s/*" % bucket_name
                 ]
-            }]
-        }
+            },
+            # lsh@2023-05-01: ACLs have been turned off. This new statement
+            # maps the lost 'PublicRead' permissions on *objects*.
+            # - https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#acl-access-policy-permission-mapping
+            {
+                "Sid": "AddPerm",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": ["s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
+                "Resource": [
+                    # "arn:aws:s3:::foo-elife-published"
+                    "arn:aws:s3:::%s" % bucket_name
+                ]
+            }
+        ]
+    }
+    template.add_resource(s3.BucketPolicy(
+        "%sPolicy" % bucket_title, # "foo-elife-published" => "FooElifePublishedPolicy"
+        Bucket=bucket_name,
+        PolicyDocument=policy
+    ))
+
+def _add_public_read_only_bucket_policy(template, bucket_title, bucket_name):
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "AddPerm",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": ["s3:GetObject"],
+                "Resource": [
+                    # "arn:aws:s3:::foo-elife-published/*"
+                    "arn:aws:s3:::%s/*" % bucket_name
+                ]
+            }
+        ]
+    }
+    template.add_resource(s3.BucketPolicy(
+        "%sPolicy" % bucket_title, # "foo-elife-published" => "FooElifePublishedPolicy"
+        Bucket=bucket_name,
+        PolicyDocument=policy
     ))
 
 def _bucket_kms_encryption(key_arn):
@@ -696,6 +795,12 @@ def _elb_healthcheck_target(context):
 
 def render_elb(context, template, ec2_instances):
     elb_is_public = True if context['full_hostname'] else False
+    elb_policy_list = [
+        elb.Policy(**{
+            'PolicyName': 'Improved-TLS-Policy',
+            'PolicyType': 'SSLNegotiationPolicyType',
+            'Attributes': [{'Name': 'Reference-Security-Policy', 'Value': 'ELBSecurityPolicy-TLS-1-2-2017-01'}]})
+    ]
     listeners_policy_names = []
 
     app_cookie_stickiness_policy = []
@@ -732,6 +837,7 @@ def render_elb(context, template, ec2_instances):
             ))
             elb_ports.append(80)
         elif protocol == 'https':
+            listeners_policy_names.append("Improved-TLS-Policy")
             listeners.append(elb.Listener(
                 InstanceProtocol='HTTP',
                 InstancePort='80',
@@ -776,10 +882,6 @@ def render_elb(context, template, ec2_instances):
             IdleTimeout=context['elb']['idle_timeout']
         ),
         CrossZone=True,
-        Instances=lmap(Ref, ec2_instances.values()),
-        # TODO: from configuration
-        Listeners=listeners,
-        LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
         HealthCheck=elb.HealthCheck(
             Target=_elb_healthcheck_target(context),
             HealthyThreshold=str(context['elb']['healthcheck'].get('healthy_threshold', 10)),
@@ -787,6 +889,10 @@ def render_elb(context, template, ec2_instances):
             Interval=str(context['elb']['healthcheck'].get('interval', 30)),
             Timeout=str(context['elb']['healthcheck'].get('timeout', 30)),
         ),
+        Instances=lmap(Ref, ec2_instances.values()),
+        Listeners=listeners,
+        LBCookieStickinessPolicy=lb_cookie_stickiness_policy,
+        Policies=elb_policy_list,
         SecurityGroups=[Ref(SECURITY_GROUP_ELB_TITLE)],
         Scheme='internet-facing' if elb_is_public else 'internal',
         Subnets=context['elb']['subnets'],
@@ -1003,6 +1109,7 @@ def render_alb(context, template, ec2_instances):
         }
         if protocol == 'HTTPS':
             props.update({
+                'SslPolicy': 'ELBSecurityPolicy-TLS-1-2-2017-01',
                 'Certificates': [alb.Certificate(CertificateArn=context['alb']['certificate'])]
             })
         _lb_listener_list.append(alb.Listener(**props))
@@ -1209,7 +1316,7 @@ def external_dns_fastly(context):
                 TTL="60",
                 ResourceRecords=ip_addresses,
             )
-            raise ConfigurationError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
+            raise ValueError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
 
         hostedzone = context['domain'] + "."
         cname = context['fastly']['dns']['cname']
@@ -1246,7 +1353,7 @@ def elasticache_security_group(context):
 def elasticache_default_parameter_group(context):
     return elasticache.ParameterGroup(
         ELASTICACHE_PARAMETER_GROUP_TITLE,
-        CacheParameterGroupFamily='redis2.8',
+        CacheParameterGroupFamily='redis6.x',
         Description='ElastiCache parameter group for %s' % context['stackname'],
         Properties=context['elasticache']['configuration']
     )
@@ -1254,7 +1361,7 @@ def elasticache_default_parameter_group(context):
 def elasticache_overridden_parameter_group(context, cluster_context, cluster):
     return elasticache.ParameterGroup(
         "%s%d" % (ELASTICACHE_PARAMETER_GROUP_TITLE, cluster),
-        CacheParameterGroupFamily='redis2.8',
+        CacheParameterGroupFamily='redis6.x',
         Description='ElastiCache parameter group for %s cluster %d' % (context['stackname'], cluster),
         Properties=cluster_context['configuration']
     )

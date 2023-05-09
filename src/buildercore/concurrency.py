@@ -8,7 +8,9 @@ def concurrency_for(stackname, concurrency_name):
     Concurrency can be:
     - serial: one at a time
     - parallel: all together
-    - blue-green: 50% at a time"""
+    - blue-green: 50% at a time
+
+    requires `stackname` to exist on the filesystem, see `src.decorators.requires_aws_stack_template`."""
 
     concurrency_names = ['serial', 'parallel', 'blue-green']
 

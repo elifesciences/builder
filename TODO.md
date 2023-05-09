@@ -7,11 +7,23 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 * delete src/tests/fixtures/additional-projects
     - I think support for different regions and things has been removed
         - it was never really used
+* switch to threadbare
+    - done
+* remove python2 support
+    - done
 
 ## todo
 
 ## todo (bucket)
 
+* switch taskrunner.py print statements to error logs
+* emit a description of the job being run before running it
+* update_infrastructure, elide 'UserData' in confirmation
+  - it's too large and pointless
+* change 'call_while' to 'call_until'
+    - 'call while ec2 is not running', 'call while file is not present'
+        - this negative predicate is awkward
+        - 'call until ec2 is running' and 'call until file present' is much better
 * build_vars, are these supposed to look like that?
         "ext_node_hostname": "prod--alfred--%s.elifesciences.org",
         "int_node_hostname": "prod--alfred--%s.elife.internal",
@@ -22,9 +34,7 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 * add a changelog and versioning and releases
 * revisit tests
     - they take *forever*
-* switch to threadbare
-    - remove fabric
-    - remove python2 support
+* remove fabric
 * switch *away* from threadbare and fabric to something sane
     - with fewer dependencies
 * revisit project configuration
@@ -45,8 +55,20 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 * rename 'cfngen.py' to 'build_context.py' or something similar
 * delete src/tests/fixtures/dummy-project2.yaml
     - looks like the pattern in tests/fixtures/dummy-project.yaml caught on instead
-
 * if skip=ec2 in update_infrastructure, don't bring the nodes into a running state
     - this may actually interfere with IP addresses in the cloudformation template
         - in which case, what depends on those values? surely they would get old/stale quickly ...
 * projects, removing caching 
+* launch and masterless.launch
+    - emit a more useful summary of the stack about to be created. 
+        - should each resource have a 'summary'? for example, an ec2 summary could be:
+            * test--project.elifesciences.org
+            * us-east-1 t3.small instance with 8GB root and 20GB external volumes
+            * SSH, HTTP (internal), HTTPS, PostgreSQL, Redis (internal)
+
+        - it currently looks like:
+            INFO - masterless - attempting to create masterless stack:
+            INFO - masterless - stackname:	elife-libraries--mysqlauth
+            INFO - masterless - region:	us-east-1
+            INFO - masterless - formula_revisions:	[]
+

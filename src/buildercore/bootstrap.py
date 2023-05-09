@@ -9,7 +9,7 @@ from os.path import join
 from collections import OrderedDict
 from datetime import datetime
 from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod, command
-from .context_handler import only_if as updates
+from .context_handler import only_if
 from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
 from .lifecycle import delete_dns
@@ -18,7 +18,7 @@ from .command import remote_sudo, remote_file_exists, remote_listfiles, fab_get,
 import backoff
 import botocore
 from kids.cache import cache as cached
-from functools import reduce # pylint:disable=redefined-builtin
+from collections.abc import Iterable
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ def put_script(script_filename, remote_script):
 @backoff.on_exception(backoff.expo, command.NetworkError, max_time=60)
 def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for `config.SCRIPTS_PATH` and executes it in the /tmp dir with given params.
+    script is run as the root user via sudo.
     WARN: assumes you are connected to a stack"""
     start = datetime.now()
     remote_script = _put_temporary_script(script_filename)
@@ -83,7 +84,7 @@ def create_stack(stackname):
         return False
 
 
-@updates('ec2')
+@only_if('ec2')
 def setup_ec2(stackname, context):
     def _setup_ec2_node():
         def is_resourcing():
@@ -100,7 +101,7 @@ def setup_ec2(stackname, context):
             except command.NetworkError:
                 LOG.debug("failed to connect to server ...")
                 return True
-        utils.call_while(is_resourcing, interval=3, update_msg='Waiting for /home/ubuntu to be detected ...')
+        utils.call_while(is_resourcing, interval=config.AWS_POLLING_INTERVAL, update_msg='Waiting for /home/ubuntu to be detected ...')
 
     stack_all_ec2_nodes(stackname, _setup_ec2_node, username=BOOTSTRAP_USER)
 
@@ -119,48 +120,63 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
         # u'Version': u'2008-10-17'}
         return statement.get('Condition', {}).get('StringLike', {}).get('aws:SourceArn') in topic_arns
 
-    policy['Statement'] = list([s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)])
+    policy['Statement'] = [s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)]
     if policy['Statement']:
         return policy
-    # TODO: unreachable code, policy['Statement'] will always be something
-    return None
 
-def unsub_sqs(stackname, new_context, region, dry_run=False):
-    sublist = core.all_sns_subscriptions(region, stackname)
+def unsub_sqs(stackname, context_sqs, region, dry_run=False):
+    all_subscriptions = core.all_sns_subscriptions(region, stackname)
 
-    # compare project subscriptions to those actively subscribed to (sublist)
+    # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
+    # don't know how it happened but we have cases where a project has multiple subscriptions to the same topic.
+    # this would mean multiple duplicate notifications.
+
+    # group subscriptions by Topic so we detect duplicates below.
+    sub_groups = utils.mkidx(lambda sub: sub['Topic'], all_subscriptions)
+
     unsub_map = {}
-    permission_map = {}
-    for queue_name, subscriptions in new_context.items():
-        unsub_map[queue_name] = [sub for sub in sublist if sub['Topic'] not in subscriptions]
-        permission_map[queue_name] = [sub['TopicArn'] for sub in sublist if sub['Topic'] not in subscriptions]
+    for queue_name, ctx_subscription_list in context_sqs.items():
+        # compare project subscriptions to those actively subscribed to (`all_subscriptions`)
+        unsub_map[queue_name] = [sub for sub in all_subscriptions if sub['Topic'] not in ctx_subscription_list]
 
-    if not dry_run:
-        sns = core.boto_client('sns', region)
-        for sub in utils.shallow_flatten(unsub_map.values()):
-            LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
-            sns.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+        # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
+        # look for subscription in sub groups with >1 subs and ensure it gets removed.
+        for sub in all_subscriptions:
+            topic = sub['Topic']
+            if topic in sub_groups and len(sub_groups[topic]) > 1:
+                msg_list = [t['SubscriptionArn'].split(':')[-1] for t in sub_groups[topic]]
+                LOG.warning("multiple SQS subscriptions to the SNS topic %r found: %s" % (topic, msg_list))
+                unsub_map[queue_name].append(sub_groups[topic].pop())
 
-        sqs = core.boto_resource('sqs', region)
-        for queue_name, topic_arns in permission_map.items():
-            # not an atomic update, but there's no other way to do it
-            queue = sqs.get_queue_by_name(QueueName=queue_name)
-            policy = json.loads(queue.attributes.get('Policy', '{}'))
-            LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
-            new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
-            if new_policy:
-                new_policy_dump = json.dumps(new_policy)
-            else:
-                new_policy_dump = ''
+    # 'permissions' here is more like 'policy': what to do (send a message) when receiving a message from a source (SNS)
+    # we strip these and re-add them on each update.
+    permission_map = {queue_name: [sub['TopicArn'] for sub in sub_list] for queue_name, sub_list in unsub_map.items()}
 
-            try:
-                LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
-                queue.set_attributes(Attributes={'Policy': new_policy_dump})
-            except botocore.exceptions.ClientError as ex:
-                msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_dump)
-                # TODO: `extra` are not logged so they are lost
-                LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
-                raise
+    if dry_run:
+        return unsub_map, permission_map
+
+    sns = core.boto_client('sns', region)
+    for sub in utils.shallow_flatten(unsub_map.values()):
+        LOG.info("Unsubscribing %s from %s", sub['Topic'], stackname)
+        sns.unsubscribe(SubscriptionArn=sub['SubscriptionArn'])
+
+    sqs = core.boto_resource('sqs', region)
+    for queue_name, topic_arns in permission_map.items():
+        # not an atomic update, but there's no other way to do it
+        queue = sqs.get_queue_by_name(QueueName=queue_name)
+        policy = json.loads(queue.attributes.get('Policy', '{}'))
+        LOG.info("Saving new Policy for %s removing %s (%s)", queue_name, topic_arns, policy)
+        new_policy = remove_topics_from_sqs_policy(policy, topic_arns)
+        new_policy_json = json.dumps(new_policy) if new_policy else ''
+
+        try:
+            LOG.info("Existing policy: %s", queue.attributes.get('Policy'))
+            queue.set_attributes(Attributes={'Policy': new_policy_json})
+        except botocore.exceptions.ClientError as ex:
+            msg = "uncaught boto exception updating policy for queue %r: %s" % (queue_name, new_policy_json)
+            # TODO: `extra` is logged but not rendered so are effectively lost
+            LOG.exception(msg, extra={'response': ex.response, 'permission_map': permission_map.items()})
+            raise
 
     return unsub_map, permission_map
 
@@ -175,12 +191,12 @@ def sub_sqs(stackname, context_sqs, region):
     sqs = core.boto_resource('sqs', region)
     sns_client = core.boto_client('sns', region)
 
-    for queue_name, subscriptions in context_sqs.items():
+    for queue_name, subscription_list in context_sqs.items():
         LOG.info('Setup of SQS queue %s', queue_name, extra={'stackname': stackname})
-        ensure(isinstance(subscriptions, list), "Not a list of topics: %s" % subscriptions)
+        ensure(isinstance(subscription_list, list), "Not a list of topics: %s" % subscription_list)
 
         queue = sqs.get_queue_by_name(QueueName=queue_name)
-        for topic_name in subscriptions:
+        for topic_name in subscription_list:
             LOG.info('Subscribing %s to SNS topic %s', queue_name, topic_name, extra={'stackname': stackname})
 
             # idempotent, works as lookup
@@ -192,8 +208,8 @@ def sub_sqs(stackname, context_sqs, region):
             topic_arn = topic_lookup['TopicArn']
 
             # deals with both subscription and IAM policy
-            # http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
-            # https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
+            # - http://boto.cloudhackers.com/en/latest/ref/sns.html#boto.sns.SNSConnection.subscribe_sqs_queue
+            # - https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
             #response = sns.subscribe_sqs_queue(topic_arn, queue)
             # WARN: doesn't do all of the above in boto3
             #response = sns.subscribe(TopicArn=topic_arn, Protocol='sqs', Endpoint=queue.attributes['QueueArn'])
@@ -204,14 +220,14 @@ def sub_sqs(stackname, context_sqs, region):
             LOG.info('Setting RawMessageDelivery of subscription %s', subscription_arn, extra={'stackname': stackname})
             sns_client.set_subscription_attributes(SubscriptionArn=subscription_arn, AttributeName='RawMessageDelivery', AttributeValue='true')
 
-@updates('sqs')
+@only_if('sqs')
 @core.requires_active_stack
 def update_sqs_stack(stackname, context, **kwargs):
     region = context['aws']['region']
     unsub_sqs(stackname, context['sqs'], region)
     sub_sqs(stackname, context['sqs'], region)
 
-@updates('s3')
+@only_if('s3')
 @core.requires_active_stack
 def update_s3_stack(stackname, context, **kwargs):
     """
@@ -254,7 +270,7 @@ def _queue_configurations(stackname, queues, bucket_name, region):
 
 def _setup_s3_to_sqs_policy(stackname, queue_name, bucket_name, region):
     """Loads the policy of queue_name, and adds a statement to let bucket_name
-    notify to it"""
+    send notifications to it."""
     # the only way to make this work is to add a new policy
     # statement for each of the buckets
     # - you cannot filter the AWS account by Principal (for some unknown reason)
@@ -337,44 +353,6 @@ def master_data(region):
 def master(region, key):
     return master_data(region)[key]
 
-# TODO: move to buildercore.cloudformation?
-@core.requires_active_stack
-def template_info(stackname):
-    "returns some useful information about the given stackname as a map"
-    # data = core.describe_stack(stackname).__dict__ # original boto2 approach, never officially supported
-    data = core.describe_stack(stackname).meta.data # boto3
-
-    # looking at the entire set of formulas, all usage is cfn.outputs, cfn.stack_id and cfn.stack_name
-    # in the interests of being explicit on what is supported, I'm changing what this now returns
-    keepers = OrderedDict([
-        ('StackName', 'stack_name'),
-        ('StackId', 'stack_id'),
-        ('Outputs', 'outputs')
-    ])
-
-    # preserve the lowercase+underscore formatting of original struct
-    utils.renkeys(data, keepers.items()) # in-place changes
-
-    # replaces the standand list-of-dicts 'outputs' with a simpler dict
-    # TODO: outputs may be empty in the input `data` here
-    data['outputs'] = reduce(utils.conj, map(lambda o: {o['OutputKey']: o['OutputValue']}, data['outputs']))
-
-    return subdict(data, keepers.values())
-
-def write_environment_info(stackname, overwrite=False):
-    """Looks for /etc/cfn-info.json and writes one if not found.
-    Must be called with an active stack connection.
-
-    This gives Salt the outputs available at stack creation, but that were not
-    available at template compilation time.
-    """
-    if not remote_file_exists("/etc/cfn-info.json") or overwrite:
-        LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
-        infr_config = utils.json_dumps(template_info(stackname))
-        return fab_put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
-    LOG.debug('cfn outputs found, skipping')
-    return []
-
 #
 #
 #
@@ -387,16 +365,15 @@ def update_stack(stackname, service_list=None, **kwargs):
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
     service_update_fns = OrderedDict([
-        ('ec2', (update_ec2_stack, ['concurrency', 'formula_revisions'])),
+        ('ec2', (update_ec2_stack, ['concurrency', 'formula_revisions', 'dry_run'])),
         ('s3', (update_s3_stack, [])),
         ('sqs', (update_sqs_stack, [])),
     ])
     service_list = service_list or service_update_fns.keys()
-    ensure(utils.iterable(service_list), "cannot iterate over given service list %r" % service_list)
+    ensure(isinstance(service_list, Iterable), "cannot iterate over given service list %r" % service_list)
     context = context_handler.load_context(stackname)
-    for servicename, delegation in subdict(service_update_fns, service_list).items():
-        fn, additional_arguments_names = delegation
-        actual_arguments = {key: value for key, value in kwargs.items() if key in additional_arguments_names}
+    for servicename, (fn, fn_kwarg_args) in subdict(service_update_fns, service_list).items():
+        actual_arguments = subdict(kwargs, fn_kwarg_args)
         fn(stackname, context, **actual_arguments)
 
 def upload_master_builder_key(key):
@@ -427,7 +404,7 @@ def download_master_configuration(master_stack):
 
 def expand_master_configuration(master_configuration_template, formulas=None):
     "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"
-    cfg = utils.ordered_load(master_configuration_template)
+    cfg = utils.yaml_load(master_configuration_template)
 
     if not formulas:
         formulas = project.known_formulas() # *all* formulas
@@ -452,9 +429,9 @@ def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
         fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
-@updates('ec2')
+@only_if('ec2')
 @core.requires_active_stack
-def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None):
+def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=None, dry_run=False):
     """installs/updates the ec2 instance attached to the specified stackname.
 
     Once AWS has finished creating an EC2 instance for us, we need to install
@@ -487,7 +464,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
 
     def _update_ec2_node():
         # write out environment config (/etc/cfn-info.json) so Salt can read CFN outputs
-        write_environment_info(stackname, overwrite=True)
+        core.write_environment_info(stackname, overwrite=True)
 
         # bit of a hack, but project config merging doesn't apply to top-level values
         # in this case we look for an alternate salt version under a project's 'ec2' section
@@ -498,7 +475,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
         if alt_salt_version and is_masterless:
             salt_version = alt_salt_version
 
-        install_master_flag = str(is_master or is_masterless).lower() # ll: 'true'
+        install_master_flag = str(is_master or is_masterless).lower() # "true"
 
         build_vars = bvars.read_from_current_host()
         minion_id = build_vars.get('nodename', stackname)
@@ -516,7 +493,7 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             # the master-builder key
             upload_master_builder_key(master_builder_key)
             envvars = {
-                'BUILDER_TOPFILE': os.environ.get('BUILDER_TOPFILE', ''),
+                'BUILDER_TOPFILE': config.ENV['BUILDER_TOPFILE']
             }
 
             # Vagrant's equivalent is 'init-vagrant-formulas.sh'
@@ -546,19 +523,11 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
             put_script('update-master.sh', '/opt/update-master.sh')
 
         # anything other than '--dry-run' and '--no-color' essentially
-        dry_run = "--no-dry-run"
+        highstate_dry_run = "--dry-run" if dry_run else "--no-dry-run"
         coloured_output = "--no-color" if WHOAMI == CI_USER else "--yes-color"
-        run_script('highstate.sh', dry_run, coloured_output)
+        run_script('highstate.sh', highstate_dry_run, coloured_output)
 
     stack_all_ec2_nodes(stackname, _update_ec2_node, username=BOOTSTRAP_USER, concurrency=concurrency)
-
-def remove_minion_key(stackname):
-    "removes all keys for all nodes of the given stackname from the master server"
-    pdata = project_data_for_stackname(stackname)
-    region = pdata['aws']['region']
-    master_stack = core.find_master(region)
-    with stack_conn(master_stack):
-        remote_sudo("rm -f /etc/salt/pki/master/minions/%s--*" % stackname)
 
 # TODO: bootstrap.py may not be best place for this
 def master_minion_keys(master_stackname, group_by_stackname=True):
@@ -570,14 +539,16 @@ def master_minion_keys(master_stackname, group_by_stackname=True):
         return master_stack_key_paths
     # group by stackname. stackname is created by stripping node information off the end.
     # not all keys will have node information! in these case, we just want the first two 'bits'
-    keyfn = lambda p: "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
+
+    def keyfn(p):
+        return "--".join(core.parse_stackname(os.path.basename(p), all_bits=True)[:2])
     return utils.mkidx(keyfn, master_stack_key_paths)
 
 # TODO: bootstrap.py may not be best place for this
 def orphaned_keys(master_stackname):
     "returns a list of paths to keys on the master server that have no corresponding *active* cloudformation stack"
     region = core.find_region(master_stackname)
-    # ll: ['annotations--continuumtest', 'annotations--end2end', 'annotations--prod', 'anonymous--continuum', 'api-gateway--continuumtest', ...]
+    # ['annotations--continuumtest', 'annotations--end2end', 'annotations--prod', 'anonymous--continuum', 'api-gateway--continuumtest', ...]
     active_cfn_stack_names = core.active_stack_names(region)
     grouped_key_files = master_minion_keys(master_stackname)
     missing_stacks = set(grouped_key_files.keys()).difference(active_cfn_stack_names)
@@ -591,6 +562,9 @@ def remove_all_orphaned_keys(master_stackname):
             fname = os.path.basename(path) # prevent accidental deletion of anything not a key
             remote_sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
+# TODO what does stack destruction have to do with ec2 bootstrap?
+# it can't be moved to core because of the `cloudformation` module dependency.
+# we need something in buildercore/ that ties all these disparate things together
 def destroy(stackname):
     # TODO: if context does not exist anymore on S3,
     # we could exit idempotently
@@ -600,7 +574,7 @@ def destroy(stackname):
     cloudformation.destroy(stackname, context)
 
     # don't do this. requires master server access and would prevent regular users deleting stacks
-    # remove_minion_key(stackname)
+    # core.remove_minion_key(stackname)
     delete_dns(stackname)
 
     context_handler.delete_context(stackname)

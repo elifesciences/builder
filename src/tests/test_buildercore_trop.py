@@ -1,6 +1,5 @@
 from collections import OrderedDict
-import json  # , yaml
-import os
+import json
 from os.path import join
 import unittest
 from unittest.mock import patch
@@ -26,12 +25,13 @@ def _parse_json(dump):
 
 class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
-        self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
+        # lsh@2022-08-31: unused?
+        #self.project_config = join(self.fixtures_dir, 'projects', "dummy-project.yaml")
         self.dummy3_config = join(self.fixtures_dir, 'dummy3-project.json')
-        os.environ['LOGNAME'] = 'my_user'
+        self.reset_stack_author = base.set_config('STACK_AUTHOR', 'my_user')
 
     def tearDown(self):
-        del os.environ['LOGNAME']
+        self.reset_stack_author()
 
     # --- rds
 
@@ -48,7 +48,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertTrue(isinstance(data['Resources']['AttachedDB']['Properties'], dict))
         properties = data['Resources']['AttachedDB']['Properties']
         self.assertEqual(properties['AllocatedStorage'], 15)
-        self.assertEqual(properties['StorageType'], 'standard')
+        self.assertEqual(properties['StorageType'], 'gp2')
         # "Test that sequence first contains the same elements as second, regardless of their order."
         self.assertCountEqual(
             data['Resources']['AttachedDB']['Properties']['Tags'],
@@ -193,7 +193,7 @@ class TestBuildercoreTrop(base.BaseCase):
                     'DeviceName': '/dev/sda1',
                     'Ebs': {
                         'VolumeSize': 20,
-                        'VolumeType': 'standard',
+                        'VolumeType': 'gp2',
                     },
                 },
             ]
@@ -596,18 +596,17 @@ class TestBuildercoreTrop(base.BaseCase):
     # --- alb
 
     def test_render_alb(self):
-        fixture = json.loads(base.fixture("cloudformation/project-with-alb.json"))
+        expected = json.loads(base.fixture("cloudformation/project-with-alb.json"))
         context = cfngen.build_context('project-with-alb', stackname='project-with-alb--foo')
-        cfn_template_json = trop.render(context)
-        cfn_template = json.loads(cfn_template_json)
+        actual = json.loads(trop.render(context))
 
         # UserData is identical, but ordering is not preserved in py2 vs py3
-        del fixture['Resources']['EC2Instance1']['Properties']['UserData']
-        del fixture['Resources']['EC2Instance2']['Properties']['UserData']
-        del cfn_template['Resources']['EC2Instance1']['Properties']['UserData']
-        del cfn_template['Resources']['EC2Instance2']['Properties']['UserData']
+        del expected['Resources']['EC2Instance1']['Properties']['UserData']
+        del expected['Resources']['EC2Instance2']['Properties']['UserData']
+        del actual['Resources']['EC2Instance1']['Properties']['UserData']
+        del actual['Resources']['EC2Instance2']['Properties']['UserData']
 
-        self.assertEqual(fixture, cfn_template)
+        self.assertEqual(expected, actual)
 
     # --- dns
 
@@ -702,6 +701,8 @@ class TestBuildercoreTrop(base.BaseCase):
                             },
                         ],
                     },
+                    'OwnershipControls': {'Rules': [{'ObjectOwnership': 'BucketOwnerEnforced'}]},
+                    'PublicAccessBlockConfiguration': {'RestrictPublicBuckets': False},
                     'WebsiteConfiguration': {
                         'IndexDocument': 'index.html',
                     },
@@ -723,15 +724,17 @@ class TestBuildercoreTrop(base.BaseCase):
                     'Bucket': 'widgets-static-hosting-prod',
                     'PolicyDocument': {
                         "Version": "2012-10-17",
-                        "Statement": [{
-                            "Sid": "AddPerm",
-                            "Effect": "Allow",
-                            "Principal": "*",
-                            "Action": ["s3:GetObject"],
-                            "Resource":[
-                                "arn:aws:s3:::widgets-static-hosting-prod/*",
-                            ]
-                        }]
+                        "Statement": [
+                            {
+                                "Sid": "AddPerm",
+                                "Effect": "Allow",
+                                "Principal": "*",
+                                "Action": ["s3:GetObject"],
+                                "Resource":[
+                                    "arn:aws:s3:::widgets-static-hosting-prod/*",
+                                ]
+                            }
+                        ]
                     }
                 },
             },
@@ -743,8 +746,9 @@ class TestBuildercoreTrop(base.BaseCase):
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Delete',
                 'Properties': {
-                    'AccessControl': 'PublicRead',
                     'BucketName': 'widgets-just-access-prod',
+                    'OwnershipControls': {'Rules': [{'ObjectOwnership': 'BucketOwnerEnforced'}]},
+                    'PublicAccessBlockConfiguration': {'RestrictPublicBuckets': False},
                     'Tags': [
                         {'Key': 'Cluster', 'Value': 'project-with-s3--prod'},
                         {'Key': 'Environment', 'Value': 'prod'},
@@ -763,15 +767,26 @@ class TestBuildercoreTrop(base.BaseCase):
                     'Bucket': 'widgets-just-access-prod',
                     'PolicyDocument': {
                         "Version": "2012-10-17",
-                        "Statement": [{
-                            "Sid": "AddPerm",
-                            "Effect": "Allow",
-                            "Principal": "*",
-                            "Action": ["s3:GetObject"],
-                            "Resource":[
-                                "arn:aws:s3:::widgets-just-access-prod/*",
-                            ]
-                        }]
+                        "Statement": [
+                            {
+                                "Sid": "AddPerm",
+                                "Effect": "Allow",
+                                "Principal": "*",
+                                "Action": ["s3:GetObject"],
+                                "Resource":[
+                                    "arn:aws:s3:::widgets-just-access-prod/*",
+                                ]
+                            },
+                            {
+                                "Sid": "AddPerm",
+                                "Effect": "Allow",
+                                "Principal": "*",
+                                "Action": ["s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
+                                "Resource":[
+                                    "arn:aws:s3:::widgets-just-access-prod",
+                                ]
+                            }
+                        ]
                     }
                 },
             },
@@ -831,6 +846,8 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         cfn_template = trop.render(context)
         cfn_template = _parse_json(cfn_template)
+        # cp /tmp/project-with-cloudfront-cdn.json src/tests/fixtures/cloudformation/
+        #open('/tmp/project-with-cloudfront-cdn.json', 'w').write(json.dumps(cfn_template, indent=2))
         fixture = json.loads(base.fixture("cloudformation/project-with-cloudfront-cdn.json"))
         self.assertEqual(fixture, cfn_template)
 
@@ -1031,7 +1048,7 @@ class TestBuildercoreTrop(base.BaseCase):
                 'CacheParameterGroupName': {'Ref': 'ElastiCacheParameterGroup'},
                 'CacheSubnetGroupName': {'Ref': 'ElastiCacheSubnetGroup'},
                 'Engine': 'redis',
-                'EngineVersion': '2.8.24',
+                'EngineVersion': '6.2',
                 'PreferredAvailabilityZone': 'us-east-1a',
                 'NumCacheNodes': 1,
                 'Tags': [
@@ -1046,7 +1063,7 @@ class TestBuildercoreTrop(base.BaseCase):
         )
         self.assertEqual(
             {
-                'CacheParameterGroupFamily': 'redis2.8',
+                'CacheParameterGroupFamily': 'redis6.x',
                 'Description': 'ElastiCache parameter group for project-with-elasticache-redis--prod',
                 'Properties': {
                     'maxmemory-policy': 'volatile-ttl',
@@ -1104,7 +1121,7 @@ class TestBuildercoreTrop(base.BaseCase):
         # default parameter group
         self.assertEqual(
             {
-                'CacheParameterGroupFamily': 'redis2.8',
+                'CacheParameterGroupFamily': 'redis6.x',
                 'Description': 'ElastiCache parameter group for project-with-multiple-elasticaches--prod',
                 'Properties': {
                     'maxmemory-policy': 'volatile-lru',
@@ -1126,7 +1143,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual('cache.t2.medium', data['Resources']['ElastiCache2']['Properties']['CacheNodeType'])
         self.assertEqual(
             {
-                'CacheParameterGroupFamily': 'redis2.8',
+                'CacheParameterGroupFamily': 'redis6.x',
                 'Description': 'ElastiCache parameter group for project-with-multiple-elasticaches--prod cluster 2',
                 'Properties': {
                     'maxmemory-policy': 'volatile-ttl',

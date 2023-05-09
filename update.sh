@@ -1,13 +1,15 @@
 #!/bin/bash
-
-set -e # everything must pass
+set -e
 
 python3 .prerequisites.py "$@"
 
-# remove any old compiled python files
+# remove any old compiled python files.
 find src/ -name '*.pyc' -delete
 
-# activate the venv, recreating if neccessary
+# installs tfenv and the versions of terraform required.
+. install-terraform.sh
+
+# activate the venv, recreating it if neccessary.
 . .activate-venv.sh
 
-printf "\\n   ◕ ‿‿ ◕   all done\\n\\n"
+printf "\\nall done\\n\\n"

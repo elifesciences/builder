@@ -100,7 +100,6 @@ class TestBuildercoreLifecycle(base.BaseCase):
     @patch('buildercore.lifecycle._stop')
     @patch('buildercore.lifecycle.find_ec2_instances')
     def test_stops_instances_when_running_for_too_many_minutes(self, find_ec2_instances, _stop):
-
         find_ec2_instances.return_value = [self._ec2_instance('running', launch_time=datetime(2000, 1, 1, tzinfo=utc))]
         lifecycle.stop_if_running_for('dummy1--test', 30)
 

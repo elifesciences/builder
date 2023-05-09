@@ -39,8 +39,8 @@ class TestWithInstance(base.BaseIntegrationCase):
         self.assertEqual(len(core.find_ec2_instances(self.stackname)), 1) # 1 node is running
         self.assertEqual(len(core.find_ec2_instances(self.stackname, state='stopped', allow_empty=True)), 0) # 0 nodes are stopped
 
-    def test_bootstrap_template_info(self):
-        resp = bootstrap.template_info(self.stackname)
+    def test_core_template_info(self):
+        resp = core.template_info(self.stackname)
         expecting = {
             'stack_name': self.stackname,
             'stack_id': 'arn:aws:cloudformation:us-east-1:512686554592:stack/dummy1--luke-20180420025657-458624/afc10200-4459-11e8-8c52-500c2864aa35',
@@ -54,10 +54,10 @@ class TestWithInstance(base.BaseIntegrationCase):
         self.assertTrue(utils.hasallkeys(resp, expecting.keys()))
         self.assertTrue(utils.hasallkeys(resp['outputs'], expecting['outputs'].keys()))
 
-    def test_bootstrap_write_environment_info(self):
+    def test_core_write_environment_info(self):
         with core.stack_conn(self.stackname, username=BOOTSTRAP_USER):
-            bootstrap.write_environment_info(self.stackname, overwrite=False)
-            bootstrap.write_environment_info(self.stackname, overwrite=True)
+            core.write_environment_info(self.stackname, overwrite=False)
+            core.write_environment_info(self.stackname, overwrite=True)
 
     def test_core_describe_stack(self):
         core.describe_stack(self.stackname)

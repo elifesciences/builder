@@ -5,7 +5,7 @@ import contextlib
 import subprocess
 from threading import Timer
 import getpass
-from pssh import exceptions as pssh_exceptions
+import pssh.exceptions
 import os, sys
 from pssh.clients.native import SSHClient as PSSHClient
 import gevent
@@ -57,13 +57,17 @@ class NetworkError(BaseException):
         custom_error_prefixes = {
             # builder: https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L345-L347
             # pssh: https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L272-L274
-            pssh_exceptions.Timeout: "Timed out trying to connect.",
+            pssh.exceptions.Timeout: "Timed out trying to connect.",
             # builder: https://github.com/elifesciences/builder/blob/master/src/buildercore/core.py#L348-L350
             # fabric: https://github.com/mathiasertl/fabric/blob/master/fabric/network.py#L601-L605
             # pssh: https://github.com/ParallelSSH/parallel-ssh/blob/2e9668cf4b58b38316b1d515810d7e6c595c76f3/pssh/exceptions.py
-            pssh_exceptions.SSHException: "Low level socket error connecting to host.",
-            pssh_exceptions.SessionError: "Low level socket error connecting to host.",
-            pssh_exceptions.ConnectionErrorException: "Low level socket error connecting to host.",
+            pssh.exceptions.SSHException: "Low level socket error connecting to host.",
+            pssh.exceptions.SessionError: "Low level socket error connecting to host.",
+            # lsh@2023-05-08: changed in pssh 2.9.0 and deprecated, pssh uses the builtin now.
+            pssh.exceptions.ConnectionErrorException: "Low level socket error connecting to host.",
+            ConnectionError: "Low level socket error connecting to host.",
+            # lsh@2023-05-08: introduced in pssh 2.9.0, we have to capture this and retry it ourselves.
+            ConnectionRefusedError: "Low level socket error connecting to host."
         }
         new_error = custom_error_prefixes.get(type(self.wrapped)) or ""
         original_error = str(self.wrapped)
@@ -829,7 +833,7 @@ def _download_as_root_hack(remote_path, local_path, **kwargs):
         transfer_fn(remote_tempfile, local_path)
         return local_path
 
-    except (pssh_exceptions.SFTPError, pssh_exceptions.SCPError) as exc:
+    except (pssh.exceptions.SFTPError, pssh.exceptions.SCPError) as exc:
         # permissions or network issues may cause these
         raise NetworkError(exc)
 
@@ -884,7 +888,7 @@ def download(remote_path, local_path, use_sudo=False, **kwargs):
 
             try:
                 transfer_fn(remote_path, local_path)
-            except (pssh_exceptions.SFTPError, pssh_exceptions.SCPError) as exc:
+            except (pssh.exceptions.SFTPError, pssh.exceptions.SCPError) as exc:
                 # permissions or network issues may cause these
                 raise NetworkError(exc)
 
@@ -930,7 +934,7 @@ def _upload_as_root_hack(local_path, remote_path, **kwargs):
             remote_file_exists(remote_path, use_sudo=True, **kwargs),
             "remote path does not exist: %s" % (remote_path),
         )
-    except (pssh_exceptions.SFTPError, pssh_exceptions.SCPError) as exc:
+    except (pssh.exceptions.SFTPError, pssh.exceptions.SCPError) as exc:
         # permissions or network issues may cause these
         raise NetworkError(exc)
 
@@ -951,7 +955,10 @@ def _write_bytes_to_temporary_file(local_path):
             if isinstance(data, str) and common.PY3:
                 data = bytes(data, "utf-8")
             fh.write(data)
-        cleanup = lambda: os.unlink(local_path)
+
+        def cleanup():
+            return os.unlink(local_path)
+
         return local_path, cleanup
     return local_path, None
 
@@ -980,6 +987,6 @@ def upload(local_path, remote_path, use_sudo=False, **kwargs):
         try:
             transfer_fn = _transfer_fn(client, "upload", **kwargs)
             transfer_fn(local_path, remote_path)
-        except (pssh_exceptions.SFTPError, pssh_exceptions.SCPError) as exc:
+        except (pssh.exceptions.SFTPError, pssh.exceptions.SCPError) as exc:
             # permissions or network issues may cause these
             raise NetworkError(exc)
