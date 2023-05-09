@@ -28,7 +28,9 @@ fi
 #pip3 install 'importlib_metadata==4.13.0'
 # lsh@2023-05-01: downgraded again after new issue with importlib-metadata.
 # - https://alfred.elifesciences.org/job/process/job/process-ec2-plugin-ami-update/105/console
-pip3 install 'importlib_metadata==4.12.0'
+#pip3 install 'importlib_metadata==4.12.0'
+# lsh@2023-05-09: issue still not fixed, another downgrade to 4.6.4 seems to let me start the salt-minion without issue.
+pip3 install 'importlib_metadata==4.6.4'
 
 if $dry_run; then
     echo "Executing salt highstate (testing)"
