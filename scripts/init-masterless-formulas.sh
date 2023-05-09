@@ -16,7 +16,7 @@ configuration_repo=$3 # what configuration do I know?
 # REQUIRES CREDENTIALS!
 if [ ! -d /opt/builder-private ]; then
     cd /opt
-    git clone "$pillar_repo" builder-private
+    git clone "$pillar_repo" builder-private --quiet
 else
     cd /opt/builder-private
     git clean -d --force # remove any unknown files
@@ -31,7 +31,7 @@ fi
 # REQUIRES CREDENTIALS!
 if [ ! -d /opt/builder-configuration ]; then
     cd /opt
-    git clone "$configuration_repo" builder-configuration
+    git clone "$configuration_repo" builder-configuration --quiet
 else
     cd /opt/builder-configuration
     git clean -d --force # remove any unknown files
@@ -98,7 +98,7 @@ clone_update() {
     else
         echo "cloning $repo_name"
         cd "$formula_dir"
-        git clone "$repo" "$repo_name/"
+        git clone "$repo" "$repo_name/" --quiet
     fi
 
     # tell the minion where it can find the formula's state and pillar data

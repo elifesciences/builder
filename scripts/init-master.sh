@@ -94,7 +94,7 @@ fi
 # clone builder-configuration in /opt/builder-configuration
 if [ ! -d /opt/builder-configuration ]; then
     cd /opt
-    git clone "$configuration_repo" builder-configuration
+    git clone "$configuration_repo" builder-configuration --quiet
 else
     cd /opt/builder-configuration
     #git clean -d --force # in vagrant, destroys any rsync'd files
@@ -119,7 +119,7 @@ do
             git pull --rebase
         )
     else
-        git clone "$formula_repo" "$pname"
+        git clone "$formula_repo" "$pname" --quiet
     fi
 done
 
