@@ -1036,7 +1036,7 @@ set -o xtrace
         'desired_capacity': context['eks']['worker']['desired-capacity'],
         'vpc_zone_identifier': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
         'tags': autoscaling_group_tags,
-        'lifecycle': {'ignore_changes': ['desired_capacity'] if context['eks']['worker']['ignore-desired-capacity-drift'] == True else []},
+        'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) == True else []},
     })
 
 def _render_eks_workers_role(context, template):
