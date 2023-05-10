@@ -1188,7 +1188,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'propagate_at_launch': True,
                     },
                 ],
-                'lifecycle': {},
+                'lifecycle': {'ignore_changes': []},
             }
         )
 
