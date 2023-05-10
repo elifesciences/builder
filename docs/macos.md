@@ -12,11 +12,9 @@ If these dependency problems can't be resolved then `builder` can be run inside 
 
     ./mac-bldr.sh
 
-
 Inside a running instance:
 
     ./update.sh --exclude virtualbox
-
 
 (`--exclude virtualbox` is for M* ARM-based macs, as Virtualbox doesn't work outside x86 platforms.)
 
@@ -24,14 +22,12 @@ Depending on the commands you intend to run, you might also need to login into `
 
     ./bldr vault.login
 
-
 You should then be able to run any command you need to.
 
 If you use a different SSH key, or your AWS credentials are stored in a non-standard location then use the
 `CUSTOM_SSH_KEY` and `CUSTOM_AWS_CREDENTIALS` environment variables to point at the right files, e.g.
 
     CUSTOM_SSH_KEY=/path/to/ssh/key CUSTOM_AWS_CREDENTIALS=/path/to/aws/credentials/file ./mac-bldr.sh
-
 
 ## Running natively
 
