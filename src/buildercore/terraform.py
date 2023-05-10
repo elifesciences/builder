@@ -1035,7 +1035,7 @@ set -o xtrace
         'max_size': context['eks']['worker']['max-size'],
         'desired_capacity': context['eks']['worker']['desired-capacity'],
         'vpc_zone_identifier': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
-        'tags': autoscaling_group_tags,
+        'tag': autoscaling_group_tags,
     })
 
 def _render_eks_workers_role(context, template):

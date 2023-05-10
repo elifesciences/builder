@@ -1905,7 +1905,7 @@ fastly-logs:
     domain: false
     intdomain: false
     terraform:
-        # lsh@2023-04-25: got an esoteric error about missing credentials attempting to use 
+        # lsh@2023-04-25: got an esoteric error about missing credentials attempting to use
         # "-/google" instead of "hashicorp/google".
         # fixing providers part is part of this ticket:
         # - https://github.com/elifesciences/issues/issues/8256
@@ -2048,6 +2048,17 @@ kubernetes-aws:
     description: project managing an EKS cluster
     domain: False
     intdomain: False
+    terraform:
+        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
+        provider-aws:
+            source: "hashicorp/aws"
+            version: "4.66.1"
+        provider-tls:
+            source: "hashicorp/tls"
+            version: "4.0.4"
+        provider-kubernetes:
+            source: "hashicorp/kubernetes"
+            version: "2.20.0"
     aws:
         ec2: false
     aws-alt:
@@ -2058,7 +2069,7 @@ kubernetes-aws:
                 worker:
                     type: t3.large
                     max-size: 18
-                    desired-capacity: 16
+                    desired-capacity: 15
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
@@ -2080,7 +2091,7 @@ kubernetes-aws:
                 worker:
                     type: t3.large
                     max-size: 6
-                    desired-capacity: 2
+                    desired-capacity: 3
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
