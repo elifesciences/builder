@@ -243,6 +243,8 @@ defaults:
                 max-size: 3
                 # (currently fixed) number of EC2 nodes
                 desired-capacity: 1
+                # Whether to ignore drift in desired-capacity (due to f.e. the autoscaler taking control)
+                ignore-desired-capacity-drift: false
                 #root:
                 #   size: 20 # GiB, default
             efs: false
@@ -2070,6 +2072,7 @@ kubernetes-aws:
                     type: t3.large
                     max-size: 18
                     desired-capacity: 16
+                    ignore-desired-capacity-drift: true
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
@@ -2092,6 +2095,7 @@ kubernetes-aws:
                     type: t3.large
                     max-size: 6
                     desired-capacity: 2
+                    ignore-desired-capacity-drift: true
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
