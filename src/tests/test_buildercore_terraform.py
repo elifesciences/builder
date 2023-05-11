@@ -1161,7 +1161,7 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'max_size': 3,
                 'desired_capacity': 3,
                 'vpc_zone_identifier': ['subnet-c3c3c3c3', 'subnet-d4d4d4d4'],
-                'tags': [
+                'tag': [
                     {
                         'key': 'Project',
                         'value': 'project-with-eks',
