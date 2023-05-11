@@ -10,11 +10,14 @@ defaults:
         version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
         # the version of Terraform providers (plugins) required.
         provider-aws:
-            source: "-/aws"
-            version: "2.28.0"
+            source: "hashicorp/aws"
+            version: "4.66.1"
         provider-tls:
-            source: "-/tls"
-            version: "2.2"
+            source: "hashicorp/tls"
+            version: "4.0.4"
+        provider-kubernetes:
+            source: "hashicorp/kubernetes"
+            version: "2.20.0"
         provider-fastly:
             source: "fastly/fastly"
             version: "1.1.4"
@@ -24,9 +27,6 @@ defaults:
         provider-google:
             source: "-/google"
             version: "2.20.3"
-        provider-kubernetes:
-            source: "-/kubernetes"
-            version: "2.19.0"
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
     # addressing within VPC
@@ -2050,17 +2050,6 @@ kubernetes-aws:
     description: project managing an EKS cluster
     domain: False
     intdomain: False
-    terraform:
-        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
-        provider-aws:
-            source: "hashicorp/aws"
-            version: "4.66.1"
-        provider-tls:
-            source: "hashicorp/tls"
-            version: "4.0.4"
-        provider-kubernetes:
-            source: "hashicorp/kubernetes"
-            version: "2.20.0"
     aws:
         ec2: false
     aws-alt:
