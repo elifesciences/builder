@@ -249,10 +249,8 @@ defaults:
                 #   size: 20 # GiB, default
             efs: false
             addons:
-                kube-proxy:
-                    version: latest
-                coredns:
-                    version: latest
+                kube-proxy: false
+                coredns: false
 
             # this configures IAM roles for service accounts (IRSA).
             iam-oidc-provider: false
@@ -2083,6 +2081,11 @@ kubernetes-aws:
                     max-size: 6
                     desired-capacity: 2
                     ignore-desired-capacity-drift: true
+                addons:
+                    kube-proxy:
+                        version: latest
+                    coredns:
+                        version: latest
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
