@@ -2081,11 +2081,6 @@ kubernetes-aws:
                     max-size: 6
                     desired-capacity: 2
                     ignore-desired-capacity-drift: true
-                addons:
-                    kube-proxy:
-                        version: latest
-                    coredns:
-                        version: latest
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
