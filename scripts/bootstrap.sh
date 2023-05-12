@@ -52,6 +52,7 @@ install_git=false
 
 # Python is such a hard dependency of Salt that we have to upgrade it outside of 
 # Salt to avoid changing it while it is running
+# TODO: after salt 3006 we may be able to get rid of all of this python3 'upgrade' logic.
 
 if ! command -v python3; then
     # python3 not found
@@ -92,9 +93,12 @@ if $upgrade_python3; then
 
     python3 -m pip install pip setuptools --upgrade
 
-    # some Salt states require extra libraries to be installed before calling highstate.
-    # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
-    python3 -m pip install "docker[tls]==4.1.0"
+    # TODO: remove block after complete upgrade to 3006
+    if ! startswith "$version" "3006"; then
+        # some Salt states require extra libraries to be installed before calling highstate.
+        # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
+        python3 -m pip install "docker[tls]==4.1.0"
+    fi
 
     # record an entry about when python3 was installed/upgraded.
     # presence of this entry is used to skip this section in future, unless forced with a flag.
@@ -118,6 +122,7 @@ if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
     wget https://bootstrap.saltstack.com --output-document salt_bootstrap.sh --no-verbose
 
+    # TODO: remove conditional after complete upgrade to 3006
     if startswith "$version" "3006"; then
         # salt 3006 introduces their 'Onedir' ("wonder"?) single binary installation approach.
         # - https://docs.saltproject.io/salt/install-guide/en/latest/topics/upgrade-to-onedir.html
@@ -146,6 +151,7 @@ if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
     if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
+        # TODO: remove conditional after complete upgrade to 3006
         if startswith "$version" "3006"; then
             sh salt_bootstrap.sh -F -M -c /tmp onedir "$version"
         else
@@ -156,6 +162,16 @@ if [ "$install_master" = "true" ]; then
     fi
 fi
 
+# install salt dependencies
+if $upgrade_python3; then
+    # TODO: remove conditional after complete upgrade to 3006
+    if startswith "$version" "3006"; then
+        # some Salt states require extra libraries to be installed before calling highstate.
+        # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
+        # lsh@2023-05-12: pinned to 6.x.x just because it's the latest stable.
+        salt-pip install "docker~=6.1"
+    fi
+fi
 
 # record some basic provisioning info after the above successfully completes
 if $installing; then echo "$(date -I) -- installed salt $version" >> /root/events.log; fi
