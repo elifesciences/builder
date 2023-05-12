@@ -424,6 +424,7 @@ builder:
     vagrant: {}
 
 basebox:
+    salt: "3006"
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
