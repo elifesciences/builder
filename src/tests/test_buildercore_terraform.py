@@ -1378,6 +1378,31 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('${aws_iam_policy.dummy-aws-ebs-csi-driver.arn}', aws_iam_role_policy_attachment['policy_arn'])
         self.assertEqual('${aws_iam_role.dummy-aws-ebs-csi-driver.name}', aws_iam_role_policy_attachment['role'])
 
+    def test_simple_addons(self):
+        pname = 'project-with-eks-and-simple-addons'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('eks_addon_kube_proxy', terraform_template['resource']['aws_eks_addon'])
+        self.assertIn('eks_addon_coredns', terraform_template['resource']['aws_eks_addon'])
+
+        self.assertEqual('1.25', terraform_template['resource']['aws_eks_addon']['eks_addon_kube_proxy']['addon_version'])
+        self.assertEqual('1.9', terraform_template['resource']['aws_eks_addon']['eks_addon_coredns']['addon_version'])
+
+    def test_simple_addons_latest(self):
+        pname = 'project-with-eks-and-simple-addons-latest'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('eks_addon_kube_proxy', terraform_template['data']['aws_eks_addon_version'])
+        self.assertIn('eks_addon_coredns', terraform_template['data']['aws_eks_addon_version'])
+        self.assertTrue(terraform_template['data']['aws_eks_addon_version']['eks_addon_kube_proxy']['most_recent'])
+        self.assertTrue(terraform_template['data']['aws_eks_addon_version']['eks_addon_coredns']['most_recent'])
+        self.assertEqual('${data.aws_eks_addon_version.eks_addon_kube_proxy.version}', terraform_template['resource']['aws_eks_addon']['eks_addon_kube_proxy']['addon_version'])
+        self.assertEqual('${data.aws_eks_addon_version.eks_addon_coredns.version}', terraform_template['resource']['aws_eks_addon']['eks_addon_coredns']['addon_version'])
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

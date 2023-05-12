@@ -1229,6 +1229,46 @@ def _render_eks_master_security_group(context, template):
         'tags': security_group_tags,
     })
 
+def _render_eks_addon(context, template, name, addon_name, version, configuration_values = False, resolve_conflicts='OVERWRITE', service_account_role_arn = False):
+    if (version == 'latest'):
+        template.populate_data(
+            'aws_eks_addon_version',
+            'eks_addon_%s' % name,
+            block={
+                'addon_name': addon_name,
+                'kubernetes_version': '${data.aws_eks_cluster.main.version}',
+                'most_recent': True,
+            }
+        )
+
+    resource_block = {
+        'cluster_name': '${data.aws_eks_cluster.main.id}',
+        'addon_name': addon_name,
+        'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % name,
+        'tags': aws.generic_tags(context),
+        'resolve_conflicts': resolve_conflicts,
+    }
+
+    if (configuration_values != False):
+        resource_block['configuration_values'] = configuration_values
+
+    if (service_account_role_arn != False):
+        resource_block['service_account_role_arn'] = service_account_role_arn
+
+    template.populate_resource(
+        'aws_eks_addon',
+        'eks_addon_%s' % name,
+        block = resource_block,
+    )
+
+def _render_eks_addons(context, template):
+    if (lookup(context,'eks.addons.kube-proxy')):
+        addon_version = lookup(context, 'eks.addons.kube-proxy.version', 'latest')
+        _render_eks_addon(context, template, 'kube_proxy', 'kube-proxy', addon_version)
+    if (lookup(context,'eks.addons.coredns')):
+        addon_version = lookup(context, 'eks.addons.coredns.version', 'latest')
+        _render_eks_addon(context, template, 'coredns', 'coredns', addon_version)
+
 def render_eks(context, template):
     "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
     if not context['eks']:
@@ -1243,6 +1283,8 @@ def render_eks(context, template):
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
+    if lookup(context, 'eks.addons', False):
+        _render_eks_addons(context, template)
 
 # ---
 

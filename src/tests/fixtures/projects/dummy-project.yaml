@@ -1019,6 +1019,29 @@ project-with-eks-and-irsa-csi-ebs-role:
                     service-account: dummy-ebs-csi-controller-sa
                     namespace: dummy-kube-system
 
+project-with-eks-and-simple-addons:
+    description: project managing an EKS cluster with simple addons
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            addons:
+                kube-proxy:
+                    version: '1.25'
+                coredns:
+                    version: '1.9'
+
+project-with-eks-and-simple-addons-latest:
+    description: project managing an EKS cluster with simple addons
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            addons:
+                kube-proxy:
+                    version: latest
+                coredns:
+                    version: latest
 project-with-docdb:
     description: project managing a single DocumentDB instance
     aws:
