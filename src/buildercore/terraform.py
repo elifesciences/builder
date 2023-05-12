@@ -1229,7 +1229,7 @@ def _render_eks_master_security_group(context, template):
         'tags': security_group_tags,
     })
 
-def _render_eks_addon(context, template, name, addon_name, version, configuration_values = False, resolve_conflicts='OVERWRITE', service_account_role_arn = False):
+def _render_eks_addon(context, template, name, addon_name, version, configuration_values=False, resolve_conflicts='OVERWRITE', service_account_role_arn=False):
     if (version == 'latest'):
         template.populate_data(
             'aws_eks_addon_version',
@@ -1258,14 +1258,14 @@ def _render_eks_addon(context, template, name, addon_name, version, configuratio
     template.populate_resource(
         'aws_eks_addon',
         'eks_addon_%s' % name,
-        block = resource_block,
+        block=resource_block,
     )
 
 def _render_eks_addons(context, template):
-    if (lookup(context,'eks.addons.kube-proxy')):
+    if (lookup(context, 'eks.addons.kube-proxy')):
         addon_version = lookup(context, 'eks.addons.kube-proxy.version', 'latest')
         _render_eks_addon(context, template, 'kube_proxy', 'kube-proxy', addon_version)
-    if (lookup(context,'eks.addons.coredns')):
+    if (lookup(context, 'eks.addons.coredns')):
         addon_version = lookup(context, 'eks.addons.coredns.version', 'latest')
         _render_eks_addon(context, template, 'coredns', 'coredns', addon_version)
 
