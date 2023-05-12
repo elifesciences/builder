@@ -90,6 +90,8 @@ if $upgrade_python3; then
 
     # progress bar output gets noisy.
     python3 -m pip config set global.progress_bar off
+    # beyond a certain version (like '10') we don't care what version pip is at.
+    python3 -m pip config set global.disable-pip-version-check true
 
     python3 -m pip install pip setuptools --upgrade
 
@@ -144,7 +146,6 @@ if ($installing || $upgrading); then
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
-
 
 # salt-master
 if [ "$install_master" = "true" ]; then
