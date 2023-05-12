@@ -47,13 +47,8 @@ else
     fi
 fi
 
-remove_python2=false
 upgrade_python3=false
 install_git=false
-
-if command -v python2.7; then
-    remove_python2=true
-fi
 
 # Python is such a hard dependency of Salt that we have to upgrade it outside of 
 # Salt to avoid changing it while it is running
@@ -80,12 +75,6 @@ fi
 if $upgrading; then
     # old versions of this file interfere with the salt upgrade process as they 404 software as soon as it falls out of support.
     rm -f /etc/apt/sources.list.d/saltstack.list
-fi
-
-if $remove_python2; then
-    # shortcut for 'remove'+'autoremove'+'purge' that doesn't fail when a package is not found.
-    # run before anything we control is installed. if python2 exists afterwards, something is still installing it.
-    apt --purge autoremove python2.7 python2.7-dev -y
 fi
 
 if $upgrade_python3; then
