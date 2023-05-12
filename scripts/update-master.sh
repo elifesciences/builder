@@ -33,7 +33,7 @@ done
 # BUG: when /var/run/salt-master.pid not present it causes script to exit
 master_pid=$(test -e /var/run/salt-master.pid && cat /var/run/salt-master.pid)
 if [ "$master_pid" != "" ]; then
-    systemctl stop salt-master 2> /dev/null || service salt-master stop || true
+    systemctl stop salt-master 2> /dev/null || true
     # wait for salt-master to exit
     timeout 2 tail --pid="$master_pid" -f /dev/null || true
 fi
@@ -41,4 +41,4 @@ fi
 # we were patient and polite, but if it's still running we kill it hard
 killall -9 salt-master || true
 
-systemctl start salt-master 2> /dev/null || service salt-master start
+systemctl start salt-master 2> /dev/null
