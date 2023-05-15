@@ -702,8 +702,8 @@ def build_context_eks(pdata, context):
     addons = {}
     for label, data in pdata['aws']['eks'].get('addons', {}).items():
         addons[label] = {
-            'name': data.get('name', label), # "kube_proxy" or "kube-proxy"
-            'label': label, # "kube-proxy"
+            'name': data.get('name', label), # name of the addon returned from DescribeAddonVersions API request, e.g. kube-proxy
+            'label': data.get('label', label), # local label for terraform resource e.g. "kube_proxy"
             'version': data.get('version', 'latest'),
             'configuration_values': None,
             'resolve_conflicts': 'OVERWRITE',

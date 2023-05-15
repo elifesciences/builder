@@ -1230,16 +1230,16 @@ def _render_eks_master_security_group(context, template):
     })
 
 def _render_eks_addon(context, template, addon):
-    name = addon['name'] # "kube_proxy"
-    label = addon['label'] # "kube-proxy"
+    name = addon['name'] # "kube-proxy"
+    label = addon['label'] # "kube_proxy"
     version = addon['version']
 
     if version == 'latest':
         template.populate_data(
             'aws_eks_addon_version',
-            'eks_addon_%s' % name,
+            'eks_addon_%s' % label,
             block={
-                'addon_name': label,
+                'addon_name': name,
                 'kubernetes_version': '${data.aws_eks_cluster.main.version}',
                 'most_recent': True,
             }
@@ -1247,8 +1247,8 @@ def _render_eks_addon(context, template, addon):
 
     resource_block = {
         'cluster_name': '${data.aws_eks_cluster.main.id}',
-        'addon_name': label,
-        'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % name,
+        'addon_name': name,
+        'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
         'tags': aws.generic_tags(context),
         'resolve_conflicts': addon['resolve_conflicts'],
     }
@@ -1261,7 +1261,7 @@ def _render_eks_addon(context, template, addon):
 
     template.populate_resource(
         'aws_eks_addon',
-        'eks_addon_%s' % name,
+        'eks_addon_%s' % label,
         block=resource_block,
     )
 
