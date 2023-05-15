@@ -250,6 +250,7 @@ defaults:
             efs: false
             addons:
                 # kube-proxy:
+                #     name: kube_proxy
                 #     version: latest
                 # coredns:
                 #     version: latest

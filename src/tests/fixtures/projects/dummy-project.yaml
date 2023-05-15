@@ -1027,6 +1027,7 @@ project-with-eks-and-simple-addons:
         eks:
             addons:
                 kube-proxy:
+                    name: kube_proxy
                     version: '1.25'
                 coredns:
                     version: '1.9'
@@ -1039,6 +1040,7 @@ project-with-eks-and-simple-addons-latest:
         eks:
             addons:
                 kube-proxy:
+                    name: kube_proxy
                     version: latest
                 coredns:
                     version: latest

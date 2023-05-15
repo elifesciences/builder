@@ -1229,13 +1229,17 @@ def _render_eks_master_security_group(context, template):
         'tags': security_group_tags,
     })
 
-def _render_eks_addon(context, template, name, addon_name, version, configuration_values=False, resolve_conflicts='OVERWRITE', service_account_role_arn=False):
-    if (version == 'latest'):
+def _render_eks_addon(context, template, addon):
+    name = addon['name'] # "kube_proxy"
+    label = addon['label'] # "kube-proxy"
+    version = addon['version']
+
+    if version == 'latest':
         template.populate_data(
             'aws_eks_addon_version',
             'eks_addon_%s' % name,
             block={
-                'addon_name': addon_name,
+                'addon_name': label,
                 'kubernetes_version': '${data.aws_eks_cluster.main.version}',
                 'most_recent': True,
             }
@@ -1243,17 +1247,17 @@ def _render_eks_addon(context, template, name, addon_name, version, configuratio
 
     resource_block = {
         'cluster_name': '${data.aws_eks_cluster.main.id}',
-        'addon_name': addon_name,
+        'addon_name': label,
         'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % name,
         'tags': aws.generic_tags(context),
-        'resolve_conflicts': resolve_conflicts,
+        'resolve_conflicts': addon['resolve_conflicts'],
     }
 
-    if (configuration_values != False):
-        resource_block['configuration_values'] = configuration_values
+    if addon['configuration_values']:
+        resource_block['configuration_values'] = addon['configuration_values']
 
-    if (service_account_role_arn != False):
-        resource_block['service_account_role_arn'] = service_account_role_arn
+    if addon['service_account_role_arn']:
+        resource_block['service_account_role_arn'] = addon['service_account_role_arn']
 
     template.populate_resource(
         'aws_eks_addon',
@@ -1262,12 +1266,8 @@ def _render_eks_addon(context, template, name, addon_name, version, configuratio
     )
 
 def _render_eks_addons(context, template):
-    if (lookup(context, 'eks.addons.kube-proxy')):
-        addon_version = lookup(context, 'eks.addons.kube-proxy.version', 'latest')
-        _render_eks_addon(context, template, 'kube_proxy', 'kube-proxy', addon_version)
-    if (lookup(context, 'eks.addons.coredns')):
-        addon_version = lookup(context, 'eks.addons.coredns.version', 'latest')
-        _render_eks_addon(context, template, 'coredns', 'coredns', addon_version)
+    for addon_data in context["eks"]["addons"].values():
+        _render_eks_addon(context, template, addon_data)
 
 def render_eks(context, template):
     "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
@@ -1283,8 +1283,7 @@ def render_eks(context, template):
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
-    if lookup(context, 'eks.addons', False):
-        _render_eks_addons(context, template)
+    _render_eks_addons(context, template)
 
 # ---
 

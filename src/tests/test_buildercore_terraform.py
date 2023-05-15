@@ -1378,7 +1378,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('${aws_iam_policy.dummy-aws-ebs-csi-driver.arn}', aws_iam_role_policy_attachment['policy_arn'])
         self.assertEqual('${aws_iam_role.dummy-aws-ebs-csi-driver.name}', aws_iam_role_policy_attachment['role'])
 
-    def test_simple_addons(self):
+    def test_eks_simple_addons(self):
         pname = 'project-with-eks-and-simple-addons'
         iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
@@ -1390,7 +1390,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('1.25', terraform_template['resource']['aws_eks_addon']['eks_addon_kube_proxy']['addon_version'])
         self.assertEqual('1.9', terraform_template['resource']['aws_eks_addon']['eks_addon_coredns']['addon_version'])
 
-    def test_simple_addons_latest(self):
+    def test_eks_simple_addons_latest(self):
         pname = 'project-with-eks-and-simple-addons-latest'
         iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
