@@ -704,9 +704,22 @@ def build_context_bigquery(pdata, context):
     return context
 
 def build_context_eks(pdata, context):
-    if pdata['aws'].get('eks'):
-        context['eks'] = pdata['aws']['eks']
+    if not pdata['aws'].get('eks'):
+        return context
 
+    context['eks'] = pdata['aws']['eks']
+
+    addons = {}
+    for label, data in pdata['aws']['eks'].get('addons', {}).items():
+        addons[label] = {
+            'name': data.get('name', label), # name of the addon returned from DescribeAddonVersions API request, e.g. kube-proxy
+            'label': data.get('label', label), # local label for terraform resource e.g. "kube_proxy"
+            'version': data.get('version', 'latest'),
+            'configuration_values': None,
+            'resolve_conflicts': 'OVERWRITE',
+            'service_account_role_arn': None,
+        }
+    context['eks']['addons'] = addons
     return context
 
 def complete_domain(host, default_main):

@@ -16,6 +16,7 @@ ALL_PROJECTS = [
     'project-on-gcp', 'project-with-bigquery-datasets-only', 'project-with-bigquery', 'project-with-bigquery-remote-schemas',
     'project-with-eks', 'project-with-eks-efs',
     'project-with-eks-and-iam-oidc-provider', 'project-with-eks-and-irsa-external-dns-role', 'project-with-eks-and-irsa-kubernetes-autoscaler-role', 'project-with-eks-and-irsa-csi-ebs-role',
+    'project-with-eks-and-simple-addons', 'project-with-eks-and-simple-addons-latest',
     'project-with-docdb', 'project-with-docdb-cluster',
     'project-with-unique-alt-config',
     'project-with-waf',
