@@ -248,12 +248,10 @@ defaults:
                 #root:
                 #   size: 20 # GiB, default
             efs: false
-            # addons:
-            #     kube-proxy:
-            #         label: kube_proxy
-            #         version: latest
-            #     coredns:
-            #         version: latest
+            addons:
+                coredns: {}
+                kube-proxy:
+                    label: kube_proxy
 
             # this configures IAM roles for service accounts (IRSA).
             iam-oidc-provider: false
