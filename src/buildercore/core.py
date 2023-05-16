@@ -527,6 +527,15 @@ def parse_stackname(stackname, all_bits=False, idx=False):
         bits = dict(zip(bit_keys, bits))
     return bits
 
+def prune_stackname(stackname):
+    """converts a 'pname--iid' or 'pname--iid--nid' style stackname to just 'pname--iid'.
+    invalid stacknames return None."""
+    try:
+        bits = parse_stackname(stackname, all_bits=True)
+        return "--".join(bits[:2])
+    except ValueError:
+        return None
+
 def stackname_parseable(stackname):
     "returns true if the given stackname can be parsed"
     try:
