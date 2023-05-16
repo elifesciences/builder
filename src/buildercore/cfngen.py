@@ -59,8 +59,10 @@ def instance_alias(instance_id):
     Used in cases where the resource names generated with the `instance_id` are too long!
     for example, the `instance_id`:
         "pr-100-base-update"
+        "pr-65-fresh-snsalt"
     may generate an S3 bucket name of:
         "pr-100-base-update-elife-bot-accepted-submission-cleaning-output"
+        "pr-65-fresh-snsalt-elife-bot-accepted-submission-cleaning-output"
     that is 64 characters long when the maximum is 63.
     with an alias we can shorten that at the expense of this extra indirection."""
     if not isinstance(instance_id, str):
@@ -73,6 +75,14 @@ def instance_alias(instance_id):
         alias = "bu"
         pr_num = match.group('pr')
         return "pr-%s-%s" % (pr_num, alias) # "pr-123-bu"
+
+    # pr-*-fresh-snsalt
+    fresh_snsalt_alias_regex = re.compile(r"pr-(?P<pr>\d+)-fresh-snsalt")
+    match = re.match(fresh_snsalt_alias_regex, instance_id)
+    if match:
+        alias = "fs"
+        pr_num = match.group('pr')
+        return "pr-%s-%s" % (pr_num, alias) # "pr-123-fs"
 
     # add further aliases here
     # ...
@@ -338,7 +348,6 @@ def build_context_aws(pdata, context):
     return context
 
 def build_context_s3(pdata, context):
-    # future: build what is necessary for buildercore.bootstrap.setup_s3()
     default_bucket_configuration = {
         'sqs-notifications': {},
         'deletion-policy': 'delete',
@@ -351,6 +360,7 @@ def build_context_s3(pdata, context):
         for bucket_template_name in pdata['aws']['s3']:
             configuration = pdata['aws']['s3'][bucket_template_name]
             bucket_name = parameterize(context)(bucket_template_name)
+            ensure(len(bucket_name) <= 63, "bucket name %r from template %r is longer than 63 characters: %s" % (bucket_name, bucket_template_name, len(bucket_name)))
             context['s3'][bucket_name] = default_bucket_configuration.copy()
             context['s3'][bucket_name].update(configuration if configuration else {})
     return context
@@ -694,9 +704,22 @@ def build_context_bigquery(pdata, context):
     return context
 
 def build_context_eks(pdata, context):
-    if pdata['aws'].get('eks'):
-        context['eks'] = pdata['aws']['eks']
+    if not pdata['aws'].get('eks'):
+        return context
 
+    context['eks'] = pdata['aws']['eks']
+
+    addons = {}
+    for label, data in pdata['aws']['eks'].get('addons', {}).items():
+        addons[label] = {
+            'name': data.get('name', label), # name of the addon returned from DescribeAddonVersions API request, e.g. kube-proxy
+            'label': data.get('label', label), # local label for terraform resource e.g. "kube_proxy"
+            'version': data.get('version', 'latest'),
+            'configuration_values': None,
+            'resolve_conflicts': 'OVERWRITE',
+            'service_account_role_arn': None,
+        }
+    context['eks']['addons'] = addons
     return context
 
 def complete_domain(host, default_main):

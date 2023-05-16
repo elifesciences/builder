@@ -4,7 +4,7 @@ defaults:
         # distinguishes this data from other types and versions of configuration data
         type: project
         version: 1
-    salt: "3003" # the version of Salt to install on ec2 instances
+    salt: "3004" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
         version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-098883a939acf7b53 # GENERATED created from basebox--2004
+            ami: ami-043e8435d200e0938 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -248,6 +248,10 @@ defaults:
                 #root:
                 #   size: 20 # GiB, default
             efs: false
+            addons:
+                coredns: {}
+                kube-proxy:
+                    label: kube_proxy
 
             # this configures IAM roles for service accounts (IRSA).
             iam-oidc-provider: false
@@ -392,7 +396,7 @@ defaults:
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
             ec2:
-                salt: '3003'
+                salt: '3006'
                 masterless: True
 
         # lsh@2022-07: remove this alt-config once all formula Jenkinsfiles are updated

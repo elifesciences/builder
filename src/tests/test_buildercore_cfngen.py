@@ -317,6 +317,12 @@ def test_instance_alias():
         ("pr-abc-base-update", None),
         ("pr-base-update", None),
 
+        # pr-*-fresh-snsalt'
+        ("pr-0-fresh-snsalt", "pr-0-fs"),
+        ("pr-123-fresh-snsalt", "pr-123-fs"),
+        ("pr-abc-base-update", None),
+        ("pr-base-update", None),
+
         # ...
     ]
     for given, expected in cases:

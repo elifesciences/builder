@@ -1229,6 +1229,46 @@ def _render_eks_master_security_group(context, template):
         'tags': security_group_tags,
     })
 
+def _render_eks_addon(context, template, addon):
+    name = addon['name'] # "kube-proxy"
+    label = addon['label'] # "kube_proxy"
+    version = addon['version']
+
+    if version == 'latest':
+        template.populate_data(
+            'aws_eks_addon_version',
+            'eks_addon_%s' % label,
+            block={
+                'addon_name': name,
+                'kubernetes_version': '${data.aws_eks_cluster.main.version}',
+                'most_recent': True,
+            }
+        )
+
+    resource_block = {
+        'cluster_name': '${data.aws_eks_cluster.main.id}',
+        'addon_name': name,
+        'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
+        'tags': aws.generic_tags(context),
+        'resolve_conflicts': addon['resolve_conflicts'],
+    }
+
+    if addon['configuration_values']:
+        resource_block['configuration_values'] = addon['configuration_values']
+
+    if addon['service_account_role_arn']:
+        resource_block['service_account_role_arn'] = addon['service_account_role_arn']
+
+    template.populate_resource(
+        'aws_eks_addon',
+        'eks_addon_%s' % label,
+        block=resource_block,
+    )
+
+def _render_eks_addons(context, template):
+    for addon_data in context["eks"]["addons"].values():
+        _render_eks_addon(context, template, addon_data)
+
 def render_eks(context, template):
     "all from https://learn.hashicorp.com/terraform/aws/eks-intro"
     if not context['eks']:
@@ -1243,6 +1283,7 @@ def render_eks(context, template):
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
+    _render_eks_addons(context, template)
 
 # ---
 
