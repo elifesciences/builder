@@ -187,10 +187,11 @@ def process_project_security_updates():
 def all_ec2_instances_for_salt_upgrade():
     "All ec2 instance names suitable for a Salt upgrade"
     ignore_these = [
-        "Elife ALM (alm.svr.*)", # so very dead
-        "basebox--1804--1", # ami creation, periodically destroyed and recreated
+        "basebox--2004--1", # ami creation, periodically destroyed and recreated
         "master-server--prod--1", # updated in separate step
-        "containers-jenkins-plugin", # there are three of these
+        # created and destroyed by jenkins. 
+        # the template is 'containers--jenkins-plugin-ami'
+        "containers-jenkins-plugin", 
         "kubernetes-aws--flux-prod",
         "kubernetes-aws--flux-test",
         "kubernetes-aws--test",
