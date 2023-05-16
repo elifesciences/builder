@@ -51,6 +51,18 @@ class SimpleCases(base.BaseCase):
         ]
         self.assertAllPairsEqual(partial(core.parse_stackname, all_bits=True, idx=True), expected)
 
+    def test_prune_stackname(self):
+        cases = [
+            (None, None),
+            ('', None),
+            (123, None),
+            ('foo', None),
+            ('foo--bar', 'foo--bar'),
+            ('foo--bar--baz', 'foo--bar')
+        ]
+        for given, expected in cases:
+            self.assertEqual(expected, core.prune_stackname(given))
+
     def test_master_server_stackname(self):
         self.assertTrue(core.is_master_server_stack('master-server--temp'))
         self.assertFalse(core.is_master_server_stack('master-some-project--end2end'))

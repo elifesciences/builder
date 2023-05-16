@@ -189,9 +189,9 @@ def all_ec2_instances_for_salt_upgrade():
     ignore_these = [
         "basebox--2004--1", # ami creation, periodically destroyed and recreated
         "master-server--prod--1", # updated in separate step
-        # created and destroyed by jenkins. 
+        # created and destroyed by jenkins.
         # the template is 'containers--jenkins-plugin-ami'
-        "containers-jenkins-plugin", 
+        "containers-jenkins-plugin",
         "kubernetes-aws--flux-prod",
         "kubernetes-aws--flux-test",
         "kubernetes-aws--test",
