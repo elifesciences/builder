@@ -4,7 +4,7 @@ defaults:
         # distinguishes this data from other types and versions of configuration data
         type: project
         version: 1
-    salt: "3003" # the version of Salt to install on ec2 instances
+    salt: "3004" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
         version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
