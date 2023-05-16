@@ -12,7 +12,7 @@ set -xv  # output the scripts and interpolated steps
 minion_id=$1
 
 # ELPP-3601: Vagrant machines run masterless and don't need salt-minion running
-systemctl stop salt-minion 2> /dev/null || service salt-minion stop
+systemctl stop salt-minion 2> /dev/null
 
 # link up the project formula mounted at /project
 # NOTE: these links will be overwritten if this a master-server instance

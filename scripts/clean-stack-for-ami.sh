@@ -1,6 +1,6 @@
 #!/bin/bash
-# runs as ROOT before AMI creation
-# creation
+# runs before AMI creation creation
+# runs as ROOT 
 
 set -e # everything must pass
 set -u # no unbound variables
@@ -8,7 +8,7 @@ set -xv  # output the scripts and interpolated steps
 
 if command -v salt-minion > /dev/null; then
     # salt is installed
-    systemctl stop salt-minion 2> /dev/null || service salt-minion stop
+    systemctl stop salt-minion 2> /dev/null
 fi
 
 # remove credentials and stack-specific files
