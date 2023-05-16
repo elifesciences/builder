@@ -396,7 +396,7 @@ defaults:
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
             ec2:
-                salt: '3004'
+                salt: '3006'
                 masterless: True
 
         # lsh@2022-07: remove this alt-config once all formula Jenkinsfiles are updated
