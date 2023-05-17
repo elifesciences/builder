@@ -82,8 +82,9 @@ The elife-master-builder Github user should already have access to these formula
     }
 else
     cd /opt/builder-private
-    git clean -d --force # in vagrant, destroys any rsync'd files
+    git clean -d --force # in vagrant, destroys any uncommitted rsync'd files
     git reset --hard
+    git checkout master
     git pull
 fi
 cp /opt/builder-private/etc-salt-master /etc/salt/master.template
@@ -97,8 +98,9 @@ if [ ! -d /opt/builder-configuration ]; then
     git clone "$configuration_repo" builder-configuration --quiet
 else
     cd /opt/builder-configuration
-    #git clean -d --force # in vagrant, destroys any rsync'd files
+    git clean -d --force # in vagrant, destroys any uncommitted rsync'd files
     git reset --hard
+    git checkout master
     git pull
 fi
 
@@ -123,24 +125,17 @@ do
     fi
 done
 
-
-# install/update builder
-# the master server will need to install project formulas. 
-
-# install builder dependencies for Ubuntu not covered by bootstrap.sh
-apt-get install libffi-dev libssl-dev -y
-python3 -m pip install virtualenv
-
-rm -rf /opt/builder
-
 # some vagrant wrangling for convenient development
 if [ -d /vagrant ]; then
     # we're inside Vagrant!
-    # if there is a directory called builder-private, then use it's contents 
+    # if there is a host directory called builder-private, then use it's contents 
     if [ -d /vagrant/builder-private ]; then
         rsync -av /vagrant/builder-private/ /opt/builder-private/
     fi
 fi
+
+# installed during bootstrap, the salt-minion is probably unhappy at this point. reboot it.
+systemctl restart salt-minion 2> /dev/null
 
 echo "master server configured"
 
