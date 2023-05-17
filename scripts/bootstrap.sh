@@ -100,6 +100,7 @@ if $upgrade_python3; then
         # some Salt states require extra libraries to be installed before calling highstate.
         # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
         python3 -m pip install "docker[tls]==4.1.0"
+        python3 -m pip install "pymysql~=1.0"
     fi
 
     # record an entry about when python3 was installed/upgraded.
@@ -169,8 +170,8 @@ if $upgrade_python3; then
     if startswith "$version" "3006"; then
         # some Salt states require extra libraries to be installed before calling highstate.
         # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
-        # lsh@2023-05-12: pinned to 6.x.x just because it's the latest stable.
-        salt-pip install "docker~=6.1"
+        # lsh@2023-05-12: version pins are just because they're the latest stable, nothing significant.
+        salt-pip install "docker~=6.1" "pymysql~=1.0"
     fi
 fi
 
