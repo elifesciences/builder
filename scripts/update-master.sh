@@ -8,10 +8,12 @@ set -xv  # output the scripts and interpolated steps
 
 cd /opt/builder-private
 git reset --hard
+git checkout master
 git pull --rebase
 
 cd /opt/builder-configuration
 git reset --hard
+git checkout master
 git pull --rebase
 
 # ... then clone/pull all formula repos and update master config
@@ -42,3 +44,4 @@ fi
 killall -9 salt-master || true
 
 systemctl start salt-master 2> /dev/null
+
