@@ -165,14 +165,13 @@ if [ "$install_master" = "true" ]; then
 fi
 
 # install salt dependencies
-if $upgrade_python3; then
-    # TODO: remove conditional after complete upgrade to 3006
-    if startswith "$version" "3006"; then
-        # some Salt states require extra libraries to be installed before calling highstate.
-        # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
-        # lsh@2023-05-12: version pins are just because they're the latest stable, nothing significant.
-        salt-pip install "docker~=6.1" "pymysql~=1.0"
-    fi
+
+# TODO: remove conditional after complete upgrade to 3006
+if startswith "$version" "3006"; then
+    # some Salt states require extra libraries to be installed before calling highstate.
+    # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
+    # lsh@2023-05-12: version pins are just because they're the latest stable, nothing significant.
+    salt-pip install "docker~=6.1" "pymysql~=1.0"
 fi
 
 # record some basic provisioning info after the above successfully completes
