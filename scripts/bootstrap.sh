@@ -47,21 +47,12 @@ else
     fi
 fi
 
-upgrade_python3=false
+install_python=false
 install_git=false
-
-# Python is such a hard dependency of Salt that we have to upgrade it outside of 
-# Salt to avoid changing it while it is running
-# TODO: after salt 3006 we may be able to get rid of all of this python3 'upgrade' logic.
 
 if ! command -v python3; then
     # python3 not found
-    upgrade_python3=true
-else
-    # python 3 found but have our other py3 dependencies been installed?
-    if ! grep "installed/upgraded python3" /root/events.log; then
-        upgrade_python3=true
-    fi
+    install_python=true
 fi
 
 if ! command -v git; then
@@ -69,7 +60,7 @@ if ! command -v git; then
     install_git=true
 fi
 
-if ($upgrade_python3 || $install_git); then
+if ($install_python || $install_git); then
     apt-get update -y -q
 fi
 
@@ -78,8 +69,7 @@ if $upgrading; then
     rm -f /etc/apt/sources.list.d/saltstack.list
 fi
 
-if $upgrade_python3; then
-
+if $install_python; then
     # confdef: If conf file modified and the version in the package changed, choose the default action without prompting. 
     #          If there is no default action, stop to ask the user unless '--force-confnew' or '--force-confold' given.
     # confold: If conf file modified and the version in the package changed, keep the old version without prompting
@@ -88,31 +78,15 @@ if $upgrade_python3; then
         -y -q --no-install-recommends \
         -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
-    # progress bar output gets noisy.
     python3 -m pip config set global.progress_bar off
-    # beyond a certain version (like '10') we don't care what version pip is at.
     python3 -m pip config set global.disable-pip-version-check true
 
-    python3 -m pip install pip setuptools --upgrade
-
-    # TODO: remove block after complete upgrade to 3006
-    if ! startswith "$version" "3006"; then
-        # some Salt states require extra libraries to be installed before calling highstate.
-        # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
-        python3 -m pip install "docker[tls]==4.1.0"
-        python3 -m pip install "pymysql~=1.0"
-    fi
+    # lsh@2023-05-17: why do we need setuptools ?
+    python3 -m pip install pip wheel setuptools --upgrade
 
     # record an entry about when python3 was installed/upgraded.
     # presence of this entry is used to skip this section in future, unless forced with a flag.
-    if [ -f /root/upgrade-python3.flag ]; then
-        echo "$(date -I) -- installed/upgraded python3 (forced)" >> /root/events.log;
-    else
-        echo "$(date -I) -- installed/upgraded python3" >> /root/events.log;
-    fi
-
-    # remove 'force upgrade' flag, if it exists
-    rm -f /root/upgrade-python3.flag
+    echo "$(date -I) -- installed python3" >> /root/events.log;
 fi
 
 if $install_git; then
@@ -125,56 +99,38 @@ if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
     wget https://bootstrap.saltstack.com --output-document salt_bootstrap.sh --no-verbose
 
-    # TODO: remove conditional after complete upgrade to 3006
-    if startswith "$version" "3006"; then
-        # salt 3006 introduces their 'Onedir' ("wonder"?) single binary installation approach.
-        # - https://docs.saltproject.io/salt/install-guide/en/latest/topics/upgrade-to-onedir.html
-
-        # -F  Allow copied files to overwrite existing(config, init.d, etc)
-        # -c  Temporary configuration directory
-        # -M  Also install master
-        sh salt_bootstrap.sh -F -c /tmp onedir "$version"
-
-    else
-        # -x  Changes the Python version used to install Salt.
-        # -P  Allow pip based installations.
-        # -F  Allow copied files to overwrite existing(config, init.d, etc)
-        # -c  Temporary configuration directory
-        # -M  Also install master
-        # https://github.com/saltstack/salt-bootstrap/blob/develop/bootstrap-salt.sh
-        sh salt_bootstrap.sh -x python3 -P -F -c /tmp stable "$version"
-    fi
+    # -F      Allow copied files to overwrite existing(config, init.d, etc)
+    # -c      Temporary configuration directory
+    # onedir  a single binary salt installation, only supported installation type since v3006.0
+    # -M      Also install master
+    sh salt_bootstrap.sh -F -c /tmp onedir "$version"
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
+
 
 # salt-master
 if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
     if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
-        # TODO: remove conditional after complete upgrade to 3006
-        if startswith "$version" "3006"; then
-            sh salt_bootstrap.sh -F -M -c /tmp onedir "$version"
-        else
-            sh salt_bootstrap.sh -x python3 -P -F -M -c /tmp stable "$version"
-        fi
+        sh salt_bootstrap.sh -F -M -c /tmp onedir "$version"
     else
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
 fi
 
-# install salt dependencies
 
-# TODO: remove conditional after complete upgrade to 3006
-if startswith "$version" "3006"; then
-    # some Salt states require extra libraries to be installed before calling highstate.
-    # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
+# install salt dependencies
+# some Salt states require extra libraries to be installed before calling highstate.
+# salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
+if ($installing || $upgrading); then
     # lsh@2023-05-12: version pins are just because they're the latest stable, nothing significant.
     salt-pip install "docker~=6.1" "pymysql~=1.0"
 fi
 
-# record some basic provisioning info after the above successfully completes
+
+# record some basic info after the above successfully completes
 if $installing; then echo "$(date -I) -- installed salt $version" >> /root/events.log; fi
 if $upgrading; then echo "$(date -I) -- upgraded salt to $version" >> /root/events.log; fi
 
@@ -194,8 +150,10 @@ while IFS='=' read -r variable_name grain_value ; do
 done < <(env | grep '^grain_.*')
 echo "$grains" > /etc/salt/grains
 
+
 # restart salt-minion. necessary as we may have changed minion's configuration
 systemctl restart salt-minion 2> /dev/null
+
 
 # generate a key for the root user
 # in AWS this is uploaded to the server and moved into place prior to calling 
@@ -205,8 +163,8 @@ if [ ! -f /root/.ssh/id_rsa ]; then
 fi
 touch /root/.ssh/known_hosts
 
-# after bootstrap.sh and before salt's highstate, we may need to talk to github
 
+# after bootstrap.sh and before salt's highstate, we may need to talk to github
 # ensure salt can talk to github without host verification failures
 # remove any existing keys for github.com
 ssh-keygen -R github.com
