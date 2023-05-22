@@ -296,7 +296,7 @@ def test_find_rds_instances__replacement(test_projects):
 ])
 def test_stack_all_ec2_nodes__network_retry_logic(_):
     "NetworkErrors are caught and retried N times before finally failing with the last raised exception"
-    expected = 6
+    expected = 5
     retried = 0
 
     exc = ConnectionRefusedError("foo")
