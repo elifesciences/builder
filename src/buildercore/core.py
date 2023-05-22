@@ -373,7 +373,7 @@ def all_node_params(stackname):
 
     return params
 
-def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, **kwargs):
+def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, num_attempts=5, **kwargs):
     """Executes `workfn` on all EC2 nodes of `stackname`.
     Optionally connects with the specified `username`."""
     work_kwargs = {}
@@ -412,7 +412,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     def single_node_work_fn():
         last_exc = None
-        for attempt in range(0, 6):
+        for attempt in range(0, num_attempts):
             time.sleep(attempt / 2)
             try:
                 return workfn(**work_kwargs)

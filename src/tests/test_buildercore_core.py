@@ -296,7 +296,7 @@ def test_find_rds_instances__replacement(test_projects):
 ])
 def test_stack_all_ec2_nodes__network_retry_logic(_):
     "NetworkErrors are caught and retried N times before finally failing with the last raised exception"
-    expected = 6
+    expected = 3
     retried = 0
 
     exc = ConnectionRefusedError("foo")
@@ -317,7 +317,8 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
                 (command.remote, {'command': "echo 'hello world'"}),
                 abort_on_prompts=True,
                 # 'retried' isn't updated on our thread when run using 'parallel'
-                concurrency='serial'
+                concurrency='serial',
+                num_attempts=3
             )
             assert last_exc == expected_exc
         assert retried == expected
