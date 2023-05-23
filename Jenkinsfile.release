@@ -4,6 +4,8 @@ elifePipeline {
     }
 
     stage 'Deploy to elife-libraries--ci', {
-        builderUpdate("elife-libraries--ci")
+        lock("elife-libraries--ci") {
+            builderUpdate("elife-libraries--ci")
+        }
     }
 }
