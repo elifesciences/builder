@@ -709,16 +709,27 @@ def build_context_eks(pdata, context):
 
     context['eks'] = pdata['aws']['eks']
 
+    def _build_addon_policy(label, data):
+        return {
+            'service-account': data.get('service-account'),
+            'namespace': data.get('namespace'),
+            'managed-policy': data.get('managed-policy', False),
+            'policy-template': data.get('policy-template', False),
+        }
+
     addons = {}
     for label, data in pdata['aws']['eks'].get('addons', {}).items():
         addons[label] = {
             'name': data.get('name', label), # name of the addon returned from DescribeAddonVersions API request, e.g. kube-proxy
             'label': data.get('label', label), # local label for terraform resource e.g. "kube_proxy"
             'version': data.get('version', 'latest'),
-            'configuration_values': None,
-            'resolve_conflicts': 'OVERWRITE',
-            'service_account_role_arn': None,
+            'configuration-values': data.get('configuration-values', None),
+            'resolve-conflicts': 'OVERWRITE',
         }
+
+        # Check if this addons needs additional permissions granting to a kubernetes service account via IRSA
+        addons[label]['irsa-role'] = _build_addon_policy(label, data.get('irsa-role')) if data.get('irsa-role', False) != False else False
+
     context['eks']['addons'] = addons
     return context
 
