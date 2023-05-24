@@ -1420,7 +1420,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('eks_addon_vpc_cni', terraform_template['resource']['aws_eks_addon'])
         self.assertEqual('${aws_iam_role.eks_addon_vpc_cni.arn}', terraform_template['resource']['aws_eks_addon']['eks_addon_vpc_cni']['service_account_role_arn'])
 
-    def test_eks_simple_addons_latest(self):
+    def test_eks_simple_addons_with_irsa_policy_template_role(self):
         pname = 'project-with-eks-and-addon-with-irsa-policy-template-role'
         iid = pname + '--%s' % self.environment
         context = cfngen.build_context(pname, stackname=iid)
