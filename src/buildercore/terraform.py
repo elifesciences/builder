@@ -1270,7 +1270,7 @@ def _render_eks_addon(context, template, addon):
     if addon['irsa-role']:
         serviceaccount = addon['irsa-role']['service-account']
         namespace = addon['irsa-role']['namespace']
-        role_name = label
+        role_name = 'eks-addon-%s' % name
 
         if addon['irsa-role']['policy-template']:
             template_name = addon['irsa-role']['policy-template']
