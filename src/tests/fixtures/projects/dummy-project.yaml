@@ -1044,6 +1044,35 @@ project-with-eks-and-simple-addons-latest:
                     version: latest
                 coredns:
                     version: latest
+
+project-with-eks-and-addon-with-irsa-managed-policy-role:
+    description: project managing an EKS cluster with an addon with IRSA with a managed policy
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            addons:
+                vpc-cni:
+                    label: vpc_cni
+                    irsa-role:
+                        managed-policy: arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+                        service-account: aws-node
+                        namespace: kube-system
+
+project-with-eks-and-addon-with-irsa-policy-template-role:
+    description: project managing an EKS cluster with an addon with IRSA with a policy template
+    domain: False
+    intdomain: False
+    aws:
+        eks:
+            addons:
+                aws-ebs-csi-driver:
+                    label: aws_ebs_csi_driver
+                    irsa-role:
+                        policy-template: aws-ebs-csi-driver
+                        service-account: ebs-csi-controller-sa
+                        namespace: kube-system
+
 project-with-docdb:
     description: project managing a single DocumentDB instance
     aws:
