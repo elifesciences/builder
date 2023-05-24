@@ -911,7 +911,7 @@ def _render_eks_iam_policy_template_and_role(context, template, role_name, assum
     })
 
     policy_reference = "${aws_iam_policy.%s.arn}" % role_name
-    _render_eks_iam_role(context, template, role_name, assume_serviceaccount, assume_namespace,  policy_reference)
+    _render_eks_iam_role(context, template, role_name, assume_serviceaccount, assume_namespace, policy_reference)
 
 
 def _render_eks_iam_access(context, template):
