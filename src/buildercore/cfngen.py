@@ -728,7 +728,9 @@ def build_context_eks(pdata, context):
         }
 
         # Check if this addons needs additional permissions granting to a kubernetes service account via IRSA
-        addons[label]['irsa-role'] = _build_addon_policy(label, data.get('irsa-role')) if data.get('irsa-role', False) != False else False
+        irsa_role = data.get('irsa-role')
+        if irsa_role:
+            addons[label]['irsa-role'] = _build_addon_policy(label, irsa_role)
 
     context['eks']['addons'] = addons
     return context

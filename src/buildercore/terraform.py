@@ -1267,7 +1267,7 @@ def _render_eks_addon(context, template, addon):
         resource_block['configuration_values'] = addon['configuration-values']
 
     # Create additional IAM policy and role either from POLICY_TEMPLATES or AWS managed policy
-    if addon['irsa-role']:
+    if 'irsa-role' in addon:
         serviceaccount = addon['irsa-role']['service-account']
         namespace = addon['irsa-role']['namespace']
         role_name = 'eks_addon_%s' % label
