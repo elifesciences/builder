@@ -1403,6 +1403,43 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual('${data.aws_eks_addon_version.eks_addon_kube_proxy.version}', terraform_template['resource']['aws_eks_addon']['eks_addon_kube_proxy']['addon_version'])
         self.assertEqual('${data.aws_eks_addon_version.eks_addon_coredns.version}', terraform_template['resource']['aws_eks_addon']['eks_addon_coredns']['addon_version'])
 
+    def test_eks_simple_addons_with_irsa_managed_policy_role(self):
+        pname = 'project-with-eks-and-addon-with-irsa-managed-policy-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('eks_addon_vpc_cni', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('kube-system', terraform_template['resource']['aws_iam_role']['eks_addon_vpc_cni']['assume_role_policy'])
+        self.assertIn('aws-node', terraform_template['resource']['aws_iam_role']['eks_addon_vpc_cni']['assume_role_policy'])
+
+        self.assertIn('eks_addon_vpc_cni', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual('arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy', terraform_template['resource']['aws_iam_role_policy_attachment']['eks_addon_vpc_cni']['policy_arn'])
+        self.assertEqual('${aws_iam_role.eks_addon_vpc_cni.name}', terraform_template['resource']['aws_iam_role_policy_attachment']['eks_addon_vpc_cni']['role'])
+
+        self.assertIn('eks_addon_vpc_cni', terraform_template['resource']['aws_eks_addon'])
+        self.assertEqual('${aws_iam_role.eks_addon_vpc_cni.arn}', terraform_template['resource']['aws_eks_addon']['eks_addon_vpc_cni']['service_account_role_arn'])
+
+    def test_eks_simple_addons_with_irsa_policy_template_role(self):
+        pname = 'project-with-eks-and-addon-with-irsa-policy-template-role'
+        iid = pname + '--%s' % self.environment
+        context = cfngen.build_context(pname, stackname=iid)
+        terraform_template = json.loads(terraform.render(context))
+
+        self.assertIn('eks_addon_aws_ebs_csi_driver', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('name', terraform_template['resource']['aws_iam_policy']['eks_addon_aws_ebs_csi_driver'])
+
+        self.assertIn('eks_addon_aws_ebs_csi_driver', terraform_template['resource']['aws_iam_role'])
+        self.assertIn('kube-system', terraform_template['resource']['aws_iam_role']['eks_addon_aws_ebs_csi_driver']['assume_role_policy'])
+        self.assertIn('ebs-csi-controller-sa', terraform_template['resource']['aws_iam_role']['eks_addon_aws_ebs_csi_driver']['assume_role_policy'])
+
+        self.assertIn('eks_addon_aws_ebs_csi_driver', terraform_template['resource']['aws_iam_role_policy_attachment'])
+        self.assertEqual('${aws_iam_policy.eks_addon_aws_ebs_csi_driver.arn}', terraform_template['resource']['aws_iam_role_policy_attachment']['eks_addon_aws_ebs_csi_driver']['policy_arn'])
+        self.assertEqual('${aws_iam_role.eks_addon_aws_ebs_csi_driver.name}', terraform_template['resource']['aws_iam_role_policy_attachment']['eks_addon_aws_ebs_csi_driver']['role'])
+
+        self.assertIn('eks_addon_aws_ebs_csi_driver', terraform_template['resource']['aws_eks_addon'])
+        self.assertEqual('${aws_iam_role.eks_addon_aws_ebs_csi_driver.arn}', terraform_template['resource']['aws_eks_addon']['eks_addon_aws_ebs_csi_driver']['service_account_role_arn'])
+
     def test_sanity_of_rendered_log_format(self):
         def _render_log_format_with_dummy_template():
             return re.sub(

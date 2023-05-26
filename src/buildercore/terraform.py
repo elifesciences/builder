@@ -868,6 +868,51 @@ def render_bigquery(context, template):
     return template.to_dict()
 
 # EKS
+def _render_eks_iam_role(context, template, role_name, assume_serviceaccount, assume_namespace, policy_arn):
+    stackname = context['stackname']
+
+    assume_policy = json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Federated": "${aws_iam_openid_connect_provider.default.arn}",
+                },
+                "Action": "sts:AssumeRoleWithWebIdentity",
+                "Condition": {
+                    "StringEquals": {
+                        "${aws_iam_openid_connect_provider.default.url}:sub": ["system:serviceaccount:%s:%s" % (assume_namespace, assume_serviceaccount)]
+                    }
+                }
+            }
+        ]
+    })
+
+    template.populate_resource('aws_iam_role', role_name, block={
+        'name': '%s--%s' % (stackname, role_name),
+        'assume_role_policy': assume_policy,
+    })
+
+    template.populate_resource('aws_iam_role_policy_attachment', role_name, block={
+        'policy_arn': policy_arn,
+        'role': "${aws_iam_role.%s.name}" % role_name,
+    })
+
+def _render_eks_iam_policy_template_and_role(context, template, role_name, assume_serviceaccount, assume_namespace, template_name):
+    stackname = context['stackname']
+    accountid = context['aws']['account-id']
+
+    policy_name = '%s--%s' % (stackname, role_name)
+    template.populate_resource('aws_iam_policy', role_name, block={
+        'name': policy_name,
+        'path': '/',
+        'policy': json.dumps(IRSA_POLICY_TEMPLATES[template_name](stackname, accountid)),
+    })
+
+    policy_reference = "${aws_iam_policy.%s.arn}" % role_name
+    _render_eks_iam_role(context, template, role_name, assume_serviceaccount, assume_namespace, policy_reference)
+
 
 def _render_eks_iam_access(context, template):
     template.populate_data("tls_certificate", "oidc_cert", {
@@ -881,7 +926,7 @@ def _render_eks_iam_access(context, template):
     })
 
     if 'iam-roles' in context['eks'] and isinstance(context['eks']['iam-roles'], OrderedDict):
-        for rolename, role_definition in context['eks']['iam-roles'].items():
+        for role_name, role_definition in context['eks']['iam-roles'].items():
             if 'policy-template' not in role_definition:
                 raise RuntimeError("Please provide a valid policy-template from %s" % IRSA_POLICY_TEMPLATES.keys())
 
@@ -891,46 +936,11 @@ def _render_eks_iam_access(context, template):
             if 'service-account' not in role_definition or 'namespace' not in role_definition:
                 raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
 
-            stackname = context['stackname']
-            accountid = context['aws']['account-id']
             serviceaccount = role_definition['service-account']
             namespace = role_definition['namespace']
+            template_name = role_definition['policy-template']
 
-            policy = json.dumps(IRSA_POLICY_TEMPLATES[role_definition['policy-template']](stackname, accountid))
-
-            assume_policy = json.dumps({
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Principal": {
-                            "Federated": "${aws_iam_openid_connect_provider.default.arn}",
-                        },
-                        "Action": "sts:AssumeRoleWithWebIdentity",
-                        "Condition": {
-                            "StringEquals": {
-                                "${aws_iam_openid_connect_provider.default.url}:sub": ["system:serviceaccount:%s:%s" % (namespace, serviceaccount)]
-                            }
-                        }
-                    }
-                ]
-            })
-
-            template.populate_resource('aws_iam_role', rolename, block={
-                'name': '%s--%s' % (stackname, rolename),
-                'assume_role_policy': assume_policy,
-            })
-
-            template.populate_resource('aws_iam_policy', rolename, block={
-                'name': '%s--%s' % (stackname, rolename),
-                'path': '/',
-                'policy': policy,
-            })
-
-            template.populate_resource('aws_iam_role_policy_attachment', rolename, block={
-                'policy_arn': "${aws_iam_policy.%s.arn}" % rolename,
-                'role': "${aws_iam_role.%s.name}" % rolename,
-            })
+            _render_eks_iam_policy_template_and_role(context, template, role_name, serviceaccount, namespace, template_name)
 
 def _render_eks_user_access(context, template):
     template.populate_resource('aws_iam_role', 'user', block={
@@ -1250,14 +1260,26 @@ def _render_eks_addon(context, template, addon):
         'addon_name': name,
         'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
         'tags': aws.generic_tags(context),
-        'resolve_conflicts': addon['resolve_conflicts'],
+        'resolve_conflicts': addon['resolve-conflicts'],
     }
 
-    if addon['configuration_values']:
-        resource_block['configuration_values'] = addon['configuration_values']
+    if addon['configuration-values']:
+        resource_block['configuration_values'] = addon['configuration-values']
 
-    if addon['service_account_role_arn']:
-        resource_block['service_account_role_arn'] = addon['service_account_role_arn']
+    # Create additional IAM policy and role either from POLICY_TEMPLATES or AWS managed policy
+    if 'irsa-role' in addon:
+        serviceaccount = addon['irsa-role']['service-account']
+        namespace = addon['irsa-role']['namespace']
+        role_name = 'eks_addon_%s' % label
+
+        if addon['irsa-role']['policy-template']:
+            template_name = addon['irsa-role']['policy-template']
+            _render_eks_iam_policy_template_and_role(context, template, role_name, serviceaccount, namespace, template_name)
+        elif addon['irsa-role']['managed-policy']:
+            policy_name = addon['irsa-role']['managed-policy']
+            _render_eks_iam_role(context, template, role_name, serviceaccount, namespace, policy_name)
+
+        resource_block['service_account_role_arn'] = '${aws_iam_role.%s.arn}' % role_name
 
     template.populate_resource(
         'aws_eks_addon',
