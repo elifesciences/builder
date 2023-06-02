@@ -160,7 +160,10 @@ def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
     call_while(
         # lsh@2023-05-22: added `num_attempts=1` after getting 60 minutes of polling:
         # - https://github.com/elifesciences/issues/issues/8314
-        lambda: _some_node_is_not_ready(stackname, instance_ids=ec2_to_be_checked, num_attempts=1),
+        #lambda: _some_node_is_not_ready(stackname, instance_ids=ec2_to_be_checked, num_attempts=1),
+        # lsh@2023-06-02: reverted `num_attempts=1` after `cfn.start` dies almost immediately.
+        # I think I'd prefer the rare 60mins of polling over the common immediate failure.
+        lambda: _some_node_is_not_ready(stackname, instance_ids=ec2_to_be_checked),
         interval=config.AWS_POLLING_INTERVAL,
         timeout=config.BUILDER_TIMEOUT,
         update_msg="waiting for nodes to complete boot",
