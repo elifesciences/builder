@@ -415,7 +415,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         for attempt in range(0, num_attempts):
             if attempt != 0:
                 LOG.info("attempt %s of %s" % (attempt + 1, num_attempts))
-            time.sleep(attempt)
+            time.sleep(2 * (attempt + 1)) # 2sec, 4sec, 6sec, 8sec, 10sec
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
