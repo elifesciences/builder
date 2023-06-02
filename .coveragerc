@@ -1,6 +1,7 @@
 [run]
 # whether to measure branch coverage in addition to statement coverage.
 branch = true
+concurrency = gevent
 
 [report]
 show_missing = false

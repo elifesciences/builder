@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import wraps, partial
 from datetime import datetime
 import tempfile
 import contextlib
@@ -11,7 +11,7 @@ from pssh.clients.native import SSHClient as PSSHClient
 import gevent
 import io
 import logging
-from . import state, common
+from . import state
 from .common import (
     PromptedException,
     merge,
@@ -213,13 +213,18 @@ def _execute(command, user, key_filename, host_string, port, use_pty, timeout):
 
     try:
         # https://parallel-ssh.readthedocs.io/en/latest/native_single.html#pssh.clients.native.single.SSHClient.run_command
-        channel, host_string, stdout, stderr, stdin = client.run_command(
+        # https://github.com/ParallelSSH/parallel-ssh/blob/master/pssh/output.py
+        host_output = client.run_command(
             command, sudo, user, use_pty, shell, encoding, timeout
         )
 
+        host_string = host_output.host
+        stdout = host_output.stdout
+        stderr = host_output.stderr
+
         def get_exit_code():
-            client.wait_finished(channel)
-            return channel.get_exit_status()
+            client.wait_finished(host_output)
+            return host_output.exit_code
 
         return {
             # defer executing as it consumes output entirely before returning. this
@@ -239,11 +244,6 @@ def _print_line(output_pipe, line, **kwargs):
     """writes the given `line` (string) to the given `output_pipe` (file-like object)
     if `quiet` is True, `line` is *not* written to `output_pipe`.
     if `discard_output` is True, `line` is *not* returned and output does *not* accumulate in memory."""
-
-    if not common.PY3:
-        # in python2, assume the data we're reading is utf-8 otherwise the call to `.format`
-        # below will attempt to encode the string as ascii and fail with an `UnicodeEncodeError`
-        line = line.encode("utf-8")
 
     base_kwargs = {
         "discard_output": False,
@@ -283,7 +283,6 @@ def _print_line(output_pipe, line, **kwargs):
             except ValueError:  # "substring not found"
                 msg = "'display_prefix' option ignored: '{line}' not found in 'line_template' setting"
                 LOG.warning(msg)
-                pass
 
         output_pipe.write(template.format(**template_kwargs))
 
@@ -291,14 +290,14 @@ def _print_line(output_pipe, line, **kwargs):
         return line  # free of any formatting
 
 
-def _process_output(output_pipe, result_list, **kwargs):
+def _process_output(output_pipe, result_buffer, **kwargs):
     "calls `_print_line` on each result in `result_list`."
 
     # always process the results as soon as we have them
     # use `quiet=True` to hide the printing of output to stdout/stderr
     # use `discard_output=True` to discard the results as soon as they are read.
     # `stderr` results may be empty if `combine_stderr` in call to `remote` was `True`
-    new_results = [_print_line(output_pipe, line, **kwargs) for line in result_list]
+    new_results = [_print_line(output_pipe, line, **kwargs) for line in result_buffer]
     output_pipe.flush()
     if "discard_output" in kwargs and not kwargs["discard_output"]:
         return new_results
@@ -502,14 +501,6 @@ def local(command, **kwargs):
     }
     global_kwargs, user_kwargs, final_kwargs = handle(base_kwargs, kwargs)
 
-    # TODO: once py2 support has been dropped, move this back to file head
-    devnull_opened = False
-    try:
-        from subprocess import DEVNULL  # py3
-    except ImportError:
-        devnull_opened = True
-        DEVNULL = open(os.devnull, "wb")
-
     if final_kwargs["capture"]:
         if final_kwargs["combine_stderr"]:
             out_stream = subprocess.PIPE
@@ -521,8 +512,8 @@ def local(command, **kwargs):
         if final_kwargs["quiet"]:
             # we're not capturing and we've been told to be quiet
             # send everything to /dev/null
-            out_stream = DEVNULL
-            err_stream = DEVNULL
+            out_stream = subprocess.DEVNULL
+            err_stream = subprocess.DEVNULL
         else:
             out_stream = None
             err_stream = None
@@ -564,9 +555,6 @@ def local(command, **kwargs):
         "stdout": (stdout or b"").decode("utf-8").splitlines(),
         "stderr": (stderr or b"").decode("utf-8").splitlines(),
     }
-
-    if devnull_opened:
-        DEVNULL.close()
 
     if result["succeeded"]:
         return result
@@ -709,7 +697,7 @@ def rsync_download(remote_path, local_path, **kwargs):
 def _transfer_fn(client, direction, **kwargs):
     """returns the `client` object's appropriate transfer *method* given a `direction`.
     `direction` is either 'upload' or 'download'.
-    Also accepts the `transfer_protocol` keyword parameter that is either 'scp' (default) or 'sftp'."""
+    Also accepts the `transfer_protocol` keyword parameter that is either 'rsync' (default), 'scp' or 'sftp'."""
     base_kwargs = {
         "overwrite": True,
         # sftp is *exceptionally* slow.
@@ -734,7 +722,9 @@ def _transfer_fn(client, direction, **kwargs):
                 fn(local_file, remote_file)
             else:
                 # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L524
-                gevent.joinall(fn(local_file, remote_file), raise_error=True)
+                g = fn(local_file, remote_file)
+                if g:
+                    gevent.joinall(g, raise_error=True)
 
             # lsh@2020-04, local testing didn't reveal anything but small files uploaded via SCP SCP during CI
             # were either missing or had empty bodies. SFTP seemed to be fine.
@@ -760,14 +750,16 @@ def _transfer_fn(client, direction, **kwargs):
             if final_kwargs["transfer_protocol"] == "rsync":
                 fn(remote_file, local_file)
             else:
-                # https://github.com/ParallelSSH/parallel-ssh/blob/8b7bb4bcb94d913c3b7da77db592f84486c53b90/pssh/clients/native/parallel.py#L560
-                gevent.joinall(fn(remote_file, local_file), raise_error=True)
+                # https://github.com/ParallelSSH/parallel-ssh/blob/d812ff32d828009ddb94f458fe43920c22df4c0e/pssh/clients/native/single.py#L558
+                g = fn(remote_file, local_file)
+                if g:
+                    gevent.joinall(g, raise_error=True)
 
         return wrapper
 
     upload_backends = {
-        "sftp": client.copy_file,
-        "scp": client.scp_send,
+        "sftp": partial(client.copy_file, recurse=True),
+        "scp": partial(client.scp_send, recurse=True),
         "rsync": rsync_upload,
     }
 
@@ -951,14 +943,10 @@ def _write_bytes_to_temporary_file(local_path):
             data = local_bytes.getvalue()
             # data may be a string or it may be bytes.
             # if it's a string we assume it's a UTF-8 string.
-            # skip entirely if we're on Python2
-            if isinstance(data, str) and common.PY3:
+            if isinstance(data, str):
                 data = bytes(data, "utf-8")
             fh.write(data)
-
-        def cleanup():
-            return os.unlink(local_path)
-
+        cleanup = lambda: os.unlink(local_path)
         return local_path, cleanup
     return local_path, None
 
