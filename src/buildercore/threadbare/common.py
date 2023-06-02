@@ -1,8 +1,5 @@
-import sys
 import os
 from functools import reduce
-
-PY3 = sys.version_info[0] == 3
 
 
 class PromptedException(BaseException):
@@ -11,13 +8,13 @@ class PromptedException(BaseException):
 
 def ensure(assertion, msg, exception_class=AssertionError):
     """intended as a convenient replacement for `assert` statements that
-    get compiled away with -O flags"""
+    gets compiled away with the `-O` flag."""
     if not assertion:
         raise exception_class(msg)
 
 
 def first(x):
-    "returns the first element in an collection of things"
+    "returns the first element in a collection or `None`."
     if x is None:
         return x
     try:
@@ -29,7 +26,7 @@ def first(x):
 
 
 def merge(*dict_list):
-    "non-destructively merges a series of dictionaries from left to right, returning a new dictionary"
+    "non-destructively merges a series of dictionaries from left to right, returning a new dictionary."
 
     def reduce_fn(d1, d2=None):
         d3 = {}
@@ -63,7 +60,6 @@ def cwd():
 
 # direct copy from Fabric:
 # https://github.com/mathiasertl/fabric/blob/master/fabric/operations.py#L33-L46
-# TODO: adjust licence accordingly
 def _shell_escape(string):
     """
     Escape double quotes, backticks and dollar signs in given ``string``.

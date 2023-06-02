@@ -1,19 +1,19 @@
-# file generated 2023-05-26 - see update-dependencies.sh
+# file generated 2023-06-02 - see update-dependencies.sh
 astroid==2.15.5
 attrs==23.1.0
 autopep8==1.7.0
 backoff==1.11.1
 bcrypt==4.0.1
 boto==2.49.0
-boto3==1.26.141
-botocore==1.29.141
+boto3==1.26.145
+botocore==1.29.145
 certifi==2023.5.7
 cffi==1.15.1
 cfn-flip==1.3.0
 charset-normalizer==3.1.0
 click==8.1.3
 coverage==4.5.4
-cryptography==40.0.2
+cryptography==41.0.1
 deepmerge==1.1.0
 dill==0.3.6
 exceptiongroup==1.1.1
@@ -32,7 +32,7 @@ mccabe==0.7.0
 moto==3.1.16
 netaddr==0.7.20
 packaging==23.1
-parallel-ssh==1.9.1
+parallel-ssh==2.12.0
 paramiko==2.12.0
 platformdirs==3.5.1
 pluggy==1.0.0
@@ -51,17 +51,18 @@ pytz==2023.3
 PyYAML==5.4.1
 requests==2.31.0
 responses==0.23.1
-ruamel.yaml==0.17.27
+ruamel.yaml==0.17.31
 ruamel.yaml.clib==0.2.7
 s3transfer==0.6.1
 six==1.16.0
-ssh2-python==0.27.0
+ssh-python==1.0.0
+ssh2-python==1.0.0
 toml==0.10.2
 tomli==2.0.1
 tomlkit==0.11.8
 troposphere==3.1.1
 types-PyYAML==6.0.12.10
-typing_extensions==4.6.2
+typing_extensions==4.6.3
 Unidecode==1.2.0
 urllib3==1.26.16
 Werkzeug==2.3.4
