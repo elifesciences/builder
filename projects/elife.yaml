@@ -595,6 +595,7 @@ api-gateway:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
             fastly:
+                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/
                 subdomains:
                     - "{instance}--cdn-gateway"
                     - api
