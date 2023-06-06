@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# renders a project's final configuration as YAML
-# if run without any arguments, returns a list of known projects
-# requires the builder venv
-# NOTE: we capture this logic here to avoid dealing with Fabric's noisy output
+# requires a venv
+# renders a project's final configuration as YAML or JSON
+# returns a list of known projects when run without any arguments
+
 import sys, os, argparse, json
 from functools import partial
 

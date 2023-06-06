@@ -56,13 +56,6 @@ both_checks = [
      {'Linux': 'sudo pip install virtualenv',
       'Mac OS': 'brew install python@3.8'}),
 
-    # needed for installing pynacl, which is a transitive dependency of Paramiko which is a dependency of Fabric
-    ('make',
-     {'Linux': 'apt-get install build-essential',
-      'Mac OS': 'xcode-select --install'},
-     dumb_install_check,
-     lambda x: shs('make -v').splitlines()[0]),
-
     ('virtualbox',
      {'Mac OS': 'brew install virtualbox'},
      dumb_install_check,

@@ -318,7 +318,6 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
 
 def _ec2_connection_params(stackname, username, **kwargs):
     "returns a dictionary of settings to be used with `command.settings` context manager"
-    # http://docs.fabfile.org/en/1.14/usage/env.html
     params = {'user': username}
     pem = stack_pem(stackname)
     # handles cases where we want to establish a connection to run a task
@@ -439,18 +438,14 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
             except CommandException as err:
                 LOG.error(str(err).replace("\n", "    "))
-                # available as 'results' to fabric.tasks.error
                 raise err
 
         if last_exc:
             raise last_exc
 
-    # something less stateful like a context manager?
-    # lsh@2019-10: unlike other parameters passed to the `settings` context manager, these values are not reverted until program exit
-    # this is to preserve existing behaviour
-    params['fabric.state.output'] = {
-        'aborts': False
-    }
+    params.update({
+        'display_aborts': False
+    })
 
     if not concurrency:
         concurrency = 'parallel'
@@ -828,6 +823,6 @@ def write_environment_info(stackname, overwrite=False):
     if not command.remote_file_exists("/etc/cfn-info.json") or overwrite:
         LOG.info('no cfn outputs found or overwrite=True, writing /etc/cfn-info.json ...')
         infr_config = utils.json_dumps(template_info(stackname))
-        return command.fab_put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
+        return command.put_data(infr_config, "/etc/cfn-info.json", use_sudo=True)
     LOG.debug('cfn outputs found, skipping.')
     return []

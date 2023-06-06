@@ -292,7 +292,7 @@ def exec_task(task_str, task_map_list):
         return return_map
 
     except KeyboardInterrupt:
-        print('\nStopped.') # mimic fabric
+        print('\nStopped.')
         return_map['rc'] = 1
         return return_map
 

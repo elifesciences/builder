@@ -1,14 +1,8 @@
 import os
-import logging
 import threadbare
 from io import BytesIO
 from . import utils
-
-def no_op(msg):
-    "used in rare circumstances when either a function in Fabric or Threadbare doesn't have a corollary in the other"
-    def fn(*args, **kwargs):
-        return None
-    return fn
+import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -27,16 +21,6 @@ threadbare.state.set_defaults({"abort_exception": CommandException,
 # api
 #
 
-def threadbare_state_settings_wrapper(**kwargs):
-    """a context manager that alters mutable application state for functions called within it's scope.
-    Not necessary for threadbare but there are some outlier Fabric settings that need coercing."""
-    for key, val in kwargs.pop('fabric.state.output', {}).items():
-        opt = "display_" + key # display_running, display_aborts, etc
-        kwargs[opt] = val
-    if 'output_prefix' in kwargs:
-        kwargs['display_prefix'] = kwargs.pop('output_prefix')
-    return threadbare.state.settings(**kwargs)
-
 # lsh@2020-12-10: worker processes during multiprocessing seem to hang on to old imported references of `env`.
 # this means `buildercore.command.env` is missing values but `buildercore.threadbare.state.ENV` is fine.
 # force proper reference by enclosing in a function.
@@ -53,7 +37,7 @@ serial = threadbare.execute.serial
 
 hide = threadbare.operations.hide
 
-settings = threadbare_state_settings_wrapper
+settings = threadbare.state.settings
 
 lcd = threadbare.operations.lcd # local change dir
 rcd = threadbare.operations.rcd # remote change dir
@@ -65,10 +49,9 @@ download = threadbare.operations.download
 remote_file_exists = threadbare.operations.remote_file_exists
 
 #
-# moved
+# wrappers/convenience functions
 #
 
-# TODO: consider pushing into threadbare
 def remote_listfiles(path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     if not path:
@@ -81,9 +64,10 @@ def remote_listfiles(path=None, use_sudo=False):
         return []
     return stdout
 
-# TODO: rename, update docstr
-def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
-    "wrapper around fabric.operations.get"
+def get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
+    """downloads the file at `remote_path` to `local_path` that may be a bytes buffer.
+    if `local_path` is a bytes buffer and `return_stream` is `False` (default), the buffer is filled, closed and the result is returned.
+    if `local_path` is a bytes buffer and `return_stream` is `True`, the buffer is filled and repointed to it's beginning before returning."""
     label = label or remote_path
     msg = "downloading %s" % label
     LOG.info(msg)
@@ -96,19 +80,18 @@ def fab_get(remote_path, local_path=None, use_sudo=False, label=None, return_str
         return local_path.getvalue().decode() # return a string
     return local_path
 
-# TODO: rename, update docstr
-def fab_put(local_path, remote_path, use_sudo=False, label=None):
-    "wrapper around fabric.operations.put"
+def put(local_path, remote_path, use_sudo=False, label=None):
+    "friendly wrapper around `threadbare.upload` that uploads the file at `local_path` to `remote_path`."
     label = label or local_path
     msg = "uploading %s to %s" % (label, remote_path)
     LOG.info(msg)
     upload(local_path=local_path, remote_path=remote_path, use_sudo=use_sudo)
     return remote_path
 
-# TODO: rename, docstr
-def fab_put_data(data, remote_path, use_sudo=False):
+def put_data(data, remote_path, use_sudo=False):
+    "friendly wrapper around `command.put` that uploads `data` as if it were a file to `remote_path`."
     utils.ensure(isinstance(data, bytes) or utils.isstr(data), "data must be bytes or a string that can be encoded to bytes")
     data = data if isinstance(data, bytes) else data.encode()
     bytestream = BytesIO(data)
     label = "%s bytes" % bytestream.getbuffer().nbytes
-    return fab_put(bytestream, remote_path, use_sudo=use_sudo, label=label)
+    return put(bytestream, remote_path, use_sudo=use_sudo, label=label)

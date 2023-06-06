@@ -119,7 +119,7 @@ def _ensure_valid_ec2_states(states, valid_states):
     )
 
 def _daemons_ready():
-    "Assumes it is connected to an ec2 host via fabric"
+    "Assumes it is connected to an ec2 host via threadbare"
     node_id = current_ec2_node_id()
     path = '/var/lib/cloud/instance/boot-finished'
 
