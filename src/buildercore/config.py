@@ -37,7 +37,6 @@ ENV = {
     'BLDR_ROLE': None, # or 'admin', see taskrunner.py
     'PROJECT': None,
     'INSTANCE': None,
-    'BLDR_BACKEND': 'threadbare',
     'BUILDER_TOPFILE': '',
 }
 ENV = {k: os.environ.get(k, default) for k, default in ENV.items()}

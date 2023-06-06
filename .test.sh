@@ -15,7 +15,6 @@ coverage_threshold=70
 coverage_err="\nFAILED coverage test: $coverage_threshold%% required but exiting successfully with this warning.\n"
 
 # `patched_pytest` is a copy of 'pytest' but with gevent monkey patching.
-# see `venv/bin/pytest` and `src/buildercore/threadbare/__init__.py`
 
 if [ -n "$args" ]; then 
     # custom pytest arguments have been given, use those.
