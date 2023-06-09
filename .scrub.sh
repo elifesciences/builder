@@ -1,4 +1,5 @@
 #!/bin/bash
+# requires an activated venv
 # scrub.sh uses the autopep8 tool to clean up whitespace and other small bits
 
 # E261 = double space before inline comment

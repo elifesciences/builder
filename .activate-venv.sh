@@ -1,4 +1,5 @@
 #!/bin/bash
+# requires an activated venv
 set -e
 
 # lsh@2022-02-14: venv is now preserved by default

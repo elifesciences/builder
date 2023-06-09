@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# requires a venv
+# requires an activated venv
 # renders a project's final configuration as YAML or JSON
 # returns a list of known projects when run without any arguments
 

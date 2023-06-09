@@ -17,6 +17,7 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 
 ## todo (bucket)
 
+* remove BLDR_ROLE
 * switch taskrunner.py print statements to error logs
 * emit a description of the job being run before running it
 * update_infrastructure, elide 'UserData' in confirmation

@@ -1325,40 +1325,40 @@ class TerraformTemplate():
         self.locals_ = locals_
 
     # for naming see https://www.terraform.io/docs/configuration/resources.html#syntax
-    def populate_resource(self, type, name, key=None, block=None):
-        if type not in self.resource:
-            self.resource[type] = OrderedDict()
-        target = self.resource[type]
+    def populate_resource(self, resource_type, name, key=None, block=None):
+        if resource_type not in self.resource:
+            self.resource[resource_type] = OrderedDict()
+        target = self.resource[resource_type]
         if key:
             if name not in target:
                 target[name] = OrderedDict()
             if key in target[name]:
                 raise TerraformTemplateError(
-                    "Resource %s being overwritten (%s)" % ((type, name, key), target[name][key])
+                    "Resource %s being overwritten (%s)" % ((resource_type, name, key), target[name][key])
                 )
             target[name][key] = block
         else:
             target[name] = block
 
     # TODO: optional `key`?
-    def populate_resource_element(self, type, name, key, block=None):
-        if type not in self.resource:
-            self.resource[type] = OrderedDict()
-        target = self.resource[type]
+    def populate_resource_element(self, resource_type, name, key, block=None):
+        if resource_type not in self.resource:
+            self.resource[resource_type] = OrderedDict()
+        target = self.resource[resource_type]
         if name not in target:
             target[name] = OrderedDict()
         if key not in target[name]:
             target[name][key] = []
         target[name][key].append(block)
 
-    def populate_data(self, type, name, block=None):
-        if type not in self.data:
-            self.data[type] = OrderedDict()
-        if name in self.data[type]:
+    def populate_data(self, data_type, name, block=None):
+        if data_type not in self.data:
+            self.data[data_type] = OrderedDict()
+        if name in self.data[data_type]:
             raise TerraformTemplateError(
-                "Data %s being overwritten (%s)" % ((type, name), self.data[type][name])
+                "Data %s being overwritten (%s)" % ((data_type, name), self.data[data_type][name])
             )
-        self.data[type][name] = block
+        self.data[data_type][name] = block
 
     def populate_local(self, name, value):
         self.locals_[name] = value

@@ -418,14 +418,14 @@ def _top_level_separators(s):
     """a YAML string pre-processor applied prior to being written to file by ruamel.
     it adds a newline between top-level entries."""
     retval = ''
-    open = None
+    opened = None
     for line in s.splitlines():
         if line and line[0] == ' ':
-            open = True
+            opened = True
         else:
-            if open is True and line:
+            if opened is True and line:
                 retval += '\n'
-            open = False
+            opened = False
         retval += line
         retval += '\n'
     return retval

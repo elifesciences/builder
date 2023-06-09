@@ -15,7 +15,7 @@ class CommandException(Exception):
 
 NetworkError = threadbare.operations.NetworkError
 threadbare.state.set_defaults({"abort_exception": CommandException,
-                               "key_filename": os.path.expanduser("~/.ssh/id_rsa")})
+                               "key_filename": os.path.expanduser(config.USER_PRIVATE_KEY)})
 
 #
 # api
@@ -23,7 +23,7 @@ threadbare.state.set_defaults({"abort_exception": CommandException,
 
 # lsh@2020-12-10: worker processes during multiprocessing seem to hang on to old imported references of `env`.
 # this means `buildercore.command.env` is missing values but `buildercore.threadbare.state.ENV` is fine.
-# force proper reference by enclosing in a function.
+# force proper reference by enclosing within a function.
 def env(key=None):
     """function for accessing the globally shared and mutable 'env' dictionary.
     When called without a `key` it returns the whole dictionary."""
@@ -67,7 +67,7 @@ def remote_listfiles(path=None, use_sudo=False):
 def get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=False):
     """downloads the file at `remote_path` to `local_path` that may be a bytes buffer.
     if `local_path` is a bytes buffer and `return_stream` is `False` (default), the buffer is filled, closed and the result is returned.
-    if `local_path` is a bytes buffer and `return_stream` is `True`, the buffer is filled and repointed to it's beginning before returning."""
+    if `local_path` is a bytes buffer and `return_stream` is `True`, the buffer is filled and it's pointer reset before returning."""
     label = label or remote_path
     msg = "downloading %s" % label
     LOG.info(msg)
@@ -81,7 +81,7 @@ def get(remote_path, local_path=None, use_sudo=False, label=None, return_stream=
     return local_path
 
 def put(local_path, remote_path, use_sudo=False, label=None):
-    "friendly wrapper around `threadbare.upload` that uploads the file at `local_path` to `remote_path`."
+    "convenience wrapper around `threadbare.upload` that uploads the file at `local_path` to `remote_path`."
     label = label or local_path
     msg = "uploading %s to %s" % (label, remote_path)
     LOG.info(msg)
@@ -89,7 +89,7 @@ def put(local_path, remote_path, use_sudo=False, label=None):
     return remote_path
 
 def put_data(data, remote_path, use_sudo=False):
-    "friendly wrapper around `command.put` that uploads `data` as if it were a file to `remote_path`."
+    "convenience wrapper around `command.put` that uploads `data` as if it were a file to `remote_path`."
     utils.ensure(isinstance(data, bytes) or utils.isstr(data), "data must be bytes or a string that can be encoded to bytes")
     data = data if isinstance(data, bytes) else data.encode()
     bytestream = BytesIO(data)

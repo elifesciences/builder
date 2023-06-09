@@ -1,4 +1,5 @@
 #!/bin/bash
+# requires an activated venv
 # runs project tests
 # and optionally the integration tests with BUILDER_INTEGRATION_TESTS=1.
 # called by `test.sh` and `canary.sh`
