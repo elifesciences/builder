@@ -393,7 +393,7 @@ def download_master_builder_key(stackname):
     master_stack = core.find_master(region)
     private_key = "/root/.ssh/id_rsa"
     with stack_conn(master_stack):
-        label="master builder key %s:%s" % (master_stack, private_key)
+        label = "master builder key %s:%s" % (master_stack, private_key)
         return command.get(private_key, use_sudo=True, return_stream=True, label=label)
 
 def download_master_configuration(master_stack):

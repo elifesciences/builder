@@ -1,7 +1,7 @@
 import os
 import threadbare
 from io import BytesIO
-from . import utils
+from . import utils, config
 import logging
 
 LOG = logging.getLogger(__name__)
