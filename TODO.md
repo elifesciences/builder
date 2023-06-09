@@ -11,11 +11,13 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
     - done
 * remove python2 support
     - done
-
+* remove fabric
+    - done
 ## todo
 
 ## todo (bucket)
 
+* remove BLDR_ROLE
 * switch taskrunner.py print statements to error logs
 * emit a description of the job being run before running it
 * update_infrastructure, elide 'UserData' in confirmation
@@ -34,7 +36,7 @@ This is just a scratchpad for keeping track of ideas, nice-to-haves, etc.
 * add a changelog and versioning and releases
 * revisit tests
     - they take *forever*
-* remove fabric
+
 * switch *away* from threadbare and fabric to something sane
     - with fewer dependencies
 * revisit project configuration

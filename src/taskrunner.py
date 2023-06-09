@@ -1,14 +1,14 @@
-# import threadbare early so gevent.monkey_patch can patch everything
-from buildercore import config, threadbare
+# import threadbare early so `gevent.monkey_patch` can patch everything
+import threadbare
+from buildercore import config
 from functools import reduce
 from decorators import echo_output
-from buildercore import command
 import cfn, lifecycle, masterless, vault, aws, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks, stack
 import aws.rds, aws.cloudformation, aws.ec2
 import sys, traceback
 import utils
 
-# threadbare module is otherwise not used is flagged for linting
+# threadbare module is otherwise not used and is flagged for linting
 assert threadbare
 
 @echo_output
@@ -292,7 +292,7 @@ def exec_task(task_str, task_map_list):
         return return_map
 
     except KeyboardInterrupt:
-        print('\nStopped.') # mimic fabric
+        print('\nStopped.')
         return_map['rc'] = 1
         return return_map
 
@@ -301,10 +301,6 @@ def exec_task(task_str, task_map_list):
         print(traceback.format_exc())
         return_map['rc'] = 2 # arbitrary
         return return_map
-
-    finally:
-        # close any outstanding network connections
-        command.network_disconnect_all()
 
 def main(arg_list):
     show_debug_tasks = config.ENV["BLDR_ROLE"] == "admin"

@@ -14,7 +14,7 @@ from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
 from .utils import first, ensure, subdict, yaml_dumps, lmap
 from .lifecycle import delete_dns
 from .config import BOOTSTRAP_USER, WHOAMI, CI_USER
-from .command import remote_sudo, remote_file_exists, remote_listfiles, fab_get, fab_put, fab_put_data
+from .command import remote_sudo, remote_file_exists, remote_listfiles
 import backoff
 import botocore
 from kids.cache import cache as cached
@@ -31,7 +31,7 @@ def _put_temporary_script(script_filename):
     start = datetime.now()
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_filename) + '-' + timestamp_marker)
-    return fab_put(local_script, remote_script)
+    return command.put(local_script, remote_script)
 
 def put_script(script_filename, remote_script):
     """uploads a script for `config.SCRIPTS_PATH` in remote_script location, making it executable
@@ -382,7 +382,7 @@ def upload_master_builder_key(key):
     LOG.info("upload master builder key to %s", private_key)
     try:
         # NOTE: overwrites any existing master key on machine being updated
-        fab_put(local_path=key, remote_path=private_key, use_sudo=True)
+        command.put(local_path=key, remote_path=private_key, use_sudo=True)
         remote_sudo("rm -f %s && chown root:root %s && chmod 600 %s" % (old_public_key, private_key, private_key))
     finally:
         key.close()
@@ -393,14 +393,12 @@ def download_master_builder_key(stackname):
     master_stack = core.find_master(region)
     private_key = "/root/.ssh/id_rsa"
     with stack_conn(master_stack):
-        # lsh@2019-11: disabled. we do actually get better exceptions with this disabled
-        # with fabric.api.show('exceptions'): # I actually get better exceptions with this disabled
-        #    return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
-        return fab_get(private_key, use_sudo=True, return_stream=True, label="master builder key %s:%s" % (master_stack, private_key))
+        label = "master builder key %s:%s" % (master_stack, private_key)
+        return command.get(private_key, use_sudo=True, return_stream=True, label=label)
 
 def download_master_configuration(master_stack):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
-        return fab_get('/etc/salt/master.template', use_sudo=True, return_stream=True)
+        return command.get('/etc/salt/master.template', use_sudo=True, return_stream=True)
 
 def expand_master_configuration(master_configuration_template, formulas=None):
     "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"
@@ -427,7 +425,7 @@ def expand_master_configuration(master_configuration_template, formulas=None):
 
 def upload_master_configuration(master_stack, master_configuration_data):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
-        fab_put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
+        command.put_data(master_configuration_data, remote_path='/etc/salt/master', use_sudo=True)
 
 @only_if('ec2')
 @core.requires_active_stack

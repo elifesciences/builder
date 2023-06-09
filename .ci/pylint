@@ -3,21 +3,23 @@ set -e
 
 source venv/bin/activate
 
-# remove any old compiled python files
-# pylint likes to lint them
+# remove any old compiled python files.
+# pylint likes to lint them.
 find src/ -name '*.py[c|~]' -delete
 find src/ -regex "\(.*__pycache__.*\|*.py[co]\)" -delete
 
-# --jobs 0 will auto-detect the number of processors available to use
-# E1129=doesn't like Fabric's context manager
-# E0602=undefined-variable, temporary while python2 is still supported
+# '--jobs 0' auto-detect the number of processors available to use.
 pylint -E *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py src/tests/*.py src/integration_tests/*.py \
-    --jobs 0 \
-    --disable=E1129 \
-    --disable=E0602
-# specific warnings we're interested in, comma separated with no spaces
-# presence of these warnings are a failure
-# TODO: re-add 'redefined-builtin' after python2 support dropped
+    --jobs 0
+
+# specific warnings we're interested in, comma separated with no spaces.
+# presence of these warnings are a failure.
+# 'pointless-string-statement' - "when a string is used as a statement (which of course has no effect)."
+# 'no-else-return' - "unnecessary block of code following an if containing a return statement"
+# 'redefined-outer-name' - "a variable's name hides a name defined in an outer scope or except handler."
+# 'redefined-builtin' - "a variable or function override a built-in."
 pylint *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py \
-    --disable=all --reports=n --score=n \
-    --enable=pointless-string-statement,no-else-return,redefined-outer-name
+    --disable=all \
+    --reports=n \
+    --score=n \
+    --enable=pointless-string-statement,no-else-return,redefined-outer-name,redefined-builtin

@@ -368,16 +368,14 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
     if not instances:
         return
 
-    # take out the load of crap that Fabric prints mangling the useful output
-    # of a remote command
+    # removes much of the crap emitted that mangles the useful output of a remote command.
     custom_settings = {}
     if clean_output:
-        custom_settings['fabric.state.output'] = {
-            'status': False,
-            'running': False
+        custom_settings = {
+            'display_status': False,
+            'display_running': False,
+            'display_prefix': False,
         }
-        custom_settings['output_prefix'] = False
-
     try:
         with settings(**custom_settings):
             return stack_all_ec2_nodes(

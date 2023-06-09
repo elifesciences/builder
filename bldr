@@ -15,8 +15,4 @@ if [ -f .aws-credentials.env ]; then
     source ./.aws-credentials.env
 fi
 
-if [ -f .use-fabric.flag ]; then
-    export BLDR_BACKEND=fabric
-fi
-
 python3 src/taskrunner.py "$*"

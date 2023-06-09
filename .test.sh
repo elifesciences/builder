@@ -1,4 +1,5 @@
 #!/bin/bash
+# requires an activated venv
 # runs project tests
 # and optionally the integration tests with BUILDER_INTEGRATION_TESTS=1.
 # called by `test.sh` and `canary.sh`
@@ -15,7 +16,6 @@ coverage_threshold=70
 coverage_err="\nFAILED coverage test: $coverage_threshold%% required but exiting successfully with this warning.\n"
 
 # `patched_pytest` is a copy of 'pytest' but with gevent monkey patching.
-# see `venv/bin/pytest` and `src/buildercore/threadbare/__init__.py`
 
 if [ -n "$args" ]; then 
     # custom pytest arguments have been given, use those.

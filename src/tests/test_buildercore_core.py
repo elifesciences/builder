@@ -310,7 +310,7 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
     m = Mock()
     m.run_command = raiser
     stackname = "foo--bar"
-    with patch('buildercore.threadbare.operations._ssh_client', return_value=m):
+    with patch('threadbare.operations._ssh_client', return_value=m):
         with pytest.raises(command.NetworkError) as last_exc:
             core.stack_all_ec2_nodes(
                 stackname,
