@@ -20,7 +20,7 @@ pytz = "*"
 PyYAML = "~=5.4"
 "ruamel.yaml" = "==0.17.*"
 requests = "~=2.26"
-threadbare = "~=3.1"
+threadbare = {git = "https://github.com/elifesciences/threadbare.git", editable = true, ref = "stop-wrapping-network-error"}
 # doesn't follow semver, features removed in 3.2.0
 troposphere = "==3.1.1"
 # transitive from python-slugify. not semver.
