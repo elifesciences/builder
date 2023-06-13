@@ -61,6 +61,19 @@ kubernetes-aws:
 ./bldr update_infrastructure:kubernetes-aws--flux-prod  # to update/change
 ```
 
+### Upgrade a cluster
+
+updating the version of eks will upgrade the EKS managed controlplane, the launch configuration's AMI image and any addons to the latest supported version. Once that value is updated, run an update like so:
+
+```
+./bldr update_infrastructure:kubernetes-aws--flux-prod
+./bldr update_infrastructure:kubernetes-aws--flux-prod
+```
+
+Note: AWS API will not return the correct addon versions until the cluster has been upgraded. Therefore, to fully upgrade requires two runs: one to upgrade EKS, and one to then upgrade the addons
+
+Note: it is useful to run the `update_infrastructure` command once before starting an upgrade, to make sure the cluster AMI and addons are up to date for the previous EKS version. This way, the upgrade command for the new EKS is easier to see what has changed the cluster version upgrade.
+
 ### Delete a cluster
 
 A cluster cannot be deleted as-is as its operations create cloud resources that become dependent upon the cluster resources, or would become leftovers if not deleted at the right level of abstraction.
