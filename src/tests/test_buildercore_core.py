@@ -295,12 +295,12 @@ def test_find_rds_instances__replacement(test_projects):
     {'InstanceId': 'foo', 'PublicIpAddress': '0', 'Tags': []}
 ])
 def test_stack_all_ec2_nodes__network_retry_logic(_):
-    "NetworkErrors are caught and retried N times before finally failing with the last raised exception"
+    "exceptions during call are caught and retried N times before finally failing with the last raised exception"
     expected = 3
     retried = 0
 
     exc = ConnectionRefusedError("foo")
-    expected_exc = command.NetworkError(exc)
+    expected_exc = exc
 
     def raiser(*args, **kwargs):
         nonlocal retried, exc
@@ -311,7 +311,7 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
     m.run_command = raiser
     stackname = "foo--bar"
     with patch('threadbare.operations._ssh_client', return_value=m):
-        with pytest.raises(command.NetworkError) as last_exc:
+        with pytest.raises(ConnectionRefusedError) as last_exc:
             core.stack_all_ec2_nodes(
                 stackname,
                 (command.remote, {'command': "echo 'hello world'"}),
@@ -320,5 +320,6 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
                 concurrency='serial',
                 num_attempts=3
             )
-            assert last_exc == expected_exc
+            assert "foo" == "bar" # unreachable code, don't add assertions here
+        assert last_exc.value == expected_exc
         assert retried == expected

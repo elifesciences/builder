@@ -10,11 +10,10 @@ import botocore
 import botocore.config
 from contextlib import contextmanager
 from . import command, context_handler
-from .command import settings, execute, parallel, serial, env, CommandException, NetworkError
+from .command import settings, env, CommandException, NetworkError, NetworkTimeoutError, NetworkUnknownHostError
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
-import pssh.exceptions
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
@@ -418,26 +417,25 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
-                if str(err).startswith('Timed out trying to connect'):
-                    LOG.info("Timeout while executing task on a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
-                    last_exc = err
-                    continue
-                if str(err).startswith('Low level socket error connecting to host'):
-                    # "Cannot connect to a 'journal--prod' node (connection refused) during attempt 2, retrying on this node"
-                    LOG.info("Cannot connect to a %s node (%s) during attempt %s, retrying on this node", stackname, err, attempt)
-                    last_exc = err
-                    continue
+                # "NetworkError executing task on foo--bar--1 during attempt 2: rsync returned error 30: Timeout in data send/receive. retrying."
+                instance_id = "%s--%s" % (stackname, current_node_id())
+                LOG.error("NetworkError executing task on %s during attempt %s: %s. retrying.", instance_id, attempt + 1, err)
+                last_exc = err
+                continue
 
-                raise err
-
-            # lsh@2023-05-09: the NetworkError wrapper above is not working in all cases. investigate
-            except (ConnectionError, ConnectionRefusedError, pssh.exceptions.ConnectionErrorException) as err:
-                LOG.exception("programming error, failed to capture exception in a `operations.NetworkError`.")
+            except (ConnectionError, ConnectionRefusedError, NetworkTimeoutError, NetworkUnknownHostError) as err:
+                # "low level network error executing task on foo--bar--1 during attempt 2: connection refused. retrying."
+                instance_id = "%s--%s" % (stackname, current_node_id())
+                LOG.error("low level network error executing task on %s during attempt %s: %s. retrying.", stackname, attempt + 1, err)
                 last_exc = err
                 continue
 
             except CommandException as err:
-                LOG.error(str(err).replace("\n", "    "))
+                # "command aborted while executing on foo--bar--1 during attempt 2."
+                instance_id = "%s--%s" % (stackname, current_node_id())
+                LOG.info("command aborted while executing on %s during attempt %s.", instance_id, attempt + 1)
+                err_str = str(err).replace("\n", "    ")
+                LOG.error(err_str)
                 raise err
 
         if last_exc:
@@ -463,11 +461,11 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
 def serial_work(single_node_work, params):
     with settings(**params):
-        return execute(serial(single_node_work), hosts=list(params['public_ips'].values()))
+        return command.execute(command.serial(single_node_work), hosts=list(params['public_ips'].values()))
 
 def parallel_work(single_node_work, params):
     with settings(**params):
-        return execute(parallel(single_node_work), hosts=list(params['public_ips'].values()))
+        return command.execute(command.parallel(single_node_work), hosts=list(params['public_ips'].values()))
 
 def current_ec2_node_id():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
