@@ -70,7 +70,8 @@ def create_keypair(stackname):
     # py3 issue here: https://github.com/boto/boto/issues/3782
     # key.save(config.KEYPAIR_PATH) # exclude the filename
     #keypair.material = keypair.material.encode()
-    open(expected_key, 'w').write(keypair.key_material)
+    with open(expected_key, 'w') as fh:
+        fh.write(keypair.key_material)
     os.chmod(expected_key, 0o600)
     write_keypair_to_s3(stackname)
     return expected_key

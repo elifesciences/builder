@@ -133,7 +133,8 @@ def bootstrap(stackname, context):
         on_error = lambda: keypair.delete_keypair(stackname)
 
     stack_path = core.stack_path(stackname)
-    stack_body = open(stack_path, 'r').read()
+    with open(stack_path, 'r') as fh:
+        stack_body = fh.read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         LOG.warning("empty template: %s" % stack_path)
         return
@@ -198,7 +199,8 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
     return utils.visit(template_data, convert_string_bools, predicate)
 
 def _read_template(path_to_template):
-    template_data = json.load(open(path_to_template, 'r'))
+    with open(path_to_template, 'r') as fh:
+        template_data = json.load(fh)
     template_data = upgrade_v2_troposphere_template_to_v3(template_data)
     return template_data
 
@@ -217,7 +219,8 @@ def outputs_map(stackname):
 @core.requires_stack_file
 def template_outputs_map(stackname):
     """returns a map of a stack template's 'Output' keys to their values."""
-    stack = json.load(open(core.stack_path(stackname), 'r'))
+    with open(core.stack_path(stackname), 'r') as fh:
+        stack = json.load(fh)
     output_map = stack.get('Outputs', [])
     return {output_key: output['Value'] for output_key, output in output_map.items()}
 

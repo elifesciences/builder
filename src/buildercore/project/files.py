@@ -9,7 +9,8 @@ LOG = logging.getLogger(__name__)
 def read_project_file(project_file_path):
     """reads the contents of the YAML file at `project_file_path`.
     for example, `/path/to/builder/projects/elife.yaml`."""
-    return utils.yaml_load(open(project_file_path, 'r'))
+    with open(project_file_path, 'r') as fh:
+        return utils.yaml_load(fh.read())
 
 @cached
 def all_projects(project_file_path):

@@ -58,7 +58,8 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
     default = None
     if default_file:
         try:
-            default = open(default_file, 'r').read()
+            with open(default_file, 'r') as fh:
+                default = fh.read()
             pick_list.index(default)
         except (ValueError, IOError):
             # either the given default file doesn't exist or the
@@ -89,7 +90,8 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
         choice = pick_list[int(uinput) - 1]
         if default_file:
             # write the new default to file
-            open(default_file, 'w').write(choice)
+            with open(default_file, 'w') as fh:
+                fh.write(choice)
         return choice
 
 def uin(param, default=0xDEADBEEF):

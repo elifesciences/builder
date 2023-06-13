@@ -235,7 +235,7 @@ def random_alphanumeric(length=32):
     rand = random.SystemRandom()
     return ''.join(rand.choice(string.ascii_letters + string.digits) for _ in range(length))
 
-def yaml_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
+def yaml_load(data, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
     # pylint: disable=too-many-ancestors
     class OrderedLoader(loader_class):
         pass
@@ -246,7 +246,7 @@ def yaml_load(stream, loader_class=yaml.Loader, object_pairs_hook=OrderedDict):
     OrderedLoader.add_constructor(
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
         construct_mapping)
-    return yaml.load(stream, OrderedLoader)
+    return yaml.load(data, OrderedLoader)
 
 def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
     "wrapper around the yaml.dump function with sensible defaults for formatting"

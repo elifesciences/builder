@@ -60,4 +60,5 @@ class TestReadWrite(base.BaseCase):
         s3.write(key, expected_contents)
         s3.download(key, expected_output)
         self.assertTrue(os.path.exists(expected_output))
-        self.assertEqual(open(expected_output, 'r').read(), expected_contents)
+        with open(expected_output, 'r') as fh:
+            self.assertEqual(fh.read(), expected_contents)

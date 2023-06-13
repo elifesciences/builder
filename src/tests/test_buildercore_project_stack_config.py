@@ -53,7 +53,8 @@ def test_all_stack_data(datadir):
 def test__dumps_stack_file():
     "a stack config file can be read, parsed as YAML into Python and dumped back to YAML without changes."
     fixture = base.fixture_path('stacks/stacks.yaml')
-    expected = open(fixture, 'r').read()
+    with open(fixture, 'r') as fh:
+        expected = fh.read()
     config = stack_config.read_stack_file(fixture)
     actual = stack_config._dumps_stack_file(config)
     assert actual == expected

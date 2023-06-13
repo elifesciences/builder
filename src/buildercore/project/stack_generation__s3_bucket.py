@@ -19,13 +19,15 @@ def cached_output(unique_name):
         LOG.info("cache miss, path not found: %s", path)
     else:
         LOG.debug("cache hit, path found: %s", path)
-        return json.load(open(path, 'r'))
+        with open(path, 'r') as fh:
+            return json.load(fh)
 
 def cache(data, unique_name):
     """writes given `data` as JSON to a temporary file using `unique_name`.
     returns path to cached data."""
     path = cache_path(unique_name)
-    open(path, 'w').write(utils.json_dumps(data, indent=4))
+    with open(path, 'w') as fh:
+        fh.write(utils.json_dumps(data, indent=4))
     return path
 
 # ---
