@@ -6,7 +6,7 @@ from datetime import datetime
 import logging
 import re
 import backoff
-from .command import remote_file_exists, CommandException
+from .command import CommandException, NetworkTimeoutError, NetworkUnknownHostError
 import boto # route53 boto2 > route53 boto3
 from . import config, core, command
 from .core import boto_conn, find_ec2_instances, find_rds_instances, current_ec2_node_id, NoPublicIps, NoRunningInstances
@@ -124,8 +124,8 @@ def _daemons_ready():
     path = '/var/lib/cloud/instance/boot-finished'
 
     try:
-        return remote_file_exists(path)
-    except command.NetworkError:
+        return command.remote_file_exists(path)
+    except (ConnectionError, ConnectionRefusedError, NetworkTimeoutError, NetworkUnknownHostError):
         LOG.debug("failed to connect to %s...", node_id)
         return False
 
