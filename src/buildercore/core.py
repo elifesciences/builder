@@ -415,21 +415,21 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 # attempt 0 is skipped, attempt 1 is 4sec, attempt 2 is 6sec, then 8sec, then 10sec, ...
                 sleep_amt = 2 * (attempt + 1)
                 # "attempt 2 of 6, pausing for 4secs ..."
-                LOG.info("attempt %s of %s, pausing %ssecs ..." % (attempt + 1, num_attempts, sleep_amt))
+                LOG.info("attempt %s of %s, pausing for %ssecs ..." % (attempt + 1, num_attempts, sleep_amt))
                 time.sleep(sleep_amt)
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
-                # "NetworkError executing task on foo--bar--1 during attempt 2: rsync returned error 30: Timeout in data send/receive. retrying."
+                # "NetworkError executing task on foo--bar--1 during attempt 2: rsync returned error 30: Timeout in data send/receive."
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.error("NetworkError executing task on %s during attempt %s: %s. retrying.", instance_id, attempt + 1, err)
+                LOG.error("NetworkError executing task on %s during attempt %s: %s", instance_id, attempt + 1, err)
                 last_exc = err
                 continue
 
             except (ConnectionError, ConnectionRefusedError, NetworkTimeoutError, NetworkUnknownHostError) as err:
-                # "low level network error executing task on foo--bar--1 during attempt 2: connection refused. retrying."
+                # "low level network error executing task on foo--bar--1 during attempt 2: connection refused"
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.error("low level network error executing task on %s during attempt %s: %s. retrying.", stackname, attempt + 1, err)
+                LOG.error("low level network error executing task on %s during attempt %s: %s", stackname, attempt + 1, err)
                 last_exc = err
                 continue
 
