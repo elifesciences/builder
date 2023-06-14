@@ -371,7 +371,7 @@ def all_node_params(stackname):
 
     return params
 
-def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, num_attempts=5, **kwargs):
+def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurrency=None, node=None, instance_ids=None, num_attempts=6, **kwargs):
     """Executes `workfn` on all EC2 nodes of `stackname`.
     Optionally connects with the specified `username`."""
     work_kwargs = {}
@@ -412,8 +412,11 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
         last_exc = None
         for attempt in range(0, num_attempts):
             if attempt != 0:
-                LOG.info("attempt %s of %s" % (attempt + 1, num_attempts))
-            time.sleep(2 * (attempt + 1)) # 2sec, 4sec, 6sec, 8sec, 10sec
+                # attempt 0 is skipped, attempt 1 is 4sec, attempt 2 is 6sec, then 8sec, then 10sec, ...
+                sleep_amt = 2 * (attempt + 1)
+                # "attempt 2 of 6, pausing for 4secs ..."
+                LOG.info("attempt %s of %s, pausing %ssecs ..." % (attempt + 1, num_attempts, sleep_amt))
+                time.sleep(sleep_amt)
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
