@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c1e3d2ae01a9ae9bffb80849c3594d8745ba6cd70938a233762dc74e9d75134b"
+            "sha256": "d799828cf4fed4a5b312f5cfa51e7e9b11e7eb17f7b70430dc3d50f39af180fb"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -34,19 +34,19 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:20b88a8145845e4923d438f5f89fdbdac5bae4011e706cd0974ac69c41f258b4",
-                "sha256:81bff32c96a6b4b203beb63826214d8cf24ca1a86e81d43bbb688a21c5d79e2a"
+                "sha256:92de7eec15adda76abff0580b1e8ca70646470fba4c807934062456d0c5c9171",
+                "sha256:ec3a4aef45d16d9362191aa245a31059df009cd73668d0c3b15126cfeb5d3fd7"
             ],
             "index": "pypi",
-            "version": "==1.26.151"
+            "version": "==1.26.153"
         },
         "botocore": {
             "hashes": [
-                "sha256:0790bf5d25ad6f2db3450797251a78fbcb7b72cdeeb2fd0b82c2668a41d9f41c",
-                "sha256:fdaaa34ea5f09666f17d24d2f4179f7ec81dd6f831ef6b785d4552f919291cab"
+                "sha256:d59b8e87138581a339b9f84a9e90bc4c1a152cf8ca2adbaad7792a4c4125bffa",
+                "sha256:d6d3294fde297ae76fadb4bafad93ef958f145bb9a502bf7b1e57ff6f8dc4039"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==1.29.151"
+            "version": "==1.29.153"
         },
         "certifi": {
             "hashes": [
@@ -551,13 +551,12 @@
             "version": "==1.0.0"
         },
         "threadbare": {
-            "editable": true,
-            "git": "https://github.com/elifesciences/threadbare.git",
             "hashes": [
-                "sha256:7d3f2ed3be29b10e3c0d2b9d0160171e97ff9864ffa31def0b9683c368c99d8c",
-                "sha256:fbf2008a846f65e862f4d77cdb88605985f9ea5b4c096a81051fcf51eed793de"
+                "sha256:2d3733c62120f77c5c947bd6696873587db21295182ffe9cd89e7aa76c3aa35a",
+                "sha256:ba5f22acea1cec91ea2fd460416d71c0fe924b33a22cc5eb3cb9bd74cbf0c7ba"
             ],
-            "ref": "6dbe1d2ec6b977054bde7d22b10510af8804ef28"
+            "index": "pypi",
+            "version": "==4.0.0"
         },
         "troposphere": {
             "hashes": [
@@ -654,19 +653,19 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:20b88a8145845e4923d438f5f89fdbdac5bae4011e706cd0974ac69c41f258b4",
-                "sha256:81bff32c96a6b4b203beb63826214d8cf24ca1a86e81d43bbb688a21c5d79e2a"
+                "sha256:92de7eec15adda76abff0580b1e8ca70646470fba4c807934062456d0c5c9171",
+                "sha256:ec3a4aef45d16d9362191aa245a31059df009cd73668d0c3b15126cfeb5d3fd7"
             ],
             "index": "pypi",
-            "version": "==1.26.151"
+            "version": "==1.26.153"
         },
         "botocore": {
             "hashes": [
-                "sha256:0790bf5d25ad6f2db3450797251a78fbcb7b72cdeeb2fd0b82c2668a41d9f41c",
-                "sha256:fdaaa34ea5f09666f17d24d2f4179f7ec81dd6f831ef6b785d4552f919291cab"
+                "sha256:d59b8e87138581a339b9f84a9e90bc4c1a152cf8ca2adbaad7792a4c4125bffa",
+                "sha256:d6d3294fde297ae76fadb4bafad93ef958f145bb9a502bf7b1e57ff6f8dc4039"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==1.29.151"
+            "version": "==1.29.153"
         },
         "certifi": {
             "hashes": [
