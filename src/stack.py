@@ -1,5 +1,15 @@
-from buildercore import project
-from buildercore.project import stack_generation
+"""`stack.py` is the interface to the new resource description and wrangling logic.
+
+`stackcore/*.py` is where all of the non-interface stack wrangling logic lives.
+
+This separation is to reduce any further complexity in `buildercore/*` which is entirely
+orientated around the current resource description and data structures.
+
+"""
+
+
+from stackcore import project
+from stackcore.project import stack_generation
 from decorators import format_output, requires_stack_config
 import utils
 

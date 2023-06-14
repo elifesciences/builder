@@ -1,6 +1,6 @@
 import os, tempfile, json
 from buildercore import core, utils
-from buildercore.project import stack_config as project_config
+from stackcore.project import stack_config as project_config
 from botocore.exceptions import ClientError
 
 import logging

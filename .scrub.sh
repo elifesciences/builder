@@ -13,6 +13,6 @@
 
 autopep8 \
     --in-place --recursive --aggressive \
-    --ignore E501,E302,E261,E401,E305,E309,E731,W690 \
+    --ignore E501,E302,E261,E26,E265,E401,E305,E309,E731,W690 \
     --exclude *.html \
     src/

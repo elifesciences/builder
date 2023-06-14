@@ -4,7 +4,7 @@
 from functools import reduce
 import os
 from buildercore.utils import ensure, merge
-from buildercore.project import stack_config, stack_generation__s3_bucket
+from stackcore.project import stack_config, stack_generation__s3_bucket
 
 import logging
 

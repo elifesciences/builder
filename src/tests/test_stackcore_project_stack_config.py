@@ -1,5 +1,5 @@
 from . import base
-from buildercore.project import stack_config
+from stackcore.project import stack_config
 
 def test_deepmerge():
     "the simpler deepmerge for stacks "
@@ -65,8 +65,8 @@ def test__dumps_stack_file__updated_data():
 
     # preserving comments against stacks became too fiddly and time consuming to debug.
     # I've settled for just preserving comments in the 'defaults' section.
-    #update = {'example-stack-identifier': {"random-property": "some-new-value"}}
-    #config = stack_config.deep_merge(config, update)
+    # update = {'example-stack-identifier': {"random-property": "some-new-value"}}
+    # config = stack_config.deep_merge(config, update)
 
     actual = stack_config._dumps_stack_file(config)
 

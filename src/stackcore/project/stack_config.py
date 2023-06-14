@@ -20,7 +20,7 @@ stack config is a means to:
 
 stack configuration is *not*:
 - intended to replace 'project' configuration.
-- particularly deep or complex, it should be a thin wrapper around CFN and TForm to begin with
+- particularly deep or complex, it should be a thin wrapper around cloudformation and terraform to begin with.
 
 """
 
@@ -86,7 +86,7 @@ def _dumps_stack_file(data):
             return data
         return {key: data[key] for key in sorted(data, key=lambda n: order.get(n) or 99)}
     # this destroys comments as it replaces the ruamel.ordereddict with a regular dict.
-    # comments for 'defaults' can be guaranteed but not for resources.
+    # comments for 'defaults' section can be guaranteed, but not for resources.
     data = utils.dictmap(order_keys, data)
 
     return utils.ruamel_dumps(data)

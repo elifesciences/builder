@@ -2,6 +2,7 @@ from time import time
 import os
 from os.path import join
 import utils
+import stackcore.project
 from buildercore import core, project, config, cloudformation, utils as core_utils
 from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr, ensure
 from functools import wraps, partial
@@ -167,7 +168,7 @@ def requires_stack_config(func):
     def call(*args, **kwargs):
         stackname = first(args)  # or config.ENV['INSTANCE'] # preserve this? I can't see anything using it.
         ensure(stackname, "stackname required", utils.TaskExit)
-        stack = project.stack(stackname)
+        stack = stackcore.project.stack(stackname)
         ensure(stack, "stack %r not found" % stackname, utils.TaskExit)
         return func(stackname, *args[1:], **kwargs)
     return call
