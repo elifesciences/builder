@@ -3,10 +3,11 @@ FROM python:3.8-alpine3.12
 # cmake + zlib-dev for parallel-ssh dependencies
 # paramiko is pure python and never needed it
 RUN apk add --no-cache \
+    cmake \
+    git \
+    libffi-dev \
     libressl-dev \
     musl-dev \
-    libffi-dev \
-    cmake \
     zlib-dev
 
 RUN apk add --no-cache --virtual build-deps \
@@ -15,9 +16,8 @@ RUN apk add --no-cache --virtual build-deps \
     g++ \
     make
 
-# setuptools>=58 dropped support for a dependency 2to3 Troposphere 2.7.1 depends on
 RUN python3 -m venv /venv && \
-    /venv/bin/pip install wheel pip "setuptools<58" --upgrade
+    /venv/bin/pip install wheel pip --upgrade
 
 COPY requirements.txt /requirements.txt
 
