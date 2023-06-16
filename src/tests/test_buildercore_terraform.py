@@ -245,13 +245,15 @@ class TestBuildercoreTerraform(base.BaseCase):
         with terraform._open(stackname, filename, mode="w") as fh:
             fh.write("baz")
         self.assertTrue(os.path.exists(expected_file))
-        self.assertEqual(open(expected_file, "r").read(), "baz")
+        with open(expected_file, "r") as fh:
+            self.assertEqual(fh.read(), "baz")
 
         expected_file_2 = join(self.temp_dir, stackname, filename) # + ".tf.json"
         with terraform._open(stackname, filename, extension=None, mode="w") as fh:
             fh.write("boo")
         self.assertTrue(os.path.exists(expected_file_2))
-        self.assertEqual(open(expected_file_2, "r").read(), "boo")
+        with open(expected_file_2, "r") as fh:
+            self.assertEqual(fh.read(), "boo")
 
     @patch('buildercore.terraform.Terraform')
     def test_init_providers(self, Terraform):
@@ -264,7 +266,8 @@ class TestBuildercoreTerraform(base.BaseCase):
         # ensure tfenv file created
         tfenv_file = join(self.temp_dir, stackname, ".terraform-version")
         self.assertTrue(os.path.exists(tfenv_file))
-        self.assertEqual(open(tfenv_file, "r").read(), context['terraform']['version'])
+        with open(tfenv_file, "r") as fh:
+            self.assertEqual(fh.read(), context['terraform']['version'])
 
         terraform_binary.init.assert_called_once()
         for configuration in self._load_terraform_file(stackname, 'providers').get('provider'):

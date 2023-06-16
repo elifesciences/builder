@@ -398,7 +398,7 @@ def download_master_builder_key(stackname):
 
 def download_master_configuration(master_stack):
     with stack_conn(master_stack, username=BOOTSTRAP_USER):
-        return command.get('/etc/salt/master.template', use_sudo=True, return_stream=True)
+        return command.get('/etc/salt/master.template', use_sudo=True)
 
 def expand_master_configuration(master_configuration_template, formulas=None):
     "reads a /etc/salt/master type file in as YAML and returns a processed python dictionary"

@@ -200,7 +200,10 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
         pname, iid = core.parse_stackname(n)
         return order.get(iid, adhoc)
 
-    remastered_list = open('remastered.txt', 'r').read().splitlines() if os.path.exists('remastered.txt') else []
+    remastered_list = []
+    if os.path.exists('remastered.txt'):
+        with open('remastered.txt', 'r') as fh:
+            remastered_list = fh.read().splitlines()
 
     for pname in pname_list:
         # when would this ever be the case?
@@ -228,7 +231,8 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
                         break
                     # print a reminder of which stack was just updated
                     print("\n(%s)\n" % stackname)
-                    open('remastered.txt', 'a').write("%s\n" % stackname)
+                    with open('remastered.txt', 'a') as fh:
+                        fh.write("%s\n" % stackname)
                 except KeyboardInterrupt:
                     LOG.warning("ctrl-c, skipping stack: %s", stackname)
                     LOG.info("ctrl-c again to exit process entirely")

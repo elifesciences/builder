@@ -46,7 +46,8 @@ def fixture_path(fixture_subpath):
 
 def fixture(fixture_subpath):
     "returns contents of given fixture as a string"
-    return open(fixture_path(fixture_subpath), 'r').read()
+    with open(fixture_path(fixture_subpath), 'r') as fh:
+        return fh.read()
 
 def json_fixture(fixture_subpath):
     "same as `fixture`, but deserialises the contents from JSON."
@@ -144,7 +145,8 @@ class BaseIntegrationCase(BaseCase):
 
         if cls.reuse_existing_stack and os.path.exists(cls.statefile):
             # evidence of a previous instance and we've been told to re-use old instances
-            old_state = json.load(open(cls.statefile, 'r'))
+            with open(cls.statefile, 'r') as fh:
+                old_state = json.load(fh)
             old_env = old_state.get('environment')
 
             # test if the old stack still exists ...
@@ -178,7 +180,8 @@ class BaseIntegrationCase(BaseCase):
     def tear_down_stack(cls):
         try:
             if cls.reuse_existing_stack:
-                json.dump(cls.state, open(cls.statefile, 'w'))
+                with open(cls.statefile, 'w') as fh:
+                    json.dump(cls.state, fh)
             if cls.cleanup:
                 for stackname in cls.stacknames:
                     LOG.info("ensure_destroyed %s", stackname)

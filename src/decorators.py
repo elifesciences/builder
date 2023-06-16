@@ -29,7 +29,8 @@ def deffile(fname):
 
 def setdefault(fname, value):
     "writes the given value to the given default file"
-    open(deffile(fname), 'w').write(value)
+    with open(deffile(fname), 'w') as fh:
+        fh.write(value)
 
 def requires_filtered_project(filterfn=None):
     def wrap1(func):

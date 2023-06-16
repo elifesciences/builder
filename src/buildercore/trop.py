@@ -259,7 +259,8 @@ def ec2instance(context, node):
         # so we use redundant-subnet-id-2 (us-east-1a)
         subnet_id = lu('aws.redundant-subnet-id-2')
 
-    clean_server_script = open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment'), 'r').read()
+    with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment'), 'r') as fh:
+        clean_server_script = fh.read()
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
         "InstanceType": lu('ec2.type'),
@@ -1514,7 +1515,8 @@ class JSONRule(object):
         ensure(os.path.exists(self.path), "path not found: %s" % (self.path,))
 
     def JSONrepr(self):
-        return json.load(open(self.path, 'r'))
+        with open(self.path, 'r') as fh:
+            return json.load(fh)
 
 # in order to allow custom objects as Rules, I had to slip `JSONRule` in here:
 class PatchedWebACL(wafv2.WebACL):

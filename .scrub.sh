@@ -3,6 +3,7 @@
 # scrub.sh uses the autopep8 tool to clean up whitespace and other small bits
 
 # E261 = double space before inline comment
+# E265, E26 = don't add a space after inline and block comments
 # E501 = don't squeeze lines to fix max length
 # E302 = don't go crazy with the double whitespace between funcs
 # E401 = don't put imports on separate lines
@@ -13,6 +14,6 @@
 
 autopep8 \
     --in-place --recursive --aggressive \
-    --ignore E501,E302,E261,E401,E305,E309,E731,W690 \
+    --ignore E501,E302,E261,E26,E265,E401,E305,E309,E731,W690 \
     --exclude *.html \
     src/

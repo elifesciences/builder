@@ -44,7 +44,7 @@ def pytest_runtest_teardown(item, nextitem):
     LOG.info("Tearing down up %s::%s", item.cls, item.name)
 
 # https://docs.pytest.org/en/7.1.x/how-to/fixtures.html#fixture-scopes
-@pytest.yield_fixture(scope='session')
+@pytest.fixture(scope='session')
 def test_projects():
     try:
         base.switch_in_test_settings()
@@ -52,7 +52,7 @@ def test_projects():
     finally:
         base.switch_out_test_settings()
 
-@pytest.yield_fixture
+@pytest.fixture
 def tempdir():
     "replaces the path to `/tmp` with a unique temp directory for the age of the test."
     path, cleanup_fn = core_utils_tempdir()
@@ -62,7 +62,7 @@ def tempdir():
     finally:
         cleanup_fn()
 
-@pytest.yield_fixture
+@pytest.fixture
 def datadir():
     "returns a path to a unique temp directory for the age of the test."
     path, cleanup_fn = core_utils_tempdir()

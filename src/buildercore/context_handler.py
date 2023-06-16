@@ -36,7 +36,8 @@ def download_from_s3(stackname, refresh=False):
 
 def _load_context_from_disk(stackname):
     path = local_context_file(stackname)
-    return json.load(open(path, 'r'))
+    with open(path, 'r') as fh:
+        return json.load(fh)
 
 def _load_context_from_s3(stackname):
     "downloads context from S3 then returns the results of loading it from disk"
@@ -76,12 +77,14 @@ def load_context(stackname):
     return contents
 
 def write_context_locally(stackname, contents):
-    open(local_context_file(stackname), 'w').write(contents)
+    with open(local_context_file(stackname), 'w') as fh:
+        fh.write(contents)
 
 def write_context_to_s3(stackname):
     path = local_context_file(stackname)
     key = s3_context_key(stackname)
-    s3.write(key, open(path, 'rb'), overwrite=True)
+    with open(path, 'rb') as fh:
+        s3.write(key, fh, overwrite=True)
 
 def write_context(stackname, context):
     write_context_locally(stackname, json.dumps(context))

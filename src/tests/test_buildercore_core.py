@@ -123,7 +123,8 @@ class SimpleCases(base.BaseCase):
             ('lax--prod', []), # lax doesn't subscribe to anything
             ('observer--prod', ['bus-articles--prod', 'bus-metrics--prod']),
         ]
-        fixture = json.load(open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r'))
+        with open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r') as fh:
+            fixture = json.load(fh)
         with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
             for stackname, expected_subs in cases:
                 res = core.all_sns_subscriptions('someregion', stackname)
@@ -167,7 +168,8 @@ class TestCoreNewProjectData(base.BaseCase):
             ('dummy3', self.dummy3_config),
         ]
         for pname, expected_path in expected:
-            expected_data = json.load(open(expected_path, 'r'))
+            with open(expected_path, 'r') as fh:
+                expected_data = json.load(fh)
             project_data = project.project_data(pname)
             # cp /tmp/dummy*-project.json src/tests/fixtures/
             #json.dump(project_data, open('/tmp/%s-project.json' % pname, 'w'), indent=4)
@@ -183,7 +185,8 @@ class TestCoreNewProjectData(base.BaseCase):
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
 
-        expected_data = json.load(open(self.dummy1_config, 'r'))
+        with open(self.dummy1_config, 'r') as fh:
+            expected_data = json.load(fh)
         expected_data['vagrant']['cpus'] = 999
         self.assertEqual(project_data, expected_data)
 
@@ -195,7 +198,8 @@ class TestCoreNewProjectData(base.BaseCase):
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
 
-        expected_data = json.load(open(self.dummy1_config, 'r'))
+        with open(self.dummy1_config, 'r') as fh:
+            expected_data = json.load(fh)
         expected_data['vagrant']['cpus'] = 999
         expected_data['vagrant']['cpucap'] = 111
 

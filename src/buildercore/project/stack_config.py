@@ -48,7 +48,8 @@ def stack_has_path(data):
 
 def read_stack_file(path):
     "reads the contents of the YAML file at `path`, returning Python data."
-    data = utils.ruamel_load(open(path, 'r'))
+    with open(path, 'r') as fh:
+        data = utils.ruamel_load(fh)
     # a check before `parse_stack_map` to insert a reference to where this data originated.
     # it's necessary so we know where to update an individual stack in future during stack regeneration.
     # the 'defaults.meta.type' path is simply to test that `meta` is a dict.
@@ -93,7 +94,8 @@ def _dumps_stack_file(data):
 
 def write_stack_file(data, path):
     "same as `_dumps_stack_file`, but the result is written to `path`"
-    open(path, 'w').write(_dumps_stack_file(data))
+    with open(path, 'w') as fh:
+        fh.write(_dumps_stack_file(data))
 
 def write_stack_file_updates(data, path):
     "reads stack config, replacing the stack configuration with `data` and writes the changes back to file."

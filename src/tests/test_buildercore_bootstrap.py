@@ -8,8 +8,8 @@ from os.path import join
 class TestBuildercoreBootstrap(base.BaseCase):
     def test_master_configuration(self):
         formulas = ['https://github.com/elifesciences/journal-formula', 'https://github.com/elifesciences/lax-formula']
-        master_configuration_template = open('src/tests/fixtures/etc-salt-master.template', 'r')
-        master_configuration = bootstrap.expand_master_configuration(master_configuration_template, formulas)
+        with open('src/tests/fixtures/etc-salt-master.template', 'r') as fh:
+            master_configuration = bootstrap.expand_master_configuration(fh.read(), formulas)
         master_configuration_yaml = yaml_dumps(master_configuration)
         expected_configuration = """auto_accept: true
 interface: 0.0.0.0
@@ -32,7 +32,8 @@ pillar_roots:
 
     def test_unsub_sqs(self):
         stackname = 'observer--end2end'
-        fixture = json.load(open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r'))
+        with open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r') as fh:
+            fixture = json.load(fh)
         with mock.patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
             # observer no longer wants to subscribe to metrics
             context = {stackname: ['bus-articles--end2end', 'bus-metrics--end2end']}
@@ -57,7 +58,8 @@ pillar_roots:
     def test_unsub_sqs_detect_multiple_subs(self):
         "when multiple subscriptions to a single topic exist, unsusbscribe from them"
         stackname = 'observer--end2end'
-        fixture = json.load(open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r'))
+        with open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r') as fh:
+            fixture = json.load(fh)
 
         multiple_sub_same_topic = {
             "Topic": "bus-articles--end2end",
