@@ -200,11 +200,10 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
         pname, iid = core.parse_stackname(n)
         return order.get(iid, adhoc)
 
+    remastered_list = []
     if os.path.exists('remastered.txt'):
         with open('remastered.txt', 'r') as fh:
             remastered_list = fh.read().splitlines()
-    else:
-        remastered_list = []
 
     for pname in pname_list:
         # when would this ever be the case?

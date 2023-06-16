@@ -1,3 +1,4 @@
+import io
 import pytest
 from collections import OrderedDict
 from . import base
@@ -353,3 +354,15 @@ def test_updatein__create():
     ]
     for (given, path, newval), expected in cases:
         assert utils.updatein(given, path, newval, create=True) == expected
+
+def test_yaml_load():
+    cases = [
+        ("", None),
+        ("null", None),
+        ("foo: bar", {"foo": "bar"}),
+    ]
+    for given, expected in cases:
+        # data
+        assert utils.yaml_load(given) == expected
+        # stream
+        assert utils.yaml_load(io.StringIO(given)) == expected

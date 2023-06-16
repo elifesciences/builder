@@ -67,9 +67,6 @@ def create_keypair(stackname):
     expected_key = stack_pem(stackname, die_if_exists=True)
     ec2 = core.boto_conn(stackname, 'ec2')
     keypair = ec2.create_key_pair(KeyName=stackname)
-    # py3 issue here: https://github.com/boto/boto/issues/3782
-    # key.save(config.KEYPAIR_PATH) # exclude the filename
-    #keypair.material = keypair.material.encode()
     with open(expected_key, 'w') as fh:
         fh.write(keypair.key_material)
     os.chmod(expected_key, 0o600)
