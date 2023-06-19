@@ -10,7 +10,7 @@ import botocore
 import botocore.config
 from contextlib import contextmanager
 from . import command, context_handler
-from .command import settings, env, CommandException, NetworkError, NetworkTimeoutError, NetworkUnknownHostError
+from .command import settings, env, CommandException, NetworkError, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError
 from slugify import slugify
 import logging
 from kids.cache import cache as cached
@@ -426,7 +426,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 last_exc = err
                 continue
 
-            except (ConnectionError, ConnectionRefusedError, NetworkTimeoutError, NetworkUnknownHostError) as err:
+            except (ConnectionError, ConnectionRefusedError, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError) as err:
                 # "low level network error executing task on foo--bar--1 during attempt 2: connection refused"
                 instance_id = "%s--%s" % (stackname, current_node_id())
                 LOG.error("low level network error executing task on %s during attempt %s: %s", stackname, attempt + 1, err)
