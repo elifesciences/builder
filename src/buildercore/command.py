@@ -19,6 +19,7 @@ NetworkError = threadbare.operations.NetworkError
 # see: https://github.com/ParallelSSH/parallel-ssh/blob/2.12.0/pssh/exceptions.py
 NetworkTimeoutError = pssh.exceptions.Timeout
 NetworkUnknownHostError = pssh.exceptions.UnknownHostError
+NetworkAuthenticationError = pssh.exceptions.AuthenticationError
 
 threadbare.state.set_defaults({"abort_exception": CommandException,
                                "key_filename": os.path.expanduser(config.USER_PRIVATE_KEY)})
