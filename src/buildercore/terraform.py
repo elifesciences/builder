@@ -1590,6 +1590,15 @@ def init(stackname, context):
         fp.write(json.dumps(backend, indent=4))
 
     with _open(stackname, 'providers', mode='w') as fp:
+
+        # lsh@2023-06-19: removes 'version' from provider data in tf 0.14.11 as
+        # it's in providers.tf.json generates a deprecation warning.
+        if context['terraform']['version'] == '0.14.11':
+            for provider_dict in providers['provider']:
+                for provider_name, provider_data in provider_dict.items():
+                    if 'version' in provider_data:
+                        del provider_data['version']
+
         fp.write(json.dumps(providers, indent=4))
 
     terraform.init(input=False, capture_output=False, raise_on_error=True)
