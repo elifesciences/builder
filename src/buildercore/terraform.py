@@ -1537,7 +1537,7 @@ def init(stackname, context):
 
     # in 0.13 'providers' relies on a 'required_providers' block under 'terraform'
     # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
-    # coerce the `providers` dict into the new-style `required_providers` and drop provider 'version' keys.
+    # coerce the `providers` dict into the new-style `required_providers` and drop provider 'version' fields.
     # in 0.14 'version' in 'providers' section is now deprecated and you'll get warnings/errors.
     required_providers = {}
     for provider_dict in providers['provider']:
