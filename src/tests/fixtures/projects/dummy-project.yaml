@@ -1,28 +1,32 @@
 defaults:
     description: defaults for all projects in this file
+    meta:
+        # distinguishes this data from other types and versions of configuration data
+        type: project
+        version: 1
     salt: '3003' # the version of salt these project use
     terraform:
         # the version of Terraform this project requires
-        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
+        version: "0.14.11" # next version is "0.15.5" see `install-terraform.sh`
         # the version of Terraform providers (plugins) required.
         provider-aws:
-            source: "-/aws"
-            version: "2.28.0"
+            source: "hashicorp/aws"
+            version: "4.66.1"
         provider-tls:
-            source: "-/tls"
-            version: "2.2"
+            source: "hashicorp/tls"
+            version: "4.0.4"
+        provider-kubernetes:
+            source: "hashicorp/kubernetes"
+            version: "2.20.0"
         provider-fastly:
             source: "fastly/fastly"
             version: "1.1.4"
         provider-vault:
-            source: "-/vault"
+            source: "hashicorp/vault"
             version: "3.14.0"
         provider-google:
-            source: "-/google"
+            source: "hashicorp/google"
             version: "2.20.3"
-        provider-kubernetes:
-            source: "-/kubernetes"
-            version: "2.19.0"
     # use false with a subdomain to assign internal addresses only
     domain: example.org
     # addressing within VPC

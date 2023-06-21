@@ -1,31 +1,36 @@
 {
     "description": "defaults for all projects in this file",
+    "meta": {
+        "type": "project",
+        "version": 1,
+        "description": "foo"
+    },
     "salt": "3003",
     "terraform": {
-        "version": "0.13.7",
+        "version": "0.14.11",
         "provider-aws": {
-            "source": "-/aws",
-            "version": "2.28.0"
+            "source": "hashicorp/aws",
+            "version": "4.66.1"
         },
         "provider-tls": {
-            "source": "-/tls",
-            "version": "2.2"
+            "source": "hashicorp/tls",
+            "version": "4.0.4"
+        },
+        "provider-kubernetes": {
+            "source": "hashicorp/kubernetes",
+            "version": "2.20.0"
         },
         "provider-fastly": {
             "source": "fastly/fastly",
             "version": "1.1.4"
         },
         "provider-vault": {
-            "source": "-/vault",
+            "source": "hashicorp/vault",
             "version": "3.14.0"
         },
         "provider-google": {
-            "source": "-/google",
+            "source": "hashicorp/google",
             "version": "2.20.3"
-        },
-        "provider-kubernetes": {
-            "source": "-/kubernetes",
-            "version": "2.19.0"
         }
     },
     "domain": "example.org",
@@ -252,9 +257,6 @@
         "ports": {
             "1239": 80
         }
-    },
-    "meta": {
-        "description": "foo"
     },
     "gcp-alt": {}
 }

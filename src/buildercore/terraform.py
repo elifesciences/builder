@@ -1537,22 +1537,24 @@ def init(stackname, context):
 
     # in 0.13 'providers' relies on a 'required_providers' block under 'terraform'
     # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
-    def provider_to_required_provider(provider_dict):
+    # coerce the `providers` dict into the new-style `required_providers` and drop provider 'version' keys.
+    # in 0.14 'version' in 'providers' section is now deprecated and you'll get warnings/errors.
+    required_providers = {}
+    for provider_dict in providers['provider']:
         provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
         provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
         source_path = "terraform." + provider_context_key + ".source" # "terraform.provider-aws.source"
         source = lookup(context, source_path, default=None)
-        # TODO: migrate providers from "-/foo" to "hashicorp/foo"
-        # it requires this: https://github.com/hashicorp/terraform/issues/25702#issuecomment-666426977-permalink
         ensure(source, "'source' value at path %r missing in provider: %s" % (source_path, context['terraform']))
-        return (provider_name, {
+        required_providers[provider_name] = {
             'source': source,
-            # TODO: 'version' in 'providers' section is now properly deprecated in 0.14.x
-            'version': provider_dict[provider_name]['version']})
+            'version': provider_dict[provider_name]['version']
+        }
+        del provider_dict[provider_name]['version']
 
     backend = {
         'terraform': {
-            'required_providers': dict(map(provider_to_required_provider, providers['provider'])),
+            'required_providers': required_providers,
             # Terraform will manage where and when to pull it's state.
             # Cloudformation state is managed by builder and goes to the same bucket.
             'backend': {
@@ -1590,15 +1592,6 @@ def init(stackname, context):
         fp.write(json.dumps(backend, indent=4))
 
     with _open(stackname, 'providers', mode='w') as fp:
-
-        # lsh@2023-06-19: removes 'version' from provider data in tf 0.14.11 as
-        # it's in providers.tf.json generates a deprecation warning.
-        if context['terraform']['version'] == '0.14.11':
-            for provider_dict in providers['provider']:
-                for provider_name, provider_data in provider_dict.items():
-                    if 'version' in provider_data:
-                        del provider_data['version']
-
         fp.write(json.dumps(providers, indent=4))
 
     terraform.init(input=False, capture_output=False, raise_on_error=True)
