@@ -23,9 +23,6 @@ def _ec2_connection(stackname):
 def _rds_connection(stackname):
     return boto_conn(stackname, 'rds', client=True)
 
-def _r53_connection():
-    return core.boto_client('route53')
-
 def _node_id(node):
     name = core.tags2dict(node.tags)['Name']
     nid = core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
@@ -280,10 +277,11 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
 def _update_dns_a_record(zone_name, name, value):
+    "creates or updates a Route53 DNS 'A' record `name` in hosted zone `zone_name` with `value`."
     # "zone_name" => "elifesciences.org"
     # "name" => "foo--journal.elifesciences.org"
     # "value" => "1.2.3.4"
-    r53 = _r53_connection()
+    r53 = core.boto_client('route53')
     result = r53.list_resource_record_sets(HostedZoneId=zone_name, StartRecordName=name, StartRecordType="A")
     a_record_list = result['ResourceRecordSets']
 
@@ -291,8 +289,8 @@ def _update_dns_a_record(zone_name, name, value):
     ensure(len(a_record_list) < 2, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
     a_record = first(a_record_list)
     if lookup(a_record, 'ResourceRecords.0.Value', None) == value:
-        # "No need to update DNS record 'foo--journal.elifesciences.org' (already 1.2.3.4)"
-        LOG.info("No need to update DNS record %r (already %s)", name, value)
+        # "DNS record 'foo--journal.elifesciences.org' already '1.2.3.4', update skipped"
+        LOG.info("DNS record %r already %r, update skipped", name, value)
         return
 
     if not a_record:
@@ -300,10 +298,14 @@ def _update_dns_a_record(zone_name, name, value):
         # It *did* happen when another journal instance was brought up using the `prod` config.
         # It overwrote the DNS entries for `journal--prod` and then destroyed them when it rolled back.
         # `lifecycle.update_dns` is now the recommended way to fix broken DNS.
-        LOG.warning("DNS record %s does not exist!", name)
-        LOG.info("Creating DNS record %s with %s", name, value)
+
+        # "DNS record 'foo--journal.elifesciences.org' does not exist!"
+        LOG.warning("DNS record %r does not exist!", name)
+        # "Creating DNS record 'foo--journal.elifesciences.org' with '1.2.3.4'"
+        LOG.info("Creating DNS record %r with %r", name, value)
     else:
-        LOG.info("Updating DNS record %s to %s", name, value)
+        # "Updating DNS record 'foo--journal.elifesciences.org' to '1.2.3.4'"
+        LOG.info("Updating DNS record %r to %r", name, value)
 
     r53.change_resource_record_sets(**{
         "HostedZoneId": zone_name,
@@ -356,13 +358,14 @@ def update_dns(stackname):
             _update_dns_a_record(context['domain'], context['full_hostname'], node.public_ip_address)
 
 def _delete_dns_a_record(zone_name, name):
+    "deletes a Route53 DNS 'A' record `name` in hosted zone `zone_name`."
     # "zone_name" => "elifesciences.org"
     # "name" => "foo--journal.elifesciences.org"
 
     # lsh@2023-06-20: added check for boto3 upgrade - batch updates to DNS worry me.
     ensure(name and len(name.strip()) > 2, "refusing to delete DNS record with strange name %r" % name)
 
-    r53 = _r53_connection()
+    r53 = core.boto_client('route53')
     result = r53.list_resource_record_sets(HostedZoneId=zone_name, StartRecordName=name, StartRecordType="A")
     a_record_list = result['ResourceRecordSets']
 
