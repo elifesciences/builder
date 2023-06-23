@@ -57,5 +57,6 @@ class TestProjectData(base.BaseCase):
             expected_data = json.load(open(expected_path, 'r'))
             project_data = project.project_data(pname)
             project_data = utils.remove_ordereddict(project_data)
+            # cp /tmp/dummy1.json src/tests/fixtures/dummy1-project.json
             #open("/tmp/%s.json" % pname, 'w').write(json.dumps(project_data, indent=4))
             self.assertEqual(expected_data, project_data, "failed on %r" % expected_path)

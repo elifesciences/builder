@@ -7,7 +7,7 @@ defaults:
     salt: "3006" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
-        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
+        version: "0.14.11" # next version is "0.15.5" see `install-terraform.sh`
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "hashicorp/aws"
@@ -22,10 +22,10 @@ defaults:
             source: "fastly/fastly"
             version: "1.1.4"
         provider-vault:
-            source: "-/vault"
+            source: "hashicorp/vault"
             version: "3.14.0"
         provider-google:
-            source: "-/google"
+            source: "hashicorp/google"
             version: "2.20.3"
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
@@ -1914,14 +1914,6 @@ fastly-logs:
     domain: false
     intdomain: false
     terraform:
-        # lsh@2023-04-25: got an esoteric error about missing credentials attempting to use
-        # "-/google" instead of "hashicorp/google".
-        # fixing providers part is part of this ticket:
-        # - https://github.com/elifesciences/issues/issues/8256
-        provider-vault:
-            source: "hashicorp/vault"
-        provider-google:
-            source: "hashicorp/google"
     aws:
         # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
@@ -1941,9 +1933,6 @@ fastly-logs:
                     generic_cdn:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     journal:
-                        time-partitioning:
-                            field: timestamp
-                            type: DAY
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
@@ -1965,6 +1954,15 @@ fastly-logs:
                     tables:
                         reproducible_document_stack:
                             schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
+        prod:
+            bigquery:
+                "{instance}":
+                    tables:
+                        journal:
+                            # lsh@2023-06-19: just prod apparently
+                            time-partitioning:
+                                field: timestamp
+                                type: DAY
 
 data-pipeline:
     description: Data consolidation project

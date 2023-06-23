@@ -270,8 +270,39 @@ class TestBuildercoreTerraform(base.BaseCase):
             self.assertEqual(fh.read(), context['terraform']['version'])
 
         terraform_binary.init.assert_called_once()
-        for configuration in self._load_terraform_file(stackname, 'providers').get('provider'):
-            self.assertIn('version', list(configuration.values())[0])
+
+        expected_providers = {
+            'data': {
+                'vault_generic_secret': {'fastly': {'path': 'secret/builder/apikey/fastly'}}},
+            'provider': [
+                {'vault': {'address': 'https://vault.example.org:8200'}},
+                {'fastly': {'api_key': '${data.vault_generic_secret.fastly.data["api_key"]}'}}
+            ]
+        }
+        self.assertEqual(self._load_terraform_file(stackname, 'providers'), expected_providers)
+
+        expected_backend = {
+            'terraform': {
+                'backend': {
+                    's3': {
+                        'bucket': 'elife-builder',
+                        'key': 'terraform/project-with-fastly-minimal--%s.tfstate' % self.environment,
+                        'region': 'us-east-1'
+                    }
+                },
+                'required_providers': {
+                    'fastly': {
+                        'source': 'fastly/fastly',
+                        'version': '= 1.1.4'
+                    },
+                    'vault': {
+                        'source': 'hashicorp/vault',
+                        'version': '= 3.14.0'
+                    }
+                }
+            }
+        }
+        self.assertEqual(self._load_terraform_file(stackname, 'backend'), expected_backend)
 
     @patch('buildercore.terraform.Terraform')
     def test_fastly_provider_reads_api_key_from_vault(self, Terraform):
@@ -840,7 +871,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         providers = self._load_terraform_file(stackname, 'providers')
         self.assertEqual(
             {
-                'version': "= %s" % '2.19.0',
                 'host': '${data.aws_eks_cluster.main.endpoint}',
                 'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
                 'token': '${data.aws_eks_cluster_auth.main.token}',
