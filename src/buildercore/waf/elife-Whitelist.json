@@ -54,6 +54,11 @@
               "IPSetReferenceStatement": {
                 "Arn": {
                   "Fn::GetAtt": ["WAFIPSetWhitelist", "Arn"]
+                },
+                "IPSetForwardedIPConfig": {
+                  "HeaderName": "X-Forwarded-For",
+                  "Position": "FIRST",
+                  "FallbackBehavior": "NO_MATCH"
                 }
               }
             }
