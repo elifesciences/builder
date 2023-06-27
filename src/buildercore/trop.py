@@ -1565,6 +1565,7 @@ def render_waf_ipsets(context):
         if not '/' in ip_address:
             return ip_address + "/32"
         return ip_address
+
     def ipset(ip_list_key, ip_list_values):
         title = WAF_IPSET % ip_list_key.title() # "whitelist" => "IPSetWhitelist"
         return wafv2.IPSet(title, **{
