@@ -1,10 +1,14 @@
 {
-  "Name": "elife-RateLimitExcessiveBotTraffic",
-  "Priority": 20,
+  "Name": "elife-RateLimitExcessiveBotTrafficCDN",
+  "Priority": 19,
   "Statement": {
     "RateBasedStatement": {
       "Limit": 100,
-      "AggregateKeyType": "IP",
+      "AggregateKeyType": "FORWARDED_IP",
+      "ForwardedIPConfig": {
+        "HeaderName": "X-Forwarded-For",
+        "FallbackBehavior": "NO_MATCH"
+      },
       "ScopeDownStatement": {
         "OrStatement": {
           "Statements": [

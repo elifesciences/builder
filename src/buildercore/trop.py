@@ -1561,7 +1561,7 @@ def render_waf_associations(context):
 def render_waf_ipsets(context):
     """returns a list of IPSet objects. These can be used in WAF rules to affect groups of IP addresses.
     we use them to whitelist traffic."""
-    def ipsuffix(ip_address):
+    def withsuffix(ip_address):
         if not '/' in ip_address:
             return ip_address + "/32"
         return ip_address
@@ -1572,7 +1572,7 @@ def render_waf_ipsets(context):
             'Name': "%s--%s" % (context['stackname'], ip_list_key), # "firewall--prod--whitelist"
             # "whitelist of IP addresses for firewall--prod"
             'Description': "%s of IPs for %s" % (ip_list_key, context['stackname']),
-            'Addresses': [ipsuffix(ip_address) for ip_address in ip_list_values],
+            'Addresses': [withsuffix(ip_address) for ip_address in ip_list_values],
             'IPAddressVersion': 'IPV4',
             'Scope': 'REGIONAL',
         })

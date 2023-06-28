@@ -61,6 +61,13 @@
                   "FallbackBehavior": "NO_MATCH"
                 }
               }
+            },
+            {
+              "IPSetReferenceStatement": {
+                "Arn": {
+                  "Fn::GetAtt": ["WAFIPSetWhitelist", "Arn"]
+                }
+              }
             }
           ]
         }
