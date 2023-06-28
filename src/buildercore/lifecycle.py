@@ -297,7 +297,7 @@ def _get_a_record(zone_name, name):
         # 'continuumtest--lax.elifesciences' doesn't exist the next record 'continuumtest--metrics.elifesciences' is returned!!
         # boto3 is just awful compared to boto2.
         a_record = None
-        
+
     return zone_id, a_record
 
 def _update_dns_a_record(zone_name, name, value):
@@ -305,7 +305,7 @@ def _update_dns_a_record(zone_name, name, value):
     # "zone_name" => "elifesciences.org"
     # "name" => "foo--journal.elifesciences.org"
     # "value" => "1.2.3.4"
-    
+
     zone_id, a_record = _get_a_record(zone_name, name)
 
     if a_record and lookup(a_record, 'ResourceRecords.0.Value', None) == value:
