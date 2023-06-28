@@ -2153,6 +2153,9 @@ firewall:
             waf:
                 ip-sets:
                     whitelist:
+                        # internal vpc traffic between journal nodes and api-gateway nodes
+                        # 'subnet-1d4eb46a', 'elife-public-subnet'
+                        - 10.0.2.0/24
                         # elsevier
                         - 203.56.241.128
                         - 54.166.39.175
@@ -2175,14 +2178,19 @@ firewall:
                     # lsh@2021-11-23: disabled https://github.com/elifesciences/issues/issues/7089
                     #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
                 custom-rules:
-                    - elife-Whitelist.json
-                    - elife-Blacklist.json
+                    - elife-Whitelist.json # priority 0
+                    - elife-Blacklist.json # priority 15
                     # lsh@2022-04-08: disabled, aws bot rules were ineffective, undermining this rule.
                     #- elife-DistributedSlowBot.json
-                    - elife-RateLimitExcessiveBotTraffic.json
+                    # lsh@2023-06-28: same intent, different ingress - via CDN and via prod--journal
+                    # using aggregate key to consolidate rules not possible as rule passes when any key in aggregate is absent.
+                    # - https://docs.aws.amazon.com/waf/latest/APIReference/API_RateBasedStatementCustomKey.html
+                    - elife-RateLimitExcessiveBotTrafficCDN.json # priority 19
+                    - elife-RateLimitExcessiveBotTraffic.json # priority 20
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
                         priority: 5
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-bot.html
                         excluded:
                             - CategoryAdvertising
                             - CategoryArchiver
@@ -2199,12 +2207,17 @@ firewall:
                             - SignalAutomatedBrowser
                             - SignalKnownBotDataCenter
                             - SignalNonBrowserUserAgent
-                    AWS/AWSManagedRulesAmazonIpReputationList:
-                        priority: 6
-                        excluded:
-                            -   AWSManagedIPReputationList
+                    # lsh@2023-06-27: disabled, managed rule doesn't support forwarded IP addresses
+                    # - https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-ip-rep.html
+                    # - https://github.com/elifesciences/issues/issues/8362
+                    #AWS/AWSManagedRulesAmazonIpReputationList:
+                    #    priority: 6
+                    #    excluded:
+                    #        -   AWSManagedIPReputationList
                     AWS/AWSManagedRulesCommonRuleSet:
                         priority: 7
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-baseline.html#aws-managed-rule-groups-baseline-crs
+                        # these rules use the ruleset action (block).
                         included:
                             - NoUserAgent_HEADER
                             - UserAgent_BadBots_HEADER
@@ -2212,7 +2225,8 @@ firewall:
                             - GenericLFI_URIPATH
                             - GenericRFI_URIPATH
                             - CrossSiteScripting_BODY
-                        # these rules do not use the ruleset action (block) but are counted and passed through for further processing
+                        # these rules do *not* use the ruleset action (block), but are 
+                        # counted and passed through for further processing.
                         excluded:
                             - CrossSiteScripting_COOKIE
                             - CrossSiteScripting_QUERYARGUMENTS
@@ -2232,6 +2246,7 @@ firewall:
                             - SizeRestrictions_URIPATH
                     AWS/AWSManagedRulesKnownBadInputsRuleSet:
                         priority: 8
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-baseline.html#aws-managed-rule-groups-baseline-known-bad-inputs
                         excluded:
                             - BadAuthToken_COOKIE_AUTHORIZATION
                             - ExploitablePaths_URIPATH
@@ -2239,18 +2254,21 @@ firewall:
                             - PROPFIND_METHOD
                     AWS/AWSManagedRulesLinuxRuleSet:
                         priority: 9
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-use-case.html#aws-managed-rule-groups-use-case-linux-os
                         excluded:
                             - LFI_BODY
                             - LFI_QUERYARGUMENTS
                             - LFI_URIPATH
                     AWS/AWSManagedRulesPHPRuleSet:
                         priority: 10
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-use-case.html#aws-managed-rule-groups-use-case-php-app
                         included:
                             - PHPHighRiskMethodsVariables_QUERYARGUMENTS
                             - PHPHighRiskMethodsVariables_BODY
                         excluded: []
                     AWS/AWSManagedRulesUnixRuleSet:
                         priority: 11
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-use-case.html#aws-managed-rule-groups-use-case-posix-os
                         included:
                             - UNIXShellCommandsVariables_QUERYARGUMENTS
                             - UNIXShellCommandsVariables_BODY
