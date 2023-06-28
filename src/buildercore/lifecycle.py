@@ -276,20 +276,40 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     ec2_to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
+def _get_a_record(zone_name, name):
+    # "zone_name" => "elifesciences.org"
+    # "name" => "foo--journal.elifesciences.org"
+    if not name.endswith('.'):
+        name += "." # "foo--journal.elifesciences.org."
+    r53 = core.boto_client('route53')
+    zone_id = r53.list_hosted_zones_by_name(DNSName=zone_name)['HostedZones'][0]['Id']
+    result = r53.list_resource_record_sets(HostedZoneId=zone_id, StartRecordName=name, StartRecordType="A", MaxItems="1")
+    a_record_list = result['ResourceRecordSets']
+
+    # "zero or one 'A' records expected for 'foo--journal.elifesciences.org.', found 2"
+    ensure(len(a_record_list) < 2, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
+
+    # {'Name': 'continuumtest--lax.elifesciences.org.', 'Type': 'A', 'TTL': 60, 'ResourceRecords': [{'Value': '3.93.31.184'}]}
+    a_record = first(a_record_list)
+
+    if a_record and a_record['Name'] != name:
+        # `list_resource_record_sets` is *filtering* records, and not selecting a specific record, so when
+        # 'continuumtest--lax.elifesciences' doesn't exist the next record 'continuumtest--metrics.elifesciences' is returned!!
+        # boto3 is just awful compared to boto2.
+        a_record = None
+        
+    return zone_id, a_record
+
 def _update_dns_a_record(zone_name, name, value):
     "creates or updates a Route53 DNS 'A' record `name` in hosted zone `zone_name` with `value`."
     # "zone_name" => "elifesciences.org"
     # "name" => "foo--journal.elifesciences.org"
     # "value" => "1.2.3.4"
-    r53 = core.boto_client('route53')
-    result = r53.list_resource_record_sets(HostedZoneId=zone_name, StartRecordName=name, StartRecordType="A")
-    a_record_list = result['ResourceRecordSets']
+    
+    zone_id, a_record = _get_a_record(zone_name, name)
 
-    # "zero or one 'A' records expected for 'foo--journal.elifesciences.org', found 2"
-    ensure(len(a_record_list) < 2, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
-    a_record = first(a_record_list)
-    if lookup(a_record, 'ResourceRecords.0.Value', None) == value:
-        # "DNS record 'foo--journal.elifesciences.org' already '1.2.3.4', update skipped"
+    if a_record and lookup(a_record, 'ResourceRecords.0.Value', None) == value:
+        # "DNS record 'foo--journal.elifesciences.org.' already '1.2.3.4', update skipped"
         LOG.info("DNS record %r already %r, update skipped", name, value)
         return
 
@@ -298,28 +318,33 @@ def _update_dns_a_record(zone_name, name, value):
         # It *did* happen when another journal instance was brought up using the `prod` config.
         # It overwrote the DNS entries for `journal--prod` and then destroyed them when it rolled back.
         # `lifecycle.update_dns` is now the recommended way to fix broken DNS.
-
-        # "DNS record 'foo--journal.elifesciences.org' does not exist!"
+        # "DNS record 'foo--journal.elifesciences.org.' does not exist!"
         LOG.warning("DNS record %r does not exist!", name)
-        # "Creating DNS record 'foo--journal.elifesciences.org' with '1.2.3.4'"
+
+        # "Creating DNS record 'foo--journal.elifesciences.org.' with '1.2.3.4'"
         LOG.info("Creating DNS record %r with %r", name, value)
     else:
-        # "Updating DNS record 'foo--journal.elifesciences.org' to '1.2.3.4'"
+        # "Updating DNS record 'foo--journal.elifesciences.org.' to '1.2.3.4'"
         LOG.info("Updating DNS record %r to %r", name, value)
 
-    r53.change_resource_record_sets(**{
-        "HostedZoneId": zone_name,
+    ttl = a_record['TTL'] if a_record else 600 # seconds, boto2 default
+
+    core.boto_client('route53').change_resource_record_sets(**{
+        "HostedZoneId": zone_id,
         "ChangeBatch": {
-            "Changes": {
-                "Action": "UPSERT",
-                "ResourceRecordSet": {
-                    "Name": name,
-                    "Type": "A",
-                    "ResourceRecords": [
-                        {"Value": value}
-                    ]
+            "Changes": [
+                {
+                    "Action": "UPSERT",
+                    "ResourceRecordSet": {
+                        "Name": name,
+                        "Type": "A",
+                        "TTL": ttl,
+                        "ResourceRecords": [
+                            {"Value": value}
+                        ]
+                    }
                 }
-            }
+            ]
         }
     })
 
@@ -362,33 +387,33 @@ def _delete_dns_a_record(zone_name, name):
     # "zone_name" => "elifesciences.org"
     # "name" => "foo--journal.elifesciences.org"
 
-    # lsh@2023-06-20: added check for boto3 upgrade - batch updates to DNS worry me.
-    ensure(name and len(name.strip()) > 2, "refusing to delete DNS record with strange name %r" % name)
-
-    r53 = core.boto_client('route53')
-    result = r53.list_resource_record_sets(HostedZoneId=zone_name, StartRecordName=name, StartRecordType="A")
-    a_record_list = result['ResourceRecordSets']
-
-    # "zero or one 'A' records expected for 'foo--journal.elifesciences.org', found 2"
-    ensure(len(a_record_list) < 2, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
-    a_record = first(a_record_list)
+    zone_id, a_record = _get_a_record(zone_name, name)
 
     if not a_record:
         LOG.info("No DNS record to delete")
         return
 
+    # "expecting 1 resource record, found: [{'Value': '4.3.2.1'}, {'Value': '1.2.3.4'}]"
+    ensure(len(a_record['ResourceRecords']) == 1, "expecting 1 resource record, found: %s" % a_record['ResourceRecords'])
+
     # "Deleting DNS record 'foo--journal.elifesciences.org'
     LOG.info("Deleting DNS record %r", name)
-    r53.change_resource_record_sets(**{
-        "HostedZoneId": zone_name,
+    core.boto_client('route53').change_resource_record_sets(**{
+        "HostedZoneId": zone_id,
         "ChangeBatch": {
-            "Changes": {
-                "Action": "DELETE",
-                "ResourceRecordSet": {
-                    "Name": name,
-                    "Type": "A",
+            "Changes": [
+                {
+                    "Action": "DELETE",
+                    "ResourceRecordSet": {
+                        "Name": name,
+                        "Type": "A",
+                        "TTL": a_record['TTL'],
+                        "ResourceRecords": [
+                            {"Value": a_record['ResourceRecords'][0]['Value']}
+                        ]
+                    }
                 }
-            }
+            ]
         }
     })
 

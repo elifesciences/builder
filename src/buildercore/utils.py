@@ -324,8 +324,8 @@ def json_dumps(obj, dangerous=False, **kwargs):
 def lookup(data, path, default=0xDEADBEEF):
     """recursively navigates the `data` dict using the given dot-delimited `path`,
     raising a `KeyError` if a value is not present or `default`."""
-    if not isinstance(data, dict):
-        raise ValueError("lookup context must be a dictionary")
+    if not isinstance(data, dict) or not isinstance(data, list):
+        raise ValueError("lookup context must be a dictionary or a list, not %r" % type(data))
     if not isstr(path):
         raise ValueError("path must be a string, given %r", path)
     try:
@@ -334,7 +334,12 @@ def lookup(data, path, default=0xDEADBEEF):
             bit, rest = bits
         else:
             bit, rest = bits[0], []
-        val = data[bit]
+        if isinstance(data, list) and not isint(bit):
+            raise ValueError("data is a list but path is not an integer")
+        if isinstance(data, list):
+            val = data[int(bit)]
+        else:
+            val = data[bit]
         if rest:
             return lookup(val, rest, default)
         return val
