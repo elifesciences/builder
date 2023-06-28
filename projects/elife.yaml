@@ -7,7 +7,7 @@ defaults:
     salt: "3006" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
-        version: "0.13.7" # next version is "0.14.11" see `install-terraform.sh`
+        version: "0.14.11" # next version is "0.15.5" see `install-terraform.sh`
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "hashicorp/aws"
@@ -22,10 +22,10 @@ defaults:
             source: "fastly/fastly"
             version: "1.1.4"
         provider-vault:
-            source: "-/vault"
+            source: "hashicorp/vault"
             version: "3.14.0"
         provider-google:
-            source: "-/google"
+            source: "hashicorp/google"
             version: "2.20.3"
     # use false with a subdomain to assign internal addresses only
     domain: elifesciences.org
@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0bcf1ef84398a9f7e # GENERATED created from basebox--2004
+            ami: ami-07b05ce0f22dc51ef # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -1914,14 +1914,6 @@ fastly-logs:
     domain: false
     intdomain: false
     terraform:
-        # lsh@2023-04-25: got an esoteric error about missing credentials attempting to use
-        # "-/google" instead of "hashicorp/google".
-        # fixing providers part is part of this ticket:
-        # - https://github.com/elifesciences/issues/issues/8256
-        provider-vault:
-            source: "hashicorp/vault"
-        provider-google:
-            source: "hashicorp/google"
     aws:
         # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
@@ -1941,9 +1933,6 @@ fastly-logs:
                     generic_cdn:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     journal:
-                        time-partitioning:
-                            field: timestamp
-                            type: DAY
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
                     iiif:
                         schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
@@ -1965,6 +1954,15 @@ fastly-logs:
                     tables:
                         reproducible_document_stack:
                             schema: ./src/buildercore/bigquery/schemas/fastly-logs-201810.json
+        prod:
+            bigquery:
+                "{instance}":
+                    tables:
+                        journal:
+                            # lsh@2023-06-19: just prod apparently
+                            time-partitioning:
+                                field: timestamp
+                                type: DAY
 
 data-pipeline:
     description: Data consolidation project
@@ -2155,6 +2153,9 @@ firewall:
             waf:
                 ip-sets:
                     whitelist:
+                        # internal vpc traffic between journal nodes and api-gateway nodes
+                        # 'subnet-1d4eb46a', 'elife-public-subnet'
+                        - 10.0.2.0/24
                         # elsevier
                         - 203.56.241.128
                         - 54.166.39.175
@@ -2177,14 +2178,19 @@ firewall:
                     # lsh@2021-11-23: disabled https://github.com/elifesciences/issues/issues/7089
                     #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
                 custom-rules:
-                    - elife-Whitelist.json
-                    - elife-Blacklist.json
+                    - elife-Whitelist.json # priority 0
+                    - elife-Blacklist.json # priority 15
                     # lsh@2022-04-08: disabled, aws bot rules were ineffective, undermining this rule.
                     #- elife-DistributedSlowBot.json
-                    - elife-RateLimitExcessiveBotTraffic.json
+                    # lsh@2023-06-28: same intent, different ingress - via CDN and via prod--journal
+                    # using aggregate key to consolidate rules not possible as rule passes when any key in aggregate is absent.
+                    # - https://docs.aws.amazon.com/waf/latest/APIReference/API_RateBasedStatementCustomKey.html
+                    - elife-RateLimitExcessiveBotTrafficCDN.json # priority 19
+                    - elife-RateLimitExcessiveBotTraffic.json # priority 20
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
                         priority: 5
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-bot.html
                         excluded:
                             - CategoryAdvertising
                             - CategoryArchiver
@@ -2201,12 +2207,17 @@ firewall:
                             - SignalAutomatedBrowser
                             - SignalKnownBotDataCenter
                             - SignalNonBrowserUserAgent
-                    AWS/AWSManagedRulesAmazonIpReputationList:
-                        priority: 6
-                        excluded:
-                            -   AWSManagedIPReputationList
+                    # lsh@2023-06-27: disabled, managed rule doesn't support forwarded IP addresses
+                    # - https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-ip-rep.html
+                    # - https://github.com/elifesciences/issues/issues/8362
+                    #AWS/AWSManagedRulesAmazonIpReputationList:
+                    #    priority: 6
+                    #    excluded:
+                    #        -   AWSManagedIPReputationList
                     AWS/AWSManagedRulesCommonRuleSet:
                         priority: 7
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-baseline.html#aws-managed-rule-groups-baseline-crs
+                        # these rules use the ruleset action (block).
                         included:
                             - NoUserAgent_HEADER
                             - UserAgent_BadBots_HEADER
@@ -2214,7 +2225,8 @@ firewall:
                             - GenericLFI_URIPATH
                             - GenericRFI_URIPATH
                             - CrossSiteScripting_BODY
-                        # these rules do not use the ruleset action (block) but are counted and passed through for further processing
+                        # these rules do *not* use the ruleset action (block), but are 
+                        # counted and passed through for further processing.
                         excluded:
                             - CrossSiteScripting_COOKIE
                             - CrossSiteScripting_QUERYARGUMENTS
@@ -2234,6 +2246,7 @@ firewall:
                             - SizeRestrictions_URIPATH
                     AWS/AWSManagedRulesKnownBadInputsRuleSet:
                         priority: 8
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-baseline.html#aws-managed-rule-groups-baseline-known-bad-inputs
                         excluded:
                             - BadAuthToken_COOKIE_AUTHORIZATION
                             - ExploitablePaths_URIPATH
@@ -2241,18 +2254,21 @@ firewall:
                             - PROPFIND_METHOD
                     AWS/AWSManagedRulesLinuxRuleSet:
                         priority: 9
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-use-case.html#aws-managed-rule-groups-use-case-linux-os
                         excluded:
                             - LFI_BODY
                             - LFI_QUERYARGUMENTS
                             - LFI_URIPATH
                     AWS/AWSManagedRulesPHPRuleSet:
                         priority: 10
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-use-case.html#aws-managed-rule-groups-use-case-php-app
                         included:
                             - PHPHighRiskMethodsVariables_QUERYARGUMENTS
                             - PHPHighRiskMethodsVariables_BODY
                         excluded: []
                     AWS/AWSManagedRulesUnixRuleSet:
                         priority: 11
+                        # https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-use-case.html#aws-managed-rule-groups-use-case-posix-os
                         included:
                             - UNIXShellCommandsVariables_QUERYARGUMENTS
                             - UNIXShellCommandsVariables_BODY
