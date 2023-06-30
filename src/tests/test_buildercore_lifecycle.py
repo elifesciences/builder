@@ -1,9 +1,10 @@
+from moto import mock_route53
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 from pytz import utc
 from . import base
 from buildercore.core import parse_stackname
-from buildercore import cfngen, lifecycle
+from buildercore import core, cfngen, lifecycle
 
 
 class TestBuildercoreLifecycle(base.BaseCase):
@@ -123,3 +124,102 @@ class TestBuildercoreLifecycle(base.BaseCase):
             'DBInstanceStatus': state,
         }
         return instance
+
+@mock_route53
+def test_get_create_update_delete_dns_a_record():
+    zone_name = "example.org"
+    name = "bar--foo.example.org"
+    value = "1.2.3.4"
+
+    # set up a dummy hosted zone
+    conn = core.boto_client('route53')
+    dummy_hosted_zone = conn.create_hosted_zone(Name=zone_name, CallerReference='foo')
+    expected_zone_id = dummy_hosted_zone['HostedZone']['Id']
+
+    # ensure empty
+    expected_record = None
+    expected_name = "bar--foo.example.org."
+    expected = (expected_zone_id, expected_name, expected_record)
+    assert lifecycle._get_dns_a_record(zone_name, name) == expected
+
+    # create a record
+    lifecycle._update_dns_a_record(zone_name, name, value)
+    expected_record = {
+        "Name": "bar--foo.example.org.",
+        "ResourceRecords": [{"Value": "1.2.3.4"}],
+        "Type": "A",
+        "TTL": 600,
+    }
+    expected = (expected_zone_id, expected_name, expected_record)
+    assert lifecycle._get_dns_a_record(zone_name, name) == expected
+
+    # update a record
+    new_value = "4.3.2.1"
+    lifecycle._update_dns_a_record(zone_name, name, new_value)
+    expected_record = {
+        "Name": "bar--foo.example.org.",
+        "ResourceRecords": [{"Value": "4.3.2.1"}],
+        "Type": "A",
+        "TTL": 600,
+    }
+    expected = (expected_zone_id, expected_name, expected_record)
+    assert lifecycle._get_dns_a_record(zone_name, name) == expected
+
+    # delete a record
+    lifecycle._delete_dns_a_record(zone_name, name)
+    expected_record = None
+    expected = (expected_zone_id, expected_name, expected_record)
+    assert lifecycle._get_dns_a_record(zone_name, name) == expected
+
+@mock_route53
+def test_get_dns_a_record():
+    "boto3 route53 fetching of dns records is a little dodgy and will return similarly named records if we're not really careful"
+    zone_name = "example.org"
+
+    # set up a dummy hosted zone
+    conn = core.boto_client('route53')
+    dummy_hosted_zone = conn.create_hosted_zone(Name=zone_name, CallerReference='foo')
+    zone_id = dummy_hosted_zone['HostedZone']['Id']
+
+    # create some records
+    record_list = [
+        ("foo--bar.example.org", "1.2.3.4"),
+        ("foo--baz.example.org", "4.3.2.1"),
+    ]
+    for name, value in record_list:
+        lifecycle._update_dns_a_record(zone_name, name, value)
+
+    # dodgy example 1
+    name = "bar.example.org"
+    result = conn.list_resource_record_sets(HostedZoneId=zone_id, StartRecordName=name, StartRecordType="A", MaxItems="1")
+    expected_dodginess = [{'Name': 'foo--bar.example.org.',
+                           'ResourceRecords': [{'Value': '1.2.3.4'}],
+                           'TTL': 600,
+                           'Type': 'A'}]
+    assert result['ResourceRecordSets'] == expected_dodginess
+
+    # dodgy example 2
+    name = "example.org"
+    result = conn.list_resource_record_sets(HostedZoneId=zone_id, StartRecordName=name, StartRecordType="A", MaxItems="1")
+    expected_dodginess = [{'Name': 'example.org.',
+                           'ResourceRecords': [{'Value': 'ns-2048.awsdns-64.com'},
+                                               {'Value': 'ns-2049.awsdns-65.net'},
+                                               {'Value': 'ns-2050.awsdns-66.org'},
+                                               {'Value': 'ns-2051.awsdns-67.co.uk'}],
+                           'TTL': 172800,
+                           'Type': 'NS'}]
+    assert result['ResourceRecordSets'] == expected_dodginess
+
+    name = "bar.example.org"
+    expected_name = "bar.example.org."
+    expected_record = None
+    expected = (zone_id, expected_name, expected_record)
+    result = lifecycle._get_dns_a_record(zone_name, name)
+    assert result == expected
+
+    name = "example.org"
+    expected_name = "example.org."
+    expected_record = None
+    expected = (zone_id, expected_name, expected_record)
+    result = lifecycle._get_dns_a_record(zone_name, name)
+    assert result == expected

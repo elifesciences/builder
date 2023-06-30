@@ -366,3 +366,27 @@ def test_yaml_load():
         assert utils.yaml_load(given) == expected
         # stream
         assert utils.yaml_load(io.StringIO(given)) == expected
+
+def test_lookup__no_default():
+    cases = [
+        ({'foo': 'bar'}, "foo", "bar"),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo', {'bar': {'baz': 'bup'}}),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo.bar', {'baz': 'bup'}),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo.bar.baz', 'bup'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.0.bar', 'baz'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.1.bup', 'boo'),
+    ]
+    for context, path, expected in cases:
+        assert utils.lookup(context, path) == expected
+
+def test_lookup__with_default():
+    cases = [
+        ({}, 'foo', None),
+        ({}, 'foo.bar', None),
+        ({'foo': 'bar'}, "foo.bar.baz", None),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo.bar.baz', 'bup'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.0.bar', 'baz'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.1.bup', 'boo'),
+    ]
+    for context, path, expected in cases:
+        assert utils.lookup(context, path, None) == expected

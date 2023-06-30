@@ -276,7 +276,7 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     ec2_to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
-def _get_a_record(zone_name, name):
+def _get_dns_a_record(zone_name, name):
     # "zone_name" => "elifesciences.org"
     # "name" => "foo--journal.elifesciences.org"
     if not name.endswith('.'):
@@ -292,13 +292,18 @@ def _get_a_record(zone_name, name):
     # {'Name': 'continuumtest--lax.elifesciences.org.', 'Type': 'A', 'TTL': 60, 'ResourceRecords': [{'Value': '3.93.31.184'}]}
     a_record = first(a_record_list)
 
+    # `list_resource_record_sets` is *filtering* records, and not selecting a specific record, so when
+    # 'continuumtest--lax.elifesciences' doesn't exist the next record 'continuumtest--metrics.elifesciences' is returned!!
+    # same for record type.
+    # boto3 is just awful compared to boto2.
+
     if a_record and a_record['Name'] != name:
-        # `list_resource_record_sets` is *filtering* records, and not selecting a specific record, so when
-        # 'continuumtest--lax.elifesciences' doesn't exist the next record 'continuumtest--metrics.elifesciences' is returned!!
-        # boto3 is just awful compared to boto2.
         a_record = None
 
-    return zone_id, a_record
+    if a_record and a_record['Type'] != 'A':
+        a_record = None
+
+    return zone_id, name, a_record
 
 def _update_dns_a_record(zone_name, name, value):
     "creates or updates a Route53 DNS 'A' record `name` in hosted zone `zone_name` with `value`."
@@ -306,7 +311,7 @@ def _update_dns_a_record(zone_name, name, value):
     # "name" => "foo--journal.elifesciences.org"
     # "value" => "1.2.3.4"
 
-    zone_id, a_record = _get_a_record(zone_name, name)
+    zone_id, name, a_record = _get_dns_a_record(zone_name, name)
 
     if a_record and lookup(a_record, 'ResourceRecords.0.Value', None) == value:
         # "DNS record 'foo--journal.elifesciences.org.' already '1.2.3.4', update skipped"
@@ -387,7 +392,7 @@ def _delete_dns_a_record(zone_name, name):
     # "zone_name" => "elifesciences.org"
     # "name" => "foo--journal.elifesciences.org"
 
-    zone_id, a_record = _get_a_record(zone_name, name)
+    zone_id, name, a_record = _get_dns_a_record(zone_name, name)
 
     if not a_record:
         LOG.info("No DNS record to delete")
