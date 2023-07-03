@@ -277,8 +277,12 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
 def _get_dns_a_record(zone_name, name):
-    # "zone_name" => "elifesciences.org"
-    # "name" => "foo--journal.elifesciences.org"
+    """fetches a DNS 'A' type record from `zone_name` with name `name`.
+    Trailing periods are appended to `name` if not present.
+    Returns the `zone_name`'s ID, the modified `name` and the 'A' record returned by Boto3.
+    `zone_name` => "elifesciences.org"
+    `name` => "foo--journal.elifesciences.org"
+    """
     if not name.endswith('.'):
         name += "." # "foo--journal.elifesciences.org."
     r53 = core.boto_client('route53')
@@ -292,10 +296,9 @@ def _get_dns_a_record(zone_name, name):
     # {'Name': 'continuumtest--lax.elifesciences.org.', 'Type': 'A', 'TTL': 60, 'ResourceRecords': [{'Value': '3.93.31.184'}]}
     a_record = first(a_record_list)
 
-    # `list_resource_record_sets` is *filtering* records, and not selecting a specific record, so when
+    # `list_resource_record_sets` is *sorting* records, and not selecting or even filtering to a specific record, so when
     # 'continuumtest--lax.elifesciences' doesn't exist the next record 'continuumtest--metrics.elifesciences' is returned!!
-    # same for record type.
-    # boto3 is just awful compared to boto2.
+    # same behaviour for record type, so if the named record doesn't exist, the NS will be returned. crazy.
 
     if a_record and a_record['Name'] != name:
         a_record = None
@@ -306,11 +309,11 @@ def _get_dns_a_record(zone_name, name):
     return zone_id, name, a_record
 
 def _update_dns_a_record(zone_name, name, value):
-    "creates or updates a Route53 DNS 'A' record `name` in hosted zone `zone_name` with `value`."
-    # "zone_name" => "elifesciences.org"
-    # "name" => "foo--journal.elifesciences.org"
-    # "value" => "1.2.3.4"
-
+    """creates or updates a Route53 DNS 'A' record `name` in `zone_name` with `value`.
+    `zone_name` => "elifesciences.org"
+    `name` => "foo--journal.elifesciences.org"
+    `value` => "1.2.3.4"
+    """
     zone_id, name, a_record = _get_dns_a_record(zone_name, name)
 
     if a_record and lookup(a_record, 'ResourceRecords.0.Value', None) == value:
@@ -318,21 +321,20 @@ def _update_dns_a_record(zone_name, name, value):
         LOG.info("DNS record %r already %r, update skipped", name, value)
         return
 
-    if not a_record:
+    if a_record:
+        # "Updating DNS record 'foo--journal.elifesciences.org.' to '1.2.3.4'"
+        LOG.info("Updating DNS record %r to %r", name, value)
+        ttl = a_record['TTL']
+
+    else:
         # lsh@2021-08-02: record doesn't exist. This case almost never happens.
         # It *did* happen when another journal instance was brought up using the `prod` config.
         # It overwrote the DNS entries for `journal--prod` and then destroyed them when it rolled back.
         # `lifecycle.update_dns` is now the recommended way to fix broken DNS.
-        # "DNS record 'foo--journal.elifesciences.org.' does not exist!"
-        LOG.warning("DNS record %r does not exist!", name)
 
         # "Creating DNS record 'foo--journal.elifesciences.org.' with '1.2.3.4'"
         LOG.info("Creating DNS record %r with %r", name, value)
-    else:
-        # "Updating DNS record 'foo--journal.elifesciences.org.' to '1.2.3.4'"
-        LOG.info("Updating DNS record %r to %r", name, value)
-
-    ttl = a_record['TTL'] if a_record else 600 # seconds, boto2 default
+        ttl = 600 # seconds, boto2 default
 
     core.boto_client('route53').change_resource_record_sets(**{
         "HostedZoneId": zone_id,
@@ -388,10 +390,10 @@ def update_dns(stackname):
             _update_dns_a_record(context['domain'], context['full_hostname'], node.public_ip_address)
 
 def _delete_dns_a_record(zone_name, name):
-    "deletes a Route53 DNS 'A' record `name` in hosted zone `zone_name`."
-    # "zone_name" => "elifesciences.org"
-    # "name" => "foo--journal.elifesciences.org"
-
+    """deletes a Route53 DNS 'A' record `name` in hosted zone `zone_name`.
+    `zone_name` => "elifesciences.org"
+    `name` => "foo--journal.elifesciences.org"
+    """
     zone_id, name, a_record = _get_dns_a_record(zone_name, name)
 
     if not a_record:

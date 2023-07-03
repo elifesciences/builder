@@ -165,15 +165,35 @@ def test_get_create_update_delete_dns_a_record():
     expected = (expected_zone_id, expected_name, expected_record)
     assert lifecycle._get_dns_a_record(zone_name, name) == expected
 
+    # update is idempotent
+    new_value = "4.3.2.1"
+    lifecycle._update_dns_a_record(zone_name, name, new_value)
+    expected_record = {
+        "Name": "bar--foo.example.org.",
+        "ResourceRecords": [{"Value": "4.3.2.1"}],
+        "Type": "A",
+        "TTL": 600,
+    }
+    expected = (expected_zone_id, expected_name, expected_record)
+    assert lifecycle._get_dns_a_record(zone_name, name) == expected
+
     # delete a record
     lifecycle._delete_dns_a_record(zone_name, name)
     expected_record = None
     expected = (expected_zone_id, expected_name, expected_record)
     assert lifecycle._get_dns_a_record(zone_name, name) == expected
 
+    # delete an unknown record
+    name = "baz--bar.example.org"
+    lifecycle._delete_dns_a_record(zone_name, name)
+    expected_name = "baz--bar.example.org."
+    expected_record = None
+    expected = (expected_zone_id, expected_name, expected_record)
+    assert lifecycle._get_dns_a_record(zone_name, name) == expected
+
 @mock_route53
 def test_get_dns_a_record():
-    "boto3 route53 fetching of dns records is a little dodgy and will return similarly named records if we're not really careful"
+    "boto3 route53 fetching of dns records is a little dodgy and will return similar/adjacent records if we're not really careful"
     zone_name = "example.org"
 
     # set up a dummy hosted zone
@@ -210,6 +230,7 @@ def test_get_dns_a_record():
                            'Type': 'NS'}]
     assert result['ResourceRecordSets'] == expected_dodginess
 
+    # safer example 1
     name = "bar.example.org"
     expected_name = "bar.example.org."
     expected_record = None
@@ -217,6 +238,7 @@ def test_get_dns_a_record():
     result = lifecycle._get_dns_a_record(zone_name, name)
     assert result == expected
 
+    # safer example 2
     name = "example.org"
     expected_name = "example.org."
     expected_record = None
