@@ -8,7 +8,6 @@ python_version = "3.8"
 
 [packages]
 backoff = "~=1.5"
-boto = "~=2.48"
 boto3 = "~=1.6"
 deepmerge = "~=1.1"
 "kids.cache" = "==0.0.7"

@@ -366,3 +366,63 @@ def test_yaml_load():
         assert utils.yaml_load(given) == expected
         # stream
         assert utils.yaml_load(io.StringIO(given)) == expected
+
+def test_is_greater_than_zero():
+    cases = [
+        (-1, False),
+        (0, True),
+        (1, True),
+        ("-1", False),
+        ("0", True),
+        ("1", True),
+    ]
+    for given, expected in cases:
+        assert utils.is_greater_than_zero(given) == expected
+
+def test_lookup__no_default():
+    cases = [
+        ({'foo': 'bar'}, "foo", "bar"),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo', {'bar': {'baz': 'bup'}}),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo.bar', {'baz': 'bup'}),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo.bar.baz', 'bup'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.0.bar', 'baz'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.1.bup', 'boo'),
+    ]
+    for context, path, expected in cases:
+        assert utils.lookup(context, path) == expected
+
+def test_lookup__with_default():
+    cases = [
+        ({}, 'foo', None),
+        ({}, 'foo.bar', None),
+        ({'foo': 'bar'}, "", None),
+        ({'foo': {'bar': {'baz': 'bup'}}}, 'foo.bar.baz', 'bup'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.0.bar', 'baz'),
+        ({'foo': [{'bar': 'baz'}, {'bup': 'boo'}]}, 'foo.1.bup', 'boo'),
+    ]
+    for context, path, expected in cases:
+        assert utils.lookup(context, path, None) == expected, path
+
+def test_lookup__bad_values():
+    cases = [
+
+        # the value '12' is too large for list with 3 items
+        ({'foo': ["a", "b", "c"]}, "foo.12"),
+
+        # the value '-1' is negative
+        ({'foo': ["a", "b", "c"]}, "foo.-1"),
+
+        # the value 'bar' is a string, not a dictionary, and cannot be inspected any further.
+        ({'foo': 'bar'}, "foo.bar.baz"),
+        # the value 'bar' is a string, not a list, and cannot be inspected any further.
+        ({'foo': 'bar'}, "foo.0"),
+        # bad path types
+        ({'foo': 'bar'}, None),
+        ({'foo': 'bar'}, 0),
+        ({'foo': 'bar'}, []),
+        ({'foo': 'bar'}, {}),
+
+    ]
+    for context, path in cases:
+        with pytest.raises(ValueError):
+            utils.lookup(context, path, None)

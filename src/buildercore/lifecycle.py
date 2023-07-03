@@ -7,10 +7,9 @@ import logging
 import re
 import backoff
 from .command import CommandException, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError
-import boto # route53 boto2 > route53 boto3
 from . import config, core, command
 from .core import boto_conn, find_ec2_instances, find_rds_instances, current_ec2_node_id, NoPublicIps, NoRunningInstances
-from .utils import call_while, ensure, lmap
+from .utils import call_while, ensure, lmap, first, lookup
 from .context_handler import load_context
 
 LOG = logging.getLogger(__name__)
@@ -23,17 +22,6 @@ def _ec2_connection(stackname):
 
 def _rds_connection(stackname):
     return boto_conn(stackname, 'rds', client=True)
-
-def _r53_connection():
-    """returns a *boto2* route53 connection.
-    route53 for boto3 is *very* poor and much too low-level with no 'resource' construct (yet?). It should be avoided.
-
-    http://boto.cloudhackers.com/en/latest/ref/route53.html
-
-    lsh@2021-08: boto3 still hasn't got it's higher level 'resource' interface yet, but
-    it's 'client' interface looks more fleshed out now than it did when boto3 was first
-    introduced. Consider upgrading."""
-    return boto.connect_route53() # no region necessary
 
 def _node_id(node):
     name = core.tags2dict(node.tags)['Name']
@@ -288,26 +276,84 @@ def stop_if_running_for(stackname, minimum_minutes=55):
     ec2_to_be_stopped = [node_id for (node_id, running_time) in running_times.items() if running_time >= minimum_running_time]
     _stop(stackname, ec2_to_be_stopped, rds_to_be_stopped=[])
 
+def _get_dns_a_record(zone_name, name):
+    """fetches a DNS 'A' type record from `zone_name` with name `name`.
+    Trailing periods are appended to `name` if not present.
+    Returns the `zone_name`'s ID, the modified `name` and the 'A' record returned by Boto3.
+    `zone_name` => "elifesciences.org"
+    `name` => "foo--journal.elifesciences.org"
+    """
+    if not name.endswith('.'):
+        name += "." # "foo--journal.elifesciences.org."
+    r53 = core.boto_client('route53')
+    zone_id = r53.list_hosted_zones_by_name(DNSName=zone_name)['HostedZones'][0]['Id']
+    result = r53.list_resource_record_sets(HostedZoneId=zone_id, StartRecordName=name, StartRecordType="A", MaxItems="1")
+    a_record_list = result['ResourceRecordSets']
+
+    # "zero or one 'A' records expected for 'foo--journal.elifesciences.org.', found 2"
+    ensure(len(a_record_list) < 2, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
+
+    # {'Name': 'continuumtest--lax.elifesciences.org.', 'Type': 'A', 'TTL': 60, 'ResourceRecords': [{'Value': '3.93.31.184'}]}
+    a_record = first(a_record_list)
+
+    # `list_resource_record_sets` is *sorting* records, and not selecting or even filtering to a specific record, so when
+    # 'continuumtest--lax.elifesciences' doesn't exist the next record 'continuumtest--metrics.elifesciences' is returned!!
+    # same behaviour for record type, so if the named record doesn't exist, the NS will be returned. crazy.
+
+    if a_record and a_record['Name'] != name:
+        a_record = None
+
+    if a_record and a_record['Type'] != 'A':
+        a_record = None
+
+    return zone_id, name, a_record
+
 def _update_dns_a_record(zone_name, name, value):
-    # "zone_name" => "elifesciences.org"
-    # "name" => "foo--journal.elifesciences.org"
-    # "value" => "1.2.3.4"
-    zone = _r53_connection().get_zone(zone_name)
-    a_record = zone.get_a(name)
+    """creates or updates a Route53 DNS 'A' record `name` in `zone_name` with `value`.
+    `zone_name` => "elifesciences.org"
+    `name` => "foo--journal.elifesciences.org"
+    `value` => "1.2.3.4"
+    """
+    zone_id, name, a_record = _get_dns_a_record(zone_name, name)
+
+    if a_record and lookup(a_record, 'ResourceRecords.0.Value', None) == value:
+        # "DNS record 'foo--journal.elifesciences.org.' already '1.2.3.4', update skipped"
+        LOG.info("DNS record %r already %r, update skipped", name, value)
+        return
+
     if a_record:
-        if a_record.resource_records == [value]:
-            LOG.info("No need to update DNS record %s (already %s)", name, value)
-        else:
-            LOG.info("Updating DNS record %s to %s", name, value)
-            zone.update_a(name, value)
+        # "Updating DNS record 'foo--journal.elifesciences.org.' to '1.2.3.4'"
+        LOG.info("Updating DNS record %r to %r", name, value)
+        ttl = a_record['TTL']
+
     else:
         # lsh@2021-08-02: record doesn't exist. This case almost never happens.
         # It *did* happen when another journal instance was brought up using the `prod` config.
         # It overwrote the DNS entries for `journal--prod` and then destroyed them when it rolled back.
         # `lifecycle.update_dns` is now the recommended way to fix broken DNS.
-        LOG.warning("DNS record %s does not exist!", name)
-        LOG.info("Creating DNS record %s with %s", name, value)
-        zone.add_a(name, value)
+
+        # "Creating DNS record 'foo--journal.elifesciences.org.' with '1.2.3.4'"
+        LOG.info("Creating DNS record %r with %r", name, value)
+        ttl = 600 # seconds, boto2 default
+
+    core.boto_client('route53').change_resource_record_sets(**{
+        "HostedZoneId": zone_id,
+        "ChangeBatch": {
+            "Changes": [
+                {
+                    "Action": "UPSERT",
+                    "ResourceRecordSet": {
+                        "Name": name,
+                        "Type": "A",
+                        "TTL": ttl,
+                        "ResourceRecords": [
+                            {"Value": value}
+                        ]
+                    }
+                }
+            ]
+        }
+    })
 
 def update_dns(stackname):
     context = load_context(stackname)
@@ -344,12 +390,39 @@ def update_dns(stackname):
             _update_dns_a_record(context['domain'], context['full_hostname'], node.public_ip_address)
 
 def _delete_dns_a_record(zone_name, name):
-    zone = _r53_connection().get_zone(zone_name)
-    if zone.get_a(name):
-        LOG.info("Deleting DNS record %s", name)
-        zone.delete_a(name)
-    else:
+    """deletes a Route53 DNS 'A' record `name` in hosted zone `zone_name`.
+    `zone_name` => "elifesciences.org"
+    `name` => "foo--journal.elifesciences.org"
+    """
+    zone_id, name, a_record = _get_dns_a_record(zone_name, name)
+
+    if not a_record:
         LOG.info("No DNS record to delete")
+        return
+
+    # "expecting 1 resource record, found: [{'Value': '4.3.2.1'}, {'Value': '1.2.3.4'}]"
+    ensure(len(a_record['ResourceRecords']) == 1, "expecting 1 resource record, found: %s" % a_record['ResourceRecords'])
+
+    # "Deleting DNS record 'foo--journal.elifesciences.org'
+    LOG.info("Deleting DNS record %r", name)
+    core.boto_client('route53').change_resource_record_sets(**{
+        "HostedZoneId": zone_id,
+        "ChangeBatch": {
+            "Changes": [
+                {
+                    "Action": "DELETE",
+                    "ResourceRecordSet": {
+                        "Name": name,
+                        "Type": "A",
+                        "TTL": a_record['TTL'],
+                        "ResourceRecords": [
+                            {"Value": a_record['ResourceRecords'][0]['Value']}
+                        ]
+                    }
+                }
+            ]
+        }
+    })
 
 def delete_dns(stackname):
     context = load_context(stackname)

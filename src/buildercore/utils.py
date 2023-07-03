@@ -45,6 +45,10 @@ def deepcopy(x):
 def isint(v):
     return str(v).lstrip('-+').isdigit()
 
+def is_greater_than_zero(v):
+    "returns `True` if `v` is an integer and greater than 0"
+    return isint(v) and int(v) > -1
+
 def isstr(v):
     return isinstance(v, str)
 
@@ -324,17 +328,28 @@ def json_dumps(obj, dangerous=False, **kwargs):
 def lookup(data, path, default=0xDEADBEEF):
     """recursively navigates the `data` dict using the given dot-delimited `path`,
     raising a `KeyError` if a value is not present or `default`."""
-    if not isinstance(data, dict):
-        raise ValueError("lookup context must be a dictionary")
+    if not isinstance(data, dict) and not isinstance(data, list):
+        raise ValueError("lookup context must be a dictionary or a list, not %r" % type(data))
     if not isstr(path):
-        raise ValueError("path must be a string, given %r", path)
+        raise ValueError("path must be a string, given %r of type %r", path, type(path))
     try:
-        bits = path.split('.', 1)
-        if len(bits) > 1:
-            bit, rest = bits
+        path_bit_list = path.split('.', 1)
+        if len(path_bit_list) > 1:
+            path_bit, rest = path_bit_list
         else:
-            bit, rest = bits[0], []
-        val = data[bit]
+            path_bit, rest = path_bit_list[0], []
+        if isinstance(data, list):
+            if not is_greater_than_zero(path_bit):
+                # "data is a list but path bit is not a positive integer: foo"
+                raise ValueError("data is a list but path bit is not a positive integer: %r" % path_bit)
+            path_idx = int(path_bit)
+            data_len = len(data) - 1
+            if path_idx > data_len:
+                # "path index '12' out of range for data of size '3'"
+                raise ValueError("path index %r out of range for data of size %r" % (path_idx, data_len))
+            val = data[path_idx]
+        else:
+            val = data[path_bit]
         if rest:
             return lookup(val, rest, default)
         return val
