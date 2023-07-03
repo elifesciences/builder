@@ -11,7 +11,7 @@ from buildercore.command import settings
 from buildercore import config, project
 from buildercore import bootstrap, cfngen, lifecycle, core
 import cfn
-import imp
+import importlib
 # import pytest # see ../conftest.py
 
 LOG = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def switch_in_test_settings(projects_files=None):
 def switch_out_test_settings():
     # clear any caches and reload the config module
     project._project_map.cache_clear()
-    imp.reload(config)
+    importlib.reload(config)
 
 def test_project_list():
     switch_in_test_settings()
