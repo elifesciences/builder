@@ -17,7 +17,9 @@ python-slugify = "~=1.2"
 # lsh@2023-06: python-terraform is in a bad way.
 # it's no longer maintained and it's most recent release didn't make it to pypi.
 #python-terraform = "~=0.10"
-python-terraform = {editable = false, ref = "0.14.0", git = "https://github.com/beelit94/python-terraform.git"}
+# lsh@2023-07: dda-python-terraform is a fork of python-terraform
+#python-terraform = {editable = false, ref = "0.14.0", git = "https://github.com/beelit94/python-terraform.git"}
+dda-python-terraform = "~=2.1.1"
 pytz = "*"
 PyYAML = "~=5.4"
 "ruamel.yaml" = "==0.17.*"
