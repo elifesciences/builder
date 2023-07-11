@@ -1,7 +1,7 @@
 from collections import namedtuple, OrderedDict
 import os, re, shutil, json
 from os.path import join
-from python_terraform import Terraform, IsFlagged, IsNotFlagged
+from dda_python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .context_handler import only_if, load_context
 from .utils import ensure, mkdir_p, lookup, updatein
 from . import aws, fastly, config
@@ -1575,12 +1575,15 @@ def init(stackname, context):
         fp.write(context['terraform']['version'])
 
     terraform = Terraform(**{
-        'working_dir': join(config.TERRAFORM_DIR, stackname), # "./.cfn/terraform/project--env/"
-        'terraform_bin_path': config.TERRAFORM_BIN_PATH, # "/path/to/builder/.tfenv/bin/terraform"
+        # "/path/to/builder/.cfn/terraform/project--env/"
+        'working_dir': join(config.PROJECT_PATH, config.TERRAFORM_DIR, stackname),
+        # "/path/to/builder/.tfenv/bin/terraform"
+        'terraform_bin_path': config.TERRAFORM_BIN_PATH,
+        'terraform_semantic_version': context['terraform']['version'],
     })
 
     try:
-        rc, stdout, _ = terraform.cmd("version")
+        rc, stdout, _ = terraform.cmd({'chdir': terraform.working_dir}, "version")
         ensure(rc == 0, "failed to query Terraform for it's version.")
         LOG.info("\n-----------\n" + stdout + "-----------")
     except ValueError:

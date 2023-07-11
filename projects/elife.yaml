@@ -7,7 +7,7 @@ defaults:
     salt: "3006" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
-        version: "0.14.11" # next version is "0.15.5" see `install-terraform.sh`
+        version: "0.15.5" # next version is "1.0.11" see `install-terraform.sh`
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "hashicorp/aws"
@@ -1913,7 +1913,6 @@ fastly-logs:
     description: Fastly CDN access logs
     domain: false
     intdomain: false
-    terraform:
     aws:
         # unique because:
         # - 'gcp.bigquery.{instance}.project' is static.
@@ -2225,7 +2224,7 @@ firewall:
                             - GenericLFI_URIPATH
                             - GenericRFI_URIPATH
                             - CrossSiteScripting_BODY
-                        # these rules do *not* use the ruleset action (block), but are 
+                        # these rules do *not* use the ruleset action (block), but are
                         # counted and passed through for further processing.
                         excluded:
                             - CrossSiteScripting_COOKIE
