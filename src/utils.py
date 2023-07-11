@@ -115,14 +115,21 @@ def uin(param, default=0xDEADBEEF):
         return userin
 
 
-def confirm(message):
+def confirm(message, type_to_confirm=None):
     if config.BUILDER_NON_INTERACTIVE:
         LOG.info('non-interactive mode, confirming automatically')
-        return
+        return True
 
     errcho(message)
-    errcho('press Enter to confirm (ctrl-c to quit)')
-    get_input('')
+    if not type_to_confirm:
+        errcho('press Enter to confirm (ctrl-c to quit)')
+        get_input('')
+        return True
+
+    errcho('type %r to continue (ctrl-c to quit)\n' % type_to_confirm)
+    uinput = get_input('> ')
+    errcho('')
+    return uinput  == type_to_confirm
 
 def walk_nested_struct(val, fn):
     "walks a potentially nested structure, calling `fn` on each value it encounters"
