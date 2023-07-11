@@ -129,6 +129,7 @@ TASK_LIST = [
     report.ec2_node_count,
     # see: https://alfred.elifesciences.org/job/process/job/process-project-security-updates/
     report.process_project_security_updates,
+    report.ri_recommendations,
 
     checks.stack_exists,
     tasks.delete_all_amis_to_prune,
