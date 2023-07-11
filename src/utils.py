@@ -129,7 +129,7 @@ def confirm(message, type_to_confirm=None):
     errcho('type %r to continue (ctrl-c to quit)\n' % type_to_confirm)
     uinput = get_input('> ')
     errcho('')
-    return uinput  == type_to_confirm
+    return uinput == type_to_confirm
 
 def walk_nested_struct(val, fn):
     "walks a potentially nested structure, calling `fn` on each value it encounters"
