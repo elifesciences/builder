@@ -745,6 +745,7 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Delete',
+                'DependsOn': ['WidgetsJustAccessProdBucketPolicy'],
                 'Properties': {
                     'BucketName': 'widgets-just-access-prod',
                     'OwnershipControls': {'Rules': [{'ObjectOwnership': 'BucketOwnerEnforced'}]},
@@ -797,6 +798,7 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Delete',
+
                 'Properties': {
                     'BucketEncryption': {
                         'ServerSideEncryptionConfiguration': [
