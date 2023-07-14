@@ -41,8 +41,9 @@ class TestUtils(base.BaseCase):
         for data, tbr, expected in expected_list:
             self.assertEqual(utils.rmval(data, *tbr), expected)
 
+    @patch('sys.stderr')
     @patch('utils.get_input', return_value='1')
-    def test_pick(self, get_input):
+    def test_pick(self, _, get_input):
         value = utils._pick('project', ['lax', 'bot'], '/tmp/cache')
         self.assertEqual('lax', value)
 
@@ -134,3 +135,13 @@ def test_mkdirp_is_idempotent_on_existing_directories(tempdir):
     assert os.path.exists(path)
     utils.mkdirp(path)
     assert os.path.exists(path)
+
+@patch('sys.stderr')
+@patch('buildercore.config.BUILDER_NON_INTERACTIVE', False)
+def test_confirm(_):
+    with patch('utils.get_input', return_value=''):
+        assert utils.confirm('which one is the any key?') is True
+    with patch('utils.get_input', return_value='verified'):
+        assert utils.confirm('my voice is my passport. verify me.', type_to_confirm='verified') is True
+    with patch('utils.get_input', return_value='who?'):
+        assert utils.confirm('my voice is my passport. verify me.', type_to_confirm='verified') is False

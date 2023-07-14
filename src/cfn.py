@@ -87,7 +87,8 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
     LOG.info("Terraform delta: %s", delta.terraform)
 
     # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
-    utils.confirm('Confirming changes to CloudFormation and Terraform templates?')
+    if not utils.confirm('Confirming changes to CloudFormation and Terraform templates?', 'confirm'):
+        raise TaskExit("failed to confirm")
 
     context_handler.write_context(stackname, context)
 

@@ -677,7 +677,7 @@ def render_s3(context, template):
         ))
 
 def _add_public_read_list_bucket_policy(template, bucket_title, bucket_name):
-    policy = {
+    policy_document = {
         "Version": "2012-10-17",
         "Statement": [
             {
@@ -705,11 +705,14 @@ def _add_public_read_list_bucket_policy(template, bucket_title, bucket_name):
             }
         ]
     }
-    template.add_resource(s3.BucketPolicy(
+    policy = s3.BucketPolicy(
         "%sPolicy" % bucket_title, # "foo-elife-published" => "FooElifePublishedPolicy"
         Bucket=bucket_name,
-        PolicyDocument=policy
-    ))
+        PolicyDocument=policy_document,
+        # force creation order to remove any ambiguity about permissions.
+        DependsOn=bucket_title
+    )
+    template.add_resource(policy)
 
 def _add_public_read_only_bucket_policy(template, bucket_title, bucket_name):
     policy = {
