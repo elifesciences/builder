@@ -298,7 +298,10 @@ def find_all_rds_instances():
     "returns a list of DBInstance dicts, straight from boto."
     # warning: not paginated, ~18 results at time of writing.
     conn = boto3.client('rds', region_name=find_region())
-    return conn.describe_db_instances()['DBInstances']
+    results = conn.describe_db_instances(MaxRecords=100)['DBInstances']
+    for i, row in enumerate(results):
+        results[i]['TagsDict'] = tags2dict(row['TagList'])
+    return results
 
 #
 #
