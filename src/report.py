@@ -1,4 +1,3 @@
-import json
 import dateutil.parser
 from functools import partial
 from datetime import datetime, timedelta
@@ -370,14 +369,8 @@ def all_cloudformation_instances():
     "All (steady) Cloudformation stacks."
     return [stack[0] for stack in core.steady_aws_stacks(core.find_region())]
 
-def _ec2_ri():
-    cache_file = 'ec2-ri.json'
-    if os.path.exists(cache_file):
-        raw_data = json.load(open(cache_file, 'r'))
-    else:
-        raw_data = core.ec2_instance_list(state=None)
-        open(cache_file, 'w').write(json.dumps(raw_data, default=str))
-
+def _ri_recommendations_ec2():
+    "returns a Reserved Instance purchase recommendation for EC2 instances"
     lu = {
         't3.nano': 1,
         't3.micro': 2,
@@ -387,21 +380,21 @@ def _ec2_ri():
         't3.xlarge': 32,
         't3.2xlarge': 64
     }
-
-    rows = []
+    raw_data = core.ec2_instance_list(state=None)
+    row_list = []
     for ec2 in raw_data:
-        inst = ec2['InstanceType'] # t3.large
-        rows.append({
+        inst = ec2['InstanceType'] # "t3.large"
+        if inst not in lu:
+            # only consider the t3 family
+            continue
+        row_list.append({
             'Name': ec2['TagsDict'].get('Name'),
             'InstanceType': inst,
-            'Env': ec2['TagsDict'].get('Environment'), # prod, staging, continuumtest, etc
-            'ComputeUnits': lu[inst] if inst in lu else -999
+            'Env': ec2['TagsDict'].get('Environment'), # "prod", "staging", "continuumtest", etc
+            'ComputeUnits': lu[inst]
         })
 
-    # we're only considering the t3 family
-    t3_row_list = list(filter(lambda row: row['InstanceType'].startswith('t3.'), rows))
-
-    # we're only considering instances in environments that are always on.
+    # only consider instances in environments that are always on.
     # ci, end2end and adhoc instances are excluded.
     always_on_envs = [
         'prod',
@@ -412,21 +405,21 @@ def _ec2_ri():
         'flux-test',
         'flux-prod',
     ]
-    row_list, ignored_rows = core_utils.splitfilter(lambda row: row['Env'] in always_on_envs, t3_row_list)
+    included_rows, excluded_rows = core_utils.splitfilter(lambda row: row['Env'] in always_on_envs, row_list)
 
     result = {
         'summary': {
-            'total-ec2-instances': len(rows),
-            'total-t3-ec2-instances': len(t3_row_list), # good to compare to overal total
-            'total-always-on-t3-ec2-instances': len(row_list),
+            'total-ec2-instances': len(raw_data),
+            'total-t3-ec2-instances': len(row_list), # good to compare to overal total
+            'total-always-on-t3-ec2-instances': len(included_rows),
             #'instance-type-breakdown': core_utils.mkidx(lambda row: row['InstanceType'], row_list),
             #'env-type-breakdown': core_utils.mkidx(lambda row: row['Env'], row_list),
 
-            'total-t3-units': sum([row['ComputeUnits'] for row in t3_row_list]),
-            'total-always-on-t3-units': sum(row['ComputeUnits'] for row in row_list),
+            'total-t3-units': sum([row['ComputeUnits'] for row in row_list]),
+            'total-always-on-t3-units': sum(row['ComputeUnits'] for row in included_rows),
         },
-        #'rows-included': row_list,
-        #'rows-excluded': ignored_rows,
+        #'rows-included': included_rows,
+        #'rows-excluded': excluded_rows,
     }
 
     # "253 * t3.nano"
@@ -434,42 +427,34 @@ def _ec2_ri():
 
     return result
 
-def _rds_ri():
-    cache_file = 'ri-rds.json'
-    if not os.path.exists(cache_file):
-        raw_data = core.find_all_rds_instances()
-        open(cache_file, 'w').write(json.dumps(raw_data, default=str))
-    else:
-        raw_data = json.load(open(cache_file, 'r'))
-
+def _ri_recommendations_rds():
+    "returns a Reserved Instance purchase recommendation for RDS instances"
     lu = {
-        'db.t3.nano': 1,  # not available for reservation
-        'db.t3.micro': 2, # so we use this as our multipler
+        #'db.t3.nano': 1,  # not available for reservation
+        'db.t3.micro': 2,  # so use this for multipler
         'db.t3.small': 4,
         'db.t3.medium': 8,
         'db.t3.large': 16,
         'db.t3.xlarge': 32,
         'db.t3.2xlarge': 64
     }
-
-    rows = []
+    raw_data = core.find_all_rds_instances()
+    row_list = []
     for rds in raw_data:
-        inst = rds['DBInstanceClass'] # db.t3.micro
+        inst = rds['DBInstanceClass'] # "db.t3.micro"
         ensure(inst in lu, "instance type not found: %s" % inst)
-        rows.append({
+        row_list.append({
             'Name': rds['DBInstanceIdentifier'],
-            # these are used directly to make reservations
             'InstanceType': inst,
-            'Engine': rds['Engine'], # postgres
+            'Engine': rds['Engine'], # "postgres"
             'MultiAZ': rds['MultiAZ'], # true/false
-            'AZ': rds['AvailabilityZone'], # us-east-1
-
+            'AZ': rds['AvailabilityZone'], # "us-east-1"
             'Env': rds['TagsDict'].get('Environment'),
             'ComputeUnits': lu[inst] / lu['db.t3.micro']
         })
 
-    # erm, RDS instances are always on because they take too long to turn off...
-    included_rows, excluded_rows = core_utils.splitfilter(lambda row: True, rows)
+    # RDS instances are always on because they take too long to turn off
+    included_rows, excluded_rows = core_utils.splitfilter(lambda row: True, row_list)
 
     result = {
         'summary': {
@@ -500,6 +485,6 @@ def _rds_ri():
 @configured_report(as_list=False, output_format='json')
 def ri_recommendations():
     return {
-        'ec2': _ec2_ri(),
-        'rds': _rds_ri()
+        'ec2': _ri_recommendations_ec2(),
+        'rds': _ri_recommendations_rds(),
     }
