@@ -763,7 +763,7 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(
             {
                 'Type': 'AWS::S3::BucketPolicy',
-                'DependsOn': {'Ref': 'WidgetsJustAccessProdBucket'},
+                'DependsOn': 'WidgetsJustAccessProdBucket',
                 'Properties': {
                     'Bucket': 'widgets-just-access-prod',
 

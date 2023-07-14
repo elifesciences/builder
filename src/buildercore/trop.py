@@ -710,7 +710,7 @@ def _add_public_read_list_bucket_policy(template, bucket_title, bucket_name):
         Bucket=bucket_name,
         PolicyDocument=policy_document,
         # force creation order to remove any ambiguity about permissions.
-        DependsOn=Ref(bucket_title)
+        DependsOn=bucket_title
     )
     template.add_resource(policy)
 
