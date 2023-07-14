@@ -745,7 +745,6 @@ class TestBuildercoreTrop(base.BaseCase):
             {
                 'Type': 'AWS::S3::Bucket',
                 'DeletionPolicy': 'Delete',
-                'DependsOn': ['WidgetsJustAccessProdBucketPolicy'],
                 'Properties': {
                     'BucketName': 'widgets-just-access-prod',
                     'OwnershipControls': {'Rules': [{'ObjectOwnership': 'BucketOwnerEnforced'}]},
@@ -764,8 +763,10 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(
             {
                 'Type': 'AWS::S3::BucketPolicy',
+                'DependsOn': {'Ref': 'WidgetsJustAccessProdBucket'},
                 'Properties': {
                     'Bucket': 'widgets-just-access-prod',
+
                     'PolicyDocument': {
                         "Version": "2012-10-17",
                         "Statement": [

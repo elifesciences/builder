@@ -625,7 +625,6 @@ def render_s3(context, template):
         props = {
             'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize(),
             'Tags': s3.Tags(**aws.generic_tags(context, name=False)),
-            'DependsOn': [],
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:
@@ -657,6 +656,7 @@ def render_s3(context, template):
             _add_public_read_only_bucket_policy(template, bucket_title, bucket_name)
 
         if context['s3'][bucket_name]['public']:
+            _add_public_read_list_bucket_policy(template, bucket_title, bucket_name)
             # disable to allow public IAM policies to work
             # - https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket-publicaccessblockconfiguration.html#cfn-s3-bucket-publicaccessblockconfiguration-restrictpublicbuckets
             props['PublicAccessBlockConfiguration'] = s3.PublicAccessBlockConfiguration(
@@ -666,15 +666,9 @@ def render_s3(context, template):
             props['OwnershipControls'] = s3.OwnershipControls(
                 Rules=[s3.OwnershipControlsRule(ObjectOwnership="BucketOwnerEnforced")]
             )
-            # describe the actions the public are allowed on this bucket.
-            public_policy = _add_public_read_list_bucket_policy(template, bucket_title, bucket_name)
-            props['DependsOn'].append(public_policy) # the policy is created before the bucket
 
         if context['s3'][bucket_name]['encryption']:
             props['BucketEncryption'] = _bucket_kms_encryption(context['s3'][bucket_name]['encryption'])
-
-        if props['DependsOn'] == []:
-            del props['DependsOn']
 
         template.add_resource(s3.Bucket(
             bucket_title,
@@ -714,10 +708,11 @@ def _add_public_read_list_bucket_policy(template, bucket_title, bucket_name):
     policy = s3.BucketPolicy(
         "%sPolicy" % bucket_title, # "foo-elife-published" => "FooElifePublishedPolicy"
         Bucket=bucket_name,
-        PolicyDocument=policy_document
+        PolicyDocument=policy_document,
+        # force creation order to remove any ambiguity about permissions.
+        DependsOn=Ref(bucket_title)
     )
     template.add_resource(policy)
-    return policy
 
 def _add_public_read_only_bucket_policy(template, bucket_title, bucket_name):
     policy = {
