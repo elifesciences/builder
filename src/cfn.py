@@ -205,7 +205,8 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
         LOG.info('wrote: %s' % os.path.abspath(terraform_file))
 
     # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
-    utils.confirm('the above resources will be created')
+    if not utils.confirm('the above resources will be created', 'confirm'):
+        raise TaskExit('failed to confirm')
 
     return stackname
 

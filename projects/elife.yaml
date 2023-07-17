@@ -591,6 +591,30 @@ api-gateway:
                     dataset: staging
                 gcslogging:
                     bucket: staging-elife-fastly
+        lb:
+            fastly: false
+            ec2:
+                cluster-size: 2
+            alb:
+                listeners:
+                    listener1:
+                        protocol: http
+                        port: 80
+                        forward: target-group1
+                    listener2:
+                        protocol: https
+                        port: 443
+                        forward: target-group1
+                target_groups:
+                    target-group1:
+                        protocol: http
+                        port: 80
+                        healthcheck:
+                            path: /ping
+                            timeout: 4
+                            interval: 5
+                            unhealthy_threshold: 2
+                            healthy_threshold: 2
         prod:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
@@ -2176,6 +2200,8 @@ firewall:
                     - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--continuumtest/227b8db4a52cc218
                     # lsh@2021-11-23: disabled https://github.com/elifesciences/issues/issues/7089
                     #- arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/journal--end2end/0791eb8462a24c37
+                    # temporary
+                    - arn:aws:elasticloadbalancing:us-east-1:512686554592:loadbalancer/app/api-gateway--elbtest2/e3fa0e0a8d7bddd8
                 custom-rules:
                     - elife-Whitelist.json # priority 0
                     - elife-Blacklist.json # priority 15
