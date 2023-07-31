@@ -981,7 +981,7 @@ elife-bot:
             sqs:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
                     subscriptions:
-                        - {instance}-elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
+                        - "{instance}-elife-accepted-submission-cleaning-s3-events" # see the 'accepted-submission-cleaning' project
         prod:
             ec2:
                 type: t3.medium
@@ -2127,16 +2127,15 @@ accepted-submission-cleaning:
     domain: null
     intdomain: null
     aws:
-        # unique because: 'sns' contains static values.
-        unique: true
         ec2: false
         continuumtest:
             s3:
-                continuumtest-elife-accepted-submission-cleaning:
-                    deletion-policy: retain
+                "{instance}-elife-accepted-submission-cleaning": {}
             sns:
-                - continuumtest-elife-accepted-submission-cleaning-s3-events
+                - "{instance}-elife-accepted-submission-cleaning-s3-events"
         prod:
+            # unique because: 'sns' and 's3' contain static values.
+            unique: true
             s3:
                 elife-accepted-submission-cleaning:
                     deletion-policy: retain    
