@@ -1610,13 +1610,9 @@ def init(stackname, context):
 @only_if_managed_services_are_present
 def update(stackname, context):
     terraform = init(stackname, context)
-    # todo: remove after complete upgrade to 1.0
-    if terraform.terraform_semantic_version == '1.0.11':
-        # lsh@2023-07-31: bug (I think) in dda_python_terraform that prevents supplying a plan file after 1.0.
-        # I've had no luck attempting to fix it but I do think we should just yank this dependency altogether.
-        terraform.apply(skip_plan=True, input=False, capture_output=False, raise_on_error=True)
-    else:
-        terraform.apply('out.plan', skip_plan=True, input=False, capture_output=False, raise_on_error=True)
+    # lsh@2023-07-31: bug (I think) in dda_python_terraform that prevents supplying a plan file after 1.0.
+    #terraform.apply('out.plan', skip_plan=True, input=False, capture_output=False, raise_on_error=True)
+    terraform.apply(skip_plan=True, input=False, capture_output=False, raise_on_error=True)
 
 def update_template(stackname):
     context = load_context(stackname)
