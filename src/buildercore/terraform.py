@@ -851,6 +851,13 @@ def render_bigquery(context, template):
             'table_id': table_id, # "csv_report_380"
             'project': table_options['project'], # "elife-data-pipeline"
             'schema': schema_ref,
+            'lifecycle': {
+                'ignore_changes': [
+                    'last_modified_time',
+                    'num_bytes',
+                    'num_rows'
+                ]
+            }
         }
         if table_options.get('time-partitioning'):
             ensure(table_options['time-partitioning'].get('type') == 'DAY', "The only supported type of time partitioning for %s is `DAY`" % table_id)

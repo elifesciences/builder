@@ -784,17 +784,19 @@ class TestBuildercoreTerraform(base.BaseCase):
             'project': 'elife-something',
         })
 
-        table = template['resource']['google_bigquery_table']['my_dataset_%s_widgets' % self.environment]
-        self.assertEqual(table, {
+        expected = {
             'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
+            "lifecycle": {"ignore_changes": ["last_modified_time", "num_bytes", "num_rows"]},
             'table_id': 'widgets',
             'project': 'elife-something',
             'schema': '${file("key-value.json")}',
-        })
+        }
+        actual = template['resource']['google_bigquery_table']['my_dataset_%s_widgets' % self.environment]
+        self.assertEqual(expected, actual)
 
-        table = template['resource']['google_bigquery_table']['my_dataset_%s_partitioned_table' % self.environment]
-        self.assertEqual(table, {
+        expected = {
             'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
+            "lifecycle": {"ignore_changes": ["last_modified_time", "num_bytes", "num_rows"]},
             'table_id': 'partitioned_table',
             'project': 'elife-something',
             'schema': '${file("key-value.json")}',
@@ -802,7 +804,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'field': 'a_timestamp',
                 'type': 'DAY',
             },
-        })
+        }
+        actual = template['resource']['google_bigquery_table']['my_dataset_%s_partitioned_table' % self.environment]
+        self.assertEqual(expected, actual)
 
     def test_bigquery_remote_paths(self):
         "remote paths require terraform to fetch and load the files, which requires another entry in the 'data' list"
@@ -825,18 +829,21 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'my_dataset_%s_remote' % self.environment: {
                             'project': 'elife-something',
                             'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
+                            "lifecycle": {"ignore_changes": ["last_modified_time", "num_bytes", "num_rows"]},
                             'table_id': 'remote',
                             'schema': '${data.http.my_dataset_%s_remote.body}' % self.environment,
                         },
                         'my_dataset_%s_remote_github' % self.environment: {
                             'project': 'elife-something',
                             'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
+                            "lifecycle": {"ignore_changes": ["last_modified_time", "num_bytes", "num_rows"]},
                             'table_id': 'remote_github',
                             'schema': '${data.http.my_dataset_%s_remote_github.body}' % self.environment,
                         },
                         'my_dataset_%s_local' % self.environment: {
                             'project': 'elife-something',
                             'dataset_id': '${google_bigquery_dataset.my_dataset_%s.dataset_id}' % self.environment,
+                            "lifecycle": {"ignore_changes": ["last_modified_time", "num_bytes", "num_rows"]},
                             'table_id': 'local',
                             'schema': '${file("key-value.json")}'
                         }
