@@ -7,7 +7,7 @@ defaults:
     salt: "3006" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
-        version: "0.15.5" # next version is "1.0.11" see `install-terraform.sh`
+        version: "1.0.11"
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "hashicorp/aws"
@@ -2128,6 +2128,7 @@ accepted-submission-cleaning:
     intdomain: null
     aws:
         ec2: false
+    aws-alt:
         continuumtest:
             s3:
                 "{instance}-elife-accepted-submission-cleaning": {}

@@ -851,6 +851,13 @@ def render_bigquery(context, template):
             'table_id': table_id, # "csv_report_380"
             'project': table_options['project'], # "elife-data-pipeline"
             'schema': schema_ref,
+            'lifecycle': {
+                'ignore_changes': [
+                    'last_modified_time',
+                    'num_bytes',
+                    'num_rows'
+                ]
+            }
         }
         if table_options.get('time-partitioning'):
             ensure(table_options['time-partitioning'].get('type') == 'DAY', "The only supported type of time partitioning for %s is `DAY`" % table_id)
@@ -1435,9 +1442,9 @@ def plan(context):
 
     def _explain_plan(plan_filename):
         return_code, stdout, stderr = terraform.show(plan_filename, no_color=IsFlagged, raise_on_error=True, detailed_exitcode=IsNotFlagged)
-        ensure(return_code == 0, "Exit code of `terraform show out.plan` should be 0, not %s" % return_code)
+        ensure(return_code == 0, "Exit code of `terraform show %s` should be 0, not %s" % (plan_filename, return_code))
         # TODO: may not be empty if TF_LOG is used
-        ensure(stderr == '', "Stderr of `terraform show out.plan` should be empty:\n%s" % stderr)
+        ensure(stderr == '', "Stderr of `terraform show %s` should be empty:\n%s" % (plan_filename, stderr))
         return _clean_stdout(stdout)
 
     return TerraformDelta(_explain_plan(_generate_plan()))
@@ -1603,9 +1610,9 @@ def init(stackname, context):
 @only_if_managed_services_are_present
 def update(stackname, context):
     terraform = init(stackname, context)
-    # lsh@2023-04-06: `var=None` to fix known bug in `python-terraform` with versions of terraform >0.11
-    # - https://github.com/beelit94/python-terraform/issues/67
-    terraform.apply('out.plan', input=False, capture_output=False, raise_on_error=True, var=None)
+    # lsh@2023-07-31: bug (I think) in dda_python_terraform that prevents supplying a plan file after 1.0.
+    #terraform.apply('out.plan', skip_plan=True, input=False, capture_output=False, raise_on_error=True)
+    terraform.apply(skip_plan=True, input=False, capture_output=False, raise_on_error=True)
 
 def update_template(stackname):
     context = load_context(stackname)
