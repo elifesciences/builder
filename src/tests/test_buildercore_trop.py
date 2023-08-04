@@ -730,7 +730,7 @@ class TestBuildercoreTrop(base.BaseCase):
                                 "Effect": "Allow",
                                 "Principal": "*",
                                 "Action": ["s3:GetObject"],
-                                "Resource":[
+                                "Resource": [
                                     "arn:aws:s3:::widgets-static-hosting-prod/*",
                                 ]
                             }
@@ -775,7 +775,7 @@ class TestBuildercoreTrop(base.BaseCase):
                                 "Effect": "Allow",
                                 "Principal": "*",
                                 "Action": ["s3:GetObject"],
-                                "Resource":[
+                                "Resource": [
                                     "arn:aws:s3:::widgets-just-access-prod/*",
                                 ]
                             },
@@ -784,7 +784,7 @@ class TestBuildercoreTrop(base.BaseCase):
                                 "Effect": "Allow",
                                 "Principal": "*",
                                 "Action": ["s3:ListBucket", "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"],
-                                "Resource":[
+                                "Resource": [
                                     "arn:aws:s3:::widgets-just-access-prod",
                                 ]
                             }
