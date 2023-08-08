@@ -130,6 +130,9 @@ def unsub_sqs(stackname, context_sqs, region, dry_run=False):
     # lsh@2022-08-30, issue#6016: detect multiple subscriptions and prune them.
     # don't know how it happened but we have cases where a project has multiple subscriptions to the same topic.
     # this would mean multiple duplicate notifications.
+    # lsh@2023-08-08, issue#8426, duplicate subs not being detected and removed.
+    # the `stackname` was used to filter the list of subs as a suffix to 'Endpoint'.
+    # the subs are now filtered by exactly matching any SQS names to 'Endpoint'.
 
     # group subscriptions by Topic so we detect duplicates below.
     sub_groups = utils.mkidx(lambda sub: sub['Topic'], all_subscriptions)

@@ -45,9 +45,15 @@ def _load_context_from_s3(stackname):
         raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
     return _load_context_from_disk(stackname)
 
-def load_context(stackname):
+# not threadsafe, do not merge this.
+CONTEXTS_THIS_SESSION = {}
+
+def load_context(stackname, use_cached=True):
     """Returns the store context data structure for 'stackname'.
     Downloads from S3 if missing on the local builder instance"""
+
+    if use_cached and stackname in CONTEXTS_THIS_SESSION:
+        return CONTEXTS_THIS_SESSION[stackname]
 
     # giorgio@2018-11-03: "Current situation is you may have a old context around on your local disk.
     # This applies to `elife-alfred--prod` as well. Making the context always downloaded from S3 avoids this stale copy
@@ -73,6 +79,8 @@ def load_context(stackname):
         LOG.warn("stack context is using legacy 'project.aws' instead of just 'aws': %s" % stackname)
         contents['aws'] = contents['project']['aws']
     # end of fallback
+
+    CONTEXTS_THIS_SESSION[stackname] = contents
 
     return contents
 

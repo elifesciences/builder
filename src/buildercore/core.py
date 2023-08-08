@@ -96,16 +96,29 @@ def _all_sns_subscriptions(region):
 
 def all_sns_subscriptions(region, stackname=None):
     """returns all SQS subscriptions to all SNS topics.
-    optionally filtered by subscription endpoints matching given `stackname`"""
+    optionally filter subscriptions by the SQS subscriptions for given `stackname`.
+
+    when given a stack we know the names of all of the SQS queues and any SNS topics.
+    unfortunately there is no boto method to filter SNS subscriptions by SQS name.
+    an SQS queue may also have multiple subscriptions to different topics,
+    as well as multiple subscriptions to the *same* topic (somehow).
+    (de-duping is handled in `bootstrap.unsub_sqs`)"""
+
+    # a subscription looks like:
+    # {'Endpoint': 'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
+    #  'Owner':    '512686554592',
+    #  'Protocol': 'sqs',
+    #  'SubscriptionArn': 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
+    #  'TopicArn': 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}
+
     subs_list = _all_sns_subscriptions(region)
     if stackname:
-        # a subscription looks like:
-        # {u'Endpoint': u'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
-        #  u'Owner': u'512686554592',
-        #  u'Protocol': u'sqs',
-        #  u'SubscriptionArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1:f44c42db-81c0-4504-b3de-51b0fb1099ff',
-        #  u'TopicArn': u'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1'}
-        subs_list = lfilter(lambda row: row['Endpoint'].endswith(stackname), subs_list)
+        context = context_handler.load_context(stackname, use_cached=True)
+        stackname_sqs = context.get('sqs', {})
+
+        def fn(sub):
+            return sub['Protocol'] == 'sqs' and sub['Endpoint'].split(':')[-1] in stackname_sqs
+        subs_list = list(filter(fn, subs_list))
 
     # add a 'Topic' key for easier filtering downstream
     # 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1' => 'bus-articles--substest1'
