@@ -10,5 +10,8 @@ if [ ! -e venv/bin/ipython ]; then
     rlwrap ./shell.py
 else
     # ipython found, do not use rlwrap. it messes with ipython features.
+    # bug with ipython, ensure we use a compatible version
+    # https://github.com/ipython/ipython/issues/13966
+    pip install "ipython<=8.10"
     ./shell.py
 fi

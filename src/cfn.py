@@ -42,16 +42,21 @@ def ensure_destroyed(stackname):
 
 @requires_aws_stack
 @timeit
-def update(stackname, autostart="0", concurrency='serial', dry_run=False):
-    """Update a stack's ec2 environment.
-    Runs the (idempotent) bootstrap script then Salt highstate.
-    Does *not* call Cloudformation's `update` command on the stack,
-    see `update_infrastructure`."""
+def update(stackname, autostart="0", concurrency='serial', dry_run=False, service_list=None):
+    """Ignore infrastructure changes and update a stack.
+
+    Runs the ec2 update by default (bootstrap script, Salt highstate).
+    Use comma-separated `service_list=foo,bar,baz` to target specific services.
+    Available services: ec2, s3, sqs"""
     instances = _check_want_to_be_running(stackname, utils.strtobool(autostart))
     if not instances:
         return
     dry_run = utils.strtobool(dry_run)
-    return bootstrap.update_stack(stackname, service_list=['ec2'], concurrency=concurrency, dry_run=dry_run)
+    if service_list:
+        service_list = [service.strip().lower() for service in service_list.split(',')]
+    else:
+        service_list = ['ec2']
+    return bootstrap.update_stack(stackname, service_list=service_list, concurrency=concurrency, dry_run=dry_run)
 
 @timeit
 def update_infrastructure(stackname, skip=None, start=['ec2']):
