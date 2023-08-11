@@ -98,11 +98,11 @@ def all_sns_subscriptions(region, stackname=None):
     """returns all SQS subscriptions to all SNS topics.
     optionally filter subscriptions by the SQS subscriptions for given `stackname`.
 
-    when given a stack we know the names of all of the SQS queues and any SNS topics.
-    unfortunately there is no boto method to filter SNS subscriptions by SQS name.
-    an SQS queue may also have multiple subscriptions to different topics,
-    as well as multiple subscriptions to the *same* topic (somehow).
-    (de-duping is handled in `bootstrap.unsub_sqs`)"""
+    When given a stack we can fetch the names of all SQS queues and any SNS topics.
+    Unfortunately there is no boto method to filter SNS subscriptions by SQS name.
+    An SQS queue may also be subscribed to multiple different topics,
+    as well as being subscribed to the *same* topic multiple times (somehow, de-duping
+    is handled in `bootstrap.unsub_sqs`)."""
 
     # a subscription looks like:
     # {'Endpoint': 'arn:aws:sqs:us-east-1:512686554592:observer--substest1',
@@ -113,12 +113,12 @@ def all_sns_subscriptions(region, stackname=None):
 
     subs_list = _all_sns_subscriptions(region)
     if stackname:
-        context = context_handler.load_context(stackname, use_cached=True)
-        stackname_sqs = context.get('sqs', {})
+        context = context_handler.load_context(stackname)
+        known_sqs_name_set = set(context.get('sqs', {}))
 
         def fn(sub):
-            return sub['Protocol'] == 'sqs' and sub['Endpoint'].split(':')[-1] in stackname_sqs
-        subs_list = list(filter(fn, subs_list))
+            return sub['Protocol'] == 'sqs' and sub['Endpoint'].split(':')[-1] in known_sqs_name_set
+        subs_list = lfilter(fn, subs_list)
 
     # add a 'Topic' key for easier filtering downstream
     # 'arn:aws:sns:us-east-1:512686554592:bus-articles--substest1' => 'bus-articles--substest1'
