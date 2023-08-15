@@ -2067,7 +2067,7 @@ kubernetes-aws:
                 version: '1.27'
                 worker:
                     type: t3.large
-                    max-size: 20
+                    max-size: 24
                     desired-capacity: 16
                     ignore-desired-capacity-drift: true
                 iam-oidc-provider: true
