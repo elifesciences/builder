@@ -2283,3 +2283,13 @@ firewall:
                             - UNIXShellCommandsVariables_QUERYARGUMENTS
                             - UNIXShellCommandsVariables_BODY
                         excluded: []
+
+monitor:
+    description: prometheus + grafana monitoring server
+    subdomain: monitor
+    formula-repo: https://github.com/elifesciences/monitor-formula
+    aws: {}
+    vagrant:
+        ports:
+            9090: 9090 # prometheus
+            3000: 3000 # grafana
