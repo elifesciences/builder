@@ -2293,14 +2293,11 @@ monitor:
     formula-repo: https://github.com/elifesciences/monitor-formula
     aws:
         ec2:
-            # lets see how t3.small goes.
-            # I'm guessing network latency for collection and cpu for graphing will be bottlenecks
-            #type: t3.medium
             ports:
                 - 22
-                - 3000 # grafana # todo: 443 => 3000 via nginx
+                - 3000 # grafana
                 - 9090 # prometheus, basic auth
-                - 9100: # node_exporter /metrics, internal access only
+                - 9100: # prometheus node_exporter, internal access only
                     cidr-ip: 10.0.0.0/16
                 - 9093 # alertmanager, basic auth
             root:
