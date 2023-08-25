@@ -499,6 +499,9 @@ lax:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 # bot-lax web UI to upload/validate/transform XML and article-json
                 - 8001
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
@@ -2283,3 +2286,27 @@ firewall:
                             - UNIXShellCommandsVariables_QUERYARGUMENTS
                             - UNIXShellCommandsVariables_BODY
                         excluded: []
+
+monitor:
+    description: prometheus + grafana monitoring server
+    subdomain: monitor
+    formula-repo: https://github.com/elifesciences/monitor-formula
+    aws:
+        ec2:
+            ports:
+                - 22
+                - 3000 # grafana
+                - 9090 # prometheus, basic auth
+                - 9100: # prometheus node_exporter, internal access only
+                    cidr-ip: 10.0.0.0/16
+                - 9093 # alertmanager, basic auth
+            root:
+                size: 30 # GB # just while testing
+        #ext:
+        #    size: 30 # GB # todo: how much storage for ~1 day of data? and for ~14 days of data?
+
+    vagrant:
+        ports:
+            9090: 9090 # prometheus
+            3000: 3000 # grafana
+            9093: 9093 # alertmanager
