@@ -2070,7 +2070,7 @@ kubernetes-aws:
                 version: '1.27'
                 worker:
                     type: t3.large
-                    max-size: 24
+                    max-size: 26
                     desired-capacity: 16
                     ignore-desired-capacity-drift: true
                 iam-oidc-provider: true
@@ -2142,7 +2142,7 @@ accepted-submission-cleaning:
             unique: true
             s3:
                 elife-accepted-submission-cleaning:
-                    deletion-policy: retain    
+                    deletion-policy: retain
             sns:
                 - elife-accepted-submission-cleaning-s3-events
 
