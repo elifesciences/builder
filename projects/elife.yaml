@@ -1866,6 +1866,9 @@ digests:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         end2end:
             rds:
