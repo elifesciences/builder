@@ -1839,6 +1839,9 @@ profiles:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         end2end:
             rds:
@@ -1851,6 +1854,9 @@ profiles:
                     - 443
                     - 8081 # orcid-dummy http
                     - 8082 # orcid-dummy https
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
         prod:
             rds:
                 multi-az: true
