@@ -559,6 +559,9 @@ api-gateway:
                 - 443
                 # - 8000: # don't expose to public. Kong uses this to proxy requests.
                 # - 8001: # don't expose to public. Kong uses this for API admin.
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         fastly:
             subdomains:
                 - "{instance}--cdn-gateway"
