@@ -1603,6 +1603,9 @@ iiif:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         fastly:
             subdomains:
                 - "{instance}--cdn-iiif"
@@ -1696,6 +1699,9 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 4
             ext:
                 size: 30 # GB
@@ -1711,6 +1717,9 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 2
             ext:
                 size: 30 # GB
@@ -1729,6 +1738,9 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 2
             elb:
                 protocol:
@@ -1748,6 +1760,9 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 3
             ext:
                 size: 30 # GB
