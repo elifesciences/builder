@@ -1834,6 +1834,9 @@ annotations:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             annotations--{instance}:
                 subscriptions:
