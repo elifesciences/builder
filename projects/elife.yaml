@@ -905,6 +905,9 @@ elife-bot:
         ec2:
             ports:
                 - 22
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         ext:
             size: 30 # GB
         s3:
