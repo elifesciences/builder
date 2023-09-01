@@ -474,6 +474,9 @@ master-server:
                     cidr-ip: 10.0.0.0/16
                 - 8080 # chemist, receives Github webhooks for updating formulas
                 - 8200 # Vault, secrets management web UI
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         'prod':
             # unique because: 'subdomains' contains static values.
@@ -853,6 +856,9 @@ pattern-library:
             ports:
                 - 22
                 - 443
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         ci:
             ec2: false
@@ -1334,6 +1340,9 @@ elife-alfred:
                 - 443
                 - 10241 # JNLP for jenkins-cli.jar
                 - 16022 # Jenkins SSH port
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         ext:
             size: 100 # GB
         s3:
@@ -1440,6 +1449,9 @@ search:
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1459,6 +1471,9 @@ search:
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 root:
                     size: 30 # GB
                 cluster-size: 2
@@ -1551,7 +1566,10 @@ observer:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
-                - 443  # app
+                - 443
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             observer--{instance}:
                 subscriptions:
@@ -1808,6 +1826,9 @@ redirects:
                 - 22
                 - 80
                 - 443
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         prod:
             ec2:
@@ -2046,6 +2067,9 @@ bastion:
         ec2:
             ports:
                 - 22
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         prod:
             ec2:
