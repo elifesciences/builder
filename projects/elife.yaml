@@ -956,6 +956,9 @@ elife-bot:
                     - 8020 # exposing FTP contents
                     - 8021 # exposing FTP contents, HTTPS
                     - 1080 # exposing mailcatcher API
+                    # prometheus node_exporter
+                    - 9100:
+                        cidr-ip: 10.0.0.0/16 # internal access only
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
@@ -1280,6 +1283,9 @@ elife-libraries:
         ec2:
             ports:
                 - 22
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
         ext:
             size: 30 # GB
     aws-alt:
@@ -1374,6 +1380,9 @@ api-dummy:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                # prometheus node_exporter
+                - 9100:
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         demo:
             ec2:
