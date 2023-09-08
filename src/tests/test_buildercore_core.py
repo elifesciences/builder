@@ -9,6 +9,23 @@ from unittest import skip
 from unittest.mock import patch, Mock
 import botocore
 
+def test_prune_stackname():
+    cases = [
+        (None, None),
+        ("foo", None),
+        ("foo--bar", "foo--bar"),
+        ("foo--bar--baz", "foo--bar"),
+
+        ("lax--prod", "lax--prod"),
+        ("lax--prod--4", "lax--prod"),
+        ("lax--prod--4--5--6", "lax--prod"),
+
+        # ??
+        ("lax--", "lax--"),
+    ]
+    for given, expected in cases:
+        assert core.prune_stackname(given) == expected
+
 class SimpleCases(base.BaseCase):
     def test_project_name_from_stackname(self):
         expected = [

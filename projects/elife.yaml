@@ -474,6 +474,8 @@ master-server:
                     cidr-ip: 10.0.0.0/16
                 - 8080 # chemist, receives Github webhooks for updating formulas
                 - 8200 # Vault, secrets management web UI
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         'prod':
             # unique because: 'subdomains' contains static values.
@@ -497,10 +499,8 @@ lax:
                 - 443
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
-                # bot-lax web UI to upload/validate/transform XML and article-json
-                - 8001
-                # prometheus node_exporter
-                - 9100:
+                - 8001 # bot-lax web UI to upload/validate/transform XML and article-json
+                - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             bot-lax-{instance}-inc: {}
@@ -552,13 +552,13 @@ api-gateway:
                 size: 30 # GB
             ports:
                 - 22
-                # only internal traffic has access to port 80 and http
                 - 80:
-                    cidr-ip: 10.0.0.0/16
-                # public access to api gateway
-                - 443
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 443 # public access to api gateway
                 # - 8000: # don't expose to public. Kong uses this to proxy requests.
                 # - 8001: # don't expose to public. Kong uses this for API admin.
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         fastly:
             subdomains:
                 - "{instance}--cdn-gateway"
@@ -620,7 +620,9 @@ journal:
                 - 22
                 - 443
                 - 80:
-                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         ci:
             ec2:
@@ -847,6 +849,8 @@ pattern-library:
             ports:
                 - 22
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         ci:
             ec2: false
@@ -874,6 +878,8 @@ elife-metrics:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         end2end:
             description: end2end environment for metrics. RDS backed.
@@ -902,6 +908,8 @@ elife-bot:
         ec2:
             ports:
                 - 22
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         ext:
             size: 30 # GB
         s3:
@@ -938,6 +946,8 @@ elife-bot:
                     - 8020 # exposing FTP contents
                     - 8021 # exposing FTP contents, HTTPS
                     - 1080 # exposing mailcatcher API
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
@@ -1139,7 +1149,9 @@ journal-cms:
                 - 22
                 - 443
                 - 80:
-                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
@@ -1203,6 +1215,8 @@ elife-dashboard:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         end2end:
             # unique because: 'sqs' contains static values.
@@ -1256,6 +1270,8 @@ elife-libraries:
         ec2:
             ports:
                 - 22
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         ext:
             size: 30 # GB
     aws-alt:
@@ -1316,6 +1332,8 @@ elife-alfred:
                 - 443
                 - 10241 # JNLP for jenkins-cli.jar
                 - 16022 # Jenkins SSH port
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         ext:
             size: 100 # GB
         s3:
@@ -1347,6 +1365,8 @@ api-dummy:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         demo:
             ec2:
@@ -1397,6 +1417,8 @@ search:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             # search--prod, search--end2end, etc.
             search--{instance}:
@@ -1419,6 +1441,8 @@ search:
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1438,6 +1462,8 @@ search:
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 root:
                     size: 30 # GB
                 cluster-size: 2
@@ -1467,6 +1493,8 @@ recommendations:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
     vagrant:
         ports:
@@ -1486,6 +1514,8 @@ personalised-covers:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         s3:
             "{instance}-elife-personalised-covers":
                 deletion-policy: delete
@@ -1524,7 +1554,9 @@ observer:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
-                - 443  # app
+                - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             observer--{instance}:
                 subscriptions:
@@ -1591,6 +1623,8 @@ iiif:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         fastly:
             subdomains:
                 - "{instance}--cdn-iiif"
@@ -1684,6 +1718,8 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 4
             ext:
                 size: 30 # GB
@@ -1699,6 +1735,8 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 2
             ext:
                 size: 30 # GB
@@ -1717,6 +1755,8 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 2
             elb:
                 protocol:
@@ -1736,6 +1776,8 @@ iiif:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 3
             ext:
                 size: 30 # GB
@@ -1766,6 +1808,8 @@ redirects:
                 - 22
                 - 80
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         prod:
             ec2:
@@ -1803,6 +1847,8 @@ profiles:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         end2end:
             rds:
@@ -1815,6 +1861,8 @@ profiles:
                     - 443
                     - 8081 # orcid-dummy http
                     - 8082 # orcid-dummy https
+                    - 9100: # prometheus node_exporter
+                        cidr-ip: 10.0.0.0/16 # internal access only
         prod:
             rds:
                 multi-az: true
@@ -1833,6 +1881,8 @@ annotations:
             ports:
                 - 22
                 - 80:
+                    cidr-ip: 10.0.0.0/16 # internal access only
+                - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             annotations--{instance}:
@@ -1860,6 +1910,8 @@ digests:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         end2end:
             rds:
@@ -1992,6 +2044,8 @@ bastion:
         ec2:
             ports:
                 - 22
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         prod:
             ec2:
@@ -2114,6 +2168,8 @@ bioprotocol:
                 - 80:
                     cidr-ip: 10.0.0.0/16
                 - 443
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
             # single queue that receives messages about updates to articles (internally)
             bioprotocol--{instance}:
@@ -2297,8 +2353,8 @@ monitor:
                 - 22
                 - 3000 # grafana
                 - 9090 # prometheus, basic auth
-                - 9100: # prometheus node_exporter, internal access only
-                    cidr-ip: 10.0.0.0/16
+                - 9100: # prometheus node_exporter
+                    cidr-ip: 10.0.0.0/16 # internal access only
                 - 9093 # alertmanager, basic auth
             root:
                 size: 30 # GB # just while testing

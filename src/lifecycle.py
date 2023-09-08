@@ -1,11 +1,40 @@
-from buildercore import lifecycle
+import re
+import report
+import utils
+from buildercore import core, lifecycle
 from decorators import requires_aws_stack, timeit, echo_output
+from threadbare import state
+from threadbare.execute import execute, parallel
 
 @requires_aws_stack
 @timeit
 def start(stackname):
     "Starts the nodes of 'stackname'. Idempotent"
     lifecycle.start(stackname)
+
+# lsh@2023-09-08: new and a bit experimental but useful enough that I keep coming back to it.
+def start_many(pattern):
+    """call `lifecycle.start` on many instances matching a pattern in parallel.
+    for example: ./bldr lifecycle.start_many:".+--(ci|end2end)--.+"
+    """
+    if not pattern:
+        raise utils.TaskExit("a regular expression matching ec2 names is required.")
+    ec2_list = report._all_ec2_instances(state=None)
+    filtered_ec2_list = list(filter(lambda ec2_name: re.match(pattern, ec2_name), ec2_list))
+
+    stackname_list = sorted(set([core.prune_stackname(ec2) for ec2 in filtered_ec2_list]))
+
+    print("the following stacks will be started:")
+    print(stackname_list)
+    print()
+    utils.confirm("continue?")
+
+    @parallel
+    def workerfn():
+        return lifecycle.start(state.ENV['stackname'])
+
+    with state.settings():
+        execute(workerfn, param_key='stackname', param_values=stackname_list)
 
 @requires_aws_stack
 @timeit
