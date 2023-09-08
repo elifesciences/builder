@@ -99,6 +99,8 @@ TASK_LIST = [
     aws.ec2.restart_node,
     aws.ec2.reboot_node,
 
+    lifecycle.start_many,
+
     # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
     masterless.launch,
     # see: elife-jenkins-workflow-libs/vars/elifeFormula.groovy
