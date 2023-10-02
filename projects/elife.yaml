@@ -2225,7 +2225,10 @@ firewall:
                         # internal vpc traffic between journal nodes and api-gateway nodes
                         # 'subnet-1d4eb46a', 'elife-public-subnet'
                         - 10.0.2.0/24
-                        # elsevier
+                        # TurnItInBot
+                        - 199.47.87.132/30
+                        - 199.47.82.0/28
+                        # Elsevier
                         - 203.56.241.128
                         - 54.166.39.175
                         - 125.17.16.94
