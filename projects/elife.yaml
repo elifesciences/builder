@@ -2354,11 +2354,9 @@ monitor:
         ec2:
             ports:
                 - 22
-                - 3000 # grafana
-                - 9090 # prometheus, basic auth
+                - 443
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
-                - 9093 # alertmanager, basic auth
             root:
                 size: 30 # GB # just while testing
         #ext:
@@ -2366,6 +2364,4 @@ monitor:
 
     vagrant:
         ports:
-            9090: 9090 # prometheus
-            3000: 3000 # grafana
-            9093: 9093 # alertmanager
+            1241: 80
