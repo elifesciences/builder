@@ -2357,10 +2357,8 @@ monitor:
                 - 443
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
-            root:
-                size: 30 # GB # just while testing
-        #ext:
-        #    size: 30 # GB # todo: how much storage for ~1 day of data? and for ~14 days of data?
+        ext:
+            size: 30 # GB
 
     vagrant:
         ports:
