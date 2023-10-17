@@ -938,6 +938,7 @@ elife-bot:
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
+                "{instance}-elife-striking-images":
         end2end:
             ec2:
                 type: t3.medium
@@ -964,6 +965,7 @@ elife-bot:
                     sqs-notifications:
                         end2end-poa-incoming-queue: {}
                     deletion-policy: delete
+                "{instance}-elife-striking-images":
                 # commented out because bucket already exists outside of CloudFormation:
                 #"end2end-elife-bot":
                 #    deletion-policy: delete
@@ -988,6 +990,7 @@ elife-bot:
                 "{instance}-elife-ejp-poa-delivery":
                     sqs-notifications:
                         continuumtest-poa-incoming-queue: {}
+                "{instance}-elife-striking-images":
                 # commented out because bucket exists outside of CloudFormation:
                 #"continuumtest-elife-bot":
                 #    deletion-policy: delete
@@ -1028,6 +1031,7 @@ elife-bot:
                 #elife-poa-packaging
                 #elife-publishing-archive
                 #elife-publishing-expanded
+                #elife-striking-images
 
             sqs:
                 "{instance}-elife-accepted-submission-cleaning-s3-events":
