@@ -1,22 +1,22 @@
-# file generated 2023-10-20 - see update-dependencies.sh
+# file generated 2023-10-27 - see update-dependencies.sh
 astroid==2.15.8
 autopep8==2.0.4
 backoff==1.11.1
-boto3==1.28.67
-botocore==1.31.67
+boto3==1.28.72
+botocore==1.31.72
 certifi==2023.7.22
 cffi==1.16.0
 cfn-flip==1.3.0
-charset-normalizer==3.3.0
+charset-normalizer==3.3.1
 click==8.1.7
 coverage==7.3.2
-cryptography==41.0.4
+cryptography==41.0.5
 dda-python-terraform==2.1.1
 deepmerge==1.1.0
 dill==0.3.7
 exceptiongroup==1.1.3
 gevent==23.9.1
-greenlet==3.0.0
+greenlet==3.0.1
 idna==3.4
 iniconfig==2.0.0
 isort==5.12.0
@@ -36,7 +36,7 @@ pycodestyle==2.11.1
 pycparser==2.21
 pyflakes==3.1.0
 pylint==2.17.7
-pytest==7.4.2
+pytest==7.4.3
 pytest-cov==4.1.0
 python-dateutil==2.8.2
 python-slugify==1.2.6
@@ -44,7 +44,7 @@ pytz==2023.3.post1
 PyYAML==6.0.1
 requests==2.31.0
 responses==0.23.3
-ruamel.yaml==0.17.39
+ruamel.yaml==0.17.40
 ruamel.yaml.clib==0.2.8
 s3transfer==0.7.0
 six==1.16.0
@@ -58,7 +58,7 @@ types-PyYAML==6.0.12.12
 typing_extensions==4.8.0
 Unidecode==1.2.0
 urllib3==1.26.18
-Werkzeug==3.0.0
+Werkzeug==3.0.1
 wrapt==1.15.0
 xmltodict==0.13.0
 zope.event==5.0
