@@ -8,7 +8,6 @@ import json
 import logging
 import os
 import re
-from collections import OrderedDict
 from collections.abc import Iterable
 from datetime import datetime
 from os.path import join
@@ -382,15 +381,15 @@ def update_stack(stackname, service_list=None, **kwargs):
     # Has too many responsibilities:
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
-    service_update_fns = OrderedDict([
-        ('ec2', (update_ec2_stack, ['concurrency', 'formula_revisions', 'dry_run'])),
-        ('s3', (update_s3_stack, [])),
-        ('sqs', (update_sqs_stack, [])),
-    ])
+    service_update_fns = {
+        'ec2': (update_ec2_stack, ['concurrency', 'formula_revisions', 'dry_run']),
+        's3': (update_s3_stack, []),
+        'sqs': (update_sqs_stack, []),
+    }
     service_list = service_list or service_update_fns.keys()
     ensure(isinstance(service_list, Iterable), "cannot iterate over given service list %r" % service_list)
     context = context_handler.load_context(stackname)
-    for servicename, (fn, fn_kwarg_args) in subdict(service_update_fns, service_list).items():
+    for (fn, fn_kwarg_args) in subdict(service_update_fns, service_list).values():
         actual_arguments = subdict(kwargs, fn_kwarg_args)
         fn(stackname, context, **actual_arguments)
 

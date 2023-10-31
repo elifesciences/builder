@@ -15,7 +15,7 @@ select = [
     "RUF",
     
     # pep8-naming: https://docs.astral.sh/ruff/rules/#pep8-naming-n
-    # todo: these look fine
+    # todo
     #"N",
     
     # isort: https://docs.astral.sh/ruff/rules/#isort-i
@@ -23,6 +23,21 @@ select = [
 
     # pyupgrade: https://docs.astral.sh/ruff/rules/#pyupgrade-up
     "UP",
+
+    # flake8-2020: https://docs.astral.sh/ruff/rules/#flake8-2020-ytt
+    "YTT",
+
+    # flake8-bandit: https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+    # todo: these look good
+    #"S",
+
+    # flake8-blind-except: https://docs.astral.sh/ruff/rules/#flake8-blind-except-ble
+    # todo
+    #"BLE",
+
+    # flake-8-bugbear: https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    # todo
+    #"B"
 ]
 
 ignore = [

@@ -646,7 +646,7 @@ def render_s3(context, template):
     for bucket_name in context['s3']:
         props = {
             'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize(),
-            'Tags': s3.Tags(**aws.generic_tags(context, name=False)),
+            'Tags': s3.Tags(**aws.generic_tags(context)),
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:

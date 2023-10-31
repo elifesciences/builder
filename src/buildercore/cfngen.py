@@ -787,9 +787,9 @@ def more_validation(json_template_str):
         # case: s3 bucket names must be between 3 and 63 chars
         # case: s3 bucket names must not contain uppercase characters
         # - https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-        bucket_map = utils.dictfilter(lambda key, val: val.get('Type') == "AWS::S3::Bucket", data.get('Resources'))
-        for bucket_map in bucket_map.values():
-            bucket_name = bucket_map['Properties']['BucketName']
+        bucket_list = [val for val in data.Get('Resources').values() if val.get('Type') == 'AWS::S3::Bucket']
+        for bucket in bucket_list:
+            bucket_name = bucket['Properties']['BucketName']
             length = len(bucket_name)
             # occasionally true with particularly long alt-config names and instance ids
             ensure(length >= 3 and length <= 63, "s3 bucket names must be between 3 and 63 characters: %s" % bucket_name)

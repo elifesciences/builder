@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 ACCOUNT_EKS_AMI = '602401143452'
 
-def generic_tags(context, name=True):
+def generic_tags(context):
     tags = OrderedDict([
         ('Project', context['project_name']), # "journal"
         ('Environment', context['instance_id']), # "prod"
