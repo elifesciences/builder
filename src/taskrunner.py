@@ -1,29 +1,30 @@
 # import threadbare early so `gevent.monkey_patch` can patch everything
-import threadbare
-from buildercore import config
-from functools import reduce
-from decorators import echo_output
-import cfn
-import lifecycle
-import masterless
-import vault
-import aws
-import tasks
-import master
-import askmaster
-import buildvars
-import project
-import deploy
-import report
-import fix
-import checks
-import stack
-import aws.rds
-import aws.cloudformation
-import aws.ec2
 import sys
 import traceback
+from functools import reduce
+
+import askmaster
+import aws
+import aws.cloudformation
+import aws.ec2
+import aws.rds
+import buildvars
+import cfn
+import checks
+import deploy
+import fix
+import lifecycle
+import master
+import masterless
+import project
+import report
+import stack
+import tasks
+import threadbare
 import utils
+import vault
+from buildercore import config
+from decorators import echo_output
 
 # threadbare module is otherwise not used and is flagged for linting
 assert threadbare

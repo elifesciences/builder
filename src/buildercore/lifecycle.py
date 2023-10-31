@@ -2,15 +2,29 @@
 
 The primary reason for doing this is to save on costs."""
 
-from datetime import datetime
 import logging
 import re
+from datetime import datetime
+
 import backoff
-from .command import CommandException, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError
-from . import config, core, command
-from .core import boto_conn, find_ec2_instances, find_rds_instances, current_ec2_node_id, NoPublicIps, NoRunningInstances
-from .utils import call_while, ensure, lmap, first, lookup
+
+from . import command, config, core
+from .command import (
+    CommandException,
+    NetworkAuthenticationError,
+    NetworkTimeoutError,
+    NetworkUnknownHostError,
+)
 from .context_handler import load_context
+from .core import (
+    NoPublicIps,
+    NoRunningInstances,
+    boto_conn,
+    current_ec2_node_id,
+    find_ec2_instances,
+    find_rds_instances,
+)
+from .utils import call_while, ensure, first, lmap, lookup
 
 LOG = logging.getLogger(__name__)
 

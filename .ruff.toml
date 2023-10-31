@@ -39,7 +39,8 @@ select = [
     # todo: these look fine
     #"N",
     
-    #"I",
+    # isort: https://docs.astral.sh/ruff/rules/#isort-i
+    "I",
 
 ]
 

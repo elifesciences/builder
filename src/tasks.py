@@ -3,13 +3,14 @@
 If you find certain 'types' of tasks accumulating, they might be
 better off in their own module. This module really is for stuff
 that has no home."""
-from buildercore import core, bakery
-from utils import confirm, errcho
-from decorators import requires_aws_stack
-from buildercore.core import stack_conn
-from buildercore.context_handler import load_context
-import report
 import logging
+
+import report
+from buildercore import bakery, core
+from buildercore.context_handler import load_context
+from buildercore.core import stack_conn
+from decorators import requires_aws_stack
+from utils import confirm, errcho
 
 LOG = logging.getLogger(__name__)
 

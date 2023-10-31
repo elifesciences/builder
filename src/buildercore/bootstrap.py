@@ -4,25 +4,38 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os
 import json
+import logging
+import os
 import re
-from os.path import join
 from collections import OrderedDict
+from collections.abc import Iterable
 from datetime import datetime
-from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod, command
-from .context_handler import only_if
-from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, ensure, subdict, yaml_dumps, lmap
-from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER, WHOAMI, CI_USER
-from .command import remote_sudo, remote_file_exists, remote_listfiles
+from os.path import join
+
 import backoff
 import botocore
 from kids.cache import cache as cached
-from collections.abc import Iterable
 
-import logging
+from . import (
+    bvars,
+    cloudformation,
+    command,
+    config,
+    context_handler,
+    core,
+    project,
+    terraform,
+    utils,
+)
+from . import sns as snsmod
+from .command import remote_file_exists, remote_listfiles, remote_sudo
+from .config import BOOTSTRAP_USER, CI_USER, WHOAMI
+from .context_handler import only_if
+from .core import project_data_for_stackname, stack_all_ec2_nodes, stack_conn
+from .lifecycle import delete_dns
+from .utils import ensure, first, lmap, subdict, yaml_dumps
+
 LOG = logging.getLogger(__name__)
 
 #

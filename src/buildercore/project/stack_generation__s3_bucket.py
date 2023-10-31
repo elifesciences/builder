@@ -1,11 +1,12 @@
+import json
+import logging
 import os
 import tempfile
-import json
-from buildercore import core, utils
-from buildercore.project import stack_config as project_config
+
 from botocore.exceptions import ClientError
 
-import logging
+from buildercore import core, utils
+from buildercore.project import stack_config as project_config
 
 LOG = logging.getLogger(__name__)
 

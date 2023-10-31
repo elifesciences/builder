@@ -1,10 +1,12 @@
-import os
-from botocore.exceptions import ClientError
-from . import config, core
-from .utils import isstr, ensure
-from kids.cache import cache as cached
-from io import IOBase
 import logging
+import os
+from io import IOBase
+
+from botocore.exceptions import ClientError
+from kids.cache import cache as cached
+
+from . import config, core
+from .utils import ensure, isstr
 
 LOG = logging.getLogger(__name__)
 

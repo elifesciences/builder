@@ -1,12 +1,14 @@
-import dateutil.parser
-from functools import partial
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+from functools import partial, wraps
+
+import dateutil.parser
 import utils
-from buildercore import core, project, utils as core_utils
-from buildercore.utils import lookup, ensure
-from functools import wraps
+from buildercore import core, project
+from buildercore import utils as core_utils
+from buildercore.utils import ensure, lookup
 from decorators import format_output
+
 
 def print_list(row_list, checkboxes=True):
     "given a list of things, prints a markdown list to `stdout` with optional checkboxes."

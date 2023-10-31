@@ -1,7 +1,8 @@
+import utils
 from buildercore import project
 from buildercore.project import stack_generation
 from decorators import format_output, requires_stack_config
-import utils
+
 
 @format_output()
 def list_stacks(include_resources=True):

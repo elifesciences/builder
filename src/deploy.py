@@ -1,12 +1,21 @@
 """module concerns itself with tasks involving branch deployments of projects."""
 
-from pprint import pformat
-from decorators import requires_aws_stack, requires_aws_stack_template
-from buildercore import core, bootstrap, bluegreen_v2, bluegreen, cloudformation, context_handler, trop
-from buildercore.core import all_node_params
-from buildercore.concurrency import concurrency_for
-import buildvars
 import logging
+from pprint import pformat
+
+import buildvars
+from buildercore import (
+    bluegreen,
+    bluegreen_v2,
+    bootstrap,
+    cloudformation,
+    context_handler,
+    core,
+    trop,
+)
+from buildercore.concurrency import concurrency_for
+from buildercore.core import all_node_params
+from decorators import requires_aws_stack, requires_aws_stack_template
 
 LOG = logging.getLogger(__name__)
 

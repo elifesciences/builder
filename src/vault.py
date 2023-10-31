@@ -1,8 +1,10 @@
-from buildercore.command import local
-from buildercore import project
-import utils
-import sys
 import logging
+import sys
+
+import utils
+from buildercore import project
+from buildercore.command import local
+
 LOG = logging.getLogger(__name__)
 
 def vault_addr():

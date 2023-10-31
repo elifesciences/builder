@@ -1,14 +1,15 @@
-import os
-from os.path import join
-from collections import OrderedDict
-from pprint import pformat
-from buildercore.command import lcd, settings, local
-from decorators import requires_project
-from buildercore import bootstrap, checks, core, context_handler, config
-from buildercore.utils import ensure, subdict
 import logging
-import cfn
+import os
+from collections import OrderedDict
 from functools import wraps
+from os.path import join
+from pprint import pformat
+
+import cfn
+from buildercore import bootstrap, checks, config, context_handler, core
+from buildercore.command import lcd, local, settings
+from buildercore.utils import ensure, subdict
+from decorators import requires_project
 
 LOG = logging.getLogger(__name__)
 

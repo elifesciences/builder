@@ -1,20 +1,36 @@
 "general logic for the `buildercore` module."
 
+import logging
 import os
 import time
 from collections import OrderedDict
+from contextlib import contextmanager
 from os.path import join
-from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .utils import subdict, ensure, first, lookup, lmap, lfilter, unique, isstr
+
 import boto3
 import botocore
 import botocore.config
-from contextlib import contextmanager
-from . import command, context_handler
-from .command import settings, env, CommandException, NetworkError, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError
-from slugify import slugify
-import logging
 from kids.cache import cache as cached
+from slugify import slugify
+
+from . import (  # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
+    command,
+    config,
+    context_handler,
+    decorators,
+    project,
+    utils,
+)
+from .command import (
+    CommandException,
+    NetworkAuthenticationError,
+    NetworkError,
+    NetworkTimeoutError,
+    NetworkUnknownHostError,
+    env,
+    settings,
+)
+from .utils import ensure, first, isstr, lfilter, lmap, lookup, subdict, unique
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)

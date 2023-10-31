@@ -1,14 +1,15 @@
 "handles the creation/deletion/storage of keypairs from AWS"
 
+import logging
 import os
 import shutil
 from os.path import join
-from . import core, utils, config, s3
+
+from . import config, core, s3, utils
+from .command import local
 from .core import stack_pem
 from .utils import lfilter
-from .command import local
 
-import logging
 LOG = logging.getLogger(__name__)
 
 #

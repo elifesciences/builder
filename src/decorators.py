@@ -1,12 +1,22 @@
-from time import time
-import os
-from os.path import join
-import utils
-from buildercore import core, project, config, cloudformation, utils as core_utils
-from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr, ensure
-from functools import wraps, partial
-from pprint import pformat
 import logging
+import os
+from functools import partial, wraps
+from os.path import join
+from pprint import pformat
+from time import time
+
+import utils
+from buildercore import cloudformation, config, core, project
+from buildercore import utils as core_utils
+from buildercore.utils import (
+    ensure,
+    errcho,
+    first,
+    isstr,
+    lfilter,
+    lmap,
+    remove_ordereddict,
+)
 
 LOG = logging.getLogger(__name__)
 

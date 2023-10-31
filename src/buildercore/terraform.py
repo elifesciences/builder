@@ -1,15 +1,17 @@
-from collections import namedtuple, OrderedDict
+import contextlib
+import json
+import logging
 import os
 import re
 import shutil
-import json
+from collections import OrderedDict, namedtuple
 from os.path import join
-from dda_python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, lookup, updatein
-from . import aws, fastly, config
-import contextlib
-import logging
+
+from dda_python_terraform import IsFlagged, IsNotFlagged, Terraform
+
+from . import aws, config, fastly
+from .context_handler import load_context, only_if
+from .utils import ensure, lookup, mkdir_p, updatein
 
 LOG = logging.getLogger(__name__)
 

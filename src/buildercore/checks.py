@@ -2,9 +2,12 @@
 
 these should complement not replicate any project configuration validation."""
 
-import requests
 import os
+
+import requests
+
 from . import core, project
+
 
 class AccessProblem(RuntimeError):
     pass

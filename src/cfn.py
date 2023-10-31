@@ -1,22 +1,49 @@
-import os
 import json
-from pprint import pformat
-import backoff
-from buildercore.command import local, remote, upload, download, settings, remote_file_exists, CommandException, NetworkError
-import utils
-import buildvars
-from utils import TaskExit
-from decorators import requires_project, requires_aws_stack, requires_aws_stack_template, setdefault, timeit
-from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
-# potentially remove to go through buildercore.bootstrap?
-from buildercore import cloudformation, terraform
-from buildercore.concurrency import concurrency_for
-from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
-from buildercore.decorators import PredicateException
-from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY
-from buildercore.utils import ensure
-
 import logging
+import os
+from pprint import pformat
+
+import backoff
+import buildvars
+import utils
+
+# potentially remove to go through buildercore.bootstrap?
+from buildercore import (
+    bootstrap,
+    cfngen,
+    checks,
+    cloudformation,
+    context_handler,
+    core,
+    project,
+    terraform,
+)
+from buildercore import lifecycle as core_lifecycle
+from buildercore import utils as core_utils
+from buildercore.command import (
+    CommandException,
+    NetworkError,
+    download,
+    local,
+    remote,
+    remote_file_exists,
+    settings,
+    upload,
+)
+from buildercore.concurrency import concurrency_for
+from buildercore.config import BOOTSTRAP_USER, DEPLOY_USER, USER_PRIVATE_KEY
+from buildercore.core import stack_all_ec2_nodes, stack_conn, stack_pem, tags2dict
+from buildercore.decorators import PredicateException
+from buildercore.utils import ensure
+from decorators import (
+    requires_aws_stack,
+    requires_aws_stack_template,
+    requires_project,
+    setdefault,
+    timeit,
+)
+from utils import TaskExit
+
 LOG = logging.getLogger(__name__)
 
 # TODO: move to a lower level if possible

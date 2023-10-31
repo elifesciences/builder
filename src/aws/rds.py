@@ -1,6 +1,8 @@
-from buildercore import core
-from decorators import requires_aws_stack, format_output
 import logging
+
+from buildercore import core
+from decorators import format_output, requires_aws_stack
+
 LOG = logging.getLogger(__name__)
 
 # lsh@2022-09-16: this function was created ages ago as 'rds_snapshot_list' and lived in './aws.py'.

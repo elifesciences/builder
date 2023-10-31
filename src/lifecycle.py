@@ -1,10 +1,12 @@
 import re
+
 import report
 import utils
 from buildercore import core, lifecycle
-from decorators import requires_aws_stack, timeit, echo_output
+from decorators import echo_output, requires_aws_stack, timeit
 from threadbare import state
 from threadbare.execute import execute, parallel
+
 
 @requires_aws_stack
 @timeit

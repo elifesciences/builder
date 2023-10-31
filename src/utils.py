@@ -2,10 +2,10 @@ import logging
 import os
 import sys
 from distutils.util import strtobool as _strtobool
-from buildercore import config
-from buildercore.utils import ensure, second, last, isint
+
+from buildercore import config, core
 from buildercore.command import local
-from buildercore import core
+from buildercore.utils import ensure, isint, last, second
 
 LOG = logging.getLogger(__name__)
 

@@ -1,11 +1,14 @@
 # from . import core # DONT import core. this project module should be relatively independent
-import os
-from buildercore import utils, config
-from kids.cache import cache
-from . import files, stack_config
 import copy
 import logging
+import os
 from functools import reduce
+
+from kids.cache import cache
+
+from buildercore import config, utils
+
+from . import files, stack_config
 
 LOG = logging.getLogger(__name__)
 

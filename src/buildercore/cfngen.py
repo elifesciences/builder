@@ -17,16 +17,18 @@ We want to add an external volume to an EC2 instance to increase available space
 
 """
 
-from slugify import slugify
-import logging
 import json
+import logging
 import re
 from collections import OrderedDict, namedtuple
 from functools import partial
+
 import botocore
 import netaddr
-from . import config, utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
+from slugify import slugify
+
+from . import cloudformation, config, context_handler, core, project, terraform, utils
+from .utils import deepcopy, delkey, ensure, lmap, lookup, subdict
 
 LOG = logging.getLogger(__name__)
 

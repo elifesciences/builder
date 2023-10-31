@@ -10,12 +10,13 @@
 # See cloudformation.py and trop.py for rendering Cloudformation templates with this context data
 # See terraform.py for rendering Terraform templates with this context data
 
-import os
 import json
+import logging
+import os
 from os.path import join
+
 from . import config, s3
 
-import logging
 LOG = logging.getLogger(__name__)
 
 def s3_context_key(stackname):

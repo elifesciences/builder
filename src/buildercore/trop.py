@@ -12,15 +12,36 @@ The non-AWS pipeline is similar:
 see also `terraform.py`."""
 
 import json
+import logging
 import os
 from collections import OrderedDict
-from os.path import join
-from . import config, utils, bvars, aws
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, wafv2
-from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
 from functools import partial
-from .utils import ensure, subdict, lmap, isstr, deepcopy, lookup
-import logging
+from os.path import join
+
+from troposphere import (
+    Base64,
+    GetAtt,
+    Output,
+    Parameter,
+    Ref,
+    Tags,
+    Template,
+    cloudfront,
+    docdb,
+    ec2,
+    elasticache,
+    rds,
+    route53,
+    s3,
+    sns,
+    sqs,
+    wafv2,
+)
+from troposphere import elasticloadbalancing as elb
+from troposphere import elasticloadbalancingv2 as alb
+
+from . import aws, bvars, config, utils
+from .utils import deepcopy, ensure, isstr, lmap, lookup, subdict
 
 # todo: remove on upgrade to python 3
 # backports a fix we need to py2-compatible troposphere 2.7.1

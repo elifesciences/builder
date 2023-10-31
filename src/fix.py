@@ -1,9 +1,10 @@
-from pprint import pformat
-import utils
-from decorators import requires_aws_stack
-from buildercore import core, cfngen, context_handler
-from buildercore.utils import json_dumps, subdict, lu, shallow_flatten
 import logging
+from pprint import pformat
+
+import utils
+from buildercore import cfngen, context_handler, core
+from buildercore.utils import json_dumps, lu, shallow_flatten, subdict
+from decorators import requires_aws_stack
 
 LOG = logging.getLogger(__name__)
 SEP = "%s\n" % ("-" * 20,)

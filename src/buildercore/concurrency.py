@@ -1,6 +1,7 @@
 "Bit of a floating module, I guess to avoid circular dependencies. Needs to be reconciled somehow."
 
-from . import bluegreen, bluegreen_v2, context_handler, cloudformation
+from . import bluegreen, bluegreen_v2, cloudformation, context_handler
+
 
 def concurrency_for(stackname, concurrency_name):
     """concurrency default is to perform updates one machine at a time.

@@ -24,9 +24,11 @@ stack configuration is *not*:
 
 """
 
+from deepmerge import Merger
+
 from buildercore import utils
 from buildercore.utils import ensure
-from deepmerge import Merger
+
 
 def deep_merge(d1, d2):
     custom_merger = Merger(

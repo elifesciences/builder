@@ -4,8 +4,9 @@ The nodes inside a stack are divided into two groups: blue and green.
 Actions are performed separately on the two groups while they are detached from the load balancer."""
 
 import logging
-from .core import boto_client, parallel_work
+
 from .cloudformation import read_output
+from .core import boto_client, parallel_work
 from .utils import call_while
 
 LOG = logging.getLogger(__name__)

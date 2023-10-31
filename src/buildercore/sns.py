@@ -1,6 +1,7 @@
 import hashlib
 import json
 
+
 # https://github.com/boto/boto/blob/develop/boto/sns/connection.py#L322
 def subscribe_sqs_queue(sns_client, topic_arn, queueobj):
     """

@@ -2,17 +2,26 @@
 
 See `askmaster.py` for tasks that are run on minions."""
 
+import logging
 import os
 import time
-import cfn
+
 import buildvars
+import cfn
 import utils
-from buildercore.command import remote_sudo, local
-from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
-from buildercore.utils import lmap, exsubdict, mkidx, ensure
+from buildercore import (
+    bootstrap,
+    cfngen,
+    config,
+    context_handler,
+    core,
+    keypair,
+    project,
+)
+from buildercore.command import local, remote_sudo
+from buildercore.utils import ensure, exsubdict, lmap, mkidx
 from decorators import echo_output, requires_aws_stack
 from kids.cache import cache as cached
-import logging
 
 LOG = logging.getLogger(__name__)
 

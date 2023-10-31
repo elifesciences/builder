@@ -3,8 +3,9 @@ __description__ = """Module that deals with AMI baking!
 We bake new AMIs to avoid long deployments and the occasional
 runtime bugs that crop up while building brand new machines."""
 
-from buildercore import core, utils, bootstrap, config
+from buildercore import bootstrap, config, core, utils
 from buildercore.utils import ensure
+
 
 def ami_name(stackname):
     # elife-api.2015-12-31

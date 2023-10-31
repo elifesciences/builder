@@ -1,9 +1,11 @@
-import os
-import threadbare
-from io import BytesIO
-from . import utils, config
 import logging
+import os
+from io import BytesIO
+
 import pssh.exceptions
+import threadbare
+
+from . import config, utils
 
 LOG = logging.getLogger(__name__)
 

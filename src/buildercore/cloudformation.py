@@ -2,15 +2,17 @@
 
 see `trop.py` for the *generation* of Cloudformation templates."""
 
+import json
+import logging
+import os
 from collections import namedtuple
 from contextlib import contextmanager
-import logging
-import json
-import os
-from pprint import pformat
 from functools import partial
+from pprint import pformat
+
 import backoff
 import botocore
+
 from . import config, core, keypair, trop, utils
 from .utils import call_while, ensure
 
