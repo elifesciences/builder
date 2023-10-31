@@ -1,8 +1,5 @@
 #!/bin/bash
-set -e
+. ./.scrub.sh 2> /dev/null
 
-source venv/bin/activate
-
-. .scrub.sh 2> /dev/null
 echo "Failing if scrub produces local modifications"
 git diff --exit-code

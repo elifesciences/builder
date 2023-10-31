@@ -1,6 +1,6 @@
 #!/bin/bash
+# scrub.sh uses ruff to fix any small bits
 # requires an activated venv
-# scrub.sh uses the autopep8 tool to clean up whitespace and other small bits
 
 # E261 = double space before inline comment
 # E265, E26 = don't add a space after inline and block comments
@@ -12,8 +12,13 @@
 # E731 = don't assign a lambda expression check.
 # W690 = don't try to make code more compatible for python3. 2to3 will do this for us eventually
 
-autopep8 \
-    --in-place --recursive --aggressive \
-    --ignore E501,E302,E261,E26,E265,E401,E305,E309,E731,W690 \
-    --exclude *.html \
-    src/
+#autopep8 \
+#    --in-place --recursive --aggressive \
+#    --ignore E501,E302,E261,E26,E265,E401,E305,E309,E731,W690 \
+#    --exclude *.html \
+#    src/
+
+ruff check \
+    --config .ruff.toml \
+    --fix-only \
+    *.py src/

@@ -1,0 +1,51 @@
+# '--jobs 0' auto-detect the number of processors available to use.
+#pylint -E *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py src/tests/*.py src/integration_tests/*.py \
+#    --jobs 0
+#
+# specific warnings we're interested in, comma separated with no spaces.
+# presence of these warnings are a failure.
+# 'pointless-string-statement' - "when a string is used as a statement (which of course has no effect)."
+# 'no-else-return' - "unnecessary block of code following an if containing a return statement"
+# 'redefined-outer-name' - "a variable's name hides a name defined in an outer scope or except handler."
+# 'redefined-builtin' - "a variable or function override a built-in."
+#pylint *.py ./src/*.py src/buildercore/*.py src/buildercore/project/*.py \
+#    --disable=all \
+#    --reports=n \
+#    --score=n \
+#    --enable=pointless-string-statement,no-else-return,redefined-outer-name,redefined-builtin
+#
+# ---
+#
+# # skips complaints about 'raw_input' and 'file' not being defined in python3
+# if pyflakes src/ | grep -v -E "'raw_input'|'file'"; then exit 1; fi
+
+exclude = [
+    "./src/tests", 
+    "./src/integration_tests",
+]
+
+select = [
+    # ruff's default set of rules: https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
+    #"E4", "E7", "E9", "F",
+    "E", "F",
+    
+    # pycodestyle: https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
+    "W",
+    
+    # ruff: https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "RUF",
+    
+    # pep8-naming: https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    # todo: these look fine
+    #"N",
+    
+    #"I",
+
+]
+
+ignore = [
+    "RUF005", # "Consider {expression} instead of concatenation"
+    "RUF012", # "Mutable class attributes should be annotated with `typing.ClassVar`"
+    "E501", # Line too long
+    "E731", # Do not assign a `lambda` expression, use a `def`
+]
