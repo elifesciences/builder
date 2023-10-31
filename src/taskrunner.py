@@ -3,9 +3,26 @@ import threadbare
 from buildercore import config
 from functools import reduce
 from decorators import echo_output
-import cfn, lifecycle, masterless, vault, aws, tasks, master, askmaster, buildvars, project, deploy, report, fix, checks, stack
-import aws.rds, aws.cloudformation, aws.ec2
-import sys, traceback
+import cfn
+import lifecycle
+import masterless
+import vault
+import aws
+import tasks
+import master
+import askmaster
+import buildvars
+import project
+import deploy
+import report
+import fix
+import checks
+import stack
+import aws.rds
+import aws.cloudformation
+import aws.ec2
+import sys
+import traceback
 import utils
 
 # threadbare module is otherwise not used and is flagged for linting

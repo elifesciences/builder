@@ -1,5 +1,6 @@
 from io import BytesIO
-import json, base64
+import json
+import base64
 from .command import download
 import logging
 

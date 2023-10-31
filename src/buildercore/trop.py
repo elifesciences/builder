@@ -11,7 +11,8 @@ The non-AWS pipeline is similar:
 
 see also `terraform.py`."""
 
-import json, os
+import json
+import os
 from collections import OrderedDict
 from os.path import join
 from . import config, utils, bvars, aws
@@ -84,8 +85,8 @@ def _convert_ports_to_dictionary(ports):
                 ports_map[p] = {}
             elif isinstance(p, dict):
                 ensure(len(p) == 1, "Single port definition cannot contain more than one value")
-                from_port = list(p.keys())[0]
-                configuration = list(p.values())[0]
+                from_port = next(iter(p.keys()))
+                configuration = next(iter(p.values()))
                 ports_map[from_port] = configuration
             else:
                 raise ValueError("Invalid port definition: %s" % (p,))
@@ -1565,7 +1566,7 @@ def render_waf_ipsets(context):
     """returns a list of IPSet objects. These can be used in WAF rules to affect groups of IP addresses.
     we use them to whitelist traffic."""
     def withsuffix(ip_address):
-        if not '/' in ip_address:
+        if '/' not in ip_address:
             return ip_address + "/32"
         return ip_address
 

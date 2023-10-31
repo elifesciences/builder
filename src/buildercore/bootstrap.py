@@ -4,7 +4,9 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os, json, re
+import os
+import json
+import re
 from os.path import join
 from collections import OrderedDict
 from datetime import datetime

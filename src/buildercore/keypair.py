@@ -1,6 +1,7 @@
 "handles the creation/deletion/storage of keypairs from AWS"
 
-import os, shutil
+import os
+import shutil
 from os.path import join
 from . import core, utils, config, s3
 from .core import stack_pem

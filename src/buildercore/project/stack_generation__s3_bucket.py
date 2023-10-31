@@ -1,4 +1,6 @@
-import os, tempfile, json
+import os
+import tempfile
+import json
 from buildercore import core, utils
 from buildercore.project import stack_config as project_config
 from botocore.exceptions import ClientError
@@ -106,7 +108,7 @@ def generate_stack(config_path):
     def not_cloudformation_tagged(stack):
         tag = 'aws:cloudformation:stack-id'
         # {"foo": {"meta": ..., "resource-list": ...}} => {"meta": ..., "resource-list": ...}
-        stack_data = list(stack.values())[0]
+        stack_data = next(iter(stack.values()))
         for resource in stack_data['resource-list']:
             if tag in resource.get('tag-list', {}):
                 LOG.warning("excluding %r, it belongs to: %s" %

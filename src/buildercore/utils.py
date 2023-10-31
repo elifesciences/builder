@@ -2,7 +2,12 @@ from io import StringIO
 from ruamel.yaml import YAML
 from pprint import pformat
 import pytz
-import os, sys, json, time, random, string
+import os
+import sys
+import json
+import time
+import random
+import string
 from functools import wraps
 from datetime import datetime
 import yaml
@@ -10,7 +15,9 @@ from collections import OrderedDict
 from os.path import join
 import logging
 from kids.cache import cache as cached
-import tempfile, shutil, copy
+import tempfile
+import shutil
+import copy
 
 LOG = logging.getLogger(__name__)
 
@@ -178,7 +185,6 @@ def firstnn(x):
     "returns the first non-nil value in x"
     return first(filter(lambda v: v is not None, x))
 
-# pylint: disable=too-many-arguments
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
     """calls the given function `fn` every `interval` seconds until it returns False.
     An `exception_class` will be raised if `timeout` is reached (default `RuntimeError`).

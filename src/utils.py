@@ -1,6 +1,7 @@
 import logging
-import os, sys
-from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
+import os
+import sys
+from distutils.util import strtobool as _strtobool
 from buildercore import config
 from buildercore.utils import ensure, second, last, isint
 from buildercore.command import local

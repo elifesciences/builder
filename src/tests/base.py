@@ -93,8 +93,6 @@ class BaseCase(TestCase):
         switch_in_test_settings()
         self.fixtures_dir = fixtures_dir
 
-    # TODO: python2 warning
-    # pylint: disable=E1101
     def assertCountEqual(self, *args):
         parent = super(BaseCase, self)
         if not hasattr(parent, 'assertCountEqual'):
@@ -102,7 +100,6 @@ class BaseCase(TestCase):
         else:
             parent.assertCountEqual(*args)
 
-    # pyline: disable=invalid-name
     def assertAllPairsEqual(self, fn, pair_lst):
         "given a function and a list of (given, expected) asserts all fn(given) == expected"
         for given, expected in pair_lst:
@@ -110,14 +107,12 @@ class BaseCase(TestCase):
                 actual = fn(given)
                 self.assertEqual(expected, actual, "failed, %r != %r" % (expected, actual))
 
-    # pyline: disable=invalid-name
     def assertAllTrue(self, fn, lst):
         "given a function a list of values, asserts all fn(value) are true"
         for x in lst:
             with self.subTest(given=x):
                 self.assertTrue(fn(x), "failed, fn(%s) != True" % x)
 
-    # pyline: disable=invalid-name
     def assertAllNotTrue(self, fn, lst):
         "given a function a list of values, asserts all fn(value) are NOT true"
         for x in lst:

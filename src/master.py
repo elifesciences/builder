@@ -2,8 +2,11 @@
 
 See `askmaster.py` for tasks that are run on minions."""
 
-import os, time
-import cfn, buildvars, utils
+import os
+import time
+import cfn
+import buildvars
+import utils
 from buildercore.command import remote_sudo, local
 from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
 from buildercore.utils import lmap, exsubdict, mkidx, ensure

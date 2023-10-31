@@ -1,4 +1,5 @@
-import json, inspect
+import json
+import inspect
 from functools import wraps
 import logging
 

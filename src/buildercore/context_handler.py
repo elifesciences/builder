@@ -10,7 +10,8 @@
 # See cloudformation.py and trop.py for rendering Cloudformation templates with this context data
 # See terraform.py for rendering Terraform templates with this context data
 
-import os, json
+import os
+import json
 from os.path import join
 from . import config, s3
 

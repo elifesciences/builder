@@ -1,8 +1,10 @@
-import os, json
+import os
+import json
 from pprint import pformat
 import backoff
 from buildercore.command import local, remote, upload, download, settings, remote_file_exists, CommandException, NetworkError
-import utils, buildvars
+import utils
+import buildvars
 from utils import TaskExit
 from decorators import requires_project, requires_aws_stack, requires_aws_stack_template, setdefault, timeit
 from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
@@ -365,7 +367,6 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1
 
 @requires_aws_stack
 @requires_aws_stack_template
-# pylint: disable-msg=too-many-arguments
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
     if command is None:
         utils.errcho("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)

@@ -1,5 +1,8 @@
 from collections import namedtuple, OrderedDict
-import os, re, shutil, json
+import os
+import re
+import shutil
+import json
 from os.path import join
 from dda_python_terraform import Terraform, IsFlagged, IsNotFlagged
 from .context_handler import only_if, load_context
@@ -1053,7 +1056,7 @@ set -o xtrace
         'desired_capacity': context['eks']['worker']['desired-capacity'],
         'vpc_zone_identifier': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
         'tag': autoscaling_group_tags,
-        'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) == True else []},
+        'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
     })
 
 def _render_eks_workers_role(context, template):
@@ -1548,7 +1551,7 @@ def init(stackname, context):
     # in 0.14 'version' in 'providers' section is now deprecated and you'll get warnings/errors.
     required_providers = {}
     for provider_dict in providers['provider']:
-        provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
+        provider_name = next(iter(provider_dict.keys())) # {'fastly': {'version': ..., ...}, ...} => 'fastly'
         provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
         source_path = "terraform." + provider_context_key + ".source" # "terraform.provider-aws.source"
         source = lookup(context, source_path, default=None)
