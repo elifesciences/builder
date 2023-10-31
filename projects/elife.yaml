@@ -1297,6 +1297,11 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             ec2:
                 type: c5.9xlarge
+        gravtest1:
+            description: graviton test
+            ec2:
+                type: c6g.12xlarge
+                ami: ami-0372efd2cd94de14f # 20.04, arm64, hvm:ebs-ssd, 20231020.1
     vagrant:
         ram: 4096
 
