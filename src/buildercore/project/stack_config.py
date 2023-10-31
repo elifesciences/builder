@@ -50,7 +50,7 @@ def stack_has_path(data):
 
 def read_stack_file(path):
     "reads the contents of the YAML file at `path`, returning Python data."
-    with open(path, 'r') as fh:
+    with open(path) as fh:
         data = utils.ruamel_load(fh)
     # a check before `parse_stack_map` to insert a reference to where this data originated.
     # it's necessary so we know where to update an individual stack in future during stack regeneration.

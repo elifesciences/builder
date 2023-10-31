@@ -281,7 +281,7 @@ def ec2instance(context, node):
         # so we use redundant-subnet-id-2 (us-east-1a)
         subnet_id = lu('aws.redundant-subnet-id-2')
 
-    with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment'), 'r') as fh:
+    with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment')) as fh:
         clean_server_script = fh.read()
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
@@ -1532,7 +1532,7 @@ def render_waf_managed_rule(stackname, rule_name_with_ns, rule):
 
 # when given an object to render, Troposphere will look for some way to encode it's data:
 # - https://github.com/cloudtools/troposphere/blob/2.7.1/troposphere/__init__.py#L69-L72
-class JSONRule(object):
+class JSONRule:
     title = 'Rule'
 
     def __init__(self, name):
@@ -1540,7 +1540,7 @@ class JSONRule(object):
         ensure(os.path.exists(self.path), "path not found: %s" % (self.path,))
 
     def JSONrepr(self):
-        with open(self.path, 'r') as fh:
+        with open(self.path) as fh:
             return json.load(fh)
 
 # in order to allow custom objects as Rules, I had to slip `JSONRule` in here:

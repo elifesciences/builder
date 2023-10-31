@@ -91,7 +91,7 @@ USER = {
     'stack-files': [],
 }
 if os.path.exists(USER_SETTINGS_PATH):
-    with open(USER_SETTINGS_PATH, 'r') as fh:
+    with open(USER_SETTINGS_PATH) as fh:
         USER.update(utils.yaml_load(fh.read()))
 
 # logging

@@ -38,7 +38,7 @@ def download_from_s3(stackname, refresh=False):
 
 def _load_context_from_disk(stackname):
     path = local_context_file(stackname)
-    with open(path, 'r') as fh:
+    with open(path) as fh:
         return json.load(fh)
 
 def _load_context_from_s3(stackname):

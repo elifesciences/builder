@@ -343,9 +343,9 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
     # for when we really need it to exist
     if die_if_doesnt_exist and not os.path.exists(expected_key):
-        raise EnvironmentError("keypair %r not found at %r" % (stackname, expected_key))
+        raise OSError("keypair %r not found at %r" % (stackname, expected_key))
     if die_if_exists and os.path.exists(expected_key):
-        raise EnvironmentError("keypair %r found at %r, not overwriting." % (stackname, expected_key))
+        raise OSError("keypair %r found at %r, not overwriting." % (stackname, expected_key))
     return expected_key
 
 def _ec2_connection_params(stackname, username, **kwargs):
@@ -721,7 +721,7 @@ def steady_stack_names(region):
 
 class MultipleRegionsError(EnvironmentError):
     def __init__(self, regions):
-        super(MultipleRegionsError, self).__init__()
+        super().__init__()
         self._regions = regions
 
     def regions(self):
@@ -745,7 +745,7 @@ def find_region(stackname=None):
     all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
     region_list = unique(filter(None, all_regions)) # remove any Nones, make unique, make a list
     if not region_list:
-        raise EnvironmentError("no regions available at all!")
+        raise OSError("no regions available at all!")
     if len(region_list) > 1:
         raise MultipleRegionsError(region_list)
     return region_list[0]

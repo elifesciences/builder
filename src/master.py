@@ -60,7 +60,7 @@ def write_missing_keypairs_to_s3():
 def download_keypair(stackname):
     try:
         return keypair.download_from_s3(stackname)
-    except EnvironmentError as err:
+    except OSError as err:
         LOG.info(err)
 
 #
@@ -214,7 +214,7 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
 
     remastered_list = []
     if os.path.exists('remastered.txt'):
-        with open('remastered.txt', 'r') as fh:
+        with open('remastered.txt') as fh:
             remastered_list = fh.read().splitlines()
 
     for pname in pname_list:

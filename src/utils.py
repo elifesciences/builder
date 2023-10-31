@@ -59,10 +59,10 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
     default = None
     if default_file:
         try:
-            with open(default_file, 'r') as fh:
+            with open(default_file) as fh:
                 default = fh.read()
             pick_list.index(default)
-        except (ValueError, IOError):
+        except (OSError, ValueError):
             # either the given default file doesn't exist or the
             # default value doesn't appear in pick list, ignore given default
             default = None

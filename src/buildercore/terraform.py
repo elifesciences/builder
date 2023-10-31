@@ -1324,7 +1324,7 @@ def render_eks(context, template):
 class TerraformTemplateError(RuntimeError):
     pass
 
-class TerraformTemplate():
+class TerraformTemplate:
     def __init__(self, resource=None, data=None, locals_=None):
         if not resource:
             resource = OrderedDict()

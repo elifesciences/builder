@@ -1,4 +1,3 @@
-# coding: utf8
 
 """
 Marshalls a collection of project information together in to a dictionary called the `context`.

@@ -24,7 +24,7 @@ def write_keypair_to_s3(stackname):
     # http://boto.readthedocs.io/en/latest/ref/ec2.html#boto.ec2.keypair.KeyPair
     path = stack_pem(stackname, die_if_doesnt_exist=True)
     key = s3_keypair_key(stackname)
-    with open(path, 'r') as fp:
+    with open(path) as fp:
         pem_contents = fp.read()
     s3.write(key, pem_contents)
     return s3.exists(key)
@@ -57,7 +57,7 @@ def delete_keypair_from_fs(stackname):
         shutil.copy2(expected_key, delete_path)
         os.unlink(expected_key)
         return True
-    except (RuntimeError, IOError):
+    except (OSError, RuntimeError):
         LOG.exception("unhandled exception attempting to delete keypair from filesystem")
 
 #

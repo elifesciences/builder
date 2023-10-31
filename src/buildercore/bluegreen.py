@@ -11,7 +11,7 @@ from .utils import call_while
 
 LOG = logging.getLogger(__name__)
 
-class BlueGreenConcurrency(object):
+class BlueGreenConcurrency:
     def __init__(self, region):
         self.conn = boto_client('elb', region)
 

@@ -222,13 +222,13 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
     if cloudformation_file:
         print('cloudformation template:')
-        with open(cloudformation_file, 'r') as fh:
+        with open(cloudformation_file) as fh:
             print(json.dumps(json.load(fh), indent=4))
         print()
 
     if terraform_file:
         print('terraform template:')
-        with open(terraform_file, 'r') as fh:
+        with open(terraform_file) as fh:
             print(json.dumps(json.load(fh), indent=4))
         print()
 
