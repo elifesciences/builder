@@ -1,4 +1,7 @@
-# import threadbare early so `gevent.monkey_patch` can patch everything
+# import threadbare early so `gevent.monkey_patch` can patch everything.
+# threadbare module is otherwise not used.
+import threadbare # noqa: F401, I001
+
 import sys
 import traceback
 from functools import reduce
@@ -20,14 +23,11 @@ import project
 import report
 import stack
 import tasks
-import threadbare
 import utils
 import vault
 from buildercore import config
 from decorators import echo_output
 
-# threadbare module is otherwise not used and is flagged for linting
-assert threadbare
 
 @echo_output
 def ping():
