@@ -1,10 +1,12 @@
-from moto import mock_route53
 from datetime import datetime
-from unittest.mock import patch, MagicMock
-from pytz import utc
-from . import base
+from unittest.mock import MagicMock, patch
+
+from buildercore import cfngen, core, lifecycle
 from buildercore.core import parse_stackname
-from buildercore import core, cfngen, lifecycle
+from moto import mock_route53
+from pytz import utc
+
+from . import base
 
 
 class TestBuildercoreLifecycle(base.BaseCase):

@@ -1,10 +1,12 @@
-import pytest
 import re
+from unittest.mock import MagicMock, patch
+
+import pytest
 import utils
-from . import base
 from buildercore import cfngen, context_handler
-from cfn import ssh, owner_ssh, generate_stack_from_input
-from unittest.mock import patch, MagicMock
+from cfn import generate_stack_from_input, owner_ssh, ssh
+
+from . import base
 
 # warn: this module uses fixtures implicitly loaded from `./src/conftest.py`
 

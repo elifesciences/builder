@@ -1,5 +1,7 @@
-from . import base
 from buildercore.project import stack_config
+
+from . import base
+
 
 def test_deepmerge():
     "the simpler deepmerge for stacks "
@@ -53,7 +55,7 @@ def test_all_stack_data(datadir):
 def test__dumps_stack_file():
     "a stack config file can be read, parsed as YAML into Python and dumped back to YAML without changes."
     fixture = base.fixture_path('stacks/stacks.yaml')
-    with open(fixture, 'r') as fh:
+    with open(fixture) as fh:
         expected = fh.read()
     config = stack_config.read_stack_file(fixture)
     actual = stack_config._dumps_stack_file(config)

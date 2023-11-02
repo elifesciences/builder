@@ -1,10 +1,13 @@
-from collections import OrderedDict
 import json
-from os.path import join
 import unittest
+from collections import OrderedDict
+from os.path import join
 from unittest.mock import patch
-from . import base
+
 from buildercore import cfngen, trop
+
+from . import base
+
 
 def _parse_json(dump):
     """Parses `dump` into a dictionary, using strings rather than unicode strings.

@@ -1,7 +1,10 @@
 import os
-from . import base
-from unittest.mock import patch, call
+from unittest.mock import call, patch
+
 import utils
+
+from . import base
+
 
 class TestUtils(base.BaseCase):
     def setUp(self):
@@ -73,7 +76,7 @@ class TestUtils(base.BaseCase):
         self.assertRegex(utils.pwd(), "^/.*/src$")
 
     def test_table(self):
-        class AnObject():
+        class AnObject:
             def __init__(self, project, instance_id):
                 self.project = project
                 self.instance_id = instance_id

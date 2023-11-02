@@ -1,6 +1,9 @@
-from . import base
 from unittest.mock import patch
+
 import decorators
+
+from . import base
+
 
 class TestDecorators(base.BaseCase):
     @patch('decorators.LOG.info')

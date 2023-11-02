@@ -1,7 +1,9 @@
 import sys
-from . import base
 from io import StringIO
+
 import taskrunner as tr
+
+from . import base
 
 SUCCESS_RC = 0
 

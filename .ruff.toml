@@ -1,8 +1,7 @@
 target-version = "py38"
 
 exclude = [
-    "./src/tests", 
-    "./src/integration_tests",
+
 ]
 
 select = [

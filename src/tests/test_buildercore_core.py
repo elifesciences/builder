@@ -1,13 +1,16 @@
-from moto import mock_rds
-import pytest
-from functools import partial
 import json
+from functools import partial
 from os.path import join
-from . import base
-from buildercore import core, utils, project, command
 from unittest import skip
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 import botocore
+import pytest
+from buildercore import command, core, project, utils
+from moto import mock_rds
+
+from . import base
+
 
 def test_prune_stackname():
     cases = [
@@ -140,7 +143,7 @@ class SimpleCases(base.BaseCase):
             ('lax--prod', []), # lax doesn't subscribe to anything
             ('observer--prod', ['bus-articles--prod', 'bus-metrics--prod']),
         ]
-        with open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r') as fh:
+        with open(join(self.fixtures_dir, 'sns_subscriptions.json')) as fh:
             fixture = json.load(fh)
         with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
             for stackname, expected_subs in cases:
@@ -185,7 +188,7 @@ class TestCoreNewProjectData(base.BaseCase):
             ('dummy3', self.dummy3_config),
         ]
         for pname, expected_path in expected:
-            with open(expected_path, 'r') as fh:
+            with open(expected_path) as fh:
                 expected_data = json.load(fh)
             project_data = project.project_data(pname)
             # cp /tmp/dummy*-project.json src/tests/fixtures/
@@ -202,7 +205,7 @@ class TestCoreNewProjectData(base.BaseCase):
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
 
-        with open(self.dummy1_config, 'r') as fh:
+        with open(self.dummy1_config) as fh:
             expected_data = json.load(fh)
         expected_data['vagrant']['cpus'] = 999
         self.assertEqual(project_data, expected_data)
@@ -215,7 +218,7 @@ class TestCoreNewProjectData(base.BaseCase):
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
 
-        with open(self.dummy1_config, 'r') as fh:
+        with open(self.dummy1_config) as fh:
             expected_data = json.load(fh)
         expected_data['vagrant']['cpus'] = 999
         expected_data['vagrant']['cpucap'] = 111

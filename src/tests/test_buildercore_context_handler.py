@@ -1,6 +1,9 @@
 from os import remove
-from . import base
+
 from buildercore import cfngen, context_handler
+
+from . import base
+
 
 class TestBuildercoreContext(base.BaseCase):
     def setUp(self):

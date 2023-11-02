@@ -1,7 +1,10 @@
-from buildercore import bluegreen
-from . import base
-from unittest.mock import patch, MagicMock
 from collections import OrderedDict
+from unittest.mock import MagicMock, patch
+
+from buildercore import bluegreen
+
+from . import base
+
 
 def try_only_once(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
     if not exception_class:

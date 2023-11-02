@@ -1,7 +1,8 @@
 import logging
-from tests import base
-from buildercore import bootstrap, cloudformation, utils, core, command
+
+from buildercore import bootstrap, cloudformation, command, core, utils
 from buildercore.config import BOOTSTRAP_USER
+from tests import base
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
@@ -15,13 +16,13 @@ LOG = logging.getLogger(__name__)
 class TestWithInstance(base.BaseIntegrationCase):
     @classmethod
     def setUpClass(cls):
-        super(TestWithInstance, cls).setUpClass()
+        super().setUpClass()
         cls.set_up_stack(project='dummy1', explicitly_start=True)
 
     @classmethod
     def tearDownClass(cls):
         cls.tear_down_stack()
-        super(TestWithInstance, cls).tearDownClass()
+        super().tearDownClass()
 
     def test_bootstrap_create_stack_idempotence(self):
         "the same stack cannot be created multiple times"

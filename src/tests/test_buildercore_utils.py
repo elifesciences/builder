@@ -1,11 +1,13 @@
 import io
-import pytest
-from collections import OrderedDict
-from . import base
-from functools import partial
-from buildercore import utils
-from unittest.mock import patch, MagicMock
 import logging
+from collections import OrderedDict
+from functools import partial
+from unittest.mock import MagicMock, patch
+
+import pytest
+from buildercore import utils
+
+from . import base
 
 LOG = logging.getLogger(__name__)
 
@@ -196,9 +198,9 @@ class Simple(base.BaseCase):
         utils.ensure(True, "True should allow ensure() to continue")
         self.assertRaises(AssertionError, utils.ensure, False, "Error message")
 
-        class CustomException(Exception):
+        class CustomError(Exception):
             pass
-        self.assertRaises(CustomException, utils.ensure, False, "Error message", CustomException)
+        self.assertRaises(CustomError, utils.ensure, False, "Error message", CustomError)
 
     def test_nested_dictmap(self):
         "nested_dictmap transforms a dictionary recursively as expected"
