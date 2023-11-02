@@ -133,7 +133,7 @@ class SimpleCases(base.BaseCase):
         self.assertEqual([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
 
     def test_find_ec2_instances_requiring_a_non_empty_list(self):
-        self.assertRaises(core.NoRunningInstances, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
+        self.assertRaises(core.NoRunningInstancesError, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
 
     def test_all_sns_subscriptions_filters_correctly(self):
         cases = [
@@ -165,7 +165,7 @@ class Errors(base.BaseCase):
             {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Tags': []},
         ]
         self.assertRaises(
-            core.NoPublicIps,
+            core.NoPublicIpsError,
             core.stack_all_ec2_nodes, 'dummy1--test', lambda: True
         )
 

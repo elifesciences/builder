@@ -49,7 +49,7 @@ class Primitives(base.BaseCase):
             ],
         }
         self.assertRaises(
-            bluegreen.SomeOutOfServiceInstances,
+            bluegreen.SomeOutOfServiceInstancesError,
             self.concurrency.wait_all_in_service,
             'dummy1-ElasticL-ABCDEFGHI'
         )

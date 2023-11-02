@@ -21,7 +21,7 @@ from buildercore import (
 from buildercore import lifecycle as core_lifecycle
 from buildercore import utils as core_utils
 from buildercore.command import (
-    CommandException,
+    CommandError,
     NetworkError,
     download,
     local,
@@ -33,7 +33,7 @@ from buildercore.command import (
 from buildercore.concurrency import concurrency_for
 from buildercore.config import BOOTSTRAP_USER, DEPLOY_USER, USER_PRIVATE_KEY
 from buildercore.core import stack_all_ec2_nodes, stack_conn, stack_pem, tags2dict
-from buildercore.decorators import PredicateException
+from buildercore.decorators import PredicateError
 from buildercore.utils import ensure
 from decorators import (
     requires_aws_stack,
@@ -61,9 +61,9 @@ type the name of the stack to continue or anything else to quit:
 def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
-    except context_handler.MissingContextFile:
+    except context_handler.MissingContextFileError:
         LOG.warning("Context does not exist anymore or was never created, exiting idempotently")
-    except PredicateException as e:
+    except PredicateError as e:
         if "I couldn't find a cloudformation stack" in str(e):
             LOG.warning("Not even the CloudFormation template exists anymore, exiting idempotently")
             return
@@ -188,7 +188,7 @@ def check_user_input(pname, instance_id=None, alt_config=None):
         print("checking for any instance named %r ..." % (dealbreaker,))
         try:
             checks.ensure_stack_does_not_exist(dealbreaker)
-        except checks.StackAlreadyExistsProblem:
+        except checks.StackAlreadyExistsError:
             # "stack 'journal--prod' exists, cannot re-use unique configuration 'prod'"
             msg = "stack %r exists, cannot re-use unique configuration %r." % (dealbreaker, alt_config)
             raise TaskExit(msg)
@@ -197,7 +197,7 @@ def check_user_input(pname, instance_id=None, alt_config=None):
     try:
         print("checking %r doesn't exist." % stackname)
         checks.ensure_stack_does_not_exist(stackname)
-    except checks.StackAlreadyExistsProblem as e:
+    except checks.StackAlreadyExistsError as e:
         msg = 'stack %r already exists.' % e.stackname
         raise TaskExit(msg)
 
@@ -309,7 +309,7 @@ def _check_want_to_be_running(stackname, autostart=False):
         if not _are_there_existing_servers(context):
             return False
 
-    except context_handler.MissingContextFile as e:
+    except context_handler.MissingContextFileError as e:
         LOG.warning(e)
 
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
@@ -331,7 +331,7 @@ def _interactive_ssh(username, public_ip, private_key):
     try:
         command = "ssh -o \"ConnectionAttempts 3\" %s@%s -i %s" % (username, public_ip, private_key)
         return local(command)
-    except CommandException as e:
+    except CommandError as e:
         LOG.warning(e)
 
 @requires_aws_stack
@@ -422,6 +422,6 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 concurrency=concurrency_for(stackname, concurrency),
                 node=int(node) if node else None
             )
-    except CommandException as e:
+    except CommandError as e:
         LOG.error(e)
         exit(2)

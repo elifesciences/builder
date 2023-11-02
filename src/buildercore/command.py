@@ -13,7 +13,7 @@ LOG = logging.getLogger(__name__)
 # exceptions
 #
 
-class CommandException(Exception):
+class CommandError(Exception):
     pass
 
 NetworkError = threadbare.operations.NetworkError
@@ -23,7 +23,7 @@ NetworkTimeoutError = pssh.exceptions.Timeout
 NetworkUnknownHostError = pssh.exceptions.UnknownHostError
 NetworkAuthenticationError = pssh.exceptions.AuthenticationError
 
-threadbare.state.set_defaults({"abort_exception": CommandException,
+threadbare.state.set_defaults({"abort_exception": CommandError,
                                "key_filename": os.path.expanduser(config.USER_PRIVATE_KEY)})
 
 #

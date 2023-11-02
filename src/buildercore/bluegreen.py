@@ -83,7 +83,7 @@ class BlueGreenConcurrency:
             interval=5,
             timeout=60,
             update_msg='Waiting for all instances to be in service...',
-            exception_class=SomeOutOfServiceInstances
+            exception_class=SomeOutOfServiceInstancesError
         )
 
     def register(self, elb_name, nodes_params):
@@ -145,5 +145,5 @@ class BlueGreenConcurrency:
     def _instance_ids(self, nodes_params):
         return list(nodes_params['nodes'].keys())
 
-class SomeOutOfServiceInstances(RuntimeError):
+class SomeOutOfServiceInstancesError(RuntimeError):
     pass

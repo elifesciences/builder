@@ -9,7 +9,7 @@ from . import cloudformation, core, trop, utils
 
 LOG = logging.getLogger(__name__)
 
-class SomeOutOfServiceInstances(RuntimeError):
+class SomeOutOfServiceInstancesError(RuntimeError):
     pass
 
 def conn(stackname):
@@ -171,7 +171,7 @@ def wait_all_in_service(stackname):
         interval=5,
         timeout=60,
         update_msg='Waiting for all instances to be in service...',
-        exception_class=SomeOutOfServiceInstances
+        exception_class=SomeOutOfServiceInstancesError
     )
 
 def do(single_node_work_fn, node_params):

@@ -22,7 +22,7 @@ from . import (  # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
     utils,
 )
 from .command import (
-    CommandException,
+    CommandError,
     NetworkAuthenticationError,
     NetworkError,
     NetworkTimeoutError,
@@ -34,12 +34,6 @@ from .utils import ensure, first, isstr, lfilter, lmap, lookup, subdict, unique
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
-
-class DeprecationException(Exception):
-    pass
-
-class NoMasterException(Exception):
-    pass
 
 # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudformation.html#CloudFormation.Client.describe_stacks
 ALL_CFN_STATUS = [
@@ -248,7 +242,7 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
 
     LOG.debug("find_ec2_instances with filters %s returned: %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
-        raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
+        raise NoRunningInstancesError("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
 # NOTE: preserved for the commentary, but this is for boto2
@@ -378,7 +372,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     with settings(**params):
         yield
 
-class NoPublicIps(Exception):
+class NoPublicIpsError(Exception):
     pass
 
 def all_node_params(stackname):
@@ -439,7 +433,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
-    ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
+    ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIpsError)
 
     def single_node_work_fn():
         last_exc = None
@@ -466,7 +460,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 last_exc = err
                 continue
 
-            except CommandException as err:
+            except CommandError as err:
                 # "command aborted while executing on foo--bar--1 during attempt 2."
                 instance_id = "%s--%s" % (stackname, current_node_id())
                 LOG.info("command aborted while executing on %s during attempt %s.", instance_id, attempt + 1)
@@ -608,7 +602,7 @@ def describe_stack(stackname, allow_missing=False):
             return None
         raise
 
-class NoRunningInstances(Exception):
+class NoRunningInstancesError(Exception):
     pass
 
 def ec2_data(stackname, state=None):

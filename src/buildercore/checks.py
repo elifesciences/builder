@@ -9,10 +9,10 @@ import requests
 from . import core, project
 
 
-class AccessProblem(RuntimeError):
+class AccessError(RuntimeError):
     pass
 
-class StackAlreadyExistsProblem(RuntimeError):
+class StackAlreadyExistsError(RuntimeError):
     def __init__(self, message, stackname):
         RuntimeError.__init__(self, message)
         self.stackname = stackname
@@ -48,8 +48,8 @@ def can_access_builder_private(pname):
 def ensure_can_access_builder_private(pname):
     if not can_access_builder_private(pname):
         pdata = project.project_data(pname)
-        raise AccessProblem("failed to access the 'builder-private' repository: %s" % pdata['private-repo'])
+        raise AccessError("failed to access the 'builder-private' repository: %s" % pdata['private-repo'])
 
 def ensure_stack_does_not_exist(stackname):
     if core.stack_is_active(stackname):
-        raise StackAlreadyExistsProblem("%s is an active stack" % stackname, stackname)
+        raise StackAlreadyExistsError("%s is an active stack" % stackname, stackname)

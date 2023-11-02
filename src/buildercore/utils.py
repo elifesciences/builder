@@ -264,7 +264,6 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     "wrapper around the yaml.dump function with sensible defaults for formatting"
     indent = 4
     line_break = '\n'
-    # pylint: disable=too-many-ancestors
 
     if isinstance(data, bytes):
         # simple bytestrings are treated as regular (utf-8) strings and not binary data in python3+
@@ -366,7 +365,6 @@ def lookup(data, path, default=0xDEADBEEF):
         return default
 
 # TODO: this function suffers from truthy-falsey problems. prefer `lookup`.
-# pylint: disable=invalid-name
 def lu(context, *paths, **kwargs):
     """looks up many paths given the initial data, returning the first non-nil result.
     if no data available a ValueError is raised."""

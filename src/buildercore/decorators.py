@@ -5,10 +5,7 @@ from functools import wraps
 
 LOG = logging.getLogger(__name__)
 
-class FeatureDisabledException(Exception):
-    pass
-
-class PredicateException(Exception):
+class PredicateError(Exception):
     pass
 
 def _requires_fn_stack(func, pred, message=None):
@@ -22,7 +19,7 @@ def _requires_fn_stack(func, pred, message=None):
         else:
             msg = "\n\nfunction `%s()` failed predicate \"%s\" on stack '%s'\n" \
                 % (func.__name__, str(inspect.getsource(pred)).strip(), stackname)
-        raise PredicateException(msg)
+        raise PredicateError(msg)
     return _wrapper
 
 def osissuefn(issue):

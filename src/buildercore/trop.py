@@ -1013,11 +1013,11 @@ def render_alb(context, template, ec2_instances):
 
     # -- security group
 
-    ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
+    alb_security_group_id = ALB_TITLE + "SecurityGroup"
     alb_ports = [attr_map['port'] for attr_map in context['alb']['listeners'].values()]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
     _lb_security_group = security_group(
-        ALB_SECURITY_GROUP_ID,
+        alb_security_group_id,
         context['aws']['vpc-id'],
         alb_ports
     )
@@ -1037,7 +1037,7 @@ def render_alb(context, template, ec2_instances):
         Name=context['stackname'],
         Scheme='internet-facing' if alb_is_public else 'internal',
         Subnets=context['alb']['subnets'],
-        SecurityGroups=[Ref(ALB_SECURITY_GROUP_ID)],
+        SecurityGroups=[Ref(alb_security_group_id)],
         Type='application', # default, could also be 'network', superceding ELB logic
         Tags=_alb_tags(context),
         LoadBalancerAttributes=lb_attrs,
@@ -1539,7 +1539,7 @@ class JSONRule:
         self.path = join(config.SRC_PATH, 'buildercore/waf/', name)
         ensure(os.path.exists(self.path), "path not found: %s" % (self.path,))
 
-    def JSONrepr(self):
+    def JSONrepr(self): # noqa: N802
         with open(self.path) as fh:
             return json.load(fh)
 

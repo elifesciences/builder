@@ -104,7 +104,7 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
         on_start()
         yield
 
-    except StackTakingALongTimeToComplete as err:
+    except StackTakingLongTimeToCompleteError as err:
         LOG.info("Stack taking a long time to complete: %s", err)
         raise
 
@@ -151,7 +151,7 @@ def bootstrap(stackname, context):
         conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
         _wait_until_in_progress(stackname)
 
-class StackTakingALongTimeToComplete(RuntimeError):
+class StackTakingLongTimeToCompleteError(RuntimeError):
     pass
 
 def _wait_until_in_progress(stackname):
@@ -163,7 +163,7 @@ def _wait_until_in_progress(stackname):
         partial(is_updating, stackname),
         timeout=7200,
         update_msg='Waiting for CloudFormation to finish creating stack ...',
-        exception_class=StackTakingALongTimeToComplete
+        exception_class=StackTakingLongTimeToCompleteError
     )
 
     final_stack = core.describe_stack(stackname)

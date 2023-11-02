@@ -44,7 +44,7 @@ def _load_context_from_disk(stackname):
 def _load_context_from_s3(stackname):
     "downloads context from S3 then returns the results of loading it from disk"
     if not download_from_s3(stackname, refresh=True):
-        raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+        raise MissingContextFileError("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
     return _load_context_from_disk(stackname)
 
 def load_context(stackname):
@@ -62,7 +62,7 @@ def load_context(stackname):
     # 14:52:48 KeyError: 'configuration-repo'
     #
     # if not download_from_s3(stackname, refresh=True):
-    #    raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+    #    raise MissingContextFileError("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
 
     #path = local_context_file(stackname)
     #contents = json.load(open(path, 'r'))
@@ -117,5 +117,5 @@ def only_if(*servicenames):
         return decorated_with_only_if
     return decorate_with_only_if
 
-class MissingContextFile(RuntimeError):
+class MissingContextFileError(RuntimeError):
     pass
