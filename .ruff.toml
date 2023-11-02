@@ -1,3 +1,5 @@
+target-version = "py38"
+
 exclude = [
     "./src/tests", 
     "./src/integration_tests",
@@ -16,7 +18,7 @@ select = [
     
     # pep8-naming: https://docs.astral.sh/ruff/rules/#pep8-naming-n
     # todo
-    #"N",
+    "N",
     
     # isort: https://docs.astral.sh/ruff/rules/#isort-i
     "I",
