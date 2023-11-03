@@ -97,19 +97,20 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
 
 def uin(param, default=0xDEADBEEF):
     "a slightly fancier `get_input` that allows a default value and keeps prompting until it has *something*."
+    improbable_default = 0xDEADBEEF
     if config.BUILDER_NON_INTERACTIVE:
-        ensure(default != 0xDEADBEEF, "stdin requested in non-interactive mode with no default.")
+        ensure(default != improbable_default, "stdin requested in non-interactive mode with no default.")
         LOG.warning("non-interactive mode, returning default '%s'.", default)
         return default
 
     while True:
-        if default and default != 0xDEADBEEF:
+        if default and default != improbable_default:
             errcho("%s [%s]: " % (param, default))
         else:
             errcho("%s: " % param)
         userin = get_input('> ')
         if not userin or not userin.strip():
-            if default != 0xDEADBEEF:
+            if default != improbable_default:
                 return default
             errcho('input is required (ctrl-c to quit)')
             continue

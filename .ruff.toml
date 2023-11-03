@@ -7,14 +7,14 @@ exclude = [
 select = [
     # ruff's default set of rules: https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
     #"E4", "E7", "E9", "F",
-    
+
     # pyflakes: https://docs.astral.sh/ruff/rules/#pyflakes-f
     "F",
-    
+
     # pycodestyle: https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
     "E",
     "W",
-    
+
     # mccabe: https://docs.astral.sh/ruff/rules/#mccabe-c90
     #"C90", # disabled, complexity is ok
 
@@ -46,19 +46,24 @@ select = [
     # flake8-blind-except: https://docs.astral.sh/ruff/rules/#flake8-blind-except-ble
     # todo
     #"BLE",
-    
+
     # flake8-boolean-trap: https://docs.astral.sh/ruff/rules/#flake8-boolean-trap-fbt
     #"FBT", # these aren't *that* confusing, c'mon.
 
     # flake-8-bugbear: https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
     # todo
     #"B"
-    
+
     # flake8-builtins: https://docs.astral.sh/ruff/rules/#flake8-builtins-a
     "A",
-    
+
     # ...
-    
+
+    # pylint: https://docs.astral.sh/ruff/rules/#pylint-pl
+    "PL",
+
+    # ...
+
     # ruff: https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
     "RUF",
 ]
@@ -68,5 +73,8 @@ ignore = [
     "RUF012", # "Mutable class attributes should be annotated with `typing.ClassVar`". # code is not type annotated
     "E501", # "Line too long". long lines are ok, contortions to obey rule are not ok.
     "E731", # "Do not assign a `lambda` expression, use a `def`". lambdas are fine.
-    "UP031" # "Use format specifiers instead of percent format". percent formatters are fine. f-strings absorb the environment.
+    "UP031", # "Use format specifiers instead of percent format". percent formatters are fine. f-strings absorb the environment.
+    "PLR0913", # "Too many arguments in function definition". complexity is ok.
+    "PLR0915", # "Too many statements". complexity is ok.
+    "PLR0912", # "Too many branches". complexity is ok
 ]

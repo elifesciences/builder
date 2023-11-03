@@ -52,9 +52,9 @@ def sort_by_env(name):
         for env in order:
             pos = name.find("-" + env)
             if pos > -1:
-                env = name[pos + 1:] # "elife-libero-reviewer-prod" => "prod"
+                _env = name[pos + 1:] # "elife-libero-reviewer-prod" => "prod"
                 rest = name[:pos] # "elife-libero-reviewer-prod" => "elife-libero-reviewer"
-                key = "%s%s" % (rest, order.get(env, adhoc)) # "elife-libero-reviewer4"
+                key = "%s%s" % (rest, order.get(_env, adhoc)) # "elife-libero-reviewer4"
                 return key
 
         return name

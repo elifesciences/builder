@@ -305,7 +305,7 @@ def _get_dns_a_record(zone_name, name):
     a_record_list = result['ResourceRecordSets']
 
     # "zero or one 'A' records expected for 'foo--journal.elifesciences.org.', found 2"
-    ensure(len(a_record_list) < 2, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
+    ensure(len(a_record_list) <= 1, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
 
     # {'Name': 'continuumtest--lax.elifesciences.org.', 'Type': 'A', 'TTL': 60, 'ResourceRecords': [{'Value': '3.93.31.184'}]}
     a_record = first(a_record_list)

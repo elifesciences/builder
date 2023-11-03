@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 from pprint import pformat
 
 import backoff
@@ -385,7 +386,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1
         utils.confirm('continue?')
         if remote_file_exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
-            exit(1)
+            sys.exit(1)
         upload(local_path, remote_path)
 
 #
@@ -397,7 +398,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
     if command is None:
         utils.errcho("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
-        exit(1)
+        sys.exit(1)
     LOG.info("Connecting to: %s", stackname)
 
     instances = _check_want_to_be_running(stackname)
@@ -424,4 +425,4 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
             )
     except CommandError as e:
         LOG.error(e)
-        exit(2)
+        sys.exit(2)

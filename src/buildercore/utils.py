@@ -360,7 +360,8 @@ def lookup(data, path, default=0xDEADBEEF):
             return lookup(val, rest, default)
         return val
     except KeyError:
-        if default == 0xDEADBEEF:
+        improbable_default = 0xDEADBEEF
+        if default == improbable_default:
             raise
         return default
 

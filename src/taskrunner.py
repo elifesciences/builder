@@ -262,12 +262,12 @@ def parse_arguments(arguments):
 
     See sites/docs/usage/fab.rst, section on "per-task arguments" for details.
     """
-    cmds = []
+    cmd_list = []
     for cmd in arguments:
         args = []
         kwargs = {}
         if ':' in cmd:
-            cmd, argstr = cmd.split(':', 1)
+            cmd_bit, argstr = cmd.split(':', 1)
             for pair in _escape_split(',', argstr):
                 result = _escape_split('=', pair)
                 if len(result) > 1:
@@ -275,8 +275,10 @@ def parse_arguments(arguments):
                     kwargs[k] = v
                 else:
                     args.append(result[0])
-        cmds.append((cmd, args, kwargs))
-    return cmds
+        else:
+            cmd_bit = cmd
+        cmd_list.append((cmd_bit, args, kwargs))
+    return cmd_list
 
 # --- end
 
@@ -350,8 +352,8 @@ def main(arg_list):
             new_indent = ' ' * (indent + len(task_name) + offset)
 
             print(leading_indent + task_name + offset_str + tm['short_description'])
-            for row in tm['long_description'].split('\n'):
-                row = row.strip()
+            for _row in tm['long_description'].split('\n'):
+                row = _row.strip()
                 if not row:
                     continue
                 print(new_indent + row)
@@ -366,4 +368,4 @@ def main(arg_list):
     return task_result['rc']
 
 if __name__ == '__main__':
-    exit(main(sys.argv[1:]))
+    sys.exit(main(sys.argv[1:]))

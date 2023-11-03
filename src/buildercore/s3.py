@@ -71,7 +71,7 @@ def delete(key):
 
 def validate_prefix(prefix):
     prefix = prefix.strip()
-    if not prefix or len(prefix) < 2:
+    if not prefix or len(prefix) <= 1:
         raise ValueError("invalid prefix: %r" % prefix)
     if not prefix.endswith('/'):
         raise ValueError("prefix doesn't start or end in a slash: %r" % prefix)

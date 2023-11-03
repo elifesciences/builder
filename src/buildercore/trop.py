@@ -1659,7 +1659,7 @@ def render(context):
 
     for value in renderer_list:
         context_key, render_fn = value[0], value[1]
-        kwargs = value[2] if len(value) == 3 else {}
+        kwargs = value[2] if len(value) == 3 else {} # noqa: PLR2004
         if context[context_key]: # "if 's3' in context, then render_s3(...)"
             render_fn(context, template, **kwargs)
 

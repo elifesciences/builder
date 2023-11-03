@@ -361,7 +361,10 @@ def build_context_s3(pdata, context):
         for bucket_template_name in pdata['aws']['s3']:
             configuration = pdata['aws']['s3'][bucket_template_name]
             bucket_name = parameterize(context)(bucket_template_name)
-            ensure(len(bucket_name) <= 63, "bucket name %r from template %r is longer than 63 characters: %s" % (bucket_name, bucket_template_name, len(bucket_name)))
+            max_bucket_name_length = 63
+            msg = "bucket name %r from template %r is longer than 63 characters: %s" % \
+              (bucket_name, bucket_template_name, len(bucket_name))
+            ensure(len(bucket_name) <= max_bucket_name_length, msg)
             context['s3'][bucket_name] = default_bucket_configuration.copy()
             context['s3'][bucket_name].update(configuration if configuration else {})
     return context
@@ -791,8 +794,10 @@ def more_validation(json_template_str):
         for bucket in bucket_list:
             bucket_name = bucket['Properties']['BucketName']
             length = len(bucket_name)
+            min_length = 3
+            max_length = 63
             # occasionally true with particularly long alt-config names and instance ids
-            ensure(length >= 3 and length <= 63, "s3 bucket names must be between 3 and 63 characters: %s" % bucket_name)
+            ensure(length >= min_length and length <= max_length, "s3 bucket names must be between 3 and 63 characters: %s" % bucket_name)
             # this shouldn't ever be true but it's good to fail here than part way through a migration
             ensure(not any(char.isupper() for char in bucket_name), "s3 bucket name must not contain uppercase characters: %s" % bucket_name)
 

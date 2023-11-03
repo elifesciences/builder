@@ -344,6 +344,7 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
                 concurrency='serial',
                 num_attempts=3
             )
-            assert "foo" == "bar" # unreachable code, don't add assertions here
+            # unreachable code, don't add assertions here
+            assert "foo" == "bar" # noqa: PLR0133
         assert last_exc.value == expected_exc
         assert retried == expected

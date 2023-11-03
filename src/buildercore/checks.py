@@ -19,7 +19,7 @@ class StackAlreadyExistsError(RuntimeError):
 
 def http_access(url):
     resp = requests.head(url, allow_redirects=True)
-    return resp.status_code == 200
+    return resp.status_code == 200 # noqa: PLR2004
 
 def ssh_access(url):
     cmd = 'git ls-remote ' + url + ' &> /dev/null'
@@ -27,11 +27,13 @@ def ssh_access(url):
 
 def access(repo_url):
     bits = repo_url.split('://', 1)
-    if len(bits) == 1:
+    just_protocol = 1
+    protocol_and_address = 2
+    if len(bits) == just_protocol:
         protocol = 'ssh'
         remote = repo_url
     else:
-        assert len(bits) == 2, "could not find a protocol in url: %r" % repo_url
+        assert len(bits) == protocol_and_address, "could not find a protocol in url: %r" % repo_url
         protocol, remote = bits
     if protocol == 'http':
         protocol = 'https'
