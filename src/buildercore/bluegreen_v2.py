@@ -34,8 +34,8 @@ def divide_by_colour(node_params):
 
     def subset(is_subset):
         subset = node_params.copy()
-        subset['nodes'] = {id: node for (id, node) in node_params['nodes'].items() if is_subset(node)}
-        subset['public_ips'] = {id: ip for (id, ip) in node_params['public_ips'].items() if id in subset['nodes'].keys()}
+        subset['nodes'] = {node_id: node for (node_id, node) in node_params['nodes'].items() if is_subset(node)}
+        subset['public_ips'] = {node_id: ip for (node_id, ip) in node_params['public_ips'].items() if node_id in subset['nodes'].keys()}
         return subset
 
     return subset(is_blue), subset(is_green)

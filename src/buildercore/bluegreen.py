@@ -64,8 +64,8 @@ class BlueGreenConcurrency:
 
         def subset(is_subset):
             subset = nodes_params.copy()
-            subset['nodes'] = {id: node for (id, node) in nodes_params['nodes'].items() if is_subset(node)}
-            subset['public_ips'] = {id: ip for (id, ip) in nodes_params['public_ips'].items() if id in subset['nodes'].keys()}
+            subset['nodes'] = {node_id: node for (node_id, node) in nodes_params['nodes'].items() if is_subset(node)}
+            subset['public_ips'] = {node_id: ip for (node_id, ip) in nodes_params['public_ips'].items() if node_id in subset['nodes'].keys()}
             return subset
         return subset(is_blue), subset(is_green)
 
