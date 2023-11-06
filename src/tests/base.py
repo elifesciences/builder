@@ -3,14 +3,13 @@ import json
 import logging
 import os
 import shutil
-from datetime import datetime
 from os.path import join
 from random import randint
 from subprocess import check_output
 from unittest import TestCase
 
 import cfn
-from buildercore import bootstrap, cfngen, config, core, lifecycle, project
+from buildercore import bootstrap, cfngen, config, core, lifecycle, project, utils
 from buildercore.command import settings
 
 # import pytest # see ../conftest.py
@@ -35,7 +34,7 @@ def generate_environment_name():
     """to avoid multiple people clashing while running their builds
        and new builds clashing with older ones"""
     who = check_output('whoami').rstrip().decode()
-    now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    now = utils.utcnow().strftime("%Y%m%d%H%M%S")
     return "-".join([who, now, str(randint(1, 1000000))]) # "luke-20180420022437-51631"
 
 this_dir = os.path.realpath(os.path.dirname(__file__))

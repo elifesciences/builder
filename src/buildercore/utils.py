@@ -305,13 +305,12 @@ def listfiles(path, ext_list=None):
     return sorted(filter(os.path.isfile, path_list))
 
 def utcnow():
-    now = datetime.now()
-    return now.replace(tzinfo=pytz.UTC)
+    return datetime.now(tz=pytz.UTC)
 
 def ymd(dt=None, fmt="%Y-%m-%d"):
     "formats a datetime object to YYY-mm-dd format"
     if not dt:
-        dt = datetime.now() # TODO: replace this with a utcnow()
+        dt = utcnow()
     return dt.strftime(fmt)
 
 def mkdir_p(path):

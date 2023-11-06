@@ -9,7 +9,6 @@ import logging
 import os
 import re
 from collections.abc import Iterable
-from datetime import datetime
 from os.path import join
 
 import backoff
@@ -42,7 +41,7 @@ LOG = logging.getLogger(__name__)
 #
 def _put_temporary_script(script_filename):
     local_script = join(config.SCRIPTS_PATH, script_filename)
-    start = datetime.now()
+    start = utils.utcnow()
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_filename) + '-' + timestamp_marker)
     return command.put(local_script, remote_script)
@@ -58,7 +57,7 @@ def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for `config.SCRIPTS_PATH` and executes it in the /tmp dir with given params.
     script is run as the root user via sudo.
     WARN: assumes you are connected to a stack"""
-    start = datetime.now()
+    start = utils.utcnow()
     remote_script = _put_temporary_script(script_filename)
 
     def escape_string_parameter(parameter):
@@ -69,7 +68,7 @@ def run_script(script_filename, *script_params, **environment_variables):
     result = remote_sudo(" ".join(env_string + cmd))
     retval = result['return_code']
     remote_sudo("rm " + remote_script) # remove the script after executing it
-    end = datetime.now()
+    end = utils.utcnow()
     LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
     return retval
 

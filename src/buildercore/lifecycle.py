@@ -4,11 +4,10 @@ The primary reason for doing this is to save on costs."""
 
 import logging
 import re
-from datetime import datetime
 
 import backoff
 
-from . import command, config, core
+from . import command, config, core, utils
 from .command import (
     CommandError,
     NetworkAuthenticationError,
@@ -281,7 +280,8 @@ def _last_ec2_start_time(stackname):
 
 def stop_if_running_for(stackname, minimum_minutes=55):
     starting_times = _last_ec2_start_time(stackname)
-    running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) for (node_id, launch_time) in starting_times.items()}
+    now = utils.utcnow()
+    running_times = {node_id: int((now - launch_time).total_seconds()) for (node_id, launch_time) in starting_times.items()}
     LOG.info("Total running times: %s", running_times)
 
     minimum_running_time = minimum_minutes * 60
