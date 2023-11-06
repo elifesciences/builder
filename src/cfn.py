@@ -158,7 +158,7 @@ def check_user_input(pname, instance_id=None, alt_config=None):
 
     # if the requested instance-id matches a known alt-config, we'll use that alt-config. warn user.
     if instance_id in pdata['aws-alt'].keys():
-        LOG.warn("instance-id %r found in alt-config list, using that.", instance_id)
+        LOG.warning("instance-id %r found in alt-config list, using that.", instance_id)
         alt_config = instance_id
 
     # no alt-config given but alt-config options exist, prompt user
@@ -235,10 +235,10 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
         print()
 
     if cloudformation_file:
-        LOG.info('wrote: %s' % os.path.abspath(cloudformation_file))
+        LOG.info('wrote: %s', os.path.abspath(cloudformation_file))
 
     if terraform_file:
-        LOG.info('wrote: %s' % os.path.abspath(terraform_file))
+        LOG.info('wrote: %s', os.path.abspath(terraform_file))
 
     # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
     utils.confirm('the above resources will be created')

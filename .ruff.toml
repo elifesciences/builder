@@ -77,6 +77,23 @@ select = [
     
     # flake8-errmsg
     "EM",
+    
+    # flake8-executable
+    "EXE",
+
+    # flake8-future-annotations
+    #"FA", # type annotations not used
+    
+    # flake8-implicit-str-concat
+    "ISC",
+    
+    #flake8-import-conventions
+    #"ICN", # highly specific to unused package imports
+    
+    # flake8-logging-format
+    "G",
+    
+    
 
     # ...
 

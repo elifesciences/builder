@@ -161,7 +161,7 @@ def unsub_sqs(stackname, context_sqs, region, dry_run=False):
             topic = sub['Topic']
             if topic in sub_groups and len(sub_groups[topic]) > 1:
                 msg_list = [t['SubscriptionArn'].split(':')[-1] for t in sub_groups[topic]]
-                LOG.warning("multiple SQS subscriptions to the SNS topic %r found: %s" % (topic, msg_list))
+                LOG.warning("multiple SQS subscriptions to the SNS topic %r found: %s", topic, msg_list)
                 unsub_map[queue_name].append(sub_groups[topic].pop())
 
     # 'permissions' here is more like 'policy': what to do (send a message) when receiving a message from a source (SNS)

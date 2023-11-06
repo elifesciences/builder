@@ -598,7 +598,7 @@ def render_rds(context, template):
             "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId", "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
         ]
         removed = {key: data.pop(key) for key in delete_these if key in data}
-        LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s" % removed)
+        LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s", removed)
         LOG.warning("removing the 'snapshot-id' value will cause a new database to be created on update.")
         LOG.warning("changing the 'snapshot-id' value will cause the database to be replaced.")
 

@@ -72,7 +72,7 @@ def load_context(stackname):
 
     # fallback: if legacy 'project.aws' key exists, use that for 'aws'
     if contents.get('project', {}).get('aws'):
-        LOG.warn("stack context is using legacy 'project.aws' instead of just 'aws': %s" % stackname)
+        LOG.warning("stack context is using legacy 'project.aws' instead of just 'aws': %s", stackname)
         contents['aws'] = contents['project']['aws']
     # end of fallback
 

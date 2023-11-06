@@ -442,7 +442,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
                 # attempt 0 is skipped, attempt 1 is 4sec, attempt 2 is 6sec, then 8sec, then 10sec, ...
                 sleep_amt = 2 * (attempt + 1)
                 # "attempt 2 of 6, pausing for 4secs ..."
-                LOG.info("attempt %s of %s, pausing for %ssecs ..." % (attempt + 1, num_attempts, sleep_amt))
+                LOG.info("attempt %s of %s, pausing for %ssecs ...", attempt + 1, num_attempts, sleep_amt)
                 time.sleep(sleep_amt)
             try:
                 return workfn(**work_kwargs)

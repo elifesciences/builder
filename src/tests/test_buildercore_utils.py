@@ -213,7 +213,7 @@ class Simple(base.BaseCase):
             # given, expected, fn
             ({'a': 'b'}, {'a': 'b'}, None), # no function, does nothing
             ({'a': 'b'}, {'a': 'b'}, lambda k, v: (k, v)), # returns inputs
-            ({'a': 'b'}, {'a': 'b'}, lambda k, v: (LOG.debug(k + v), (k, v))[1]), # side effects
+            ({'a': 'b'}, {'a': 'b'}, lambda k, v: (LOG.debug(k + v), (k, v))[1]), # noqa: G003 # side effects
 
             # keys as well as values are updated
             ({'a': {'b': {'{foo}': '{bar}'}}}, {'a': {'b': {'pants': 'party'}}}, lambda k, v: (func(k), func(v))),

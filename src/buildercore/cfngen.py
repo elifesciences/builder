@@ -1015,7 +1015,7 @@ def template_delta(context):
             if title not in old_template[section]:
                 return False
         else:
-            LOG.warning("section %r not present in old template but is present in new: %s" % (section, title))
+            LOG.warning("section %r not present in old template but is present in new: %s", section, title)
             return False # can we handle this better?
 
         title_in_old = dict(old_template[section][title])

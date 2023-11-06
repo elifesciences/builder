@@ -112,8 +112,8 @@ def generate_stack(config_path):
         stack_data = next(iter(stack.values()))
         for resource in stack_data['resource-list']:
             if tag in resource.get('tag-list', {}):
-                LOG.warning("excluding %r, it belongs to: %s" %
-                            (resource['name'], resource['tag-list']['aws:cloudformation:stack-name']))
+                LOG.warning("excluding %r, it belongs to: %s",
+                            resource['name'], resource['tag-list']['aws:cloudformation:stack-name'])
                 return False
         return True
 

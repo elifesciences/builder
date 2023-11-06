@@ -42,7 +42,7 @@ def write_template(stackname, contents):
     output_fname = core.stack_path(stackname)
     with open(output_fname, 'w') as fp:
         fp.write(contents)
-    LOG.info("wrote cloudformation template for %r to: %s" % (stackname, output_fname))
+    LOG.info("wrote cloudformation template for %r to: %s", stackname, output_fname)
     return output_fname
 
 def find_template_path(stackname):
@@ -138,7 +138,7 @@ def bootstrap(stackname, context):
     with open(stack_path) as fh:
         stack_body = fh.read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
-        LOG.warning("empty template: %s" % stack_path)
+        LOG.warning("empty template: %s", stack_path)
         return
 
     if core.stack_is_active(stackname):

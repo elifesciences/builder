@@ -23,7 +23,7 @@ def _requires_fn_stack(func, pred, message=None):
     return _wrapper
 
 def osissuefn(issue):
-    LOG.warning("TODO: " + issue)
+    LOG.warning("TODO: %s", issue)
 
 def osissue(issue):
     def wrap1(func):

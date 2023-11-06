@@ -110,7 +110,7 @@ def switch_revision(stackname, revision=None, concurrency=None):
         buildvars = _retrieve_build_vars()
 
         if 'revision' in buildvars and revision == buildvars['revision']:
-            LOG.info('FYI, node %r already on revision %r!' % (node_name, revision))
+            LOG.info('FYI, node %r already on revision %r!', node_name, revision)
             return
 
         new_data = buildvars

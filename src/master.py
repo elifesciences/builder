@@ -225,7 +225,7 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
             continue
 
         project_stack_list = sorted(stack_idx[pname], key=sortbyenv)
-        LOG.info("%r instances: %s" % (pname, ", ".join(project_stack_list)))
+        LOG.info("%r instances: %s", pname, ", ".join(project_stack_list))
         try:
             for stackname in project_stack_list:
                 if stackname in ignore_stackname:
@@ -236,7 +236,7 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
                         LOG.info("already updated, skipping stack: %s", stackname)
                         continue
                     LOG.info("*" * 80)
-                    LOG.info("updating: %s" % stackname)
+                    LOG.info("updating: %s", stackname)
                     prompt and utils.confirm('continue?')
                     if not remaster(stackname, new_master_stackname, skip_context_check):
                         LOG.warning("failed to remaster %s, stopping further remasters to project %r", stackname, pname)

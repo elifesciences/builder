@@ -1598,7 +1598,8 @@ def init(stackname, context):
     try:
         rc, stdout, _ = terraform.cmd({'chdir': terraform.working_dir}, "version")
         ensure(rc == 0, "failed to query Terraform for it's version.")
-        LOG.info("\n-----------\n" + stdout + "-----------")
+        msg = "\n-----------\n" + stdout + "-----------"
+        LOG.info(msg)
     except ValueError:
         # "ValueError: not enough values to unpack (expected 3, got 0)"
         # we're probably testing and the Terraform object has been mocked.

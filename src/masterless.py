@@ -97,9 +97,9 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
     # a better summary of what is to be created could be printed out,
     # preferably after the templates are printed out but before confirmation.
     LOG.info('attempting to create masterless stack:')
-    LOG.info('stackname:\t' + stackname)
-    LOG.info('region:\t' + pdata['aws']['region'])
-    LOG.info('formula_revisions:\t%s' % pformat(formula_revisions))
+    LOG.info('stackname:\t%s', stackname)
+    LOG.info('region:\t%s', pdata['aws']['region'])
+    LOG.info('formula_revisions:\t%s', pformat(formula_revisions))
 
     if core.is_master_server_stack(stackname):
         checks.ensure_can_access_builder_private(pname)
