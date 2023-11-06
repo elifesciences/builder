@@ -20,7 +20,8 @@ def start_many(pattern):
     for example: ./bldr lifecycle.start_many:".+--(ci|end2end)--.+"
     """
     if not pattern:
-        raise utils.TaskExit("a regular expression matching ec2 names is required.")
+        msg = "a regular expression matching ec2 names is required."
+        raise utils.TaskExit(msg)
     ec2_list = report._all_ec2_instances(state=None)
     filtered_ec2_list = list(filter(lambda ec2_name: re.match(pattern, ec2_name), ec2_list))
 

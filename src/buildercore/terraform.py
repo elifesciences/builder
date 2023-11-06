@@ -946,7 +946,8 @@ def _render_eks_iam_access(context, template):
                 raise RuntimeError("Could not find policy template with the name %s" % role_definition['policy-template'])
 
             if 'service-account' not in role_definition or 'namespace' not in role_definition:
-                raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
+                msg = 'Please provide both a service-account and namespace in the iam-roles definition'
+                raise RuntimeError(msg)
 
             serviceaccount = role_definition['service-account']
             namespace = role_definition['namespace']

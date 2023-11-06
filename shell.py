@@ -13,12 +13,12 @@ try:
     from importlib import reload  # noqa: F401
 
     from IPython.lib.deepreload import reload as dreload  # noqa: F401
-    from IPython.terminal.embed import InteractiveShellEmbed
+    from IPython.terminal.embed import InteractiveShellEmbed # noqa: T100
     print()
     print("'importlib.reload' is available as 'reload'")
     print("'IPython.lib.deepreload.reload' is available as 'dreload'")
     print()
-    ipshell = InteractiveShellEmbed()
+    ipshell = InteractiveShellEmbed() # noqa: T100
     ipshell()
 except ImportError:
     import code

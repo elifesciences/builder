@@ -64,7 +64,8 @@ remote_file_exists = threadbare.operations.remote_file_exists
 def remote_listfiles(path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     if not path:
-        raise AssertionError("path to remote directory required")
+        msg = "path to remote directory required"
+        raise AssertionError(msg)
     runfn = remote_sudo if use_sudo else remote
     path = "%s/*" % path.rstrip("/")
     result = runfn("for i in %s; do echo $i; done" % path)

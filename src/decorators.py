@@ -96,7 +96,8 @@ def requires_aws_stack(func):
         # note: this assumes all stacks have an ec2 instance.
         asl = core.active_stack_names(region)
         if not asl:
-            raise RuntimeError('\nno AWS stacks *in an active state* exist, cannot continue.')
+            msg = '\nno AWS stacks *in an active state* exist, cannot continue.'
+            raise RuntimeError(msg)
         if not stackname or stackname not in asl:
             stackname = utils._pick("stack", asl, default_file=deffile('.active-stack'))
         args = args[1:]

@@ -739,7 +739,8 @@ def find_region(stackname=None):
     all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
     region_list = unique(filter(None, all_regions)) # remove any Nones, make unique, make a list
     if not region_list:
-        raise OSError("no regions available at all!")
+        msg = "no regions available at all!"
+        raise OSError(msg)
     if len(region_list) > 1:
         raise MultipleRegionsError(region_list)
     return region_list[0]

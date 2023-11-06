@@ -68,6 +68,15 @@ select = [
     
     # flake8-datetimez
     "DTZ",
+    
+    # flake8-debugger
+    "T10",
+
+    # flake8-django
+    # "DJ" # not a django project
+    
+    # flake8-errmsg
+    "EM",
 
     # ...
 

@@ -336,7 +336,8 @@ def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict) and not isinstance(data, list):
         raise ValueError("lookup context must be a dictionary or a list, not %r" % type(data))
     if not isstr(path):
-        raise ValueError("path must be a string, given %r of type %r", path, type(path))
+        msg = 'path must be a string, given %r of type %r'
+        raise ValueError(msg, path, type(path))
     try:
         path_bit_list = path.split('.', 1)
         if len(path_bit_list) > 1:
