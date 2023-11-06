@@ -271,7 +271,7 @@ def fix_bootstrap(stackname):
 
 def _pick_node(instance_list, node):
     instance_list = sorted(instance_list, key=lambda n: tags2dict(n.tags)['Name'])
-    info = [n for n in instance_list] #
+    info = list(instance_list) #
 
     def helpfn(pick):
         node = pick - 1

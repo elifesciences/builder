@@ -24,7 +24,7 @@ def start_many(pattern):
     ec2_list = report._all_ec2_instances(state=None)
     filtered_ec2_list = list(filter(lambda ec2_name: re.match(pattern, ec2_name), ec2_list))
 
-    stackname_list = sorted(set([core.prune_stackname(ec2) for ec2 in filtered_ec2_list]))
+    stackname_list = sorted({core.prune_stackname(ec2) for ec2 in filtered_ec2_list})
 
     print("the following stacks will be started:")
     print(stackname_list)

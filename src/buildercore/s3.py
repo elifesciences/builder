@@ -56,7 +56,7 @@ def delete(key):
     "deletes a single key from the builder bucket"
     # legacy prefixes
     protected = ['boxes/', 'cfn/', 'private/']
-    if not all([not key.startswith(prefix) for prefix in protected]):
+    if not all(not key.startswith(prefix) for prefix in protected):
         msg = "you tried to delete a key with a protected prefix"
         LOG.warning(msg, extra={'key': key, 'protected': protected})
         raise ValueError(msg)

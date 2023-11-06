@@ -21,4 +21,5 @@
 ruff check \
     --config .ruff.toml \
     --fix-only \
+    --unsafe-fixes \
     *.py src/

@@ -372,14 +372,14 @@ def lu(context, *paths, **kwargs):
     default = None
     if 'default' in kwargs:
         default = kwargs['default']
-    v = firstnn(map(lambda path: lookup(context, path, default), paths))
+    v = firstnn(lookup(context, path, default) for path in paths)
     if v is None:
         raise ValueError("no value available for paths %r. %s" % (paths, pformat(context)))
     return v
 
 def hasallkeys(ddict, key_list):
     "predicate, returns true if all keys in given key_list are present in dictionary ddict"
-    return all([key in ddict for key in key_list])
+    return all(key in ddict for key in key_list)
 
 def missingkeys(ddict, key_list):
     "returns all keys in key_list that are not in given ddict"

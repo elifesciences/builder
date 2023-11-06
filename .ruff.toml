@@ -57,6 +57,15 @@ select = [
     # flake8-builtins: https://docs.astral.sh/ruff/rules/#flake8-builtins-a
     "A",
 
+    # flake8-commas
+    #"COM", # inserts trailing commas into function calls? too weird.
+
+    # flake8-copyright
+    #"CPY",
+
+    # flake8-comprehensions
+    "C4",
+
     # ...
 
     # pylint: https://docs.astral.sh/ruff/rules/#pylint-pl

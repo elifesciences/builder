@@ -186,7 +186,7 @@ def tags2dict(tags):
     """
     if tags is None:
         return {}
-    return dict((el['Key'], el['Value']) for el in tags)
+    return {el['Key']: el['Value'] for el in tags}
 
 def ec2_instance_list(state='running'):
     """returns a list of all ec2 instances in given `state`.
@@ -205,7 +205,7 @@ def ec2_instance_list(state='running'):
     # probably not paginated, but we can specify 1000 results at once:
     # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.ServiceResource.instances
     qs = conn.instances.filter(Filters=filters, MaxResults=1000)
-    result = list(ec2.meta.data for ec2 in qs)
+    result = [ec2.meta.data for ec2 in qs]
     for ec2 in result:
         ec2['TagsDict'] = tags2dict(ec2['Tags'])
     return result

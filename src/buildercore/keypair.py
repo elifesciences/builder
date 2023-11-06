@@ -93,5 +93,5 @@ def all_in_s3():
 def all_locally():
     "all keypairs on the filesystem"
     keys = os.listdir(config.KEYPAIR_PATH)
-    key_paths = map(lambda fname: join(config.KEYPAIR_PATH, fname), keys)
+    key_paths = [join(config.KEYPAIR_PATH, fname) for fname in keys]
     return lfilter(os.path.isfile, key_paths)

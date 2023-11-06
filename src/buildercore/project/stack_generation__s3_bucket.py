@@ -69,7 +69,7 @@ def regenerate_resource(old_resource):
     old_resource['versioning'] = output['versioning'] == 'Enabled'
 
     tag_list = [(t['Key'], t['Value']) for t in output['tag-list']]
-    tag_list = {k: v for k, v in sorted(tag_list, key=lambda x: x[0])}
+    tag_list = dict(sorted(tag_list, key=lambda x: x[0]))
     old_resource['tag-list'] = tag_list or {}
 
     return old_resource
