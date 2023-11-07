@@ -274,8 +274,10 @@ def _last_ec2_start_time(stackname):
     nodes = find_ec2_instances(stackname, allow_empty=True)
 
     def _parse_datetime(value):
-        assert value.tzname() == 'UTC', 'datetime object returned by the EC2 API is not UTC, needs timezone conversion'
-        return value.replace(tzinfo=None)
+        assert value.tzname() == 'UTC', 'datetime object returned by the EC2 API is not UTC and needs timezone conversion'
+        # lsh@2023-11-07: everything should be UTC now
+        #return value.replace(tzinfo=None)
+        return value
     return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
 def stop_if_running_for(stackname, minimum_minutes=55):
