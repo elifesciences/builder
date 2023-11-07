@@ -136,6 +136,7 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     policy['Statement'] = [s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)]
     if policy['Statement']:
         return policy
+    return None
 
 def unsub_sqs(stackname, context_sqs, region, dry_run=False):
     all_subscriptions = core.all_sns_subscriptions(region, stackname)

@@ -67,7 +67,7 @@ def ensure_destroyed(stackname):
     except PredicateError as e:
         if "I couldn't find a cloudformation stack" in str(e):
             LOG.warning("Not even the CloudFormation template exists anymore, exiting idempotently")
-            return
+            return None
         raise
 
 @requires_aws_stack
@@ -80,7 +80,7 @@ def update(stackname, autostart="0", concurrency='serial', dry_run=False, servic
     Available services: ec2, s3, sqs"""
     instances = _check_want_to_be_running(stackname, utils.strtobool(autostart))
     if not instances:
-        return
+        return None
     dry_run = utils.strtobool(dry_run)
     if service_list:
         service_list = [service.strip().lower() for service in service_list.split(',')]
@@ -404,7 +404,7 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
 
     instances = _check_want_to_be_running(stackname)
     if not instances:
-        return
+        return None
 
     # removes much of the crap emitted that mangles the useful output of a remote command.
     custom_settings = {}

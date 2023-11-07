@@ -470,6 +470,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
         if last_exc:
             raise last_exc
+        return None
 
     params.update({
         'display_aborts': False
@@ -695,6 +696,7 @@ def active_aws_project_stacks(pname):
         stackname = first(triple)
         if stackname_parseable(stackname):
             return project_name_from_stackname(stackname) == pname
+        return None
     return lfilter(fn, active_aws_stacks(region))
 
 def stack_names(stack_list, only_parseable=True):

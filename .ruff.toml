@@ -108,6 +108,15 @@ select = [
     # flake8-pytest-style
     #"PT", # todo
 
+    #flake8-quotes
+    #"Q", # todo, but too many changes required. bundle with PT perhaps
+
+    # flake8-raise
+    #"RSE", # "Removing the parentheses makes the code more concise" not a good reason imo.
+    
+    # flake8-return
+    "RET",
+
     # ...
 
     # pylint: https://docs.astral.sh/ruff/rules/#pylint-pl
@@ -129,4 +138,5 @@ ignore = [
     "PLR0915", # "Too many statements". complexity is ok.
     "PLR0912", # "Too many branches". complexity is ok
     "PIE804", # "Unnecessary dict kwargs", boto often requires many long parameter names. dicts are nicer in this case.
+    "RET504", # "Unnecessary assignment to {name} before return statement". typically deliberate for readability/debugging/extensibilty.
 ]

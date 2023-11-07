@@ -132,6 +132,7 @@ def all_ec2_projects():
             # we wrap in 'aws' here because we're looking for 'aws.ec2', not the un-nested 'ec2'
             if has_ec2(pname, {'aws': alt_data}):
                 return pname
+        return None
     results = [has_ec2(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
     return results
@@ -240,6 +241,7 @@ def all_projects_using(key):
             # we wrap in 'aws' here because we're looking for 'aws.foo', not the un-nested 'foo'
             if has_(pname, {'aws': alt_data}):
                 return pname
+        return None
     results = [has_(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
     return results
@@ -298,6 +300,7 @@ def long_running_large_ec2_instances(**kwargs):
             return result
         if known_instance_types[inst_type] >= known_instance_types[large_inst]:
             return result
+        return None
 
     def is_long_running(result):
         launch_time = result['LaunchTime']

@@ -1033,6 +1033,7 @@ def template_delta(context):
         # however, no reason not to let EC2Instance2 be created?
         if title in ['EC2Instance1', 'ExtraStorage1', 'MountPoint1']:
             return title.strip('1')
+        return None
 
     delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()

@@ -1319,6 +1319,7 @@ def render_eks(context, template):
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
     _render_eks_addons(context, template)
+    return None
 
 # ---
 
@@ -1407,6 +1408,7 @@ def write_template(stackname, contents):
         with _open(stackname, 'generated', mode='w') as fp:
             fp.write(json.dumps(json_contents, indent=4))
             return fp.name
+    return None
 
 def read_template(stackname):
     with _open(stackname, 'generated', mode='r') as fp:

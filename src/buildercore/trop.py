@@ -954,7 +954,7 @@ def _external_dns_alb(context):
     # todo: update
     # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
     if using_elb(context):
-        return
+        return None
 
     # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -979,7 +979,7 @@ def _internal_dns_alb(context):
     # todo: update
     # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
     if using_elb(context):
-        return
+        return None
 
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!

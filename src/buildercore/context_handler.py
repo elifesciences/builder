@@ -114,6 +114,7 @@ def only_if(*servicenames):
                 # TODO: context is not always necessary in fn implementations. Can we avoid passing it when not needed?
                 return fn(stackname, context, **kwargs)
             LOG.info("Skipped as %s not in the context", servicenames)
+            return None
         return decorated_with_only_if
     return decorate_with_only_if
 

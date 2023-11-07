@@ -98,7 +98,7 @@ def update_salt(stackname):
 
     if not context.get('ec2'):
         LOG.info("no ec2 context. skipping stack: %s", stackname)
-        return
+        return None
 
     LOG.info("upgrading stack's salt minion")
 
@@ -134,12 +134,12 @@ def remaster(stackname, new_master_stackname="master-server--prod", skip_context
 
     if not context.get('ec2'):
         LOG.info("no ec2 context, skipping %s", stackname)
-        return
+        return None
 
     if context['ec2'].get('master_ip') == master_ip:
         LOG.info("already remastered: %s", stackname)
         if not skip_context_check:
-            return
+            return None
 
     pdata = core.project_data_for_stackname(stackname)
 

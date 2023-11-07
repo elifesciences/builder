@@ -71,12 +71,13 @@ def requires_aws_project_stack(*plist):
             asl = core.active_stack_names(region)
             if not asl:
                 print('\nno AWS stacks exist, cannot continue.')
-                return
+                return None
 
             def pname_startswith(stack):
                 for pname in plist:
                     if stack.startswith(pname):
                         return stack
+                return None
             asl = lfilter(pname_startswith, asl)
             if not stackname or stackname not in asl:
                 stackname = utils._pick("stack", asl)
@@ -127,7 +128,7 @@ def requires_steady_stack(func):
 
         if not keys:
             print('\nno AWS stacks *in a steady state* exist, cannot continue.')
-            return
+            return None
         stackname = first(args) or config.ENV['INSTANCE']
         if not stackname or stackname not in keys:
             stackname = utils._pick("stack", sorted(keys), helpfn=helpfn, default_file=deffile('.active-stack'))

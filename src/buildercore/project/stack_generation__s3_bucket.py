@@ -20,6 +20,7 @@ def cached_output(unique_name):
     path = cache_path(unique_name)
     if not os.path.exists(path):
         LOG.info("cache miss, path not found: %s", path)
+        return None
     else:
         LOG.debug("cache hit, path found: %s", path)
         with open(path) as fh:

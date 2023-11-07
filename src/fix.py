@@ -133,6 +133,7 @@ def _dns_check(stackname, context):
             details = "records found: %s" % (pformat(records),)
             solution = './bldr update_dns:%s' % (stackname,)
             return problem(description, solution, details)
+        return None
 
     results = []
     for label, dns in domain_map.items():

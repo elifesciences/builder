@@ -33,7 +33,7 @@ def download_template(stackname):
     except botocore.exceptions.ClientError as exc:
         not_found_message = "Stack with id %s does not exist" % stackname
         if exc.response['Error']['Message'] == not_found_message:
-            return
+            return None
         raise exc
 
 def write_template(stackname, contents):
@@ -67,7 +67,7 @@ def validate_template(rendered_template):
     "remote cloudformation template checks."
     if json.loads(rendered_template) == EMPTY_TEMPLATE:
         # empty templates are technically invalid, but they don't interact with CloudFormation at all
-        return
+        return None
     conn = core.boto_client('cloudformation', region='us-east-1')
     return conn.validate_template(TemplateBody=rendered_template)
 
@@ -138,7 +138,7 @@ def bootstrap(stackname, context):
         stack_body = fh.read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
         LOG.warning("empty template: %s", stack_path)
-        return
+        return None
 
     if core.stack_is_active(stackname):
         LOG.info("stack exists") # avoid `on_start` handler
@@ -149,6 +149,7 @@ def bootstrap(stackname, context):
         # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
         conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
         _wait_until_in_progress(stackname)
+        return None
 
 class StackTakingLongTimeToCompleteError(RuntimeError):
     pass

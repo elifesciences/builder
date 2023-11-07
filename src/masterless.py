@@ -134,3 +134,4 @@ def set_versions(stackname, *repolist):
             bootstrap.run_script('update-masterless-formula.sh', repo, formula, revision)
 
     core.stack_all_ec2_nodes(stackname, updater, concurrency='serial')
+    return None
