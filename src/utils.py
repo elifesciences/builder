@@ -84,7 +84,7 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
                 return pick_list[pick_list.index(default)]
             errcho('input is required\n')
             continue
-        elif not uinput.isdigit() or int(uinput) not in list(range(1, len(pick_list) + 1)):
+        if not uinput.isdigit() or int(uinput) not in list(range(1, len(pick_list) + 1)):
             errcho('a digit within the range of choices is required')
             continue
         choice = pick_list[int(uinput) - 1]
