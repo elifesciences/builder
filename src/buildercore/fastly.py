@@ -1,10 +1,9 @@
 """models Fastly API concepts
 
 No dependencies on Terraform should be in this module"""
-
 import os
 import re
-from collections import namedtuple
+import typing
 
 
 class FastlyVCL:
@@ -47,7 +46,7 @@ class FastlyVCL:
             raise FastlyCustomVCLGenerationError("Cannot match %s into main VCL template:\n\n%s" % (lookup, str(self)))
         return section_start
 
-class FastlyVCLInclusion(namedtuple('FastlyVCLInclusion', ['name', 'type', 'hook'])):
+class FastlyVCLInclusion(typing.NamedTuple('FastlyVCLInclusion', ['name', 'type', 'hook'])):
     def insert_include(self, main_vcl):
         return main_vcl.insert(
             self.type,
@@ -59,7 +58,7 @@ class FastlyVCLInclusion(namedtuple('FastlyVCLInclusion', ['name', 'type', 'hook
             ]
         )
 
-class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type', 'hook'])):
+class FastlyVCLSnippet(typing.NamedTuple('FastlyVCLSnippet', ['name', 'content', 'type', 'hook'])):
     """VCL snippets that can be used to augment the default VCL
     Due to Terraform limitations we are unable to pass these directly to the Fastly API, and have to build a whole VCL ourselves.
     Terminology for fields comes from https://docs.fastly.com/api/config#snippet"""
@@ -67,7 +66,7 @@ class FastlyVCLSnippet(namedtuple('FastlyVCLSnippet', ['name', 'content', 'type'
     def as_inclusion(self):
         return FastlyVCLInclusion(self.name, self.type, self.hook)
 
-class FastlyVCLTemplate(namedtuple('FastlyVCLTemplate', ['name', 'content', 'type', 'hook'])):
+class FastlyVCLTemplate(typing.NamedTuple('FastlyVCLTemplate', ['name', 'content', 'type', 'hook'])):
     def as_inclusion(self, name):
         return FastlyVCLInclusion(name, self.type, self.hook)
 

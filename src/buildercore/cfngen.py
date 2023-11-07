@@ -15,11 +15,11 @@ Case 3: Stack updates
 We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
-
 import json
 import logging
 import re
-from collections import OrderedDict, namedtuple
+import typing
+from collections import OrderedDict
 from functools import partial
 
 import botocore
@@ -938,7 +938,7 @@ LB_REMOVABLE_TITLE_PATTERNS = [
 # * what to modify
 # * what to remove
 # TODO: remove (plus, edit, minus) delegating to self.cloudformation instead
-class Delta(namedtuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'terraform'])):
+class Delta(typing.NamedTuple('Delta', ['plus', 'edit', 'minus', 'cloudformation', 'terraform'])):
     @classmethod
     def from_cloudformation_and_terraform(cls, cloud_formation_delta, terraform_delta):
         return cls(

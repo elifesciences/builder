@@ -13,7 +13,6 @@ LOG = logging.getLogger(__name__)
 # see `taskrunner.exec_task` for handling of tasks that raise this.
 class TaskExit(BaseException):
     "raise to quit a task early"
-    pass
 
 def strtobool(x):
     """wraps `distutils.util.strtobool` that casts 'yes', 'no', '1', '0', 'true', 'false', etc to

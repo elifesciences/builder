@@ -437,7 +437,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     def single_node_work_fn():
         last_exc = None
-        for attempt in range(0, num_attempts):
+        for attempt in range(num_attempts):
             if attempt != 0:
                 # attempt 0 is skipped, attempt 1 is 4sec, attempt 2 is 6sec, then 8sec, then 10sec, ...
                 sleep_amt = 2 * (attempt + 1)

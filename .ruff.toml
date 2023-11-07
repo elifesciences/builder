@@ -93,7 +93,17 @@ select = [
     # flake8-logging-format
     "G",
     
+    # flake8-no-pep420
+    #"INP", # todo, probably a good idea
     
+    # flake8-pie
+    "PIE",
+    
+    # flake8-print
+    # "T20", # nothing wrong with print statements
+    
+    # flake8-pyi
+    "PYI",
 
     # ...
 
@@ -115,4 +125,5 @@ ignore = [
     "PLR0913", # "Too many arguments in function definition". complexity is ok.
     "PLR0915", # "Too many statements". complexity is ok.
     "PLR0912", # "Too many branches". complexity is ok
+    "PIE804", # "Unnecessary dict kwargs", boto often requires many long parameter names. dicts are nicer in this case.
 ]

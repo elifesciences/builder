@@ -1,11 +1,10 @@
 """module concerns itself with the creation, updating and deleting of Cloudformation template instances.
 
 see `trop.py` for the *generation* of Cloudformation templates."""
-
 import json
 import logging
 import os
-from collections import namedtuple
+import typing
 from contextlib import contextmanager
 from functools import partial
 from pprint import pformat
@@ -74,7 +73,7 @@ def validate_template(rendered_template):
 
 # ---
 
-class CloudFormationDelta(namedtuple('Delta', ['plus', 'edit', 'minus'])):
+class CloudFormationDelta(typing.NamedTuple('Delta', ['plus', 'edit', 'minus'])):
     """represents a delta between and old and new CloudFormation generated template, showing which resources are being added, updated, or removed
 
     Extends the namedtuple-generated class to add custom methods."""
