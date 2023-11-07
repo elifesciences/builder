@@ -103,7 +103,10 @@ select = [
     # "T20", # nothing wrong with print statements
     
     # flake8-pyi
-    "PYI",
+    #"PYI", # typing not used
+    
+    # flake8-pytest-style
+    #"PT", # todo
 
     # ...
 

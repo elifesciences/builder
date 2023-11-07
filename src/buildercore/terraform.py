@@ -4,8 +4,7 @@ import logging
 import os
 import re
 import shutil
-import typing
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from os.path import join
 
 from dda_python_terraform import IsFlagged, IsNotFlagged, Terraform
@@ -1390,7 +1389,7 @@ class TerraformTemplate:
 
 
 
-class TerraformDelta(typing.NamedTuple('TerraformDelta', ['plan_output'])):
+class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
     """represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed.
 
     Extends the namedtuple-generated class to add custom methods."""
