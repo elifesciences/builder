@@ -56,7 +56,8 @@ class TestProjectData(base.BaseCase):
             ('dummy3', self.dummy3_config),
         ]
         for pname, expected_path in expected:
-            expected_data = json.load(open(expected_path))
+            with open(expected_path) as fh:
+                expected_data = json.load(fh)
             project_data = project.project_data(pname)
             project_data = utils.remove_ordereddict(project_data)
             # cp /tmp/dummy1.json src/tests/fixtures/dummy1-project.json

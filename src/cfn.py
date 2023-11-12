@@ -157,7 +157,7 @@ def check_user_input(pname, instance_id=None, alt_config=None):
         ensure('aws-alt' in pdata, "alt-config %r given, but project has no alternate configurations" % alt_config)
 
     # if the requested instance-id matches a known alt-config, we'll use that alt-config. warn user.
-    if instance_id in pdata['aws-alt'].keys():
+    if instance_id in pdata['aws-alt']:
         LOG.warning("instance-id %r found in alt-config list, using that.", instance_id)
         alt_config = instance_id
 

@@ -206,7 +206,7 @@ def using_elb(context):
     if 'primary_lb' in context and context['primary_lb'] == 'alb':
         return False
     # one or the other is present
-    return True if 'elb' in context and context['elb'] else False
+    return bool("elb" in context and context["elb"])
 
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"
@@ -820,7 +820,7 @@ def _elb_healthcheck_target(context):
     raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_elb(context, template, ec2_instances):
-    elb_is_public = True if context['full_hostname'] else False
+    elb_is_public = bool(context["full_hostname"])
     elb_policy_list = [
         elb.Policy(**{
             'PolicyName': 'Improved-TLS-Policy',
@@ -1007,7 +1007,7 @@ def render_alb(context, template, ec2_instances):
     """an ALB is an ELBv2. It can operate at the network level if need be but we're using it at the
     'Application' level, routing using port and protocol."""
 
-    alb_is_public = True if context['full_hostname'] else False
+    alb_is_public = bool(context["full_hostname"])
 
     outputs = []
 
@@ -1142,7 +1142,7 @@ def render_alb(context, template, ec2_instances):
 
     # -- dns
 
-    alb_is_public = True if context['full_hostname'] else False
+    alb_is_public = bool(context["full_hostname"])
     if context['full_hostname'] or context['int_full_hostname']:
         # add A records to `elifesciences.org` or `elife.internal` hosted zones
         dns_fn = _external_dns_alb if alb_is_public else _internal_dns_alb
@@ -1150,11 +1150,10 @@ def render_alb(context, template, ec2_instances):
         if dns:
             template.add_resource(dns)
 
-    if context['full_hostname']:
-        # add CNAME records
-        if not using_elb(context):
-            # skip calling this again if ELB present
-            [template.add_resource(cname) for cname in cnames(context)]
+    # add CNAME records
+    if context['full_hostname'] and not using_elb(context):
+        # skip calling this again if ELB present
+        [template.add_resource(cname) for cname in cnames(context)]
 
     # --
 
@@ -1617,10 +1616,10 @@ def render_waf(context, template):
 # --- todo: revisit this, seems to be part of rds+ec2
 
 def add_outputs(context, template):
-    if R53_EXT_TITLE in template.resources.keys():
+    if R53_EXT_TITLE in template.resources:
         template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
 
-    if R53_INT_TITLE in template.resources.keys():
+    if R53_INT_TITLE in template.resources:
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
 #

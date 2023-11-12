@@ -411,10 +411,10 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == int(node)}
-        public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+        public_ips = {k: v for k, v in public_ips.items() if k in nodes}
     elif instance_ids:
         nodes = {k: v for k, v in nodes.items() if k in instance_ids}
-        public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+        public_ips = {k: v for k, v in public_ips.items() if k in nodes}
 
     if not public_ips:
         LOG.info("No EC2 nodes to execute on")

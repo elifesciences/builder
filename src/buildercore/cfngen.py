@@ -499,7 +499,7 @@ def build_context_rds(pdata, context, existing_context):
     override = lookup(pdata, 'aws.rds.db-name', None)
     rds_dbname = override or existing_rds_dbname or auto_rds_dbname
 
-    updating = True if existing_context else False
+    updating = bool(existing_context)
     replacing = False
 
     context['rds'] = pdata['aws']['rds']
@@ -820,7 +820,7 @@ def validate_project(pname, **extra):
     more_validation(template)
     LOG.debug("local validation of cloudformation template passed")
     # validate all alternative configurations
-    for altconfig in pdata.get('aws-alt', {}).keys():
+    for altconfig in pdata.get('aws-alt', {}):
         LOG.info('validating %s, %s', pname, altconfig)
         extra = {
             'alt-config': altconfig

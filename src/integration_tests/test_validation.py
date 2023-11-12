@@ -36,8 +36,7 @@ class TestValidationElife:
     @pytest.mark.parametrize("project_name", base.elife_project_list())
     def test_validation_elife_projects(self, project_name, filter_project_name):
         "elife projects (and their alternative configurations) that come with the builder pass validation"
-        if filter_project_name:
-            if project_name != filter_project_name:
-                pytest.skip("Filtered out through filter_project_name")
+        if filter_project_name and project_name != filter_project_name:
+            pytest.skip("Filtered out through filter_project_name")
 
         cfngen.validate_project(project_name)

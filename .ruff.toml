@@ -117,6 +117,16 @@ select = [
     # flake8-return
     "RET",
 
+    #"SLF", public/private separation not really followed in builder
+
+    #"SLOT", todo
+    
+    # flake8-simplify
+    "SIM",
+
+    # flake8-tidy-imports
+    "TID",
+
     # ...
 
     # pylint: https://docs.astral.sh/ruff/rules/#pylint-pl

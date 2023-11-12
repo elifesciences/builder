@@ -187,10 +187,7 @@ def start(stackname):
 
     # TODO: do the same exclusion for EC2
     ec2_states = _ec2_nodes_states(stackname)
-    if context.get('rds'):
-        rds_states = _rds_nodes_states(stackname)
-    else:
-        rds_states = {}
+    rds_states = _rds_nodes_states(stackname) if context.get('rds') else {}
     LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
     _ensure_valid_ec2_states(ec2_states, {'stopped', 'pending', 'running', 'stopping'})
 
@@ -255,10 +252,7 @@ def stop(stackname, services=None):
     context = load_context(stackname)
 
     ec2_states = _ec2_nodes_states(stackname)
-    if context.get('rds'):
-        rds_states = _rds_nodes_states(stackname)
-    else:
-        rds_states = {}
+    rds_states = _rds_nodes_states(stackname) if context.get('rds') else {}
     LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
     _ensure_valid_ec2_states(ec2_states, {'running', 'stopping', 'stopped'})
 

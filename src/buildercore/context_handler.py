@@ -110,7 +110,7 @@ def only_if(*servicenames):
     def decorate_with_only_if(fn):
         def decorated_with_only_if(stackname, context, **kwargs):
             # only update service if stack is using given service
-            if [k for k in context.keys() if context.get(k) and k in servicenames]:
+            if [k for k in context if context.get(k) and k in servicenames]:
                 # TODO: context is not always necessary in fn implementations. Can we avoid passing it when not needed?
                 return fn(stackname, context, **kwargs)
             LOG.info("Skipped as %s not in the context", servicenames)
