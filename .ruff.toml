@@ -127,10 +127,40 @@ select = [
     # flake8-tidy-imports
     "TID",
 
-    # ...
+    # flake8-type-checking
+    #"TCH", # typing not used
+    
+    # flake8-gettext
+    "INT",
+    
+    # flake8-unused-arguments
+    #"ARG", # todo: probably a good idea to review all of these
+    
+    # flake8-use-pathlib
+    #"PTH", # pathlib not used
+    
+    # flake8-todos
+    #"TD", # todo: probably a good idea
+    
+    # flake8-fixme
+    # "FIX", # enabling this would prevent code with TODOs from passing CI. not practical.
+    
+    # eradicate
+    #"ERA", # todo: review these
+    
+    # pandas-vet
+    #"PD", pandas not used
+    
+    # pygrep-hooks
+    "PGH",
 
     # pylint: https://docs.astral.sh/ruff/rules/#pylint-pl
     "PL",
+
+    # tryceratops
+    #"TRY", # todo
+
+    "FLY",
 
     # ...
 
@@ -149,4 +179,5 @@ ignore = [
     "PLR0912", # "Too many branches". complexity is ok
     "PIE804", # "Unnecessary dict kwargs", boto often requires many long parameter names. dicts are nicer in this case.
     "RET504", # "Unnecessary assignment to {name} before return statement". typically deliberate for readability/debugging/extensibilty.
+    "TRY300", # "Consider moving this statement to an else block", might have merit but syntax is strange and unfamiliar
 ]

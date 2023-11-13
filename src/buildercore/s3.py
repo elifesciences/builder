@@ -19,9 +19,9 @@ def builder_bucket():
         bucket = resource.Bucket(nom)
         ensure(bucket in resource.buckets.all(), "bucket %r in region %r does not exist" % (nom, region))
         return bucket
-    except ClientError as err:
+    except ClientError:
         LOG.error("unhandled error attempting to find S3 bucket %r in region %r", nom, region,
-                  extra={'bucket': nom, 'region': region, 'error': str(err)})
+                  extra={'bucket': nom, 'region': region})
         raise
 
 def exists(key):

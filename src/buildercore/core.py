@@ -316,7 +316,7 @@ def find_rds_instances(stackname):
         if err.response['Error']['Code'] == 'DBInstanceNotFound':
             return []
 
-        raise err
+        raise
 
 def find_all_rds_instances():
     "returns a list of DBInstance dicts, straight from boto."
@@ -449,24 +449,22 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
             except NetworkError as err:
                 # "NetworkError executing task on foo--bar--1 during attempt 2: rsync returned error 30: Timeout in data send/receive."
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.error("NetworkError executing task on %s during attempt %s: %s", instance_id, attempt + 1, err)
+                LOG.exception("NetworkError executing task on %s during attempt %s", instance_id, attempt + 1)
                 last_exc = err
                 continue
 
             except (ConnectionError, ConnectionRefusedError, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError) as err:
                 # "low level network error executing task on foo--bar--1 during attempt 2: connection refused"
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.error("low level network error executing task on %s during attempt %s: %s", stackname, attempt + 1, err)
+                LOG.exception("low level network error executing task on %s during attempt %s", stackname, attempt + 1)
                 last_exc = err
                 continue
 
-            except CommandError as err:
+            except CommandError:
                 # "command aborted while executing on foo--bar--1 during attempt 2."
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.info("command aborted while executing on %s during attempt %s.", instance_id, attempt + 1)
-                err_str = str(err).replace("\n", "    ")
-                LOG.error(err_str)
-                raise err
+                LOG.exception("command aborted while executing on %s during attempt %s", instance_id, attempt + 1)
+                raise
 
         if last_exc:
             raise last_exc

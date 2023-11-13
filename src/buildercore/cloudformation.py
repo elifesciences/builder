@@ -34,7 +34,7 @@ def download_template(stackname):
         not_found_message = "Stack with id %s does not exist" % stackname
         if exc.response['Error']['Message'] == not_found_message:
             return None
-        raise exc
+        raise
 
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
