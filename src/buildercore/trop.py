@@ -886,7 +886,7 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
-    for _, listener in context['elb']['additional_listeners'].items():
+    for listener in context['elb']['additional_listeners'].values():
         listeners.append(elb.Listener(
             InstanceProtocol='HTTP',
             InstancePort=str(listener['port']),
@@ -1118,7 +1118,7 @@ def render_alb(context, template, ec2_instances):
     # -- listeners, one for each protocol+port pair
 
     _lb_listener_list = []
-    for listener_name, attr_map in context['alb']['listeners'].items():
+    for attr_map in context['alb']['listeners'].values():
         _target_group = _lb_target_group_map[attr_map['forward']]
         _target_group_arn = target_group_id(_target_group.Protocol, _target_group.Port)
         protocol = attr_map['protocol'].upper()

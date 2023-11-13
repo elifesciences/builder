@@ -25,11 +25,9 @@ def rmval(lst, *vals):
     lst = lst[:]
     removed = []
     for val in vals:
-        try:
+        if val in lst:
             lst.remove(val)
             removed.append(val)
-        except ValueError:
-            continue
     return lst, removed
 
 def git_remote_branches(url):
@@ -145,12 +143,6 @@ def mkdirp(path):
 
 def pwd():
     return os.path.dirname(os.path.realpath(__file__))
-
-def table(rows, keys):
-    lines = []
-    for row in rows:
-        lines.append(', '.join([getattr(row, key) for key in keys]))
-    return "\n".join(lines)
 
 def find_region(stackname=None):
     """tries to find the region, but falls back to user input if there are multiple regions available.

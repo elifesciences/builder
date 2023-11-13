@@ -237,7 +237,7 @@ def all_projects_using(key):
         if lookup(pdata, key, None):
             return pname
         # if evidence of a 'foo' section not found directly, check alternate configurations
-        for alt_name, alt_data in pdata.get('aws-alt', {}).items():
+        for alt_data in pdata.get('aws-alt', {}).values():
             # we wrap in 'aws' here because we're looking for 'aws.foo', not the un-nested 'foo'
             if has_(pname, {'aws': alt_data}):
                 return pname

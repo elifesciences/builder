@@ -161,6 +161,14 @@ select = [
     #"TRY", # todo
 
     "FLY",
+    
+    # NumPy-specific rules
+    # "NPY" # numpy not used
+
+    # "AIR", # airflow not used
+    
+    "PERF",
+    
 
     # ...
 

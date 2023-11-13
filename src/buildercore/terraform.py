@@ -734,7 +734,7 @@ def render_fastly(context, template):
 
     if context['fastly']['surrogate-keys']:
         for name, surrogate in context['fastly']['surrogate-keys'].items():
-            for sample_name, sample in surrogate.get('samples', {}).items():
+            for sample in surrogate.get('samples', {}).values():
                 # check sample['url'] parsed leads to sample['value']
                 match = re.match(surrogate['url'], sample['path'])
                 ensure(match is not None, "Regex %s does not match sample %s" % (surrogate['url'], sample))
