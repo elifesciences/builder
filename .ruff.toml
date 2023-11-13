@@ -65,46 +65,46 @@ select = [
 
     # flake8-comprehensions
     "C4",
-    
+
     # flake8-datetimez
     "DTZ",
-    
+
     # flake8-debugger
     "T10",
 
     # flake8-django
     # "DJ" # not a django project
-    
+
     # flake8-errmsg
     "EM",
-    
+
     # flake8-executable
     "EXE",
 
     # flake8-future-annotations
     #"FA", # type annotations not used
-    
+
     # flake8-implicit-str-concat
     "ISC",
-    
+
     #flake8-import-conventions
     #"ICN", # highly specific to unused package imports
-    
+
     # flake8-logging-format
     "G",
-    
+
     # flake8-no-pep420
     #"INP", # todo, probably a good idea
-    
+
     # flake8-pie
     "PIE",
-    
+
     # flake8-print
     # "T20", # nothing wrong with print statements
-    
+
     # flake8-pyi
     #"PYI", # typing not used
-    
+
     # flake8-pytest-style
     #"PT", # todo
 
@@ -113,14 +113,14 @@ select = [
 
     # flake8-raise
     #"RSE", # "Removing the parentheses makes the code more concise" not a good reason imo.
-    
+
     # flake8-return
     "RET",
 
     #"SLF", public/private separation not really followed in builder
 
     #"SLOT", todo
-    
+
     # flake8-simplify
     "SIM",
 
@@ -129,28 +129,28 @@ select = [
 
     # flake8-type-checking
     #"TCH", # typing not used
-    
+
     # flake8-gettext
     "INT",
-    
+
     # flake8-unused-arguments
     #"ARG", # todo: probably a good idea to review all of these
-    
+
     # flake8-use-pathlib
     #"PTH", # pathlib not used
-    
+
     # flake8-todos
     #"TD", # todo: probably a good idea
-    
+
     # flake8-fixme
     # "FIX", # enabling this would prevent code with TODOs from passing CI. not practical.
-    
+
     # eradicate
     #"ERA", # todo: review these
-    
+
     # pandas-vet
     #"PD", pandas not used
-    
+
     # pygrep-hooks
     "PGH",
 
@@ -161,16 +161,20 @@ select = [
     #"TRY", # todo
 
     "FLY",
-    
+
     # NumPy-specific rules
     # "NPY" # numpy not used
 
     # "AIR", # airflow not used
-    
-    "PERF",
-    
 
-    # ...
+    # Perflint
+    "PERF",
+
+    # refurb
+    #"FURB", # still in preview
+
+    # flake8-logging
+    # "LOG", # still in preview
 
     # ruff: https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
     "RUF",
