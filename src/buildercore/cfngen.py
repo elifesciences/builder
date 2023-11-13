@@ -800,7 +800,6 @@ def more_validation(json_template_str):
             # this shouldn't ever be true but it's good to fail here than part way through a migration
             ensure(not any(char.isupper() for char in bucket_name), "s3 bucket name must not contain uppercase characters: %s" % bucket_name)
 
-        return True
     except BaseException:
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
