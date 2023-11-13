@@ -8,60 +8,57 @@ select = [
     # ruff's default set of rules: https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
     #"E4", "E7", "E9", "F",
 
-    # pyflakes: https://docs.astral.sh/ruff/rules/#pyflakes-f
+    # pyflakes
     "F",
 
-    # pycodestyle: https://docs.astral.sh/ruff/rules/#pycodestyle-e-w
+    # pycodestyle
     "E",
     "W",
 
-    # mccabe: https://docs.astral.sh/ruff/rules/#mccabe-c90
+    # mccabe
     #"C90", # disabled, complexity is ok
 
-    # isort: https://docs.astral.sh/ruff/rules/#isort-i
+    # isort
     "I",
 
-    # pep8-naming: https://docs.astral.sh/ruff/rules/#pep8-naming-n
+    # pep8-naming
     "N",
 
-    # pydocstyle: https://docs.astral.sh/ruff/rules/#pydocstyle-d
-    #"D", # too pedantic, docs are not generated
+    # pydocstyle
+    #"D", # disabled, too pedantic, docs are not generated
 
-    # pyupgrade: https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    # pyupgrade
     "UP",
 
-    # flake8-2020: https://docs.astral.sh/ruff/rules/#flake8-2020-ytt
+    # flake8-2020
     "YTT",
 
-    # flake8-annotations: https://docs.astral.sh/ruff/rules/#flake8-annotations-ann
-    #"ANN", # code is not be type annotated.
+    # flake8-annotations
+    #"ANN", # disabled, type annotation not used
 
-    # flake8-async: https://docs.astral.sh/ruff/rules/#flake8-async-async
-    #"ASYNC", # code doesn't use Python's async
+    # flake8-async
+    #"ASYNC", # disabled, aync not used
 
-    # flake8-bandit: https://docs.astral.sh/ruff/rules/#flake8-bandit-s
-    # todo
-    #"S",
+    # flake8-bandit
+    #"S", # todo
 
-    # flake8-blind-except: https://docs.astral.sh/ruff/rules/#flake8-blind-except-ble
-    # todo
-    #"BLE",
+    # flake8-blind-except
+    #"BLE", # todo
 
-    # flake8-boolean-trap: https://docs.astral.sh/ruff/rules/#flake8-boolean-trap-fbt
-    #"FBT", # these aren't *that* confusing, c'mon.
+    # flake8-boolean-trap
+    #"FBT", # disabled, these aren't *that* confusing, c'mon.
 
-    # flake-8-bugbear: https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
-    # todo
-    #"B"
+    # flake-8-bugbear
+    #"B", # todo
 
-    # flake8-builtins: https://docs.astral.sh/ruff/rules/#flake8-builtins-a
+    # flake8-builtins
     "A",
 
     # flake8-commas
-    #"COM", # inserts trailing commas into function calls? too weird.
+    #"COM", # disabled, inserts trailing commas into function calls, too weird.
 
     # flake8-copyright
-    #"CPY",
+    #"CPY", # disabled, too onerous
 
     # flake8-comprehensions
     "C4",
@@ -73,7 +70,7 @@ select = [
     "T10",
 
     # flake8-django
-    # "DJ" # not a django project
+    # "DJ" # disabled, django not used
 
     # flake8-errmsg
     "EM",
@@ -82,43 +79,45 @@ select = [
     "EXE",
 
     # flake8-future-annotations
-    #"FA", # type annotations not used
+    #"FA", # disabled, type annotations not used
 
     # flake8-implicit-str-concat
     "ISC",
 
-    #flake8-import-conventions
-    #"ICN", # highly specific to unused package imports
+    # flake8-import-conventions
+    "ICN", # disabled, too opinionated
 
     # flake8-logging-format
     "G",
 
     # flake8-no-pep420
-    #"INP", # todo, probably a good idea
+    #"INP", # todo
 
     # flake8-pie
     "PIE",
 
     # flake8-print
-    # "T20", # nothing wrong with print statements
+    # "T20", # disabled, nothing wrong with print statements
 
     # flake8-pyi
-    #"PYI", # typing not used
+    #"PYI", # disabled, type annotations not used
 
     # flake8-pytest-style
     #"PT", # todo
 
     #flake8-quotes
-    #"Q", # todo, but too many changes required. bundle with PT perhaps
+    #"Q", # todo
 
     # flake8-raise
-    #"RSE", # "Removing the parentheses makes the code more concise" not a good reason imo.
+    #"RSE", # disabled, too opinionated
 
     # flake8-return
     "RET",
 
-    #"SLF", public/private separation not really followed in builder
+    # flake8-self
+    #"SLF", # disabled, public/private separation not really followed in builder
 
+    # flake8-slots
     #"SLOT", todo
 
     # flake8-simplify
@@ -128,33 +127,33 @@ select = [
     "TID",
 
     # flake8-type-checking
-    #"TCH", # typing not used
+    #"TCH", # disabled, type annotations not used
 
     # flake8-gettext
     "INT",
 
     # flake8-unused-arguments
-    #"ARG", # todo: probably a good idea to review all of these
+    #"ARG", # todo
 
     # flake8-use-pathlib
-    #"PTH", # pathlib not used
+    #"PTH", # disabled, pathlib not used
 
     # flake8-todos
-    #"TD", # todo: probably a good idea
+    #"TD", # todo ;)
 
     # flake8-fixme
-    # "FIX", # enabling this would prevent code with TODOs from passing CI. not practical.
+    # "FIX", # disabled, enabling would prevent code with TODOs from passing CI. not practical.
 
     # eradicate
-    #"ERA", # todo: review these
+    #"ERA", # todo
 
     # pandas-vet
-    #"PD", pandas not used
+    #"PD", # disabled, pandas not used
 
     # pygrep-hooks
     "PGH",
 
-    # pylint: https://docs.astral.sh/ruff/rules/#pylint-pl
+    # pylint
     "PL",
 
     # tryceratops
@@ -163,20 +162,21 @@ select = [
     "FLY",
 
     # NumPy-specific rules
-    # "NPY" # numpy not used
+    # "NPY" # disabled, numpy not used
 
-    # "AIR", # airflow not used
+    # Airflow
+    # "AIR", # disabled, airflow not used
 
     # Perflint
     "PERF",
 
     # refurb
-    #"FURB", # still in preview
+    #"FURB", # disabled, still in preview
 
     # flake8-logging
-    # "LOG", # still in preview
+    # "LOG", # disabled, still in preview
 
-    # ruff: https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    # ruff
     "RUF",
 ]
 

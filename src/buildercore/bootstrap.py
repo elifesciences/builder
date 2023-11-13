@@ -381,6 +381,8 @@ def update_stack(stackname, service_list=None, **kwargs):
     # Has too many responsibilities:
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
+
+    # order is important
     service_update_fns = {
         'ec2': (update_ec2_stack, ['concurrency', 'formula_revisions', 'dry_run']),
         's3': (update_s3_stack, []),
