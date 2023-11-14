@@ -260,7 +260,7 @@ def yaml_load(stream_or_data, loader_class=yaml.Loader, object_pairs_hook=Ordere
     OrderedLoader.add_constructor(
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
         construct_mapping)
-    return yaml.safe_load(stream_or_data, OrderedLoader)
+    return yaml.load(stream_or_data, OrderedLoader)
 
 def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
     "wrapper around the yaml.dump function with sensible defaults for formatting"
