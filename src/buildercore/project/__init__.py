@@ -100,8 +100,9 @@ def project_data(pname):
     data = project_map()
     try:
         return data[pname]
-    except KeyError:
-        raise ValueError("unknown project %r, known projects %r" % (pname, list(data.keys())))
+    except KeyError as keyerr:
+        msg = "unknown project %r, known projects %r" % (pname, list(data.keys()))
+        raise ValueError(msg) from keyerr
 
 #
 #

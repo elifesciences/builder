@@ -186,6 +186,14 @@ def firstnn(x):
     "returns the first non-nil value in x"
     return first(filter(lambda v: v is not None, x))
 
+'''
+def call_while_example():
+    "a simple example of how to use the `call_while` function. polls fs every two seconds until /tmp/foo is detected"
+    def file_doesnt_exist():
+        return not os.path.exists("/tmp/foo")
+    call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
+'''
+
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
     """calls the given function `fn` every `interval` seconds until it returns False.
     An `exception_class` will be raised if `timeout` is reached (default `RuntimeError`).
@@ -212,12 +220,6 @@ def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="
         time.sleep(interval)
         elapsed = elapsed + interval
     LOG.info(done_msg)
-
-def call_while_example():
-    "a simple example of how to use the `call_while` function. polls fs every two seconds until /tmp/foo is detected"
-    def file_doesnt_exist():
-        return not os.path.exists("/tmp/foo")
-    call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
 
 def updatein(data, path, newval, create=False):
     """mutator. updates a value within a nested dict.
@@ -258,7 +260,7 @@ def yaml_load(stream_or_data, loader_class=yaml.Loader, object_pairs_hook=Ordere
     OrderedLoader.add_constructor(
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
         construct_mapping)
-    return yaml.load(stream_or_data, OrderedLoader)
+    return yaml.safe_load(stream_or_data, OrderedLoader)
 
 def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style=False, **kwds):
     "wrapper around the yaml.dump function with sensible defaults for formatting"

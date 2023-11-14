@@ -18,7 +18,8 @@ class StackAlreadyExistsError(RuntimeError):
         self.stackname = stackname
 
 def http_access(url):
-    resp = requests.head(url, allow_redirects=True)
+    timeout = 10 # seconds
+    resp = requests.head(url, allow_redirects=True, timeout=timeout)
     return resp.status_code == 200 # noqa: PLR2004
 
 def ssh_access(url):

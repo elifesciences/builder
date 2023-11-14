@@ -40,16 +40,16 @@ select = [
     #"ASYNC", # disabled, aync not used
 
     # flake8-bandit
-    #"S", # todo
+    #"S", # disabled, too many false positives
 
     # flake8-blind-except
-    #"BLE", # todo
+    #"BLE", # disabled, these are typically the last 'catch-all' handler for anything not caught higher up.
 
     # flake8-boolean-trap
     #"FBT", # disabled, these aren't *that* confusing, c'mon.
 
     # flake-8-bugbear
-    #"B", # todo
+    "B",
 
     # flake8-builtins
     "A",
@@ -193,3 +193,5 @@ ignore = [
     "RET504", # "Unnecessary assignment to {name} before return statement". typically deliberate for readability/debugging/extensibilty.
     "TRY300", # "Consider moving this statement to an else block", might have merit but syntax is strange and unfamiliar
 ]
+
+

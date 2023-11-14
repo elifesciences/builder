@@ -1,4 +1,5 @@
 import sys
+from functools import partial
 from io import StringIO
 
 import taskrunner as tr
@@ -34,7 +35,7 @@ class TaskRunner(base.BaseCase):
             ("--list", 0),
         ]
         for invocation, expected_return_code in list_tasks_invocations:
-            response = capture_stdout(lambda: tr.main([invocation]))
+            response = capture_stdout(partial(tr.main, [invocation]))
             self.assertEqual(response["result"], expected_return_code)
 
     def test_commands_are_present(self):

@@ -3,9 +3,9 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 from os.path import join
 from random import randint
-from subprocess import check_output
 from unittest import TestCase
 
 import cfn
@@ -33,7 +33,7 @@ def set_config(key, value):
 def generate_environment_name():
     """to avoid multiple people clashing while running their builds
        and new builds clashing with older ones"""
-    who = check_output('whoami').rstrip().decode()
+    who = subprocess.check_output('whoami').rstrip().decode()
     now = utils.utcnow().strftime("%Y%m%d%H%M%S")
     return "-".join([who, now, str(randint(1, 1000000))]) # "luke-20180420022437-51631"
 

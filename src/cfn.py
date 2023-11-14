@@ -89,7 +89,7 @@ def update(stackname, autostart="0", concurrency='serial', dry_run=False, servic
     return bootstrap.update_stack(stackname, service_list=service_list, concurrency=concurrency, dry_run=dry_run)
 
 @timeit
-def update_infrastructure(stackname, skip=None, start=['ec2']):
+def update_infrastructure(stackname, skip=None, start=None):
     """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
@@ -107,6 +107,8 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
 
     By default starts EC2 instances but this can be avoid by passing `start=`"""
 
+    if start is None:
+        start = ["ec2"]
     skip = skip.split(",") if skip else []
     start = start.split(",") if isinstance(start, str) else start or []
 
@@ -190,18 +192,18 @@ def check_user_input(pname, instance_id=None, alt_config=None):
         print("checking for any instance named %r ..." % (dealbreaker,))
         try:
             checks.ensure_stack_does_not_exist(dealbreaker)
-        except checks.StackAlreadyExistsError:
+        except checks.StackAlreadyExistsError as err:
             # "stack 'journal--prod' exists, cannot re-use unique configuration 'prod'"
             msg = "stack %r exists, cannot re-use unique configuration %r." % (dealbreaker, alt_config)
-            raise TaskExit(msg)
+            raise TaskExit(msg) from err
 
     # check that the instance we want to create doesn't exist
     try:
         print("checking %r doesn't exist." % stackname)
         checks.ensure_stack_does_not_exist(stackname)
-    except checks.StackAlreadyExistsError as e:
-        msg = 'stack %r already exists.' % e.stackname
-        raise TaskExit(msg)
+    except checks.StackAlreadyExistsError as err:
+        msg = 'stack %r already exists.' % err.stackname
+        raise TaskExit(msg) from err
 
     more_context = {'stackname': stackname}
     if alt_config:
