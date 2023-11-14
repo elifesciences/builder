@@ -4,11 +4,12 @@ The nodes inside a stack are divided into two groups: blue and green.
 Actions are performed separately on the two groups while they are detached from the load balancer."""
 
 import logging
-from . import core, utils, cloudformation, trop
+
+from . import cloudformation, core, trop, utils
 
 LOG = logging.getLogger(__name__)
 
-class SomeOutOfServiceInstances(RuntimeError):
+class SomeOutOfServiceInstancesError(RuntimeError):
     pass
 
 def conn(stackname):
@@ -33,8 +34,8 @@ def divide_by_colour(node_params):
 
     def subset(is_subset):
         subset = node_params.copy()
-        subset['nodes'] = {id: node for (id, node) in node_params['nodes'].items() if is_subset(node)}
-        subset['public_ips'] = {id: ip for (id, ip) in node_params['public_ips'].items() if id in subset['nodes'].keys()}
+        subset['nodes'] = {node_id: node for (node_id, node) in node_params['nodes'].items() if is_subset(node)}
+        subset['public_ips'] = {node_id: ip for (node_id, ip) in node_params['public_ips'].items() if node_id in subset['nodes']}
         return subset
 
     return subset(is_blue), subset(is_green)
@@ -170,7 +171,7 @@ def wait_all_in_service(stackname):
         interval=5,
         timeout=60,
         update_msg='Waiting for all instances to be in service...',
-        exception_class=SomeOutOfServiceInstances
+        exception_class=SomeOutOfServiceInstancesError
     )
 
 def do(single_node_work_fn, node_params):

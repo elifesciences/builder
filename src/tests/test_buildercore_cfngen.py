@@ -1,7 +1,9 @@
-import pytest
-from . import base
-from buildercore import core, cfngen, context_handler, cloudformation, utils
 import logging
+
+import pytest
+from buildercore import cfngen, cloudformation, context_handler, core, utils
+
+from . import base
 
 LOG = logging.getLogger(__name__)
 
@@ -99,7 +101,7 @@ def test_rds_config__replacement(test_projects):
     context = cfngen.build_context('project-with-rds-only', stackname=stackname, existing_context=existing_context)
     assert context['rds']['replacing']
 
-class TestBuildercoreCfngen():
+class TestBuildercoreCfngen:
     # note: this requires pytest, but provides great introspection
     # on which project_name is failing
     @pytest.mark.parametrize("project_name", base.test_project_list())

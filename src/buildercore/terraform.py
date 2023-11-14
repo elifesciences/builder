@@ -1,12 +1,17 @@
-from collections import namedtuple, OrderedDict
-import os, re, shutil, json
-from os.path import join
-from dda_python_terraform import Terraform, IsFlagged, IsNotFlagged
-from .context_handler import only_if, load_context
-from .utils import ensure, mkdir_p, lookup, updatein
-from . import aws, fastly, config
 import contextlib
+import json
 import logging
+import os
+import re
+import shutil
+from collections import OrderedDict, namedtuple
+from os.path import join
+
+from dda_python_terraform import IsFlagged, IsNotFlagged, Terraform
+
+from . import aws, config, fastly
+from .context_handler import load_context, only_if
+from .utils import ensure, lookup, mkdir_p, updatein
 
 LOG = logging.getLogger(__name__)
 
@@ -729,7 +734,7 @@ def render_fastly(context, template):
 
     if context['fastly']['surrogate-keys']:
         for name, surrogate in context['fastly']['surrogate-keys'].items():
-            for sample_name, sample in surrogate.get('samples', {}).items():
+            for sample in surrogate.get('samples', {}).values():
                 # check sample['url'] parsed leads to sample['value']
                 match = re.match(surrogate['url'], sample['path'])
                 ensure(match is not None, "Regex %s does not match sample %s" % (surrogate['url'], sample))
@@ -941,7 +946,8 @@ def _render_eks_iam_access(context, template):
                 raise RuntimeError("Could not find policy template with the name %s" % role_definition['policy-template'])
 
             if 'service-account' not in role_definition or 'namespace' not in role_definition:
-                raise RuntimeError("Please provide both a service-account and namespace in the iam-roles definition")
+                msg = 'Please provide both a service-account and namespace in the iam-roles definition'
+                raise RuntimeError(msg)
 
             serviceaccount = role_definition['service-account']
             namespace = role_definition['namespace']
@@ -1053,7 +1059,7 @@ set -o xtrace
         'desired_capacity': context['eks']['worker']['desired-capacity'],
         'vpc_zone_identifier': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
         'tag': autoscaling_group_tags,
-        'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) == True else []},
+        'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
     })
 
 def _render_eks_workers_role(context, template):
@@ -1313,13 +1319,14 @@ def render_eks(context, template):
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
     _render_eks_addons(context, template)
+    return None
 
 # ---
 
 class TerraformTemplateError(RuntimeError):
     pass
 
-class TerraformTemplate():
+class TerraformTemplate:
     def __init__(self, resource=None, data=None, locals_=None):
         if not resource:
             resource = OrderedDict()
@@ -1380,6 +1387,9 @@ class TerraformTemplate():
             result['locals'] = self.locals_
         return result
 
+
+
+
 class TerraformDelta(namedtuple('TerraformDelta', ['plan_output'])):
     """represents a delta between and old and new Terraform generated template, showing which resources are being added, updated, or removed.
 
@@ -1398,6 +1408,7 @@ def write_template(stackname, contents):
         with _open(stackname, 'generated', mode='w') as fp:
             fp.write(json.dumps(json_contents, indent=4))
             return fp.name
+    return None
 
 def read_template(stackname):
     with _open(stackname, 'generated', mode='r') as fp:
@@ -1548,7 +1559,7 @@ def init(stackname, context):
     # in 0.14 'version' in 'providers' section is now deprecated and you'll get warnings/errors.
     required_providers = {}
     for provider_dict in providers['provider']:
-        provider_name = list(provider_dict.keys())[0] # {'fastly': {'version': ..., ...}, ...} => 'fastly'
+        provider_name = next(iter(provider_dict.keys())) # {'fastly': {'version': ..., ...}, ...} => 'fastly'
         provider_context_key = "provider-" + provider_name # "provider-aws", "provider-vault"
         source_path = "terraform." + provider_context_key + ".source" # "terraform.provider-aws.source"
         source = lookup(context, source_path, default=None)
@@ -1592,7 +1603,8 @@ def init(stackname, context):
     try:
         rc, stdout, _ = terraform.cmd({'chdir': terraform.working_dir}, "version")
         ensure(rc == 0, "failed to query Terraform for it's version.")
-        LOG.info("\n-----------\n" + stdout + "-----------")
+        msg = "\n-----------\n" + stdout + "-----------"
+        LOG.info(msg)
     except ValueError:
         # "ValueError: not enough values to unpack (expected 3, got 0)"
         # we're probably testing and the Terraform object has been mocked.

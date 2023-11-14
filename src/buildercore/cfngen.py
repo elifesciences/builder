@@ -1,4 +1,3 @@
-# coding: utf8
 
 """
 Marshalls a collection of project information together in to a dictionary called the `context`.
@@ -16,17 +15,18 @@ Case 3: Stack updates
 We want to add an external volume to an EC2 instance to increase available space, so we partially update the CloudFormation template to create it.
 
 """
-
-from slugify import slugify
-import logging
 import json
+import logging
 import re
 from collections import OrderedDict, namedtuple
 from functools import partial
+
 import botocore
 import netaddr
-from . import config, utils, cloudformation, terraform, core, project, context_handler
-from .utils import ensure, lmap, deepcopy, subdict, lookup, delkey
+from slugify import slugify
+
+from . import cloudformation, config, context_handler, core, project, terraform, utils
+from .utils import deepcopy, delkey, ensure, lmap, lookup, subdict
 
 LOG = logging.getLogger(__name__)
 
@@ -360,7 +360,10 @@ def build_context_s3(pdata, context):
         for bucket_template_name in pdata['aws']['s3']:
             configuration = pdata['aws']['s3'][bucket_template_name]
             bucket_name = parameterize(context)(bucket_template_name)
-            ensure(len(bucket_name) <= 63, "bucket name %r from template %r is longer than 63 characters: %s" % (bucket_name, bucket_template_name, len(bucket_name)))
+            max_bucket_name_length = 63
+            msg = "bucket name %r from template %r is longer than 63 characters: %s" % \
+              (bucket_name, bucket_template_name, len(bucket_name))
+            ensure(len(bucket_name) <= max_bucket_name_length, msg)
             context['s3'][bucket_name] = default_bucket_configuration.copy()
             context['s3'][bucket_name].update(configuration if configuration else {})
     return context
@@ -496,7 +499,7 @@ def build_context_rds(pdata, context, existing_context):
     override = lookup(pdata, 'aws.rds.db-name', None)
     rds_dbname = override or existing_rds_dbname or auto_rds_dbname
 
-    updating = True if existing_context else False
+    updating = bool(existing_context)
     replacing = False
 
     context['rds'] = pdata['aws']['rds']
@@ -786,16 +789,17 @@ def more_validation(json_template_str):
         # case: s3 bucket names must be between 3 and 63 chars
         # case: s3 bucket names must not contain uppercase characters
         # - https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-        bucket_map = utils.dictfilter(lambda key, val: val.get('Type') == "AWS::S3::Bucket", data.get('Resources'))
-        for bucket_map in bucket_map.values():
-            bucket_name = bucket_map['Properties']['BucketName']
+        bucket_list = [val for val in data.Get('Resources').values() if val.get('Type') == 'AWS::S3::Bucket']
+        for bucket in bucket_list:
+            bucket_name = bucket['Properties']['BucketName']
             length = len(bucket_name)
+            min_length = 3
+            max_length = 63
             # occasionally true with particularly long alt-config names and instance ids
-            ensure(length >= 3 and length <= 63, "s3 bucket names must be between 3 and 63 characters: %s" % bucket_name)
+            ensure(length >= min_length and length <= max_length, "s3 bucket names must be between 3 and 63 characters: %s" % bucket_name)
             # this shouldn't ever be true but it's good to fail here than part way through a migration
             ensure(not any(char.isupper() for char in bucket_name), "s3 bucket name must not contain uppercase characters: %s" % bucket_name)
 
-        return True
     except BaseException:
         LOG.exception("uncaught error attempting to validate cloudformation template")
         raise
@@ -815,7 +819,7 @@ def validate_project(pname, **extra):
     more_validation(template)
     LOG.debug("local validation of cloudformation template passed")
     # validate all alternative configurations
-    for altconfig in pdata.get('aws-alt', {}).keys():
+    for altconfig in pdata.get('aws-alt', {}):
         LOG.info('validating %s, %s', pname, altconfig)
         extra = {
             'alt-config': altconfig
@@ -1009,7 +1013,7 @@ def template_delta(context):
             if title not in old_template[section]:
                 return False
         else:
-            LOG.warning("section %r not present in old template but is present in new: %s" % (section, title))
+            LOG.warning("section %r not present in old template but is present in new: %s", section, title)
             return False # can we handle this better?
 
         title_in_old = dict(old_template[section][title])
@@ -1028,6 +1032,7 @@ def template_delta(context):
         # however, no reason not to let EC2Instance2 be created?
         if title in ['EC2Instance1', 'ExtraStorage1', 'MountPoint1']:
             return title.strip('1')
+        return None
 
     delta_plus_resources = {
         title: r for (title, r) in template['Resources'].items()

@@ -1,16 +1,24 @@
-from io import StringIO
-from ruamel.yaml import YAML
-from pprint import pformat
-import pytz
-import os, sys, json, time, random, string
-from functools import wraps
-from datetime import datetime
-import yaml
-from collections import OrderedDict
-from os.path import join
+import copy
+import json
 import logging
+import os
+import random
+import shutil
+import string
+import sys
+import tempfile
+import time
+from collections import OrderedDict
+from datetime import datetime
+from functools import wraps
+from io import StringIO
+from os.path import join
+from pprint import pformat
+
+import pytz
+import yaml
 from kids.cache import cache as cached
-import tempfile, shutil, copy
+from ruamel.yaml import YAML
 
 LOG = logging.getLogger(__name__)
 
@@ -178,7 +186,14 @@ def firstnn(x):
     "returns the first non-nil value in x"
     return first(filter(lambda v: v is not None, x))
 
-# pylint: disable=too-many-arguments
+'''
+def call_while_example():
+    "a simple example of how to use the `call_while` function. polls fs every two seconds until /tmp/foo is detected"
+    def file_doesnt_exist():
+        return not os.path.exists("/tmp/foo")
+    call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
+'''
+
 def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="done.", exception_class=None):
     """calls the given function `fn` every `interval` seconds until it returns False.
     An `exception_class` will be raised if `timeout` is reached (default `RuntimeError`).
@@ -205,12 +220,6 @@ def call_while(fn, interval=5, timeout=600, update_msg="waiting ...", done_msg="
         time.sleep(interval)
         elapsed = elapsed + interval
     LOG.info(done_msg)
-
-def call_while_example():
-    "a simple example of how to use the `call_while` function. polls fs every two seconds until /tmp/foo is detected"
-    def file_doesnt_exist():
-        return not os.path.exists("/tmp/foo")
-    call_while(file_doesnt_exist, interval=2, update_msg="waiting for /tmp/foo to be created", done_msg="/tmp/foo found")
 
 def updatein(data, path, newval, create=False):
     """mutator. updates a value within a nested dict.
@@ -257,7 +266,6 @@ def ordered_dump(data, stream=None, dumper_class=yaml.Dumper, default_flow_style
     "wrapper around the yaml.dump function with sensible defaults for formatting"
     indent = 4
     line_break = '\n'
-    # pylint: disable=too-many-ancestors
 
     if isinstance(data, bytes):
         # simple bytestrings are treated as regular (utf-8) strings and not binary data in python3+
@@ -299,13 +307,12 @@ def listfiles(path, ext_list=None):
     return sorted(filter(os.path.isfile, path_list))
 
 def utcnow():
-    now = datetime.now()
-    return now.replace(tzinfo=pytz.UTC)
+    return datetime.now(tz=pytz.UTC)
 
 def ymd(dt=None, fmt="%Y-%m-%d"):
     "formats a datetime object to YYY-mm-dd format"
     if not dt:
-        dt = datetime.now() # TODO: replace this with a utcnow()
+        dt = utcnow()
     return dt.strftime(fmt)
 
 def mkdir_p(path):
@@ -331,7 +338,8 @@ def lookup(data, path, default=0xDEADBEEF):
     if not isinstance(data, dict) and not isinstance(data, list):
         raise ValueError("lookup context must be a dictionary or a list, not %r" % type(data))
     if not isstr(path):
-        raise ValueError("path must be a string, given %r of type %r", path, type(path))
+        msg = 'path must be a string, given %r of type %r'
+        raise ValueError(msg, path, type(path))
     try:
         path_bit_list = path.split('.', 1)
         if len(path_bit_list) > 1:
@@ -354,26 +362,26 @@ def lookup(data, path, default=0xDEADBEEF):
             return lookup(val, rest, default)
         return val
     except KeyError:
-        if default == 0xDEADBEEF:
+        improbable_default = 0xDEADBEEF
+        if default == improbable_default:
             raise
         return default
 
 # TODO: this function suffers from truthy-falsey problems. prefer `lookup`.
-# pylint: disable=invalid-name
 def lu(context, *paths, **kwargs):
     """looks up many paths given the initial data, returning the first non-nil result.
     if no data available a ValueError is raised."""
     default = None
     if 'default' in kwargs:
         default = kwargs['default']
-    v = firstnn(map(lambda path: lookup(context, path, default), paths))
+    v = firstnn(lookup(context, path, default) for path in paths)
     if v is None:
         raise ValueError("no value available for paths %r. %s" % (paths, pformat(context)))
     return v
 
 def hasallkeys(ddict, key_list):
     "predicate, returns true if all keys in given key_list are present in dictionary ddict"
-    return all([key in ddict for key in key_list])
+    return all(key in ddict for key in key_list)
 
 def missingkeys(ddict, key_list):
     "returns all keys in key_list that are not in given ddict"

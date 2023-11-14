@@ -4,23 +4,36 @@ created Cloudformation template.
 The "stackname" parameter these functions take is the name of the cfn template
 without the extension."""
 
-import os, json, re
+import json
+import logging
+import os
+import re
+from collections.abc import Iterable
 from os.path import join
-from collections import OrderedDict
-from datetime import datetime
-from . import utils, config, bvars, core, context_handler, project, cloudformation, terraform, sns as snsmod, command
-from .context_handler import only_if
-from .core import stack_all_ec2_nodes, project_data_for_stackname, stack_conn
-from .utils import first, ensure, subdict, yaml_dumps, lmap
-from .lifecycle import delete_dns
-from .config import BOOTSTRAP_USER, WHOAMI, CI_USER
-from .command import remote_sudo, remote_file_exists, remote_listfiles
+
 import backoff
 import botocore
 from kids.cache import cache as cached
-from collections.abc import Iterable
 
-import logging
+from . import (
+    bvars,
+    cloudformation,
+    command,
+    config,
+    context_handler,
+    core,
+    project,
+    terraform,
+    utils,
+)
+from . import sns as snsmod
+from .command import remote_file_exists, remote_listfiles, remote_sudo
+from .config import BOOTSTRAP_USER, CI_USER, WHOAMI
+from .context_handler import only_if
+from .core import project_data_for_stackname, stack_all_ec2_nodes, stack_conn
+from .lifecycle import delete_dns
+from .utils import ensure, first, lmap, subdict, yaml_dumps
+
 LOG = logging.getLogger(__name__)
 
 #
@@ -28,7 +41,7 @@ LOG = logging.getLogger(__name__)
 #
 def _put_temporary_script(script_filename):
     local_script = join(config.SCRIPTS_PATH, script_filename)
-    start = datetime.now()
+    start = utils.utcnow()
     timestamp_marker = start.strftime("%Y%m%d%H%M%S")
     remote_script = join('/tmp', os.path.basename(script_filename) + '-' + timestamp_marker)
     return command.put(local_script, remote_script)
@@ -44,7 +57,7 @@ def run_script(script_filename, *script_params, **environment_variables):
     """uploads a script for `config.SCRIPTS_PATH` and executes it in the /tmp dir with given params.
     script is run as the root user via sudo.
     WARN: assumes you are connected to a stack"""
-    start = datetime.now()
+    start = utils.utcnow()
     remote_script = _put_temporary_script(script_filename)
 
     def escape_string_parameter(parameter):
@@ -55,7 +68,7 @@ def run_script(script_filename, *script_params, **environment_variables):
     result = remote_sudo(" ".join(env_string + cmd))
     retval = result['return_code']
     remote_sudo("rm " + remote_script) # remove the script after executing it
-    end = datetime.now()
+    end = utils.utcnow()
     LOG.info("Executed script %s in %2.4f seconds", script_filename, (end - start).total_seconds())
     return retval
 
@@ -123,6 +136,7 @@ def remove_topics_from_sqs_policy(policy, topic_arns):
     policy['Statement'] = [s for s in policy.get('Statement', []) if not for_unsubbed_topic(s)]
     if policy['Statement']:
         return policy
+    return None
 
 def unsub_sqs(stackname, context_sqs, region, dry_run=False):
     all_subscriptions = core.all_sns_subscriptions(region, stackname)
@@ -148,7 +162,7 @@ def unsub_sqs(stackname, context_sqs, region, dry_run=False):
             topic = sub['Topic']
             if topic in sub_groups and len(sub_groups[topic]) > 1:
                 msg_list = [t['SubscriptionArn'].split(':')[-1] for t in sub_groups[topic]]
-                LOG.warning("multiple SQS subscriptions to the SNS topic %r found: %s" % (topic, msg_list))
+                LOG.warning("multiple SQS subscriptions to the SNS topic %r found: %s", topic, msg_list)
                 unsub_map[queue_name].append(sub_groups[topic].pop())
 
     # 'permissions' here is more like 'policy': what to do (send a message) when receiving a message from a source (SNS)
@@ -367,15 +381,17 @@ def update_stack(stackname, service_list=None, **kwargs):
     # Has too many responsibilities:
     #    - ec2: deploys
     #    - s3, sqs, ...: infrastructure updates
-    service_update_fns = OrderedDict([
-        ('ec2', (update_ec2_stack, ['concurrency', 'formula_revisions', 'dry_run'])),
-        ('s3', (update_s3_stack, [])),
-        ('sqs', (update_sqs_stack, [])),
-    ])
+
+    # order is important
+    service_update_fns = {
+        'ec2': (update_ec2_stack, ['concurrency', 'formula_revisions', 'dry_run']),
+        's3': (update_s3_stack, []),
+        'sqs': (update_sqs_stack, []),
+    }
     service_list = service_list or service_update_fns.keys()
     ensure(isinstance(service_list, Iterable), "cannot iterate over given service list %r" % service_list)
     context = context_handler.load_context(stackname)
-    for servicename, (fn, fn_kwarg_args) in subdict(service_update_fns, service_list).items():
+    for (fn, fn_kwarg_args) in subdict(service_update_fns, service_list).values():
         actual_arguments = subdict(kwargs, fn_kwarg_args)
         fn(stackname, context, **actual_arguments)
 

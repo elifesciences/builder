@@ -2,14 +2,26 @@
 
 See `askmaster.py` for tasks that are run on minions."""
 
-import os, time
-import cfn, buildvars, utils
-from buildercore.command import remote_sudo, local
-from buildercore import core, bootstrap, config, keypair, project, cfngen, context_handler
-from buildercore.utils import lmap, exsubdict, mkidx, ensure
+import logging
+import os
+import time
+
+import buildvars
+import cfn
+import utils
+from buildercore import (
+    bootstrap,
+    cfngen,
+    config,
+    context_handler,
+    core,
+    keypair,
+    project,
+)
+from buildercore.command import local, remote_sudo
+from buildercore.utils import ensure, exsubdict, lmap, mkidx
 from decorators import echo_output, requires_aws_stack
 from kids.cache import cache as cached
-import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -48,7 +60,7 @@ def write_missing_keypairs_to_s3():
 def download_keypair(stackname):
     try:
         return keypair.download_from_s3(stackname)
-    except EnvironmentError as err:
+    except OSError as err:
         LOG.info(err)
 
 #
@@ -86,7 +98,7 @@ def update_salt(stackname):
 
     if not context.get('ec2'):
         LOG.info("no ec2 context. skipping stack: %s", stackname)
-        return
+        return None
 
     LOG.info("upgrading stack's salt minion")
 
@@ -122,12 +134,12 @@ def remaster(stackname, new_master_stackname="master-server--prod", skip_context
 
     if not context.get('ec2'):
         LOG.info("no ec2 context, skipping %s", stackname)
-        return
+        return None
 
     if context['ec2'].get('master_ip') == master_ip:
         LOG.info("already remastered: %s", stackname)
         if not skip_context_check:
-            return
+            return None
 
     pdata = core.project_data_for_stackname(stackname)
 
@@ -202,7 +214,7 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
 
     remastered_list = []
     if os.path.exists('remastered.txt'):
-        with open('remastered.txt', 'r') as fh:
+        with open('remastered.txt') as fh:
             remastered_list = fh.read().splitlines()
 
     for pname in pname_list:
@@ -213,7 +225,7 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
             continue
 
         project_stack_list = sorted(stack_idx[pname], key=sortbyenv)
-        LOG.info("%r instances: %s" % (pname, ", ".join(project_stack_list)))
+        LOG.info("%r instances: %s", pname, ", ".join(project_stack_list))
         try:
             for stackname in project_stack_list:
                 if stackname in ignore_stackname:
@@ -224,7 +236,7 @@ def remaster_all(*pname_list, prompt=False, skip_context_check=False):
                         LOG.info("already updated, skipping stack: %s", stackname)
                         continue
                     LOG.info("*" * 80)
-                    LOG.info("updating: %s" % stackname)
+                    LOG.info("updating: %s", stackname)
                     prompt and utils.confirm('continue?')
                     if not remaster(stackname, new_master_stackname, skip_context_check):
                         LOG.warning("failed to remaster %s, stopping further remasters to project %r", stackname, pname)

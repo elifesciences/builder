@@ -1,10 +1,12 @@
-import os
-from botocore.exceptions import ClientError
-from . import config, core
-from .utils import isstr, ensure
-from kids.cache import cache as cached
-from io import IOBase
 import logging
+import os
+from io import IOBase
+
+from botocore.exceptions import ClientError
+from kids.cache import cache as cached
+
+from . import config, core
+from .utils import ensure, isstr
 
 LOG = logging.getLogger(__name__)
 
@@ -17,9 +19,9 @@ def builder_bucket():
         bucket = resource.Bucket(nom)
         ensure(bucket in resource.buckets.all(), "bucket %r in region %r does not exist" % (nom, region))
         return bucket
-    except ClientError as err:
+    except ClientError:
         LOG.error("unhandled error attempting to find S3 bucket %r in region %r", nom, region,
-                  extra={'bucket': nom, 'region': region, 'error': str(err)})
+                  extra={'bucket': nom, 'region': region})
         raise
 
 def exists(key):
@@ -54,7 +56,7 @@ def delete(key):
     "deletes a single key from the builder bucket"
     # legacy prefixes
     protected = ['boxes/', 'cfn/', 'private/']
-    if not all([not key.startswith(prefix) for prefix in protected]):
+    if not all(not key.startswith(prefix) for prefix in protected):
         msg = "you tried to delete a key with a protected prefix"
         LOG.warning(msg, extra={'key': key, 'protected': protected})
         raise ValueError(msg)
@@ -69,7 +71,7 @@ def delete(key):
 
 def validate_prefix(prefix):
     prefix = prefix.strip()
-    if not prefix or len(prefix) < 2:
+    if not prefix or len(prefix) <= 1:
         raise ValueError("invalid prefix: %r" % prefix)
     if not prefix.endswith('/'):
         raise ValueError("prefix doesn't start or end in a slash: %r" % prefix)

@@ -1,13 +1,16 @@
-from moto import mock_rds
-import pytest
-from functools import partial
 import json
+from functools import partial
 from os.path import join
-from . import base
-from buildercore import core, utils, project, command
 from unittest import skip
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 import botocore
+import pytest
+from buildercore import command, core, project, utils
+from moto import mock_rds
+
+from . import base
+
 
 def test_prune_stackname():
     cases = [
@@ -133,14 +136,14 @@ class SimpleCases(base.BaseCase):
         self.assertEqual([], core.find_ec2_instances('dummy1--prod', allow_empty=True))
 
     def test_find_ec2_instances_requiring_a_non_empty_list(self):
-        self.assertRaises(core.NoRunningInstances, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
+        self.assertRaises(core.NoRunningInstancesError, core.find_ec2_instances, 'dummy1--prod', allow_empty=False)
 
     def test_all_sns_subscriptions_filters_correctly(self):
         cases = [
             ('lax--prod', []), # lax doesn't subscribe to anything
             ('observer--prod', ['bus-articles--prod', 'bus-metrics--prod']),
         ]
-        with open(join(self.fixtures_dir, 'sns_subscriptions.json'), 'r') as fh:
+        with open(join(self.fixtures_dir, 'sns_subscriptions.json')) as fh:
             fixture = json.load(fh)
         with patch('buildercore.core._all_sns_subscriptions', return_value=fixture):
             for stackname, expected_subs in cases:
@@ -165,7 +168,7 @@ class Errors(base.BaseCase):
             {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Tags': []},
         ]
         self.assertRaises(
-            core.NoPublicIps,
+            core.NoPublicIpsError,
             core.stack_all_ec2_nodes, 'dummy1--test', lambda: True
         )
 
@@ -185,7 +188,7 @@ class TestCoreNewProjectData(base.BaseCase):
             ('dummy3', self.dummy3_config),
         ]
         for pname, expected_path in expected:
-            with open(expected_path, 'r') as fh:
+            with open(expected_path) as fh:
                 expected_data = json.load(fh)
             project_data = project.project_data(pname)
             # cp /tmp/dummy*-project.json src/tests/fixtures/
@@ -202,7 +205,7 @@ class TestCoreNewProjectData(base.BaseCase):
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
 
-        with open(self.dummy1_config, 'r') as fh:
+        with open(self.dummy1_config) as fh:
             expected_data = json.load(fh)
         expected_data['vagrant']['cpus'] = 999
         self.assertEqual(project_data, expected_data)
@@ -215,7 +218,7 @@ class TestCoreNewProjectData(base.BaseCase):
         project_data = project.project_data('dummy1')
         project_data = utils.remove_ordereddict(project_data)
 
-        with open(self.dummy1_config, 'r') as fh:
+        with open(self.dummy1_config) as fh:
             expected_data = json.load(fh)
         expected_data['vagrant']['cpus'] = 999
         expected_data['vagrant']['cpucap'] = 111
@@ -341,6 +344,7 @@ def test_stack_all_ec2_nodes__network_retry_logic(_):
                 concurrency='serial',
                 num_attempts=3
             )
-            assert "foo" == "bar" # unreachable code, don't add assertions here
+            # unreachable code, don't add assertions here
+            assert "foo" == "bar" # noqa: PLR0133
         assert last_exc.value == expected_exc
         assert retried == expected

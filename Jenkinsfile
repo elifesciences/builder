@@ -10,12 +10,6 @@ elifePipeline {
         sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault'
     }
 
-    stage 'Scrub', {
-        withCommitStatus({
-            sh './.ci-scrub.sh'
-        }, 'scrub', commit)
-    }
-
     stage '.ci/ checks', {
         elifeLocalTests()
     }

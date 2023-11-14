@@ -1,10 +1,12 @@
-from moto import mock_route53
 from datetime import datetime
-from unittest.mock import patch, MagicMock
-from pytz import utc
-from . import base
+from unittest.mock import MagicMock, patch
+
+from buildercore import cfngen, core, lifecycle
 from buildercore.core import parse_stackname
-from buildercore import core, cfngen, lifecycle
+from moto import mock_route53
+from pytz import utc
+
+from . import base
 
 
 class TestBuildercoreLifecycle(base.BaseCase):
@@ -109,18 +111,18 @@ class TestBuildercoreLifecycle(base.BaseCase):
         context = cfngen.build_context(pname, stackname=stackname)
         self.contexts[stackname] = context
 
-    def _ec2_instance(self, state='running', id='i-456', launch_time=datetime(2017, 1, 1, tzinfo=utc)):
+    def _ec2_instance(self, state='running', node_id='i-456', launch_time=datetime(2017, 1, 1, tzinfo=utc)):
         instance = MagicMock()
-        instance.id = id
+        instance.id = node_id
         state_codes = {'running': 16}
         instance.state = {'Code': state_codes.get(state, -1), 'Name': state} # 'Code' should vary but probably isn't being used
         instance.tags = [{'Key': 'Name', 'Value': 'dummy1--test--1'}]
         instance.launch_time = launch_time
         return instance
 
-    def _rds_instance(self, state='available', id='i-456'):
+    def _rds_instance(self, state='available', db_id='i-456'):
         instance = {
-            'DBInstanceIdentifier': id,
+            'DBInstanceIdentifier': db_id,
             'DBInstanceStatus': state,
         }
         return instance

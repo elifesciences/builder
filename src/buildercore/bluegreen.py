@@ -4,13 +4,14 @@ The nodes inside a stack are divided into two groups: blue and green.
 Actions are performed separately on the two groups while they are detached from the load balancer."""
 
 import logging
-from .core import boto_client, parallel_work
+
 from .cloudformation import read_output
+from .core import boto_client, parallel_work
 from .utils import call_while
 
 LOG = logging.getLogger(__name__)
 
-class BlueGreenConcurrency(object):
+class BlueGreenConcurrency:
     def __init__(self, region):
         self.conn = boto_client('elb', region)
 
@@ -63,8 +64,8 @@ class BlueGreenConcurrency(object):
 
         def subset(is_subset):
             subset = nodes_params.copy()
-            subset['nodes'] = {id: node for (id, node) in nodes_params['nodes'].items() if is_subset(node)}
-            subset['public_ips'] = {id: ip for (id, ip) in nodes_params['public_ips'].items() if id in subset['nodes'].keys()}
+            subset['nodes'] = {node_id: node for (node_id, node) in nodes_params['nodes'].items() if is_subset(node)}
+            subset['public_ips'] = {node_id: ip for (node_id, ip) in nodes_params['public_ips'].items() if node_id in subset['nodes']}
             return subset
         return subset(is_blue), subset(is_green)
 
@@ -82,7 +83,7 @@ class BlueGreenConcurrency(object):
             interval=5,
             timeout=60,
             update_msg='Waiting for all instances to be in service...',
-            exception_class=SomeOutOfServiceInstances
+            exception_class=SomeOutOfServiceInstancesError
         )
 
     def register(self, elb_name, nodes_params):
@@ -144,5 +145,5 @@ class BlueGreenConcurrency(object):
     def _instance_ids(self, nodes_params):
         return list(nodes_params['nodes'].keys())
 
-class SomeOutOfServiceInstances(RuntimeError):
+class SomeOutOfServiceInstancesError(RuntimeError):
     pass

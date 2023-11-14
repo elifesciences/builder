@@ -2,19 +2,32 @@
 
 The primary reason for doing this is to save on costs."""
 
-from datetime import datetime
 import logging
 import re
+
 import backoff
-from .command import CommandException, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError
-from . import config, core, command
-from .core import boto_conn, find_ec2_instances, find_rds_instances, current_ec2_node_id, NoPublicIps, NoRunningInstances
-from .utils import call_while, ensure, lmap, first, lookup
+
+from . import command, config, core, utils
+from .command import (
+    CommandError,
+    NetworkAuthenticationError,
+    NetworkTimeoutError,
+    NetworkUnknownHostError,
+)
 from .context_handler import load_context
+from .core import (
+    NoPublicIpsError,
+    NoRunningInstancesError,
+    boto_conn,
+    current_ec2_node_id,
+    find_ec2_instances,
+    find_rds_instances,
+)
+from .utils import call_while, ensure, first, lmap, lookup
 
 LOG = logging.getLogger(__name__)
 
-class EC2Timeout(RuntimeError):
+class EC2TimeoutError(RuntimeError):
     pass
 
 def _ec2_connection(stackname):
@@ -122,16 +135,16 @@ def _some_node_is_not_ready(stackname, **kwargs):
         ip_to_ready = core.stack_all_ec2_nodes(stackname, _daemons_ready, username=config.BOOTSTRAP_USER, **kwargs)
         LOG.info("_some_node_is_not_ready: %s", ip_to_ready)
         return len(ip_to_ready) == 0 or False in ip_to_ready.values()
-    except NoPublicIps as e:
+    except NoPublicIpsError as e:
         LOG.info("No public ips available yet: %s", e)
         return True
-    except NoRunningInstances as e:
+    except NoRunningInstancesError as e:
         # shouldn't be necessary because of _wait_ec2_all_in_state() we do before, but the EC2 API is not consistent
         # and sometimes selecting instances filtering for the `running` state doesn't find them
         # even if their state is `running` according to the latest API call
         LOG.info("No running instances yet: %s", e)
         return True
-    except CommandException as e:
+    except CommandError as e:
         # login problem is a legitimate error for booting servers,
         # but also a signal the SSH private key is not allowed if it persists
         if "Needed to prompt for a connection or sudo password" in str(e):
@@ -156,7 +169,7 @@ def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
         timeout=config.BUILDER_TIMEOUT,
         update_msg="waiting for nodes to complete boot",
         done_msg="all nodes have public ips, are reachable via SSH and have completed boot",
-        exception_class=EC2Timeout
+        exception_class=EC2TimeoutError
     )
 
 def start_rds_nodes(stackname):
@@ -174,10 +187,7 @@ def start(stackname):
 
     # TODO: do the same exclusion for EC2
     ec2_states = _ec2_nodes_states(stackname)
-    if context.get('rds'):
-        rds_states = _rds_nodes_states(stackname)
-    else:
-        rds_states = {}
+    rds_states = _rds_nodes_states(stackname) if context.get('rds') else {}
     LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
     _ensure_valid_ec2_states(ec2_states, {'stopped', 'pending', 'running', 'stopping'})
 
@@ -206,7 +216,7 @@ def start(stackname):
 
     try:
         wait_for_ec2_steady_state(stackname, ec2_to_be_checked)
-    except EC2Timeout as e:
+    except EC2TimeoutError as e:
         # a persistent login problem won't be solved by a reboot
         if "Needed to prompt for a connection or sudo password" in str(e):
             raise
@@ -242,10 +252,7 @@ def stop(stackname, services=None):
     context = load_context(stackname)
 
     ec2_states = _ec2_nodes_states(stackname)
-    if context.get('rds'):
-        rds_states = _rds_nodes_states(stackname)
-    else:
-        rds_states = {}
+    rds_states = _rds_nodes_states(stackname) if context.get('rds') else {}
     LOG.info("Current states: EC2 %s, RDS %s", ec2_states, rds_states)
     _ensure_valid_ec2_states(ec2_states, {'running', 'stopping', 'stopped'})
 
@@ -261,13 +268,16 @@ def _last_ec2_start_time(stackname):
     nodes = find_ec2_instances(stackname, allow_empty=True)
 
     def _parse_datetime(value):
-        assert value.tzname() == 'UTC', 'datetime object returned by the EC2 API is not UTC, needs timezone conversion'
-        return value.replace(tzinfo=None)
+        assert value.tzname() == 'UTC', 'datetime object returned by the EC2 API is not UTC and needs timezone conversion'
+        # lsh@2023-11-07: everything should be UTC now
+        #return value.replace(tzinfo=None)
+        return value
     return {node.id: _parse_datetime(node.launch_time) for node in nodes}
 
 def stop_if_running_for(stackname, minimum_minutes=55):
     starting_times = _last_ec2_start_time(stackname)
-    running_times = {node_id: int((datetime.utcnow() - launch_time).total_seconds()) for (node_id, launch_time) in starting_times.items()}
+    now = utils.utcnow()
+    running_times = {node_id: int((now - launch_time).total_seconds()) for (node_id, launch_time) in starting_times.items()}
     LOG.info("Total running times: %s", running_times)
 
     minimum_running_time = minimum_minutes * 60
@@ -291,7 +301,7 @@ def _get_dns_a_record(zone_name, name):
     a_record_list = result['ResourceRecordSets']
 
     # "zero or one 'A' records expected for 'foo--journal.elifesciences.org.', found 2"
-    ensure(len(a_record_list) < 2, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
+    ensure(len(a_record_list) <= 1, "zero or one 'A' records expected for %r, found %s" % (name, len(a_record_list)))
 
     # {'Name': 'continuumtest--lax.elifesciences.org.', 'Type': 'A', 'TTL': 60, 'ResourceRecords': [{'Value': '3.93.31.184'}]}
     a_record = first(a_record_list)
@@ -364,7 +374,7 @@ def update_dns(stackname):
     def _log_backoff(event):
         LOG.warning("Backing off in waiting for running nodes on %s to map them onto a DNS entry", event['args'][0])
 
-    @backoff.on_exception(backoff.expo, core.NoRunningInstances, on_backoff=_log_backoff, max_time=30)
+    @backoff.on_exception(backoff.expo, core.NoRunningInstancesError, on_backoff=_log_backoff, max_time=30)
     def _wait_for_running_nodes(stackname):
         return find_ec2_instances(stackname)
 

@@ -1,9 +1,11 @@
-import os
-import threadbare
-from io import BytesIO
-from . import utils, config
 import logging
+import os
+from io import BytesIO
+
 import pssh.exceptions
+import threadbare
+
+from . import config, utils
 
 LOG = logging.getLogger(__name__)
 
@@ -11,7 +13,7 @@ LOG = logging.getLogger(__name__)
 # exceptions
 #
 
-class CommandException(Exception):
+class CommandError(Exception):
     pass
 
 NetworkError = threadbare.operations.NetworkError
@@ -21,7 +23,7 @@ NetworkTimeoutError = pssh.exceptions.Timeout
 NetworkUnknownHostError = pssh.exceptions.UnknownHostError
 NetworkAuthenticationError = pssh.exceptions.AuthenticationError
 
-threadbare.state.set_defaults({"abort_exception": CommandException,
+threadbare.state.set_defaults({"abort_exception": CommandError,
                                "key_filename": os.path.expanduser(config.USER_PRIVATE_KEY)})
 
 #
@@ -62,7 +64,8 @@ remote_file_exists = threadbare.operations.remote_file_exists
 def remote_listfiles(path=None, use_sudo=False):
     """returns a list of files in a directory at `path` as absolute paths"""
     if not path:
-        raise AssertionError("path to remote directory required")
+        msg = "path to remote directory required"
+        raise AssertionError(msg)
     runfn = remote_sudo if use_sudo else remote
     path = "%s/*" % path.rstrip("/")
     result = runfn("for i in %s; do echo $i; done" % path)

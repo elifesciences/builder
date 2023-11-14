@@ -1,13 +1,16 @@
-import os
-from collections import OrderedDict
 import json
+import os
 import re
-import yaml
+from collections import OrderedDict
 from os.path import join
-from unittest.mock import patch, MagicMock
 from unittest import TestCase
-from . import base
+from unittest.mock import MagicMock, patch
+
+import yaml
 from buildercore import cfngen, terraform, utils
+
+from . import base
+
 
 class TestTerraformTemplate(TestCase):
     def test_resource_creation(self):
@@ -215,9 +218,9 @@ class TestBuildercoreTerraform(base.BaseCase):
 
     # --- utils
 
-    def _getProvider(self, providers_file, provider_name, provider_alias=None):
+    def _get_provider(self, providers_file, provider_name, provider_alias=None):
         providers_list = providers_file['provider']
-        matching_providers = [p for p in providers_list if list(p.keys())[0] == provider_name]
+        matching_providers = [p for p in providers_list if next(iter(p.keys())) == provider_name]
         if provider_alias:
             matching_providers = [p for p in matching_providers if p[provider_name].get('alias') == provider_alias]
         self.assertLessEqual(len(matching_providers), 1, "Too many providers %s found in %s" % (provider_name, providers_list))
@@ -230,7 +233,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         return yaml.safe_load(terraform_template)
 
     def _load_terraform_file(self, stackname, filename):
-        with open(join(self.temp_dir, stackname, '%s.tf.json' % filename), 'r') as fp:
+        with open(join(self.temp_dir, stackname, '%s.tf.json' % filename)) as fp:
             return self._parse_template(fp.read())
 
     # ---
@@ -245,18 +248,18 @@ class TestBuildercoreTerraform(base.BaseCase):
         with terraform._open(stackname, filename, mode="w") as fh:
             fh.write("baz")
         self.assertTrue(os.path.exists(expected_file))
-        with open(expected_file, "r") as fh:
+        with open(expected_file) as fh:
             self.assertEqual(fh.read(), "baz")
 
         expected_file_2 = join(self.temp_dir, stackname, filename) # + ".tf.json"
         with terraform._open(stackname, filename, extension=None, mode="w") as fh:
             fh.write("boo")
         self.assertTrue(os.path.exists(expected_file_2))
-        with open(expected_file_2, "r") as fh:
+        with open(expected_file_2) as fh:
             self.assertEqual(fh.read(), "boo")
 
     @patch('buildercore.terraform.Terraform')
-    def test_init_providers(self, Terraform):
+    def test_init_providers(self, Terraform): # noqa: N803
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
         stackname = 'project-with-fastly-minimal--%s' % self.environment
@@ -266,7 +269,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         # ensure tfenv file created
         tfenv_file = join(self.temp_dir, stackname, ".terraform-version")
         self.assertTrue(os.path.exists(tfenv_file))
-        with open(tfenv_file, "r") as fh:
+        with open(tfenv_file) as fh:
             self.assertEqual(fh.read(), context['terraform']['version'])
 
         terraform_binary.init.assert_called_once()
@@ -305,7 +308,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertEqual(self._load_terraform_file(stackname, 'backend'), expected_backend)
 
     @patch('buildercore.terraform.Terraform')
-    def test_fastly_provider_reads_api_key_from_vault(self, Terraform):
+    def test_fastly_provider_reads_api_key_from_vault(self, Terraform): # noqa: N803
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
         stackname = 'project-with-fastly-minimal--%s' % self.environment
@@ -313,7 +316,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         terraform.init(stackname, context)
         providers_file = self._load_terraform_file(stackname, 'providers')
         self.assertEqual(
-            self._getProvider(providers_file, 'fastly').get('api_key'),
+            self._get_provider(providers_file, 'fastly').get('api_key'),
             '${data.vault_generic_secret.fastly.data["api_key"]}'
         )
         self.assertEqual(
@@ -324,7 +327,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
     @patch('buildercore.terraform.Terraform')
-    def test_delta(self, Terraform):
+    def test_delta(self, Terraform): # noqa: N803
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
         terraform_binary.show.return_value = (0, 'Plan output: ...', '')
@@ -869,7 +872,7 @@ class TestBuildercoreTerraform(base.BaseCase):
         )
 
     @patch('buildercore.terraform.Terraform')
-    def test_kubernetes_provider(self, Terraform):
+    def test_kubernetes_provider(self, Terraform): # noqa: N803
         terraform_binary = MagicMock()
         Terraform.return_value = terraform_binary
         stackname = 'project-with-eks--%s' % self.environment
@@ -882,14 +885,14 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
                 'token': '${data.aws_eks_cluster_auth.main.token}',
             },
-            self._getProvider(providers, 'kubernetes')
+            self._get_provider(providers, 'kubernetes')
         )
 
         self.assertEqual(
             {
                 'role_arn': '${aws_iam_role.user.arn}',
             },
-            self._getProvider(providers, 'aws', 'eks_assume_role').get('assume_role')
+            self._get_provider(providers, 'aws', 'eks_assume_role').get('assume_role')
         )
         self.assertIn('aws_eks_cluster', providers['data'])
         self.assertEqual(

@@ -1,9 +1,10 @@
-from pprint import pformat
-import utils
-from decorators import requires_aws_stack
-from buildercore import core, cfngen, context_handler
-from buildercore.utils import json_dumps, subdict, lu, shallow_flatten
 import logging
+from pprint import pformat
+
+import utils
+from buildercore import cfngen, context_handler, core
+from buildercore.utils import json_dumps, lu, shallow_flatten, subdict
+from decorators import requires_aws_stack
 
 LOG = logging.getLogger(__name__)
 SEP = "%s\n" % ("-" * 20,)
@@ -97,7 +98,7 @@ def _dns_check(stackname, context):
     def hosted_zone_id(dns):
         "given a DNS entry, figures out which AWS Hosted Zone it belongs to"
         bits = dns.split('.')
-        if len(bits) == 3:
+        if len(bits) == 3: # noqa: SIM108, PLR2004
             name = '.'.join(bits[1:]) + '.'
         else:
             name = dns + '.'
@@ -132,6 +133,7 @@ def _dns_check(stackname, context):
             details = "records found: %s" % (pformat(records),)
             solution = './bldr update_dns:%s' % (stackname,)
             return problem(description, solution, details)
+        return None
 
     results = []
     for label, dns in domain_map.items():
@@ -146,7 +148,7 @@ def _dns_check(stackname, context):
                 if _results:
                     results.append(_results)
 
-    return success() if not results else results
+    return results if results else success()
 
 # ---
 

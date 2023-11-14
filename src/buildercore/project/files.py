@@ -1,15 +1,18 @@
 import copy
-from buildercore import utils
-from buildercore.utils import ensure
-from buildercore.config import CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT
-from kids.cache import cache as cached
 import logging
+
+from kids.cache import cache as cached
+
+from buildercore import utils
+from buildercore.config import CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT
+from buildercore.utils import ensure
+
 LOG = logging.getLogger(__name__)
 
 def read_project_file(project_file_path):
     """reads the contents of the YAML file at `project_file_path`.
     for example, `/path/to/builder/projects/elife.yaml`."""
-    with open(project_file_path, 'r') as fh:
+    with open(project_file_path) as fh:
         return utils.yaml_load(fh.read())
 
 @cached

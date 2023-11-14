@@ -11,15 +11,37 @@ The non-AWS pipeline is similar:
 
 see also `terraform.py`."""
 
-import json, os
-from collections import OrderedDict
-from os.path import join
-from . import config, utils, bvars, aws
-from troposphere import GetAtt, Output, Ref, Template, ec2, rds, sns, sqs, Base64, route53, Parameter, Tags, docdb, wafv2
-from troposphere import s3, cloudfront, elasticloadbalancing as elb, elasticloadbalancingv2 as alb, elasticache
-from functools import partial
-from .utils import ensure, subdict, lmap, isstr, deepcopy, lookup
+import json
 import logging
+import os
+from collections import OrderedDict
+from functools import partial
+from os.path import join
+
+from troposphere import (
+    Base64,
+    GetAtt,
+    Output,
+    Parameter,
+    Ref,
+    Tags,
+    Template,
+    cloudfront,
+    docdb,
+    ec2,
+    elasticache,
+    rds,
+    route53,
+    s3,
+    sns,
+    sqs,
+    wafv2,
+)
+from troposphere import elasticloadbalancing as elb
+from troposphere import elasticloadbalancingv2 as alb
+
+from . import aws, bvars, config, utils
+from .utils import deepcopy, ensure, isstr, lmap, lookup, subdict
 
 # todo: remove on upgrade to python 3
 # backports a fix we need to py2-compatible troposphere 2.7.1
@@ -84,8 +106,8 @@ def _convert_ports_to_dictionary(ports):
                 ports_map[p] = {}
             elif isinstance(p, dict):
                 ensure(len(p) == 1, "Single port definition cannot contain more than one value")
-                from_port = list(p.keys())[0]
-                configuration = list(p.values())[0]
+                from_port = next(iter(p.keys()))
+                configuration = next(iter(p.values()))
                 ports_map[from_port] = configuration
             else:
                 raise ValueError("Invalid port definition: %s" % (p,))
@@ -184,7 +206,7 @@ def using_elb(context):
     if 'primary_lb' in context and context['primary_lb'] == 'alb':
         return False
     # one or the other is present
-    return True if 'elb' in context and context['elb'] else False
+    return bool("elb" in context and context["elb"])
 
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"
@@ -259,7 +281,7 @@ def ec2instance(context, node):
         # so we use redundant-subnet-id-2 (us-east-1a)
         subnet_id = lu('aws.redundant-subnet-id-2')
 
-    with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment'), 'r') as fh:
+    with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment')) as fh:
         clean_server_script = fh.read()
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
@@ -576,7 +598,7 @@ def render_rds(context, template):
             "CharacterSetName", "DBClusterIdentifier", "DeleteAutomatedBackups", "EnablePerformanceInsights", "KmsKeyId", "MonitoringInterval", "MonitoringRoleArn", "PerformanceInsightsKMSKeyId", "PerformanceInsightsRetentionPeriod", "PromotionTier", "SourceDBInstanceIdentifier", "SourceRegion", "StorageEncrypted", "Timezone"
         ]
         removed = {key: data.pop(key) for key in delete_these if key in data}
-        LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s" % removed)
+        LOG.warning("because a 'snapshot-id' was specified, the following keys have been removed: %s", removed)
         LOG.warning("removing the 'snapshot-id' value will cause a new database to be created on update.")
         LOG.warning("changing the 'snapshot-id' value will cause the database to be replaced.")
 
@@ -624,7 +646,7 @@ def render_s3(context, template):
     for bucket_name in context['s3']:
         props = {
             'DeletionPolicy': context['s3'][bucket_name]['deletion-policy'].capitalize(),
-            'Tags': s3.Tags(**aws.generic_tags(context, name=False)),
+            'Tags': s3.Tags(**aws.generic_tags(context)),
         }
         bucket_title = _sanitize_title(bucket_name) + "Bucket"
         if context['s3'][bucket_name]['cors']:
@@ -798,7 +820,7 @@ def _elb_healthcheck_target(context):
     raise ValueError("Unsupported healthcheck protocol: %s" % context['elb']['healthcheck']['protocol'])
 
 def render_elb(context, template, ec2_instances):
-    elb_is_public = True if context['full_hostname'] else False
+    elb_is_public = bool(context["full_hostname"])
     elb_policy_list = [
         elb.Policy(**{
             'PolicyName': 'Improved-TLS-Policy',
@@ -864,7 +886,7 @@ def render_elb(context, template, ec2_instances):
         else:
             raise RuntimeError("Unknown procotol `%s`" % context['elb']['protocol'])
 
-    for _, listener in context['elb']['additional_listeners'].items():
+    for listener in context['elb']['additional_listeners'].values():
         listeners.append(elb.Listener(
             InstanceProtocol='HTTP',
             InstancePort=str(listener['port']),
@@ -932,7 +954,7 @@ def _external_dns_alb(context):
     # todo: update
     # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
     if using_elb(context):
-        return
+        return None
 
     # http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html
     # The DNS name of an existing Amazon Route 53 hosted zone
@@ -957,7 +979,7 @@ def _internal_dns_alb(context):
     # todo: update
     # disabling the ELB during migration will replace the ELB DNS entries with ALB DNS entries.
     if using_elb(context):
-        return
+        return None
 
     # The DNS name of an existing Amazon Route 53 hosted zone
     hostedzone = context['int_domain'] + "." # TRAILING DOT IS IMPORTANT!
@@ -985,17 +1007,17 @@ def render_alb(context, template, ec2_instances):
     """an ALB is an ELBv2. It can operate at the network level if need be but we're using it at the
     'Application' level, routing using port and protocol."""
 
-    alb_is_public = True if context['full_hostname'] else False
+    alb_is_public = bool(context["full_hostname"])
 
     outputs = []
 
     # -- security group
 
-    ALB_SECURITY_GROUP_ID = ALB_TITLE + "SecurityGroup"
+    alb_security_group_id = ALB_TITLE + "SecurityGroup"
     alb_ports = [attr_map['port'] for attr_map in context['alb']['listeners'].values()]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
     _lb_security_group = security_group(
-        ALB_SECURITY_GROUP_ID,
+        alb_security_group_id,
         context['aws']['vpc-id'],
         alb_ports
     )
@@ -1015,7 +1037,7 @@ def render_alb(context, template, ec2_instances):
         Name=context['stackname'],
         Scheme='internet-facing' if alb_is_public else 'internal',
         Subnets=context['alb']['subnets'],
-        SecurityGroups=[Ref(ALB_SECURITY_GROUP_ID)],
+        SecurityGroups=[Ref(alb_security_group_id)],
         Type='application', # default, could also be 'network', superceding ELB logic
         Tags=_alb_tags(context),
         LoadBalancerAttributes=lb_attrs,
@@ -1096,7 +1118,7 @@ def render_alb(context, template, ec2_instances):
     # -- listeners, one for each protocol+port pair
 
     _lb_listener_list = []
-    for listener_name, attr_map in context['alb']['listeners'].items():
+    for attr_map in context['alb']['listeners'].values():
         _target_group = _lb_target_group_map[attr_map['forward']]
         _target_group_arn = target_group_id(_target_group.Protocol, _target_group.Port)
         protocol = attr_map['protocol'].upper()
@@ -1120,7 +1142,7 @@ def render_alb(context, template, ec2_instances):
 
     # -- dns
 
-    alb_is_public = True if context['full_hostname'] else False
+    alb_is_public = bool(context["full_hostname"])
     if context['full_hostname'] or context['int_full_hostname']:
         # add A records to `elifesciences.org` or `elife.internal` hosted zones
         dns_fn = _external_dns_alb if alb_is_public else _internal_dns_alb
@@ -1128,7 +1150,7 @@ def render_alb(context, template, ec2_instances):
         if dns:
             template.add_resource(dns)
 
-    if context['full_hostname']:
+    if context['full_hostname']: # noqa: SIM102
         # add CNAME records
         if not using_elb(context):
             # skip calling this again if ELB present
@@ -1320,7 +1342,8 @@ def external_dns_fastly(context):
                 TTL="60",
                 ResourceRecords=ip_addresses,
             )
-            raise ValueError("2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains")
+            msg = "2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains"
+            raise ValueError(msg)
 
         hostedzone = context['domain'] + "."
         cname = context['fastly']['dns']['cname']
@@ -1510,15 +1533,15 @@ def render_waf_managed_rule(stackname, rule_name_with_ns, rule):
 
 # when given an object to render, Troposphere will look for some way to encode it's data:
 # - https://github.com/cloudtools/troposphere/blob/2.7.1/troposphere/__init__.py#L69-L72
-class JSONRule(object):
+class JSONRule:
     title = 'Rule'
 
     def __init__(self, name):
         self.path = join(config.SRC_PATH, 'buildercore/waf/', name)
         ensure(os.path.exists(self.path), "path not found: %s" % (self.path,))
 
-    def JSONrepr(self):
-        with open(self.path, 'r') as fh:
+    def JSONrepr(self): # noqa: N802
+        with open(self.path) as fh:
             return json.load(fh)
 
 # in order to allow custom objects as Rules, I had to slip `JSONRule` in here:
@@ -1565,7 +1588,7 @@ def render_waf_ipsets(context):
     """returns a list of IPSet objects. These can be used in WAF rules to affect groups of IP addresses.
     we use them to whitelist traffic."""
     def withsuffix(ip_address):
-        if not '/' in ip_address:
+        if '/' not in ip_address:
             return ip_address + "/32"
         return ip_address
 
@@ -1594,10 +1617,10 @@ def render_waf(context, template):
 # --- todo: revisit this, seems to be part of rds+ec2
 
 def add_outputs(context, template):
-    if R53_EXT_TITLE in template.resources.keys():
+    if R53_EXT_TITLE in template.resources:
         template.add_output(mkoutput("DomainName", "Domain name of the newly created stack instance", Ref(R53_EXT_TITLE)))
 
-    if R53_INT_TITLE in template.resources.keys():
+    if R53_INT_TITLE in template.resources:
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
 #
@@ -1637,7 +1660,7 @@ def render(context):
 
     for value in renderer_list:
         context_key, render_fn = value[0], value[1]
-        kwargs = value[2] if len(value) == 3 else {}
+        kwargs = value[2] if len(value) == 3 else {} # noqa: PLR2004
         if context[context_key]: # "if 's3' in context, then render_s3(...)"
             render_fn(context, template, **kwargs)
 

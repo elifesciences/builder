@@ -1,6 +1,7 @@
-import utils
-import stack
 import pytest
+import stack
+import utils
+
 
 def test_generate_stacks__unknown_stacktype():
     "an error is raised if the given resource type is unsupported."

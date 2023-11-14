@@ -1,7 +1,10 @@
-from . import base
-from os.path import join
-from buildercore.project import files
 from collections import OrderedDict
+from os.path import join
+
+from buildercore.project import files
+
+from . import base
+
 
 class TestFiles(base.BaseCase):
     def setUp(self):

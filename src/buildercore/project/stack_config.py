@@ -24,9 +24,11 @@ stack configuration is *not*:
 
 """
 
+from deepmerge import Merger
+
 from buildercore import utils
 from buildercore.utils import ensure
-from deepmerge import Merger
+
 
 def deep_merge(d1, d2):
     custom_merger = Merger(
@@ -48,7 +50,7 @@ def stack_has_path(data):
 
 def read_stack_file(path):
     "reads the contents of the YAML file at `path`, returning Python data."
-    with open(path, 'r') as fh:
+    with open(path) as fh:
         data = utils.ruamel_load(fh)
     # a check before `parse_stack_map` to insert a reference to where this data originated.
     # it's necessary so we know where to update an individual stack in future during stack regeneration.
@@ -80,7 +82,7 @@ def _dumps_stack_file(data):
     data = utils.dictmap(prune_path, data)
 
     order = ['name', 'description', 'meta']
-    order = dict(zip(order, range(0, len(order)))) # {'id': 0, 'name': 1, ...}
+    order = dict(zip(order, range(len(order)))) # {'id': 0, 'name': 1, ...}
 
     def order_keys(toplevel, data):
         if toplevel == 'defaults':

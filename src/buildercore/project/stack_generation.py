@@ -1,12 +1,12 @@
 '''logic to generate and refresh the configuration of stacks and their list of resources.
 
 '''
-from functools import reduce
-import os
-from buildercore.utils import ensure, merge
-from buildercore.project import stack_config, stack_generation__s3_bucket
-
 import logging
+import os
+from functools import reduce
+
+from buildercore.project import stack_config, stack_generation__s3_bucket
+from buildercore.utils import ensure, merge
 
 LOG = logging.getLogger(__name__)
 

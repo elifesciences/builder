@@ -1,6 +1,9 @@
 from unittest.mock import patch
+
 from buildercore import bakery
+
 from . import base
+
 
 class TestBuildercoreBakery(base.BaseCase):
     @patch('buildercore.utils.ymd')

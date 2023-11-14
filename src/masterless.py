@@ -1,14 +1,15 @@
-import os
-from os.path import join
-from collections import OrderedDict
-from pprint import pformat
-from buildercore.command import lcd, settings, local
-from decorators import requires_project
-from buildercore import bootstrap, checks, core, context_handler, config
-from buildercore.utils import ensure, subdict
 import logging
-import cfn
+import os
+from collections import OrderedDict
 from functools import wraps
+from os.path import join
+from pprint import pformat
+
+import cfn
+from buildercore import bootstrap, checks, config, context_handler, core
+from buildercore.command import lcd, local, settings
+from buildercore.utils import ensure, subdict
+from decorators import requires_project
 
 LOG = logging.getLogger(__name__)
 
@@ -96,9 +97,9 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
     # a better summary of what is to be created could be printed out,
     # preferably after the templates are printed out but before confirmation.
     LOG.info('attempting to create masterless stack:')
-    LOG.info('stackname:\t' + stackname)
-    LOG.info('region:\t' + pdata['aws']['region'])
-    LOG.info('formula_revisions:\t%s' % pformat(formula_revisions))
+    LOG.info('stackname:\t%s', stackname)
+    LOG.info('region:\t%s', pdata['aws']['region'])
+    LOG.info('formula_revisions:\t%s', pformat(formula_revisions))
 
     if core.is_master_server_stack(stackname):
         checks.ensure_can_access_builder_private(pname)
@@ -133,3 +134,4 @@ def set_versions(stackname, *repolist):
             bootstrap.run_script('update-masterless-formula.sh', repo, formula, revision)
 
     core.stack_all_ec2_nodes(stackname, updater, concurrency='serial')
+    return None

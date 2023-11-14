@@ -1,12 +1,22 @@
-from time import time
-import os
-from os.path import join
-import utils
-from buildercore import core, project, config, cloudformation, utils as core_utils
-from buildercore.utils import first, remove_ordereddict, errcho, lfilter, lmap, isstr, ensure
-from functools import wraps, partial
-from pprint import pformat
 import logging
+import os
+from functools import partial, wraps
+from os.path import join
+from pprint import pformat
+from time import time
+
+import utils
+from buildercore import cloudformation, config, core, project
+from buildercore import utils as core_utils
+from buildercore.utils import (
+    ensure,
+    errcho,
+    first,
+    isstr,
+    lfilter,
+    lmap,
+    remove_ordereddict,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -48,7 +58,6 @@ def requires_filtered_project(filterfn=None):
         return wrap2
     return wrap1
 
-# pylint: disable=invalid-name
 requires_project = requires_filtered_project(None)
 
 def requires_aws_project_stack(*plist):
@@ -62,12 +71,13 @@ def requires_aws_project_stack(*plist):
             asl = core.active_stack_names(region)
             if not asl:
                 print('\nno AWS stacks exist, cannot continue.')
-                return
+                return None
 
             def pname_startswith(stack):
                 for pname in plist:
                     if stack.startswith(pname):
                         return stack
+                return None
             asl = lfilter(pname_startswith, asl)
             if not stackname or stackname not in asl:
                 stackname = utils._pick("stack", asl)
@@ -87,7 +97,8 @@ def requires_aws_stack(func):
         # note: this assumes all stacks have an ec2 instance.
         asl = core.active_stack_names(region)
         if not asl:
-            raise RuntimeError('\nno AWS stacks *in an active state* exist, cannot continue.')
+            msg = '\nno AWS stacks *in an active state* exist, cannot continue.'
+            raise RuntimeError(msg)
         if not stackname or stackname not in asl:
             stackname = utils._pick("stack", asl, default_file=deffile('.active-stack'))
         args = args[1:]
@@ -117,7 +128,7 @@ def requires_steady_stack(func):
 
         if not keys:
             print('\nno AWS stacks *in a steady state* exist, cannot continue.')
-            return
+            return None
         stackname = first(args) or config.ENV['INSTANCE']
         if not stackname or stackname not in keys:
             stackname = utils._pick("stack", sorted(keys), helpfn=helpfn, default_file=deffile('.active-stack'))

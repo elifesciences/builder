@@ -1,5 +1,7 @@
 from buildercore import fastly
+
 from . import base
+
 
 class TestFastlyCustomVCL(base.BaseCase):
     def test_inserts_snippets_through_include_statements(self):

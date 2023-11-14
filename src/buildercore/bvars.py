@@ -1,7 +1,9 @@
-from io import BytesIO
-import json, base64
-from .command import download
+import base64
+import json
 import logging
+from io import BytesIO
+
+from .command import download
 
 LOG = logging.getLogger(__name__)
 

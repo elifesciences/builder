@@ -13,8 +13,8 @@ image=py3
 #if ! docker inspect --type=image "elifesciences/builder:$image" > /dev/null; then
     time docker build \
         --no-cache \
-        -f "Dockerfile.${image}" \
-        -t "elifesciences/builder:${image}" \
+        --file "Dockerfile.${image}" \
+        --tag "elifesciences/builder:${image}" \
         . \
         1>&2
 #fi

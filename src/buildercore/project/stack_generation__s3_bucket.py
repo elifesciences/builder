@@ -1,9 +1,12 @@
-import os, tempfile, json
-from buildercore import core, utils
-from buildercore.project import stack_config as project_config
+import json
+import logging
+import os
+import tempfile
+
 from botocore.exceptions import ClientError
 
-import logging
+from buildercore import core, utils
+from buildercore.project import stack_config as project_config
 
 LOG = logging.getLogger(__name__)
 
@@ -17,10 +20,10 @@ def cached_output(unique_name):
     path = cache_path(unique_name)
     if not os.path.exists(path):
         LOG.info("cache miss, path not found: %s", path)
-    else:
-        LOG.debug("cache hit, path found: %s", path)
-        with open(path, 'r') as fh:
-            return json.load(fh)
+        return None
+    LOG.debug("cache hit, path found: %s", path)
+    with open(path) as fh:
+        return json.load(fh)
 
 def cache(data, unique_name):
     """writes given `data` as JSON to a temporary file using `unique_name`.
@@ -66,7 +69,7 @@ def regenerate_resource(old_resource):
     old_resource['versioning'] = output['versioning'] == 'Enabled'
 
     tag_list = [(t['Key'], t['Value']) for t in output['tag-list']]
-    tag_list = {k: v for k, v in sorted(tag_list, key=lambda x: x[0])}
+    tag_list = dict(sorted(tag_list, key=lambda x: x[0]))
     old_resource['tag-list'] = tag_list or {}
 
     return old_resource
@@ -106,11 +109,11 @@ def generate_stack(config_path):
     def not_cloudformation_tagged(stack):
         tag = 'aws:cloudformation:stack-id'
         # {"foo": {"meta": ..., "resource-list": ...}} => {"meta": ..., "resource-list": ...}
-        stack_data = list(stack.values())[0]
+        stack_data = next(iter(stack.values()))
         for resource in stack_data['resource-list']:
             if tag in resource.get('tag-list', {}):
-                LOG.warning("excluding %r, it belongs to: %s" %
-                            (resource['name'], resource['tag-list']['aws:cloudformation:stack-name']))
+                LOG.warning("excluding %r, it belongs to: %s",
+                            resource['name'], resource['tag-list']['aws:cloudformation:stack-name'])
                 return False
         return True
 

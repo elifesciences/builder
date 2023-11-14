@@ -1,5 +1,6 @@
+from unittest.mock import MagicMock, patch
+
 from buildercore import bluegreen_v2
-from unittest.mock import patch, MagicMock
 
 NODE_PARAMS = {
     'key_filename': './dummy1--test.pem',
@@ -139,7 +140,7 @@ def test_target_groups():
     stackname = "foo"
     mock = MagicMock()
     mock.describe_target_health.return_value = TARGET_HEALTH
-    with patch('buildercore.bluegreen_v2.conn', return_value=mock):
+    with patch('buildercore.bluegreen_v2.conn', return_value=mock): # noqa: SIM117
         with patch('buildercore.core.all_node_params', return_value=NODE_PARAMS):
             with patch('buildercore.cloudformation.outputs_map', return_value=TARGET_GROUP_OUTPUT):
                 assert bluegreen_v2._target_groups(stackname) == expected
@@ -161,7 +162,7 @@ def test_registered():
     stackname = "foo"
     mock = MagicMock()
     mock.describe_target_health.return_value = TARGET_HEALTH
-    with patch('buildercore.bluegreen_v2.conn', return_value=mock):
+    with patch('buildercore.bluegreen_v2.conn', return_value=mock):  # noqa: SIM117
         with patch('buildercore.core.all_node_params', return_value=NODE_PARAMS):
             with patch('buildercore.cloudformation.outputs_map', return_value=TARGET_GROUP_OUTPUT):
                 assert bluegreen_v2._registered(stackname, NODE_PARAMS) == expected

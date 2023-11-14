@@ -10,11 +10,13 @@
 # See cloudformation.py and trop.py for rendering Cloudformation templates with this context data
 # See terraform.py for rendering Terraform templates with this context data
 
-import os, json
+import json
+import logging
+import os
 from os.path import join
+
 from . import config, s3
 
-import logging
 LOG = logging.getLogger(__name__)
 
 def s3_context_key(stackname):
@@ -36,13 +38,13 @@ def download_from_s3(stackname, refresh=False):
 
 def _load_context_from_disk(stackname):
     path = local_context_file(stackname)
-    with open(path, 'r') as fh:
+    with open(path) as fh:
         return json.load(fh)
 
 def _load_context_from_s3(stackname):
     "downloads context from S3 then returns the results of loading it from disk"
     if not download_from_s3(stackname, refresh=True):
-        raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+        raise MissingContextFileError("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
     return _load_context_from_disk(stackname)
 
 def load_context(stackname):
@@ -60,7 +62,7 @@ def load_context(stackname):
     # 14:52:48 KeyError: 'configuration-repo'
     #
     # if not download_from_s3(stackname, refresh=True):
-    #    raise MissingContextFile("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
+    #    raise MissingContextFileError("We are missing the context file for %s, even on S3. Does the stack exist?" % stackname)
 
     #path = local_context_file(stackname)
     #contents = json.load(open(path, 'r'))
@@ -70,7 +72,7 @@ def load_context(stackname):
 
     # fallback: if legacy 'project.aws' key exists, use that for 'aws'
     if contents.get('project', {}).get('aws'):
-        LOG.warn("stack context is using legacy 'project.aws' instead of just 'aws': %s" % stackname)
+        LOG.warning("stack context is using legacy 'project.aws' instead of just 'aws': %s", stackname)
         contents['aws'] = contents['project']['aws']
     # end of fallback
 
@@ -108,12 +110,13 @@ def only_if(*servicenames):
     def decorate_with_only_if(fn):
         def decorated_with_only_if(stackname, context, **kwargs):
             # only update service if stack is using given service
-            if [k for k in context.keys() if context.get(k) and k in servicenames]:
+            if [k for k in context if context.get(k) and k in servicenames]:
                 # TODO: context is not always necessary in fn implementations. Can we avoid passing it when not needed?
                 return fn(stackname, context, **kwargs)
             LOG.info("Skipped as %s not in the context", servicenames)
+            return None
         return decorated_with_only_if
     return decorate_with_only_if
 
-class MissingContextFile(RuntimeError):
+class MissingContextFileError(RuntimeError):
     pass

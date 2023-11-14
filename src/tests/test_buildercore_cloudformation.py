@@ -1,8 +1,11 @@
 import json
-from buildercore import cloudformation
-from . import base
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import botocore
+from buildercore import cloudformation
+
+from . import base
+
 
 def test_troposphere_v2_template_upgraded_to_v3_template():
     "`cloudformation.read_template` will upgrade any Troposphere v2 string-booleans to v3 literal booleans."

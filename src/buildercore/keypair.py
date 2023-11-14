@@ -1,13 +1,15 @@
 "handles the creation/deletion/storage of keypairs from AWS"
 
-import os, shutil
+import logging
+import os
+import shutil
 from os.path import join
-from . import core, utils, config, s3
+
+from . import config, core, s3, utils
+from .command import local
 from .core import stack_pem
 from .utils import lfilter
-from .command import local
 
-import logging
 LOG = logging.getLogger(__name__)
 
 #
@@ -22,7 +24,7 @@ def write_keypair_to_s3(stackname):
     # http://boto.readthedocs.io/en/latest/ref/ec2.html#boto.ec2.keypair.KeyPair
     path = stack_pem(stackname, die_if_doesnt_exist=True)
     key = s3_keypair_key(stackname)
-    with open(path, 'r') as fp:
+    with open(path) as fp:
         pem_contents = fp.read()
     s3.write(key, pem_contents)
     return s3.exists(key)
@@ -55,7 +57,7 @@ def delete_keypair_from_fs(stackname):
         shutil.copy2(expected_key, delete_path)
         os.unlink(expected_key)
         return True
-    except (RuntimeError, IOError):
+    except (OSError, RuntimeError):
         LOG.exception("unhandled exception attempting to delete keypair from filesystem")
 
 #
@@ -91,5 +93,5 @@ def all_in_s3():
 def all_locally():
     "all keypairs on the filesystem"
     keys = os.listdir(config.KEYPAIR_PATH)
-    key_paths = map(lambda fname: join(config.KEYPAIR_PATH, fname), keys)
+    key_paths = [join(config.KEYPAIR_PATH, fname) for fname in keys]
     return lfilter(os.path.isfile, key_paths)

@@ -1,11 +1,14 @@
 # from . import core # DONT import core. this project module should be relatively independent
-import os
-from buildercore import utils, config
-from kids.cache import cache
-from . import files, stack_config
 import copy
 import logging
+import os
 from functools import reduce
+
+from kids.cache import cache
+
+from buildercore import config, utils
+
+from . import files, stack_config
 
 LOG = logging.getLogger(__name__)
 
@@ -97,8 +100,9 @@ def project_data(pname):
     data = project_map()
     try:
         return data[pname]
-    except KeyError:
-        raise ValueError("unknown project %r, known projects %r" % (pname, list(data.keys())))
+    except KeyError as keyerr:
+        msg = "unknown project %r, known projects %r" % (pname, list(data.keys()))
+        raise ValueError(msg) from keyerr
 
 #
 #

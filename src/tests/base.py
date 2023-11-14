@@ -1,17 +1,16 @@
-import shutil
-from datetime import datetime
+import importlib
 import json
 import logging
 import os
+import shutil
 from os.path import join
 from random import randint
-from subprocess import check_output
 from unittest import TestCase
-from buildercore.command import settings
-from buildercore import config, project
-from buildercore import bootstrap, cfngen, lifecycle, core
+
 import cfn
-import importlib
+from buildercore import bootstrap, cfngen, config, core, lifecycle, project, utils
+from buildercore.command import settings
+
 # import pytest # see ../conftest.py
 
 LOG = logging.getLogger(__name__)
@@ -33,8 +32,8 @@ def set_config(key, value):
 def generate_environment_name():
     """to avoid multiple people clashing while running their builds
        and new builds clashing with older ones"""
-    who = check_output('whoami').rstrip().decode()
-    now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    who = config.WHOAMI
+    now = utils.utcnow().strftime("%Y%m%d%H%M%S")
     return "-".join([who, now, str(randint(1, 1000000))]) # "luke-20180420022437-51631"
 
 this_dir = os.path.realpath(os.path.dirname(__file__))
@@ -46,7 +45,7 @@ def fixture_path(fixture_subpath):
 
 def fixture(fixture_subpath):
     "returns contents of given fixture as a string"
-    with open(fixture_path(fixture_subpath), 'r') as fh:
+    with open(fixture_path(fixture_subpath)) as fh:
         return fh.read()
 
 def json_fixture(fixture_subpath):
@@ -89,36 +88,31 @@ class BaseCase(TestCase):
     maxDiff = None
 
     def __init__(self, *args, **kwargs):
-        super(BaseCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         switch_in_test_settings()
         self.fixtures_dir = fixtures_dir
 
-    # TODO: python2 warning
-    # pylint: disable=E1101
-    def assertCountEqual(self, *args):
-        parent = super(BaseCase, self)
+    def assertCountEqual(self, *args): # noqa: N802
+        parent = super()
         if not hasattr(parent, 'assertCountEqual'):
             self.assertItemsEqual(*args)
         else:
             parent.assertCountEqual(*args)
 
-    # pyline: disable=invalid-name
-    def assertAllPairsEqual(self, fn, pair_lst):
+    def assertAllPairsEqual(self, fn, pair_lst): # noqa: N802
         "given a function and a list of (given, expected) asserts all fn(given) == expected"
         for given, expected in pair_lst:
             with self.subTest(given=given):
                 actual = fn(given)
                 self.assertEqual(expected, actual, "failed, %r != %r" % (expected, actual))
 
-    # pyline: disable=invalid-name
-    def assertAllTrue(self, fn, lst):
+    def assertAllTrue(self, fn, lst): # noqa: N802
         "given a function a list of values, asserts all fn(value) are true"
         for x in lst:
             with self.subTest(given=x):
                 self.assertTrue(fn(x), "failed, fn(%s) != True" % x)
 
-    # pyline: disable=invalid-name
-    def assertAllNotTrue(self, fn, lst):
+    def assertAllNotTrue(self, fn, lst): # noqa: N802
         "given a function a list of values, asserts all fn(value) are NOT true"
         for x in lst:
             with self.subTest(given=x):
@@ -145,7 +139,7 @@ class BaseIntegrationCase(BaseCase):
 
         if cls.reuse_existing_stack and os.path.exists(cls.statefile):
             # evidence of a previous instance and we've been told to re-use old instances
-            with open(cls.statefile, 'r') as fh:
+            with open(cls.statefile) as fh:
                 old_state = json.load(fh)
             old_env = old_state.get('environment')
 

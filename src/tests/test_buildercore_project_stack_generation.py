@@ -1,8 +1,11 @@
-import pytest
 from unittest import mock
-from . import base
+
+import pytest
 from buildercore import utils
 from buildercore.project import stack_config, stack_generation
+
+from . import base
+
 
 def test_regenerate(tempdir, datadir):
     "a stack can be regenerated with new data from aws"

@@ -1,10 +1,11 @@
 import logging
-import os, sys
-from distutils.util import strtobool as _strtobool  # pylint: disable=import-error,no-name-in-module
-from buildercore import config
-from buildercore.utils import ensure, second, last, isint
+import os
+import sys
+from distutils.util import strtobool as _strtobool
+
+from buildercore import config, core
 from buildercore.command import local
-from buildercore import core
+from buildercore.utils import ensure, isint, last, second
 
 LOG = logging.getLogger(__name__)
 
@@ -12,7 +13,6 @@ LOG = logging.getLogger(__name__)
 # see `taskrunner.exec_task` for handling of tasks that raise this.
 class TaskExit(BaseException):
     "raise to quit a task early"
-    pass
 
 def strtobool(x):
     """wraps `distutils.util.strtobool` that casts 'yes', 'no', '1', '0', 'true', 'false', etc to
@@ -25,11 +25,9 @@ def rmval(lst, *vals):
     lst = lst[:]
     removed = []
     for val in vals:
-        try:
+        if val in lst:
             lst.remove(val)
             removed.append(val)
-        except ValueError:
-            continue
     return lst, removed
 
 def git_remote_branches(url):
@@ -58,10 +56,10 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
     default = None
     if default_file:
         try:
-            with open(default_file, 'r') as fh:
+            with open(default_file) as fh:
                 default = fh.read()
             pick_list.index(default)
-        except (ValueError, IOError):
+        except (OSError, ValueError):
             # either the given default file doesn't exist or the
             # default value doesn't appear in pick list, ignore given default
             default = None
@@ -84,7 +82,7 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
                 return pick_list[pick_list.index(default)]
             errcho('input is required\n')
             continue
-        elif not uinput.isdigit() or int(uinput) not in list(range(1, len(pick_list) + 1)):
+        if not uinput.isdigit() or int(uinput) not in list(range(1, len(pick_list) + 1)):
             errcho('a digit within the range of choices is required')
             continue
         choice = pick_list[int(uinput) - 1]
@@ -96,19 +94,20 @@ def _pick(name, pick_list, default_file=None, helpfn=None, message='please pick:
 
 def uin(param, default=0xDEADBEEF):
     "a slightly fancier `get_input` that allows a default value and keeps prompting until it has *something*."
+    improbable_default = 0xDEADBEEF
     if config.BUILDER_NON_INTERACTIVE:
-        ensure(default != 0xDEADBEEF, "stdin requested in non-interactive mode with no default.")
+        ensure(default != improbable_default, "stdin requested in non-interactive mode with no default.")
         LOG.warning("non-interactive mode, returning default '%s'.", default)
         return default
 
     while True:
-        if default and default != 0xDEADBEEF:
+        if default and default != improbable_default:
             errcho("%s [%s]: " % (param, default))
         else:
             errcho("%s: " % param)
         userin = get_input('> ')
         if not userin or not userin.strip():
-            if default != 0xDEADBEEF:
+            if default != improbable_default:
                 return default
             errcho('input is required (ctrl-c to quit)')
             continue
@@ -144,12 +143,6 @@ def mkdirp(path):
 
 def pwd():
     return os.path.dirname(os.path.realpath(__file__))
-
-def table(rows, keys):
-    lines = []
-    for row in rows:
-        lines.append(', '.join([getattr(row, key) for key in keys]))
-    return "\n".join(lines)
 
 def find_region(stackname=None):
     """tries to find the region, but falls back to user input if there are multiple regions available.

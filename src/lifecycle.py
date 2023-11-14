@@ -1,10 +1,12 @@
 import re
+
 import report
 import utils
 from buildercore import core, lifecycle
-from decorators import requires_aws_stack, timeit, echo_output
+from decorators import echo_output, requires_aws_stack, timeit
 from threadbare import state
 from threadbare.execute import execute, parallel
+
 
 @requires_aws_stack
 @timeit
@@ -18,11 +20,12 @@ def start_many(pattern):
     for example: ./bldr lifecycle.start_many:".+--(ci|end2end)--.+"
     """
     if not pattern:
-        raise utils.TaskExit("a regular expression matching ec2 names is required.")
+        msg = "a regular expression matching ec2 names is required."
+        raise utils.TaskExit(msg)
     ec2_list = report._all_ec2_instances(state=None)
     filtered_ec2_list = list(filter(lambda ec2_name: re.match(pattern, ec2_name), ec2_list))
 
-    stackname_list = sorted(set([core.prune_stackname(ec2) for ec2 in filtered_ec2_list]))
+    stackname_list = sorted({core.prune_stackname(ec2) for ec2 in filtered_ec2_list})
 
     print("the following stacks will be started:")
     print(stackname_list)

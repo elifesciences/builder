@@ -1,10 +1,10 @@
 """models Fastly API concepts
 
 No dependencies on Terraform should be in this module"""
-
-from collections import namedtuple
-import re
 import os
+import re
+from collections import namedtuple
+
 
 class FastlyVCL:
     @classmethod

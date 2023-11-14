@@ -1,6 +1,7 @@
-from decorators import format_output
 import utils
 from buildercore import core
+from decorators import format_output
+
 
 @format_output('json')
 def stack_list():

@@ -1,28 +1,39 @@
 "general logic for the `buildercore` module."
 
-import os, time
+import logging
+import os
+import time
 from collections import OrderedDict
+from contextlib import contextmanager
 from os.path import join
-from . import utils, config, project, decorators # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
-from .utils import subdict, ensure, first, lookup, lmap, lfilter, unique, isstr
+
 import boto3
 import botocore
 import botocore.config
-from contextlib import contextmanager
-from . import command, context_handler
-from .command import settings, env, CommandException, NetworkError, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError
-from slugify import slugify
-import logging
 from kids.cache import cache as cached
+from slugify import slugify
+
+from . import (  # BE SUPER CAREFUL OF CIRCULAR DEPENDENCIES
+    command,
+    config,
+    context_handler,
+    decorators,
+    project,
+    utils,
+)
+from .command import (
+    CommandError,
+    NetworkAuthenticationError,
+    NetworkError,
+    NetworkTimeoutError,
+    NetworkUnknownHostError,
+    env,
+    settings,
+)
+from .utils import ensure, first, isstr, lfilter, lmap, lookup, subdict, unique
 
 LOG = logging.getLogger(__name__)
 boto3.set_stream_logger(name='botocore', level=logging.INFO)
-
-class DeprecationException(Exception):
-    pass
-
-class NoMasterException(Exception):
-    pass
 
 # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudformation.html#CloudFormation.Client.describe_stacks
 ALL_CFN_STATUS = [
@@ -175,7 +186,7 @@ def tags2dict(tags):
     """
     if tags is None:
         return {}
-    return dict((el['Key'], el['Value']) for el in tags)
+    return {el['Key']: el['Value'] for el in tags}
 
 def ec2_instance_list(state='running'):
     """returns a list of all ec2 instances in given `state`.
@@ -193,11 +204,11 @@ def ec2_instance_list(state='running'):
         ]
     # probably not paginated, but we can specify 1000 results at once:
     # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.ServiceResource.instances
-    qs = conn.instances.filter(Filters=filters, MaxResults=1000)
-    result = list(ec2.meta.data for ec2 in qs)
-    for ec2 in result:
+    result = conn.instances.filter(Filters=filters, MaxResults=1000)
+    ec2_list = [ec2.meta.data for ec2 in result]
+    for ec2 in ec2_list:
         ec2['TagsDict'] = tags2dict(ec2['Tags'])
-    return result
+    return ec2_list
 
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname. Ordered by node index (1 to N)"
@@ -231,7 +242,7 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
 
     LOG.debug("find_ec2_instances with filters %s returned: %s", filters, [e.id for e in ec2_instances])
     if not allow_empty and not ec2_instances:
-        raise NoRunningInstances("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
+        raise NoRunningInstancesError("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
 # NOTE: preserved for the commentary, but this is for boto2
@@ -305,7 +316,7 @@ def find_rds_instances(stackname):
         if err.response['Error']['Code'] == 'DBInstanceNotFound':
             return []
 
-        raise err
+        raise
 
 def find_all_rds_instances():
     "returns a list of DBInstance dicts, straight from boto."
@@ -326,9 +337,9 @@ def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     expected_key = join(config.KEYPAIR_PATH, stackname + ".pem")
     # for when we really need it to exist
     if die_if_doesnt_exist and not os.path.exists(expected_key):
-        raise EnvironmentError("keypair %r not found at %r" % (stackname, expected_key))
+        raise OSError("keypair %r not found at %r" % (stackname, expected_key))
     if die_if_exists and os.path.exists(expected_key):
-        raise EnvironmentError("keypair %r found at %r, not overwriting." % (stackname, expected_key))
+        raise OSError("keypair %r found at %r, not overwriting." % (stackname, expected_key))
     return expected_key
 
 def _ec2_connection_params(stackname, username, **kwargs):
@@ -361,7 +372,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     with settings(**params):
         yield
 
-class NoPublicIps(Exception):
+class NoPublicIpsError(Exception):
     pass
 
 def all_node_params(stackname):
@@ -400,10 +411,10 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == int(node)}
-        public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+        public_ips = {k: v for k, v in public_ips.items() if k in nodes}
     elif instance_ids:
         nodes = {k: v for k, v in nodes.items() if k in instance_ids}
-        public_ips = {k: v for k, v in public_ips.items() if k in nodes.keys()}
+        public_ips = {k: v for k, v in public_ips.items() if k in nodes}
 
     if not public_ips:
         LOG.info("No EC2 nodes to execute on")
@@ -422,43 +433,42 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     LOG.info("Executing on ec2 nodes (%s), concurrency %s", public_ips, concurrency)
 
-    ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIps)
+    ensure(all(public_ips.values()), "Public ips are not valid: %s" % public_ips, NoPublicIpsError)
 
     def single_node_work_fn():
         last_exc = None
-        for attempt in range(0, num_attempts):
+        for attempt in range(num_attempts):
             if attempt != 0:
                 # attempt 0 is skipped, attempt 1 is 4sec, attempt 2 is 6sec, then 8sec, then 10sec, ...
                 sleep_amt = 2 * (attempt + 1)
                 # "attempt 2 of 6, pausing for 4secs ..."
-                LOG.info("attempt %s of %s, pausing for %ssecs ..." % (attempt + 1, num_attempts, sleep_amt))
+                LOG.info("attempt %s of %s, pausing for %ssecs ...", attempt + 1, num_attempts, sleep_amt)
                 time.sleep(sleep_amt)
             try:
                 return workfn(**work_kwargs)
             except NetworkError as err:
                 # "NetworkError executing task on foo--bar--1 during attempt 2: rsync returned error 30: Timeout in data send/receive."
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.error("NetworkError executing task on %s during attempt %s: %s", instance_id, attempt + 1, err)
+                LOG.exception("NetworkError executing task on %s during attempt %s", instance_id, attempt + 1)
                 last_exc = err
                 continue
 
             except (ConnectionError, ConnectionRefusedError, NetworkTimeoutError, NetworkUnknownHostError, NetworkAuthenticationError) as err:
                 # "low level network error executing task on foo--bar--1 during attempt 2: connection refused"
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.error("low level network error executing task on %s during attempt %s: %s", stackname, attempt + 1, err)
+                LOG.exception("low level network error executing task on %s during attempt %s", stackname, attempt + 1)
                 last_exc = err
                 continue
 
-            except CommandException as err:
+            except CommandError:
                 # "command aborted while executing on foo--bar--1 during attempt 2."
                 instance_id = "%s--%s" % (stackname, current_node_id())
-                LOG.info("command aborted while executing on %s during attempt %s.", instance_id, attempt + 1)
-                err_str = str(err).replace("\n", "    ")
-                LOG.error(err_str)
-                raise err
+                LOG.exception("command aborted while executing on %s during attempt %s", instance_id, attempt + 1)
+                raise
 
         if last_exc:
             raise last_exc
+        return None
 
     params.update({
         'display_aborts': False
@@ -591,7 +601,7 @@ def describe_stack(stackname, allow_missing=False):
             return None
         raise
 
-class NoRunningInstances(Exception):
+class NoRunningInstancesError(Exception):
     pass
 
 def ec2_data(stackname, state=None):
@@ -684,6 +694,7 @@ def active_aws_project_stacks(pname):
         stackname = first(triple)
         if stackname_parseable(stackname):
             return project_name_from_stackname(stackname) == pname
+        return None
     return lfilter(fn, active_aws_stacks(region))
 
 def stack_names(stack_list, only_parseable=True):
@@ -704,7 +715,7 @@ def steady_stack_names(region):
 
 class MultipleRegionsError(EnvironmentError):
     def __init__(self, regions):
-        super(MultipleRegionsError, self).__init__()
+        super().__init__()
         self._regions = regions
 
     def regions(self):
@@ -728,7 +739,8 @@ def find_region(stackname=None):
     all_regions = [lookup(p, 'aws.region', None) for p in all_projects.values()]
     region_list = unique(filter(None, all_regions)) # remove any Nones, make unique, make a list
     if not region_list:
-        raise EnvironmentError("no regions available at all!")
+        msg = "no regions available at all!"
+        raise OSError(msg)
     if len(region_list) > 1:
         raise MultipleRegionsError(region_list)
     return region_list[0]

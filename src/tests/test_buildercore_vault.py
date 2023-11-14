@@ -1,7 +1,10 @@
 import json
 from unittest.mock import patch
+
 from buildercore import vault
+
 from . import base
+
 
 class TokenCreation(base.BaseCase):
     @patch('buildercore.external.execute')

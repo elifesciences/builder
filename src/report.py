@@ -1,12 +1,14 @@
-import dateutil.parser
-from functools import partial
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+from functools import partial, wraps
+
+import dateutil.parser
 import utils
-from buildercore import core, project, utils as core_utils
-from buildercore.utils import lookup, ensure
-from functools import wraps
+from buildercore import core, project
+from buildercore import utils as core_utils
+from buildercore.utils import ensure, lookup
 from decorators import format_output
+
 
 def print_list(row_list, checkboxes=True):
     "given a list of things, prints a markdown list to `stdout` with optional checkboxes."
@@ -50,9 +52,9 @@ def sort_by_env(name):
         for env in order:
             pos = name.find("-" + env)
             if pos > -1:
-                env = name[pos + 1:] # "elife-libero-reviewer-prod" => "prod"
+                _env = name[pos + 1:] # "elife-libero-reviewer-prod" => "prod"
                 rest = name[:pos] # "elife-libero-reviewer-prod" => "elife-libero-reviewer"
-                key = "%s%s" % (rest, order.get(env, adhoc)) # "elife-libero-reviewer4"
+                key = "%s%s" % (rest, order.get(_env, adhoc)) # "elife-libero-reviewer4"
                 return key
 
         return name
@@ -130,6 +132,7 @@ def all_ec2_projects():
             # we wrap in 'aws' here because we're looking for 'aws.ec2', not the un-nested 'ec2'
             if has_ec2(pname, {'aws': alt_data}):
                 return pname
+        return None
     results = [has_ec2(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
     return results
@@ -234,10 +237,11 @@ def all_projects_using(key):
         if lookup(pdata, key, None):
             return pname
         # if evidence of a 'foo' section not found directly, check alternate configurations
-        for alt_name, alt_data in pdata.get('aws-alt', {}).items():
+        for alt_data in pdata.get('aws-alt', {}).values():
             # we wrap in 'aws' here because we're looking for 'aws.foo', not the un-nested 'foo'
             if has_(pname, {'aws': alt_data}):
                 return pname
+        return None
     results = [has_(pname, pdata) for pname, pdata in project.project_map().items()]
     results = filter(None, results)
     return results
@@ -296,6 +300,7 @@ def long_running_large_ec2_instances(**kwargs):
             return result
         if known_instance_types[inst_type] >= known_instance_types[large_inst]:
             return result
+        return None
 
     def is_long_running(result):
         launch_time = result['LaunchTime']

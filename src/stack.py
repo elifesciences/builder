@@ -1,7 +1,8 @@
+import utils
 from buildercore import project
 from buildercore.project import stack_generation
 from decorators import format_output, requires_stack_config
-import utils
+
 
 @format_output()
 def list_stacks(include_resources=True):
@@ -28,8 +29,8 @@ def generate_stacks(resource_type, config_path):
     intended to bulk populate config files."""
     try:
         stack_generation.generate_stacks(resource_type, config_path)
-    except AssertionError as ae:
-        raise utils.TaskExit(ae)
+    except AssertionError as err:
+        raise utils.TaskExit(err) from err
 
 def regenerate_stack(stackname):
     "updates all resources for the given `stackname`."

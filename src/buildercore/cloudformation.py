@@ -1,16 +1,17 @@
 """module concerns itself with the creation, updating and deleting of Cloudformation template instances.
 
 see `trop.py` for the *generation* of Cloudformation templates."""
-
+import json
+import logging
+import os
 from collections import namedtuple
 from contextlib import contextmanager
-import logging
-import json
-import os
-from pprint import pformat
 from functools import partial
+from pprint import pformat
+
 import backoff
 import botocore
+
 from . import config, core, keypair, trop, utils
 from .utils import call_while, ensure
 
@@ -32,15 +33,15 @@ def download_template(stackname):
     except botocore.exceptions.ClientError as exc:
         not_found_message = "Stack with id %s does not exist" % stackname
         if exc.response['Error']['Message'] == not_found_message:
-            return
-        raise exc
+            return None
+        raise
 
 def write_template(stackname, contents):
     "writes a json version of the python cloudformation template to the stacks directory"
     output_fname = core.stack_path(stackname)
     with open(output_fname, 'w') as fp:
         fp.write(contents)
-    LOG.info("wrote cloudformation template for %r to: %s" % (stackname, output_fname))
+    LOG.info("wrote cloudformation template for %r to: %s", stackname, output_fname)
     return output_fname
 
 def find_template_path(stackname):
@@ -66,7 +67,7 @@ def validate_template(rendered_template):
     "remote cloudformation template checks."
     if json.loads(rendered_template) == EMPTY_TEMPLATE:
         # empty templates are technically invalid, but they don't interact with CloudFormation at all
-        return
+        return None
     conn = core.boto_client('cloudformation', region='us-east-1')
     return conn.validate_template(TemplateBody=rendered_template)
 
@@ -102,7 +103,7 @@ def stack_creation(stackname, on_start=_noop, on_error=_noop):
         on_start()
         yield
 
-    except StackTakingALongTimeToComplete as err:
+    except StackTakingLongTimeToCompleteError as err:
         LOG.info("Stack taking a long time to complete: %s", err)
         raise
 
@@ -133,11 +134,11 @@ def bootstrap(stackname, context):
         on_error = lambda: keypair.delete_keypair(stackname)
 
     stack_path = core.stack_path(stackname)
-    with open(stack_path, 'r') as fh:
+    with open(stack_path) as fh:
         stack_body = fh.read()
     if json.loads(stack_body) == EMPTY_TEMPLATE:
-        LOG.warning("empty template: %s" % stack_path)
-        return
+        LOG.warning("empty template: %s", stack_path)
+        return None
 
     if core.stack_is_active(stackname):
         LOG.info("stack exists") # avoid `on_start` handler
@@ -148,8 +149,9 @@ def bootstrap(stackname, context):
         # http://boto3.readthedocs.io/en/latest/reference/services/cloudformation.html#CloudFormation.ServiceResource.create_stack
         conn.create_stack(StackName=stackname, TemplateBody=stack_body, Parameters=parameters)
         _wait_until_in_progress(stackname)
+        return None
 
-class StackTakingALongTimeToComplete(RuntimeError):
+class StackTakingLongTimeToCompleteError(RuntimeError):
     pass
 
 def _wait_until_in_progress(stackname):
@@ -161,7 +163,7 @@ def _wait_until_in_progress(stackname):
         partial(is_updating, stackname),
         timeout=7200,
         update_msg='Waiting for CloudFormation to finish creating stack ...',
-        exception_class=StackTakingALongTimeToComplete
+        exception_class=StackTakingLongTimeToCompleteError
     )
 
     final_stack = core.describe_stack(stackname)
@@ -199,7 +201,7 @@ def upgrade_v2_troposphere_template_to_v3(template_data):
     return utils.visit(template_data, convert_string_bools, predicate)
 
 def _read_template(path_to_template):
-    with open(path_to_template, 'r') as fh:
+    with open(path_to_template) as fh:
         template_data = json.load(fh)
     template_data = upgrade_v2_troposphere_template_to_v3(template_data)
     return template_data
@@ -219,7 +221,7 @@ def outputs_map(stackname):
 @core.requires_stack_file
 def template_outputs_map(stackname):
     """returns a map of a stack template's 'Output' keys to their values."""
-    with open(core.stack_path(stackname), 'r') as fh:
+    with open(core.stack_path(stackname)) as fh:
         stack = json.load(fh)
     output_map = stack.get('Outputs', [])
     return {output_key: output['Value'] for output_key, output in output_map.items()}

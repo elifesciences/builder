@@ -17,11 +17,12 @@ https://docs.pytest.org/en/latest/writing_plugins.html#conftest-py-plugins
 https://docs.pytest.org/en/stable/fixture.html#factories-as-fixtures"""
 
 import logging
-import pytest
-from buildercore.utils import tempdir as core_utils_tempdir
-from buildercore.config import get_logger, CONSOLE_HANDLER
-from tests import base
 from unittest import mock
+
+import pytest
+from buildercore.config import CONSOLE_HANDLER, get_logger
+from buildercore.utils import tempdir as core_utils_tempdir
+from tests import base
 
 CONSOLE_HANDLER.setLevel(logging.CRITICAL)
 

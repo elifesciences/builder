@@ -1,8 +1,10 @@
 import os
-from buildercore.command import local, settings
-from buildercore import project, core, cfngen, config
-from decorators import requires_project, format_output
+
 import utils
+from buildercore import cfngen, config, core, project
+from buildercore.command import local, settings
+from decorators import format_output, requires_project
+
 
 @requires_project
 @format_output('yaml')

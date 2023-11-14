@@ -2,10 +2,11 @@
 
 Requires access to the master server."""
 
+import utils
 from buildercore import core
 from buildercore.command import remote_sudo
 from buildercore.core import stack_conn
-import utils
+
 
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
     """runs the given command on all connected minions.

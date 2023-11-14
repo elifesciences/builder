@@ -1,11 +1,12 @@
+import logging
 import os
-from buildercore.command import settings
-from tests import base
-from buildercore import bootstrap, cfngen, lifecycle
-from buildercore.config import BOOTSTRAP_USER, PROJECT_PATH
+
 import buildvars
 import cfn
-import logging
+from buildercore import bootstrap, cfngen, lifecycle
+from buildercore.command import settings
+from buildercore.config import BOOTSTRAP_USER, PROJECT_PATH
+from tests import base
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
 

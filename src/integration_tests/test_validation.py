@@ -1,14 +1,16 @@
-import pytest
-from tests import base
-from buildercore import cfngen
 import logging
+
+import pytest
+from buildercore import cfngen
+from tests import base
+
 LOG = logging.getLogger(__name__)
 
 logging.disable(logging.NOTSET) # re-enables logging during integration testing
 
 # Depends on talking to AWS.
 
-class TestValidationFixtures():
+class TestValidationFixtures:
     @classmethod
     def setup_class(cls):
         base.switch_in_test_settings()
@@ -20,7 +22,7 @@ class TestValidationFixtures():
         "dummy projects and their alternative configurations pass validation"
         cfngen.validate_project(project_name)
 
-class TestValidationElife():
+class TestValidationElife:
     @classmethod
     def setup_class(cls):
         base.switch_out_test_settings()
@@ -34,8 +36,7 @@ class TestValidationElife():
     @pytest.mark.parametrize("project_name", base.elife_project_list())
     def test_validation_elife_projects(self, project_name, filter_project_name):
         "elife projects (and their alternative configurations) that come with the builder pass validation"
-        if filter_project_name:
-            if project_name != filter_project_name:
-                pytest.skip("Filtered out through filter_project_name")
+        if filter_project_name and project_name != filter_project_name:
+            pytest.skip("Filtered out through filter_project_name")
 
         cfngen.validate_project(project_name)

@@ -11,12 +11,13 @@ Values in `config.ENV` should override matching values found in `settings.yaml`.
 For testing, see `switch_in_test_settings` and `set_config` in `./src/tests/base.py`.
 
 """
-import os
 import getpass
+import logging
+import os
 from os.path import join
+
 from buildercore import utils
 from buildercore.utils import ensure, lmap
-import logging
 
 # *_DIR are relative
 # *_PATH are absolute
@@ -90,7 +91,7 @@ USER = {
     'stack-files': [],
 }
 if os.path.exists(USER_SETTINGS_PATH):
-    with open(USER_SETTINGS_PATH, 'r') as fh:
+    with open(USER_SETTINGS_PATH) as fh:
         USER.update(utils.yaml_load(fh.read()))
 
 # logging

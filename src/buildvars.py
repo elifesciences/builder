@@ -1,15 +1,17 @@
+import logging
+from io import StringIO
+from json import JSONDecodeError
+
+import utils
+from buildercore import keypair, trop
+from buildercore import utils as core_utils
 from buildercore.bvars import encode_bvars, read_from_current_host
 from buildercore.command import remote_sudo, upload
-from io import StringIO
-from decorators import requires_aws_stack, format_output
 from buildercore.config import BOOTSTRAP_USER
-from buildercore.core import stack_all_ec2_nodes, current_node_id
 from buildercore.context_handler import load_context
-from buildercore import utils as core_utils, trop, keypair
+from buildercore.core import current_node_id, stack_all_ec2_nodes
 from buildercore.utils import ensure
-import utils
-import logging
-from json import JSONDecodeError
+from decorators import format_output, requires_aws_stack
 
 LOG = logging.getLogger(__name__)
 
@@ -108,7 +110,7 @@ def switch_revision(stackname, revision=None, concurrency=None):
         buildvars = _retrieve_build_vars()
 
         if 'revision' in buildvars and revision == buildvars['revision']:
-            LOG.info('FYI, node %r already on revision %r!' % (node_name, revision))
+            LOG.info('FYI, node %r already on revision %r!', node_name, revision)
             return
 
         new_data = buildvars

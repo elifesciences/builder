@@ -1,5 +1,6 @@
-from buildercore.utils import ensure, isint
 from buildercore import core, lifecycle
+from buildercore.utils import ensure, isint
+
 
 def _find_node(node, node_obj_list):
     ensure(isint(node), "node value must be an integer")

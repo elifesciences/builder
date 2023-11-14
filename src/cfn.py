@@ -1,20 +1,50 @@
-import os, json
-from pprint import pformat
-import backoff
-from buildercore.command import local, remote, upload, download, settings, remote_file_exists, CommandException, NetworkError
-import utils, buildvars
-from utils import TaskExit
-from decorators import requires_project, requires_aws_stack, requires_aws_stack_template, setdefault, timeit
-from buildercore import core, cfngen, utils as core_utils, bootstrap, project, checks, lifecycle as core_lifecycle, context_handler
-# potentially remove to go through buildercore.bootstrap?
-from buildercore import cloudformation, terraform
-from buildercore.concurrency import concurrency_for
-from buildercore.core import stack_conn, stack_pem, stack_all_ec2_nodes, tags2dict
-from buildercore.decorators import PredicateException
-from buildercore.config import DEPLOY_USER, BOOTSTRAP_USER, USER_PRIVATE_KEY
-from buildercore.utils import ensure
-
+import json
 import logging
+import os
+import sys
+from pprint import pformat
+
+import backoff
+import buildvars
+import utils
+
+# potentially remove to go through buildercore.bootstrap?
+from buildercore import (
+    bootstrap,
+    cfngen,
+    checks,
+    cloudformation,
+    context_handler,
+    core,
+    project,
+    terraform,
+)
+from buildercore import lifecycle as core_lifecycle
+from buildercore import utils as core_utils
+from buildercore.command import (
+    CommandError,
+    NetworkError,
+    download,
+    local,
+    remote,
+    remote_file_exists,
+    settings,
+    upload,
+)
+from buildercore.concurrency import concurrency_for
+from buildercore.config import BOOTSTRAP_USER, DEPLOY_USER, USER_PRIVATE_KEY
+from buildercore.core import stack_all_ec2_nodes, stack_conn, stack_pem, tags2dict
+from buildercore.decorators import PredicateError
+from buildercore.utils import ensure
+from decorators import (
+    requires_aws_stack,
+    requires_aws_stack_template,
+    requires_project,
+    setdefault,
+    timeit,
+)
+from utils import TaskExit
+
 LOG = logging.getLogger(__name__)
 
 # TODO: move to a lower level if possible
@@ -32,12 +62,12 @@ type the name of the stack to continue or anything else to quit:
 def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
-    except context_handler.MissingContextFile:
+    except context_handler.MissingContextFileError:
         LOG.warning("Context does not exist anymore or was never created, exiting idempotently")
-    except PredicateException as e:
+    except PredicateError as e:
         if "I couldn't find a cloudformation stack" in str(e):
             LOG.warning("Not even the CloudFormation template exists anymore, exiting idempotently")
-            return
+            return None
         raise
 
 @requires_aws_stack
@@ -50,7 +80,7 @@ def update(stackname, autostart="0", concurrency='serial', dry_run=False, servic
     Available services: ec2, s3, sqs"""
     instances = _check_want_to_be_running(stackname, utils.strtobool(autostart))
     if not instances:
-        return
+        return None
     dry_run = utils.strtobool(dry_run)
     if service_list:
         service_list = [service.strip().lower() for service in service_list.split(',')]
@@ -59,7 +89,7 @@ def update(stackname, autostart="0", concurrency='serial', dry_run=False, servic
     return bootstrap.update_stack(stackname, service_list=service_list, concurrency=concurrency, dry_run=dry_run)
 
 @timeit
-def update_infrastructure(stackname, skip=None, start=['ec2']):
+def update_infrastructure(stackname, skip=None, start=None):
     """Limited update of the Cloudformation template and/or Terraform template.
 
     Resources can be added, but most of the existing ones are immutable.
@@ -77,6 +107,8 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
 
     By default starts EC2 instances but this can be avoid by passing `start=`"""
 
+    if start is None:
+        start = ["ec2"]
     skip = skip.split(",") if skip else []
     start = start.split(",") if isinstance(start, str) else start or []
 
@@ -93,7 +125,8 @@ def update_infrastructure(stackname, skip=None, start=['ec2']):
 
     # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
     if not utils.confirm('Confirming changes to CloudFormation and Terraform templates?', 'confirm'):
-        raise TaskExit("failed to confirm")
+        msg = "failed to confirm"
+        raise TaskExit(msg)
 
     context_handler.write_context(stackname, context)
 
@@ -126,8 +159,8 @@ def check_user_input(pname, instance_id=None, alt_config=None):
         ensure('aws-alt' in pdata, "alt-config %r given, but project has no alternate configurations" % alt_config)
 
     # if the requested instance-id matches a known alt-config, we'll use that alt-config. warn user.
-    if instance_id in pdata['aws-alt'].keys():
-        LOG.warn("instance-id %r found in alt-config list, using that.", instance_id)
+    if instance_id in pdata['aws-alt']:
+        LOG.warning("instance-id %r found in alt-config list, using that.", instance_id)
         alt_config = instance_id
 
     # no alt-config given but alt-config options exist, prompt user
@@ -159,18 +192,18 @@ def check_user_input(pname, instance_id=None, alt_config=None):
         print("checking for any instance named %r ..." % (dealbreaker,))
         try:
             checks.ensure_stack_does_not_exist(dealbreaker)
-        except checks.StackAlreadyExistsProblem:
+        except checks.StackAlreadyExistsError as err:
             # "stack 'journal--prod' exists, cannot re-use unique configuration 'prod'"
             msg = "stack %r exists, cannot re-use unique configuration %r." % (dealbreaker, alt_config)
-            raise TaskExit(msg)
+            raise TaskExit(msg) from err
 
     # check that the instance we want to create doesn't exist
     try:
         print("checking %r doesn't exist." % stackname)
         checks.ensure_stack_does_not_exist(stackname)
-    except checks.StackAlreadyExistsProblem as e:
-        msg = 'stack %r already exists.' % e.stackname
-        raise TaskExit(msg)
+    except checks.StackAlreadyExistsError as err:
+        msg = 'stack %r already exists.' % err.stackname
+        raise TaskExit(msg) from err
 
     more_context = {'stackname': stackname}
     if alt_config:
@@ -193,21 +226,21 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
     if cloudformation_file:
         print('cloudformation template:')
-        with open(cloudformation_file, 'r') as fh:
+        with open(cloudformation_file) as fh:
             print(json.dumps(json.load(fh), indent=4))
         print()
 
     if terraform_file:
         print('terraform template:')
-        with open(terraform_file, 'r') as fh:
+        with open(terraform_file) as fh:
             print(json.dumps(json.load(fh), indent=4))
         print()
 
     if cloudformation_file:
-        LOG.info('wrote: %s' % os.path.abspath(cloudformation_file))
+        LOG.info('wrote: %s', os.path.abspath(cloudformation_file))
 
     if terraform_file:
-        LOG.info('wrote: %s' % os.path.abspath(terraform_file))
+        LOG.info('wrote: %s', os.path.abspath(terraform_file))
 
     # see: `buildercore.config.BUILDER_NON_INTERACTIVE` for skipping confirmation prompts
     utils.confirm('the above resources will be created')
@@ -241,7 +274,7 @@ def fix_bootstrap(stackname):
 
 def _pick_node(instance_list, node):
     instance_list = sorted(instance_list, key=lambda n: tags2dict(n.tags)['Name'])
-    info = [n for n in instance_list] #
+    info = list(instance_list)
 
     def helpfn(pick):
         node = pick - 1
@@ -280,7 +313,7 @@ def _check_want_to_be_running(stackname, autostart=False):
         if not _are_there_existing_servers(context):
             return False
 
-    except context_handler.MissingContextFile as e:
+    except context_handler.MissingContextFileError as e:
         LOG.warning(e)
 
     instance_list = core.find_ec2_instances(stackname, allow_empty=True)
@@ -302,7 +335,7 @@ def _interactive_ssh(username, public_ip, private_key):
     try:
         command = "ssh -o \"ConnectionAttempts 3\" %s@%s -i %s" % (username, public_ip, private_key)
         return local(command)
-    except CommandException as e:
+    except CommandError as e:
         LOG.warning(e)
 
 @requires_aws_stack
@@ -356,7 +389,7 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1
         utils.confirm('continue?')
         if remote_file_exists(remote_path) and not overwrite:
             print('remote file exists, not overwriting')
-            exit(1)
+            sys.exit(1)
         upload(local_path, remote_path)
 
 #
@@ -365,16 +398,15 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1
 
 @requires_aws_stack
 @requires_aws_stack_template
-# pylint: disable-msg=too-many-arguments
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
     if command is None:
         utils.errcho("Please specify a command e.g. ./bldr cmd:%s,ls" % stackname)
-        exit(1)
+        sys.exit(1)
     LOG.info("Connecting to: %s", stackname)
 
     instances = _check_want_to_be_running(stackname)
     if not instances:
-        return
+        return None
 
     # removes much of the crap emitted that mangles the useful output of a remote command.
     custom_settings = {}
@@ -394,6 +426,6 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
                 concurrency=concurrency_for(stackname, concurrency),
                 node=int(node) if node else None
             )
-    except CommandException as e:
+    except CommandError as e:
         LOG.error(e)
-        exit(2)
+        sys.exit(2)

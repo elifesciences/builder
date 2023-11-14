@@ -1,0 +1,197 @@
+target-version = "py38"
+
+exclude = [
+
+]
+
+select = [
+    # ruff's default set of rules: https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
+    #"E4", "E7", "E9", "F",
+
+    # pyflakes
+    "F",
+
+    # pycodestyle
+    "E",
+    "W",
+
+    # mccabe
+    #"C90", # disabled, complexity is ok
+
+    # isort
+    "I",
+
+    # pep8-naming
+    "N",
+
+    # pydocstyle
+    #"D", # disabled, too pedantic, docs are not generated
+
+    # pyupgrade
+    "UP",
+
+    # flake8-2020
+    "YTT",
+
+    # flake8-annotations
+    #"ANN", # disabled, type annotation not used
+
+    # flake8-async
+    #"ASYNC", # disabled, aync not used
+
+    # flake8-bandit
+    #"S", # disabled, too many false positives
+
+    # flake8-blind-except
+    #"BLE", # disabled, these are typically the last 'catch-all' handler for anything not caught higher up.
+
+    # flake8-boolean-trap
+    #"FBT", # disabled, these aren't *that* confusing, c'mon.
+
+    # flake-8-bugbear
+    "B",
+
+    # flake8-builtins
+    "A",
+
+    # flake8-commas
+    #"COM", # disabled, inserts trailing commas into function calls, too weird.
+
+    # flake8-copyright
+    #"CPY", # disabled, too onerous
+
+    # flake8-comprehensions
+    "C4",
+
+    # flake8-datetimez
+    "DTZ",
+
+    # flake8-debugger
+    "T10",
+
+    # flake8-django
+    # "DJ" # disabled, django not used
+
+    # flake8-errmsg
+    "EM",
+
+    # flake8-executable
+    "EXE",
+
+    # flake8-future-annotations
+    #"FA", # disabled, type annotations not used
+
+    # flake8-implicit-str-concat
+    "ISC",
+
+    # flake8-import-conventions
+    "ICN", # disabled, too opinionated
+
+    # flake8-logging-format
+    "G",
+
+    # flake8-no-pep420
+    #"INP", # todo
+
+    # flake8-pie
+    "PIE",
+
+    # flake8-print
+    # "T20", # disabled, nothing wrong with print statements
+
+    # flake8-pyi
+    #"PYI", # disabled, type annotations not used
+
+    # flake8-pytest-style
+    #"PT", # todo
+
+    #flake8-quotes
+    #"Q", # todo
+
+    # flake8-raise
+    #"RSE", # disabled, too opinionated
+
+    # flake8-return
+    "RET",
+
+    # flake8-self
+    #"SLF", # disabled, public/private separation not really followed in builder
+
+    # flake8-slots
+    #"SLOT", todo
+
+    # flake8-simplify
+    "SIM",
+
+    # flake8-tidy-imports
+    "TID",
+
+    # flake8-type-checking
+    #"TCH", # disabled, type annotations not used
+
+    # flake8-gettext
+    "INT",
+
+    # flake8-unused-arguments
+    #"ARG", # todo
+
+    # flake8-use-pathlib
+    #"PTH", # disabled, pathlib not used
+
+    # flake8-todos
+    #"TD", # todo ;)
+
+    # flake8-fixme
+    # "FIX", # disabled, enabling would prevent code with TODOs from passing CI. not practical.
+
+    # eradicate
+    #"ERA", # todo
+
+    # pandas-vet
+    #"PD", # disabled, pandas not used
+
+    # pygrep-hooks
+    "PGH",
+
+    # pylint
+    "PL",
+
+    # tryceratops
+    #"TRY", # todo
+
+    "FLY",
+
+    # NumPy-specific rules
+    # "NPY" # disabled, numpy not used
+
+    # Airflow
+    # "AIR", # disabled, airflow not used
+
+    # Perflint
+    "PERF",
+
+    # refurb
+    #"FURB", # disabled, still in preview
+
+    # flake8-logging
+    # "LOG", # disabled, still in preview
+
+    # ruff
+    "RUF",
+]
+
+ignore = [
+    "RUF005", # "Consider {expression} instead of concatenation". solution is unreadable and optimised for speed.
+    "RUF012", # "Mutable class attributes should be annotated with `typing.ClassVar`". # code is not type annotated
+    "E501", # "Line too long". long lines are ok, contortions to obey rule are not ok.
+    "E731", # "Do not assign a `lambda` expression, use a `def`". lambdas are fine.
+    "UP031", # "Use format specifiers instead of percent format". percent formatters are fine. f-strings absorb the environment.
+    "PLR0913", # "Too many arguments in function definition". complexity is ok.
+    "PLR0915", # "Too many statements". complexity is ok.
+    "PLR0912", # "Too many branches". complexity is ok
+    "PIE804", # "Unnecessary dict kwargs", boto often requires many long parameter names. dicts are nicer in this case.
+    "RET504", # "Unnecessary assignment to {name} before return statement". typically deliberate for readability/debugging/extensibilty.
+    "TRY300", # "Consider moving this statement to an else block", might have merit but syntax is strange and unfamiliar
+]
+
+
