@@ -98,7 +98,10 @@ def _dns_check(stackname, context):
     def hosted_zone_id(dns):
         "given a DNS entry, figures out which AWS Hosted Zone it belongs to"
         bits = dns.split('.')
-        name = ".".join(bits[1:]) + "." if len(bits) == 3 else dns + "." # noqa: PLR2004
+        if len(bits) == 3: # noqa: SIM108, PLR2004
+            name = '.'.join(bits[1:]) + '.'
+        else:
+            name = dns + '.'
         return hosted_zone_map[name]
 
     record_map = {}

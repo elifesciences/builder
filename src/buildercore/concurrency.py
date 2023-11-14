@@ -23,7 +23,7 @@ def concurrency_for(stackname, concurrency_name):
 
         return bluegreen_v2.do
 
-    if concurrency_name in ("serial", "parallel"):
+    if concurrency_name in ["serial", "parallel"]:
         return concurrency_name
 
     if concurrency_name is None:

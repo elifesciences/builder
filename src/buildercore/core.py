@@ -204,11 +204,11 @@ def ec2_instance_list(state='running'):
         ]
     # probably not paginated, but we can specify 1000 results at once:
     # - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.ServiceResource.instances
-    qs = conn.instances.filter(Filters=filters, MaxResults=1000)
-    result = [ec2.meta.data for ec2 in qs]
-    for ec2 in result:
+    result = conn.instances.filter(Filters=filters, MaxResults=1000)
+    ec2_list = [ec2.meta.data for ec2 in result]
+    for ec2 in ec2_list:
         ec2['TagsDict'] = tags2dict(ec2['Tags'])
-    return result
+    return ec2_list
 
 def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=False):
     "returns list of ec2 instances data for a *specific* stackname. Ordered by node index (1 to N)"

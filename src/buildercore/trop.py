@@ -1150,10 +1150,11 @@ def render_alb(context, template, ec2_instances):
         if dns:
             template.add_resource(dns)
 
-    # add CNAME records
-    if context['full_hostname'] and not using_elb(context):
-        # skip calling this again if ELB present
-        [template.add_resource(cname) for cname in cnames(context)]
+    if context['full_hostname']: # noqa: SIM102
+        # add CNAME records
+        if not using_elb(context):
+            # skip calling this again if ELB present
+            [template.add_resource(cname) for cname in cnames(context)]
 
     # --
 
