@@ -249,6 +249,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
 @requires_project
 def launch(pname, instance_id=None, alt_config=None):
+    "create a new project instance"
     stackname = generate_stack_from_input(pname, instance_id, alt_config)
     pdata = core.project_data_for_stackname(stackname)
 

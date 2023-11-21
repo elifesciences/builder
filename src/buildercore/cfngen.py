@@ -333,6 +333,7 @@ def build_context_aws(pdata, context):
         'vpc-id',
 
         'subnet-id',
+        'subnet-ipv6',
         'subnet-cidr',
         'availability-zone',
 

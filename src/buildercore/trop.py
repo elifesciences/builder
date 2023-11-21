@@ -111,7 +111,9 @@ def _convert_ports_to_dictionary(ports):
                 ports_map[from_port] = configuration
             else:
                 raise ValueError("Invalid port definition: %s" % (p,))
-    elif isinstance(ports, dict):
+        return ports_map
+
+    if isinstance(ports, dict):
         ports_map = OrderedDict()
         for p, configuration in ports.items():
             if isinstance(configuration, bool):
@@ -123,10 +125,9 @@ def _convert_ports_to_dictionary(ports):
                 ports_map[p] = configuration
             else:
                 raise ValueError("Invalid port definition: %s => %s" % (p, configuration))
-    else:
-        raise ValueError("Invalid ports definition: %s" % ports)
+        return ports_map
 
-    return ports_map
+    raise ValueError("Invalid ports definition: %s" % ports)
 
 def merge_ports(ports, another):
     ports = OrderedDict(ports)
@@ -143,11 +144,25 @@ def convert_ports_dict_to_troposphere(ports):
         })
     return [_port_to_dict(port, configuration) for port, configuration in ports.items()]
 
-def security_group(group_id, vpc_id, ingress_data, description=""):
+def convert_ports_dict_to_troposphere__ipv6(ports):
+    def _port_to_dict(port, configuration):
+        return ec2.SecurityGroupRule(**{
+            'FromPort': port,
+            'ToPort': configuration.get('guest', port),
+            'IpProtocol': configuration.get('protocol', 'tcp'),
+            'CidrIpv6': configuration.get('cidr-ip', '::/0'),
+        })
+    return [_port_to_dict(port, configuration) for port, configuration in ports.items()]
+
+def security_group(group_id, vpc_id, ingress_data, ipv6=False, description=""):
+    if ipv6:
+        ingress = convert_ports_dict_to_troposphere__ipv6(ingress_data)
+    else:
+        ingress = convert_ports_dict_to_troposphere(ingress_data)
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
-        'SecurityGroupIngress': convert_ports_dict_to_troposphere(ingress_data),
+        'SecurityGroupIngress': ingress,
     })
 
 def _instance_tags(context, node=None):
@@ -269,7 +284,7 @@ def build_vars(context, node):
     return buildvars
 
 def ec2instance(context, node):
-    lu = partial(utils.lu, context)
+    lu = partial(utils.lookup, context)
     buildvars = build_vars(context, node)
     buildvars_serialization = bvars.encode_bvars(buildvars)
 
@@ -283,6 +298,14 @@ def ec2instance(context, node):
 
     with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment')) as fh:
         clean_server_script = fh.read()
+
+    bash_script = Base64("""#!/bin/bash
+set -x
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+echo %s > /etc/build-vars.json.b64
+
+%s""" % (buildvars_serialization, clean_server_script))
+
     project_ec2 = {
         "ImageId": lu('ec2.ami'),
         "InstanceType": lu('ec2.type'),
@@ -290,13 +313,13 @@ def ec2instance(context, node):
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
         "SubnetId": subnet_id, # "subnet-1d4eb46a"
         "Tags": instance_tags(context, node),
-        "UserData": Base64("""#!/bin/bash
-set -x
-exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
-echo %s > /etc/build-vars.json.b64
-
-%s""" % (buildvars_serialization, clean_server_script)),
+        "UserData": bash_script,
     }
+
+    if lu('aws.subnet-ipv6', False):
+        project_ec2.update({
+            "Ipv6AddressCount": 1,
+        })
 
     if lu('ec2.cpu-credits') != 'standard':
         project_ec2["CreditSpecification"] = ec2.CreditSpecification(
@@ -408,10 +431,12 @@ def ec2_security(context):
     security_group_ports = _convert_ports_to_dictionary(security_group_data)
     ingress = merge_ports(ec2_ports, security_group_ports)
 
+    ipv6 = context['aws'].get('subnet-ipv6', False)
     return security_group(
         SECURITY_GROUP_TITLE,
         context['aws']['vpc-id'],
-        ingress
+        ingress,
+        ipv6
     )
 
 def render_ec2(context, template):
@@ -421,6 +446,7 @@ def render_ec2(context, template):
     suppressed = context['ec2'].get('suppressed', [])
 
     ec2_instances = {}
+    ipv6 = context['aws'].get('subnet-ipv6', False)
     for node in range(1, context['ec2']['cluster-size'] + 1):
         if node in suppressed:
             continue
@@ -436,9 +462,14 @@ def render_ec2(context, template):
         outputs = [
             mkoutput("AZ%d" % node, "Availability Zone of the newly created EC2 instance", (EC2_TITLE_NODE % node, "AvailabilityZone")),
             mkoutput("InstanceId%d" % node, "InstanceId of the newly created EC2 instance", Ref(EC2_TITLE_NODE % node)),
-            mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
-            mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
+            #mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
+            #mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
         ]
+        if not ipv6:
+            outputs.extend([
+                mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
+                mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
+            ])
         lmap(template.add_output, outputs)
 
     # all ec2 nodes in a cluster share the same keypair
@@ -529,9 +560,11 @@ def rds_security(context):
     }
     ingress_data = [engine_ports[context['rds']['engine'].lower()]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
+    ipv6 = False
     return security_group("VPCSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
+                          ipv6,
                           "RDS DB security group")
 
 def render_rds(context, template):
@@ -931,11 +964,13 @@ def render_elb(context, template, ec2_instances):
         Ref(ELB_TITLE))
     )
 
+    ipv6 = False
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
         context['aws']['vpc-id'],
-        _convert_ports_to_dictionary(elb_ports)
-    )) # list of strings or dicts
+        _convert_ports_to_dictionary(elb_ports),
+        ipv6
+    ))
 
     if using_elb(context) and (context['full_hostname'] or context['int_full_hostname']):
         dns = external_dns_elb if elb_is_public else internal_dns_elb
@@ -1016,10 +1051,12 @@ def render_alb(context, template, ec2_instances):
     alb_security_group_id = ALB_TITLE + "SecurityGroup"
     alb_ports = [attr_map['port'] for attr_map in context['alb']['listeners'].values()]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
+    ipv6 = False
     _lb_security_group = security_group(
         alb_security_group_id,
         context['aws']['vpc-id'],
-        alb_ports
+        alb_ports,
+        ipv6
     )
 
     # -- load balancer
@@ -1372,9 +1409,11 @@ def elasticache_security_group(context):
     }
     ingress_data = [engine_ports[context['elasticache']['engine']]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
+    ipv6 = False
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
                           context['aws']['vpc-id'],
                           ingress_ports,
+                          ipv6,
                           "ElastiCache security group")
 
 def elasticache_default_parameter_group(context):
@@ -1456,9 +1495,11 @@ def docdb_security(context):
     because this is dealt with in the subnet configuration"""
     ingress_data = [27017] # default MongoDB port
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
+    ipv6 = False
     return security_group("DocumentDBSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
+                          ipv6,
                           "DocumentDB security group")
 
 def render_docdb(context, template):
