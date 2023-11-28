@@ -247,6 +247,8 @@ defaults:
                 ignore-desired-capacity-drift: false
                 #root:
                 #   size: 20 # GiB, default
+                # Assign public ip addresses to worker nodes. Default is true
+                assign-public-ip: true
             efs: false
             addons:
                 coredns: {}
