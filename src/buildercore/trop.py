@@ -156,7 +156,8 @@ def convert_ports_dict_to_troposphere__ipv6(ports):
 
 def security_group(group_id, vpc_id, ingress_data, ipv6=False, description=""):
     if ipv6:
-        ingress = convert_ports_dict_to_troposphere__ipv6(ingress_data)
+        ingress = convert_ports_dict_to_troposphere(ingress_data)
+        ingress += convert_ports_dict_to_troposphere__ipv6(ingress_data)
     else:
         ingress = convert_ports_dict_to_troposphere(ingress_data)
     return ec2.SecurityGroup(group_id, **{

@@ -348,6 +348,21 @@ def ssh(stackname, node=None, username=DEPLOY_USER):
     public_ip = _pick_node(instances, node).public_ip_address
     _interactive_ssh(username, public_ip, USER_PRIVATE_KEY)
 
+def ssh2(stackname, node=None, username=DEPLOY_USER):
+    "connect to a instance over SSH as 'elife' with *your* private key."
+    #instances = _check_want_to_be_running(stackname)
+    instances = core.find_ec2_instances(stackname)
+    if not instances:
+        raise TaskExit("no running instances found")
+
+    for inst in instances:
+        print(inst.meta.data)
+        print()
+
+    #public_ip = _pick_node(instances, node).public_ip_address
+    public_ip = instances[0].meta.data['Ipv6Address']
+    _interactive_ssh(username, public_ip, USER_PRIVATE_KEY)
+
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     """maintenance ssh.
