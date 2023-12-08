@@ -555,6 +555,8 @@ api-gateway:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443 # public access to api gateway
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 # - 8000: # don't expose to public. Kong uses this to proxy requests.
                 # - 8001: # don't expose to public. Kong uses this for API admin.
                 - 9100: # prometheus node_exporter
@@ -2172,7 +2174,7 @@ bioprotocol:
                 - 80:
                     cidr-ip: 10.0.0.0/16
                 - 443
-                - 1234: # app server metrics
+                - 1234: # caddy metrics
                     cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
