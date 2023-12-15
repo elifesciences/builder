@@ -22,6 +22,7 @@ fi
 # see: https://releases.hashicorp.com/terraform/
 # note: values should match `projects/elife.yaml` under 'defaults.terraform.version'.
 .tfenv/bin/tfenv install 1.0.11
+.tfenv/bin/tfenv install 1.1.9
 
 # activate the default version.
 # "this is used when not overridden by '.terraform-version' or 'TFENV_TERRAFORM_VERSION'"
