@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0fc8b81668a081be9 # GENERATED created from basebox--2004
+            ami: ami-01562756d8ca2f903 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
