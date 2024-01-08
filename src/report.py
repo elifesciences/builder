@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime, timedelta
 from functools import partial, wraps
@@ -493,3 +494,88 @@ def ri_recommendations():
         'ec2': _ri_recommendations_ec2(),
         'rds': _ri_recommendations_rds(),
     }
+
+def complexity_score(pname=None):
+    "counts a project's resources to give it a rough 'complexity score'"
+    all_pdata = project.project_map()
+    pname_list = [pname] if pname else sorted(all_pdata.keys())
+
+    pname_penv_count = {}
+
+    # 'filling in the gaps' when we don't have an explicit aws-alt environment for given project.
+    pname_synthetic_envs = {
+        'lax': ['ci', 'continuumtest'],
+        'recommendations': ['ci', 'continuumtest', 'end2end', 'prod'],
+    }
+    env_ignore_list = ['fresh', 'snsalt', 's2004', 'standalone']
+
+    def count_ec2(pdata):
+        if 'ec2' not in pdata or not pdata['ec2']:
+            return 0
+        if 'cluster-size' in pdata['ec2']:
+            return pdata['ec2']['cluster-size']
+        return 1
+
+    def count_db(pdata):
+        if 'rds' not in pdata:
+            return 0
+        if pdata['rds']['multi-az']:
+            return 2
+        return 1
+
+    def count_other_db(pdata):
+        count = 0
+        if 'elasticache' in pdata:
+            count += pdata['elasticache']['clusters']
+        if 'docdb' in pdata:
+            count += pdata['docdb']['cluster-size']
+        if 'fastly' in pdata and 'gcslogging' in pdata['fastly']:
+            count += 1
+        if 'fastly' in pdata and 'bigquerylogging' in pdata['fastly']:
+            count += 1
+        return count
+
+    def total(d):
+        c = 0
+        for key, val in d.items():
+            if key == 'score':
+                continue
+            if isinstance(val, dict):
+                c += total(val)
+            else:
+                c += val
+        return c
+
+    for pname in pname_list:
+        pdata = project.project_data(pname)
+
+        pname_penv_count[pname] = {}
+
+        # todo: perhaps a better approach would be using the results of find_ec2_instances ?
+        alt_envs = list(pdata['aws-alt'].keys())
+        env_list = alt_envs + pname_synthetic_envs.get(pname, [])
+
+        for env in env_list:
+            assert env not in pname_penv_count[pname], "already counted '%s' for '%s'" % (env, pname)
+            if env in env_ignore_list:
+                continue
+            #print(pname,env)
+
+            aws_pdata = pdata['aws']
+            if env in alt_envs:
+                aws_pdata = project.set_project_alt(pdata, 'aws', env)['aws']
+
+            pname_penv_count[pname][env] = {
+                'ec2': count_ec2(aws_pdata),
+                'db': count_db(aws_pdata),
+                'other-db': count_other_db(aws_pdata),
+                's3': 0,
+                'sqs/sns': 0,
+                'lb': 0,
+                'cdn': 0,
+                'domain-name': 0
+            }
+            pname_penv_count[pname][env]['score'] = total(pname_penv_count[pname][env])
+        pname_penv_count[pname]['score'] = total(pname_penv_count[pname])
+
+    print(json.dumps(pname_penv_count, indent=4))

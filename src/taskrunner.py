@@ -150,6 +150,7 @@ TASK_LIST = [
     # see: https://alfred.elifesciences.org/job/process/job/process-project-security-updates/
     report.process_project_security_updates,
     report.ri_recommendations,
+    report.complexity_score,
 
     checks.stack_exists,
     tasks.delete_all_amis_to_prune,
