@@ -1178,7 +1178,7 @@ journal-cms:
             rds:
                 type: db.t3.medium
                 engine: MySQL
-                version: '5.7'
+                version: '8.0'
                 storage: 12 # GB
                 backup-retention: 2 # days
             ext:
@@ -1187,7 +1187,7 @@ journal-cms:
             description: production-like environment.
             rds:
                 engine: MySQL
-                version: '5.7'
+                version: '8.0'
                 storage: 48 # GB
                 backup-retention: 2 # days
             ext:
@@ -1197,7 +1197,7 @@ journal-cms:
             rds:
                 type: db.t3.medium
                 engine: MySQL
-                version: '5.7'
+                version: '8.0'
                 multi-az: true
                 # storage can be increased but not decreased.
                 # journal-cms--prod once needed this amount.
