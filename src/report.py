@@ -529,11 +529,44 @@ def complexity_score(pname=None):
             count += pdata['elasticache']['clusters']
         if 'docdb' in pdata:
             count += pdata['docdb']['cluster-size']
-        if 'fastly' in pdata and 'gcslogging' in pdata['fastly']:
+        if 'fastly' in pdata and pdata['fastly'] and 'gcslogging' in pdata['fastly']:
             count += 1
-        if 'fastly' in pdata and 'bigquerylogging' in pdata['fastly']:
+        if 'fastly' in pdata and pdata['fastly'] and 'bigquerylogging' in pdata['fastly']:
             count += 1
         return count
+
+    def count_s3(pdata):
+        return len(pdata['s3'])
+
+    def count_sqs_sns(pdata):
+        "just one point if the project is using sqs or sns"
+        if len(pdata['sqs']) or len(pdata['sns']):
+            return 1
+        return 0
+
+    def count_lb(pdata):
+        count = 0
+        if 'elb' in pdata:
+            count += 1
+        if 'alb' in pdata:
+            count += 1
+        return count
+
+    def count_cdn(pdata):
+        count = 0
+        if 'cloudfront' in pdata:
+            count += 1
+        if 'fastly' in pdata:
+            count += 1
+        return count
+
+    def count_domain(pdata):
+        "just one point if the project is using a custom subdomain"
+        if 'subdomain' in pdata and pdata['subdomain']:
+            return 1
+        return 0
+
+    # ---
 
     def total(d):
         c = 0
@@ -551,7 +584,7 @@ def complexity_score(pname=None):
 
         pname_penv_count[pname] = {}
 
-        # todo: perhaps a better approach would be using the results of find_ec2_instances ?
+        # todo: perhaps a better approach would be using the results listing cloudformation stacks?
         alt_envs = list(pdata['aws-alt'].keys())
         env_list = alt_envs + pname_synthetic_envs.get(pname, [])
 
@@ -569,13 +602,15 @@ def complexity_score(pname=None):
                 'ec2': count_ec2(aws_pdata),
                 'db': count_db(aws_pdata),
                 'other-db': count_other_db(aws_pdata),
-                's3': 0,
-                'sqs/sns': 0,
-                'lb': 0,
-                'cdn': 0,
-                'domain-name': 0
+                's3': count_s3(aws_pdata),
+                'sqs/sns': count_sqs_sns(aws_pdata),
+                'lb': count_lb(aws_pdata),
+                'cdn': count_cdn(pdata),
+                'domain-name': count_domain(pdata),
             }
             pname_penv_count[pname][env]['score'] = total(pname_penv_count[pname][env])
         pname_penv_count[pname]['score'] = total(pname_penv_count[pname])
+
+    pname_penv_count['score'] = total(pname_penv_count)
 
     print(json.dumps(pname_penv_count, indent=4))
