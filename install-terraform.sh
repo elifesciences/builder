@@ -18,12 +18,13 @@ fi
 .tfenv/bin/tfenv uninstall 0.13.7 || true
 .tfenv/bin/tfenv uninstall 0.14.11 || true
 .tfenv/bin/tfenv uninstall 0.15.5 || true
+.tfenv/bin/tfenv uninstall 1.0.11 || true
 
 # see: https://releases.hashicorp.com/terraform/
 # note: values should match `projects/elife.yaml` under 'defaults.terraform.version'.
-.tfenv/bin/tfenv install 1.0.11
+.tfenv/bin/tfenv install 1.1.9
 
 # activate the default version.
 # "this is used when not overridden by '.terraform-version' or 'TFENV_TERRAFORM_VERSION'"
 # - https://github.com/tfutils/tfenv#tfenv-install-version
-.tfenv/bin/tfenv use 1.0.11
+.tfenv/bin/tfenv use 1.1.9
