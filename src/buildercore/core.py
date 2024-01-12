@@ -569,7 +569,7 @@ def stackname_parseable(stackname):
         return False
 
 def project_name_from_stackname(stackname):
-    "returns just the project name from the given stackname"
+    "returns just the project name ('lax') from the given stackname ('lax--prod', 'lax--prod--1')"
     return first(parse_stackname(stackname))
 
 def is_master_server_stack(stackname):

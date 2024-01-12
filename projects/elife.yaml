@@ -400,7 +400,7 @@ defaults:
             description: uses a public Ubuntu AMI instead of an elife generated basebox.
             ec2:
                 # should be the same as basebox '20.04' aws-alt configurations
-                ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
+                ami: ami-027a754129abb5386 # focal, build 20231208, hvm:ebs-ssd
 
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
@@ -440,7 +440,7 @@ basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
-            ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
+            ami: ami-027a754129abb5386 # focal, build 20231208, hvm:ebs-ssd
             ports:
                 - 22
     vagrant: {}
