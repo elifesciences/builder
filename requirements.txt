@@ -1,22 +1,22 @@
-# file generated 2023-12-15 - see update-dependencies.sh
+# file generated 2024-01-12 - see update-dependencies.sh
 backoff==1.11.1
-boto3==1.34.1
-botocore==1.34.1
+boto3==1.34.17
+botocore==1.34.17
 certifi==2023.11.17
 cffi==1.16.0
 cfn-flip==1.3.0
 charset-normalizer==3.3.2
 click==8.1.7
-coverage==7.3.3
+coverage==7.4.0
 cryptography==41.0.7
 dda-python-terraform @ git+https://gitlab.com/domaindrivenarchitecture/dda-python-terraform.git@3fd4a72d3d0741438afdee916217e67e63d401cb
-deepmerge==1.1.0
+deepmerge==1.1.1
 exceptiongroup==1.2.0
 gevent==23.9.1
-greenlet==3.0.2
+greenlet==3.0.3
 idna==3.6
 iniconfig==2.0.0
-Jinja2==3.1.2
+Jinja2==3.1.3
 jmespath==1.0.1
 kids.cache==0.0.7
 MarkupSafe==2.1.3
@@ -26,7 +26,7 @@ packaging==23.2
 parallel-ssh==2.12.0
 pluggy==1.3.0
 pycparser==2.21
-pytest==7.4.3
+pytest==7.4.4
 pytest-cov==4.1.0
 python-dateutil==2.8.2
 python-slugify==1.2.6
@@ -36,8 +36,8 @@ requests==2.31.0
 responses==0.24.1
 ruamel.yaml==0.17.40
 ruamel.yaml.clib==0.2.8
-ruff==0.1.8
-s3transfer==0.9.0
+ruff==0.1.12
+s3transfer==0.10.0
 six==1.16.0
 ssh-python==1.0.0
 ssh2-python==1.0.0
