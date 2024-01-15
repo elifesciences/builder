@@ -7,7 +7,7 @@ defaults:
     salt: "3006" # the version of Salt to install on ec2 instances
     terraform:
         # the version of Terraform this project requires
-        version: "1.0.11"
+        version: "1.1.9"
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "hashicorp/aws"
@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0610789ce6f13144f # GENERATED created from basebox--2004
+            ami: ami-05e26486bb5668471 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -402,7 +402,7 @@ defaults:
             description: uses a public Ubuntu AMI instead of an elife generated basebox.
             ec2:
                 # should be the same as basebox '20.04' aws-alt configurations
-                ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
+                ami: ami-027a754129abb5386 # focal, build 20231208, hvm:ebs-ssd
 
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
@@ -442,7 +442,7 @@ basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
     aws:
         ec2:
-            ami: ami-01b996646377b6619 # focal, build 20220131, hvm:ebs-ssd
+            ami: ami-027a754129abb5386 # focal, build 20231208, hvm:ebs-ssd
             ports:
                 - 22
     vagrant: {}
@@ -557,6 +557,8 @@ api-gateway:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443 # public access to api gateway
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 # - 8000: # don't expose to public. Kong uses this to proxy requests.
                 # - 8001: # don't expose to public. Kong uses this for API admin.
                 - 9100: # prometheus node_exporter
@@ -1178,7 +1180,7 @@ journal-cms:
             rds:
                 type: db.t3.medium
                 engine: MySQL
-                version: '5.7'
+                version: '8.0'
                 storage: 12 # GB
                 backup-retention: 2 # days
             ext:
@@ -1187,7 +1189,7 @@ journal-cms:
             description: production-like environment.
             rds:
                 engine: MySQL
-                version: '5.7'
+                version: '8.0'
                 storage: 48 # GB
                 backup-retention: 2 # days
             ext:
@@ -1197,7 +1199,7 @@ journal-cms:
             rds:
                 type: db.t3.medium
                 engine: MySQL
-                version: '5.7'
+                version: '8.0'
                 multi-az: true
                 # storage can be increased but not decreased.
                 # journal-cms--prod once needed this amount.
@@ -2130,7 +2132,7 @@ kubernetes-aws:
                 version: '1.27'
                 worker:
                     type: t3.large
-                    max-size: 30
+                    max-size: 34
                     desired-capacity: 16
                     ignore-desired-capacity-drift: true
                 iam-oidc-provider: true
@@ -2175,7 +2177,7 @@ bioprotocol:
                 - 80:
                     cidr-ip: 10.0.0.0/16
                 - 443
-                - 1234: # app server metrics
+                - 1234: # caddy metrics
                     cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only

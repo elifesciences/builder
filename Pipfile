@@ -19,7 +19,9 @@ python-slugify = "~=1.2"
 #python-terraform = "~=0.10"
 # lsh@2023-07: dda-python-terraform is a fork of python-terraform
 #python-terraform = {editable = false, ref = "0.14.0", git = "https://github.com/beelit94/python-terraform.git"}
-dda-python-terraform = "~=2.1.1"
+# lsh@2023-07: fix for bug available outside of release tag
+#dda-python-terraform = "~=2.1.1"
+dda-python-terraform = {git = "https://gitlab.com/domaindrivenarchitecture/dda-python-terraform.git", editable = false, ref = "3fd4a72d"}
 pytz = "*"
 PyYAML = "~=6.0.1"
 "ruamel.yaml" = "==0.17.*"
