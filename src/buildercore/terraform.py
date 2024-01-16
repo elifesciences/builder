@@ -1020,7 +1020,7 @@ set -o xtrace
 /etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
 
     worker = {
-        'associate_public_ip_address': True,
+        'associate_public_ip_address': lookup(context, 'eks.worker.assign-public-ip'),
         'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
         'image_id': '${data.aws_ami.worker.id}',
         'instance_type': context['eks']['worker']['type'],
