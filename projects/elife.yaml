@@ -1770,6 +1770,7 @@ iiif:
                 healthcheck:
                     path: /
             fastly:
+                ip-blacklist: true
                 bigquerylogging:
                     dataset: "staging"
                 gcslogging:
@@ -1793,6 +1794,7 @@ iiif:
                 healthcheck:
                     path: /
             fastly:
+                ip-blacklist: true
                 subdomains:
                     - "{instance}--cdn-iiif"
                     - iiif
