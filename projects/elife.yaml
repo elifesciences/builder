@@ -2156,7 +2156,7 @@ kubernetes-aws:
                     max-size: 6
                     desired-capacity: 2
                     ignore-desired-capacity-drift: true
-                    assign-public-ip: false
+                    assign-public-ip: true
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
