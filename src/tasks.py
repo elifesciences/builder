@@ -43,14 +43,19 @@ def delete_all_amis_to_prune():
 
 @requires_aws_stack
 def repair_cfn_info(stackname):
+    """refreshes remote `/etc/cfn-info.json`
+    this file is a simple map of Cloudformation data stored on the ec2 instance.
+    it may contain information about domain names, RDS, managed Redis instances, etc."""
     with stack_conn(stackname):
         core.write_environment_info(stackname, overwrite=True)
 
 @requires_aws_stack
 def repair_context(stackname):
-    # triggers the workaround of downloading it from EC2 and persisting it
+    """refreshes local stack context data.
+    the context is a simple map of data about a stack stored in S3."""
     load_context(stackname)
 
 @requires_aws_stack
 def remove_minion_key(stackname):
+    "deletes a salt minion's unique key from the salt master."
     core.remove_minion_key(stackname)

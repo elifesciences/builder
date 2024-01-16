@@ -118,6 +118,10 @@ def update_salt_master(region=None):
     current_master_stackname = core.find_master(region)
     return update_salt(current_master_stackname)
 
+
+# TODO: all minions should be using dns now for master location
+# remastering shouldn't be necessary. review and delete
+
 @requires_aws_stack
 def remaster(stackname, new_master_stackname="master-server--prod", skip_context_check=False):
     "Tell a minion who their new master is."
