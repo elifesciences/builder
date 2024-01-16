@@ -1332,7 +1332,7 @@ def external_dns_fastly(context):
 
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):
-            # 2nd-level domains aliases ('www' in 'www.elifesciences.org') are not supported yet by builder.
+            # 2nd-level domains aliases are not supported yet by builder.
             # See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains"
             hostedzone = hostname + "."
             ip_addresses = context['fastly']['dns']['a']
