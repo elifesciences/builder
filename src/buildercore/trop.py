@@ -1332,6 +1332,8 @@ def external_dns_fastly(context):
 
     def entry(hostname, i):
         if _is_domain_2nd_level(hostname):
+            # 2nd-level domains aliases ('www' in 'www.elifesciences.org') are not supported yet by builder.
+            # See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains"
             hostedzone = hostname + "."
             ip_addresses = context['fastly']['dns']['a']
             return route53.RecordSetType(
@@ -1342,8 +1344,6 @@ def external_dns_fastly(context):
                 TTL="60",
                 ResourceRecords=ip_addresses,
             )
-            msg = "2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains"
-            raise ValueError(msg)
 
         hostedzone = context['domain'] + "."
         cname = context['fastly']['dns']['cname']
