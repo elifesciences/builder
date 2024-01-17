@@ -173,10 +173,8 @@ DEBUG_TASK_LIST = [
     master.write_missing_keypairs_to_s3,
     master.download_keypair,
     master.server_access,
-    master.remaster,
     master.update_salt,
     master.update_salt_master,
-    master.remaster_all,
 
     buildvars.read,
     buildvars.valid,
