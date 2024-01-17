@@ -77,11 +77,6 @@ def server_access():
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
     return result['succeeded']
 
-# @cached
-# def _cached_master_ip(master_stackname):
-#    "provides a small time saving when remastering many minions"
-#    return core.ec2_data(master_stackname)[0]['PrivateIpAddress']
-
 @requires_aws_stack
 def update_salt(stackname):
     "updates the Salt version installed on the instances for the given stack"
