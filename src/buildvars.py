@@ -15,8 +15,6 @@ from decorators import format_output, requires_aws_stack
 
 LOG = logging.getLogger(__name__)
 
-OLD, ABBREV, FULL = 'old', 'abbrev', 'full'
-
 def _retrieve_build_vars():
     """wrapper around `read_from_current_host` with integrity checks. returns buildvars for the current instance.
     raises AssertionError on bad data."""
