@@ -788,27 +788,6 @@ def project_data_for_stackname(stackname):
     return project_data
 
 
-#
-# AWS configuration drift
-#
-
-def drift_check(stackname):
-    "returns a list of resources that have drifted for the given `stackname`"
-    conn = boto_conn(stackname, 'cloudformation', client=True)
-
-    handle = conn.detect_stack_drift(StackName=stackname)
-    handle = handle['StackDriftDetectionId']
-
-    def is_detecting_drift():
-        job = conn.describe_stack_drift_detection_status(StackDriftDetectionId=handle)
-        return job.get('DetectionStatus') == 'DETECTION_IN_PROGRESS'
-    utils.call_while(is_detecting_drift, interval=config.AWS_POLLING_INTERVAL, update_msg='Waiting for drift results ...')
-
-    result = conn.describe_stack_resource_drifts(StackName=stackname)
-    drifted = [resource for resource in result["StackResourceDrifts"] if resource["StackResourceDriftStatus"] != "IN_SYNC"]
-    return drifted or None
-
-
 # migrated from bootstrap.py
 # might need a better home
 
