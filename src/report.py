@@ -159,7 +159,7 @@ def process_project_security_updates():
     stack = [] # [(stackname, [env1,env2,env3]), ...]
     for stackname in results:
         try:
-            pname, iid, nid = core.parse_stackname(stackname, all_bits=True)
+            pname, iid, _ = core.parse_stackname(stackname, all_bits=True)
             if pname in project_blacklist:
                 print('skipping %s: project %r in blacklist' % (stackname, pname))
                 continue
@@ -410,7 +410,7 @@ def _ri_recommendations_ec2():
         'flux-test',
         'flux-prod',
     ]
-    included_rows, excluded_rows = core_utils.splitfilter(lambda row: row['Env'] in always_on_envs, row_list)
+    included_rows, _ = core_utils.splitfilter(lambda row: row['Env'] in always_on_envs, row_list)
 
     result = {
         'summary': {
@@ -459,7 +459,7 @@ def _ri_recommendations_rds():
         })
 
     # RDS instances are always on because they take too long to turn off
-    included_rows, excluded_rows = core_utils.splitfilter(lambda row: True, row_list)
+    included_rows, _ = core_utils.splitfilter(lambda row: True, row_list)
 
     result = {
         'summary': {
