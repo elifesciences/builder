@@ -1425,6 +1425,8 @@ search:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
@@ -1445,12 +1447,14 @@ search:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 1234: # caddy metrics
+                        cidr-ip: 10.0.0.0/16
                     - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9100: # prometheus node_exporter
                         cidr-ip: 10.0.0.0/16 # internal access only
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1466,12 +1470,14 @@ search:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 1234: # caddy metrics
+                        cidr-ip: 10.0.0.0/16
                     - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9100: # prometheus node_exporter
                         cidr-ip: 10.0.0.0/16 # internal access only
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
                     size: 30 # GB
                 cluster-size: 2
