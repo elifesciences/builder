@@ -165,7 +165,7 @@ class Errors(base.BaseCase):
     @patch('buildercore.core.ec2_data')
     def test_no_public_ips_available(self, stack_data):
         stack_data.return_value = [
-            {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Tags': []},
+            {'InstanceId': 'i-1', 'PublicIpAddress': None, 'Ipv6Address': None, 'Tags': []},
         ]
         self.assertRaises(
             core.NoPublicIpsError,

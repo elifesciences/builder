@@ -77,7 +77,7 @@ def server_access():
     nodes = core.ec2_data(stackname)
     ensure(nodes, "no master-server found!")
     ensure(len(nodes) == 1, "more than one master-server found!")
-    public_ip = nodes[0]['PublicIpAddress']
+    public_ip = core.pick_ip_address(nodes[0])
     result = local('ssh -o "StrictHostKeyChecking no" %s@%s "exit"' % (config.BOOTSTRAP_USER, public_ip))
     return result['succeeded']
 

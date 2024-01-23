@@ -245,6 +245,28 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
         raise NoRunningInstancesError("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
+# prefer this over `find_ec2_instances`
+def ec2_data(stackname, state=None):
+    """returns a list of raw boto3 EC2.Instance data for ec2 instances attached to given `stackname`.
+    does not filter by state by default.
+    does not enforce single instance checking."""
+    try:
+        ec2_instances = find_ec2_instances(stackname, state=state, allow_empty=True)
+        return [ec2.meta.data for ec2 in ec2_instances]
+    except Exception:
+        LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
+        raise
+
+def pick_ip_address(ec2_data):
+    """returns a public IP address, preferring ipv4 when available over ipv6.
+    for use with the ec2 instance data returned by `ec2_data`."""
+    return ec2_data.get('PublicIpAddress') or ec2_data.get('Ipv6Address')
+
+def pick_ip_address_obj(ec2_obj):
+    """returns a public IP address, preferring ipv4 when available over ipv6.
+    for use with the ec2 instance objects returned by `find_ec2_instances`."""
+    return ec2_obj.public_ip_address or ec2_obj.ipv6_address
+
 # NOTE: preserved for the commentary, but this is for boto2
 def _all_nodes_filter(stackname, node_ids):
     query = {
@@ -366,7 +388,7 @@ def stack_conn(stackname, username=config.DEPLOY_USER, node=None, **kwargs):
     node and ensure(utils.isint(node) and int(node) > 0, "given node must be an integer and greater than zero")
     didx = int(node) - 1 if node else 0 # decrement to a zero-based value
     data = data[didx] # data is ordered by node
-    public_ip = data['PublicIpAddress']
+    public_ip = pick_ip_address(data)
     params = _ec2_connection_params(stackname, username, host_string=public_ip)
 
     with settings(**params):
@@ -378,7 +400,7 @@ class NoPublicIpsError(Exception):
 def all_node_params(stackname):
     "returns a map of node data"
     data = ec2_data(stackname, state='running')
-    public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
+    public_ips = {ec2['InstanceId']: pick_ip_address(ec2) for ec2 in data}
     nodes = {
         ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node'])
         if 'Node' in tags2dict(ec2['Tags'])
@@ -407,7 +429,7 @@ def stack_all_ec2_nodes(stackname, workfn, username=config.DEPLOY_USER, concurre
 
     data = ec2_data(stackname, state='running')
     # TODO: reuse all_node_params?
-    public_ips = {ec2['InstanceId']: ec2.get('PublicIpAddress') for ec2 in data}
+    public_ips = {ec2['InstanceId']: pick_ip_address(ec2) for ec2 in data}
     nodes = {ec2['InstanceId']: int(tags2dict(ec2['Tags'])['Node']) if 'Node' in tags2dict(ec2['Tags']) else 1 for ec2 in data}
     if node:
         nodes = {k: v for k, v in nodes.items() if v == int(node)}
@@ -604,16 +626,6 @@ def describe_stack(stackname, allow_missing=False):
 class NoRunningInstancesError(Exception):
     pass
 
-def ec2_data(stackname, state=None):
-    """returns a list of raw boto3 EC2.Instance data for ec2 instances attached to given `stackname`.
-    does not filter by state by default.
-    does not enforce single instance checking."""
-    try:
-        ec2_instances = find_ec2_instances(stackname, state=state, allow_empty=True)
-        return [ec2.meta.data for ec2 in ec2_instances]
-    except Exception:
-        LOG.exception('unhandled exception attempting to discover more information about this instance. Instance may not exist yet.')
-        raise
 
 
 # DO NOT CACHE: function is used in polling

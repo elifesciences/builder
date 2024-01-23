@@ -384,7 +384,7 @@ def update_dns(stackname):
     if context['ec2'].get('dns-external-primary'):
         primary = 1
         primary_hostname = context['ext_node_hostname'] % primary
-        primary_ip_address = nodes[0].public_ip_address
+        primary_ip_address = core.pick_ip_address_obj(nodes[0])
         LOG.info("External primary full hostname: %s", primary_hostname)
         _update_dns_a_record(context['domain'], primary_hostname, primary_ip_address)
 
@@ -397,7 +397,7 @@ def update_dns(stackname):
     LOG.info("External full hostname: %s", context['full_hostname'])
     if context['full_hostname']:
         for node in nodes:
-            _update_dns_a_record(context['domain'], context['full_hostname'], node.public_ip_address)
+            _update_dns_a_record(context['domain'], context['full_hostname'], core.pick_ip_address_obj(node)) # TODO: I think ipv6 records require an AAAA
 
 def _delete_dns_a_record(zone_name, name):
     """deletes a Route53 DNS 'A' record `name` in hosted zone `zone_name`.

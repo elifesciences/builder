@@ -10,7 +10,7 @@ NODE_PARAMS = {
     },
     'public_ips': {
         'i-10000001': '127.0.0.1',
-        'i-10000002': '127.0.0.2',
+        'i-10000002': '127.0.0.2', # todo
     },
     'stackname': 'dummy1--test',
     'user': 'ubuntu'

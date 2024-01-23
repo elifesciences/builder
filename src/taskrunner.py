@@ -60,7 +60,6 @@ UNQUALIFIED_TASK_LIST = [
     # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.update-journal-pr
     cfn.launch,
     cfn.ssh,
-    cfn.ssh2,
     cfn.owner_ssh,
     # see: elife-jenkins-workflow-libs/vars/builderTestArtifact.groovy
     cfn.download_file,
