@@ -47,8 +47,7 @@ from utils import TaskExit
 
 LOG = logging.getLogger(__name__)
 
-# TODO: move to a lower level if possible
-# @requires_steady_stack
+# todo: merge with `ensure_destroyed`
 def destroy(stackname):
     "Delete a stack of resources."
     msg = '''this is a BIG DEAL. you cannot recover from this.
@@ -59,6 +58,7 @@ type the name of the stack to continue or anything else to quit:
         raise TaskExit('you needed to type "%s" to continue.' % stackname)
     return bootstrap.destroy(stackname)
 
+# todo: merge with `destroy`
 def ensure_destroyed(stackname):
     try:
         return bootstrap.destroy(stackname)
@@ -340,24 +340,20 @@ def _interactive_ssh(username, public_ip, private_key):
         LOG.warning(e)
 
 @requires_aws_stack
-def ssh(stackname, node=None, username=DEPLOY_USER):
+def ssh(stackname, node=None, username=DEPLOY_USER, private_key=USER_PRIVATE_KEY):
     "connect to a instance over SSH as 'elife' with *your* private key."
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
     public_ip = core.pick_ip_address_obj(_pick_node(instances, node))
-    _interactive_ssh(username, public_ip, USER_PRIVATE_KEY)
+    _interactive_ssh(username, public_ip, private_key)
 
 @requires_aws_stack
 def owner_ssh(stackname, node=None):
     """maintenance ssh.
     connect to an instance over SSH as 'ubuntu' with
     the instance's private key."""
-    instances = _check_want_to_be_running(stackname)
-    if not instances:
-        return
-    public_ip = core.pick_ip_address_obj(_pick_node(instances, node))
-    _interactive_ssh(BOOTSTRAP_USER, public_ip, stack_pem(stackname))
+    ssh(stackname, node, BOOTSTRAP_USER, stack_pem(stackname))
 
 @requires_aws_stack
 def download_file(stackname, path, destination='.', node=None, allow_missing="False", use_bootstrap_user="False"):
@@ -393,10 +389,6 @@ def upload_file(stackname, local_path, remote_path=None, overwrite=False, node=1
             sys.exit(1)
         upload(local_path, remote_path)
 
-#
-# these might need a better home
-#
-
 @requires_aws_stack
 @requires_aws_stack_template
 def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concurrency=None, node=None):
@@ -409,7 +401,7 @@ def cmd(stackname, command=None, username=DEPLOY_USER, clean_output=False, concu
     if not instances:
         return None
 
-    # removes much of the crap emitted that mangles the useful output of a remote command.
+    # removes much of the junk emitted that mangles the useful output of a remote command.
     custom_settings = {}
     if clean_output:
         custom_settings = {

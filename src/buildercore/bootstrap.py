@@ -580,8 +580,8 @@ def remove_all_orphaned_keys(master_stackname):
             remote_sudo("rm -f /etc/salt/pki/master/minions/%s" % fname)
 
 # TODO what does stack destruction have to do with ec2 bootstrap?
-# it can't be moved to core because of the `cloudformation` module dependency.
-# we need something in buildercore/ that ties all these disparate things together
+# it can't be moved to ./buildercore/core.py because of the `cloudformation` module dependency.
+# we need something in ./buildercore/ that ties these disparate things together.
 def destroy(stackname):
     # TODO: if context does not exist anymore on S3,
     # we could exit idempotently
@@ -591,7 +591,8 @@ def destroy(stackname):
     cloudformation.destroy(stackname, context)
 
     # don't do this. requires master server access and would prevent regular users deleting stacks
-    # core.remove_minion_key(stackname)
+    #core.remove_minion_key(stackname)
+
     delete_dns(stackname)
 
     context_handler.delete_context(stackname)

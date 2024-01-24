@@ -15,7 +15,6 @@ import buildvars
 import cfn
 import checks
 import deploy
-import fix
 import lifecycle
 import master
 import masterless
@@ -41,7 +40,7 @@ def echo(msg, *args, **kwargs):
 
 
 # NOTE: 'unqualified' tasks are those that can be called just by their function name.
-# for example: `./bldr start` is the unqualified function `lifecycle.start`
+# for example: `./bldr start` is the unqualified function `lifecycle.start`.
 # prefer qualified tasknames.
 
 # NOTE: a task's function signature constitutes it's API, check twice before changing it.
@@ -56,7 +55,7 @@ UNQUALIFIED_TASK_LIST = [
     # see: elife-jenkins-workflow-libs/vars/builderUpdate.groovy, elifeFormula.groovy
     cfn.update,
     cfn.update_infrastructure,
-    fix.fix_infrastructure,
+
     # see: elife-alfred-formula/jenkinsfiles/Jenkinsfile.basebox-1804, Jenkinsfile.update-journal-pr
     cfn.launch,
     cfn.ssh,
@@ -174,10 +173,8 @@ DEBUG_TASK_LIST = [
     master.write_missing_keypairs_to_s3,
     master.download_keypair,
     master.server_access,
-    master.remaster,
+    master.update,
     master.update_salt,
-    master.update_salt_master,
-    master.remaster_all,
 
     buildvars.read,
     buildvars.valid,

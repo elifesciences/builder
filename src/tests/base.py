@@ -112,12 +112,6 @@ class BaseCase(TestCase):
             with self.subTest(given=x):
                 self.assertTrue(fn(x), "failed, fn(%s) != True" % x)
 
-    def assertAllNotTrue(self, fn, lst): # noqa: N802
-        "given a function a list of values, asserts all fn(value) are NOT true"
-        for x in lst:
-            with self.subTest(given=x):
-                self.assertNotEqual(fn(x), "failed, fn(%s) != False" % x)
-
 class BaseIntegrationCase(BaseCase):
     @classmethod
     def set_up_stack(cls, project, explicitly_start=False):

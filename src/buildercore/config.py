@@ -42,7 +42,6 @@ ENV = {
 }
 ENV = {k: os.environ.get(k, default) for k, default in ENV.items()}
 
-ROOT_USER = 'root'
 BOOTSTRAP_USER = 'ubuntu'
 DEPLOY_USER = 'elife'
 CI_USER = 'jenkins'
@@ -64,7 +63,6 @@ PROJECTS_DIR = "projects"
 STACK_DIR = join(CFN_DIR, "stacks") # "./.cfn/stacks"
 CONTEXT_DIR = join(CFN_DIR, "contexts") # "./.cfn/stacks"
 SCRIPTS_DIR = "scripts"
-PRIVATE_DIR = "private"
 KEYPAIR_DIR = join(CFN_DIR, "keypairs") # "./.cfn/keypairs"
 
 # lsh@2023-03-29: projects can now specify specfic versions of Terraform to use.

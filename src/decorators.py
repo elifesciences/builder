@@ -14,7 +14,6 @@ from buildercore.utils import (
     first,
     isstr,
     lfilter,
-    lmap,
     remove_ordereddict,
 )
 
@@ -114,25 +113,6 @@ def requires_aws_stack_template(func):
         msg = "task requires cloudformation template to exist locally, but template not found and could not be downloaded: " + stack_template_path
         ensure(os.path.exists(stack_template_path), msg, utils.TaskExit)
         return func(stackname, *args, **kwargs)
-    return call
-
-def requires_steady_stack(func):
-    @wraps(func)
-    def call(*args, **kwargs):
-        ss = core.steady_aws_stacks(utils.find_region())
-        keys = lmap(first, ss)
-        idx = dict(zip(keys, ss))
-
-        def helpfn(pick):
-            return idx[pick][1]
-
-        if not keys:
-            print('\nno AWS stacks *in a steady state* exist, cannot continue.')
-            return None
-        stackname = first(args) or config.ENV['INSTANCE']
-        if not stackname or stackname not in keys:
-            stackname = utils._pick("stack", sorted(keys), helpfn=helpfn, default_file=deffile('.active-stack'))
-        return func(stackname, *args[1:], **kwargs)
     return call
 
 def echo_output(func):

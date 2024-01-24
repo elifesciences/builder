@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-05e26486bb5668471 # GENERATED created from basebox--2004
+            ami: ami-02be81e0aa6b6b4ed # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -247,6 +247,8 @@ defaults:
                 ignore-desired-capacity-drift: false
                 #root:
                 #   size: 20 # GiB, default
+                # Assign public ip addresses to worker nodes. Default is true
+                assign-public-ip: true
             efs: false
             addons:
                 coredns: {}
@@ -1446,6 +1448,8 @@ search:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
@@ -1466,12 +1470,14 @@ search:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 1234: # caddy metrics
+                        cidr-ip: 10.0.0.0/16
                     - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9100: # prometheus node_exporter
                         cidr-ip: 10.0.0.0/16 # internal access only
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1487,12 +1493,14 @@ search:
                     - 22
                     - 80:
                         cidr-ip: 10.0.0.0/16 # ELB only
+                    - 1234: # caddy metrics
+                        cidr-ip: 10.0.0.0/16
                     - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
                     - 9100: # prometheus node_exporter
                         cidr-ip: 10.0.0.0/16 # internal access only
+                    - 9201: # Opensearch
+                        cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
                     size: 30 # GB
                 cluster-size: 2
@@ -1793,6 +1801,7 @@ iiif:
                 healthcheck:
                     path: /
             fastly:
+                ip-blacklist: true
                 bigquerylogging:
                     dataset: "staging"
                 gcslogging:
@@ -1816,6 +1825,7 @@ iiif:
                 healthcheck:
                     path: /
             fastly:
+                ip-blacklist: true
                 subdomains:
                     - "{instance}--cdn-iiif"
                     - iiif
@@ -2175,6 +2185,7 @@ kubernetes-aws:
                     max-size: 6
                     desired-capacity: 2
                     ignore-desired-capacity-drift: true
+                    assign-public-ip: true
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:

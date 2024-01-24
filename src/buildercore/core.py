@@ -267,28 +267,6 @@ def pick_ip_address_obj(ec2_obj):
     for use with the ec2 instance objects returned by `find_ec2_instances`."""
     return ec2_obj.public_ip_address or ec2_obj.ipv6_address
 
-# NOTE: preserved for the commentary, but this is for boto2
-def _all_nodes_filter(stackname, node_ids):
-    query = {
-        # tag-key+tag-value is misleading here:
-        # http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-        #     tag-key - The key of a tag assigned to the resource. This filter is independent of the tag-value filter. For example, if you use both the filter "tag-key=Purpose" and the filter "tag-value=X", you get any resources assigned both the tag key Purpose (regardless of what the tag's value is), and the tag value X (regardless of what the tag's key is). If you want to list only resources where Purpose is X, see the tag:key=value filter.
-        # 'tag-key': ['Cluster', 'Name'],
-        # we cannot use 'tag-Cluster' and 'tag-name', because:
-        # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Filtering.html
-        #     In many cases, you can granulate the results by using complementary search terms on different key fields, where the AND rule is automatically applied instead. If you search for tag: Name:=All values and tag:Instance State=running, you get search results that contain both those criteria.
-        # and that means we would be too selective, requiring *both* tags to be present when we wanted to select "at least one out of two"
-        # Therefore, we check for this documented tag automatically created by
-        # Cloudformation
-        'tag:aws:cloudformation:stack-name': [stackname],
-    }
-    # hypothesis is that this is causing filters to skip running instances, non-deterministically. We'll try to filter the list in-memory instead
-    # if state:
-    #    query['instance-state-name'] = [state]
-    if node_ids:
-        query['instance-id'] = node_ids
-    return query
-
 #
 #
 #
@@ -542,6 +520,9 @@ def current_node_id():
     ensure(ec2_id in env('nodes'), "Can't find %s in %s node map" % (ec2_id, env('nodes')))
     return env('nodes')[ec2_id]
 
+# lsh@2024-01-19: disabled as unused.
+# `env` usage should be minimised. use an alternative if possible.
+'''
 def current_ip():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.
 
@@ -553,6 +534,7 @@ def current_stackname():
 
     Returns the name of the stack the task is working on, e.g. 'journal--end2end'"""
     return env('stackname')
+'''
 
 #
 # stackname wrangling
@@ -697,18 +679,6 @@ def steady_aws_stacks(region, *args, **kwargs):
     "returns all stacks that are not in a transitionary state"
     return _aws_stacks(region, STEADY_CFN_STATUS, *args, **kwargs)
 
-def active_aws_project_stacks(pname):
-    "returns all active stacks for a given project name"
-    pdata = project.project_data(pname)
-    region = pdata['aws']['region']
-
-    def fn(triple):
-        stackname = first(triple)
-        if stackname_parseable(stackname):
-            return project_name_from_stackname(stackname) == pname
-        return None
-    return lfilter(fn, active_aws_stacks(region))
-
 def stack_names(stack_list, only_parseable=True):
     """returns the names of all CloudFormation stacks.
     set `only_parseable` to `False` to include stacks not managed by builder."""
@@ -720,10 +690,6 @@ def stack_names(stack_list, only_parseable=True):
 def active_stack_names(region):
     "convenience. returns names of all active stacks"
     return stack_names(active_aws_stacks(region))
-
-def steady_stack_names(region):
-    "convenience. returns names of all stacks in a non-transitory state"
-    return stack_names(steady_aws_stacks(region))
 
 class MultipleRegionsError(EnvironmentError):
     def __init__(self, regions):
@@ -763,11 +729,6 @@ def find_master(region):
     continue to serve the minions and the right master-server (the oldest one) would need to be returned."""
     return config.MASTER_SERVER_IID
 
-def find_master_for_stack(stackname):
-    "convenience. finds the master server for the same region as given stack"
-    pdata = project_data_for_stackname(stackname)
-    return find_master(pdata['aws']['region'])
-
 #
 # decorators
 #
@@ -798,27 +759,6 @@ def project_data_for_stackname(stackname):
     if 'gcp-alt' in project_data and instance_id in project_data['gcp-alt']:
         project_data = project.set_project_alt(project_data, 'gcp', instance_id)
     return project_data
-
-
-#
-# AWS configuration drift
-#
-
-def drift_check(stackname):
-    "returns a list of resources that have drifted for the given `stackname`"
-    conn = boto_conn(stackname, 'cloudformation', client=True)
-
-    handle = conn.detect_stack_drift(StackName=stackname)
-    handle = handle['StackDriftDetectionId']
-
-    def is_detecting_drift():
-        job = conn.describe_stack_drift_detection_status(StackDriftDetectionId=handle)
-        return job.get('DetectionStatus') == 'DETECTION_IN_PROGRESS'
-    utils.call_while(is_detecting_drift, interval=config.AWS_POLLING_INTERVAL, update_msg='Waiting for drift results ...')
-
-    result = conn.describe_stack_resource_drifts(StackName=stackname)
-    drifted = [resource for resource in result["StackResourceDrifts"] if resource["StackResourceDriftStatus"] != "IN_SYNC"]
-    return drifted or None
 
 
 # migrated from bootstrap.py
