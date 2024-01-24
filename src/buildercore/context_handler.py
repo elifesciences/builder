@@ -48,7 +48,7 @@ def _load_context_from_s3(stackname):
     return _load_context_from_disk(stackname)
 
 def load_context(stackname):
-    """Returns the store context data structure for 'stackname'.
+    """Returns the stored context data structure for `stackname`.
     Downloads from S3 if missing on the local builder instance"""
 
     # giorgio@2018-11-03: "Current situation is you may have a old context around on your local disk.

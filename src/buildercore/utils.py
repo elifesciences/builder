@@ -17,7 +17,6 @@ from pprint import pformat
 
 import pytz
 import yaml
-from kids.cache import cache as cached
 from ruamel.yaml import YAML
 
 LOG = logging.getLogger(__name__)
@@ -36,9 +35,6 @@ def lfilter(func, *iterable):
 
 def keys(d):
     return list(d.keys())
-
-def lzip(*iterable):
-    return list(zip(*iterable))
 
 def merge(d1, d2):
     d0 = {}
@@ -73,12 +69,6 @@ def unique(lst):
     seen = set()
     return [x for x in lst if x not in seen and seen.add(x) is None]
 
-def conj(x, y):
-    "performs a non-mutating update of dict a with the contents of dict b"
-    z = deepcopy(x)
-    z.update(y)
-    return z
-
 def dictfilter(func, ddict):
     "return a subset of dictionary items where func(key, val) is True"
     if not func:
@@ -104,10 +94,6 @@ def nested_dictmap(fn, ddict):
 def subdict(ddict, key_list):
     # aka delall rmkeys
     return {k: v for k, v in ddict.items() if k in key_list}
-
-def exsubdict(ddict, key_list):
-    "returns a version of the given dictionary excluding the keys specified"
-    return {k: v for k, v in ddict.items() if k not in key_list}
 
 def complement(pred):
     @wraps(pred)
@@ -173,10 +159,6 @@ def first(x):
 def second(x):
     "returns the second value in x"
     return nth(x, 1)
-
-def third(x):
-    "returns the third value in x"
-    return nth(x, 2)
 
 def last(x):
     "returns the last value in x"
@@ -408,14 +390,6 @@ def tempdir():
     # usage: tempdir, killer = tempdir(); killer()
     name = tempfile.mkdtemp()
     return (name, lambda: shutil.rmtree(name))
-
-@cached
-def http_responses():
-    """a map of integers to response reason phrases
-
-    e.g. 404: 'Not Found'"""
-    import http.client
-    return http.client.responses
 
 def visit(d, f, p=None):
     """visits each value in `d` and applies function `f` to it.

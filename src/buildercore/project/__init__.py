@@ -115,9 +115,6 @@ def filtered_projects(filterfn, *args, **kwargs):
 def aws_projects(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: 'aws' in pdata, *args, **kwargs)
 
-def ec2_projects(*args, **kwargs):
-    return filtered_projects(lambda pname, pdata: pdata.get('aws', {}).get('ec2'), *args, **kwargs)
-
 #
 #
 #

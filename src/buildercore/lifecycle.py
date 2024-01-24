@@ -23,7 +23,7 @@ from .core import (
     find_ec2_instances,
     find_rds_instances,
 )
-from .utils import call_while, ensure, first, lmap, lookup
+from .utils import call_while, ensure, first, lookup
 
 LOG = logging.getLogger(__name__)
 
@@ -35,11 +35,6 @@ def _ec2_connection(stackname):
 
 def _rds_connection(stackname):
     return boto_conn(stackname, 'rds', client=True)
-
-def _node_id(node):
-    name = core.tags2dict(node.tags)['Name']
-    nid = core.parse_stackname(name, all_bits=True, idx=True).get('cluster_id', 1)
-    return int(nid)
 
 def _select_nodes_with_state(interesting_state, states):
     return [instance_id for (instance_id, state) in states.items() if state == interesting_state]
@@ -171,14 +166,6 @@ def wait_for_ec2_steady_state(stackname, ec2_to_be_checked):
         done_msg="all nodes have public ips, are reachable via SSH and have completed boot",
         exception_class=EC2TimeoutError
     )
-
-def start_rds_nodes(stackname):
-    rds_to_be_started = _rds_nodes_states(stackname)
-    LOG.info("RDS nodes to be started: %s", rds_to_be_started)
-
-    def _start(nid):
-        return _rds_connection(stackname).start_db_instance(DBInstanceIdentifier=nid)
-    return lmap(_start, rds_to_be_started.keys())
 
 def start(stackname):
     "Puts all EC2 nodes and RDS instances for given `stackname` into the 'started' state. Idempotent"

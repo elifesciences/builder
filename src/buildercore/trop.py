@@ -1342,8 +1342,6 @@ def external_dns_fastly(context):
                 TTL="60",
                 ResourceRecords=ip_addresses,
             )
-            msg = "2nd-level domains aliases are not supported yet by builder. See https://docs.fastly.com/guides/basic-configuration/using-fastly-with-apex-domains"
-            raise ValueError(msg)
 
         hostedzone = context['domain'] + "."
         cname = context['fastly']['dns']['cname']
