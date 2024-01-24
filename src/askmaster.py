@@ -8,17 +8,18 @@ from buildercore.command import remote_sudo
 from buildercore.core import stack_conn
 
 
+# ruff: noqa: W605
 def salt_master_cmd(cmd, module='cmd.run', minions=r'\*'):
-    """runs the given command on all connected minions.
-    given command must escape double quotes.
+    """runs the given command on all minions connected to the master server.
+    given `cmd` must escape double quotes.
 
     example `minions` strings:
 
-    '*'                 # all minions
-    'lax--*'            # all 'lax' minions
-    'lax--prod--*'      # all 'lax--prod' minions
-    '*--prod--*'        # all 'prod' minions
-    '*--prod--* or *--continuumtest--*' # all 'prod' and 'continuumtest' minions
+    "'\*'"                # all minions
+    "'lax--*'"            # all 'lax' minions
+    "'lax--prod--*'"      # all 'lax--prod' minions
+    "'*--prod--*'"        # all 'prod' minions
+    "'*--prod--* or *--continuumtest--*'" # all 'prod' and 'continuumtest' minions
     "--compound 'G@osrelease:18.04'" # 18.04+ minions only
 
     see: https://docs.saltproject.io/en/latest/topics/targeting/"""

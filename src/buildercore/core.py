@@ -499,7 +499,7 @@ def current_node_id():
     return env('nodes')[ec2_id]
 
 # lsh@2024-01-19: disabled as unused.
-# 'env' usage should be minimised. use an alternative if possible.
+# `env` usage should be minimised. use an alternative if possible.
 '''
 def current_ip():
     """Assumes it is called inside the 'workfn' of a 'stack_all_ec2_nodes'.

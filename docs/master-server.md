@@ -12,7 +12,7 @@ Deploy a new `master-server` production instance with:
 
     ./bldr launch:master-server,prod
 
-The first attempt will fail as the master server cannot access the [builder-private](https://github.com/elifesciences/builder-private-example) repo.
+The first attempt will fail as the master server cannot access the [builder-private](https://github.com/elifesciences/builder-private-example) repository.
 
 This can be done using [Github deploy keys](https://developer.github.com/guides/managing-deploy-keys/#deploy-keys).
 
