@@ -1367,10 +1367,9 @@ def render_eks(context, template):
     _render_eks_master(context, template)
     _render_eks_workers_security_group(context, template)
     _render_eks_workers_role(context, template)
+    _render_eks_workers_autoscaling_group(context, template)
     if lookup(context, 'eks.worker.managed', False):
         _render_eks_managed_node_group(context, template)
-    else:
-        _render_eks_workers_autoscaling_group(context, template)
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
