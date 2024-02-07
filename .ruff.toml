@@ -4,7 +4,7 @@ exclude = [
 
 ]
 
-select = [
+lint.select = [
     # ruff's default set of rules: https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
     #"E4", "E7", "E9", "F",
 
@@ -180,7 +180,7 @@ select = [
     "RUF",
 ]
 
-ignore = [
+lint.ignore = [
     "RUF005", # "Consider {expression} instead of concatenation". solution is unreadable and optimised for speed.
     "RUF012", # "Mutable class attributes should be annotated with `typing.ClassVar`". # code is not type annotated
     "E501", # "Line too long". long lines are ok, contortions to obey rule are not ok.
