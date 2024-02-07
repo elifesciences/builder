@@ -236,8 +236,10 @@ defaults:
             worker-subnet-id: subnet-07e912335040a0866
             worker-redundant-subnet-id: subnet-0110e7685debdb5eb
             worker:
-                # Whether to use managed node groups, or an ASG
+                # Whether to use managed node groups
                 managed: false
+                # What to use a self-managed ASG
+                self-managed: true
 
                 type: t2.small
                 # autoscaling group will never have fewer than these EC2 nodes
@@ -2150,6 +2152,8 @@ kubernetes-aws:
             eks:
                 version: '1.27'
                 worker:
+                    managed: false
+                    self-managed: true
                     type: t3.large
                     max-size: 34
                     desired-capacity: 16
@@ -2170,6 +2174,7 @@ kubernetes-aws:
                 version: '1.27'
                 worker:
                     managed: true
+                    self-managed: true
                     type: t3.large
                     max-size: 6
                     desired-capacity: 2
