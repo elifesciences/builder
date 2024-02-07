@@ -1062,6 +1062,59 @@ set -o xtrace
         'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
     })
 
+def _render_eks_managed_node_group(context, template):
+    autoscaling_group_tags = [
+        {
+            'key': k,
+            'value': v,
+            'propagate_at_launch': True,
+        }
+        for k, v in aws.generic_tags(context).items()
+    ]
+    autoscaling_group_tags.append({
+        'key': 'kubernetes.io/cluster/%s' % context['stackname'],
+        'value': 'owned',
+        'propagate_at_launch': True,
+    })
+
+    worker = {
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'node_group_name': '%s--worker' % context['stackname'],
+        'tag': autoscaling_group_tags,
+
+        'node_role_arn': '${aws_iam_role.worker.name}',
+
+        'subnet_ids': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
+
+        'instance_types': [context['eks']['worker']['type']],
+        'scaling_config':  {
+            'min_size': context['eks']['worker']['min-size'],
+            'max_size': context['eks']['worker']['max-size'],
+            'desired_capacity': context['eks']['worker']['desired-capacity'],
+        },
+        'update_config': {
+            'max_unavailable': 1,
+        },
+
+        # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+        # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+        'depends_on': [
+            '${aws_iam_role_policy_attachment.worker_connect',
+            '${aws_iam_role_policy_attachment.worker_cni',
+            '${aws_iam_role_policy_attachment.worker_ecr',
+            '${aws_iam_role_policy_attachment.worker_efs',
+        ],
+
+        'lifecycle': {'ignore_changes': ['scaling_config[0].desired_size'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
+    }
+
+
+    root_volume_size = lookup(context, 'eks.worker.root.size', None)
+    if root_volume_size:
+        worker['disk_size'] = root_volume_size
+
+    template.populate_resource('aws_eks_node_group', 'worker', block=worker)
+
 def _render_eks_workers_role(context, template):
     template.populate_resource('aws_iam_role', 'worker', block={
         'name': '%s--AmazonEKSWorkerRole' % context['stackname'],
@@ -1314,7 +1367,10 @@ def render_eks(context, template):
     _render_eks_master(context, template)
     _render_eks_workers_security_group(context, template)
     _render_eks_workers_role(context, template)
-    _render_eks_workers_autoscaling_group(context, template)
+    if lookup(context, 'eks.worker.managed', False):
+        _render_eks_managed_node_group(context, template)
+    else:
+        _render_eks_workers_autoscaling_group(context, template)
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
