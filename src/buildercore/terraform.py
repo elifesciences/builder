@@ -1090,7 +1090,7 @@ def _render_eks_managed_node_group(context, template):
         'scaling_config':  {
             'min_size': context['eks']['worker']['min-size'],
             'max_size': context['eks']['worker']['max-size'],
-            'desired_capacity': context['eks']['worker']['desired-capacity'],
+            'desired_size': context['eks']['worker']['desired-capacity'],
         },
         'update_config': {
             'max_unavailable': 1,
