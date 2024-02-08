@@ -1099,10 +1099,10 @@ def _render_eks_managed_node_group(context, template):
         # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
         # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
         'depends_on': [
-            '${aws_iam_role_policy_attachment.worker_connect',
-            '${aws_iam_role_policy_attachment.worker_cni',
-            '${aws_iam_role_policy_attachment.worker_ecr',
-            '${aws_iam_role_policy_attachment.worker_efs',
+            '${aws_iam_role_policy_attachment.worker_connect}',
+            '${aws_iam_role_policy_attachment.worker_cni}',
+            '${aws_iam_role_policy_attachment.worker_ecr}',
+            '${aws_iam_role_policy_attachment.worker_efs}',
         ],
 
         'lifecycle': {'ignore_changes': ['scaling_config[0].desired_size'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
