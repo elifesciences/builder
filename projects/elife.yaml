@@ -4,7 +4,7 @@ defaults:
         # distinguishes this data from other types and versions of configuration data
         type: project
         version: 1
-    salt: "3006" # the version of Salt to install on ec2 instances
+    salt: "3006.5" # the version of Salt to install on ec2 instances. see also: aws-alt.snsalt
     terraform:
         # the version of Terraform this project requires
         version: "1.1.9"
@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-02be81e0aa6b6b4ed # GENERATED created from basebox--2004
+            ami: ami-08d0e948516bdfee8 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -407,7 +407,7 @@ defaults:
         snsalt:
             description: uses the next version of Salt to test formula for problems upgrading. OS agnostic, isolated from the master-server and any external pillar data (Vault)
             ec2:
-                salt: '3006'
+                salt: '3006.5'
                 masterless: True
 
         # lsh@2022-07: remove this alt-config once all formula Jenkinsfiles are updated
@@ -1396,6 +1396,8 @@ api-dummy:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
@@ -1551,6 +1553,8 @@ personalised-covers:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         s3:
@@ -1592,6 +1596,8 @@ observer:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
@@ -1847,6 +1853,8 @@ redirects:
                 - 22
                 - 80
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
