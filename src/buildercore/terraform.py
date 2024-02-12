@@ -1072,7 +1072,7 @@ def _render_eks_managed_node_group(context, template):
         'node_group_name': '%s--worker' % context['stackname'],
         'tags': managed_node_tags,
 
-        'node_role_arn': '${aws_iam_role.worker.name}',
+        'node_role_arn': '${aws_iam_role.worker.arn}',
 
         'subnet_ids': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
 
