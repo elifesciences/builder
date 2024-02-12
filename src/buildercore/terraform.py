@@ -112,19 +112,36 @@ IRSA_POLICY_TEMPLATES = {
                     "autoscaling:DescribeLaunchConfigurations",
                     "autoscaling:DescribeTags",
                     "ec2:DescribeInstanceTypes",
-                    "ec2:DescribeLaunchTemplateVersions"
+                    "ec2:DescribeLaunchTemplateVersions",
+                    "ec2:DescribeImages",
+                    "ec2:GetInstanceTypesFromInstanceRequirements",
+                    "eks:DescribeNodegroup",
                 ],
-                "Resource": ["*"]
+                "Resource": "*"
             },
             {
                 "Effect": "Allow",
                 "Action": [
                     "autoscaling:SetDesiredCapacity",
-                    "autoscaling:TerminateInstanceInAutoScalingGroup"
+                    "autoscaling:TerminateInstanceInAutoScalingGroup",
                 ],
                 "Resource": [
                     "${aws_autoscaling_group.worker.arn}",
                 ],
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "autoscaling:SetDesiredCapacity",
+                    "autoscaling:TerminateInstanceInAutoScalingGroup",
+                ],
+                "Resource": "*",
+                "Condition": {
+                    "StringEquals": {
+                        "aws:ResourceTag/k8s.io/cluster-autoscaler/enabled": "true",
+                        "aws:ResourceTag/k8s.io/cluster-autoscaler/%s" % stackname: "owned"
+                    }
+                }
             },
         ],
     },
