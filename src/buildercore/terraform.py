@@ -1068,6 +1068,16 @@ set -o xtrace
         'value': 'owned',
         'propagate_at_launch': True,
     })
+    autoscaling_group_tags.append({
+        'key': 'k8s.io/cluster-autoscaler/enabled',
+        'value': 'true',
+        'propagate_at_launch': True,
+    })
+    autoscaling_group_tags.append({
+        'key': 'k8s.io/cluster-autoscaler/%s' % context['stackname'],
+        'value': 'owned',
+        'propagate_at_launch': True,
+    })
     template.populate_resource('aws_autoscaling_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'launch_configuration': '${aws_launch_configuration.worker.id}',

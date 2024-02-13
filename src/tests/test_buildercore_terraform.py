@@ -1232,6 +1232,16 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'value': 'owned',
                         'propagate_at_launch': True,
                     },
+                    {
+                        'key': 'k8s.io/cluster-autoscaler/enabled',
+                        'value': 'true',
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'k8s.io/cluster-autoscaler/project-with-eks--%s' % self.environment,
+                        'value': 'owned',
+                        'propagate_at_launch': True,
+                    },
                 ],
                 'lifecycle': {'ignore_changes': []},
             }
