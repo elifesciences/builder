@@ -1100,9 +1100,7 @@ def _render_eks_managed_node_group(context, template):
 
     template.populate_resource('aws_launch_template', 'worker', block=launch_template)
 
-    managed_node_tags = {
-        k: v for k, v in aws.generic_tags(context).items()
-    }
+    managed_node_tags = dict(aws.generic_tags(context).items())
 
     worker = {
         'cluster_name': '${aws_eks_cluster.main.name}',
