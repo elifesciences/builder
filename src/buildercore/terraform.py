@@ -1080,6 +1080,30 @@ set -o xtrace
     })
 
 def _render_eks_managed_node_group(context, template):
+
+    launch_template = {
+        'network_interfaces': {
+            'associate_public_ip_address': lookup(context, 'eks.worker.assign-public-ip'),
+            'security_groups': ['${aws_security_group.worker.id}'],
+        },
+        'name_prefix': '%s--worker' % context['stackname'],
+        'block_device_mappings': {
+            'device_name': '/dev/xvda',
+            'ebs': {
+                'volume_type': 'gp3',
+                'iops': 3000,
+                'throughput': 125,
+                'volume_size': 20,
+            }
+        }
+    }
+
+    root_volume_size = lookup(context, 'eks.worker.root.size', None)
+    if root_volume_size:
+        launch_template['block_device_mappings']['volume_size'] = root_volume_size
+
+    template.populate_resource('aws_launch_template', 'worker', block=launch_template)
+
     managed_node_tags = {
         k: v for k, v in aws.generic_tags(context).items()
     }
@@ -1102,6 +1126,10 @@ def _render_eks_managed_node_group(context, template):
         'update_config': {
             'max_unavailable': 1,
         },
+        'launch_template': {
+            'id': "${aws_launch_template.worker.id}",
+            'version': "${aws_launch_template.worker.latest_version}"
+        },
 
         # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
         # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
@@ -1116,11 +1144,6 @@ def _render_eks_managed_node_group(context, template):
 
     if context['eks']['efs']:
         worker['depends_on'].push('aws_iam_role_policy_attachment.worker_efs')
-
-
-    root_volume_size = lookup(context, 'eks.worker.root.size', None)
-    if root_volume_size:
-        worker['disk_size'] = root_volume_size
 
     template.populate_resource('aws_eks_node_group', 'worker', block=worker)
 
