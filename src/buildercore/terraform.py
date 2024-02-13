@@ -125,16 +125,6 @@ IRSA_POLICY_TEMPLATES = {
                     "autoscaling:SetDesiredCapacity",
                     "autoscaling:TerminateInstanceInAutoScalingGroup",
                 ],
-                "Resource": [
-                    "${aws_autoscaling_group.worker.arn}",
-                ],
-            },
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "autoscaling:SetDesiredCapacity",
-                    "autoscaling:TerminateInstanceInAutoScalingGroup",
-                ],
                 "Resource": "*",
                 "Condition": {
                     "StringEquals": {
