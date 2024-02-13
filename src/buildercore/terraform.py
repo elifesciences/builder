@@ -1093,14 +1093,10 @@ def _render_eks_managed_node_group(context, template):
                 'volume_type': 'gp3',
                 'iops': 3000,
                 'throughput': 125,
-                'volume_size': 20,
+                'volume_size': lookup(context, 'eks.worker.root.size', 20),
             }
         }
     }
-
-    root_volume_size = lookup(context, 'eks.worker.root.size', None)
-    if root_volume_size:
-        launch_template['block_device_mappings']['volume_size'] = root_volume_size
 
     template.populate_resource('aws_launch_template', 'worker', block=launch_template)
 
