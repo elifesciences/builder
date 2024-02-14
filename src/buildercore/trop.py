@@ -154,12 +154,17 @@ def convert_ports_dict_to_troposphere__ipv6(ports):
         })
     return [_port_to_dict(port, configuration) for port, configuration in ports.items()]
 
-def security_group(group_id, vpc_id, ingress_data, ipv6=False, description=""):
-    if ipv6:
+def security_group(group_id, vpc_id, ingress_data, ipv4, ipv6, description=""):
+    if ipv4 and ipv6:
         ingress = convert_ports_dict_to_troposphere(ingress_data)
         ingress += convert_ports_dict_to_troposphere__ipv6(ingress_data)
-    else:
+    elif ipv4:
         ingress = convert_ports_dict_to_troposphere(ingress_data)
+    elif ipv6:
+        ingress = convert_ports_dict_to_troposphere__ipv6(ingress_data)
+    else:
+        msg = "programming error. both 'ipv4' and 'ipv6' cannot be false"
+        raise AssertionError(msg)
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
@@ -290,12 +295,16 @@ def ec2instance(context, node):
     buildvars_serialization = bvars.encode_bvars(buildvars)
 
     odd = node % 2 == 1
-    subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
+    ipv4_subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
+    ipv6_subnet_id = lu('aws.ipv6-subnet-id') if odd else lu('aws.ipv6-redundant-subnet-id')
 
     if not odd and lu('ec2.type').startswith('t3'):
         # t3.* instances cannot be created in redundant-subnet-id-1 (us-east-1e)
         # so we use redundant-subnet-id-2 (us-east-1a)
-        subnet_id = lu('aws.redundant-subnet-id-2')
+        ipv4_subnet_id = lu('aws.redundant-subnet-id-2')
+        ipv6_subnet_id = lu('aws.ipv6-redundant-subnet-id-2')
+
+    subnet_id = ipv6_subnet_id if lu('aws.use-ipv6') else ipv4_subnet_id
 
     with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment')) as fh:
         clean_server_script = fh.read()
@@ -312,14 +321,14 @@ echo %s > /etc/build-vars.json.b64
         "InstanceType": lu('ec2.type'),
         "KeyName": Ref(KEYPAIR),
         "SecurityGroupIds": [Ref(SECURITY_GROUP_TITLE)],
-        "SubnetId": subnet_id, # "subnet-1d4eb46a"
+        "SubnetId": subnet_id,
         "Tags": instance_tags(context, node),
         "UserData": bash_script,
     }
 
-    if lu('aws.subnet-ipv6', False):
+    if lu('aws.use-ipv6', False):
         project_ec2.update({
-            "Ipv6AddressCount": 1,
+            "Ipv6AddressCount": 1, # "The number of IPv6 addresses to associate with the primary network interface."
         })
 
     if lu('ec2.cpu-credits') != 'standard':
@@ -407,7 +416,7 @@ def external_dns_ec2_single(context):
         Name=context['full_hostname'] + '.',
         Type="A",
         TTL="60",
-        ResourceRecords=[GetAtt(EC2_TITLE, "PublicIp")],
+        ResourceRecords=[GetAtt(EC2_TITLE, "PublicIp")], # todo
     )
     return dns_record
 
@@ -432,12 +441,12 @@ def ec2_security(context):
     security_group_ports = _convert_ports_to_dictionary(security_group_data)
     ingress = merge_ports(ec2_ports, security_group_ports)
 
-    ipv6 = context['aws'].get('subnet-ipv6', False)
     return security_group(
         SECURITY_GROUP_TITLE,
         context['aws']['vpc-id'],
         ingress,
-        ipv6
+        context['aws']['use-ipv4'],
+        context['aws']['use-ipv6'],
     )
 
 def render_ec2(context, template):
@@ -447,7 +456,6 @@ def render_ec2(context, template):
     suppressed = context['ec2'].get('suppressed', [])
 
     ec2_instances = {}
-    ipv6 = context['aws'].get('subnet-ipv6', False)
     for node in range(1, context['ec2']['cluster-size'] + 1):
         if node in suppressed:
             continue
@@ -463,14 +471,12 @@ def render_ec2(context, template):
         outputs = [
             mkoutput("AZ%d" % node, "Availability Zone of the newly created EC2 instance", (EC2_TITLE_NODE % node, "AvailabilityZone")),
             mkoutput("InstanceId%d" % node, "InstanceId of the newly created EC2 instance", Ref(EC2_TITLE_NODE % node)),
-            #mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
-            #mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
         ]
-        if not ipv6:
-            outputs.extend([
+        if context['aws']['use-ipv4']:
+            outputs += [
                 mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
                 mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
-            ])
+            ]
         lmap(template.add_output, outputs)
 
     # all ec2 nodes in a cluster share the same keypair
@@ -530,7 +536,7 @@ def render_ec2_dns(context, template):
             Name=context['ext_node_hostname'] % primary,
             Type="A",
             TTL="60",
-            ResourceRecords=[GetAtt(EC2_TITLE_NODE % primary, "PublicIp")],
+            ResourceRecords=[GetAtt(EC2_TITLE_NODE % primary, "PublicIp")], # todo
         )
         template.add_resource(dns_record)
 
@@ -561,10 +567,11 @@ def rds_security(context):
     }
     ingress_data = [engine_ports[context['rds']['engine'].lower()]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    ipv6 = False
+    ipv4, ipv6 = True, False
     return security_group("VPCSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
+                          ipv4,
                           ipv6,
                           "RDS DB security group")
 
@@ -965,11 +972,12 @@ def render_elb(context, template, ec2_instances):
         Ref(ELB_TITLE))
     )
 
-    ipv6 = False
+    ipv4, ipv6 = True, False
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
         context['aws']['vpc-id'],
         _convert_ports_to_dictionary(elb_ports),
+        ipv4,
         ipv6
     ))
 
@@ -1052,11 +1060,12 @@ def render_alb(context, template, ec2_instances):
     alb_security_group_id = ALB_TITLE + "SecurityGroup"
     alb_ports = [attr_map['port'] for attr_map in context['alb']['listeners'].values()]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
-    ipv6 = False
+    ipv4, ipv6 = True, False
     _lb_security_group = security_group(
         alb_security_group_id,
         context['aws']['vpc-id'],
         alb_ports,
+        ipv4,
         ipv6
     )
 
@@ -1408,10 +1417,11 @@ def elasticache_security_group(context):
     }
     ingress_data = [engine_ports[context['elasticache']['engine']]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    ipv6 = False
+    ipv4, ipv6 = True, False
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
                           context['aws']['vpc-id'],
                           ingress_ports,
+                          ipv4,
                           ipv6,
                           "ElastiCache security group")
 
@@ -1494,10 +1504,11 @@ def docdb_security(context):
     because this is dealt with in the subnet configuration"""
     ingress_data = [27017] # default MongoDB port
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    ipv6 = False
+    ipv4, ipv6 = True, False
     return security_group("DocumentDBSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
+                          ipv4,
                           ipv6,
                           "DocumentDB security group")
 
