@@ -1265,6 +1265,15 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'throughput': 125,
                         'volume_size': 40,
                     }
+                },
+                'tag_specifications': {
+                    'resource_type': 'instance',
+                    'tags': {
+                        'Cluster': 'project-with-eks--%s' % self.environment,
+                        'Environment': self.environment,
+                        'Name': 'project-with-eks--%s' % self.environment,
+                        'Project': 'project-with-eks'
+                    }
                 }
             }
         )
