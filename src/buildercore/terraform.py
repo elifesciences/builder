@@ -112,19 +112,26 @@ IRSA_POLICY_TEMPLATES = {
                     "autoscaling:DescribeLaunchConfigurations",
                     "autoscaling:DescribeTags",
                     "ec2:DescribeInstanceTypes",
-                    "ec2:DescribeLaunchTemplateVersions"
+                    "ec2:DescribeLaunchTemplateVersions",
+                    "ec2:DescribeImages",
+                    "ec2:GetInstanceTypesFromInstanceRequirements",
+                    "eks:DescribeNodegroup",
                 ],
-                "Resource": ["*"]
+                "Resource": "*"
             },
             {
                 "Effect": "Allow",
                 "Action": [
                     "autoscaling:SetDesiredCapacity",
-                    "autoscaling:TerminateInstanceInAutoScalingGroup"
+                    "autoscaling:TerminateInstanceInAutoScalingGroup",
                 ],
-                "Resource": [
-                    "${aws_autoscaling_group.worker.arn}",
-                ],
+                "Resource": "*",
+                "Condition": {
+                    "StringEquals": {
+                        "aws:ResourceTag/k8s.io/cluster-autoscaler/enabled": "true",
+                        "aws:ResourceTag/k8s.io/cluster-autoscaler/%s" % stackname: "owned"
+                    }
+                }
             },
         ],
     },
@@ -1051,6 +1058,16 @@ set -o xtrace
         'value': 'owned',
         'propagate_at_launch': True,
     })
+    autoscaling_group_tags.append({
+        'key': 'k8s.io/cluster-autoscaler/enabled',
+        'value': 'true',
+        'propagate_at_launch': True,
+    })
+    autoscaling_group_tags.append({
+        'key': 'k8s.io/cluster-autoscaler/%s' % context['stackname'],
+        'value': 'owned',
+        'propagate_at_launch': True,
+    })
     template.populate_resource('aws_autoscaling_group', 'worker', block={
         'name': '%s--worker' % context['stackname'],
         'launch_configuration': '${aws_launch_configuration.worker.id}',
@@ -1061,6 +1078,71 @@ set -o xtrace
         'tag': autoscaling_group_tags,
         'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
     })
+
+def _render_eks_managed_node_group(context, template):
+    managed_node_tags = dict(aws.generic_tags(context).items())
+
+    launch_template = {
+        'network_interfaces': {
+            'associate_public_ip_address': lookup(context, 'eks.worker.assign-public-ip'),
+            'security_groups': ['${aws_security_group.worker.id}'],
+        },
+        'name_prefix': '%s--worker' % context['stackname'],
+        'block_device_mappings': {
+            'device_name': '/dev/xvda',
+            'ebs': {
+                'volume_type': 'gp3',
+                'iops': 3000,
+                'throughput': 125,
+                'volume_size': lookup(context, 'eks.worker.root.size', 20),
+            }
+        },
+        'tag_specifications': {
+            'resource_type': 'instance',
+            'tags': managed_node_tags,
+        },
+    }
+
+    template.populate_resource('aws_launch_template', 'worker', block=launch_template)
+
+    node_group = {
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'node_group_name': '%s--worker' % context['stackname'],
+        'tags': managed_node_tags,
+
+        'node_role_arn': '${aws_iam_role.worker.arn}',
+
+        'subnet_ids': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
+
+        'instance_types': [context['eks']['worker']['type']],
+        'scaling_config':  {
+            'min_size': context['eks']['worker']['min-size'],
+            'max_size': context['eks']['worker']['max-size'],
+            'desired_size': context['eks']['worker']['desired-capacity'],
+        },
+        'update_config': {
+            'max_unavailable': 1,
+        },
+        'launch_template': {
+            'id': "${aws_launch_template.worker.id}",
+            'version': "${aws_launch_template.worker.latest_version}"
+        },
+
+        # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+        # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+        'depends_on': [
+            'aws_iam_role_policy_attachment.worker_connect',
+            'aws_iam_role_policy_attachment.worker_cni',
+            'aws_iam_role_policy_attachment.worker_ecr',
+        ],
+
+        'lifecycle': {'ignore_changes': ['scaling_config[0].desired_size'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
+    }
+
+    if context['eks']['efs']:
+        node_group['depends_on'].push('aws_iam_role_policy_attachment.worker_efs')
+
+    template.populate_resource('aws_eks_node_group', 'worker', block=node_group)
 
 def _render_eks_workers_role(context, template):
     template.populate_resource('aws_iam_role', 'worker', block={
@@ -1314,7 +1396,10 @@ def render_eks(context, template):
     _render_eks_master(context, template)
     _render_eks_workers_security_group(context, template)
     _render_eks_workers_role(context, template)
-    _render_eks_workers_autoscaling_group(context, template)
+    if lookup(context, 'eks.worker.self-managed', True):
+        _render_eks_workers_autoscaling_group(context, template)
+    if lookup(context, 'eks.worker.managed', False):
+        _render_eks_managed_node_group(context, template)
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)

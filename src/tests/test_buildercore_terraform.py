@@ -929,6 +929,8 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
         self.assertIn('aws_launch_configuration', terraform_template['resource'].keys())
         self.assertIn('aws_autoscaling_group', terraform_template['resource'].keys())
+        self.assertIn('aws_launch_template', terraform_template['resource'].keys())
+        self.assertIn('aws_eks_node_group', terraform_template['resource'].keys())
         self.assertIn('kubernetes_config_map', terraform_template['resource'].keys())
         self.assertIn('data', terraform_template.keys())
         self.assertIn('aws_ami', terraform_template['data'].keys())
@@ -1230,7 +1232,92 @@ class TestBuildercoreTerraform(base.BaseCase):
                         'value': 'owned',
                         'propagate_at_launch': True,
                     },
+                    {
+                        'key': 'k8s.io/cluster-autoscaler/enabled',
+                        'value': 'true',
+                        'propagate_at_launch': True,
+                    },
+                    {
+                        'key': 'k8s.io/cluster-autoscaler/project-with-eks--%s' % self.environment,
+                        'value': 'owned',
+                        'propagate_at_launch': True,
+                    },
                 ],
+                'lifecycle': {'ignore_changes': []},
+            }
+        )
+
+
+        self.assertIn('worker', terraform_template['resource']['aws_launch_template'])
+        self.assertEqual(
+            terraform_template['resource']['aws_launch_template']['worker'],
+            {
+                'network_interfaces': {
+                    'associate_public_ip_address': True,
+                    'security_groups': ['${aws_security_group.worker.id}'],
+                },
+                'name_prefix': 'project-with-eks--%s--worker' % self.environment,
+                'block_device_mappings': {
+                    'device_name': '/dev/xvda',
+                    'ebs': {
+                        'volume_type': 'gp3',
+                        'iops': 3000,
+                        'throughput': 125,
+                        'volume_size': 40,
+                    }
+                },
+                'tag_specifications': {
+                    'resource_type': 'instance',
+                    'tags': {
+                        'Cluster': 'project-with-eks--%s' % self.environment,
+                        'Environment': self.environment,
+                        'Name': 'project-with-eks--%s' % self.environment,
+                        'Project': 'project-with-eks'
+                    }
+                }
+            }
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_eks_node_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_eks_node_group']['worker'],
+            {
+
+                'cluster_name': '${aws_eks_cluster.main.name}',
+                'node_group_name': "project-with-eks--%s--worker" % self.environment,
+                'tags': {
+                    'Project': 'project-with-eks',
+                    'Environment': self.environment,
+                    'Name': 'project-with-eks--%s' % self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
+                },
+
+                'node_role_arn': '${aws_iam_role.worker.arn}',
+
+                'subnet_ids': ['subnet-c3c3c3c3', 'subnet-d4d4d4d4'],
+
+                'instance_types': ['t2.small'],
+                'scaling_config':  {
+                    'min_size': 1,
+                    'max_size': 3,
+                    'desired_size': 3,
+                },
+                'update_config': {
+                    'max_unavailable': 1,
+                },
+                'launch_template': {
+                    'id': "${aws_launch_template.worker.id}",
+                    'version': "${aws_launch_template.worker.latest_version}"
+                },
+
+                # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+                # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+                'depends_on': [
+                    'aws_iam_role_policy_attachment.worker_connect',
+                    'aws_iam_role_policy_attachment.worker_cni',
+                    'aws_iam_role_policy_attachment.worker_ecr',
+                ],
+
                 'lifecycle': {'ignore_changes': []},
             }
         )

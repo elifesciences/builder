@@ -963,6 +963,8 @@ project-with-eks:
             worker-subnet-id: subnet-c3c3c3c3
             worker-redundant-subnet-id: subnet-d4d4d4d4
             worker:
+                managed: true
+                self-managed: true
                 type: t2.small
                 desired-capacity: 3
                 min-size: 1
