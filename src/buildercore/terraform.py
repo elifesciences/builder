@@ -1080,6 +1080,7 @@ set -o xtrace
     })
 
 def _render_eks_managed_node_group(context, template):
+    managed_node_tags = dict(aws.generic_tags(context).items())
 
     launch_template = {
         'network_interfaces': {
@@ -1095,14 +1096,16 @@ def _render_eks_managed_node_group(context, template):
                 'throughput': 125,
                 'volume_size': lookup(context, 'eks.worker.root.size', 20),
             }
-        }
+        },
+        'tag_specifications': {
+            'resource_type': 'instance',
+            'tags': managed_node_tags,
+        },
     }
 
     template.populate_resource('aws_launch_template', 'worker', block=launch_template)
 
-    managed_node_tags = dict(aws.generic_tags(context).items())
-
-    worker = {
+    node_group = {
         'cluster_name': '${aws_eks_cluster.main.name}',
         'node_group_name': '%s--worker' % context['stackname'],
         'tags': managed_node_tags,
@@ -1139,7 +1142,7 @@ def _render_eks_managed_node_group(context, template):
     if context['eks']['efs']:
         worker['depends_on'].push('aws_iam_role_policy_attachment.worker_efs')
 
-    template.populate_resource('aws_eks_node_group', 'worker', block=worker)
+    template.populate_resource('aws_eks_node_group', 'worker', block=node_group)
 
 def _render_eks_workers_role(context, template):
     template.populate_resource('aws_iam_role', 'worker', block={
