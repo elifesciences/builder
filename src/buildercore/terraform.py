@@ -1140,7 +1140,7 @@ def _render_eks_managed_node_group(context, template):
     }
 
     if context['eks']['efs']:
-        worker['depends_on'].push('aws_iam_role_policy_attachment.worker_efs')
+        node_group['depends_on'].push('aws_iam_role_policy_attachment.worker_efs')
 
     template.populate_resource('aws_eks_node_group', 'worker', block=node_group)
 
