@@ -384,7 +384,7 @@ def update_dns(stackname):
     LOG.info("External full hostname: %s", context['full_hostname'])
     if context['full_hostname']:
         for node in nodes:
-            _update_dns_a_record(context['domain'], context['full_hostname'], core.pick_ip_address_obj(node)) # TODO: I think ipv6 records require an AAAA
+            _update_dns_a_record(context['domain'], context['full_hostname'], core.pick_ip_address_obj(node))
 
 def _delete_dns_a_record(zone_name, name):
     """deletes a Route53 DNS 'A' record `name` in hosted zone `zone_name`.

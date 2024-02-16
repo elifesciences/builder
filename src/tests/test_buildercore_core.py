@@ -192,7 +192,7 @@ class TestCoreNewProjectData(base.BaseCase):
                 expected_data = json.load(fh)
             project_data = project.project_data(pname)
             # cp /tmp/dummy*-project.json src/tests/fixtures/
-            #json.dump(project_data, open('/tmp/%s-project.json' % pname, 'w'), indent=4)
+            json.dump(project_data, open('/tmp/%s-project.json' % pname, 'w'), indent=4)
             project_data = utils.remove_ordereddict(project_data)
             self.assertEqual(expected_data, project_data)
 

@@ -96,26 +96,26 @@ defaults:
         region: us-east-1
         vpc-id: vpc-78a2071d
 
-        # project supports IPv4 or IPv6 or both.
-        # when both are true and circumstances forbid it (ec2 subnets), prefer IPv6
-        use-ipv4: true  # create DNS A records, IPv4 CIDRs, use IPv4 subnets
-        use-ipv6: false # create DNS AAAA records, IPv6 CIDRs, use IPv6 subnets
+        # project supports IPv6.
+        use-ipv6: false # create DNS AAAA records, add IPv6 security group CIDRs
 
         subnet-id: subnet-1d4eb46a # elife-public-subnet
-        subnet-cidr: '10.0.2.0/24'
+        subnet-cidr: '10.0.2.0/24' # *internal* subnet-cidr, always ipv4, used with RDS 
         availability-zone: us-east-1d
 
-        ipv6-subnet-id: subnet-053293a57277060d8 # ipv6-elife-public-subnet
-        ipv6-subnet-cidr: 2600:1f18:1403:3801::/64
-        ipv6-availability-zone: us-east-1d
+        # ipv6 alternate
+        #subnet-id: subnet-0866e00eb5b9e27d4 # ipv6-elife-public-subnet
+        #subnet-cidr: '10.0.15.0/24' # contradiction? no! subnet is not *pure* ipv6. internally it uses ipv4.
+        #availability-zone: us-east-1d
 
         redundant-subnet-id: subnet-7a31dd46 # elife-public-subnet-2
         redundant-subnet-cidr: '10.0.3.0/24'
         redundant-availability-zone: us-east-1e
 
-        ipv6-redundant-subnet-id: subnet-0b74ddccebdb57af0 # ipv6-elife-public-subnet-2
-        ipv6-redundant-subnet-cidr: 2600:1f18:1403:3802::/64
-        ipv6-redundant-availability-zone: us-east-1e
+        # ipv6 alternate
+        #redundant-subnet-id: subnet-02000374730149bf6 # ipv6-elife-public-subnet-2
+        #redundant-subnet-cidr: '10.0.16.0/24'
+        #redundant-availability-zone: us-east-1e
 
         # lsh@2022-06-27: t3.* instance types not available in us-east-1e
         # - https://aws.amazon.com/premiumsupport/knowledge-center/ec2-instance-type-not-supported-az-error/
@@ -123,9 +123,10 @@ defaults:
         redundant-subnet-cidr-2: '10.0.10.0/24'
         redundant-availability-zone-2: us-east-1a
 
-        ipv6-redundant-subnet-id-2: subnet-064d0669620c95531 # ipv6-elife-public-subnet-3
-        ipv6-redundant-subnet-cidr-2: 2600:1f18:1403:3803::/64
-        ipv6-redundant-availability-zone-2: us-east-1a
+        # ipv6 alternate
+        #redundant-subnet-id-2: subnet-03a5217409cbe6633 # ipv6-elife-public-subnet-3
+        #redundant-subnet-cidr-2: 10.0.17.0/24
+        #redundant-availability-zone-2: us-east-1a
 
         rds:
             multi-az: false
@@ -464,8 +465,11 @@ basebox:
                 - 22
     aws-alt:
         ipv6test:
-            vpc-id: vpc-78a2071d
             use-ipv6: true
+            subnet-id: subnet-0866e00eb5b9e27d4 # ipv6-elife-public-subnet
+            subnet-cidr: '10.0.15.0/24'
+            ec2:
+                ami: ami-08d0e948516bdfee8 # GENERATED created from basebox--2004
 
     vagrant: {}
 
@@ -1857,10 +1861,6 @@ redirects:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        ipv6test:
-            subnet-id: subnet-0a64914576b10c3da # dual-ip-test-subnet.
-            use-ipv6: true
-
         prod:
             ec2:
                 # lsh@2022-06-27: changed default instance from t2.nano to t3.micro

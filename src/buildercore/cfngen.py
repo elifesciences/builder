@@ -332,32 +332,19 @@ def build_context_aws(pdata, context):
         'account-id',
         'vpc-id',
 
-        'use-ipv4',
         'use-ipv6',
 
         'subnet-id',
         'subnet-cidr',
         'availability-zone',
 
-        'ipv6-subnet-id',
-        'ipv6-subnet-cidr',
-        'ipv6-availability-zone',
-
         'redundant-subnet-id',
         'redundant-subnet-cidr',
         'redundant-availability-zone',
 
-        'ipv6-redundant-subnet-id',
-        'ipv6-redundant-subnet-cidr',
-        'ipv6-redundant-availability-zone',
-
         'redundant-subnet-id-2',
         'redundant-subnet-cidr-2',
         'redundant-availability-zone-2',
-
-        'ipv6-redundant-subnet-id-2',
-        'ipv6-redundant-subnet-cidr-2',
-        'ipv6-redundant-availability-zone-2',
     ]
     context['aws'] = subdict(pdata['aws'], keepers)
     return context

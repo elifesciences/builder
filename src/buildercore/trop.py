@@ -134,37 +134,32 @@ def merge_ports(ports, another):
     ports.update(another)
     return ports
 
-def convert_ports_dict_to_troposphere(ports):
-    def _port_to_dict(port, configuration):
-        return ec2.SecurityGroupRule(**{
+def convert_ports_dict_to_troposphere(ports, ipv6=False):
+    foo = []
+    default_ipv4_cidr_ip = '0.0.0.0/0'
+    default_ipv6_cidr_ip = '::/0'
+    for port, configuration in ports.items():
+        cidr_ip = configuration.get('cidr-ip')
+        data = {
             'FromPort': port,
             'ToPort': configuration.get('guest', port),
             'IpProtocol': configuration.get('protocol', 'tcp'),
-            'CidrIp': configuration.get('cidr-ip', '0.0.0.0/0'),
-        })
-    return [_port_to_dict(port, configuration) for port, configuration in ports.items()]
+            'CidrIp': cidr_ip or default_ipv4_cidr_ip,
+        }
+        sg = ec2.SecurityGroupRule(**data)
+        foo.append(sg)
 
-def convert_ports_dict_to_troposphere__ipv6(ports):
-    def _port_to_dict(port, configuration):
-        return ec2.SecurityGroupRule(**{
-            'FromPort': port,
-            'ToPort': configuration.get('guest', port),
-            'IpProtocol': configuration.get('protocol', 'tcp'),
-            'CidrIpv6': configuration.get('cidr-ip', '::/0'),
-        })
-    return [_port_to_dict(port, configuration) for port, configuration in ports.items()]
+        # if we're using using ipv6 and if the CIDR hasn't been specified,
+        # add another security group with the ipv6 equivalent.
+        if ipv6 and cidr_ip is None:
+            del data['CidrIp']
+            data['CidrIpv6'] = default_ipv6_cidr_ip
+            sg2 = ec2.SecurityGroupRule(**data)
+            foo.append(sg2)
+    return foo
 
-def security_group(group_id, vpc_id, ingress_data, ipv4, ipv6, description=""):
-    if ipv4 and ipv6:
-        ingress = convert_ports_dict_to_troposphere(ingress_data)
-        ingress += convert_ports_dict_to_troposphere__ipv6(ingress_data)
-    elif ipv4:
-        ingress = convert_ports_dict_to_troposphere(ingress_data)
-    elif ipv6:
-        ingress = convert_ports_dict_to_troposphere__ipv6(ingress_data)
-    else:
-        msg = "programming error. both 'ipv4' and 'ipv6' cannot be false"
-        raise AssertionError(msg)
+def security_group(group_id, vpc_id, ingress_data, ipv6, description=""):
+    ingress = convert_ports_dict_to_troposphere(ingress_data, ipv6)
     return ec2.SecurityGroup(group_id, **{
         'GroupDescription': description or 'security group',
         'VpcId': vpc_id,
@@ -295,16 +290,12 @@ def ec2instance(context, node):
     buildvars_serialization = bvars.encode_bvars(buildvars)
 
     odd = node % 2 == 1
-    ipv4_subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
-    ipv6_subnet_id = lu('aws.ipv6-subnet-id') if odd else lu('aws.ipv6-redundant-subnet-id')
+    subnet_id = lu('aws.subnet-id') if odd else lu('aws.redundant-subnet-id')
 
     if not odd and lu('ec2.type').startswith('t3'):
         # t3.* instances cannot be created in redundant-subnet-id-1 (us-east-1e)
         # so we use redundant-subnet-id-2 (us-east-1a)
-        ipv4_subnet_id = lu('aws.redundant-subnet-id-2')
-        ipv6_subnet_id = lu('aws.ipv6-redundant-subnet-id-2')
-
-    subnet_id = ipv6_subnet_id if lu('aws.use-ipv6') else ipv4_subnet_id
+        subnet_id = lu('aws.redundant-subnet-id-2')
 
     with open(join(config.SCRIPTS_PATH, '.clean-server.sh.fragment')) as fh:
         clean_server_script = fh.read()
@@ -445,7 +436,6 @@ def ec2_security(context):
         SECURITY_GROUP_TITLE,
         context['aws']['vpc-id'],
         ingress,
-        context['aws']['use-ipv4'],
         context['aws']['use-ipv6'],
     )
 
@@ -472,7 +462,8 @@ def render_ec2(context, template):
             mkoutput("AZ%d" % node, "Availability Zone of the newly created EC2 instance", (EC2_TITLE_NODE % node, "AvailabilityZone")),
             mkoutput("InstanceId%d" % node, "InstanceId of the newly created EC2 instance", Ref(EC2_TITLE_NODE % node)),
         ]
-        if context['aws']['use-ipv4']:
+        # can't do this with ipv6 because the outputs are simply not present.
+        if not context['aws']['use-ipv6']:
             outputs += [
                 mkoutput("PrivateIP%d" % node, "Private IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PrivateIp")),
                 mkoutput("PublicIP%d" % node, "Public IP address of the newly created EC2 instance", (EC2_TITLE_NODE % node, "PublicIp")),
@@ -567,11 +558,10 @@ def rds_security(context):
     }
     ingress_data = [engine_ports[context['rds']['engine'].lower()]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    ipv4, ipv6 = True, False
+    ipv6 = False
     return security_group("VPCSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
-                          ipv4,
                           ipv6,
                           "RDS DB security group")
 
@@ -972,12 +962,11 @@ def render_elb(context, template, ec2_instances):
         Ref(ELB_TITLE))
     )
 
-    ipv4, ipv6 = True, False
+    ipv6 = False
     template.add_resource(security_group(
         SECURITY_GROUP_ELB_TITLE,
         context['aws']['vpc-id'],
         _convert_ports_to_dictionary(elb_ports),
-        ipv4,
         ipv6
     ))
 
@@ -1060,12 +1049,11 @@ def render_alb(context, template, ec2_instances):
     alb_security_group_id = ALB_TITLE + "SecurityGroup"
     alb_ports = [attr_map['port'] for attr_map in context['alb']['listeners'].values()]
     alb_ports = _convert_ports_to_dictionary(alb_ports)
-    ipv4, ipv6 = True, False
+    ipv6 = False
     _lb_security_group = security_group(
         alb_security_group_id,
         context['aws']['vpc-id'],
         alb_ports,
-        ipv4,
         ipv6
     )
 
@@ -1417,11 +1405,10 @@ def elasticache_security_group(context):
     }
     ingress_data = [engine_ports[context['elasticache']['engine']]]
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    ipv4, ipv6 = True, False
+    ipv6 = False
     return security_group(ELASTICACHE_SECURITY_GROUP_TITLE,
                           context['aws']['vpc-id'],
                           ingress_ports,
-                          ipv4,
                           ipv6,
                           "ElastiCache security group")
 
@@ -1504,11 +1491,10 @@ def docdb_security(context):
     because this is dealt with in the subnet configuration"""
     ingress_data = [27017] # default MongoDB port
     ingress_ports = _convert_ports_to_dictionary(ingress_data)
-    ipv4, ipv6 = True, False
+    ipv6 = False
     return security_group("DocumentDBSecurityGroup",
                           context['aws']['vpc-id'],
                           ingress_ports,
-                          ipv4,
                           ipv6,
                           "DocumentDB security group")
 
