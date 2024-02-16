@@ -2149,7 +2149,7 @@ kubernetes-aws:
                 worker:
                     type: t3.large
                     max-size: 34
-                    desired-capacity: 16
+                    desired-capacity: 1
                     ignore-desired-capacity-drift: true
                 iam-oidc-provider: true
                 iam-roles:
@@ -2168,7 +2168,7 @@ kubernetes-aws:
                 worker:
                     type: t3.large
                     max-size: 6
-                    desired-capacity: 2
+                    desired-capacity: 1
                     ignore-desired-capacity-drift: true
                     assign-public-ip: true
                 iam-oidc-provider: true
