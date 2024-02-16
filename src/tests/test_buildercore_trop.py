@@ -853,7 +853,7 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = trop.render(context)
         cfn_template = _parse_json(cfn_template)
         # cp /tmp/project-with-cloudfront-cdn.json src/tests/fixtures/cloudformation/
-        open('/tmp/project-with-cloudfront-cdn.json', 'w').write(json.dumps(cfn_template, indent=2))
+        #open('/tmp/project-with-cloudfront-cdn.json', 'w').write(json.dumps(cfn_template, indent=2))
         fixture = json.loads(base.fixture("cloudformation/project-with-cloudfront-cdn.json"))
         self.assertEqual(fixture, cfn_template)
 
