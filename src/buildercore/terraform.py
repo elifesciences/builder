@@ -1001,84 +1001,6 @@ def _render_eks_user_access(context, template):
         }
     })
 
-def _render_eks_workers_autoscaling_group(context, template):
-    template.populate_resource('aws_iam_instance_profile', 'worker', block={
-        'name': '%s--worker' % context['stackname'],
-        'role': '${aws_iam_role.worker.name}'
-    })
-
-    template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
-        'filter': {
-            'name': 'name',
-            'values': ['amazon-eks-node-%s-v*' % context['eks']['version']],
-        },
-        'most_recent': True,
-        'owners': [aws.ACCOUNT_EKS_AMI],
-    })
-
-    # EKS currently documents this required userdata for EKS worker nodes to
-    # properly configure Kubernetes applications on the EC2 instance.
-    # We utilize a Terraform local here to simplify Base64 encoding this
-    # information into the AutoScaling Launch Configuration.
-    # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-    template.populate_local('worker_userdata', """
-#!/bin/bash
-set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
-
-    worker = {
-        'associate_public_ip_address': lookup(context, 'eks.worker.assign-public-ip'),
-        'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
-        'image_id': '${data.aws_ami.worker.id}',
-        'instance_type': context['eks']['worker']['type'],
-        'name_prefix': '%s--worker' % context['stackname'],
-        'security_groups': ['${aws_security_group.worker.id}'],
-        'user_data_base64': '${base64encode(local.worker_userdata)}',
-        'lifecycle': {
-            'create_before_destroy': True,
-        },
-    }
-    root_volume_size = lookup(context, 'eks.worker.root.size', None)
-    if root_volume_size:
-        worker['root_block_device'] = {
-            'volume_size': root_volume_size
-        }
-    template.populate_resource('aws_launch_configuration', 'worker', block=worker)
-
-    autoscaling_group_tags = [
-        {
-            'key': k,
-            'value': v,
-            'propagate_at_launch': True,
-        }
-        for k, v in aws.generic_tags(context).items()
-    ]
-    autoscaling_group_tags.append({
-        'key': 'kubernetes.io/cluster/%s' % context['stackname'],
-        'value': 'owned',
-        'propagate_at_launch': True,
-    })
-    autoscaling_group_tags.append({
-        'key': 'k8s.io/cluster-autoscaler/enabled',
-        'value': 'true',
-        'propagate_at_launch': True,
-    })
-    autoscaling_group_tags.append({
-        'key': 'k8s.io/cluster-autoscaler/%s' % context['stackname'],
-        'value': 'owned',
-        'propagate_at_launch': True,
-    })
-    template.populate_resource('aws_autoscaling_group', 'worker', block={
-        'name': '%s--worker' % context['stackname'],
-        'launch_configuration': '${aws_launch_configuration.worker.id}',
-        'min_size': context['eks']['worker']['min-size'],
-        'max_size': context['eks']['worker']['max-size'],
-        'desired_capacity': context['eks']['worker']['desired-capacity'],
-        'vpc_zone_identifier': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
-        'tag': autoscaling_group_tags,
-        'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
-    })
-
 def _render_eks_managed_node_group(context, template):
     managed_node_tags = dict(aws.generic_tags(context).items())
 
@@ -1140,7 +1062,7 @@ def _render_eks_managed_node_group(context, template):
     }
 
     if context['eks']['efs']:
-        node_group['depends_on'].push('aws_iam_role_policy_attachment.worker_efs')
+        node_group['depends_on'].append('aws_iam_role_policy_attachment.worker_efs')
 
     template.populate_resource('aws_eks_node_group', 'worker', block=node_group)
 
@@ -1396,10 +1318,7 @@ def render_eks(context, template):
     _render_eks_master(context, template)
     _render_eks_workers_security_group(context, template)
     _render_eks_workers_role(context, template)
-    if lookup(context, 'eks.worker.self-managed', True):
-        _render_eks_workers_autoscaling_group(context, template)
-    if lookup(context, 'eks.worker.managed', False):
-        _render_eks_managed_node_group(context, template)
+    _render_eks_managed_node_group(context, template)
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
