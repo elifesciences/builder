@@ -11,7 +11,7 @@ defaults:
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "hashicorp/aws"
-            version: "4.67.0"
+            version: "5.37.0"
         provider-tls:
             source: "hashicorp/tls"
             version: "4.0.4"

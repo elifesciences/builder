@@ -727,7 +727,8 @@ def build_context_eks(pdata, context):
             'label': data.get('label', label), # local label for terraform resource e.g. "kube_proxy"
             'version': data.get('version', 'latest'),
             'configuration-values': data.get('configuration-values', None),
-            'resolve-conflicts': 'OVERWRITE',
+            'resolve-conflicts-on-create': 'OVERWRITE',
+            'resolve-conflicts-on-update': 'PRESERVE'
         }
 
         # Check if this addons needs additional permissions granting to a kubernetes service account via IRSA
