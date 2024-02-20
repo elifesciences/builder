@@ -1277,7 +1277,8 @@ def _render_eks_addon(context, template, addon):
         'addon_name': name,
         'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
         'tags': aws.generic_tags(context),
-        'resolve_conflicts': addon['resolve-conflicts'],
+        'resolve_conflicts_on_create': addon['resolve-conflicts-on-create'],
+        'resolve_conflicts_on_update': addon['resolve-conflicts-on-update'],
     }
 
     if addon['configuration-values']:
