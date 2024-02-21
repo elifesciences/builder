@@ -726,6 +726,7 @@ def build_context_eks(pdata, context):
             'name': data.get('name', label), # name of the addon returned from DescribeAddonVersions API request, e.g. kube-proxy
             'label': data.get('label', label), # local label for terraform resource e.g. "kube_proxy"
             'version': data.get('version', 'latest'),
+            'kubernetes_version': context['eks'].get('addons_version', context['eks'].get('version')),
             'configuration-values': data.get('configuration-values', None),
             'resolve-conflicts-on-create': 'OVERWRITE',
             'resolve-conflicts-on-update': 'PRESERVE'
