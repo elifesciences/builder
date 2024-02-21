@@ -16,7 +16,7 @@ ALL_PROJECTS = [
     'project-with-db-params', 'project-with-rds-only', 'project-with-rds-encryption', 'project-with-rds-major-version-upgrade', 'project-with-rds-snapshot',
     'project-with-elasticache-redis', 'project-with-multiple-elasticaches', 'project-with-fully-overridden-elasticaches',
     'project-on-gcp', 'project-with-bigquery-datasets-only', 'project-with-bigquery', 'project-with-bigquery-remote-schemas',
-    'project-with-eks', 'project-with-eks-efs',
+    'project-with-eks',
     'project-with-eks-and-iam-oidc-provider', 'project-with-eks-and-irsa-external-dns-role', 'project-with-eks-and-irsa-kubernetes-autoscaler-role', 'project-with-eks-and-irsa-csi-ebs-role',
     'project-with-eks-and-simple-addons', 'project-with-eks-and-simple-addons-latest', 'project-with-eks-and-addon-with-irsa-managed-policy-role', 'project-with-eks-and-addon-with-irsa-policy-template-role',
     'project-with-docdb', 'project-with-docdb-cluster',

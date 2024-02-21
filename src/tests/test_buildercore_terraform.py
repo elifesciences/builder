@@ -1260,51 +1260,6 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-    def test_eks_and_efs(self):
-        pname = 'project-with-eks-efs'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('kubernetes_efs', terraform_template['resource']['aws_iam_policy'])
-        self.assertEqual(
-            '%s--AmazonEFSKubernetes' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['path']
-        )
-        self.assertEqual(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "elasticfilesystem:DescribeFileSystems",
-                            "elasticfilesystem:DescribeMountTargets",
-                            "elasticfilesystem:DescribeMountTargetSecurityGroups",
-                            "elasticfilesystem:DescribeTags",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ]
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['policy'])
-        )
-
-        self.assertIn('worker_efs', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_efs.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_efs']
-        )
-
     def test_eks_and_iam_oidc_provider(self):
         pname = 'project-with-eks-and-iam-oidc-provider'
         iid = pname + '--%s' % self.environment

@@ -1061,9 +1061,6 @@ def _render_eks_managed_node_group(context, template):
         'lifecycle': {'ignore_changes': ['scaling_config[0].desired_size'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
     }
 
-    if context['eks']['efs']:
-        node_group['depends_on'].append('aws_iam_role_policy_attachment.worker_efs')
-
     template.populate_resource('aws_eks_node_group', 'worker', block=node_group)
 
 def _render_eks_workers_role(context, template):
@@ -1097,35 +1094,6 @@ def _render_eks_workers_role(context, template):
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
         'role': "${aws_iam_role.worker.name}",
     })
-
-    if context['eks']['efs']:
-        template.populate_resource('aws_iam_policy', 'kubernetes_efs', block={
-            'name': '%s--AmazonEFSKubernetes' % context['stackname'],
-            'path': '/',
-            'description': 'Allows management of EFS resources',
-            'policy': json.dumps({
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "elasticfilesystem:DescribeFileSystems",
-                            "elasticfilesystem:DescribeMountTargets",
-                            "elasticfilesystem:DescribeMountTargetSecurityGroups",
-                            "elasticfilesystem:DescribeTags",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ],
-            }),
-        })
-
-        template.populate_resource('aws_iam_role_policy_attachment', 'worker_efs', block={
-            'policy_arn': "${aws_iam_policy.kubernetes_efs.arn}",
-            'role': "${aws_iam_role.worker.name}",
-        })
 
 def _render_eks_workers_security_group(context, template):
     template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
