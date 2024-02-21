@@ -1242,7 +1242,7 @@ def _render_eks_addon(context, template, addon):
         )
 
     resource_block = {
-        'cluster_name': '${data.aws_eks_cluster.main.id}',
+        'cluster_name': '${data.aws_eks_cluster.main.name}',
         'addon_name': name,
         'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
         'tags': aws.generic_tags(context),
