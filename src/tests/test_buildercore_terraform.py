@@ -1244,13 +1244,27 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        self.assertIn('aws_eks_access_entry', terraform_template['resource'])
         self.assertIn('user', terraform_template['resource']['aws_eks_access_entry'])
         self.assertEqual(
             terraform_template['resource']['aws_eks_access_entry']['user'],
             {
                 'cluster_name': '${aws_eks_cluster.main.name}',
                 'principal_arn': '${aws_iam_role.user.arn}',
-                'kubernetes_groups': ['system:masters'],
+            }
+        )
+
+        self.assertIn('aws_eks_access_policy_association', terraform_template['resource'])
+        self.assertIn('user', terraform_template['resource']['aws_eks_access_policy_association'])
+        self.assertEqual(
+            terraform_template['resource']['aws_eks_access_policy_association']['user'],
+            {
+               'cluster_name': '${aws_eks_cluster.main.name}',
+                'principal_arn': '${aws_iam_role.user.arn}',
+                'policy_arn': 'arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy',
+                'access_scope': {
+                    'type': 'cluster',
+                },
             }
         )
 

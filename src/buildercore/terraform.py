@@ -982,7 +982,20 @@ def _render_eks_user_access(context, template):
     template.populate_resource('aws_eks_access_entry', 'user', block={
         'cluster_name': '${aws_eks_cluster.main.name}',
         'principal_arn': '${aws_iam_role.user.arn}',
-        'kubernetes_groups': ['system:masters'],
+    })
+
+    template.populate_resource('aws_eks_access_entry', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
+    })
+
+    template.populate_resource('aws_eks_access_policy_association', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
+        'policy_arn': 'arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy',
+        'access_scope': {
+            'type': 'cluster',
+        },
     })
 
     template.populate_local('config_map_aws_auth', """
