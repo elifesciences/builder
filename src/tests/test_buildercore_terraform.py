@@ -1244,6 +1244,16 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        self.assertIn('user', terraform_template['resource']['aws_eks_access_entry'])
+        self.assertEqual(
+            terraform_template['resource']['aws_eks_access_entry']['user'],
+            {
+                'cluster_name': '${aws_eks_cluster.main.name}',
+                'principal_arn': '${aws_iam_role.user.arn}',
+                'kubernetes_groups': ['system:masters'],
+            }
+        )
+
         self.assertIn('config_map_aws_auth', terraform_template['locals'])
         self.assertIn('aws_iam_role.worker.arn', terraform_template['locals']['config_map_aws_auth'])
         self.assertIn('aws_auth', terraform_template['resource']['kubernetes_config_map'])

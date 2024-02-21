@@ -979,6 +979,12 @@ def _render_eks_user_access(context, template):
         }),
     })
 
+    template.populate_resource('aws_eks_access_entry', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
+        'kubernetes_groups': ['system:masters'],
+    })
+
     template.populate_local('config_map_aws_auth', """
 - rolearn: ${aws_iam_role.worker.arn}
   username: system:node:{{EC2PrivateDNSName}}
