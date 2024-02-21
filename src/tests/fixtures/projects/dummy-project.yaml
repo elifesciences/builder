@@ -972,14 +972,6 @@ project-with-eks:
                 root:
                     size: 40
 
-project-with-eks-efs:
-    description: project managing an EKS cluster with EFS support
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            efs: true
-
 project-with-eks-and-iam-oidc-provider:
     description: project managing an EKS cluster with it's IAM OIDC provisioned for IRSA
     domain: False
