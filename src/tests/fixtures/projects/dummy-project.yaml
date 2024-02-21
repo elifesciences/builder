@@ -241,7 +241,6 @@ defaults:
                 #   size: 20 # GiB, default
                 # Assign public ip addresses to worker nodes. Default is true
                 assign-public-ip: true
-            efs: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             #subdomains: [] # todo: enable
