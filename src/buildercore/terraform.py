@@ -1250,6 +1250,7 @@ def _render_eks_addon(context, template, addon):
     name = addon['name'] # "kube-proxy"
     label = addon['label'] # "kube_proxy"
     version = addon['version']
+    kubernetes_version = addon['kubernetes_version']
 
     if version == 'latest':
         template.populate_data(
@@ -1257,7 +1258,7 @@ def _render_eks_addon(context, template, addon):
             'eks_addon_%s' % label,
             block={
                 'addon_name': name,
-                'kubernetes_version': '${data.aws_eks_cluster.main.version}',
+                'kubernetes_version': kubernetes_version,
                 'most_recent': True,
             }
         )
