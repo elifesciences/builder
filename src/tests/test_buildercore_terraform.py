@@ -941,6 +941,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'security_group_ids': ['${aws_security_group.master.id}'],
                     'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
                 },
+                'access_config': {
+                    'authentication_mode': "API_AND_CONFIG_MAP",
+                },
                 'depends_on': [
                     "aws_iam_role_policy_attachment.master_kubernetes",
                     "aws_iam_role_policy_attachment.master_ecs",

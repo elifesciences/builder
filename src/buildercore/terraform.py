@@ -1199,6 +1199,9 @@ def _render_eks_master(context, template):
             'security_group_ids': ['${aws_security_group.master.id}'],
             'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
+        'access_config': {
+            'authentication_mode': "API_AND_CONFIG_MAP",
+        },
         'depends_on': [
             "aws_iam_role_policy_attachment.master_kubernetes",
             "aws_iam_role_policy_attachment.master_ecs",
