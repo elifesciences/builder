@@ -1242,7 +1242,7 @@ def _render_eks_addon(context, template, addon):
         )
 
     resource_block = {
-        'cluster_name': '${data.aws_eks_cluster.main.name}',
+        'cluster_name': '${resource.aws_eks_cluster.main.name}',
         'addon_name': name,
         'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
         'tags': aws.generic_tags(context),
@@ -1445,7 +1445,7 @@ def init(stackname, context):
     # Terraform prunes unused providers when running but conditionally adding them
     # here simplifies the `.cfn/terraform/$stackname/` files and any Terraform upgrades.
 
-    providers = {'provider': [], 'data': {}}
+    providers = {'provider': []}
 
     vault_projects = ['fastly', 'bigquery']
     need_vault = any(context.get(key) for key in vault_projects)
