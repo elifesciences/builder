@@ -1024,6 +1024,10 @@ def _render_eks_managed_node_group(context, template):
 
     template.populate_resource('aws_launch_template', 'worker', block=launch_template)
 
+    template.populate_data("aws_ssm_parameter", "eks_ami_release_version", block={
+        'name': '/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/release_version',
+    })
+
     node_group = {
         'cluster_name': '${aws_eks_cluster.main.name}',
         'node_group_name': '%s--worker' % context['stackname'],
@@ -1032,6 +1036,9 @@ def _render_eks_managed_node_group(context, template):
         'node_role_arn': '${aws_iam_role.worker.arn}',
 
         'subnet_ids': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
+
+        'version': '${aws_eks_cluster.main.version}',
+        'release_version': '${nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)}',
 
         'instance_types': [context['eks']['worker']['type']],
         'scaling_config':  {

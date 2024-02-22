@@ -1143,6 +1143,13 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
+        self.assertIn('aws_ssm_parameter', terraform_template['data'])
+        self.assertIn('eks_ami_release_version', terraform_template['data']['aws_ssm_parameter'])
+        self.assertEqual(
+            terraform_template['data']['aws_ssm_parameter']['eks_ami_release_version'],
+            {'name': '/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/release_version'}
+        )
+
         self.assertIn('worker', terraform_template['resource']['aws_eks_node_group'])
         self.assertEqual(
             terraform_template['resource']['aws_eks_node_group']['worker'],
@@ -1158,6 +1165,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                 },
 
                 'node_role_arn': '${aws_iam_role.worker.arn}',
+
+                'version': '${aws_eks_cluster.main.version}',
+                'release_version': '${nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)}',
 
                 'subnet_ids': ['subnet-c3c3c3c3', 'subnet-d4d4d4d4'],
 
