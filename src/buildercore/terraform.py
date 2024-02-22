@@ -998,28 +998,6 @@ def _render_eks_user_access(context, template):
         },
     })
 
-    template.populate_local('config_map_aws_auth', """
-- rolearn: ${aws_iam_role.worker.arn}
-  username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-- rolearn: ${aws_iam_role.user.arn}
-  username: ${aws_iam_role.user.name}:{{SessionName}}
-  groups:
-    - system:masters
-""")
-
-    template.populate_resource('kubernetes_config_map', 'aws_auth', block={
-        'metadata': [{
-            'name': 'aws-auth',
-            'namespace': 'kube-system',
-        }],
-        'data': {
-            'mapRoles': '${local.config_map_aws_auth}',
-        }
-    })
-
 def _render_eks_managed_node_group(context, template):
     managed_node_tags = dict(aws.generic_tags(context).items())
 
@@ -1493,6 +1471,9 @@ def init(stackname, context):
         # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
         updatein(providers, path, VAULT_PATH_FASTLY, create=True)
 
+
+
+
     aws_projects = ['eks']
     need_aws = any(context.get(key) for key in aws_projects)
     if need_aws:
@@ -1520,34 +1501,6 @@ def init(stackname, context):
             'version': "= %s" % context['terraform']['provider-tls']['version']
         }
         providers['provider'].append({'tls': tls_provider})
-        kubernetes_provider = {
-            'version': "= %s" % context['terraform']['provider-kubernetes']['version'],
-            'host': '${data.aws_eks_cluster.main.endpoint}',
-            'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-            'token': '${data.aws_eks_cluster_auth.main.token}',
-        }
-        providers['provider'].append({'kubernetes': kubernetes_provider})
-        providers['data']['aws_eks_cluster'] = {
-            'main': {
-                'name': '${aws_eks_cluster.main.name}',
-            },
-        }
-        # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
-        aws_provider = {
-            'region': context['aws']['region'],
-            'version': '= %s' % context['terraform']['provider-aws']['version'],
-            'alias': 'eks_assume_role',
-            'assume_role': {
-                'role_arn': '${aws_iam_role.user.arn}'
-            }
-        }
-        providers['provider'].append({'aws': aws_provider})
-        providers['data']['aws_eks_cluster_auth'] = {
-            'main': {
-                'provider': 'aws.eks_assume_role',
-                'name': '${aws_eks_cluster.main.name}',
-            },
-        }
 
     # in 0.13 'providers' relies on a 'required_providers' block under 'terraform'
     # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
