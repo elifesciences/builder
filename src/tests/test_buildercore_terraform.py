@@ -878,41 +878,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         stackname = 'project-with-eks--%s' % self.environment
         context = cfngen.build_context('project-with-eks', stackname=stackname)
         terraform.init(stackname, context)
-        providers = self._load_terraform_file(stackname, 'providers')
-        self.assertEqual(
-            {
-                'host': '${data.aws_eks_cluster.main.endpoint}',
-                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                'token': '${data.aws_eks_cluster_auth.main.token}',
-            },
-            self._get_provider(providers, 'kubernetes')
-        )
-
-        self.assertEqual(
-            {
-                'role_arn': '${aws_iam_role.user.arn}',
-            },
-            self._get_provider(providers, 'aws', 'eks_assume_role').get('assume_role')
-        )
-        self.assertIn('aws_eks_cluster', providers['data'])
-        self.assertEqual(
-            {
-                'main': {
-                    'name': '${aws_eks_cluster.main.name}',
-                },
-            },
-            providers['data']['aws_eks_cluster']
-        )
-        self.assertIn('aws_eks_cluster_auth', providers['data'])
-        self.assertEqual(
-            {
-                'main': {
-                    'name': '${aws_eks_cluster.main.name}',
-                    'provider': 'aws.eks_assume_role',
-                },
-            },
-            providers['data']['aws_eks_cluster_auth']
-        )
 
     def test_eks_cluster(self):
         pname = 'project-with-eks'
@@ -928,7 +893,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
         self.assertIn('aws_launch_template', terraform_template['resource'].keys())
         self.assertIn('aws_eks_node_group', terraform_template['resource'].keys())
-        self.assertIn('kubernetes_config_map', terraform_template['resource'].keys())
 
         self.assertIn('main', terraform_template['resource']['aws_eks_cluster'])
         self.assertEqual(
@@ -1265,22 +1229,6 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'access_scope': {
                     'type': 'cluster',
                 },
-            }
-        )
-
-        self.assertIn('config_map_aws_auth', terraform_template['locals'])
-        self.assertIn('aws_iam_role.worker.arn', terraform_template['locals']['config_map_aws_auth'])
-        self.assertIn('aws_auth', terraform_template['resource']['kubernetes_config_map'])
-        self.assertEqual(
-            terraform_template['resource']['kubernetes_config_map']['aws_auth'],
-            {
-                'metadata': [{
-                    'name': 'aws-auth',
-                    'namespace': 'kube-system',
-                }],
-                'data': {
-                    'mapRoles': '${local.config_map_aws_auth}',
-                }
             }
         )
 

@@ -998,28 +998,6 @@ def _render_eks_user_access(context, template):
         },
     })
 
-    template.populate_local('config_map_aws_auth', """
-- rolearn: ${aws_iam_role.worker.arn}
-  username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-- rolearn: ${aws_iam_role.user.arn}
-  username: ${aws_iam_role.user.name}:{{SessionName}}
-  groups:
-    - system:masters
-""")
-
-    template.populate_resource('kubernetes_config_map', 'aws_auth', block={
-        'metadata': [{
-            'name': 'aws-auth',
-            'namespace': 'kube-system',
-        }],
-        'data': {
-            'mapRoles': '${local.config_map_aws_auth}',
-        }
-    })
-
 def _render_eks_managed_node_group(context, template):
     managed_node_tags = dict(aws.generic_tags(context).items())
 
@@ -1264,7 +1242,7 @@ def _render_eks_addon(context, template, addon):
         )
 
     resource_block = {
-        'cluster_name': '${data.aws_eks_cluster.main.name}',
+        'cluster_name': '${resource.aws_eks_cluster.main.name}',
         'addon_name': name,
         'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
         'tags': aws.generic_tags(context),
@@ -1467,7 +1445,7 @@ def init(stackname, context):
     # Terraform prunes unused providers when running but conditionally adding them
     # here simplifies the `.cfn/terraform/$stackname/` files and any Terraform upgrades.
 
-    providers = {'provider': [], 'data': {}}
+    providers = {'provider': []}
 
     vault_projects = ['fastly', 'bigquery']
     need_vault = any(context.get(key) for key in vault_projects)
@@ -1520,34 +1498,6 @@ def init(stackname, context):
             'version': "= %s" % context['terraform']['provider-tls']['version']
         }
         providers['provider'].append({'tls': tls_provider})
-        kubernetes_provider = {
-            'version': "= %s" % context['terraform']['provider-kubernetes']['version'],
-            'host': '${data.aws_eks_cluster.main.endpoint}',
-            'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-            'token': '${data.aws_eks_cluster_auth.main.token}',
-        }
-        providers['provider'].append({'kubernetes': kubernetes_provider})
-        providers['data']['aws_eks_cluster'] = {
-            'main': {
-                'name': '${aws_eks_cluster.main.name}',
-            },
-        }
-        # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
-        aws_provider = {
-            'region': context['aws']['region'],
-            'version': '= %s' % context['terraform']['provider-aws']['version'],
-            'alias': 'eks_assume_role',
-            'assume_role': {
-                'role_arn': '${aws_iam_role.user.arn}'
-            }
-        }
-        providers['provider'].append({'aws': aws_provider})
-        providers['data']['aws_eks_cluster_auth'] = {
-            'main': {
-                'provider': 'aws.eks_assume_role',
-                'name': '${aws_eks_cluster.main.name}',
-            },
-        }
 
     # in 0.13 'providers' relies on a 'required_providers' block under 'terraform'
     # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements
