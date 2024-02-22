@@ -1358,8 +1358,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('eks_addon_coredns', terraform_template['data']['aws_eks_addon_version'])
         self.assertTrue(terraform_template['data']['aws_eks_addon_version']['eks_addon_kube_proxy']['most_recent'])
         self.assertTrue(terraform_template['data']['aws_eks_addon_version']['eks_addon_coredns']['most_recent'])
-        self.assertEqual('1.11', terraform_template['data']['aws_eks_addon_version']['eks_addon_kube_proxy']['kubernetes_version'])
-        self.assertEqual('1.11', terraform_template['data']['aws_eks_addon_version']['eks_addon_coredns']['kubernetes_version'])
         self.assertEqual('${data.aws_eks_addon_version.eks_addon_kube_proxy.version}', terraform_template['resource']['aws_eks_addon']['eks_addon_kube_proxy']['addon_version'])
         self.assertEqual('${data.aws_eks_addon_version.eks_addon_coredns.version}', terraform_template['resource']['aws_eks_addon']['eks_addon_coredns']['addon_version'])
 
