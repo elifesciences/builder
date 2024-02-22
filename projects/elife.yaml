@@ -2144,7 +2144,7 @@ kubernetes-aws:
         flux-prod:
             ec2: false
             eks:
-                version: '1.27'
+                version: '1.28'
                 worker:
                     type: t3.large
                     max-size: 34
