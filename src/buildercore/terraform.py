@@ -979,6 +979,25 @@ def _render_eks_user_access(context, template):
         }),
     })
 
+    template.populate_resource('aws_eks_access_entry', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
+    })
+
+    template.populate_resource('aws_eks_access_entry', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
+    })
+
+    template.populate_resource('aws_eks_access_policy_association', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
+        'policy_arn': 'arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy',
+        'access_scope': {
+            'type': 'cluster',
+        },
+    })
+
     template.populate_local('config_map_aws_auth', """
 - rolearn: ${aws_iam_role.worker.arn}
   username: system:node:{{EC2PrivateDNSName}}
@@ -1166,6 +1185,9 @@ def _render_eks_master(context, template):
         'vpc_config': {
             'security_group_ids': ['${aws_security_group.master.id}'],
             'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
+        },
+        'access_config': {
+            'authentication_mode': "API_AND_CONFIG_MAP",
         },
         'depends_on': [
             "aws_iam_role_policy_attachment.master_kubernetes",

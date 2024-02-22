@@ -941,6 +941,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                     'security_group_ids': ['${aws_security_group.master.id}'],
                     'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
                 },
+                'access_config': {
+                    'authentication_mode': "API_AND_CONFIG_MAP",
+                },
                 'depends_on': [
                     "aws_iam_role_policy_attachment.master_kubernetes",
                     "aws_iam_role_policy_attachment.master_ecs",
@@ -1238,6 +1241,30 @@ class TestBuildercoreTerraform(base.BaseCase):
                         "Action": "sts:AssumeRole"
                     }
                 ]
+            }
+        )
+
+        self.assertIn('aws_eks_access_entry', terraform_template['resource'])
+        self.assertIn('user', terraform_template['resource']['aws_eks_access_entry'])
+        self.assertEqual(
+            terraform_template['resource']['aws_eks_access_entry']['user'],
+            {
+                'cluster_name': '${aws_eks_cluster.main.name}',
+                'principal_arn': '${aws_iam_role.user.arn}',
+            }
+        )
+
+        self.assertIn('aws_eks_access_policy_association', terraform_template['resource'])
+        self.assertIn('user', terraform_template['resource']['aws_eks_access_policy_association'])
+        self.assertEqual(
+            terraform_template['resource']['aws_eks_access_policy_association']['user'],
+            {
+               'cluster_name': '${aws_eks_cluster.main.name}',
+                'principal_arn': '${aws_iam_role.user.arn}',
+                'policy_arn': 'arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy',
+                'access_scope': {
+                    'type': 'cluster',
+                },
             }
         )
 
