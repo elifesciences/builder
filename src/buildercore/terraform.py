@@ -1471,9 +1471,6 @@ def init(stackname, context):
         # updates a deeply nested value. creates intermediate dictionaries when `create=True`.
         updatein(providers, path, VAULT_PATH_FASTLY, create=True)
 
-
-
-
     aws_projects = ['eks']
     need_aws = any(context.get(key) for key in aws_projects)
     if need_aws:
