@@ -1235,7 +1235,7 @@ def _render_eks_addon(context, template, addon):
             'eks_addon_%s' % label,
             block={
                 'addon_name': name,
-                'kubernetes_version': '${data.aws_eks_cluster.main.version}',
+                'kubernetes_version': '${resource.aws_eks_cluster.main.version}',
                 'most_recent': True,
             }
         )
