@@ -16,15 +16,20 @@ systemctl stop salt-minion 2> /dev/null
 
 # link up the project formula mounted at /project
 # NOTE: these links will be overwritten if this a master-server instance
-ln -sfn /project/salt /srv/salt
-ln -sfn /project/salt/pillar /srv/pillar
+# lsh@2024-03-04: salt 3006.6 ignores sylinks, the full path is now used in the minion.template
+#ln -sfn /project/salt /srv/salt
+#ln -sfn /project/salt/pillar /srv/pillar
 
 # this allows you to serve up projects like the old builder used
 # excellent for project creation without all the formula overhead
-ln -sfn /vagrant/custom-vagrant /srv/custom
+# lsh@2024-03-04: salt 3006.6 ignores sylinks, the full path is now used in the minion.template
+#ln -sfn /vagrant/custom-vagrant /srv/custom
 
 # by default the project's top.sls is disabled by file naming. hook that up here
-cd /srv/salt/ && ln -sf "${BUILDER_TOPFILE:-example.top}" top.sls
+(
+    cd /project/salt
+    ln -sf "${BUILDER_TOPFILE:-example.top}" top.sls
+)
 
 # vagrant makes all formula dependencies available, including builder base formula
 
