@@ -78,8 +78,9 @@ echo "pillar_roots:
 
 # convenience. 
 # this won't do anything but put the two top.sls files closer to each other
-cd /srv/salt/pillar
-ln -sfT /opt/builder-private/pillar/top.sls top.sls
+# lsh@2024-03-04: salt 3006.6 ignores sylinks. this disables and removes them.
+#cd /srv/salt/pillar
+#ln -sfT /opt/builder-private/pillar/top.sls top.sls
 
 clone_update() {
     repo=$1
