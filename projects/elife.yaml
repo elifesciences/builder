@@ -2170,7 +2170,7 @@ kubernetes-aws:
             eks:
                 version: '1.28'
                 worker:
-                    type: t3.large
+                    type: t3.xlarge
                     max-size: 6
                     desired-capacity: 1
                     ignore-desired-capacity-drift: true
