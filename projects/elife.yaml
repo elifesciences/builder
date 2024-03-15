@@ -1911,6 +1911,8 @@ annotations:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
