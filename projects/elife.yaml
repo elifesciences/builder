@@ -4,14 +4,14 @@ defaults:
         # distinguishes this data from other types and versions of configuration data
         type: project
         version: 1
-    salt: "3006" # the version of Salt to install on ec2 instances
+    salt: "3006" # the version of Salt to install on ec2 instances. see also: aws-alt.snsalt
     terraform:
         # the version of Terraform this project requires
         version: "1.1.9"
         # the version of Terraform providers (plugins) required.
         provider-aws:
             source: "hashicorp/aws"
-            version: "4.66.1"
+            version: "5.37.0"
         provider-tls:
             source: "hashicorp/tls"
             version: "4.0.4"
@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-08d0e948516bdfee8 # GENERATED created from basebox--2004
+            ami: ami-0440962029b7e0f46 # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -180,7 +180,7 @@ defaults:
                         healthy_threshold: 2
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2023-02-06.wildcard.elifesciences.org
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2024-02-27.wildcard.elifesciences.org
 
         # elb defaults only used if an 'elb' section present in project
         elb:
@@ -192,7 +192,7 @@ defaults:
             additional_listeners: {}
             idle_timeout: 60
             # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2023-02-06.wildcard.elifesciences.org
+            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2024-02-27.wildcard.elifesciences.org
             healthcheck:
                 protocol: http
                 port: 80
@@ -249,7 +249,6 @@ defaults:
                 #   size: 20 # GiB, default
                 # Assign public ip addresses to worker nodes. Default is true
                 assign-public-ip: true
-            efs: false
             addons:
                 coredns: {}
                 kube-proxy:
@@ -291,7 +290,7 @@ defaults:
             origins: {}
             # maintained through `aws iam upload-server-certificate`
             # arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2023-02-06.wildcard.elifesciences.org
-            certificate_id: ASCAXOXT77XQDKWEEYGJH
+            certificate_id: ASCAXOXT77XQC5OYKYYWG
             cookies: []
             compress: true
             headers: []
@@ -882,6 +881,8 @@ elife-metrics:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
@@ -1223,6 +1224,8 @@ elife-dashboard:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
@@ -1338,6 +1341,8 @@ elife-alfred:
             ports:
                 - 22
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16 # internal access only
                 - 10241 # JNLP for jenkins-cli.jar
                 - 16022 # Jenkins SSH port
                 - 9100: # prometheus node_exporter
@@ -1373,6 +1378,8 @@ api-dummy:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
@@ -1507,6 +1514,8 @@ recommendations:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt: {}
@@ -1528,6 +1537,8 @@ personalised-covers:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         s3:
@@ -1569,6 +1580,8 @@ observer:
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
@@ -1824,6 +1837,8 @@ redirects:
                 - 22
                 - 80
                 - 443
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
@@ -1898,6 +1913,8 @@ annotations:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
         sqs:
@@ -1926,6 +1943,8 @@ digests:
                 - 22
                 - 80:
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
@@ -2137,12 +2156,13 @@ kubernetes-aws:
         flux-prod:
             ec2: false
             eks:
-                version: '1.27'
+                version: '1.28'
                 worker:
                     type: t3.large
                     max-size: 34
-                    desired-capacity: 16
+                    desired-capacity: 1
                     ignore-desired-capacity-drift: true
+                    assign-public-ip: false
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:
@@ -2156,13 +2176,13 @@ kubernetes-aws:
         flux-test:
             ec2: false
             eks:
-                version: '1.27'
+                version: '1.28'
                 worker:
                     type: t3.large
                     max-size: 6
-                    desired-capacity: 2
+                    desired-capacity: 1
                     ignore-desired-capacity-drift: true
-                    assign-public-ip: true
+                    assign-public-ip: false
                 iam-oidc-provider: true
                 iam-roles:
                     kubernetes-autoscaler:

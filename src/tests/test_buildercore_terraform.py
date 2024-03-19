@@ -878,41 +878,6 @@ class TestBuildercoreTerraform(base.BaseCase):
         stackname = 'project-with-eks--%s' % self.environment
         context = cfngen.build_context('project-with-eks', stackname=stackname)
         terraform.init(stackname, context)
-        providers = self._load_terraform_file(stackname, 'providers')
-        self.assertEqual(
-            {
-                'host': '${data.aws_eks_cluster.main.endpoint}',
-                'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-                'token': '${data.aws_eks_cluster_auth.main.token}',
-            },
-            self._get_provider(providers, 'kubernetes')
-        )
-
-        self.assertEqual(
-            {
-                'role_arn': '${aws_iam_role.user.arn}',
-            },
-            self._get_provider(providers, 'aws', 'eks_assume_role').get('assume_role')
-        )
-        self.assertIn('aws_eks_cluster', providers['data'])
-        self.assertEqual(
-            {
-                'main': {
-                    'name': '${aws_eks_cluster.main.name}',
-                },
-            },
-            providers['data']['aws_eks_cluster']
-        )
-        self.assertIn('aws_eks_cluster_auth', providers['data'])
-        self.assertEqual(
-            {
-                'main': {
-                    'name': '${aws_eks_cluster.main.name}',
-                    'provider': 'aws.eks_assume_role',
-                },
-            },
-            providers['data']['aws_eks_cluster_auth']
-        )
 
     def test_eks_cluster(self):
         pname = 'project-with-eks'
@@ -924,14 +889,10 @@ class TestBuildercoreTerraform(base.BaseCase):
         self.assertIn('aws_eks_cluster', terraform_template['resource'].keys())
         self.assertIn('aws_iam_role', terraform_template['resource'].keys())
         self.assertIn('aws_security_group', terraform_template['resource'].keys())
-        self.assertIn('aws_iam_instance_profile', terraform_template['resource'].keys())
         self.assertIn('aws_security_group_rule', terraform_template['resource'].keys())
         self.assertIn('aws_iam_role_policy_attachment', terraform_template['resource'].keys())
-        self.assertIn('aws_launch_configuration', terraform_template['resource'].keys())
-        self.assertIn('aws_autoscaling_group', terraform_template['resource'].keys())
-        self.assertIn('kubernetes_config_map', terraform_template['resource'].keys())
-        self.assertIn('data', terraform_template.keys())
-        self.assertIn('aws_ami', terraform_template['data'].keys())
+        self.assertIn('aws_launch_template', terraform_template['resource'].keys())
+        self.assertIn('aws_eks_node_group', terraform_template['resource'].keys())
 
         self.assertIn('main', terraform_template['resource']['aws_eks_cluster'])
         self.assertEqual(
@@ -943,6 +904,9 @@ class TestBuildercoreTerraform(base.BaseCase):
                 'vpc_config': {
                     'security_group_ids': ['${aws_security_group.master.id}'],
                     'subnet_ids': ['subnet-a1a1a1a1', 'subnet-b2b2b2b2'],
+                },
+                'access_config': {
+                    'authentication_mode': "API_AND_CONFIG_MAP",
                 },
                 'depends_on': [
                     "aws_iam_role_policy_attachment.master_kubernetes",
@@ -1149,88 +1113,86 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('worker', terraform_template['resource']['aws_iam_instance_profile'])
+        self.assertIn('worker', terraform_template['resource']['aws_launch_template'])
         self.assertEqual(
-            terraform_template['resource']['aws_iam_instance_profile']['worker'],
+            terraform_template['resource']['aws_launch_template']['worker'],
             {
-                'name': 'project-with-eks--%s--worker' % self.environment,
-                'role': '${aws_iam_role.worker.name}'
-            }
-        )
-
-        self.assertIn('worker', terraform_template['data']['aws_ami'])
-        self.assertEqual(
-            terraform_template['data']['aws_ami']['worker'],
-            {
-                'filter': {
-                    'name': 'name',
-                    'values': ['amazon-eks-node-1.11-v*'],
-                },
-                'most_recent': True,
-                'owners': ['602401143452'],
-            }
-        )
-
-        self.assertIn('worker_userdata', terraform_template['locals'])
-        self.assertIn('/bin/bash', terraform_template['locals']['worker_userdata'])
-
-        self.assertIn('worker', terraform_template['resource']['aws_launch_configuration'])
-        self.assertEqual(
-            terraform_template['resource']['aws_launch_configuration']['worker'],
-            {
-                'associate_public_ip_address': True,
-                'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
-                'image_id': '${data.aws_ami.worker.id}',
-                'instance_type': 't2.small',
-                'root_block_device': {
-                    'volume_size': 40
+                'network_interfaces': {
+                    'associate_public_ip_address': True,
+                    'security_groups': ['${aws_security_group.worker.id}'],
                 },
                 'name_prefix': 'project-with-eks--%s--worker' % self.environment,
-                'security_groups': ['${aws_security_group.worker.id}'],
-                'user_data_base64': '${base64encode(local.worker_userdata)}',
-                'lifecycle': {
-                    'create_before_destroy': True,
+                'block_device_mappings': {
+                    'device_name': '/dev/xvda',
+                    'ebs': {
+                        'volume_type': 'gp3',
+                        'iops': 3000,
+                        'throughput': 125,
+                        'volume_size': 40,
+                    }
                 },
+                'tag_specifications': {
+                    'resource_type': 'instance',
+                    'tags': {
+                        'Cluster': 'project-with-eks--%s' % self.environment,
+                        'Environment': self.environment,
+                        'Name': 'project-with-eks--%s' % self.environment,
+                        'Project': 'project-with-eks'
+                    }
+                }
             }
         )
 
-        self.assertIn('worker', terraform_template['resource']['aws_autoscaling_group'])
+        self.assertIn('aws_ssm_parameter', terraform_template['data'])
+        self.assertIn('eks_ami_release_version', terraform_template['data']['aws_ssm_parameter'])
         self.assertEqual(
-            terraform_template['resource']['aws_autoscaling_group']['worker'],
+            terraform_template['data']['aws_ssm_parameter']['eks_ami_release_version'],
+            {'name': '/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/release_version'}
+        )
+
+        self.assertIn('worker', terraform_template['resource']['aws_eks_node_group'])
+        self.assertEqual(
+            terraform_template['resource']['aws_eks_node_group']['worker'],
             {
-                'name': "project-with-eks--%s--worker" % self.environment,
-                'launch_configuration': "${aws_launch_configuration.worker.id}",
-                'min_size': 1,
-                'max_size': 3,
-                'desired_capacity': 3,
-                'vpc_zone_identifier': ['subnet-c3c3c3c3', 'subnet-d4d4d4d4'],
-                'tag': [
-                    {
-                        'key': 'Project',
-                        'value': 'project-with-eks',
-                        'propagate_at_launch': True,
-                    },
-                    {
-                        'key': 'Environment',
-                        'value': self.environment,
-                        'propagate_at_launch': True,
-                    },
-                    {
-                        'key': 'Name',
-                        'value': 'project-with-eks--%s' % self.environment,
-                        'propagate_at_launch': True,
-                    },
-                    {
-                        'key': 'Cluster',
-                        'value': 'project-with-eks--%s' % self.environment,
-                        'propagate_at_launch': True,
-                    },
-                    {
-                        'key': 'kubernetes.io/cluster/project-with-eks--%s' % self.environment,
-                        'value': 'owned',
-                        'propagate_at_launch': True,
-                    },
+
+                'cluster_name': '${aws_eks_cluster.main.name}',
+                'node_group_name': "project-with-eks--%s--worker" % self.environment,
+                'tags': {
+                    'Project': 'project-with-eks',
+                    'Environment': self.environment,
+                    'Name': 'project-with-eks--%s' % self.environment,
+                    'Cluster': 'project-with-eks--%s' % self.environment,
+                },
+
+                'node_role_arn': '${aws_iam_role.worker.arn}',
+
+                'version': '${aws_eks_cluster.main.version}',
+                'release_version': '${nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)}',
+
+                'subnet_ids': ['subnet-c3c3c3c3', 'subnet-d4d4d4d4'],
+
+                'instance_types': ['t2.small'],
+                'scaling_config':  {
+                    'min_size': 1,
+                    'max_size': 3,
+                    'desired_size': 3,
+                },
+                'update_config': {
+                    'max_unavailable': 1,
+                },
+                'launch_template': {
+                    'id': "${aws_launch_template.worker.id}",
+                    'version': "${aws_launch_template.worker.latest_version}"
+                },
+
+                # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+                # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+                'depends_on': [
+                    'aws_iam_role_policy_attachment.worker_connect',
+                    'aws_iam_role_policy_attachment.worker_cni',
+                    'aws_iam_role_policy_attachment.worker_ecr',
                 ],
+
                 'lifecycle': {'ignore_changes': []},
             }
         )
@@ -1256,65 +1218,28 @@ class TestBuildercoreTerraform(base.BaseCase):
             }
         )
 
-        self.assertIn('config_map_aws_auth', terraform_template['locals'])
-        self.assertIn('aws_iam_role.worker.arn', terraform_template['locals']['config_map_aws_auth'])
-        self.assertIn('aws_auth', terraform_template['resource']['kubernetes_config_map'])
+        self.assertIn('aws_eks_access_entry', terraform_template['resource'])
+        self.assertIn('user', terraform_template['resource']['aws_eks_access_entry'])
         self.assertEqual(
-            terraform_template['resource']['kubernetes_config_map']['aws_auth'],
+            terraform_template['resource']['aws_eks_access_entry']['user'],
             {
-                'metadata': [{
-                    'name': 'aws-auth',
-                    'namespace': 'kube-system',
-                }],
-                'data': {
-                    'mapRoles': '${local.config_map_aws_auth}',
-                }
+                'cluster_name': '${aws_eks_cluster.main.name}',
+                'principal_arn': '${aws_iam_role.user.arn}',
             }
         )
 
-    def test_eks_and_efs(self):
-        pname = 'project-with-eks-efs'
-        iid = pname + '--%s' % self.environment
-        context = cfngen.build_context(pname, stackname=iid)
-        terraform_template = json.loads(terraform.render(context))
-
-        self.assertIn('kubernetes_efs', terraform_template['resource']['aws_iam_policy'])
+        self.assertIn('aws_eks_access_policy_association', terraform_template['resource'])
+        self.assertIn('user', terraform_template['resource']['aws_eks_access_policy_association'])
         self.assertEqual(
-            '%s--AmazonEFSKubernetes' % context['stackname'],
-            terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['name']
-        )
-        self.assertEqual(
-            '/',
-            terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['path']
-        )
-        self.assertEqual(
+            terraform_template['resource']['aws_eks_access_policy_association']['user'],
             {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "elasticfilesystem:DescribeFileSystems",
-                            "elasticfilesystem:DescribeMountTargets",
-                            "elasticfilesystem:DescribeMountTargetSecurityGroups",
-                            "elasticfilesystem:DescribeTags",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ]
-            },
-            json.loads(terraform_template['resource']['aws_iam_policy']['kubernetes_efs']['policy'])
-        )
-
-        self.assertIn('worker_efs', terraform_template['resource']['aws_iam_role_policy_attachment'])
-        self.assertEqual(
-            {
-                'policy_arn': '${aws_iam_policy.kubernetes_efs.arn}',
-                'role': "${aws_iam_role.worker.name}",
-            },
-            terraform_template['resource']['aws_iam_role_policy_attachment']['worker_efs']
+               'cluster_name': '${aws_eks_cluster.main.name}',
+                'principal_arn': '${aws_iam_role.user.arn}',
+                'policy_arn': 'arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy',
+                'access_scope': {
+                    'type': 'cluster',
+                },
+            }
         )
 
     def test_eks_and_iam_oidc_provider(self):

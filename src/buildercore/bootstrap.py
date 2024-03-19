@@ -527,7 +527,8 @@ def update_ec2_stack(stackname, context, concurrency=None, formula_revisions=Non
                 run_script('update-masterless-formula.sh', repo, formula, revision)
 
         if is_master:
-            # it is possible to be a masterless master server
+            # master-server is not masterless (!),
+            # but it is possible to have a masterless master-server.
             builder_private_repo = fdata['private-repo']
             builder_configuration_repo = fdata['configuration-repo']
             all_formulas = project.known_formulas()

@@ -112,19 +112,26 @@ IRSA_POLICY_TEMPLATES = {
                     "autoscaling:DescribeLaunchConfigurations",
                     "autoscaling:DescribeTags",
                     "ec2:DescribeInstanceTypes",
-                    "ec2:DescribeLaunchTemplateVersions"
+                    "ec2:DescribeLaunchTemplateVersions",
+                    "ec2:DescribeImages",
+                    "ec2:GetInstanceTypesFromInstanceRequirements",
+                    "eks:DescribeNodegroup",
                 ],
-                "Resource": ["*"]
+                "Resource": "*"
             },
             {
                 "Effect": "Allow",
                 "Action": [
                     "autoscaling:SetDesiredCapacity",
-                    "autoscaling:TerminateInstanceInAutoScalingGroup"
+                    "autoscaling:TerminateInstanceInAutoScalingGroup",
                 ],
-                "Resource": [
-                    "${aws_autoscaling_group.worker.arn}",
-                ],
+                "Resource": "*",
+                "Condition": {
+                    "StringEquals": {
+                        "aws:ResourceTag/k8s.io/cluster-autoscaler/enabled": "true",
+                        "aws:ResourceTag/k8s.io/cluster-autoscaler/%s" % stackname: "owned"
+                    }
+                }
             },
         ],
     },
@@ -972,95 +979,93 @@ def _render_eks_user_access(context, template):
         }),
     })
 
-    template.populate_local('config_map_aws_auth', """
-- rolearn: ${aws_iam_role.worker.arn}
-  username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-- rolearn: ${aws_iam_role.user.arn}
-  username: ${aws_iam_role.user.name}:{{SessionName}}
-  groups:
-    - system:masters
-""")
-
-    template.populate_resource('kubernetes_config_map', 'aws_auth', block={
-        'metadata': [{
-            'name': 'aws-auth',
-            'namespace': 'kube-system',
-        }],
-        'data': {
-            'mapRoles': '${local.config_map_aws_auth}',
-        }
+    template.populate_resource('aws_eks_access_entry', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
     })
 
-def _render_eks_workers_autoscaling_group(context, template):
-    template.populate_resource('aws_iam_instance_profile', 'worker', block={
-        'name': '%s--worker' % context['stackname'],
-        'role': '${aws_iam_role.worker.name}'
+    template.populate_resource('aws_eks_access_entry', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
     })
 
-    template.populate_data(DATA_TYPE_AWS_AMI, 'worker', block={
-        'filter': {
-            'name': 'name',
-            'values': ['amazon-eks-node-%s-v*' % context['eks']['version']],
+    template.populate_resource('aws_eks_access_policy_association', 'user', block={
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'principal_arn': '${aws_iam_role.user.arn}',
+        'policy_arn': 'arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy',
+        'access_scope': {
+            'type': 'cluster',
         },
-        'most_recent': True,
-        'owners': [aws.ACCOUNT_EKS_AMI],
     })
 
-    # EKS currently documents this required userdata for EKS worker nodes to
-    # properly configure Kubernetes applications on the EC2 instance.
-    # We utilize a Terraform local here to simplify Base64 encoding this
-    # information into the AutoScaling Launch Configuration.
-    # More information: https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-    template.populate_local('worker_userdata', """
-#!/bin/bash
-set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.main.endpoint}' --b64-cluster-ca '${aws_eks_cluster.main.certificate_authority.0.data}' '${aws_eks_cluster.main.name}'""")
+def _render_eks_managed_node_group(context, template):
+    managed_node_tags = dict(aws.generic_tags(context).items())
 
-    worker = {
-        'associate_public_ip_address': lookup(context, 'eks.worker.assign-public-ip'),
-        'iam_instance_profile': '${aws_iam_instance_profile.worker.name}',
-        'image_id': '${data.aws_ami.worker.id}',
-        'instance_type': context['eks']['worker']['type'],
+    launch_template = {
+        'network_interfaces': {
+            'associate_public_ip_address': lookup(context, 'eks.worker.assign-public-ip'),
+            'security_groups': ['${aws_security_group.worker.id}'],
+        },
         'name_prefix': '%s--worker' % context['stackname'],
-        'security_groups': ['${aws_security_group.worker.id}'],
-        'user_data_base64': '${base64encode(local.worker_userdata)}',
-        'lifecycle': {
-            'create_before_destroy': True,
+        'block_device_mappings': {
+            'device_name': '/dev/xvda',
+            'ebs': {
+                'volume_type': 'gp3',
+                'iops': 3000,
+                'throughput': 125,
+                'volume_size': lookup(context, 'eks.worker.root.size', 20),
+            }
+        },
+        'tag_specifications': {
+            'resource_type': 'instance',
+            'tags': managed_node_tags,
         },
     }
-    root_volume_size = lookup(context, 'eks.worker.root.size', None)
-    if root_volume_size:
-        worker['root_block_device'] = {
-            'volume_size': root_volume_size
-        }
-    template.populate_resource('aws_launch_configuration', 'worker', block=worker)
 
-    autoscaling_group_tags = [
-        {
-            'key': k,
-            'value': v,
-            'propagate_at_launch': True,
-        }
-        for k, v in aws.generic_tags(context).items()
-    ]
-    autoscaling_group_tags.append({
-        'key': 'kubernetes.io/cluster/%s' % context['stackname'],
-        'value': 'owned',
-        'propagate_at_launch': True,
+    template.populate_resource('aws_launch_template', 'worker', block=launch_template)
+
+    template.populate_data("aws_ssm_parameter", "eks_ami_release_version", block={
+        'name': '/aws/service/eks/optimized-ami/${aws_eks_cluster.main.version}/amazon-linux-2/recommended/release_version',
     })
-    template.populate_resource('aws_autoscaling_group', 'worker', block={
-        'name': '%s--worker' % context['stackname'],
-        'launch_configuration': '${aws_launch_configuration.worker.id}',
-        'min_size': context['eks']['worker']['min-size'],
-        'max_size': context['eks']['worker']['max-size'],
-        'desired_capacity': context['eks']['worker']['desired-capacity'],
-        'vpc_zone_identifier': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
-        'tag': autoscaling_group_tags,
-        'lifecycle': {'ignore_changes': ['desired_capacity'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
-    })
+
+    node_group = {
+        'cluster_name': '${aws_eks_cluster.main.name}',
+        'node_group_name': '%s--worker' % context['stackname'],
+        'tags': managed_node_tags,
+
+        'node_role_arn': '${aws_iam_role.worker.arn}',
+
+        'subnet_ids': [context['eks']['worker-subnet-id'], context['eks']['worker-redundant-subnet-id']],
+
+        'version': '${aws_eks_cluster.main.version}',
+        'release_version': '${nonsensitive(data.aws_ssm_parameter.eks_ami_release_version.value)}',
+
+        'instance_types': [context['eks']['worker']['type']],
+        'scaling_config':  {
+            'min_size': context['eks']['worker']['min-size'],
+            'max_size': context['eks']['worker']['max-size'],
+            'desired_size': context['eks']['worker']['desired-capacity'],
+        },
+        'update_config': {
+            'max_unavailable': 1,
+        },
+        'launch_template': {
+            'id': "${aws_launch_template.worker.id}",
+            'version': "${aws_launch_template.worker.latest_version}"
+        },
+
+        # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+        # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+        'depends_on': [
+            'aws_iam_role_policy_attachment.worker_connect',
+            'aws_iam_role_policy_attachment.worker_cni',
+            'aws_iam_role_policy_attachment.worker_ecr',
+        ],
+
+        'lifecycle': {'ignore_changes': ['scaling_config[0].desired_size'] if lookup(context, 'eks.worker.ignore-desired-capacity-drift', False) is True else []},
+    }
+
+    template.populate_resource('aws_eks_node_group', 'worker', block=node_group)
 
 def _render_eks_workers_role(context, template):
     template.populate_resource('aws_iam_role', 'worker', block={
@@ -1093,35 +1098,6 @@ def _render_eks_workers_role(context, template):
         'policy_arn': "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
         'role': "${aws_iam_role.worker.name}",
     })
-
-    if context['eks']['efs']:
-        template.populate_resource('aws_iam_policy', 'kubernetes_efs', block={
-            'name': '%s--AmazonEFSKubernetes' % context['stackname'],
-            'path': '/',
-            'description': 'Allows management of EFS resources',
-            'policy': json.dumps({
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "elasticfilesystem:DescribeFileSystems",
-                            "elasticfilesystem:DescribeMountTargets",
-                            "elasticfilesystem:DescribeMountTargetSecurityGroups",
-                            "elasticfilesystem:DescribeTags",
-                        ],
-                        "Resource": [
-                            "*",
-                        ],
-                    },
-                ],
-            }),
-        })
-
-        template.populate_resource('aws_iam_role_policy_attachment', 'worker_efs', block={
-            'policy_arn': "${aws_iam_policy.kubernetes_efs.arn}",
-            'role': "${aws_iam_role.worker.name}",
-        })
 
 def _render_eks_workers_security_group(context, template):
     template.populate_resource('aws_security_group_rule', 'worker_to_master', block={
@@ -1195,6 +1171,9 @@ def _render_eks_master(context, template):
             'security_group_ids': ['${aws_security_group.master.id}'],
             'subnet_ids': [context['eks']['subnet-id'], context['eks']['redundant-subnet-id']],
         },
+        'access_config': {
+            'authentication_mode': "API_AND_CONFIG_MAP",
+        },
         'depends_on': [
             "aws_iam_role_policy_attachment.master_kubernetes",
             "aws_iam_role_policy_attachment.master_ecs",
@@ -1263,17 +1242,18 @@ def _render_eks_addon(context, template, addon):
             'eks_addon_%s' % label,
             block={
                 'addon_name': name,
-                'kubernetes_version': '${data.aws_eks_cluster.main.version}',
+                'kubernetes_version': '${resource.aws_eks_cluster.main.version}',
                 'most_recent': True,
             }
         )
 
     resource_block = {
-        'cluster_name': '${data.aws_eks_cluster.main.id}',
+        'cluster_name': '${resource.aws_eks_cluster.main.name}',
         'addon_name': name,
         'addon_version': version if version != 'latest' else '${data.aws_eks_addon_version.eks_addon_%s.version}' % label,
         'tags': aws.generic_tags(context),
-        'resolve_conflicts': addon['resolve-conflicts'],
+        'resolve_conflicts_on_create': addon['resolve-conflicts-on-create'],
+        'resolve_conflicts_on_update': addon['resolve-conflicts-on-update'],
     }
 
     if addon['configuration-values']:
@@ -1314,7 +1294,7 @@ def render_eks(context, template):
     _render_eks_master(context, template)
     _render_eks_workers_security_group(context, template)
     _render_eks_workers_role(context, template)
-    _render_eks_workers_autoscaling_group(context, template)
+    _render_eks_managed_node_group(context, template)
     _render_eks_user_access(context, template)
     if lookup(context, 'eks.iam-oidc-provider', False):
         _render_eks_iam_access(context, template)
@@ -1471,7 +1451,7 @@ def init(stackname, context):
     # Terraform prunes unused providers when running but conditionally adding them
     # here simplifies the `.cfn/terraform/$stackname/` files and any Terraform upgrades.
 
-    providers = {'provider': [], 'data': {}}
+    providers = {'provider': []}
 
     vault_projects = ['fastly', 'bigquery']
     need_vault = any(context.get(key) for key in vault_projects)
@@ -1524,34 +1504,6 @@ def init(stackname, context):
             'version': "= %s" % context['terraform']['provider-tls']['version']
         }
         providers['provider'].append({'tls': tls_provider})
-        kubernetes_provider = {
-            'version': "= %s" % context['terraform']['provider-kubernetes']['version'],
-            'host': '${data.aws_eks_cluster.main.endpoint}',
-            'cluster_ca_certificate': '${base64decode(data.aws_eks_cluster.main.certificate_authority.0.data)}',
-            'token': '${data.aws_eks_cluster_auth.main.token}',
-        }
-        providers['provider'].append({'kubernetes': kubernetes_provider})
-        providers['data']['aws_eks_cluster'] = {
-            'main': {
-                'name': '${aws_eks_cluster.main.name}',
-            },
-        }
-        # https://github.com/elifesciences/issues/issues/5775#issuecomment-658111158
-        aws_provider = {
-            'region': context['aws']['region'],
-            'version': '= %s' % context['terraform']['provider-aws']['version'],
-            'alias': 'eks_assume_role',
-            'assume_role': {
-                'role_arn': '${aws_iam_role.user.arn}'
-            }
-        }
-        providers['provider'].append({'aws': aws_provider})
-        providers['data']['aws_eks_cluster_auth'] = {
-            'main': {
-                'provider': 'aws.eks_assume_role',
-                'name': '${aws_eks_cluster.main.name}',
-            },
-        }
 
     # in 0.13 'providers' relies on a 'required_providers' block under 'terraform'
     # - https://developer.hashicorp.com/terraform/language/v1.1.x/providers/requirements

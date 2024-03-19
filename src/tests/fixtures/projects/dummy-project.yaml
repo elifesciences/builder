@@ -241,7 +241,6 @@ defaults:
                 #   size: 20 # GiB, default
                 # Assign public ip addresses to worker nodes. Default is true
                 assign-public-ip: true
-            efs: false
         cloudfront:
             # cloudfront defaults only used if a 'cloudfront' section present in project
             #subdomains: [] # todo: enable
@@ -963,20 +962,14 @@ project-with-eks:
             worker-subnet-id: subnet-c3c3c3c3
             worker-redundant-subnet-id: subnet-d4d4d4d4
             worker:
+                managed: true
+                self-managed: true
                 type: t2.small
                 desired-capacity: 3
                 min-size: 1
                 max-size: 3
                 root:
                     size: 40
-
-project-with-eks-efs:
-    description: project managing an EKS cluster with EFS support
-    domain: False
-    intdomain: False
-    aws:
-        eks:
-            efs: true
 
 project-with-eks-and-iam-oidc-provider:
     description: project managing an EKS cluster with it's IAM OIDC provisioned for IRSA

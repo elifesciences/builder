@@ -206,7 +206,7 @@ def using_elb(context):
     if 'primary_lb' in context and context['primary_lb'] == 'alb':
         return False
     # one or the other is present
-    return bool("elb" in context and context["elb"])
+    return bool(context.get("elb"))
 
 def cnames(context):
     "additional CNAME DNS entries pointing to full_hostname"

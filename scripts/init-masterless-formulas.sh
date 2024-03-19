@@ -1,7 +1,8 @@
 #!/usr/bin/bash
 # AWS MASTERLESS ONLY
-# downloads and configures formulas
-# Vagrant initialises the formulas in the Vagrantfile
+# downloads and configures formulas.
+# note: Vagrant's equivalent lives in the Vagrantfile.
+# note: master-server instances are typically *not* masterless.
 
 set -eu
 set -x
@@ -42,11 +43,6 @@ else
     }
 fi
 
-# we can't use the master-server's top.sls file (and it probably shouldn't be
-# there as 'top.sls' anyway), so delete it. 
-rm -f /opt/builder-private/salt/top.sls
-
-
 #
 # handle formulas
 #
@@ -75,11 +71,6 @@ echo "pillar_roots:
     - /srv/salt/pillar/
     - /opt/builder-configuration/pillar/
     - /opt/builder-private/pillar/" > /etc/salt/minion.d/pillar_roots.conf
-
-# convenience. 
-# this won't do anything but put the two top.sls files closer to each other
-cd /srv/salt/pillar
-ln -sfT /opt/builder-private/pillar/top.sls top.sls
 
 clone_update() {
     repo=$1

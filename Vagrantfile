@@ -304,10 +304,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 more_base_paths = formula_paths.map{|p| "/vagrant/" + p + "/salt/"}
 
                 # expected order:
-                # /srv/custom/salt/
-                # /cloned-projects/builder-base-formula/salt/
-                # /srv/salt/
-                # [/cloned-projects/any-other-dependent-formulas/]
+                # /vagrant/custom-vagrant/salt/
+                # /vagrant/cloned-projects/builder-base-formula/salt/
+                # /project/salt/
+                # [/vagrant/cloned-projects/any-other-dependent-formulas/]
 
                 minion_cfg['file_roots']['base'].insert(1, more_base_paths[0]) # after /srv/custom/salt/
                 rest_paths = more_base_paths[1..-1] # all paths except the first
@@ -316,7 +316,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 more_pillar_roots = more_base_paths.map{|p| p + "pillar/" }
                 minion_cfg['pillar_roots']['base'].insert(2, *more_pillar_roots)
 
-                # write minion file. 
+                # write minion file.
                 # bootstrap script will find this file and use it
                 File.open("scripts/salt/" + INSTANCE_NAME + ".minion", "w") {|f| f.write minion_cfg.to_yaml }
 
