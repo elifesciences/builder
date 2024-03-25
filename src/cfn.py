@@ -249,6 +249,7 @@ def generate_stack_from_input(pname, instance_id=None, alt_config=None):
 
 @requires_project
 def launch(pname, instance_id=None, alt_config=None):
+    "create a new project instance"
     stackname = generate_stack_from_input(pname, instance_id, alt_config)
     pdata = core.project_data_for_stackname(stackname)
 
@@ -278,7 +279,7 @@ def _pick_node(instance_list, node):
 
     def helpfn(pick):
         node = pick - 1
-        return "%s (%s, %s)" % (tags2dict(info[node].tags)['Name'], info[node].id, info[node].public_ip_address)
+        return "%s (%s, %s)" % (tags2dict(info[node].tags)['Name'], info[node].id, core.pick_ip_address_obj(info[node]))
 
     num_instances = len(instance_list)
     if num_instances > 1:
@@ -289,7 +290,7 @@ def _pick_node(instance_list, node):
     else:
         ensure(node == 1 or node is None, "You can't specify a node different from 1 for a single-instance stack")
         instance = instance_list[0]
-    ensure(instance.public_ip_address, "Selected instance does not have a public ip address, are you sure it's running?")
+    ensure(core.pick_ip_address_obj(instance), "Selected instance does not have a public ip address, are you sure it's running?")
     return instance
 
 
@@ -344,7 +345,7 @@ def ssh(stackname, node=None, username=DEPLOY_USER, private_key=USER_PRIVATE_KEY
     instances = _check_want_to_be_running(stackname)
     if not instances:
         return
-    public_ip = _pick_node(instances, node).public_ip_address
+    public_ip = core.pick_ip_address_obj(_pick_node(instances, node))
     _interactive_ssh(username, public_ip, private_key)
 
 @requires_aws_stack

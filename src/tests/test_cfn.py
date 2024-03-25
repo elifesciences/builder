@@ -20,7 +20,7 @@ def _dummy_instance_is_active(find_ec2_instances, load_context, active_stack_nam
         },
     }
     instance = MagicMock()
-    instance.public_ip_address = '54.54.54.54'
+    instance.public_ip_address = '54.54.54.54' # todo
     instance.tags = [{'Key': 'Name', 'Value': 'dummy1--test--1'}]
     find_ec2_instances.return_value = [
         instance
