@@ -1304,6 +1304,8 @@ elife-libraries:
             description: speeding up bot-lax-adaptor tests even more
             ec2:
                 type: c5.9xlarge
+            ext:
+                size: 60 # GB
     vagrant:
         ram: 4096
 
