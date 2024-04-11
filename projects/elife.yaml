@@ -493,6 +493,9 @@ lax:
     subdomain: lax # lax.elifesciences.org
     repo: https://github.com/elifesciences/lax.git
     formula-repo: https://github.com/elifesciences/lax-formula
+    formula-dependencies:
+        - https://github.com/elifesciences/builder-base-formula
+        - https://github.com/elifesciences/elife-reporting-formula
     aws:
         ec2:
             ports:
@@ -500,6 +503,8 @@ lax:
                 - 443
                 - 80:
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
                 - 8001 # bot-lax web UI to upload/validate/transform XML and article-json
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
