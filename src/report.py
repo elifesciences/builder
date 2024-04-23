@@ -9,7 +9,6 @@ from buildercore import utils as core_utils
 from buildercore.utils import ensure, lookup
 from decorators import format_output
 
-
 def print_list(row_list, checkboxes=True):
     "given a list of things, prints a markdown list to `stdout` with optional checkboxes."
     template = "- %s"
@@ -288,6 +287,10 @@ def long_running_large_ec2_instances(**kwargs):
 
     known_env_list = [
         'ci', 'end2end', 'continuumtest', 'prod',
+    ]
+
+    known_cluster_list = [
+        'kubernetes-aws--flux-test', 'kubernetes-aws--flux-prod',
         'flux-test', 'flux-prod'
     ]
 
@@ -312,13 +315,16 @@ def long_running_large_ec2_instances(**kwargs):
     def known_env(result):
         return lookup(result, 'TagsDict.Environment', None) in known_env_list
 
+    def known_cluster(result):
+        return lookup(result, 'TagsDict.Cluster', None) in known_cluster_list
+
     def comp(result):
-        return is_large_instance(result) and is_long_running(result) and not known_env(result)
+        return is_large_instance(result) and is_long_running(result) and not known_env(result) and not known_cluster(result)
 
     large_instances = list(filter(comp, result_list))
 
     def result_item(result):
-        key_list = ['TagsDict.Name', 'LaunchTime', 'InstanceId', 'InstanceType', 'State.Name']
+        key_list = ['TagsDict.Name', 'LaunchTime', 'InstanceId', 'InstanceType', 'State.Name', 'TagsDict.Cluster', 'TagsDict.Environment']
         return {key: lookup(result, key, None) for key in key_list}
 
     return list(map(result_item, large_instances))
