@@ -9,6 +9,7 @@ from buildercore import utils as core_utils
 from buildercore.utils import ensure, lookup
 from decorators import format_output
 
+
 def print_list(row_list, checkboxes=True):
     "given a list of things, prints a markdown list to `stdout` with optional checkboxes."
     template = "- %s"
