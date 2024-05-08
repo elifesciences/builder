@@ -895,13 +895,13 @@ elife-metrics:
         prod:
             description: production environment for metrics. RDS backed.
             ext:
-                size: 10 # GB
+                size: 15 # GB
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
                 type: db.t3.medium
                 multi-az: true
-                storage: 20
+                storage: 30
     vagrant:
         ports:
             1240: 80
@@ -1607,7 +1607,7 @@ observer:
         prod:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             rds:
-                storage: 10
+                storage: 15
                 multi-az: true
     vagrant:
         ports:
