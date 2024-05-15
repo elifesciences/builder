@@ -905,6 +905,10 @@ elife-metrics:
                 type: db.t3.medium
                 multi-az: true
                 storage: 30
+        continuumtest:
+            ec2:
+                root:
+                    size: 15 # GB
     vagrant:
         ports:
             1240: 80
