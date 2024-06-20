@@ -1497,7 +1497,7 @@ search:
                     - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
-                    size: 30 # GB
+                    size: 20 # GB Reduced it from 30 GB check issue #8781
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1818,6 +1818,8 @@ iiif:
                     - 9100: # prometheus node_exporter
                         cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 3
+                root:
+                    size: 10 #GiB
             ext:
                 size: 30 # GB
             elb:
@@ -1912,6 +1914,9 @@ profiles:
         prod:
             rds:
                 multi-az: true
+            ec2:
+                root:
+                    size: 10 #GiB
     vagrant:
         ports:
             1265: 80
