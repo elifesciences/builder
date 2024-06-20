@@ -894,14 +894,21 @@ elife-metrics:
                 backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed.
+            ec2:
+                root:
+                    size: 15 # GB
             ext:
-                size: 10 # GB
+                size: 15 # GB
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
                 type: db.t3.medium
                 multi-az: true
-                storage: 20
+                storage: 30
+        continuumtest:
+            ec2:
+                root:
+                    size: 15 # GB
     vagrant:
         ports:
             1240: 80
@@ -1490,7 +1497,7 @@ search:
                     - 9201: # Opensearch
                         cidr-ip: 10.0.0.0/16 # follower nodes
                 root:
-                    size: 30 # GB
+                    size: 20 # GB Reduced it from 30 GB check issue #8781
                 cluster-size: 2
                 dns-internal: true
             elb:
@@ -1607,7 +1614,7 @@ observer:
         prod:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             rds:
-                storage: 10
+                storage: 15
                 multi-az: true
     vagrant:
         ports:
@@ -1811,6 +1818,8 @@ iiif:
                     - 9100: # prometheus node_exporter
                         cidr-ip: 10.0.0.0/16 # internal access only
                 cluster-size: 3
+                root:
+                    size: 10 #GiB
             ext:
                 size: 30 # GB
             elb:
@@ -1854,7 +1863,7 @@ redirects:
             unique: true
             cloudfront:
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
-                certificate_id: ASCAXOXT77XQDXO44HK4F
+                certificate_id: ASCAXOXT77XQA5PCG6NUR
                 subdomains:
                     - elifesciences.net
                     - e-lifesciences.org
@@ -1905,6 +1914,9 @@ profiles:
         prod:
             rds:
                 multi-az: true
+            ec2:
+                root:
+                    size: 10 #GiB
     vagrant:
         ports:
             1265: 80
@@ -2154,53 +2166,6 @@ reproducible-document-stack:
                     - "{instance}--cdn-repro"
                     - repro
 
-kubernetes-aws:
-    description: project managing an EKS cluster
-    domain: False
-    intdomain: False
-    aws:
-        ec2: false
-    aws-alt:
-        flux-prod:
-            ec2: false
-            eks:
-                version: '1.28'
-                worker:
-                    type: t3.large
-                    max-size: 34
-                    desired-capacity: 1
-                    ignore-desired-capacity-drift: true
-                    assign-public-ip: false
-                iam-oidc-provider: true
-                iam-roles:
-                    kubernetes-autoscaler:
-                        policy-template: kubernetes-autoscaler
-                        service-account: cluster-autoscaler-aws-cluster-autoscaler
-                        namespace: autoscaler
-                    external-dns:
-                        policy-template: external-dns
-                        service-account: infra-external-dns
-                        namespace: infra
-        flux-test:
-            ec2: false
-            eks:
-                version: '1.28'
-                worker:
-                    type: t3.large
-                    max-size: 6
-                    desired-capacity: 1
-                    ignore-desired-capacity-drift: true
-                    assign-public-ip: false
-                iam-oidc-provider: true
-                iam-roles:
-                    kubernetes-autoscaler:
-                        policy-template: kubernetes-autoscaler
-                        service-account: cluster-autoscaler-aws-cluster-autoscaler
-                        namespace: autoscaler
-                    external-dns:
-                        policy-template: external-dns
-                        service-account: infra-external-dns
-                        namespace: infra
 bioprotocol:
     subdomain: bp # {instance}--bp.elifesciences.org
     repo: https://github.com/elifesciences/bioprotocol-service
