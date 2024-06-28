@@ -1197,6 +1197,9 @@ journal-cms:
                 size: 30 # GB
         continuumtest:
             description: production-like environment.
+            ec2:
+                root:
+                    size: 10 #GiB
             rds:
                 engine: MySQL
                 version: '8.0'
@@ -1373,6 +1376,9 @@ elife-alfred:
             s3:
                 "{instance}-elife-alfred":
                     deletion-policy: retain
+            ec2:
+                root:
+                    size: 10 #GiB
     vagrant:
         ram: 4096
         ports:
