@@ -61,8 +61,13 @@ defaults:
             masterless: false
         region: us-east-1
         vpc-id: vpc-0a0a0a0a  # vpc-id + subnet-id are peculiar to AWS account + region
+
+        # project supports IPv6.
+        use-ipv6: false # create DNS AAAA records, add IPv6 security group CIDRs
+
         subnet-id: subnet-191919191
         subnet-cidr: '172.31.16.0/20'
+
         rds:
             # rds defaults only used if an `rds` section present in project
             # explicit database name overrides the one generated at template creation

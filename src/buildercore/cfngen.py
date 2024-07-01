@@ -332,6 +332,8 @@ def build_context_aws(pdata, context):
         'account-id',
         'vpc-id',
 
+        'use-ipv6',
+
         'subnet-id',
         'subnet-cidr',
         'availability-zone',
@@ -1095,7 +1097,7 @@ def _current_cloudformation_template(stackname):
         raise
 
 def download_cloudformation_template(stackname):
-    cloudformation.write_template(stackname, json.dumps(_current_cloudformation_template(stackname)))
+    cloudformation.write_template(stackname, json.dumps(_current_cloudformation_template(stackname), indent=4))
 
 def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)
