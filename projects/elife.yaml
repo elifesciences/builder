@@ -898,7 +898,7 @@ elife-metrics:
                 root:
                     size: 15 # GB
             ext:
-                size: 15 # GB
+                size: 20 # GB
             rds:
                 # lsh@2022-03-01: upgraded from a db.t2.small.
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
