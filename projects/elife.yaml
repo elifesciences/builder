@@ -989,6 +989,9 @@ elife-bot:
                 #           #prefix: null
                 #           #suffix: null
         continuumtest:
+            ec2:
+                root:
+                    size: 10 #GiB
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
@@ -1015,6 +1018,8 @@ elife-bot:
         prod:
             ec2:
                 type: t3.medium
+                root:
+                    size: 10 #GiB
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
@@ -1217,6 +1222,9 @@ journal-cms:
                 # storage can be increased but not decreased.
                 # journal-cms--prod once needed this amount.
                 storage: 48 # GB
+            ec2:
+                root:
+                    size: 10 # GiB
             ext:
                 size: 60 # GB
     vagrant:
@@ -1255,6 +1263,9 @@ elife-dashboard:
         continuumtest:
             # unique because: 'sqs' contains static values.
             unique: true
+            ec2:
+                root:
+                    size: 10 #GiB
             sqs:
                 # legacy custom name
                 ct-event-property-incoming-queue:
@@ -1264,6 +1275,9 @@ elife-dashboard:
             # unique because: static value in 'sqs'.
             unique: true
             description: production environment. backed by RDS
+            ec2:
+                root:
+                    size: 10 #GiB
             rds:
                 multi-az: true
             sqs:
@@ -1986,6 +2000,9 @@ digests:
             rds:
                 type: db.t3.micro
                 multi-az: true
+            ec2:
+                root:
+                    size: 10 #GiB
     vagrant:
         ram: 1024
         ports:
@@ -2193,7 +2210,11 @@ bioprotocol:
             bioprotocol--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-    aws-alt: {}
+    aws-alt:
+        prod:
+            ec2:
+                root:
+                    size 10 #GiB
     vagrant:
         ports:
             1280: 80
