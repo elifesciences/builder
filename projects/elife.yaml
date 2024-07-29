@@ -1189,7 +1189,7 @@ journal-cms:
                 size: 10 # GB
         ci:
             ext:
-                size: 5 # GB
+                size: 7 # GB
         end2end:
             description: production-like environment. backed by RDS
             rds:
@@ -1586,6 +1586,9 @@ personalised-covers:
                 "{instance}-elife-personalised-covers":
                     deletion-policy: retain
         prod:
+            ec2:
+                root:
+                    size: 10 #GiB
             # unique because: 'subdomains' contains static values.
             unique: true
             subdomains:
@@ -1809,6 +1812,8 @@ iiif:
             # - 'fastly.bigquerylogging.dataset' is using a static value.
             unique: true
             ec2:
+                root:
+                    size: 10 #GiB
                 ports:
                     - 22
                     - 80:
