@@ -955,6 +955,8 @@ elife-bot:
                 "{instance}-elife-striking-images":
         end2end:
             ec2:
+                root:
+                    size: 10 # GiB
                 type: t3.medium
                 ports:
                     - 22
@@ -1250,6 +1252,9 @@ elife-dashboard:
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
         end2end:
+            ec2:
+                root:
+                    size: 10 # GiB
             # unique because: 'sqs' contains static values.
             unique: true
             description: production-like environment.
