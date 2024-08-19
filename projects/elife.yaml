@@ -1255,6 +1255,10 @@ elife-dashboard:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
+        ci:
+            ec2:
+                root:
+                    size: 10 # GB
         end2end:
             ec2:
                 root:
@@ -1328,6 +1332,8 @@ elife-libraries:
         load:
             description: running load tests
             ec2:
+                root:
+                    size: 12 # GB
                 type: t3.2xlarge
         spectrum:
             description: running end2end tests
@@ -1589,6 +1595,8 @@ personalised-covers:
             s3: false
         ci:
             ec2:
+                root:
+                    size: 10 # GiB
                 cpu-credits: unlimited
         continuumtest:
             s3:
