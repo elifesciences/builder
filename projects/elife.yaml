@@ -1496,6 +1496,8 @@ search:
     aws-alt:
         end2end:
             ec2:
+                root:
+                    size: 10 # GB
                 ports:
                     - 22
                     - 80:
