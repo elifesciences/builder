@@ -507,6 +507,10 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
+        continuumtest:
+            ec2:
+                root:
+                    size: 10 # GB
         end2end:
             description: production-like
             ec2:
