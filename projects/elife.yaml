@@ -1431,22 +1431,6 @@ search:
                     - bus-labs-posts--{instance}
                     - bus-reviewed-preprints--{instance}
     aws-alt:
-        # temporary, see: https://github.com/elifesciences/search/pull/439
-        rmgearman:
-            ec2:
-                root:
-                    size: 30 # GB
-            sqs:
-                search--{instance}:
-                    subscriptions:
-                        - bus-articles--prod
-                        - bus-podcast-episodes--prod
-                        - bus-collections--prod
-                        - bus-interviews--prod
-                        - bus-blog-articles--prod
-                        - bus-labs-posts--prod
-                        - bus-reviewed-preprints--prod
-
         end2end:
             ec2:
                 ports:
