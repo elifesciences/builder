@@ -75,7 +75,7 @@ defaults:
             # lsh@2022-09: unused feature, not sure which project it was built for.
             dns-external-primary: false
             # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
-            # only makes sense if cluster-size > 1 with no load balancer (see 'search' project).
+            # only makes sense if cluster-size > 1 with no load balancer.
             dns-internal: false
             # override 'ext' (only supported key)
             # for some EC2 instances
@@ -1462,90 +1462,6 @@ bus:
             - bus-profiles--{instance}
             - bus-digests--{instance}
             - bus-reviewed-preprints--{instance}
-
-search:
-    domain: false
-    subdomain: search
-    repo: https://github.com/elifesciences/search
-    formula-repo: https://github.com/elifesciences/search-formula
-    formula-dependencies:
-        - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
-    aws:
-        ec2:
-            type: t3.medium
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # internal access only
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-        sqs:
-            # search--prod, search--end2end, etc.
-            search--{instance}:
-                subscriptions:
-                    - bus-articles--{instance}
-                    - bus-podcast-episodes--{instance}
-                    - bus-collections--{instance}
-                    - bus-interviews--{instance}
-                    - bus-blog-articles--{instance}
-                    - bus-labs-posts--{instance}
-                    - bus-reviewed-preprints--{instance}
-    aws-alt:
-        end2end:
-            ec2:
-                root:
-                    size: 10 # GB
-                ports:
-                    - 22
-                    - 80:
-                        cidr-ip: 10.0.0.0/16 # ELB only
-                    - 1234: # caddy metrics
-                        cidr-ip: 10.0.0.0/16
-                    - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-                    - 9201: # Opensearch
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                cluster-size: 2
-                dns-internal: true
-            elb:
-                protocol:
-                    - http
-        continuumtest:
-            ec2:
-                root:
-                    size: 15 # GB
-        prod:
-            ec2:
-                ports:
-                    - 22
-                    - 80:
-                        cidr-ip: 10.0.0.0/16 # ELB only
-                    - 1234: # caddy metrics
-                        cidr-ip: 10.0.0.0/16
-                    - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-                    - 9201: # Opensearch
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                root:
-                    size: 20 # GB Reduced it from 30 GB check issue #8781
-                cluster-size: 2
-                dns-internal: true
-            elb:
-                protocol:
-                    - http
-    vagrant:
-        ram: 4096
-        ports:
-            1244: 80
-            1245: 8080
-            9921: 9201 # opensearch
 
 recommendations:
     domain: false
