@@ -126,7 +126,7 @@ fi
 # salt builtins: https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.9/linux.txt
 if ($installing || $upgrading); then
     # lsh@2023-05-12: version pins are just because they're the latest stable, nothing significant.
-    salt-pip install "docker~=6.1" "pymysql~=1.0"
+    salt-pip install "docker~=7.1" "pymysql~=1.0"
 fi
 
 
