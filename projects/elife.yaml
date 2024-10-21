@@ -1569,11 +1569,13 @@ observer:
             rds:
                 storage: 10
                 backup-retention: 2 # days
+                version: '13.16'
         prod:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             rds:
                 storage: 15
                 multi-az: true
+                version: '13.16'
     vagrant:
         ports:
             1239: 80
