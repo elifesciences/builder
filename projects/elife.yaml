@@ -1876,6 +1876,7 @@ profiles:
         prod:
             rds:
                 multi-az: true
+                version: '13.16'
             ec2:
                 root:
                     size: 10 #GiB
