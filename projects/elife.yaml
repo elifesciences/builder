@@ -1293,6 +1293,7 @@ elife-dashboard:
                     size: 10 #GiB
             rds:
                 multi-az: true
+                version: '13.16'
             sqs:
                 # legacy custom name
                 event-property-incoming-queue:
