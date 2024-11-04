@@ -97,7 +97,7 @@ fi
 # salt-minion
 if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
-    wget https://bootstrap.saltproject.io/bootstrap-salt.sh --output-document salt_bootstrap.sh --no-verbose
+    wget -o bootstrap-salt.sh -L https://github.com/saltstack/salt-bootstrap/releases/latest/download/bootstrap-salt.sh --output-document salt_bootstrap.sh --no-verbose
 
     # -F      Allow copied files to overwrite existing(config, init.d, etc)
     # -c      Temporary configuration directory
