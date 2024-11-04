@@ -103,7 +103,7 @@ if ($installing || $upgrading); then
     # -c      Temporary configuration directory
     # onedir  a single binary salt installation, only supported installation type since v3006.0
     # -M      Also install master
-    sh salt_bootstrap.sh -F -c /tmp onedir "$version"
+    sh salt_bootstrap.sh -r -F -c /tmp onedir "$version"
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
@@ -114,7 +114,7 @@ if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
     if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
-        sh salt_bootstrap.sh -F -M -c /tmp onedir "$version"
+        sh salt_bootstrap.sh -r -F -M -c /tmp onedir "$version"
     else
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
