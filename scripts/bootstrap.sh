@@ -93,28 +93,36 @@ if $install_git; then
     apt-get install git -y -q
 fi
 
+# workaround for https://github.com/saltstack/salt-bootstrap/issues/2027
+# also see salt_bootstrap.sh -r 
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public | sudo tee /etc/apt/keyrings/salt-archive-keyring.pgp
+curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.sources | sudo tee /etc/apt/sources.list.d/salt.sources
+
+echo "Package: salt-*
+Pin: version $version.*
+Pin-Priority: 1001" | sudo tee /etc/apt/preferences.d/salt-pin-1001
 
 # salt-minion
 if ($installing || $upgrading); then
     echo "Bootstrap salt $version"
-    wget -o bootstrap-salt.sh -L https://github.com/saltstack/salt-bootstrap/releases/latest/download/bootstrap-salt.sh --output-document salt_bootstrap.sh --no-verbose
+    wget -L https://github.com/saltstack/salt-bootstrap/releases/latest/download/bootstrap-salt.sh --output-document salt_bootstrap.sh --no-verbose
 
     # -F      Allow copied files to overwrite existing(config, init.d, etc)
     # -c      Temporary configuration directory
     # onedir  a single binary salt installation, only supported installation type since v3006.0
     # -M      Also install master
-    sh salt_bootstrap.sh -F -c /tmp onedir "$version"
+    sh salt_bootstrap.sh -r -F -c /tmp onedir "$version"
 else
     echo "Skipping minion bootstrap, found: $(salt-minion --version)"
 fi
-
 
 # salt-master
 if [ "$install_master" = "true" ]; then
     # salt is not installed or the version installed is old
     if ! (command -v salt-master > /dev/null && salt-master --version | grep "$version"); then
         # master not installed
-        sh salt_bootstrap.sh -F -M -c /tmp onedir "$version"
+        sh salt_bootstrap.sh -r -F -M -c /tmp onedir "$version"
     else
         echo "Skipping master bootstrap, found: $(salt-master --version)"
     fi
