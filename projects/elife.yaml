@@ -1894,10 +1894,6 @@ digests:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        end2end:
-            rds:
-                type: db.t3.micro
-                backup-retention: 2 # days
         continuumtest:
             rds:
                 type: db.t3.micro
