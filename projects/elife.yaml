@@ -1192,16 +1192,6 @@ journal-cms:
         ci:
             ext:
                 size: 7 # GB
-        end2end:
-            description: production-like environment. backed by RDS
-            rds:
-                type: db.t3.medium
-                engine: MySQL
-                version: '8.0'
-                storage: 12 # GB
-                backup-retention: 2 # days
-            ext:
-                size: 30 # GB
         continuumtest:
             description: production-like environment.
             ec2:
