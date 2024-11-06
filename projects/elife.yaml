@@ -1259,20 +1259,6 @@ elife-dashboard:
             ec2:
                 root:
                     size: 10 # GB
-        end2end:
-            ec2:
-                root:
-                    size: 10 # GiB
-            # unique because: 'sqs' contains static values.
-            unique: true
-            description: production-like environment.
-            rds:
-                backup-retention: 2 # days
-            sqs:
-                # legacy custom name
-                end2end-event-property-incoming-queue:
-                    subscriptions:
-                        - elife-bot-event-property--end2end
         continuumtest:
             # unique because: 'sqs' contains static values.
             unique: true
