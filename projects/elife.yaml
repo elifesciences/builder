@@ -892,10 +892,6 @@ elife-metrics:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        end2end:
-            description: end2end environment for metrics. RDS backed.
-            rds:
-                backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed.
             ec2:
