@@ -1655,22 +1655,6 @@ iiif:
                 healthcheck:
                     path: /
             fastly: false
-        end2end:
-            ec2:
-                ports:
-                    - 22
-                    - 80:
-                        cidr-ip: 10.0.0.0/16 # ELB only
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-                cluster-size: 2
-            ext:
-                size: 30 # GB
-            elb:
-                protocol:
-                    - https
-                healthcheck:
-                    path: /
         # manual tests
         continuumtest:
             # unique because:
