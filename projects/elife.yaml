@@ -1013,15 +1013,6 @@ generic-cdn:
             ec2: false
         standalone:
             ec2: false
-        end2end:
-            # unique because:
-            # - 'fastly.gcslogging.path' is static. log data would be commingled.
-            unique: true
-            fastly:
-                gcslogging:
-                    bucket: end2end-elife-fastly
-                    path: generic-cdn--end2end/
-                    period: 600
         continuumtest:
             # unique because:
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
