@@ -875,43 +875,6 @@ elife-bot:
                 "{instance}-elife-published":
                     deletion-policy: retain
                 "{instance}-elife-striking-images":
-        end2end:
-            ec2:
-                root:
-                    size: 10 # GiB
-                type: t3.medium
-                ports:
-                    - 22
-                    - 8020 # exposing FTP contents
-                    - 8021 # exposing FTP contents, HTTPS
-                    - 1080 # exposing mailcatcher API
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-            s3:
-                "{instance}-elife-published":
-                    deletion-policy: retain
-                "{instance}-elife-silent-corrections":
-                    sqs-notifications:
-                        end2end-incoming-queue: {}
-                "{instance}-elife-bot-digests-input":
-                    sqs-notifications:
-                        end2end-incoming-queue: {}
-                "{instance}-elife-bot-decision-letter-input":
-                    sqs-notifications:
-                        end2end-incoming-queue: {}
-                "{instance}-elife-ejp-poa-delivery":
-                    sqs-notifications:
-                        end2end-poa-incoming-queue: {}
-                    deletion-policy: delete
-                "{instance}-elife-striking-images":
-                # commented out because bucket already exists outside of CloudFormation:
-                #"end2end-elife-bot":
-                #    deletion-policy: delete
-                #end2end-elife-production-final:
-                #    sqs-notifications:
-                #        end2end-incoming-queue: {}
-                #           #prefix: null
-                #           #suffix: null
         continuumtest:
             ec2:
                 root:
