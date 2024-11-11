@@ -1722,6 +1722,7 @@ digests:
     aws-alt:
         continuumtest:
             rds:
+                version: "13.16"
                 type: db.t3.micro
                 backup-retention: 2 # days
         prod:
