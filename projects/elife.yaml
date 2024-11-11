@@ -1727,11 +1727,13 @@ digests:
                 backup-retention: 2 # days
         prod:
             rds:
+                params: 
+                    "rds.logical_replication": 1
                 type: db.t3.micro
                 multi-az: true
-            ec2:
-                root:
-                    size: 10 #GiB
+            # ec2:
+            #     root:
+            #         size: 10 #GiB
     vagrant:
         ram: 1024
         ports:
