@@ -1061,10 +1061,6 @@ journal-cms:
                     - bus-digests--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        ckeditor:
-            description: testing environment. backed by RDS
-            ext:
-                size: 10 # GB
         ci:
             ext:
                 size: 7 # GB
