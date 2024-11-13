@@ -1178,18 +1178,6 @@ elife-libraries:
             description: |
                 running unit tests.
                 running tasks that require a builder installation but can't be run on `elife-alfred--prod`.
-        load:
-            description: running load tests
-            ec2:
-                root:
-                    size: 12 # GB
-                type: t3.2xlarge
-        spectrum:
-            description: running end2end tests
-            ec2:
-                type: t3.medium # 2 core, 8 GB of memory
-            ext:
-                size: 50 # GB
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
             ec2:
