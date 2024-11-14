@@ -1053,6 +1053,7 @@ journal-cms:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
