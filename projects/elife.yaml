@@ -422,7 +422,7 @@ defaults:
     gcp:
         bigquery: false
     vagrant:
-        box: ubuntu/focal64 # 20.04
+        box: bento/ubuntu-20.04
         ip: 192.168.56.44
         ram: 2048
         cpus: 2
