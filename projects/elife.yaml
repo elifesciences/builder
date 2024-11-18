@@ -1298,55 +1298,6 @@ recommendations:
         ports:
             1254: 80
 
-personalised-covers:
-    subdomain: personalised-covers
-    repo: https://github.com/elifesciences/personalised-covers
-    formula-repo: https://github.com/elifesciences/personalised-covers-formula
-    formula-dependencies:
-        - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
-    aws:
-        ec2:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # internal access only
-                - 443
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-        s3:
-            "{instance}-elife-personalised-covers":
-                deletion-policy: delete
-    aws-alt:
-        standalone:
-            s3: false
-        ci:
-            ec2:
-                root:
-                    size: 10 # GiB
-                cpu-credits: unlimited
-        continuumtest:
-            s3:
-                "{instance}-elife-personalised-covers":
-                    deletion-policy: retain
-        prod:
-            ec2:
-                root:
-                    size: 10 #GiB
-            # unique because: 'subdomains' contains static values.
-            unique: true
-            subdomains:
-                - covers
-            s3:
-                "{instance}-elife-personalised-covers":
-                    deletion-policy: retain
-    vagrant:
-        ports:
-            1246: 80
-            1247: 8080
-
 observer:
     description: article and non-article content reports, including RSS feeds and sitemap.
     subdomain: observer # observer.elifesciences.org
