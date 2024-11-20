@@ -35,3 +35,5 @@ tfenv.tar.gz
 .*.flag
 # osx, home of older terraform and vault binaries as versions from homebrew packages are too new.
 .bin/
+
+projects/elife/.vproject

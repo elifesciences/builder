@@ -75,7 +75,7 @@ defaults:
             # lsh@2022-09: unused feature, not sure which project it was built for.
             dns-external-primary: false
             # whether the EC2 nodes should get a per-node internal DNS entry such as env--project--1.elife.internal
-            # only makes sense if cluster-size > 1 with no load balancer (see 'search' project).
+            # only makes sense if cluster-size > 1 with no load balancer.
             dns-internal: false
             # override 'ext' (only supported key)
             # for some EC2 instances
@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-0c3080ef8bbcae81e # GENERATED created from basebox--2004
+            ami: ami-0281b2afbfbe42efe # GENERATED created from basebox--2004
                                        # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
@@ -511,22 +511,6 @@ lax:
             ec2:
                 root:
                     size: 10 # GB
-        end2end:
-            description: production-like
-            ec2:
-                cluster-size: 2
-            rds:
-                storage: 10
-                backup-retention: 2 # days
-            ext:
-                size: 10 # GB
-            elb:
-                protocol:
-                    - https
-                additional_listeners:
-                    bot_lax_adaptor:
-                        protocol: https
-                        port: 8001
         prod:
             description: RDS backed
             ec2:
@@ -637,68 +621,6 @@ journal:
                 ports:
                     - 22
                     - 443
-        end2end:
-            description: end2end environment for journal. ELB on top of multiple EC2 instances
-            ec2:
-                cluster-size: 2
-            elasticache:
-                engine: redis
-                clusters: 2
-                overrides:
-                    2:
-                        type: cache.t2.micro
-            alb:
-                listeners:
-                    listener1:
-                        protocol: http
-                        port: 80
-                        forward: target-group1
-                    listener2:
-                        protocol: https
-                        port: 443
-                        forward: target-group1
-                target_groups:
-                    target-group1:
-                        protocol: http
-                        port: 80
-                        healthcheck:
-                            path: /ping
-                            timeout: 4
-                            interval: 5
-                            unhealthy_threshold: 2
-                            healthy_threshold: 2
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-journal"
-                healthcheck:
-                    path: /ping-fastly
-                    check-interval: 10000
-                    timeout: 2000
-                errors:
-                    # always prod for simplicity
-                    url: https://prod-elife-error-pages.s3.amazonaws.com/
-                    codes:
-                        404: "404.html"
-                        410: "410.html"
-                        503: "503.html"
-                    fallbacks:
-                        4xx: "4xx.html"
-                        5xx: "5xx.html"
-                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/1WzbLJKoGqzOF1IrhTNx2M/versions/19/data/acls
-                vcl:
-                    - "original-host"
-                    - "ping-status"
-                    - "strip-non-journal-cookies"
-                    - "journal-google-scholar"
-                    - "journal-google-scholar-vary"
-                gcslogging:
-                    bucket: "{instance}-elife-fastly"
-                    path: "journal--{instance}/"
-                    period: 600
-                bigquerylogging:
-                    project: "elife-fastly"
-                    dataset: "{instance}"
-                    table: "journal"
         continuumtest:
             # unique because: 'fastly.bigquerylogging.*' values are static.
             unique: true
@@ -892,10 +814,6 @@ elife-metrics:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        end2end:
-            description: end2end environment for metrics. RDS backed.
-            rds:
-                backup-retention: 2 # days
         prod:
             description: production environment for metrics. RDS backed.
             ec2:
@@ -957,43 +875,6 @@ elife-bot:
                 "{instance}-elife-published":
                     deletion-policy: retain
                 "{instance}-elife-striking-images":
-        end2end:
-            ec2:
-                root:
-                    size: 10 # GiB
-                type: t3.medium
-                ports:
-                    - 22
-                    - 8020 # exposing FTP contents
-                    - 8021 # exposing FTP contents, HTTPS
-                    - 1080 # exposing mailcatcher API
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-            s3:
-                "{instance}-elife-published":
-                    deletion-policy: retain
-                "{instance}-elife-silent-corrections":
-                    sqs-notifications:
-                        end2end-incoming-queue: {}
-                "{instance}-elife-bot-digests-input":
-                    sqs-notifications:
-                        end2end-incoming-queue: {}
-                "{instance}-elife-bot-decision-letter-input":
-                    sqs-notifications:
-                        end2end-incoming-queue: {}
-                "{instance}-elife-ejp-poa-delivery":
-                    sqs-notifications:
-                        end2end-poa-incoming-queue: {}
-                    deletion-policy: delete
-                "{instance}-elife-striking-images":
-                # commented out because bucket already exists outside of CloudFormation:
-                #"end2end-elife-bot":
-                #    deletion-policy: delete
-                #end2end-elife-production-final:
-                #    sqs-notifications:
-                #        end2end-incoming-queue: {}
-                #           #prefix: null
-                #           #suffix: null
         continuumtest:
             ec2:
                 root:
@@ -1132,15 +1013,6 @@ generic-cdn:
             ec2: false
         standalone:
             ec2: false
-        end2end:
-            # unique because:
-            # - 'fastly.gcslogging.path' is static. log data would be commingled.
-            unique: true
-            fastly:
-                gcslogging:
-                    bucket: end2end-elife-fastly
-                    path: generic-cdn--end2end/
-                    period: 600
         continuumtest:
             # unique because:
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
@@ -1181,6 +1053,8 @@ journal-cms:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
+                - 1234: # caddy metrics
+                    cidr-ip: 10.0.0.0/16
         sqs:
             # journal-cms--prod, journal-cms--end2end, etc.
             journal-cms--{instance}:
@@ -1189,23 +1063,9 @@ journal-cms:
                     - bus-digests--{instance}
                     - bus-metrics--{instance}
     aws-alt:
-        ckeditor:
-            description: testing environment. backed by RDS
-            ext:
-                size: 10 # GB
         ci:
             ext:
                 size: 7 # GB
-        end2end:
-            description: production-like environment. backed by RDS
-            rds:
-                type: db.t3.medium
-                engine: MySQL
-                version: '8.0'
-                storage: 12 # GB
-                backup-retention: 2 # days
-            ext:
-                size: 30 # GB
         continuumtest:
             description: production-like environment.
             ec2:
@@ -1259,20 +1119,6 @@ elife-dashboard:
             ec2:
                 root:
                     size: 10 # GB
-        end2end:
-            ec2:
-                root:
-                    size: 10 # GiB
-            # unique because: 'sqs' contains static values.
-            unique: true
-            description: production-like environment.
-            rds:
-                backup-retention: 2 # days
-            sqs:
-                # legacy custom name
-                end2end-event-property-incoming-queue:
-                    subscriptions:
-                        - elife-bot-event-property--end2end
         continuumtest:
             # unique because: 'sqs' contains static values.
             unique: true
@@ -1293,6 +1139,7 @@ elife-dashboard:
                     size: 10 #GiB
             rds:
                 multi-az: true
+                version: '13.16'
             sqs:
                 # legacy custom name
                 event-property-incoming-queue:
@@ -1329,18 +1176,6 @@ elife-libraries:
             description: |
                 running unit tests.
                 running tasks that require a builder installation but can't be run on `elife-alfred--prod`.
-        load:
-            description: running load tests
-            ec2:
-                root:
-                    size: 12 # GB
-                type: t3.2xlarge
-        spectrum:
-            description: running end2end tests
-            ec2:
-                type: t3.medium # 2 core, 8 GB of memory
-            ext:
-                size: 50 # GB
         powerful3:
             description: speeding up bot-lax-adaptor tests even more
             ec2:
@@ -1413,30 +1248,6 @@ elife-alfred:
         ports:
             1433: 80
 
-api-dummy:
-    subdomain: api-dummy
-    repo: https://github.com/elifesciences/api-dummy
-    formula-repo: https://github.com/elifesciences/api-dummy-formula
-    aws:
-        ec2:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # internal access only
-                - 443
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        demo:
-            ec2:
-                type: t3.micro
-    vagrant:
-        ports:
-            1242: 80
-
-
 bus:
     description: see https://github.com/elifesciences/bus
     default-branch: null
@@ -1463,90 +1274,6 @@ bus:
             - bus-digests--{instance}
             - bus-reviewed-preprints--{instance}
 
-search:
-    domain: false
-    subdomain: search
-    repo: https://github.com/elifesciences/search
-    formula-repo: https://github.com/elifesciences/search-formula
-    formula-dependencies:
-        - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
-    aws:
-        ec2:
-            type: t3.medium
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # internal access only
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-        sqs:
-            # search--prod, search--end2end, etc.
-            search--{instance}:
-                subscriptions:
-                    - bus-articles--{instance}
-                    - bus-podcast-episodes--{instance}
-                    - bus-collections--{instance}
-                    - bus-interviews--{instance}
-                    - bus-blog-articles--{instance}
-                    - bus-labs-posts--{instance}
-                    - bus-reviewed-preprints--{instance}
-    aws-alt:
-        end2end:
-            ec2:
-                root:
-                    size: 10 # GB
-                ports:
-                    - 22
-                    - 80:
-                        cidr-ip: 10.0.0.0/16 # ELB only
-                    - 1234: # caddy metrics
-                        cidr-ip: 10.0.0.0/16
-                    - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-                    - 9201: # Opensearch
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                cluster-size: 2
-                dns-internal: true
-            elb:
-                protocol:
-                    - http
-        continuumtest:
-            ec2:
-                root:
-                    size: 15 # GB
-        prod:
-            ec2:
-                ports:
-                    - 22
-                    - 80:
-                        cidr-ip: 10.0.0.0/16 # ELB only
-                    - 1234: # caddy metrics
-                        cidr-ip: 10.0.0.0/16
-                    - 4730: # Gearman
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-                    - 9201: # Opensearch
-                        cidr-ip: 10.0.0.0/16 # follower nodes
-                root:
-                    size: 20 # GB Reduced it from 30 GB check issue #8781
-                cluster-size: 2
-                dns-internal: true
-            elb:
-                protocol:
-                    - http
-    vagrant:
-        ram: 4096
-        ports:
-            1244: 80
-            1245: 8080
-            9921: 9201 # opensearch
-
 recommendations:
     domain: false
     subdomain: recommendations
@@ -1570,55 +1297,6 @@ recommendations:
     vagrant:
         ports:
             1254: 80
-
-personalised-covers:
-    subdomain: personalised-covers
-    repo: https://github.com/elifesciences/personalised-covers
-    formula-repo: https://github.com/elifesciences/personalised-covers-formula
-    formula-dependencies:
-        - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
-    aws:
-        ec2:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # internal access only
-                - 443
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-        s3:
-            "{instance}-elife-personalised-covers":
-                deletion-policy: delete
-    aws-alt:
-        standalone:
-            s3: false
-        ci:
-            ec2:
-                root:
-                    size: 10 # GiB
-                cpu-credits: unlimited
-        continuumtest:
-            s3:
-                "{instance}-elife-personalised-covers":
-                    deletion-policy: retain
-        prod:
-            ec2:
-                root:
-                    size: 10 #GiB
-            # unique because: 'subdomains' contains static values.
-            unique: true
-            subdomains:
-                - covers
-            s3:
-                "{instance}-elife-personalised-covers":
-                    deletion-policy: retain
-    vagrant:
-        ports:
-            1246: 80
-            1247: 8080
 
 observer:
     description: article and non-article content reports, including RSS feeds and sitemap.
@@ -1649,15 +1327,12 @@ observer:
                     - bus-interviews--{instance}
                     - bus-blog-articles--{instance}
     aws-alt:
-        end2end:
-            rds:
-                storage: 10
-                backup-retention: 2 # days
         prod:
             # ip: 34.201.187.7 # observer--prod, points to observer.elifesciences.org
             rds:
                 storage: 15
                 multi-az: true
+                version: '13.16'
     vagrant:
         ports:
             1239: 80
@@ -1809,22 +1484,6 @@ iiif:
                 healthcheck:
                     path: /
             fastly: false
-        end2end:
-            ec2:
-                ports:
-                    - 22
-                    - 80:
-                        cidr-ip: 10.0.0.0/16 # ELB only
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
-                cluster-size: 2
-            ext:
-                size: 30 # GB
-            elb:
-                protocol:
-                    - https
-                healthcheck:
-                    path: /
         # manual tests
         continuumtest:
             # unique because:
@@ -1940,24 +1599,10 @@ profiles:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        end2end:
-            rds:
-                backup-retention: 2 # days
-            ec2:
-                ports:
-                    - 22
-                    - 80:
-                        cidr-ip: 10.0.0.0/16 # internal access only
-                    - 443
-                    - 1234: # caddy metrics
-                        cidr-ip: 10.0.0.0/16
-                    - 8081 # orcid-dummy http
-                    - 8082 # orcid-dummy https
-                    - 9100: # prometheus node_exporter
-                        cidr-ip: 10.0.0.0/16 # internal access only
         prod:
             rds:
                 multi-az: true
+                version: '13.16'
             ec2:
                 root:
                     size: 10 #GiB
@@ -2012,16 +1657,14 @@ digests:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        end2end:
-            rds:
-                type: db.t3.micro
-                backup-retention: 2 # days
         continuumtest:
             rds:
+                version: "13.16"
                 type: db.t3.micro
                 backup-retention: 2 # days
         prod:
             rds:
+                version: "13.16"
                 type: db.t3.micro
                 multi-az: true
             ec2:
