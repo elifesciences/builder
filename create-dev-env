@@ -18,42 +18,43 @@ source ./venv/bin/activate
 PS3="Select a project: "
 select project in $(./.project.py --format json --env=lima | jq -r '.|join(" ")')
 do
-    project=${project:-$REPLY}
+  project=${project:-$REPLY}
 
-    if ! (./.project.py --format json --env=lima $project 2>&1 >/dev/null); then
-      echo ""
-      echo "project $project doesn't exist in builder project config"
-      exit 1
+  if ! (./.project.py --format json --env=lima $project 2>&1 >/dev/null); then
+    echo ""
+    echo "project $project doesn't exist in builder project config"
+    exit 1
+  fi
+  project_config="$(./.project.py --format json --env=lima $project)"
+break;
+
+dependant_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // [])|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
+project_formula=$(echo "$project_config" | yq -o j  '.["formula-repo"]|{"url": ., "name": .|split("/")[-1]}' | jq -c)
+all_formulas=$(echo "[$project_formula]$dependant_formulas" | jq -s 'add' | jq -c)
+first_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[0]')
+all_the_rest_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[1:]')
+
+readarray -t all_formulas_array < <(echo "$all_formulas" | jq -c '.[]')
+
+for formula in "${all_formulas_array[@]}"; do
+    formula_name=$(echo $formula | jq -r .name)
+    formula_url=$(echo $formula | jq -r .url)
+    formula_path="$DIR/cloned-projects/$formula_name"
+
+    if [ ! -d "$formula_path/.git" ]; then
+        echo "cloning $formula_name"
+        git clone "$formula_url" "$formula_path" 2>&1 > /dev/null
+    else
+        echo "updating $formula_name"
+        git -C "$formula_path" pull 2>&1 > /dev/null || echo "issue updating checkout"
     fi
-    project_config="$(./.project.py --format json --env=lima $project)"
+done
 
-    dependant_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // [])|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
-    project_formula=$(echo "$project_config" | yq -o j  '.["formula-repo"]|{"url": ., "name": .|split("/")[-1]}' | jq -c)
-    all_formulas=$(echo "[$project_formula]$dependant_formulas" | jq -s 'add' | jq -c)
-    first_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[0]')
-    all_the_rest_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[1:]')
+# Make directories for override salt formulas
+mkdir -p $DIR/dev-env/$project/salt
+mkdir -p $DIR/dev-env/$project/pillar
 
-    readarray -t all_formulas_array < <(echo "$all_formulas" | jq -c '.[]')
-
-    for formula in "${all_formulas_array[@]}"; do
-        formula_name=$(echo $formula | jq -r .name)
-        formula_url=$(echo $formula | jq -r .url)
-        formula_path="$DIR/cloned-projects/$formula_name"
-
-        if [ ! -d "$formula_path/.git" ]; then
-            echo "cloning $formula_name"
-            git clone "$formula_url" "$formula_path" 2>&1 > /dev/null
-        else
-            echo "updating $formula_name"
-            git -C "$formula_path" pull 2>&1 > /dev/null || echo "issue updating checkout"
-        fi
-    done
-
-    # Make directories for override salt formulas
-    mkdir -p $DIR/dev-env/$project/salt
-    mkdir -p $DIR/dev-env/$project/pillar
-
-    minion_config=$(cat << EOF
+minion_config=$(cat << EOF
 ---
 file_client: local
 log_level: info
@@ -77,14 +78,14 @@ $(echo "$all_formulas" | yq -P -o yaml '{"pillar_roots":{"base":["/builder/dev-e
 EOF
 )
 
-    minion_config_base64=$(echo "$minion_config" | base64)
+minion_config_base64=$(echo "$minion_config" | base64)
 
 
 
-    instance_name="$project--lima"
-    salt_version="$(echo $project_config | jq -r .salt)"
+instance_name="$project--lima"
+salt_version="$(echo $project_config | jq -r .salt)"
 
-    lima_config=$(cat << EOF
+lima_config=$(cat << EOF
 minimumLimaVersion: "1.0.0"
 # turn off containerd setup
 containerd:
@@ -122,9 +123,9 @@ EOF
 
 
 
-    vm_name="$project-lima"
-    echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
-    limactl start $vm_name
+vm_name="$project-lima"
+echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
+limactl start $vm_name
 
-    break;
+
 done
