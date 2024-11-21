@@ -26,7 +26,8 @@ do
     exit 1
   fi
   project_config="$(./.project.py --format json --env=lima $project)"
-break;
+  break;
+done
 
 dependant_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // [])|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
 project_formula=$(echo "$project_config" | yq -o j  '.["formula-repo"]|{"url": ., "name": .|split("/")[-1]}' | jq -c)
@@ -126,6 +127,3 @@ EOF
 vm_name="$project-lima"
 echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
 limactl start $vm_name
-
-
-done
