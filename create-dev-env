@@ -121,6 +121,11 @@ provision:
   script: |
     #!/bin/bash
     echo $minion_config_base64 | base64 -d > /etc/salt/minion
+# Run highstate
+- mode: system
+  script: |
+    #!/bin/bash
+    salt-call state.apply
 
 
 # Embed entire project lima config here
