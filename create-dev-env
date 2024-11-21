@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+set -e
+
+if ! [ -x "$(command -v limactl)" ]; then
+    echo "no lima"
+    exit 1
+fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+
+if [ ! -d venv ]; then
+    ./update.sh
+fi
+
+source ./venv/bin/activate
+
+PS3="Select a project: "
+select project in $(./.project.py --format json --env=lima | jq '.|join(" ")')
+do
+    project_config="$(./.project.py --format json --env=lima $project)"
+
+    dependant_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // [])|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
+    project_formula=$(echo "$project_config" | yq -o j  '.["formula-repo"]|{"url": ., "name": .|split("/")[-1]}' | jq -c)
+    all_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // []) + [.["formula-repo"]]|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
+
+    readarray -t all_formulas_array < <(echo "$all_formulas" | jq -c '.[]')
+
+    for formula in "${all_formulas_array[@]}"; do
+        formula_name=$(echo $formula | jq -r .name)
+        formula_url=$(echo $formula | jq -r .url)
+        formula_path="$DIR/cloned-projects/$formula_name"
+
+        if [ ! -d "$formula_path/.git" ]; then
+            echo "cloning $formula_name"
+            git clone "$formula_url" "$formula_path" 2>&1 > /dev/null
+        else
+            echo "updating $formula_name"
+            git -C "$formula_path" pull 2>&1 > /dev/null || echo "issue updating checkout"
+        fi
+    done
+
+    minion_config=$(cat << EOF
+---
+file_client: local
+log_level: info
+fileserver_backend:
+- roots
+
+$(echo "$dependant_formulas" | yq -P -o yaml '{"file_roots":{"base":["/builder/dev-env/salt/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/")) + ["/project/salt/"]}}')
+
+$(echo "$dependant_formulas" | yq -P -o yaml '{"pillar_roots":{"base":["/builder/dev-env/pillar/", "/project/salt/pillar/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/pillar"))}}')
+
+EOF
+)
+    minion_config_base64=$(echo "$minion_config" | base64)
+
+
+
+    instance_name="$project--lima"
+    salt_version="$(echo $project_config | jq -r .salt)"
+
+    lima_config=$(cat << EOF
+minimumLimaVersion: "1.0.0"
+# turn off containerd setup
+containerd:
+  system: false
+  user: false
+
+# Mount script directory in the VM
+mounts:
+- location: "$DIR/scripts"
+  mountPoint: /scripts
+  writable: false
+- location: "$DIR"
+  mountPoint: /builder
+  writable: false
+- location: "$DIR/cloned-projects/$(echo "$project_formula" | jq -r .name)"
+  mountPoint: /project
+  writable: false
+
+## Provision
+# Update system before anything else
+upgradePackages: true
+
+provision:
+# Do bootstrap
+- mode: system
+  script: |
+    #!/bin/bash
+    bash /scripts/bootstrap.sh "$salt_version" "$instance_name" "false"
+# Setup new dev env
+- mode: system
+  script: |
+    #!/bin/bash
+    echo $minion_config_base64 | base64 -d > /etc/salt/minion
+
+
+# Embed entire project lima config here
+$(echo $project_config | jq .lima | yq -P --output-format yaml '.')
+# End project config
+EOF
+)
+
+
+
+    vm_name="$project-lima"
+    echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
+    limactl start $vm_name
+
+    break;
+done

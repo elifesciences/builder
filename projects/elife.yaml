@@ -431,6 +431,14 @@ defaults:
         #ports:
         #    1239: 80
         #    1240: 8001
+    lima:
+        images:
+            - location: "https://cloud-images.ubuntu.com/releases/20.04/release/ubuntu-20.04-server-cloudimg-amd64.img"
+              arch: "x86_64"
+            - location: "https://cloud-images.ubuntu.com/releases/20.04/release/ubuntu-20.04-server-cloudimg-arm64.img"
+              arch: "aarch64"
+        cpus: 2
+        memory: 2GiB
 
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
