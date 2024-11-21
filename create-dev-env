@@ -86,7 +86,7 @@ minion_config_base64=$(echo "$minion_config" | base64)
 
 
 
-instance_name="$project--lima"
+instance_name="$project--dev"
 salt_version="$(echo $project_config | jq -r .salt)"
 
 lima_config=$(cat << EOF
@@ -112,6 +112,8 @@ provision:
   script: |
     #!/bin/bash
     bash /builder/scripts/bootstrap.sh "$salt_version" "$instance_name" "false"
+    hostname $instance_name
+
 # Setup new dev env
 - mode: system
   script: |
@@ -127,6 +129,6 @@ EOF
 
 
 
-vm_name="$project-lima"
+vm_name="$project-dev"
 echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
 limactl start $vm_name
