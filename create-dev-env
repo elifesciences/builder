@@ -16,13 +16,22 @@ fi
 source ./venv/bin/activate
 
 PS3="Select a project: "
-select project in $(./.project.py --format json --env=lima | jq '.|join(" ")')
+select project in $(./.project.py --format json --env=lima | jq -r '.|join(" ")')
 do
+    project=${project:-$REPLY}
+
+    if ! (./.project.py --format json --env=lima $project 2>&1 >/dev/null); then
+      echo ""
+      echo "project $project doesn't exist in builder project config"
+      exit 1
+    fi
     project_config="$(./.project.py --format json --env=lima $project)"
 
     dependant_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // [])|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
     project_formula=$(echo "$project_config" | yq -o j  '.["formula-repo"]|{"url": ., "name": .|split("/")[-1]}' | jq -c)
-    all_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // []) + [.["formula-repo"]]|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
+    all_formulas=$(echo "[$project_formula]$dependant_formulas" | jq -s 'add' | jq -c)
+    first_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[0]')
+    all_the_rest_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[1:]')
 
     readarray -t all_formulas_array < <(echo "$all_formulas" | jq -c '.[]')
 
@@ -40,6 +49,10 @@ do
         fi
     done
 
+    # Make directories for override salt formulas
+    mkdir -p $DIR/dev-env/$project/salt
+    mkdir -p $DIR/dev-env/$project/pillar
+
     minion_config=$(cat << EOF
 ---
 file_client: local
@@ -47,12 +60,23 @@ log_level: info
 fileserver_backend:
 - roots
 
-$(echo "$dependant_formulas" | yq -P -o yaml '{"file_roots":{"base":["/builder/dev-env/salt/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/")) + ["/project/salt/"]}}')
+# Expected order:
+# The dev-env override salt formulas
+# The first dependant salt formula (usually builder-base-formula)
+# The project salt formulas
+# The rest of the dependant salt formulas
+$(echo "[$first_dependant_formula] [$project_formula] $all_the_rest_dependant_formula" | jq -s "add" | yq -P -o yaml '{"file_roots":{"base":["/builder/dev-env/$project/salt/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/"))}}')
 
-$(echo "$dependant_formulas" | yq -P -o yaml '{"pillar_roots":{"base":["/builder/dev-env/pillar/", "/project/salt/pillar/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/pillar"))}}')
+# Expected order:
+# The dev-env override formula pillar data
+# The project formula pillar data
+# The dependant formula pillar data
+
+$(echo "$all_formulas" | yq -P -o yaml '{"pillar_roots":{"base":["/builder/dev-env/$project/pillar/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/pillar"))}}')
 
 EOF
 )
+
     minion_config_base64=$(echo "$minion_config" | base64)
 
 
@@ -69,14 +93,8 @@ containerd:
 
 # Mount script directory in the VM
 mounts:
-- location: "$DIR/scripts"
-  mountPoint: /scripts
-  writable: false
 - location: "$DIR"
   mountPoint: /builder
-  writable: false
-- location: "$DIR/cloned-projects/$(echo "$project_formula" | jq -r .name)"
-  mountPoint: /project
   writable: false
 
 ## Provision
@@ -88,7 +106,7 @@ provision:
 - mode: system
   script: |
     #!/bin/bash
-    bash /scripts/bootstrap.sh "$salt_version" "$instance_name" "false"
+    bash /builder/scripts/bootstrap.sh "$salt_version" "$instance_name" "false"
 # Setup new dev env
 - mode: system
   script: |
