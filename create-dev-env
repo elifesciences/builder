@@ -112,6 +112,8 @@ provision:
   script: |
     #!/bin/bash
     bash /builder/scripts/bootstrap.sh "$salt_version" "$instance_name" "false"
+    systemctl stop salt-minion 2> /dev/null
+    systemctl disable salt-minion 2> /dev/null
     hostname $instance_name
 
 # Setup new dev env
