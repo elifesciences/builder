@@ -70,14 +70,14 @@ fileserver_backend:
 # The first dependant salt formula (usually builder-base-formula)
 # The project salt formulas
 # The rest of the dependant salt formulas
-$(echo "[$first_dependant_formula] [$project_formula] $all_the_rest_dependant_formula" | jq -s "add" | yq -P -o yaml '{"file_roots":{"base":["/builder/dev-env/$project/salt/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/"))}}')
+$(echo "[$first_dependant_formula] [$project_formula] $all_the_rest_dependant_formula" | jq -s "add" | yq -P -o yaml '{"file_roots":{"base":["/builder/dev-env/'$project'/salt/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/"))}}')
 
 # Expected order:
 # The dev-env override formula pillar data
 # The project formula pillar data
 # The dependant formula pillar data
 
-$(echo "$all_formulas" | yq -P -o yaml '{"pillar_roots":{"base":["/builder/dev-env/$project/pillar/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/pillar"))}}')
+$(echo "$all_formulas" | yq -P -o yaml '{"pillar_roots":{"base":["/builder/dev-env/'$project'/pillar/"] + (.|map("/builder/cloned-projects/" + .name + "/salt/pillar"))}}')
 
 EOF
 )
