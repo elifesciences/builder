@@ -82,7 +82,7 @@ $(echo "$all_formulas" | yq -P -o yaml '{"pillar_roots":{"base":["/builder/dev-e
 EOF
 )
 
-minion_config_base64=$(echo "$minion_config" | base64)
+minion_config_base64=$(echo "$minion_config" | yq '.|@yaml|@base64')
 
 
 
