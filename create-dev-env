@@ -58,6 +58,9 @@ done
 mkdir -p $DIR/dev-env/$project/salt
 mkdir -p $DIR/dev-env/$project/pillar
 
+# Make the project formula example.top into a top.sls
+(project_formula_name=$(echo $project_formula | jq -r .name); cd $DIR/cloned-projects/$project_formula_name; ln -sf example.top top.sls)
+
 minion_config=$(cat << EOF
 ---
 file_client: local
