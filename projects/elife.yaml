@@ -431,6 +431,27 @@ defaults:
         #ports:
         #    1239: 80
         #    1240: 8001
+    lima:
+        # Force intel VM, even on an arm host (using slow emulation)
+        # arch: x86_64
+
+        # Force arm VM, even on an intel host (using slow emulation)
+        # arch: aarch64
+
+        # Use macOS rosetta to run intel linux binaries within an ARM VM
+        # Note: null allows rosetta config to be default overridden by $LIMAHOME/_config/default.yaml
+        rosetta:
+          enabled: null
+          binfmt: null
+
+        images:
+            - location: "https://cloud-images.ubuntu.com/releases/20.04/release/ubuntu-20.04-server-cloudimg-amd64.img"
+              arch: "x86_64"
+            - location: "https://cloud-images.ubuntu.com/releases/20.04/release/ubuntu-20.04-server-cloudimg-arm64.img"
+              arch: "aarch64"
+        cpus: 2
+        memory: 2GiB
+        disk: 10GiB
 
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
@@ -440,6 +461,7 @@ basebox:
             ports:
                 - 22
     vagrant: {}
+    lima: {}
 
 heavybox:
     description: builds as many of the builder-base-formula states as possible
@@ -452,6 +474,7 @@ heavybox:
             size: 10 # GB
     aws-alt: {}
     vagrant: {}
+    lima: {}
 
 master-server:
     subdomain: master-server
@@ -482,6 +505,10 @@ master-server:
     vagrant:
         ports:
             8200: 8200 # Vault GUI
+    lima:
+        portForwards:
+        - guestPort: 8200
+          hostPort: 8200
 
 lax:
     description: article-json store
@@ -531,6 +558,12 @@ lax:
         ports:
             1239: 80
             1240: 8001
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1239
+        - guestPort: 8001
+          hostPort: 1240
 
 api-gateway:
     subdomain: gateway # "gateway.elifesciences.org"
@@ -596,6 +629,10 @@ api-gateway:
     vagrant:
         ports:
             1323: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1323
 
 journal:
     subdomain: journal # journal.elifesciences.org
@@ -768,6 +805,11 @@ journal:
         ram: 4096
         ports:
             1240: 80
+    lima:
+        memory: 4GiB
+        portForwards:
+        - guestPort: 80
+          hostPort: 1240
 
 pattern-library:
     subdomain: ui-patterns
@@ -796,6 +838,10 @@ pattern-library:
     vagrant:
         ports:
             1340: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1340
 
 elife-metrics:
     description: journal-level metrics
@@ -834,6 +880,10 @@ elife-metrics:
     vagrant:
         ports:
             1240: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1240
 
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
@@ -944,6 +994,7 @@ elife-bot:
                     subscriptions:
                         - elife-accepted-submission-cleaning-s3-events # see the 'accepted-submission-cleaning' project
     vagrant: {}
+    lima: {}
 
 generic-cdn:
     description: generic CDN for content like PDF, images
@@ -1096,6 +1147,10 @@ journal-cms:
     vagrant:
         ports:
             1241: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1241
 
 
 elife-dashboard:
@@ -1149,6 +1204,12 @@ elife-dashboard:
         ports:
             1324: 80
             8080: 8080 # scheduler (blocked on AWS)
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1324
+        - guestPort: 8080
+          hostPort: 8080
 
 elife-reporting:
     description: an environment for development of 'eLife-Reporting-SQL', integrated with lax.
@@ -1158,6 +1219,11 @@ elife-reporting:
         ram: 1024
         ports:
             1333: 80
+    lima:
+        memory: 1GiB
+        portForwards:
+        - guestPort: 80
+          hostPort: 1333
 
 elife-libraries:
     domain: false
@@ -1184,6 +1250,8 @@ elife-libraries:
                 size: 60 # GB
     vagrant:
         ram: 4096
+    lima:
+        memory: 4GiB
 
 containers:
     description: run any Docker-based workload
@@ -1209,6 +1277,8 @@ containers:
                 cpu-credits: unlimited
     vagrant:
         ram: 1024
+    lima:
+        memory: 1GiB
 
 elife-alfred:
     subdomain: alfred
@@ -1247,6 +1317,11 @@ elife-alfred:
         ram: 4096
         ports:
             1433: 80
+    lima:
+        memory: 4GiB
+        portForwards:
+        - guestPort: 80
+          hostPort: 1433
 
 bus:
     description: see https://github.com/elifesciences/bus
@@ -1297,6 +1372,10 @@ recommendations:
     vagrant:
         ports:
             1254: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1254
 
 observer:
     description: article and non-article content reports, including RSS feeds and sitemap.
@@ -1336,6 +1415,10 @@ observer:
     vagrant:
         ports:
             1239: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1239
 
 error-pages:
     description: static deployment of https://github.com/elifesciences/error-pages
@@ -1538,6 +1621,11 @@ iiif:
     vagrant:
         ports:
             1261: 80
+    lima:
+        arch: x86_64
+        portForwards:
+        - guestPort: 80
+          hostPort: 1261
 
 redirects:
     description: redirect various domains to the canonical elifesciences.org
@@ -1582,6 +1670,12 @@ redirects:
         ram: 512
         ports:
             1262: 80
+    lima:
+        memory: 512MiB
+        portForwards:
+        - guestPort: 80
+          hostPort: 1262
+
 
 profiles:
     subdomain: profiles
@@ -1609,6 +1703,10 @@ profiles:
     vagrant:
         ports:
             1265: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1265
 
 annotations:
     description: microservice that gives access to eLife annotations on Hypothes.is
@@ -1640,6 +1738,11 @@ annotations:
         ram: 1024
         ports:
             1248: 80
+    lima:
+        memory: 1GiB
+        portForwards:
+        - guestPort: 80
+          hostPort: 1248
 
 digests:
     subdomain: digests
@@ -1674,6 +1777,11 @@ digests:
         ram: 1024
         ports:
             1290: 80
+    lima:
+        memory: 1GiB
+        portForwards:
+        - guestPort: 80
+          hostPort: 1290
 
 
 # deployed via EKS, not EC2
@@ -1801,6 +1909,8 @@ bastion:
                 - bastion
     vagrant:
         ram: 512
+    lima:
+        memory: 512MiB
 
 reproducible-document-stack:
     description: Reproducible Document Stack example
@@ -1885,6 +1995,10 @@ bioprotocol:
     vagrant:
         ports:
             1280: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1280
 
 accepted-submission-cleaning:
     description: see https://github.com/elifesciences/bus
@@ -2069,3 +2183,7 @@ monitor:
     vagrant:
         ports:
             1241: 80
+    lima:
+        portForwards:
+        - guestPort: 80
+          hostPort: 1241
