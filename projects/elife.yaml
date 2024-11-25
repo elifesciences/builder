@@ -432,6 +432,17 @@ defaults:
         #    1239: 80
         #    1240: 8001
     lima:
+        # Force intel VM, even on an arm host (using slow emulation)
+        # arch: x86_64
+
+        # Force arm VM, even on an intel host (using slow emulation)
+        # arch: aarch64
+
+        # Use macOS rosetta to run intel linux binaries within an ARM VM
+        # rosetta:
+        #   enabled: true
+        #   binfmt: true
+
         images:
             - location: "https://cloud-images.ubuntu.com/releases/20.04/release/ubuntu-20.04-server-cloudimg-amd64.img"
               arch: "x86_64"
