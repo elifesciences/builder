@@ -104,6 +104,9 @@ containerd:
   system: false
   user: false
 
+ssh:
+  forwardAgent: true
+
 # Mount script directory in the VM
 mounts:
 - location: "$DIR"
