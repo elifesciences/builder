@@ -134,11 +134,6 @@ provision:
   script: |
     #!/bin/bash
     echo $minion_config_base64 | base64 -d > /etc/salt/minion
-# Run highstate
-- mode: system
-  script: |
-    #!/bin/bash
-    salt-call state.apply
 
 
 # Embed entire project lima config here
@@ -152,3 +147,4 @@ EOF
 vm_name="$project-dev"
 echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
 limactl start $vm_name
+limactl shell $vm_name sudo salt-call state.apply
