@@ -104,11 +104,6 @@ containerd:
   system: false
   user: false
 
-# Allow rosetta config to be default overridden by $LIMAHOME/_config/default.yaml
-rosetta:
-  enabled: null
-  binfmt: null
-
 # Mount script directory in the VM
 mounts:
 - location: "$DIR"
