@@ -2,7 +2,7 @@
 set -e
 
 if ! [ -x "$(command -v limactl)" ]; then
-    echo "no lima"
+    echo "no limactl command found. Install lima from https://lima-vm.io/docs/installation/"
     exit 1
 fi
 
