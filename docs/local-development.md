@@ -3,7 +3,7 @@
 `builder` currently relies on VirtualBox being available to orchestrate VM
 builds using Vagrant.  On systems that already have a running hypervisor this
 might not be desirable, since only one hypervisor can use virtualization
-extensions at a time.  Since the `ubuntu/trusty64` image is only available as a
+extensions at a time.  Since the main `ubuntu/*` images are only available as a
 virtualbox image this makes the situation complicated.
 
 Luckily a vagrant plugin named `vagrant-mutate` exists to work around this.  It
@@ -17,8 +17,8 @@ $ vagrant plugin install vagrant-mutate
 Now you can download the VirtualBox image and convert it to a format that your hypervisor can work with:
 
 ```bash
-$ vagrant box add ubuntu/trusty64 https://atlas.hashicorp.com/ubuntu/trusty64
-$ vagrant mutate --input-provider virtualbox ubuntu/trusty64 <output-format> # libvirt, bhyve, kvm
+$ vagrant box add ubuntu/focal64 https://atlas.hashicorp.com/ubuntu/focal64
+$ vagrant mutate --input-provider virtualbox ubuntu/focal64 <output-format> # libvirt, bhyve, kvm
 ```
 
 Now you can disable the `virtualbox` check when running update.sh and run vagrant up:
@@ -61,14 +61,14 @@ Bringing machine 'medium--vagrant' up with 'libvirt' provider...
 ==> medium--vagrant:  -- Domain type:       kvm
 ==> medium--vagrant:  -- Cpus:              1
 ==> medium--vagrant:  -- Memory:            512M
-==> medium--vagrant:  -- Management MAC:    
-==> medium--vagrant:  -- Loader:            
-==> medium--vagrant:  -- Base box:          ubuntu/trusty64
+==> medium--vagrant:  -- Management MAC:
+==> medium--vagrant:  -- Loader:
+==> medium--vagrant:  -- Base box:          ubuntu/focal64
 ==> medium--vagrant:  -- Storage pool:      default
 ==> medium--vagrant:  -- Image:             /var/lib/libvirt/images/builder_medium--vagrant.img (40G)
 ==> medium--vagrant:  -- Volume Cache:      default
-==> medium--vagrant:  -- Kernel:            
-==> medium--vagrant:  -- Initrd:            
+==> medium--vagrant:  -- Kernel:
+==> medium--vagrant:  -- Initrd:
 ==> medium--vagrant:  -- Graphics Type:     vnc
 ==> medium--vagrant:  -- Graphics Port:     5900
 ==> medium--vagrant:  -- Graphics IP:       127.0.0.1
@@ -76,10 +76,42 @@ Bringing machine 'medium--vagrant' up with 'libvirt' provider...
 ==> medium--vagrant:  -- Video Type:        cirrus
 ==> medium--vagrant:  -- Video VRAM:        9216
 ==> medium--vagrant:  -- Keymap:            en-us
-==> medium--vagrant:  -- TPM Path:          
+==> medium--vagrant:  -- TPM Path:
 ==> medium--vagrant:  -- INPUT:             type=mouse, bus=ps2
-==> medium--vagrant:  -- Command line : 
+==> medium--vagrant:  -- Command line :
 ==> medium--vagrant: Creating shared folders metadata...
 ==> medium--vagrant: Starting domain.
 ==> medium--vagrant: Waiting for domain to get an IP address...
+```
 
+# Lima
+
+Lima can be used directly as a hypervisor to build development VMs for the builder salt formulas. This lightweight hypevisor is available on Linux and macOS, and relies on the qemu universe to virtualise machines. This also unlocks the ability to run VMs on and for a different architecture that intel, such as arm64.
+
+Once lima and qemu is installed, you can create a dev VM using the `create-lima-dev-env` script:
+
+```
+./create-lima-dev-env iiif
+```
+
+If you run it without arguments, it will prompt for a project
+```
+> ./create-lima-dev-env
+1) accepted-submission-cleaning 7) bus              13) elife-dashboard         19) exeter-kriya    25) iiif            31) observer                    37) task-adept
+2) annotations                  8) containers       14) elife-libero-reviewer   20) fastly-logs     26) journal         32) pattern-library
+3) api-gateway                  9) data-pipeline    15) elife-libraries         21) figure-viewer   27) journal-cms     33) profiles
+4) basebox                      10) digests         16) elife-metrics           22) firewall        28) lax             34) recommendations
+5) bastion                      11) elife-alfred    17) elife-reporting         23) generic-cdn     29) master-server   35) redirects
+6) bioprotocol                  12) elife-bot       18) error-pages             24) heavybox        30) monitor         36) reproducible-document-stack
+Select a project:
+```
+
+You can enter the project by name or number.
+
+This will cloned the configured formulas, create and configure the VM, and run a first `sudo salt-call state.apply` (equivalent to highstate) within the VM. It will automatically map any ports >1024 to the host, so that you can access your services on localhost:8080 for example. Builder directory is mounted as /builder, and salt is configured to use the correct formulas from `cloned-projects` there.
+
+To enter the VM, you can run `limactl shell dev-env`. This will open a bash shell inside the VM, adn you a free to run `salt-call` as needed.
+
+start, stop and delete the VM using the `limactl` tool.
+
+You can further customise the machine by setting lima configuration values in `projects/elife.yaml` under the `lima:` key, including remapping ports (particularly below port 1024) to your host, setting RAM and CPUs, and other bahaviours (such as forcing architecture). See lima documentation for more details.

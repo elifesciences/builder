@@ -1,6 +1,6 @@
 # builder
 
-Centralised configuration and building of [eLife](https://elifesciences.org) *journal* applications locally ([Vagrant](#vagrant)) 
+Centralised configuration and building of [eLife](https://elifesciences.org) *journal* applications locally ([Vagrant](#vagrant))
 and remotely ([AWS, GCS](#aws-amazon-web-services)).
 
 `builder` is a Python 3.8+ project and supports Linux and MacOS.
@@ -31,7 +31,7 @@ Checked pre-requisites:
 - virtualenv
 - make
 - virtualbox
-- vagrant
+- vagrant or lima
 - ssh-credentials
 - ssh-agent
 - aws-credentials
@@ -49,15 +49,19 @@ Checked pre-requisites:
 
 ## configuration
 
-The project file `./projects/elife.yaml` describes the eLife projects that can be built and their environments. 
+The project file `./projects/elife.yaml` describes the eLife projects that can be built and their environments.
 [See here](docs/projects.md) for more project file documentation.
 
-Multiple project files can be configured by copying `settings.yaml.dist` to `settings.yaml` and 
+Multiple project files can be configured by copying `settings.yaml.dist` to `settings.yaml` and
 then modifying `project-files`.
 
-After successfully installing and configuring `builder`, try launching a Vagrant machine to test all is working correctly:
+After successfully installing and configuring `builder`, try launching a virtual machine to test all is working correctly. You can use Vagrant:
 
     PROJECT=basebox vagrant up
+
+or lima
+
+    ./create-dev-env
 
 ## development
 
@@ -65,7 +69,7 @@ After successfully installing and configuring `builder`, try launching a Vagrant
 
 It's virtualenv is found in `./venv` and can be activated with `./venv/bin/activate`.
 
-To update a dependency, modify the `Pipfile` and run `./update-dependencies.sh` to refresh the `Pipfile.lock` and 
+To update a dependency, modify the `Pipfile` and run `./update-dependencies.sh` to refresh the `Pipfile.lock` and
 `requirements.txt` files. You will need `pipenv` installed.
 
 ## testing
@@ -95,25 +99,19 @@ The Vagrantfile will call a Python script to discover which projects are availab
 Note: if you wish to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
 
 Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin
-to rebuild the ubuntu/trusty64 box for your own hypervisor. See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
+to rebuild any `ubuntu/*` box in use for your own hypervisor. See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
 
 #### Working with formula branches in Vagrant
 
-Project formulas are cloned to the local `./cloned-projects` directory and become shared directories within Vagrant. 
+Project formulas are cloned to the local `./cloned-projects` directory and become shared directories within Vagrant.
 
 Changes to formulas including their branches are available immediately.
 
-#### Working with project branches in Vagrant
-
-Run the following command inside Vagrant to change the remote commit or branch:
-
-    $ set_local_revision $commitOrBranch
-
-Then apply the formula inside Vagrant with `sudo salt-call state.highstate` or from outside with `vagrant provision`.
+You can switch or create branches locally, then apply the formula inside Vagrant with `sudo salt-call state.highstate` or from outside with `vagrant provision`.
 
 ### AWS (Amazon Web Services)
 
-The other half of the `builder` project is the ability to create and manage AWS (Amazon Web Services) and 
+The other half of the `builder` project is the ability to create and manage AWS (Amazon Web Services) and
 GCP (Google Cloud Platform) resources. This is controlled with the `bldr` script:
 
     $ ./bldr -l
@@ -136,7 +134,7 @@ To ssh into this project instance:
 
     $ ./bldr ssh:journal--myinstanceid
 
-If the instance ID used matches the name of an *alternate config* (under 'aws-alt') in `./projects/elife.yaml` then 
+If the instance ID used matches the name of an *alternate config* (under 'aws-alt') in `./projects/elife.yaml` then
 that alternate configuration will be used.
 
 Some alternate configurations are unique (like most `prod` configurations) and you won't be able to use that ID.
