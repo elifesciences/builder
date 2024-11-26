@@ -1,4 +1,29 @@
-# vagrant and virtualbox
+# Vagrant
+
+The `Vagrantfile` can build any project:
+
+    $ PROJECT=journal vagrant up
+
+or use the menu:
+
+    $ vagrant up
+    You must select a project:
+
+    1 - journal--vagrant
+    2 - api-gateway--vagrant
+    3 - ...
+    >
+
+The Vagrantfile will call a Python script to discover which projects are available. To execute that script with Docker:
+
+    touch .use-docker.flag
+
+Note: if you wish to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
+
+Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin
+to rebuild any `ubuntu/*` box in use for your own hypervisor. See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
+
+## A note on other hypervisors
 
 `builder` currently relies on VirtualBox being available to orchestrate VM
 builds using Vagrant.  On systems that already have a running hypervisor this
@@ -84,9 +109,9 @@ Bringing machine 'medium--vagrant' up with 'libvirt' provider...
 ==> medium--vagrant: Waiting for domain to get an IP address...
 ```
 
-# Lima
+# Lima (experimental)
 
-Lima can be used directly as a hypervisor to build development VMs for the builder salt formulas. This lightweight hypevisor is available on Linux and macOS, and relies on the qemu universe to virtualise machines. This also unlocks the ability to run VMs on and for a different architecture that intel, such as arm64.
+Lima can be used directly as a hypervisor to build development VMs for the builder projects. This lightweight hypevisor is available on Linux and macOS, and relies on the qemu universe to virtualise machines. This also unlocks the ability to run VMs on and for a different architecture that intel, such as arm64.
 
 Once lima and qemu is installed, you can create a dev VM using the `create-lima-dev-env` script:
 
@@ -114,4 +139,12 @@ To enter the VM, you can run `limactl shell dev-env`. This will open a bash shel
 
 start, stop and delete the VM using the `limactl` tool.
 
-You can further customise the machine by setting lima configuration values in `projects/elife.yaml` under the `lima:` key, including remapping ports (particularly below port 1024) to your host, setting RAM and CPUs, and other bahaviours (such as forcing architecture). See lima documentation for more details.
+You can further customise the machine by setting lima configuration values in `projects/elife.yaml` under the `lima:` key, including remapping ports (particularly below port 1024) to your host, setting RAM and CPUs, and other bahaviours (such as forcing architecture or activating rosetta functionality on AppleSilicon macos). See lima documentation for more details.
+
+# Working with formula branches in Vagrant or lima
+
+Project formulas are cloned to the local `./cloned-projects` directory and become shared directories within Vagrant or lima VMs.
+
+Changes to formulas including their branches are available immediately.
+
+You can switch or create branches locally, then apply the formula inside Vagrant with `sudo salt-call state.highstate` or from outside with `vagrant provision`.

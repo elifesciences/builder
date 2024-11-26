@@ -76,38 +76,9 @@ To update a dependency, modify the `Pipfile` and run `./update-dependencies.sh` 
 
     ./test.sh
 
-### Vagrant
+### Building projects locally
 
-The `Vagrantfile` can build any project:
-
-    $ PROJECT=journal vagrant up
-
-or use the menu:
-
-    $ vagrant up
-    You must select a project:
-
-    1 - journal--vagrant
-    2 - api-gateway--vagrant
-    3 - ...
-    >
-
-The Vagrantfile will call a Python script to discover which projects are available. To execute that script with Docker:
-
-    touch .use-docker.flag
-
-Note: if you wish to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
-
-Note: if you wish to use a hypervisor other than `virtualbox`, you can use the `vagrant-mutate` plugin
-to rebuild any `ubuntu/*` box in use for your own hypervisor. See the [vagrant and virtualbox documentation](docs/vagrant-and-virtualbox.md).
-
-#### Working with formula branches in Vagrant
-
-Project formulas are cloned to the local `./cloned-projects` directory and become shared directories within Vagrant.
-
-Changes to formulas including their branches are available immediately.
-
-You can switch or create branches locally, then apply the formula inside Vagrant with `sudo salt-call state.highstate` or from outside with `vagrant provision`.
+See [docs/local-project-development.md](docs/local-project-development.md) for more details on how to use vagrant or lima environments
 
 ### AWS (Amazon Web Services)
 
