@@ -462,6 +462,9 @@ basebox:
             ports:
                 - 22
     aws-alt:
+        '2004':
+            ec2:
+                ami: ami-027a754129abb5386 # focal, build 20231208, hvm:ebs-ssd
         '2204':
             ec2:
                 ami: ami-04552bb4f4dd38925 # jammy, build 20241120, hvm:ebs-ssd
