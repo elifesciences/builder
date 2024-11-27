@@ -23,7 +23,7 @@ source ./venv/bin/activate
 project=$1
 if [ -z "$project" ]; then
   PS3="Select a project: "
-  select project in $(./.project.py --format json --env=lima | jq -r '.|join(" ")')
+  select project in $(./bldr project.list:output_format=json | jq -r '.|join(" ")')
   do
     project=${project:-$REPLY}
     break;
