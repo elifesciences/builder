@@ -422,6 +422,7 @@ defaults:
     gcp:
         bigquery: false
     vagrant:
+        #box: ubuntu/jammy64 # 22.04
         box: ubuntu/focal64 # 20.04
         ip: 192.168.56.44
         ram: 2048
@@ -460,6 +461,10 @@ basebox:
             ami: ami-027a754129abb5386 # focal, build 20231208, hvm:ebs-ssd
             ports:
                 - 22
+    aws-alt:
+        '2204':
+            ec2:
+                ami: ami-04552bb4f4dd38925 # jammy, build 20241120, hvm:ebs-ssd
     vagrant: {}
     lima: {}
 
