@@ -1,6 +1,6 @@
 #!/bin/bash
 # runs given python commands inside a Builder container.
-# just like `.project.py`, the contents of stdout will be read by a YAML parser
+# the contents of stdout will be read by a YAML parser
 
 set -e
 

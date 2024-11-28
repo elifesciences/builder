@@ -8,10 +8,10 @@ At the top of a project file are the `defaults` for all projects.
 
 All sections beneath the `defaults` are 'projects'.
 
-If a setting isn't found in a project section, the default from the `defaults` 
+If a setting isn't found in a project section, the default from the `defaults`
 section is used.
 
-Some sections are special and don't have the same merging rules e.g. the `aws.rds` 
+Some sections are special and don't have the same merging rules e.g. the `aws.rds`
 and `aws.ext` paths will not have default settings merged in if a project doesn't
 specify them.
 
@@ -19,22 +19,20 @@ To see the final settings for any project, do:
 
     $ ./bldr project.data
 
-The above command will prompt you for a project and print other information to 
+The above command will prompt you for a project and print other information to
 stdout/stderr. If you want cleanly formatted project data, use the script below:
 
-    $ ./.project.py
-    
-The above will print a list of projects in YAML.
+    $ ./bldr project.list:output_format=yaml,include_without_formula=True
 
-    $ ./.project.py master-server
-    
+The above will print a list of projects in YAML. You can show only projects that have formulas by removing the `include_without_formula` param, or setting it to `False`
+
+    $ PROJECT=master-server ./bldr project.data:output_format=yaml
+
 The above will print the configuration for the `master-server` project in YAML.
 
-    $ ./.project.py master-server format=json
-    
-The above will print the configuration for the `master-server` project in JSON.
+    $ PROJECT=master-server ./bldr project.data:output_format=json
 
-All the scripts starting with `.` require you to first load the Python virtualenv with `source venv/bin/activate`.
+The above will print the configuration for the `master-server` project in JSON.
 
 ## default and alternate configurations
 
