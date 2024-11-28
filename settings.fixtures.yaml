@@ -1,0 +1,10 @@
+# This is used to generate fixtures for tests, and extends the usualy projects with some fixtures
+# see `srv/buildercore/config.py` for parsing and `regenerate-fixtures.sh` for usage
+
+project-files:
+    - projects/elife.yaml
+    - src/tests/fixtures/projects/dummy-project.yaml
+    - src/tests/fixtures/projects/dummy-project2.yaml
+
+#stack-files:
+#    - ./stacks/example.yaml
