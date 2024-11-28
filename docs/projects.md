@@ -22,7 +22,7 @@ To see the final settings for any project, do:
 The above command will prompt you for a project and print other information to
 stdout/stderr. If you want cleanly formatted project data, use the script below:
 
-    $ ./bldr project.list:output_format=yaml,include_without_formula=True
+    $ ./bldr project.list_all:output_format=yaml,include_without_formula=True
 
 The above will print a list of projects in YAML. You can show only projects that have formulas by removing the `include_without_formula` param, or setting it to `False`
 

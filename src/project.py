@@ -5,8 +5,9 @@ from buildercore import cfngen, config, core, project
 from buildercore.command import local, settings
 from decorators import format_output, requires_project
 
+
 @format_output('yaml')
-def list(include_without_formula=False, output_format=None):
+def list_all(include_without_formula=False, output_format=None):
     if include_without_formula:
         return project.project_list()
 

@@ -102,7 +102,7 @@ TASK_LIST = [
     # see: journal/Jenkinsfile.prod
     deploy.load_balancer_register_all,
 
-    project.list,
+    project.list_all,
     project.data,
     project.context,
     project.new,
