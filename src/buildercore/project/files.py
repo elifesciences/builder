@@ -66,6 +66,7 @@ def project_data(pname, project_file):
 
     excluding = [
         'vagrant',
+        'lima',
         'aws-alt',
         'gcp-alt',
         {'aws': CLOUD_EXCLUDING_DEFAULTS_IF_NOT_PRESENT},
