@@ -5,12 +5,6 @@ from buildercore import cfngen, config, core, project
 from buildercore.command import local, settings
 from decorators import format_output, requires_project
 
-@format_output('yaml')
-def list(include_without_formula=False, output_format=None):
-    if include_without_formula:
-        return project.project_list()
-
-    return [*project.filtered_projects(lambda pname, pdata: 'formula-repo' in pdata and pdata['formula-repo'] is not None)]
 
 @requires_project
 @format_output('yaml')
