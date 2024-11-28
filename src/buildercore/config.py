@@ -39,6 +39,7 @@ ENV = {
     'PROJECT': None,
     'INSTANCE': None,
     'BUILDER_TOPFILE': '',
+    'USER_SETTINGS_PATH': '',
 }
 ENV = {k: os.environ.get(k, default) for k, default in ENV.items()}
 
@@ -88,7 +89,10 @@ USER = {
     'project-files': [join(PROJECTS_DIR, 'elife.yaml')],
     'stack-files': [],
 }
-if os.path.exists(USER_SETTINGS_PATH):
+if os.path.exists(ENV['USER_SETTINGS_PATH']):
+    with open(ENV['USER_SETTINGS_PATH']) as fh:
+        USER.update(utils.yaml_load(fh.read()))
+elif os.path.exists(USER_SETTINGS_PATH):
     with open(USER_SETTINGS_PATH) as fh:
         USER.update(utils.yaml_load(fh.read()))
 
