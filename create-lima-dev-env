@@ -23,19 +23,19 @@ source ./venv/bin/activate
 project=$1
 if [ -z "$project" ]; then
   PS3="Select a project: "
-  select project in $(./bldr project.list:output_format=json | jq -r '.|join(" ")')
+  select project in $(./.project.py --format json --env=lima | jq -r '.|join(" ")')
   do
     project=${project:-$REPLY}
     break;
   done
 fi
 
-if ! (PROJECT=$project ./bldr project.data:output_format=json 2>&1 >/dev/null); then
+if ! (./.project.py --format json --env=lima $project 2>&1 >/dev/null); then
   echo ""
   echo "project $project doesn't exist in builder project config"
   exit 1
 fi
-project_config="$(PROJECT=$project ./bldr project.data:output_format=json)"
+project_config="$(./.project.py --format json --env=lima $project)"
 
 dependant_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // [])|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
 project_formula=$(echo "$project_config" | yq -o j  '.["formula-repo"]|{"url": ., "name": .|split("/")[-1]}' | jq -c)
