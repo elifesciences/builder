@@ -13,7 +13,7 @@ echo "using $py"
 
 if [ ! -e "venv/bin/$py" ]; then
     echo "could not find venv/bin/$py, recreating venv"
-    rm -rf venv
+    rm -rf venv/*
 fi
 
 # create+activate venv
