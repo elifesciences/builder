@@ -56,14 +56,6 @@ both_checks = [
      {'Linux': 'sudo pip install virtualenv',
       'Mac OS': 'brew install python@3.8'}),
 
-    ('virtualbox',
-     {'Mac OS': 'brew install virtualbox'},
-     dumb_install_check,
-     lambda x: shs('vboxmanage --version')),
-
-    ('vagrant',
-     {'Mac OS': 'brew install vagrant'}),
-
     ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f %s && test -f %s.pub' % (ssh_key, ssh_key)),
