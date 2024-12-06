@@ -61,7 +61,7 @@ After successfully installing and configuring `builder`, try launching a virtual
 
 or lima
 
-    ./create-dev-env
+    ./lima create-dev
 
 ## development
 

@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
+# proxy most commands straight through to limactl
+if [ "$1" != "create-dev" ]; then
+  echo "${@:1}"
+  limactl "${@:1}"
+  exit $?
+fi
+
 if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
     echo "Error: Bash version 4 required. If on macos, install bash from homebrew: brew install bash"
     exit 1
@@ -20,7 +27,7 @@ fi
 
 source ./venv/bin/activate
 
-project=$1
+project=$2
 if [ -z "$project" ]; then
   PS3="Select a project: "
   select project in $(./.project.py --format json --env=lima | jq -r '.|join(" ")')
@@ -96,7 +103,6 @@ minion_config_base64=$(echo "$minion_config" | yq '.|@yaml|@base64')
 
 instance_name="$project--dev"
 salt_version="$(echo $project_config | jq -r .salt)"
-
 lima_config=$(cat << EOF
 minimumLimaVersion: "1.0.0"
 # turn off containerd setup

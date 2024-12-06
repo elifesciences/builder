@@ -113,15 +113,15 @@ Bringing machine 'medium--vagrant' up with 'libvirt' provider...
 
 Lima can be used directly as a hypervisor to build development VMs for the builder projects. This lightweight hypevisor is available on Linux and macOS, and relies on the qemu universe to virtualise machines. This also unlocks the ability to run VMs on and for a different architecture that intel, such as arm64.
 
-Once lima and qemu is installed, you can create a dev VM using the `create-lima-dev-env` script:
+Once lima and qemu is installed, you can create a dev VM using the `lima` helper script:
 
 ```
-./create-lima-dev-env iiif
+./lima create-dev iiif
 ```
 
 If you run it without arguments, it will prompt for a project
 ```
-> ./create-lima-dev-env
+> ./lima create-dev
 1) accepted-submission-cleaning 7) bus              13) elife-dashboard         19) exeter-kriya    25) iiif            31) observer                    37) task-adept
 2) annotations                  8) containers       14) elife-libero-reviewer   20) fastly-logs     26) journal         32) pattern-library
 3) api-gateway                  9) data-pipeline    15) elife-libraries         21) figure-viewer   27) journal-cms     33) profiles
@@ -137,7 +137,7 @@ This will cloned the configured formulas, create and configure the VM, and run a
 
 To enter the VM, you can run `limactl shell dev-env`. This will open a bash shell inside the VM, adn you a free to run `salt-call` as needed.
 
-start, stop and delete the VM using the `limactl` tool.
+start, stop and delete the VM using the `./lima` helper script (`./lima start`, `./lima stop`, etc), or directly with the `limactl` tool.
 
 You can further customise the machine by setting lima configuration values in `projects/elife.yaml` under the `lima:` key, including remapping ports (particularly below port 1024) to your host, setting RAM and CPUs, and other bahaviours (such as forcing architecture or activating rosetta functionality on AppleSilicon macos). See lima documentation for more details.
 
