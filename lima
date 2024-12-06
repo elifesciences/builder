@@ -151,4 +151,7 @@ EOF
 vm_name="$project-dev"
 echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
 limactl start $vm_name
-limactl shell $vm_name sudo salt-call state.apply
+
+if [[ $* != *--skip-highstate* ]]; then
+  limactl shell $vm_name sudo salt-call state.apply
+fi
