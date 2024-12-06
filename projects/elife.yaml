@@ -469,7 +469,7 @@ basebox:
             ec2:
                 ami: ami-04552bb4f4dd38925 # jammy, build 20241120, hvm:ebs-ssd
     vagrant: {}
-    lima:
+    lima: {}
         #  images:
         #     - location: "https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img"
         #       arch: "x86_64"
