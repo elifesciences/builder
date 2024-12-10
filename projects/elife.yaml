@@ -891,6 +891,7 @@ elife-metrics:
                 # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
                 type: db.t3.medium
                 multi-az: true
+                version: '13.16'
                 storage: 30
         continuumtest:
             ec2:
