@@ -553,10 +553,6 @@ lax:
             bot-lax-{instance}-inc: {}
             bot-lax-{instance}-out: {}
     aws-alt:
-        continuumtest:
-            ec2:
-                root:
-                    size: 10 # GB
         prod:
             description: RDS backed
             ec2:
@@ -881,9 +877,6 @@ elife-metrics:
     aws-alt:
         prod:
             description: production environment for metrics. RDS backed.
-            ec2:
-                root:
-                    size: 15 # GB
             ext:
                 size: 20 # GB
             rds:
@@ -893,10 +886,6 @@ elife-metrics:
                 multi-az: true
                 version: '13.16'
                 storage: 30
-        continuumtest:
-            ec2:
-                root:
-                    size: 15 # GB
     vagrant:
         ports:
             1240: 80
@@ -946,9 +935,6 @@ elife-bot:
                     deletion-policy: retain
                 "{instance}-elife-striking-images":
         continuumtest:
-            ec2:
-                root:
-                    size: 10 #GiB
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
@@ -975,8 +961,6 @@ elife-bot:
         prod:
             ec2:
                 type: t3.medium
-                root:
-                    size: 10 #GiB
             s3:
                 "{instance}-elife-published":
                     deletion-policy: retain
@@ -1139,9 +1123,6 @@ journal-cms:
                 size: 7 # GB
         continuumtest:
             description: production-like environment.
-            ec2:
-                root:
-                    size: 10 #GiB
             rds:
                 engine: MySQL
                 version: '8.0'
@@ -1159,9 +1140,6 @@ journal-cms:
                 # storage can be increased but not decreased.
                 # journal-cms--prod once needed this amount.
                 storage: 48 # GB
-            ec2:
-                root:
-                    size: 10 # GiB
             ext:
                 size: 60 # GB
     vagrant:
@@ -1190,16 +1168,9 @@ elife-dashboard:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        ci:
-            ec2:
-                root:
-                    size: 10 # GB
         continuumtest:
             # unique because: 'sqs' contains static values.
             unique: true
-            ec2:
-                root:
-                    size: 10 #GiB
             sqs:
                 # legacy custom name
                 ct-event-property-incoming-queue:
@@ -1209,9 +1180,6 @@ elife-dashboard:
             # unique because: static value in 'sqs'.
             unique: true
             description: production environment. backed by RDS
-            ec2:
-                root:
-                    size: 10 #GiB
             rds:
                 multi-az: true
                 version: '13.16'
@@ -1330,9 +1298,6 @@ elife-alfred:
             s3:
                 "{instance}-elife-alfred":
                     deletion-policy: retain
-            ec2:
-                root:
-                    size: 10 #GiB
     vagrant:
         ram: 4096
         ports:
@@ -1597,8 +1562,6 @@ iiif:
             # - 'fastly.bigquerylogging.dataset' is using a static value.
             unique: true
             ec2:
-                root:
-                    size: 10 #GiB
                 ports:
                     - 22
                     - 80:
@@ -1632,8 +1595,6 @@ iiif:
                     - 1234: # caddy metrics
                         cidr-ip: 10.0.0.0/16
                 cluster-size: 3
-                root:
-                    size: 10 #GiB
             ext:
                 size: 30 # GB
             elb:
@@ -1725,9 +1686,6 @@ profiles:
             rds:
                 multi-az: true
                 version: '13.16'
-            ec2:
-                root:
-                    size: 10 #GiB
     vagrant:
         ports:
             1265: 80
@@ -1798,9 +1756,6 @@ digests:
                 version: "13.16"
                 type: db.t3.micro
                 multi-az: true
-            ec2:
-                root:
-                    size: 10 #GiB
     vagrant:
         ram: 1024
         ports:
@@ -2015,11 +1970,6 @@ bioprotocol:
             bioprotocol--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-    aws-alt:
-        prod:
-            ec2:
-                root:
-                    size 10 #GiB
     vagrant:
         ports:
             1280: 80
