@@ -148,7 +148,7 @@ EOF
 
 
 
-vm_name="$project-dev"
+vm_name="$project"
 echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
 limactl start $vm_name
 
