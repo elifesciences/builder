@@ -442,8 +442,14 @@ defaults:
         # Use macOS rosetta to run intel linux binaries within an ARM VM
         # Note: null allows rosetta config to be default overridden by $LIMAHOME/_config/default.yaml
         rosetta:
-          enabled: null
-          binfmt: null
+            enabled: null
+            binfmt: null
+
+        # default user setup with builder-base-formula
+        user:
+            name: elife
+            comment: elife
+            home: /home/elife
 
         images:
             - location: "https://cloud-images.ubuntu.com/releases/20.04/release/ubuntu-20.04-server-cloudimg-amd64.img"

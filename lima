@@ -154,4 +154,5 @@ limactl start $vm_name
 
 if [[ $* != *--skip-highstate* ]]; then
   limactl shell $vm_name sudo salt-call state.apply
+  limactl shell $vm_name sudo loginctl kill-user $(limactl list --json | jq -r .config.user.name)
 fi
