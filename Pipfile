@@ -25,7 +25,7 @@ dda-python-terraform = {git = "https://gitlab.com/domaindrivenarchitecture/dda-p
 pytz = "*"
 PyYAML = "~=6.0.1"
 "ruamel.yaml" = "==0.17.*"
-requests = "~=2.26"
+requests = "~=2.32"
 threadbare = "~=4.0"
 # doesn't follow semver, features removed in 3.2.0
 troposphere = "==3.1.1"
