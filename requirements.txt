@@ -32,7 +32,7 @@ python-dateutil==2.8.2
 python-slugify==1.2.6
 pytz==2024.1
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.2
 responses==0.25.0
 ruamel.yaml==0.17.40
 ruamel.yaml.clib==0.2.8
