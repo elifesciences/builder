@@ -68,7 +68,7 @@ def create_keypair(stackname):
     "creates the ec2 keypair and writes it to s3"
     expected_key = stack_pem(stackname, die_if_exists=True)
     ec2 = core.boto_conn(stackname, 'ec2')
-    keypair = ec2.create_key_pair(KeyName=stackname)
+    keypair = ec2.create_key_pair(KeyName=stackname, KeyType='ed25519')
     with open(expected_key, 'w') as fh:
         fh.write(keypair.key_material)
     os.chmod(expected_key, 0o600)
