@@ -85,7 +85,6 @@ defaults:
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
             ami: ami-0036eae8ca7566223 # GENERATED created from basebox--2004
-                                       # us-east-1, build date 20180814, hvm:ebs-ssd, AMI built on 20180828
             # use a master server or go ronin?
             masterless: false
             # pin a master server for all new instances of a project
@@ -409,11 +408,11 @@ defaults:
                 salt: '3006'
                 masterless: True
 
-        # lsh@2022-07: remove this alt-config once all formula Jenkinsfiles are updated
-        s2004:
-            description: Ubuntu 20.04 (Focal) but isolated from the master-server and any external pillar data (Vault)
+        s2204:
+            description: Ubuntu 22.04 (noble) but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 masterless: true
+                ami: ami-0782a71b1521dbc84 # GENERATED created from basebox--2204
 
         standalone:
             description: same as default configuration, but isolated from the master-server and any external pillar data (Vault)
