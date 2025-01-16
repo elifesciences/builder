@@ -34,7 +34,7 @@ The above will print the configuration for the `master-server` project in YAML.
     
 The above will print the configuration for the `master-server` project in JSON.
 
-All the scripts starting with `.` require you to first load the Python virtualenv with `source venv/bin/activate`.
+All the scripts starting with `.` require you to first load the Python virtual env with `source venv/bin/activate`.
 
 ## default and alternate configurations
 

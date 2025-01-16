@@ -51,11 +51,6 @@ both_checks = [
      {'Linux': 'apt-get install build-essential',
       'Mac OS': 'xcode-select --install'}),
 
-    # lsh@2022-08-30: consider removing
-    ('virtualenv',
-     {'Linux': 'sudo pip install virtualenv',
-      'Mac OS': 'brew install python@3.8'}),
-
     ('ssh-credentials',
      {'all': 'ssh-keygen -t rsa'},
      lambda x: sh('test -f %s && test -f %s.pub' % (ssh_key, ssh_key)),

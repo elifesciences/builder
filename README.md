@@ -28,7 +28,6 @@ Exclude *specific* pre-requisite checks with `--exclude foo bar baz`. For exampl
 Checked pre-requisites:
 
 - git
-- virtualenv
 - make
 - virtualbox
 - vagrant or lima
@@ -67,7 +66,7 @@ or lima
 
 `builder` is a Python project and it's dependencies are captured in a `Pipfile`.
 
-It's virtualenv is found in `./venv` and can be activated with `./venv/bin/activate`.
+It's virtual env is found in `./venv` and can be activated with `./venv/bin/activate`.
 
 To update a dependency, modify the `Pipfile` and run `./update-dependencies.sh` to refresh the `Pipfile.lock` and
 `requirements.txt` files. You will need `pipenv` installed.
