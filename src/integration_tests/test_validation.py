@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+
 from buildercore import cfngen
 from tests import base
 

@@ -6,8 +6,9 @@ from unittest.mock import Mock, patch
 
 import botocore
 import pytest
-from buildercore import command, core, project, utils
 from moto import mock_rds
+
+from buildercore import command, core, project, utils
 
 from . import base
 

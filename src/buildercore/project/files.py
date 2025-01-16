@@ -26,9 +26,6 @@ def all_projects(project_file_path):
     defaults = allp.pop("defaults")
     return defaults, allp
 
-#
-#
-#
 
 def project_cloud_alt(project_alt_contents, project_base_cloud, global_cloud):
     cloud_alt = {}

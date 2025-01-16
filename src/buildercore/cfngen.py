@@ -772,9 +772,6 @@ def build_context_vault(pdata, context):
     context['vault'] = pdata['aws'].get('vault', {})
     return context
 
-#
-#
-#
 
 def more_validation(json_template_str):
     "local cloudformation template checks. complements the validation AWS does"

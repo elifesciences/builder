@@ -2,6 +2,7 @@ import re
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 import utils
 from buildercore import cfngen, context_handler
 from cfn import generate_stack_from_input, owner_ssh, ssh

@@ -1621,9 +1621,6 @@ def add_outputs(context, template):
     if R53_INT_TITLE in template.resources:
         template.add_output(mkoutput("IntDomainName", "Domain name of the newly created stack instance", Ref(R53_INT_TITLE)))
 
-#
-#
-#
 
 def render(context):
     """given a dictionary `context`, generates a CloudFormation instance.

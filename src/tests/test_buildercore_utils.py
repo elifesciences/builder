@@ -5,6 +5,7 @@ from functools import partial
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from buildercore import utils
 
 from . import base
@@ -234,7 +235,6 @@ class Simple(base.BaseCase):
         for given, expected, func in cases:
             self.assertEqual(expected, utils.nested_dictmap(func, given))
 
-#
 
 def test_visit():
     "`visit` can pass a value or object through unmodified."

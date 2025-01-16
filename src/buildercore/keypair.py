@@ -60,9 +60,6 @@ def delete_keypair_from_fs(stackname):
     except (OSError, RuntimeError):
         LOG.exception("unhandled exception attempting to delete keypair from filesystem")
 
-#
-#
-#
 
 def create_keypair(stackname):
     "creates the ec2 keypair and writes it to s3"
@@ -83,9 +80,6 @@ def delete_keypair(stackname):
     delete_keypair_from_s3(stackname) # delete from s3
     delete_keypair_from_fs(stackname) # delete from fs
 
-#
-#
-#
 
 def all_in_s3():
     return lfilter(None, map(os.path.basename, s3.simple_listing(config.KEYPAIR_PREFIX)))

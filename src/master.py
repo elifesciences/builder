@@ -5,6 +5,8 @@ See `askmaster.py` for tasks that are run on minions."""
 import logging
 import os
 
+from kids.cache import cache as cached
+
 import cfn
 import utils
 from buildercore import (
@@ -17,7 +19,6 @@ from buildercore import (
 from buildercore.command import local
 from buildercore.utils import ensure, lmap
 from decorators import echo_output, requires_aws_stack
-from kids.cache import cache as cached
 
 LOG = logging.getLogger(__name__)
 
@@ -29,9 +30,6 @@ def update(master_stackname=None):
     ])
     bootstrap.remove_all_orphaned_keys(master_stackname)
 
-#
-#
-#
 
 def write_missing_keypairs_to_s3():
     "uploads any missing ec2 keys to S3 if they're present locally"
@@ -59,9 +57,6 @@ def download_keypair(stackname):
     except OSError as err:
         LOG.info(err)
 
-#
-#
-#
 
 @echo_output
 @cached
