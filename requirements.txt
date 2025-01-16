@@ -46,7 +46,7 @@ ssh-python==1.1.0
 ssh2-python==1.1.1
 threadbare==4.1.0
 tomli==2.2.1
-troposphere==3.1.1
+troposphere==4.9.0
 Unidecode==1.2.0
 urllib3==1.26.20
 Werkzeug==3.0.6
