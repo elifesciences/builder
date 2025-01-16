@@ -41,7 +41,7 @@ Install from dependancies with homebrew:
     brew install vagrant git openssl@1.1 libssh2 libffi python@3.8 vault virtualbox
 
 
-Activate the Python virtualenv:
+Activate the Python virtual env:
 
     source ./venv/bin/activate
 
@@ -61,7 +61,7 @@ Install from dependancies with homebrew:
 
 Install developer preview version of virtualbox from https://www.virtualbox.org/wiki/Downloads
 
-Activate the Python virtualenv:
+Activate the Python virtual env:
 
     source ./venv/bin/activate
 
