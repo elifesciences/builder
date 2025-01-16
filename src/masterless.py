@@ -30,9 +30,6 @@ def requires_masterless(fn):
     return wrapper
 
 
-#
-#
-#
 
 def parse_validate_repolist(fdata, *repolist):
     "returns a list of triples"
@@ -75,9 +72,6 @@ def parse_validate_repolist(fdata, *repolist):
 
     return arglist
 
-#
-#
-#
 
 @requires_project
 @requires_master_server_access
@@ -110,9 +104,6 @@ def launch(pname, instance_id=None, alt_config='standalone', *repolist):
     LOG.info('updating stack %s', stackname)
     bootstrap.update_stack(stackname, service_list=['ec2', 'sqs', 's3'], formula_revisions=formula_revisions)
 
-#
-#
-#
 
 @requires_master_server_access
 @requires_masterless

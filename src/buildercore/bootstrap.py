@@ -370,9 +370,6 @@ def master_data(region):
 def master(region, key):
     return master_data(region)[key]
 
-#
-#
-#
 
 def update_stack(stackname, service_list=None, **kwargs):
     """updates the given stack. if a list of services are provided (s3, ec2, sqs, etc)

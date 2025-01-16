@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+
 from buildercore import utils
 from buildercore.project import stack_config, stack_generation
 

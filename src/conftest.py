@@ -20,6 +20,7 @@ import logging
 from unittest import mock
 
 import pytest
+
 from buildercore.config import CONSOLE_HANDLER, get_logger
 from buildercore.utils import tempdir as core_utils_tempdir
 from tests import base

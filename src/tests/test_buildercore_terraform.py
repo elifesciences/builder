@@ -7,6 +7,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import yaml
+
 from buildercore import cfngen, terraform, utils
 
 from . import base

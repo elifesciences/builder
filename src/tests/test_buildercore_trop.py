@@ -22,9 +22,6 @@ def _parse_json(dump):
     # return yaml.safe_load(dump) # slightly improved in python3?
     return json.loads(dump)
 
-#
-#
-#
 
 class TestBuildercoreTrop(base.BaseCase):
     def setUp(self):
@@ -1188,9 +1185,6 @@ class TestBuildercoreTrop(base.BaseCase):
         cfn_template = json.loads(cfn_template_json)
         self.assertEqual(fixture, cfn_template)
 
-#
-#
-#
 
 class TestOverriddenComponent(unittest.TestCase):
     def test_overrides_scalar(self):
@@ -1280,9 +1274,6 @@ class TestOverriddenComponent(unittest.TestCase):
         self.assertEqual(context['rds']['deletion-policy'], "Delete")
         self.assertEqual(data['Resources']['AttachedDB']['DeletionPolicy'], 'Delete')
 
-#
-#
-#
 
 class TestIngress(base.BaseCase):
     def _dump_to_list_of_rules(self, ingress):

@@ -104,9 +104,6 @@ def project_data(pname):
         msg = "unknown project %r, known projects %r" % (pname, list(data.keys()))
         raise ValueError(msg) from keyerr
 
-#
-#
-#
 
 def filtered_projects(filterfn, *args, **kwargs):
     "returns a dict of projects filtered by given filterfn)"
@@ -115,26 +112,17 @@ def filtered_projects(filterfn, *args, **kwargs):
 def aws_projects(*args, **kwargs):
     return filtered_projects(lambda pname, pdata: 'aws' in pdata, *args, **kwargs)
 
-#
-#
-#
 
 def project_formulas():
     def fn(pname, pdata):
         return [pdata.get('formula-repo')] + pdata.get('formula-dependencies', [])
     return utils.dictmap(fn, project_map())
 
-#
-#
-#
 
 def known_formulas():
     "a simple list of all known project formulas"
     return utils.lfilter(None, utils.unique(utils.shallow_flatten(project_formulas().values())))
 
-#
-#
-#
 
 def _stack_map(path_list=None, stackname=None):
     """returns a single map of all projects and their data"""

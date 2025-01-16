@@ -136,9 +136,6 @@ def all_sns_subscriptions(region, stackname=None):
     lmap(lambda row: row.update({'Topic': row['TopicArn'].split(':')[-1]}), subs_list)
     return subs_list
 
-#
-#
-#
 
 def boto_resource(service, region=None):
     kwargs = {}
@@ -171,9 +168,6 @@ def boto_conn(pname_or_stackname, service, client=False):
     fn = boto_client if client else boto_resource
     return fn(service, pdata['aws']['region'])
 
-#
-#
-#
 
 # Silviot, https://github.com/boto/boto3/issues/264
 # not a bugfix, just a convenience wrapper
@@ -245,9 +239,6 @@ def find_ec2_instances(stackname, state='running', node_ids=None, allow_empty=Fa
         raise NoRunningInstancesError("found no running ec2 instances for %r. The stack nodes may have been stopped, but here we were requiring them to be running" % stackname)
     return ec2_instances
 
-#
-#
-#
 
 def rds_iid(stackname, replacement_number=None):
     """generates a suitable RDS instance ID for the given `stackname`.
@@ -305,9 +296,6 @@ def find_all_rds_instances():
         results[i]['TagsDict'] = tags2dict(row['TagList'])
     return results
 
-#
-#
-#
 
 def stack_pem(stackname, die_if_exists=False, die_if_doesnt_exist=False):
     """returns the path to the private key on the local filesystem.
@@ -732,9 +720,6 @@ def requires_stack_file(func):
     msg = "failed to find cloudformation stack template for %(stackname)r in: " + config.STACK_PATH
     return decorators._requires_fn_stack(func, lambda stackname: os.path.exists(stack_path(stackname)), msg)
 
-#
-#
-#
 
 def project_data_for_stackname(stackname):
     """like `project.project_data` but modifies the project data if the instance-id

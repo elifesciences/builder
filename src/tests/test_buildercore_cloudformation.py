@@ -2,6 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import botocore
+
 from buildercore import cloudformation
 
 from . import base
