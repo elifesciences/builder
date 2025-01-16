@@ -10,7 +10,7 @@ python3.8 -m venv venv
 
 # prefer using wheels to compilation
 source venv/bin/activate
-pip install wheel pip --upgrade
+pip install wheel pip pipenv --upgrade
 
 # updates the Pipfile.lock file and then installs the newly updated dependencies.
 # the envvar is necessary otherwise pipenv will use it's own .venv directory.
