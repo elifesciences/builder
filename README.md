@@ -68,8 +68,6 @@ or lima
 
 It's virtual env is found in `./venv` and can be activated with `./venv/bin/activate`.
 
-To update a dependency, modify the `Pipfile` and run `./update-dependencies.sh` to refresh the `Pipfile.lock` and
-`requirements.txt` files. You will need `pipenv` installed.
 
 ## testing
 
