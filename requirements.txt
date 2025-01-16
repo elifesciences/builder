@@ -49,7 +49,6 @@ tomli==2.2.1
 troposphere==3.1.1
 Unidecode==1.2.0
 urllib3==1.26.20
-virtualenv==20.29.0
 Werkzeug==3.0.6
 xmltodict==0.14.2
 zope.event==5.0
