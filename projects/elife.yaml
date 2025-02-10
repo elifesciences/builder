@@ -1621,6 +1621,8 @@ redirects:
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
+                # disable wildcard ACM certificate
+                certificate: false
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
                 certificate_id: ASCAXOXT77XQA5PCG6NUR
                 subdomains:
