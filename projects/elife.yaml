@@ -286,8 +286,10 @@ defaults:
             subdomains-without-dns: []
             domains: []
             origins: {}
-            # arn:aws:acm:us-east-1:512686554592:certificate/be2865f8-80cd-4c2f-9080-9edb9be3298e
-            certificate_id: be2865f8-80cd-4c2f-9080-9edb9be3298e
+            # Original way of specifying an uploaded cert in IAM
+            certificate_id: false
+            # Specify an ACM cert
+            certificate: arn:aws:acm:us-east-1:512686554592:certificate/be2865f8-80cd-4c2f-9080-9edb9be3298e
             cookies: []
             compress: true
             headers: []
