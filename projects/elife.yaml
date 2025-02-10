@@ -565,6 +565,8 @@ lax:
             rds:
                 storage: 10
                 multi-az: true
+                params:
+                    "rds.logical_replication": 1
             ext:
                 size: 10 # GB
             elb:
