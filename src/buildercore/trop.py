@@ -1254,8 +1254,8 @@ def render_cloudfront(context, template, origin_hostname):
         'HttpVersion': 'http2',
         'Origins': origins,
         'ViewerCertificate': cloudfront.ViewerCertificate(
-            IamCertificateId=context['cloudfront']['certificate_id'],
-            AcmCertificateArn=context['cloudfront']['certificate'],
+            IamCertificateId=context['cloudfront'].get('certificate_id', False),
+            AcmCertificateArn=context['cloudfront'].get('certificate', False),
             SslSupportMethod='sni-only'
         )
     }
