@@ -1234,6 +1234,21 @@ def render_cloudfront(context, template, origin_hostname):
                 )
             )
         ]
+    acmCert = context['cloudfront'].get('certificate', False)
+    iamCert = context['cloudfront'].get('certificate_id', False)
+
+    if acmCert:
+        cert = cloudfront.ViewerCertificate(
+            AcmCertificateArn=acmCert,
+            SslSupportMethod='sni-only'
+        )
+    elif iamCert:
+        cert = cloudfront.ViewerCertificate(
+            IamCertificateId=iamCert,
+            SslSupportMethod='sni-only'
+        )
+    else:
+        cert = None
     props = {
         'Aliases': allowed_cnames,
         'CacheBehaviors': [],
@@ -1253,11 +1268,7 @@ def render_cloudfront(context, template, origin_hostname):
         'Enabled': True,
         'HttpVersion': 'http2',
         'Origins': origins,
-        'ViewerCertificate': cloudfront.ViewerCertificate(
-            IamCertificateId=context['cloudfront'].get('certificate_id', False),
-            AcmCertificateArn=context['cloudfront'].get('certificate', False),
-            SslSupportMethod='sni-only'
-        )
+        'ViewerCertificate': cert
     }
 
     def _cache_behavior(origin_id, pattern, headers=None, cookies=None):
