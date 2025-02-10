@@ -605,8 +605,8 @@ def build_context_cloudfront(pdata, context):
         context['cloudfront'] = {
             'subdomains': [build_subdomain(x) for x in pdata['aws']['cloudfront']['subdomains']],
             'subdomains-without-dns': [build_subdomain(x) for x in pdata['aws']['cloudfront']['subdomains-without-dns']],
-            'certificate_id': pdata['aws']['cloudfront']['certificate_id'],
-            'certificate': pdata['aws']['cloudfront']['certificate'],
+            'certificate_id': pdata['aws']['cloudfront'].get('certificate_id', False),
+            'certificate': pdata['aws']['cloudfront'].get('certificate', False),
             'cookies': pdata['aws']['cloudfront']['cookies'],
             'compress': pdata['aws']['cloudfront']['compress'],
             'headers': pdata['aws']['cloudfront']['headers'],
