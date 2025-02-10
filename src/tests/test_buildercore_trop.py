@@ -975,6 +975,29 @@ class TestBuildercoreTrop(base.BaseCase):
             data['Resources']['CloudFrontCDN']['Properties']['DistributionConfig']['CustomErrorResponses']
         )
 
+    def test_cdn_template_acm_cert(self):
+        extra = {
+            'stackname': 'project-with-cloudfront-acm-certificate--prod',
+        }
+        context = cfngen.build_context('project-with-cloudfront-acm-certificate', **extra)
+        self.assertEqual(
+            {
+                'certificate': 'dummy...',
+                'compress': True,
+                'cookies': ['session_id'],
+                'headers': ['Accept'],
+                'logging': {
+                    'bucket': 'acme-logs',
+                },
+                'origins': {},
+                'subdomains': ['prod--cdn-of-www.example.org', 'example.org'],
+                'subdomains-without-dns': ['future.example.org'],
+                'errors': None,
+                'default-ttl': 5,
+            },
+            context['cloudfront']
+        )
+
     # --- fastly
 
     def test_fastly_template_contains_only_dns(self):
