@@ -833,7 +833,6 @@ class TestBuildercoreTrop(base.BaseCase):
         self.assertEqual(
             {
                 'certificate_id': 'dummy...',
-                'certificate': False,
                 'compress': True,
                 'cookies': ['session_id'],
                 'headers': ['Accept'],
