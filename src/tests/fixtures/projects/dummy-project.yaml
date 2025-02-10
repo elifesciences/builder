@@ -551,6 +551,30 @@ project-with-cloudfront-origins:
                         - Referer
                     cookies:
                         - session_id
+project-with-cloudfront-acm-certificate:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    subdomain: www
+    aws:
+        ec2:
+            ports:
+                - 80
+        cloudfront:
+            subdomains:
+                - "{instance}--cdn-of-www"
+                - ""
+            subdomains-without-dns:
+                - future
+            cookies:
+                - session_id
+            headers:
+                - Accept
+            default-ttl: 5
+            logging:
+                bucket: acme-logs
+            # Use an ACM certificate instead
+            certificate_id: False
+            certificate: 'dummy...'
+
 
 project-with-fastly-minimal:
     repo: ssh://git@github.com/elifesciences/dummy3

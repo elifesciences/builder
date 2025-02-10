@@ -178,8 +178,8 @@ defaults:
                         unhealthy_threshold: 2
                         healthy_threshold: 2
             idle_timeout: 60
-            # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2024-02-27.wildcard.elifesciences.org
+            certificate: arn:aws:acm:us-east-1:512686554592:certificate/be2865f8-80cd-4c2f-9080-9edb9be3298e
+
 
         # elb defaults only used if an 'elb' section present in project
         elb:
@@ -190,8 +190,7 @@ defaults:
             protocol: http
             additional_listeners: {}
             idle_timeout: 60
-            # maintained through `aws iam upload-server-certificate`
-            certificate: arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2024-02-27.wildcard.elifesciences.org
+            certificate: arn:aws:acm:us-east-1:512686554592:certificate/be2865f8-80cd-4c2f-9080-9edb9be3298e
             healthcheck:
                 protocol: http
                 port: 80
@@ -287,9 +286,10 @@ defaults:
             subdomains-without-dns: []
             domains: []
             origins: {}
-            # maintained through `aws iam upload-server-certificate`
-            # arn:aws:iam::512686554592:server-certificate/cloudfront/wildcard.elifesciences.org/2023-02-06.wildcard.elifesciences.org
-            certificate_id: ASCAXOXT77XQC5OYKYYWG
+            # Original way of specifying an uploaded cert in IAM
+            certificate_id: false
+            # Specify an ACM cert
+            certificate: arn:aws:acm:us-east-1:512686554592:certificate/be2865f8-80cd-4c2f-9080-9edb9be3298e
             cookies: []
             compress: true
             headers: []
@@ -1621,6 +1621,8 @@ redirects:
             # unique because: 'cloudfront.subdomains' contains static values.
             unique: true
             cloudfront:
+                # disable wildcard ACM certificate
+                certificate: false
                 # arn:aws:iam::512686554592:server-certificate/cloudfront/redirects/2019-06-17.elifesciences.net
                 certificate_id: ASCAXOXT77XQA5PCG6NUR
                 subdomains:
