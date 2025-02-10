@@ -605,8 +605,6 @@ def build_context_cloudfront(pdata, context):
         context['cloudfront'] = {
             'subdomains': [build_subdomain(x) for x in pdata['aws']['cloudfront']['subdomains']],
             'subdomains-without-dns': [build_subdomain(x) for x in pdata['aws']['cloudfront']['subdomains-without-dns']],
-            'certificate_id': pdata['aws']['cloudfront'].get('certificate_id', False),
-            'certificate': pdata['aws']['cloudfront'].get('certificate', False),
             'cookies': pdata['aws']['cloudfront']['cookies'],
             'compress': pdata['aws']['cloudfront']['compress'],
             'headers': pdata['aws']['cloudfront']['headers'],
@@ -623,6 +621,13 @@ def build_context_cloudfront(pdata, context):
                 for o_id, o in pdata['aws']['cloudfront']['origins'].items()
             ]),
         }
+        iam_cert = pdata['aws']['cloudfront'].get('certificate_id', False)
+        if iam_cert:
+            context['cloudfront']['certificate_id'] = iam_cert
+
+        acm_cert = pdata['aws']['cloudfront'].get('certificate', False)
+        if acm_cert:
+            context['cloudfront']['certificate'] = acm_cert
 
     return context
 
