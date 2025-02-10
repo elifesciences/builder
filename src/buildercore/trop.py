@@ -1234,17 +1234,17 @@ def render_cloudfront(context, template, origin_hostname):
                 )
             )
         ]
-    acmCert = context['cloudfront'].get('certificate', False)
-    iamCert = context['cloudfront'].get('certificate_id', False)
+    acm_cert = context['cloudfront'].get('certificate', False)
+    iam_cert = context['cloudfront'].get('certificate_id', False)
 
-    if acmCert:
+    if acm_cert:
         cert = cloudfront.ViewerCertificate(
-            AcmCertificateArn=acmCert,
+            AcmCertificateArn=acm_cert,
             SslSupportMethod='sni-only'
         )
-    elif iamCert:
+    elif iam_cert:
         cert = cloudfront.ViewerCertificate(
-            IamCertificateId=iamCert,
+            IamCertificateId=iam_cert,
             SslSupportMethod='sni-only'
         )
     else:
