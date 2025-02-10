@@ -1951,6 +1951,7 @@ bioprotocol:
             bioprotocol--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
+    aws-alt: {}
     vagrant:
         ports:
             1280: 80
