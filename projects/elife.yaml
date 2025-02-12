@@ -510,6 +510,7 @@ master-server:
         ec2:
             ports:
                 - 22
+                - 80 # Caddy, for auto issuing tls certs
                 - 4506: # salt publish port
                     # CIDR of subnet this master will serve
                     cidr-ip: 10.0.0.0/16 # access via VPC ip range only
