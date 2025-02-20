@@ -664,7 +664,6 @@ journal:
     formula-repo: https://github.com/elifesciences/journal-formula
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
             ports:
@@ -1106,7 +1105,6 @@ journal-cms:
     formula-repo: https://github.com/elifesciences/journal-cms-formula
     formula-dependencies:
         - https://github.com/elifesciences/builder-base-formula
-        - https://github.com/elifesciences/api-dummy-formula
     aws:
         ec2:
             ports:
