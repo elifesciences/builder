@@ -832,38 +832,6 @@ journal:
         - guestPort: 80
           hostPort: 1240
 
-pattern-library:
-    subdomain: ui-patterns
-    repo: https://github.com/elifesciences/pattern-library
-    formula-repo: https://github.com/elifesciences/pattern-library-formula
-    aws:
-        ec2:
-            ports:
-                - 22
-                - 443
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        ci:
-            ec2: false
-            s3:
-                "{instance}-pattern-library":
-                    public: true
-        prod:
-            # unique because: 'subdomains' contains static values.
-            unique: true
-            subdomains:
-                - ui-patterns
-    vagrant:
-        ports:
-            1340: 80
-    lima:
-        portForwards:
-        - guestPort: 80
-          hostPort: 1340
-
 elife-metrics:
     description: journal-level metrics
     subdomain: metrics # metrics.elifesciences.org
