@@ -8,7 +8,7 @@ cfn-flip==1.3.0
 charset-normalizer==3.4.1
 click==8.1.8
 coverage==7.6.1
-cryptography==44.0.1
+cryptography==44.0.2
 dda-python-terraform @ git+https://gitlab.com/domaindrivenarchitecture/dda-python-terraform.git@3fd4a72d3d0741438afdee916217e67e63d401cb
 deepmerge==1.1.1
 distlib==0.3.9
