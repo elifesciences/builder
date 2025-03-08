@@ -14,7 +14,7 @@ deepmerge==1.1.1
 distlib==0.3.9
 exceptiongroup==1.2.2
 filelock==3.16.1
-gevent==24.2.1
+gevent==24.11.1
 greenlet==3.1.1
 idna==3.10
 iniconfig==2.0.0
