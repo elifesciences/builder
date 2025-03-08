@@ -39,7 +39,7 @@ requests==2.32.3
 responses==0.25.6
 ruamel.yaml==0.18.10
 ruamel.yaml.clib==0.2.8
-ruff==0.9.2
+ruff==0.9.10
 s3transfer==0.11.0
 six==1.17.0
 ssh-python==1.1.0
