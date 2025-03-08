@@ -42,7 +42,7 @@ ruamel.yaml.clib==0.2.8
 ruff==0.9.10
 s3transfer==0.11.0
 six==1.17.0
-ssh-python==1.1.0
+ssh-python==1.1.1
 ssh2-python==1.1.2.post1
 threadbare==4.1.0
 tomli==2.2.1
