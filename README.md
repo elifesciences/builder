@@ -3,7 +3,7 @@
 Centralised configuration and building of [eLife](https://elifesciences.org) *journal* applications locally ([Vagrant](#vagrant))
 and remotely ([AWS, GCS](#aws-amazon-web-services)).
 
-`builder` is a Python 3.8+ project and supports Linux and MacOS.
+`builder` is a Python 3.10+ project and supports Linux and MacOS.
 
 # installation
 

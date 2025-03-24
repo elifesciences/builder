@@ -1,4 +1,4 @@
-FROM python:3.8-slim-bullseye
+FROM python:3.10-slim-bullseye
 
 # 'git' for installing python dependencies from git revisions
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git --no-install-recommends

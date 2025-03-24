@@ -88,6 +88,6 @@ def projects_from_file(path_to_file, *args, **kwargs):
     "returns a map of {path_to_file: project data} for given `path_to_file`."
     _, project_list = all_projects(path_to_file)
 
-    # lsh@2022-09-05: removed OrderedDicts as we're now using python3.8 exclusively.
+    # lsh@2022-09-05: removed OrderedDicts as we're now using >python3.8 exclusively.
     pdata = {pname: project_data(pname, path_to_file) for pname in project_list}
     return {path_to_file: pdata}

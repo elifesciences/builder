@@ -6,7 +6,8 @@ set -e
 rm -f .no-delete-venv.flag
 
 # python 3.8, 20.04
-python=$(which python3.8 python3 | head -n 1)
+# python 3.10, 22.04
+python=$(which python3.10 python3.8 python3 | head -n 1)
 
 py=${python##*/} # "python3.8"
 echo "using $py"
