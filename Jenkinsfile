@@ -1,5 +1,6 @@
 elifePipeline {
-
+    def defaultPythonVersion = '3.10'
+    def pythonVersions = ['3.8', '3.9', '3.10']
     def commit
     stage 'Checkout', {
         checkout scm
@@ -7,30 +8,36 @@ elifePipeline {
     }
 
     stage 'Update', {
-        sh './update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault'
+        sh "mise exec python@${defaultPythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
     }
 
     stage '.ci/ checks', {
         elifeLocalTests()
     }
 
-    lock('builder') {
-        def actions = [:]
-        def pythonVersions = ['3.8', '3.9', '3.10']
+    def versionActions = [:]
+    pythonVersions.each { pythonVersion ->
+        versionActions['Python ' + pythonVersion] = {
+            lock('builder') {
+                stage "Python ${pythonVersion}: Update", {
+                    sh "mise exec python@${pythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
+                }
 
-        pythonVersions.each { pythonVersion ->
-            stage 'Project tests python ' + pythonVersion, {
-                withCommitStatus({
-                    try {
-                        sh "BUILDER_INTEGRATION_TESTS=1 JUNIT_OUTPUT_ID=py${pythonVersion} mise exec python@${pythonVersion} -- ./test.sh"
-                    } finally {
-                        // https://issues.jenkins-ci.org/browse/JENKINS-27395?focusedCommentId=345589&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-345589
-                        junit testResults: "build/pytest-py${pythonVersion}.xml"
-                    }
-                }, "py" + pythonVersion, commit)
+                stage "Python ${pythonVersion}: Project tests", {
+                    withCommitStatus({
+                        try {
+                            sh "BUILDER_INTEGRATION_TESTS=1 JUNIT_OUTPUT_ID=py${pythonVersion} mise exec python@${pythonVersion} -- ./test.sh"
+                        } finally {
+                            // https://issues.jenkins-ci.org/browse/JENKINS-27395?focusedCommentId=345589&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-345589
+                            junit testResults: "build/pytest-py${pythonVersion}.xml"
+                        }
+                    }, "py" + pythonVersion, commit)
+                }
             }
         }
     }
+
+    parallel versionActions
 
     stage 'Downstream', {
         elifeMainlineOnly {
