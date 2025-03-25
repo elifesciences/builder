@@ -14,9 +14,7 @@ or use the menu:
     3 - ...
     >
 
-The Vagrantfile will call a Python script to discover which projects are available. To execute that script with Docker:
-
-    touch .use-docker.flag
+The Vagrantfile will call a Python script to discover which projects are available.
 
 Note: if you wish to use a private key not in `~/.ssh/id_rsa`, you can [customize the SSH key path](docs/ssh-key.md).
 

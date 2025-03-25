@@ -18,18 +18,14 @@ def runcmd(cmd)
         output = io.read
     end
     exit_status = $?.exitstatus
-    if exit_status != 0 
+    if exit_status != 0
       throw "Command '#{cmd}' exited with #{exit_status}"
     end
     return output
 end
 
 def project_cmd(argstr)
-    flag = ".use-docker.flag"
-    if File.exists?(flag)
-      executable = "python-docker.sh"
-    else
-      executable = "venv/bin/python"
+    executable = "venv/bin/python"
     end
     cmd = "/bin/bash -c \"./#{executable} .project.py #{argstr}\""
     prn(cmd)
@@ -79,7 +75,7 @@ else
     SUPPORTED_PROJECTS.each_with_index do |k,i|
         KEYED[i+1] = k[0]
     end
-    
+
     default_project = nil
     if File.exists?('projects/elife/.vproject')
         fh = File.open('projects/elife/.vproject', 'r')
@@ -87,9 +83,9 @@ else
         fh.close()
     end
     DEFAULT_AVAILABLE = SUPPORTED_PROJECTS.include?(default_project)
-    
+
     vmlist = runningvms()
-    
+
     begin
         while true
             prn
@@ -100,7 +96,7 @@ else
                     prn "#{k} - #{i}"
                 end
             end
-            
+
             if DEFAULT_AVAILABLE
                 prn "> (" + default_project + ")"
             else
@@ -120,17 +116,17 @@ else
                 prn "a number in the range 1 to #{SUPPORTED_PROJECTS.length} is required"
                 next
             end
-            
+
             INSTANCE_NAME = KEYED[opt] # "elife-lax--vagrant"
             break
         end
-        
+
         # remember the selected project
         FileUtils.mkdir_p('projects/elife/')
         fh = File.open('projects/elife/.vproject', 'w')
         fh.write(INSTANCE_NAME)
         fh.close()
-        
+
     rescue Interrupt
         abort ".. interrupt caught, aborting"
     end
@@ -144,7 +140,7 @@ IS_MASTER = PROJECT_NAME == "master-server"
 if not SUPPORTED_PROJECTS.has_key? INSTANCE_NAME
     prn "unknown project '#{INSTANCE_NAME}'"
     prn "known projects: " + SUPPORTED_PROJECTS.keys.join(', ')
-    abort 
+    abort
 end
 
 PRJ = project_cmd(PROJECT_NAME)
@@ -164,18 +160,18 @@ def prj(key, default=nil)
     PRJ['vagrant'].fetch(key, default)
 end
 
-# ask user if they want to use the large amount of RAM requested  
+# ask user if they want to use the large amount of RAM requested
 RAM_CHECK_THRESHOLD = 4096
 if (prj('ram').to_i > RAM_CHECK_THRESHOLD) and ['up', 'reload'].include? VAGRANT_COMMAND
     requested = prj('ram')
-    
+
     flag = ".#{PROJECT_NAME}-#{requested}.flag"
 
     if File.exists?(flag)
         prn "found #{flag}, skipping excessive ram check"
-    else 
+    else
         prn "project is requesting a large amount of RAM (#{requested}MB)"
-        
+
         prn "1 - #{RAM_CHECK_THRESHOLD}MB"
         prn "2 - #{requested}MB"
         prn "> (#{RAM_CHECK_THRESHOLD}MB)"
@@ -185,9 +181,9 @@ if (prj('ram').to_i > RAM_CHECK_THRESHOLD) and ['up', 'reload'].include? VAGRANT
         rescue Interrupt
             abort
         end
-        
+
         options = {1 => RAM_CHECK_THRESHOLD, 2 => prj('ram')}
-        
+
         if not opt
             PRJ['vagrant']['ram'] = RAM_CHECK_THRESHOLD
         elsif options.keys.include? opt
@@ -235,7 +231,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         project.vm.host_name = INSTANCE_NAME
         prn " [info] hostname is #{INSTANCE_NAME} (this affects Salt configuration)"
         project.vm.network :private_network, ip: prj("ip")
-      
+
         # setup any port forwarding
         prj("ports", {}).each{|host_port, guest_port|
             #prn("host #{host_port} guest #{guest_port}")
@@ -254,7 +250,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             # allows symlinks to be created
             # bug in virtualbox 5.0.4 causing symlinks with '..' in them to fail with protocol error
             vb.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root", "1"]
-            
+
             # speeds up downloads (supposedly):
             # https://github.com/mitchellh/vagrant/issues/1807#issuecomment-19132198
             vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
@@ -299,7 +295,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                 }
                 # write the minion file
                 minion_cfg = YAML.load_file("scripts/salt/minion.template")
-                
+
                 project_formula = formula_paths.pop() # path to this project's formula
                 more_base_paths = formula_paths.map{|p| "/vagrant/" + p + "/salt/"}
 
@@ -329,7 +325,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
         # makes the current user's pub key available within the guest.
         # Salt will pick up on it's existence and add it to the deploy user's
-        # `./ssh/authorised_keys` file allowing login. 
+        # `./ssh/authorised_keys` file allowing login.
         # ssh-agent provides communication with Github
         if File.exists?(CUSTOM_SSH_KEY + ".pub")
           runcmd("cp #{CUSTOM_SSH_KEY}.pub custom-vagrant/id_rsa.pub")

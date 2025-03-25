@@ -29,15 +29,6 @@ elifePipeline {
             }, python, commit)
         }
 
-        actions["Docker ${python}"] = {
-            withCommitStatus({
-                node('containers-jenkins-plugin') {
-                    checkout scm
-                    sh "./docker-smoke.sh"
-                }
-            }, "docker-${python}", commit)
-        }
-
         stage 'Project tests', {
             parallel actions
         }
