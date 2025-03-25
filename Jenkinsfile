@@ -22,7 +22,7 @@ elifePipeline {
             stage 'Project tests python ' + pythonVersion, {
                 withCommitStatus({
                     try {
-                        sh "BUILDER_INTEGRATION_TESTS=1 mise exec python@${pythonVersion} -- ./test.sh"
+                        sh "BUILDER_INTEGRATION_TESTS=1 JUNIT_OUTPUT_ID=py${pythonVersion} mise exec python@${pythonVersion} -- ./test.sh"
                     } finally {
                         // https://issues.jenkins-ci.org/browse/JENKINS-27395?focusedCommentId=345589&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-345589
                         junit testResults: "build/pytest-py${pythonVersion}.xml"
