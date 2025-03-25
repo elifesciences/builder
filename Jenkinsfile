@@ -1,5 +1,5 @@
 elifePipeline {
-    def defaultPythonVersion = '3.8'
+    def defaultPythonVersion = '3.10'
     def pythonVersions = ['3.8', '3.9', '3.10']
     def commit
     stage 'Checkout', {
