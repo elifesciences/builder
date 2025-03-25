@@ -15,10 +15,26 @@ elifePipeline {
                 }
 
                 def checkActions = [:]
-                checkActions["Python ${pythonVersion}: lint"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/lint")
-                checkActions["Python ${pythonVersion}: projects-smoke"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/projects-smoke")
-                checkActions["Python ${pythonVersion}: scrub"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/scrub")
-                checkActions["Python ${pythonVersion}: shell-checking"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/shell-checking")
+                checkActions["Python ${pythonVersion}: lint"] = {
+                    withCommitStatus({
+                        sh "mise exec python@${pythonVersion} -- ./.ci/lint"
+                    }, "Python ${pythonVersion}: lint", commit)
+                }
+                checkActions["Python ${pythonVersion}: projects-smoke"] = {
+                    withCommitStatus({
+                        sh "mise exec python@${pythonVersion} -- ./.ci/projects-smoke"
+                    }, "Python ${pythonVersion}: projects", commit)
+                }
+                checkActions["Python ${pythonVersion}: scrub"] = {
+                    withCommitStatus({
+                        sh "mise exec python@${pythonVersion} -- ./.ci/scrub"
+                    }, "Python ${pythonVersion}: scrub", commit)
+                }
+                checkActions["Python ${pythonVersion}: shell-checking"] = {
+                    withCommitStatus({
+                        sh "mise exec python@${pythonVersion} -- ./.ci/shell-checking"
+                    }, "Python ${pythonVersion}: shell", commit)
+                }
                 parallel checkActions
 
                 stage "Python ${pythonVersion}: Project tests", {
