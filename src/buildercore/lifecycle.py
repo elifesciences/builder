@@ -64,7 +64,7 @@ def _ec2_nodes_states(stackname, node_ids=None):
     def _unify_node_information(nodes, name):
         excluding_terminated = [node for node in nodes if node.state['Name'] != 'terminated']
         ensure(len(excluding_terminated) <= 1, "Multiple nodes in %s have the same name (%s), but a non-terminated state" % (excluding_terminated, name))
-        if len(excluding_terminated): # > 1
+        if len(excluding_terminated) >= 1:
             return excluding_terminated[0]
         return None
 
