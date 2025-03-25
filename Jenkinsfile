@@ -7,11 +7,11 @@ elifePipeline {
         commit = elifeGitRevision()
     }
 
-    stage "Update", {
+    stage 'Update', {
         sh "mise exec python@${defaultPythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
     }
 
-    stage ".ci/ checks", {
+    stage '.ci/ checks', {
         elifeLocalTests()
     }
 
