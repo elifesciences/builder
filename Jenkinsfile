@@ -14,28 +14,9 @@ elifePipeline {
                     sh "mise exec python@${pythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
                 }
 
-                def checkActions = [:]
-                checkActions["Python ${pythonVersion}: lint"] = {
-                    withCommitStatus({
-                        sh "mise exec python@${pythonVersion} -- ./.ci/lint"
-                    }, "Python ${pythonVersion}: lint", commit)
+                stage "Python ${pythonVersion}: .ci/ checks", {
+                    elifeLocalTests()
                 }
-                checkActions["Python ${pythonVersion}: projects-smoke"] = {
-                    withCommitStatus({
-                        sh "mise exec python@${pythonVersion} -- ./.ci/projects-smoke"
-                    }, "Python ${pythonVersion}: projects", commit)
-                }
-                checkActions["Python ${pythonVersion}: scrub"] = {
-                    withCommitStatus({
-                        sh "mise exec python@${pythonVersion} -- ./.ci/scrub"
-                    }, "Python ${pythonVersion}: scrub", commit)
-                }
-                checkActions["Python ${pythonVersion}: shell-checking"] = {
-                    withCommitStatus({
-                        sh "mise exec python@${pythonVersion} -- ./.ci/shell-checking"
-                    }, "Python ${pythonVersion}: shell", commit)
-                }
-                parallel checkActions
 
                 stage "Python ${pythonVersion}: Project tests", {
                     withCommitStatus({
