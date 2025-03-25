@@ -2,14 +2,10 @@
 # requires an activated venv
 set -e
 
-# lsh@2022-02-14: venv is now preserved by default
-rm -f .no-delete-venv.flag
+python=$(which python3 | head -n 1)
 
-# python 3.8, 20.04
-python=$(which python3.8 python3 | head -n 1)
-
-py=${python##*/} # "python3.8"
-echo "using $py"
+py=${python##*/} # "python3"
+echo "using binary $py ($($py --version))"
 
 if [ ! -e "venv/bin/$py" ]; then
     echo "could not find venv/bin/$py, recreating venv"

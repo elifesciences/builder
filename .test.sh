@@ -17,7 +17,7 @@ coverage_err="\nFAILED coverage test: $coverage_threshold%% required but exiting
 
 # `patched_pytest` is a copy of 'pytest' but with gevent monkey patching.
 
-if [ -n "$args" ]; then 
+if [ -n "$args" ]; then
     # custom pytest arguments have been given, use those.
     ./patched_pytest -vv "$args"
 
@@ -39,7 +39,7 @@ else
         -vv \
         --cov-config=.coveragerc --cov-report= --cov=src \
         --capture=no \
-        --junitxml="build/pytest-py3.xml" \
+        --junitxml="build/pytest-${JUNIT_OUTPUT_ID:-py3}.xml" \
         src/tests src/integration_tests
 
     echo "Checking coverage report"
