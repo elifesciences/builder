@@ -10,20 +10,18 @@ elifePipeline {
     pythonVersions.each { pythonVersion ->
         versionActions['Python ' + pythonVersion] = {
             lock('builder') {
-                stage 'Python ' + pythonVersion + ': Update', {
-                    sh 'mise exec python@${pythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault'
+                stage "Python ${pythonVersion}: Update", {
+                    sh "mise exec python@${pythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
                 }
 
-                stage 'Python ' + pythonVersion + ': .ci/ checks', {
-                    def checkActions = [:]
-                    checkActions['lint'] = elifeLocalTests('mise exec python@${pythonVersion} -- ./.ci/lint')
-                    checkActions['projects-smoke'] = elifeLocalTests('mise exec python@${pythonVersion} -- ./.ci/projects-smoke')
-                    checkActions['scrub'] = elifeLocalTests('mise exec python@${pythonVersion} -- ./.ci/scrub')
-                    checkActions['shell-checking'] = elifeLocalTests('mise exec python@${pythonVersion} -- ./.ci/shell-checking')
-                    parallel checkActions
-                }
+                def checkActions = [:]
+                checkActions["Python ${pythonVersion}: lint"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/lint")
+                checkActions["Python ${pythonVersion}: projects-smoke"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/projects-smoke")
+                checkActions["Python ${pythonVersion}: scrub"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/scrub")
+                checkActions["Python ${pythonVersion}: shell-checking"] = elifeLocalTests("mise exec python@${pythonVersion} -- ./.ci/shell-checking")
+                parallel checkActions
 
-                stage 'Python ' + pythonVersion + ': Project tests', {
+                stage "Python ${pythonVersion}: Project tests", {
                     withCommitStatus({
                         try {
                             sh "BUILDER_INTEGRATION_TESTS=1 JUNIT_OUTPUT_ID=py${pythonVersion} mise exec python@${pythonVersion} -- ./test.sh"
