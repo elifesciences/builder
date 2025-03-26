@@ -1531,7 +1531,7 @@ def render_waf_managed_rule(stackname, rule_name_with_ns, rule):
         'Name': rule_name_with_ns,
         'Priority': rule['priority'],
         'Statement': wafv2.StatementOne(ManagedRuleGroupStatement=managed_statement),
-        'OverrideAction': wafv2.OverrideAction(**{"None": wafv2.NoneAction()}), # double urgh.
+        'OverrideAction': wafv2.OverrideAction(**{"None": {}}), # double urgh.
         'VisibilityConfig': wafv2.VisibilityConfig(**{
             'CloudWatchMetricsEnabled': True,
             # 'firewall--prod--AWS-AWSManagedRulesKnownBadInputsRuleSet"
