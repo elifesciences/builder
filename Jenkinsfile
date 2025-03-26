@@ -1,6 +1,5 @@
 elifePipeline {
-    def defaultPythonVersion = '3.10'
-    def pythonVersions = ['3.8', '3.9', '3.10']
+    def pythonVersions = ['3.8', '3.10']
     def commit
     stage 'Checkout', {
         checkout scm
@@ -9,7 +8,7 @@ elifePipeline {
 
     stage 'Update', {
         sh "rm -rf venv/*"
-        sh "mise exec python@${defaultPythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
+        sh "mise exec -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
     }
 
     stage '.ci/ checks', {
