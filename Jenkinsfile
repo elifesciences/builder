@@ -8,6 +8,7 @@ elifePipeline {
     }
 
     stage 'Update', {
+        sh "rm -rf venv/*"
         sh "mise exec python@${defaultPythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
     }
 
@@ -20,6 +21,7 @@ elifePipeline {
         versionActions['Python ' + pythonVersion] = {
             lock('builder') {
                 stage "Python ${pythonVersion}: Update", {
+                    sh "rm -rf venv/*"
                     sh "mise exec python@${pythonVersion} -- ./update.sh --exclude virtualbox vagrant ssh-credentials ssh-agent vault"
                 }
 
