@@ -22,7 +22,7 @@ Jinja2==3.1.6
 jmespath==1.0.1
 kids.cache==0.0.7
 MarkupSafe==2.1.5
-moto==3.1.19
+moto==4.2.14
 netaddr==0.10.1
 packaging==24.2
 parallel-ssh==2.14.0
