@@ -2,5 +2,15 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "boto3",
+        "botocore"
+      ],
+      "groupName": "boto3",
+      "commitMessageTopic": "Boto3"
+    }
   ]
 }
