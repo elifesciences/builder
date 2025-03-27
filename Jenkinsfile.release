@@ -1,6 +1,6 @@
 elifePipeline {
     stage 'Deploy to Alfred', {
-        sh 'cd /srv/builder && git pull && . && ./update.sh --exclude virtualbox vagrant vault ssh-agent ssh-credentials'
+        sh 'cd /srv/builder && git pull && . && mise exec - ./update.sh --exclude virtualbox vagrant vault ssh-agent ssh-credentials'
     }
 
     stage 'Deploy to elife-libraries--ci', {
