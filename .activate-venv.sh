@@ -2,13 +2,13 @@
 # requires an activated venv
 set -e
 
-python=$(which python3 | head -n 1)
+python=$(which python3 python | head -n 1)
 
-py=${python##*/} # "python3"
+py=${python##*/} # "python3" or "python"
 echo "using binary $py ($($py --version))"
 
-if [ ! -e "venv/bin/$py" ]; then
-    echo "could not find venv/bin/$py, recreating venv"
+if [[ "$(readlink venv/bin/$py)" != "$python"  ]]; then
+    echo "venv/bin/$py is not symlinked to $python recreating venv"
     rm -rf venv/*
 fi
 
