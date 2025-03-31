@@ -38,7 +38,7 @@ PyYAML==6.0.2
 requests==2.32.3
 responses==0.25.7
 ruamel.yaml==0.18.10
-ruamel.yaml.clib==0.2.8
+ruamel.yaml.clib==0.2.12
 ruff==0.11.2
 s3transfer==0.11.4
 six==1.17.0
