@@ -1,5 +1,5 @@
 elifePipeline {
-    def pythonVersions = ['3.8', '3.10']
+    def pythonVersions = ['3.10']
     def commit
     stage 'Checkout', {
         checkout scm
