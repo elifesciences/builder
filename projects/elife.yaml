@@ -1679,43 +1679,6 @@ annotations:
         - guestPort: 80
           hostPort: 1248
 
-digests:
-    subdomain: digests
-    domain: false
-    repo: https://github.com/elifesciences/digests
-    formula-repo: https://github.com/elifesciences/digests-formula
-    aws:
-        ec2:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # access via VPC ip range only
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        continuumtest:
-            rds:
-                version: "13.16"
-                type: db.t3.micro
-                backup-retention: 2 # days
-        prod:
-            rds:
-                version: "13.16"
-                type: db.t3.micro
-                multi-az: true
-    vagrant:
-        ram: 1024
-        ports:
-            1290: 80
-    lima:
-        memory: 1GiB
-        portForwards:
-        - guestPort: 80
-          hostPort: 1290
-
-
 # deployed via EKS, not EC2
 elife-libero-reviewer:
     default-branch: null
