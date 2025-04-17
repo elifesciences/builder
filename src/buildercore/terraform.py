@@ -7,7 +7,7 @@ import shutil
 from collections import OrderedDict, namedtuple
 from os.path import join
 
-from dda_python_terraform import IsFlagged, IsNotFlagged, Terraform
+from python_terraform import IsFlagged, IsNotFlagged, Terraform
 
 from . import aws, config, fastly
 from .context_handler import load_context, only_if
