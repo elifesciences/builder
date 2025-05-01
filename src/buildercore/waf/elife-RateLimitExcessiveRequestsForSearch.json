@@ -1,0 +1,41 @@
+{
+  "Name": "elife-RateLimitExcessiveRequestsForSearch",
+  "Priority": 21,
+  "Action": {
+    "Block": {}
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "elife-RateLimitExcessiveRequestsForSearch"
+  },
+  "Statement": {
+    "RateBasedStatement": {
+      "Limit": "100",
+      "AggregateKeyType": "CUSTOM_KEYS",
+      "EvaluationWindowSec": 300,
+      "CustomKeys": [
+        {
+          "JA4Fingerprint": {
+            "FallbackBehavior": "NO_MATCH"
+          }
+        }
+      ],
+      "ScopeDownStatement": {
+        "ByteMatchStatement": {
+          "FieldToMatch": {
+            "UriPath": {}
+          },
+          "PositionalConstraint": "STARTS_WITH",
+          "SearchString": "/search",
+          "TextTransformations": [
+            {
+              "Type": "NONE",
+              "Priority": 0
+            }
+          ]
+        }
+      }
+    }
+  }
+}
