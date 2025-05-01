@@ -12,26 +12,42 @@
   "Statement": {
     "RateBasedStatement": {
       "Limit": "100",
-      "AggregateKeyType": "CUSTOM_KEYS",
+      "AggregateKeyType": "CONSTANT",
       "EvaluationWindowSec": 300,
-      "CustomKeys": [
-        {
-          "JA4Fingerprint": {
-            "FallbackBehavior": "NO_MATCH"
-          }
-        }
-      ],
       "ScopeDownStatement": {
-        "ByteMatchStatement": {
-          "FieldToMatch": {
-            "UriPath": {}
-          },
-          "PositionalConstraint": "STARTS_WITH",
-          "SearchString": "/search",
-          "TextTransformations": [
+        "AndStatement": {
+          "Statements": [
             {
-              "Type": "NONE",
-              "Priority": 0
+              "ByteMatchStatement": {
+                "FieldToMatch": {
+                  "JA4Fingerprint": {
+                    "FallbackBehavior": "MATCH"
+                  }
+                },
+                "PositionalConstraint": "EXACTLY",
+                "SearchString": "t12d490700_119ac02b6b6f_3c5a66c06c35",
+                "TextTransformations": [
+                  {
+                    "Type": "NONE",
+                    "Priority": 0
+                  }
+                ]
+              }
+            },
+            {
+              "ByteMatchStatement": {
+                "FieldToMatch": {
+                  "UriPath": {}
+                },
+                "PositionalConstraint": "STARTS_WITH",
+                "SearchString": "/search",
+                "TextTransformations": [
+                  {
+                    "Type": "NONE",
+                    "Priority": 0
+                  }
+                ]
+              }
             }
           ]
         }
