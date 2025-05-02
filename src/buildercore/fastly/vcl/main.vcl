@@ -4,6 +4,11 @@ sub vcl_recv {
     unset req.http.X-eLife-Restart;
   }
 
+  if (tls.client.ja4) {
+    # Send ja4 fingerprint upstream
+    set req.http.X-ja4-fingerprint = tls.client.ja4;
+  }
+
   # Disable Stale-While-Revalidate if a shield request to avoid double SWR
   if (req.http.Fastly-FF) {
     set req.max_stale_while_revalidate = 0s;
