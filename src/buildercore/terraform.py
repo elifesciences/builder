@@ -1549,11 +1549,10 @@ def init(stackname, context):
         'working_dir': join(config.PROJECT_PATH, config.TERRAFORM_DIR, stackname),
         # "/path/to/builder/.tfenv/bin/terraform"
         'terraform_bin_path': config.TERRAFORM_BIN_PATH,
-        'terraform_semantic_version': context['terraform']['version'],
     })
 
     try:
-        rc, stdout, _ = terraform.cmd({'chdir': terraform.working_dir}, "version")
+        rc, stdout, _ = terraform.cmd("version")
         ensure(rc == 0, "failed to query Terraform for it's version.")
         msg = "\n-----------\n" + stdout + "-----------"
         LOG.info(msg)
