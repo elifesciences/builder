@@ -9,6 +9,10 @@ sub vcl_recv {
     set req.max_stale_while_revalidate = 0s;
   }
 
+  if (tls.client.ja4) {
+    set req.http.x-ja4fingerprint = tls.client.ja4;
+  }
+
   #FASTLY recv
 
   if (req.request != "HEAD" && req.request != "GET" && req.request != "FASTLYPURGE") {
