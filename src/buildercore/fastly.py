@@ -125,6 +125,12 @@ VCL_SNIPPETS = {
         type='deliver',
         hook='after'
     ),
+    'add-ja4-fingerprint-header': FastlyVCLSnippet(
+        name='add-ja4-fingerprint-header',
+        content=_read_vcl_file('add-ja4-fingerprint-header.vcl'),
+        type='recv',
+        hook='before'
+    ),
 }
 
 VCL_TEMPLATES = {
