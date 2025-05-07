@@ -817,6 +817,7 @@ journal:
                     - "strip-non-journal-cookies"
                     - "journal-google-scholar"
                     - "journal-google-scholar-vary"
+                    - "add-ja4-fingerprint-header"
                 gcslogging:
                     bucket: "{instance}-elife-fastly"
                     path: "journal--{instance}/"
