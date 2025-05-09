@@ -1972,8 +1972,10 @@ firewall:
                     # - https://docs.aws.amazon.com/waf/latest/APIReference/API_RateBasedStatementCustomKey.html
                     - elife-RateLimitExcessiveBotTrafficCDN.json # priority 19
                     - elife-RateLimitExcessiveBotTraffic.json # priority 20
-                    # disabled because the ja4fingerprint is mostly fastly
-                    # - elife-RateLimitExcessiveRequestsForSearch.json # priority 21
+
+                    # Identify BadBots by their fingerprint, rather than by IP or UA
+                    - elife-RateLimitExcessiveRequestsForSearch-IdentifyBadFingerprints.json # Priority 21
+                    - elife-RateLimitExcessiveRequestsForSearch-RateLimitForSearch.json # Priority 22
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
                         priority: 5
