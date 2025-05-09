@@ -7,7 +7,7 @@
   "VisibilityConfig": {
     "SampledRequestsEnabled": true,
     "CloudWatchMetricsEnabled": true,
-    "MetricName": "elife-ExcessiveRequestsForSearchIdentifyBadFingerprints"
+    "MetricName": "elife-RateLimitExcessiveRequestsForSearch"
   },
   "Statement": {
     "RateBasedStatement": {
