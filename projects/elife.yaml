@@ -1974,8 +1974,8 @@ firewall:
                     - elife-RateLimitExcessiveBotTraffic.json # priority 20
 
                     # Identify BadBots by their fingerprint, rather than by IP or UA
-                    - elife-RateLimitExcessiveRequestsForSearch-IdentifyBadFingerprints.json # Priority 21
-                    - elife-RateLimitExcessiveRequestsForSearch-RateLimitForSearch.json # Priority 22
+                    - 21-elife-BadBots-IdentifyFingerprints.json # Priority 21
+                    - 22-elife-BadBots-RateLimitForSearch.json # Priority 22
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
                         priority: 5

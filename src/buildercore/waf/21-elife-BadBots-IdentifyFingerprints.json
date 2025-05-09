@@ -1,5 +1,5 @@
 {
-  "Name": "elife-RateLimitExcessiveRequestsForSearch-IdentifyBadFingerprints",
+  "Name": "elife-BadBots-IdentifyFingerprints",
   "Priority": 21,
   "Action": {
     "Count": {}
@@ -7,7 +7,7 @@
   "VisibilityConfig": {
     "SampledRequestsEnabled": true,
     "CloudWatchMetricsEnabled": true,
-    "MetricName": "elife-RateLimitExcessiveRequestsForSearch"
+    "MetricName": "elife-BadBots-IdentifyFingerprints"
   },
   "Statement": {
     "OrStatement": {
