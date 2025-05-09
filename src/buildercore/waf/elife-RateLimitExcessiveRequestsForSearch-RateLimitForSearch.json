@@ -1,0 +1,59 @@
+{
+  "Name": "elife-RateLimitExcessiveRequestsForSearch-RateLimitForSearch",
+  "Priority": 22,
+  "Action": {
+    "Block": {}
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "elife-ExcessiveRequestsForSearchIdentifyBadFingerprints"
+  },
+  "Statement": {
+    "RateBasedStatement": {
+      "Limit": "100",
+      "AggregateKeyType": "CUSTOM_KEYS",
+      "EvaluationWindowSec": 300,
+      "CustomKeys": [
+        {
+          "Header": {
+            "Name": "x-ja4fingerprint",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        }
+      ],
+      "ScopeDownStatement": {
+        "AndStatement": {
+          "Statements": [
+            {
+              "LabelMatchStatement": {
+                "Scope": "LABEL",
+                "Key": "elife:badbots:fingerprint"
+              }
+            },
+            {
+              "ByteMatchStatement": {
+                "FieldToMatch": {
+                  "UriPath": {}
+                },
+                "PositionalConstraint": "STARTS_WITH",
+                "SearchString": "/search",
+                "TextTransformations": [
+                  {
+                    "Type": "NONE",
+                    "Priority": 0
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
