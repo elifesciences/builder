@@ -1,0 +1,74 @@
+{
+  "Name": "elife-RateLimitExcessiveRequestsForSearch-IdentifyBadFingerprints",
+  "Priority": 21,
+  "Action": {
+    "Count": {}
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "elife-ExcessiveRequestsForSearchIdentifyBadFingerprints"
+  },
+  "Statement": {
+    "OrStatement": {
+      "Statements": [
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "x-ja4fingerprint"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d4312h1_c7886603b240_d41ae481755e",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "x-ja4fingerprint"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d1516h2_8daaf6152771_d8a2da3f94cd",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "x-ja4fingerprint"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d190900_9dc949149365_97f8aa674fd9",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "RuleLabels": [
+    {
+      "Name": "elife:badbots:fingerprint"
+    }
+  ]
+}
