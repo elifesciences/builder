@@ -61,7 +61,7 @@
                 "Priority": 0
               }
             ],
-            "RegexString": "(blexbot|neevabot|headlesschrome|python-urllib|python-requests|aiohttp|seostar|seznambot|seekport|applebot|centuryb\\.o\\.t|dotbot|scrapy|ultimate_sitemap_parser|placeholder|bdbot|nutch|sentibot|ImagesiftBot|ChatGLM-Spider)"
+            "RegexString": "(blexbot|neevabot|headlesschrome|python-urllib|python-requests|aiohttp|seostar|seznambot|seekport|applebot|centuryb\\.o\\.t|dotbot|scrapy|ultimate_sitemap_parser|placeholder|bdbot|nutch|sentibot|chatglm-spider)"
           }
         }
       ]
