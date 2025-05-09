@@ -45,23 +45,6 @@
               }
             ]
           }
-        },
-        {
-          "ByteMatchStatement": {
-            "FieldToMatch": {
-              "SingleHeader": {
-                "Name": "x-ja4fingerprint"
-              }
-            },
-            "PositionalConstraint": "EXACTLY",
-            "SearchString": "t13d190900_9dc949149365_97f8aa674fd9",
-            "TextTransformations": [
-              {
-                "Type": "NONE",
-                "Priority": 0
-              }
-            ]
-          }
         }
       ]
     }
