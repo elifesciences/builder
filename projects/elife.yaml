@@ -1792,6 +1792,10 @@ bastion:
     formula-repo: https://github.com/elifesciences/bastion-formula
     aws:
         ec2:
+            ami: ami-012f9cfff30bd0eb4 # 22.04
+            root:
+                type: gp3
+                size: 8
             ports:
                 - 22
                 - 9100: # prometheus node_exporter
