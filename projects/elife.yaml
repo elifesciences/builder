@@ -635,11 +635,7 @@ api-gateway:
             # unique because:
             # - 'fastly.bigquerylogging.dataset' is static.
             unique: true
-            fastly:
-                bigquerylogging:
-                    dataset: staging
-                gcslogging:
-                    bucket: staging-elife-fastly
+            fastly: false
         prod:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
