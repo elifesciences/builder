@@ -1364,6 +1364,7 @@ def external_dns_fastly(context):
             Type="CNAME",
             TTL="60",
             ResourceRecords=[cname],
+            DeletionPolicy="Retain", # To support a migration from builder
         )
     return [entry(hostname, i) for i, hostname in enumerate(context['fastly']['subdomains'])]
 
