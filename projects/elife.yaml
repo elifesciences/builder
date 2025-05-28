@@ -1565,43 +1565,6 @@ iiif:
         - guestPort: 80
           hostPort: 1261
 
-redirects:
-    description: redirect various domains to the canonical elifesciences.org
-    subdomain: redirects
-    intdomain: null
-    formula-repo: https://github.com/elifesciences/redirects-formula
-    aws:
-        ec2:
-            # lsh@2022-03-14: changed default instance type from a t2.nano to a t2.small.
-            # lsh@2022-06-25: t2.small has changed to t3.small
-            # getting freezing behaviour during formula testing
-            ports:
-                - 22
-                - 80
-                - 443
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        prod:
-            ec2:
-                # lsh@2022-06-27: changed default instance from t2.nano to t3.micro
-                type: t3.micro
-            # unique because: 'cloudfront.subdomains' contains static values.
-            unique: true
-
-    vagrant:
-        ram: 512
-        ports:
-            1262: 80
-    lima:
-        memory: 512MiB
-        portForwards:
-        - guestPort: 80
-          hostPort: 1262
-
-
 profiles:
     subdomain: profiles
     repo: https://github.com/elifesciences/profiles
