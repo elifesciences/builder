@@ -605,45 +605,14 @@ api-gateway:
                 # - 8001: # don't expose to public. Kong uses this for API admin.
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
-        fastly:
-            subdomains:
-                - "{instance}--cdn-gateway"
-            healthcheck:
-                path: /ping-fastly
-                check-interval: 10000
-                timeout: 2000
-            vcl:
-                - "original-host"
-                - "gzip-by-content-type-suffix"
-            gcslogging:
-                bucket: "{instance}-elife-fastly"
-                path: "api-gateway--{instance}/"
-                period: 600
-            bigquerylogging:
-                project: "elife-fastly"
-                dataset: "{instance}"
-                table: "api_gateway"
     aws-alt:
-        # standalone instances do not have access to Vault secrets via the master-server and it's ext_pillar
-        standalone:
-            fastly: false
-        s2004:
-            fastly: false
-        snsalt:
-            fastly: false
         continuumtest:
             # unique because:
             # - 'fastly.bigquerylogging.dataset' is static.
             unique: true
-            fastly: false
         prod:
-            # unique because: 'fastly.subdomains' contains static values.
+            # unique because: 'fastly.subdomains' used to contain static values.
             unique: true
-            fastly:
-                ip-blacklist: true # maintained at https://manage.fastly.com/configure/services/
-                subdomains:
-                    - "{instance}--cdn-gateway"
-                    - api
     vagrant:
         ports:
             1323: 80
