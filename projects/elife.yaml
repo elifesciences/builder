@@ -1272,80 +1272,9 @@ iiif:
                     cidr-ip: 10.0.0.0/16 # internal access only
                 - 1234: # caddy metrics
                     cidr-ip: 10.0.0.0/16
-        fastly:
-            subdomains:
-                - "{instance}--cdn-iiif"
-            gcslogging:
-                bucket: "{instance}-elife-fastly"
-                path: "iiif--{instance}/"
-                period: 600
-            bigquerylogging:
-                project: "elife-fastly"
-                dataset: "{instance}"
-                table: "iiif"
-            healthcheck:
-                path: /ping-fastly
-                check-interval: 10000
-                timeout: 2000
-            surrogate-keys:
-                article-id-versioned:
-                    url: "^/lax[:/]([0-9]+)(?:/|%252F)elife-(?:[a-z0-9-]+)-v([0-9]+)\\.(?:.+)$"
-                    value: "article/\\1 article/\\1v\\2"
-                    samples:
-                        figure:
-                            path: /lax:10627/elife-10627-fig1-v1.tif/full/1500,/0/default.jpg
-                            expected: "article/10627 article/10627v1"
-                        article-figure-supplement:
-                            path: /lax:00666/elife-00666-fig2-figsupp1-v1.tif
-                            expected: "article/00666 article/00666v1"
-                        appendix-figure-supplement:
-                            path: /lax:18215/elife-18215-app2-fig1-figsupp2-v2.tif
-                            expected: "article/18215 article/18215v2"
-                        encoded-urls:
-                            path: /lax/18215%252Felife-18215-app2-fig1-figsupp2-v2.tif
-                            expected: "article/18215 article/18215v2"
-                article-id-unversioned:
-                    url: "^/lax[:/]([0-9]+)(?:/|%252F)elife-(?:[a-z-0-9]+)-(?:video|media)(?:[0-9]+)\\.(?:.+)$"
-                    value: "article/\\1 article/\\1/videos"
-                    samples:
-                        video-still:
-                            path: /lax:34773/elife-34773-video2.jpg/full/639,/0/default.jpg
-                            expected: "article/34773 article/34773/videos"
-                        another-video-still:
-                            path: /lax:07398/elife-07398-media1.jpg
-                            expected: "article/07398 article/07398/videos"
-                        article-figure-video-still:
-                            path: /lax:26866/elife-26866-fig3-video1.jpg
-                            expected: "article/26866 article/26866/videos"
-                        encoded-urls:
-                            path: /lax/26866%252Felife-26866-fig3-video1.jpg
-                            expected: "article/26866 article/26866/videos"
-                digest-id:
-                    url: "^/digests/([0-9]+)(?:/|%252F)(?:.+)$"
-                    value: "digest/\\1"
-                    samples:
-                        digest-image-info-json:
-                            path: /digests/39984%252Fdigest-39984.jpg/info.json
-                            expected: "digest/39984"
-                        digest-image-full:
-                            path: /digests/39984%252Fdigest-39984.jpg/full/full/0/default.jpg
-                            expected: "digest/39984"
-                        digest-image-resized:
-                            path: /digests/39984%252Fdigest-39984.jpg/full/500,/0/default.jpg
-                            expected: "digest/39984"
-                        non-encoded-urls:
-                            path: /digests/39984/digest-39984.jpg/info.json
-                            expected: "digest/39984"
     aws-alt:
-        standalone:
-            fastly: false
-        s2004:
-            fastly: false
-        snsalt:
-            fastly: false
         devchk:
             description: image deviation testing, checks for regressions and errors in article images.
-            fastly: false
             type: c5.2xlarge # 8 cores, 16GB ram, $0.34 per Hour
             ec2:
                 masterless: True
@@ -1377,7 +1306,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly: false
         # manual tests
         continuumtest:
             # unique because:
@@ -1398,7 +1326,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly: false
         prod:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
@@ -1419,11 +1346,6 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly:
-                ip-blacklist: true
-                subdomains:
-                    - "{instance}--cdn-iiif"
-                    - iiif
     vagrant:
         ports:
             1261: 80
