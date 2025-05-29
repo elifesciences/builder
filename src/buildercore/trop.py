@@ -1353,6 +1353,7 @@ def external_dns_fastly(context):
                 Type="A",
                 TTL="60",
                 ResourceRecords=ip_addresses,
+                DeletionPolicy="Retain", # To support a migration from builder
             )
 
         hostedzone = context['domain'] + "."
