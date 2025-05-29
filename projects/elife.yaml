@@ -1487,57 +1487,18 @@ reproducible-document-stack:
     description: Reproducible Document Stack example
     repo: https://github.com/elifesciences/rds-example
     aws:
-        # unique because: 'fastly.bigquerylogging.table' contains a static value.
+        # unique because: 'fastly.bigquerylogging.table' contained a static value.
         unique: true
         ec2: false
         s3:
             "{instance}-elife-reproducible-document-stack":
                 public: true
-        fastly:
-            backends:
-                # first is default
-                default:
-                    hostname: "{instance}-elife-reproducible-document-stack.s3.amazonaws.com"
-            subdomains:
-                - "{instance}--cdn-repro"
-            default-ttl: 60 # seconds
-            # doesn't work and there's no information about why
-            # https://community.fastly.com/t/monitoring-health-status-from-fastly-health-checks/516
-            #healthcheck:
-            #    path: /ping-fastly
-            #    check-interval: 10000
-            #    timeout: 2000
-            errors:
-                # always prod for simplicity
-                url: https://prod-elife-error-pages.s3.amazonaws.com/
-                codes:
-                    503: "503.html"
-                fallbacks:
-                    4xx: "4xx.html"
-                    5xx: "5xx.html"
-            vcl:
-                - "original-host"
-                - "ping-status"
-            gcslogging:
-                bucket: "{instance}-elife-fastly"
-                path: "reproducible-document-stack--{instance}/"
-                period: 600
-            bigquerylogging:
-                project: "elife-fastly"
-                dataset: "{instance}"
-                table: "reproducible_document_stack"
     aws-alt:
-        staging:
-            fastly: false
         prod:
             # (still) unique because:
-            # - 'fastly.bigquerylogging.table' contains a static value.
-            # - 'fastly.subdomains' contains a static value.
+            # - 'fastly.bigquerylogging.table' contained a static value.
+            # - 'fastly.subdomains' contained a static value.
             unique: true
-            fastly:
-                subdomains:
-                    - "{instance}--cdn-repro"
-                    - repro
 
 bioprotocol:
     subdomain: bp # {instance}--bp.elifesciences.org
