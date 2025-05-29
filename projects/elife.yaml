@@ -1015,13 +1015,7 @@ generic-cdn:
             # unique because:
             # - 'fastly.gcslogging.path' is static. log data would be commingled.
             unique: true
-            fastly:
-                gcslogging:
-                    bucket: staging-elife-fastly
-                    path: generic-cdn--continuumtest/
-                    period: 600
-                bigquerylogging:
-                    dataset: "staging"
+            fastly: false
         prod:
             # unique because:
             # - 'fastly.subdomains' contains static values.
