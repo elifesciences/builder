@@ -1398,12 +1398,7 @@ iiif:
                     - https
                 healthcheck:
                     path: /
-            fastly:
-                ip-blacklist: true
-                bigquerylogging:
-                    dataset: "staging"
-                gcslogging:
-                    bucket: staging-elife-fastly
+            fastly: false
         prod:
             # unique because: 'fastly.subdomains' contains static values.
             unique: true
