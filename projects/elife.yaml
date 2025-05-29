@@ -1527,6 +1527,8 @@ reproducible-document-stack:
                 dataset: "{instance}"
                 table: "reproducible_document_stack"
     aws-alt:
+        staging:
+            fastly: false
         prod:
             # (still) unique because:
             # - 'fastly.bigquerylogging.table' contains a static value.
