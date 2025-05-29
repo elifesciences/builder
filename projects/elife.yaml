@@ -486,7 +486,6 @@ basebox:
         #     - location: "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-arm64.img"
         #       arch: "aarch64"
 
-
 heavybox:
     description: builds as many of the builder-base-formula states as possible
     formula-repo: https://github.com/elifesciences/heavybox-formula
@@ -932,7 +931,6 @@ journal-cms:
         - guestPort: 80
           hostPort: 1241
 
-
 elife-dashboard:
     subdomain: ppp-dash # ppp-dash.elifesciences.org
     repo: https://github.com/elifesciences/elife-dashboard
@@ -1351,7 +1349,6 @@ annotations:
         - guestPort: 80
           hostPort: 1248
 
-# deployed via EKS, not EC2
 elife-libero-reviewer:
     default-branch: null
     domain: null
