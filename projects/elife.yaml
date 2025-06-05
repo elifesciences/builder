@@ -605,10 +605,6 @@ api-gateway:
                 - 9100: # prometheus node_exporter
                     cidr-ip: 10.0.0.0/16 # internal access only
     aws-alt:
-        continuumtest:
-            # unique because:
-            # - 'fastly.bigquerylogging.dataset' is static.
-            unique: true
         prod:
             # unique because: 'fastly.subdomains' used to contain static values.
             unique: true
