@@ -707,20 +707,6 @@ journal:
                             interval: 5
                             unhealthy_threshold: 2
                             healthy_threshold: 2
-            cloudfront:
-                subdomains:
-                    - "placeholder2-prod-journal" # only here to avoid rewriting the following values
-                    - www
-                    - elife
-                headers:
-                    - Host
-                errors:
-                    domain: prod-elife-error-pages.s3-website-us-east-1.amazonaws.com
-                    pattern: "???.html"
-                    codes:
-                        # ELB with no active instances
-                        503: "/5xx.html"
-                    protocol: http
     vagrant:
         ram: 4096
         ports:
