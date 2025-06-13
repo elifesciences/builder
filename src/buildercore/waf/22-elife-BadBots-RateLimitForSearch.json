@@ -11,7 +11,7 @@
   },
   "Statement": {
     "RateBasedStatement": {
-      "Limit": "100",
+      "Limit": "50",
       "AggregateKeyType": "CUSTOM_KEYS",
       "EvaluationWindowSec": 300,
       "CustomKeys": [
