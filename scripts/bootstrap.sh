@@ -99,8 +99,13 @@ mkdir -p /etc/apt/keyrings
 curl -fsSL https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public | sudo tee /etc/apt/keyrings/salt-archive-keyring.pgp
 curl -fsSL https://github.com/saltstack/salt-install-guide/releases/latest/download/salt.sources | sudo tee /etc/apt/sources.list.d/salt.sources
 
+pin_version="$version"
+if [[ "$version" != *.* ]]; then
+    pin_version="$version.*"
+fi
+
 echo "Package: salt-*
-Pin: version $version.*
+Pin: version $pin_version
 Pin-Priority: 1001" | sudo tee /etc/apt/preferences.d/salt-pin-1001
 
 # salt-minion
