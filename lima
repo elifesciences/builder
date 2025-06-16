@@ -10,7 +10,7 @@ fi
 
 if [ "$1" == "shell" ]; then
   echo "${@:1}"
-  limactl shell --workdir=$(limactl list --json | jq -r .config.user.home) "${@:2}"
+  limactl shell --workdir=$(limactl list "$project" --json | jq -r .config.user.home) "${@:2}"
   exit $?
 fi
 
@@ -159,6 +159,6 @@ echo "$lima_config" | limactl create --tty=false --name="$vm_name" -
 limactl start $vm_name
 
 if [[ $* != *--skip-highstate* ]]; then
-  limactl shell --workdir=$(limactl list --json | jq -r .config.user.home) $vm_name sudo salt-call state.apply
-  limactl shell --workdir=$(limactl list --json | jq -r .config.user.home) $vm_name sudo loginctl kill-user $(limactl list --json | jq -r .config.user.name)
+  limactl shell --workdir="$(limactl list "$project" --json | jq -r .config.user.home)" $vm_name sudo salt-call state.apply
+  limactl shell --workdir="$(limactl list "$project" --json | jq -r .config.user.home)" $vm_name sudo loginctl kill-user $(limactl list --json | jq -r .config.user.name)
 fi
