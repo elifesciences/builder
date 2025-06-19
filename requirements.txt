@@ -48,7 +48,7 @@ threadbare==4.1.0
 tomli==2.2.1
 troposphere==3.2.2
 Unidecode==1.4.0
-urllib3==2.4.0
+urllib3==2.5.0
 Werkzeug==3.1.3
 xmltodict==0.14.2
 zope.event==5.0
