@@ -848,7 +848,6 @@ journal-cms:
                 subscriptions:
                     - bus-articles--{instance}
                     - bus-digests--{instance}
-                    - bus-metrics--{instance}
     aws-alt:
         ci:
             ext:
