@@ -9,22 +9,147 @@
     "CloudWatchMetricsEnabled": true,
     "MetricName": "elife-BadBots-IdentifyFingerprints"
   },
-    "Statement": {
-      "RegexMatchStatement": {
-        "FieldToMatch": {
-          "SingleHeader": {
-            "Name": "x-ja4fingerprint"
+  "Statement": {
+    "OrStatement": {
+      "Statements": [
+        {
+          "RegexMatchStatement": {
+            "FieldToMatch": {
+              "SingleHeader": {
+                "Name": "x-ja4fingerprint"
+              }
+            },
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ],
+            "RegexString": "(t13d4312h1_c7886603b240_d41ae481755e|t13d1812h1_85036bcba153_d41ae481755e|t13d121100_0ed44715e6cd_ef7df7f74e48|t13d121000_0ed44715e6cd_78e6aca7449b|t13d4412h1_fd39b124ee10_58ed7828516f|t13d1812h1_85036bcba153_d41ae481|t12d430500_1ce71f0edbb1_0a9e4f040ead)"
           }
         },
-        "RegexString": "(t13d4312h1_c7886603b240_d41ae481755e|t13d1812h1_85036bcba153_d41ae481755e|t13d121100_0ed44715e6cd_ef7df7f74e48|t13d121000_0ed44715e6cd_78e6aca7449b|t13d4412h1_fd39b124ee10_58ed7828516f|t13d1812h1_85036bcba153_d41ae481|t12d430500_1ce71f0edbb1_0a9e4f040ead)",
-        "TextTransformations": [
-          {
-            "Priority": 0,
-            "Type": "NONE"
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "JA4Fingerprint": {
+                "FallbackBehavior": "NO_MATCH"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d4312h1_c7886603b240_d41ae481755e",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
           }
-        ]
-      }
-    },
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "JA4Fingerprint": {
+                "FallbackBehavior": "NO_MATCH"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d1812h1_85036bcba153_d41ae481755e",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "JA4Fingerprint": {
+                "FallbackBehavior": "NO_MATCH"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d121100_0ed44715e6cd_ef7df7f74e48",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "JA4Fingerprint": {
+                "FallbackBehavior": "NO_MATCH"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d121000_0ed44715e6cd_78e6aca7449b",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "JA4Fingerprint": {
+                "FallbackBehavior": "NO_MATCH"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d4412h1_fd39b124ee10_58ed7828516f",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "JA4Fingerprint": {
+                "FallbackBehavior": "NO_MATCH"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t13d1812h1_85036bcba153_d41ae481",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        },
+        {
+          "ByteMatchStatement": {
+            "FieldToMatch": {
+              "JA4Fingerprint": {
+                "FallbackBehavior": "NO_MATCH"
+              }
+            },
+            "PositionalConstraint": "EXACTLY",
+            "SearchString": "t12d430500_1ce71f0edbb1_0a9e4f040ead",
+            "TextTransformations": [
+              {
+                "Type": "NONE",
+                "Priority": 0
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
   "RuleLabels": [
     {
       "Name": "elife:badbots:fingerprint"
