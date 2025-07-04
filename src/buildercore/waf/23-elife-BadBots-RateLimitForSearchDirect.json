@@ -1,0 +1,53 @@
+{
+  "Name": "elife-BadBots-RateLimitForSearchDirect",
+  "Priority": 23,
+  "Action": {
+    "Block": {}
+  },
+  "VisibilityConfig": {
+    "SampledRequestsEnabled": true,
+    "CloudWatchMetricsEnabled": true,
+    "MetricName": "elife-BadBots-RateLimitForSearch"
+  },
+  "Statement": {
+    "RateBasedStatement": {
+      "Limit": 50,
+      "AggregateKeyType": "CUSTOM_KEYS",
+      "EvaluationWindowSec": 300,
+      "CustomKeys": [
+        {
+          "JA4Fingerprint": {
+            "FallbackBehavior": "NO_MATCH"
+          }
+        }
+      ],
+      "ScopeDownStatement": {
+        "AndStatement": {
+          "Statements": [
+            {
+              "LabelMatchStatement": {
+                "Scope": "NAMESPACE",
+                "Key": "elife:badbots:"
+              }
+            },
+            {
+              "ByteMatchStatement": {
+                "FieldToMatch": {
+                  "UriPath": {}
+                },
+                "PositionalConstraint": "STARTS_WITH",
+                "SearchString": "/search",
+                "TextTransformations": [
+                  {
+                    "Type": "NONE",
+                    "Priority": 0
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

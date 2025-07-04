@@ -1559,7 +1559,8 @@ firewall:
 
                     # Identify BadBots by their fingerprint, rather than by IP or UA
                     - 21-elife-BadBots-IdentifyFingerprints.json # Priority 21
-                    - 22-elife-BadBots-RateLimitForSearch.json # Priority 22
+                    - 22-elife-BadBots-RateLimitForSearchCDN.json # Priority 22
+                    - 23-elife-BadBots-RateLimitForSearchDirect.json # Priority 23
                 managed-rules:
                     AWS/AWSManagedRulesBotControlRuleSet:
                         priority: 5

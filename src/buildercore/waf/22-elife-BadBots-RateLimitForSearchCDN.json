@@ -1,5 +1,5 @@
 {
-  "Name": "elife-BadBots-RateLimitForSearch",
+  "Name": "elife-BadBots-RateLimitForSearchCDN",
   "Priority": 22,
   "Action": {
     "Block": {}
