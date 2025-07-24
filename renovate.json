@@ -3,6 +3,9 @@
   "extends": [
     "config:recommended"
   ],
+  "assignees": [
+    "scottaubrey"
+  ],
   "packageRules": [
     {
       "matchPackageNames": [
