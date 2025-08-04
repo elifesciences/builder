@@ -84,7 +84,7 @@ defaults:
             suppressed: []
             # find more here: http://cloud-images.ubuntu.com/releases/
             # Ubuntu 18.04
-            ami: ami-00f258dda9c8388fa # GENERATED created from basebox--2004
+            ami: ami-0b4e8fcba658c6b28 # GENERATED created from basebox--2004
             # use a master server or go ronin?
             masterless: false
             # pin a master server for all new instances of a project
