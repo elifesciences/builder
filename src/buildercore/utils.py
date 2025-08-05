@@ -130,7 +130,7 @@ def deepmerge(into, from_here, excluding=None):
            isinstance(val, dict):
             # matching dictionaries,
             # recurse, passing any child-level exclusion lists down.
-            deepmerge(into[key], from_here[key], child_exclude.get(key, []))
+            deepmerge(into[key], val, child_exclude.get(key, []))
         else:
             # mismatched types. `from_here` overwrites `key` in `into`.
             into[key] = val
