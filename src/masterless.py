@@ -16,7 +16,7 @@ LOG = logging.getLogger(__name__)
 def requires_master_server_access(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        import master
+        import master # noqa: PLC0415, I001
         ensure(master.server_access(), "this command requires access to the master server. you don't have it.")
         return fn(*args, **kwargs)
     return wrapper
