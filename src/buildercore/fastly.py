@@ -14,6 +14,9 @@ class FastlyVCL:
     def __init__(self, lines):
         self._lines = lines
 
+    def __hash__(self):
+        return hash(self._lines)
+
     def __eq__(self, another):
         return self._lines == another._lines
 
