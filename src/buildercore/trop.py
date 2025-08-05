@@ -304,13 +304,13 @@ echo %s > /etc/build-vars.json.b64
         )
 
     if context['ec2'].get('root'):
-        project_ec2['BlockDeviceMappings'] = [{
-            'DeviceName': context['ec2']['root']['device'],
-            'Ebs': {
-                'VolumeSize': context['ec2']['root']['size'],
-                'VolumeType': context['ec2']['root']['type'],
-            }
-        }]
+        project_ec2['BlockDeviceMappings'] = [ec2.BlockDeviceMapping(
+            DeviceName=context['ec2']['root']['device'],
+            Ebs=ec2.EBSBlockDevice(
+                VolumeSize=context['ec2']['root']['size'],
+                VolumeType=context['ec2']['root']['type'],
+            )
+        )]
     return ec2.Instance(EC2_TITLE_NODE % node, **project_ec2)
 
 def render_ext_volume(context, context_ext, template, actual_ec2_instances, node=1):
