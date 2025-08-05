@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import botocore
 import pytest
-from moto import mock_rds
+from moto import mock_aws
 
 from buildercore import command, core, project, utils
 
@@ -292,7 +292,7 @@ def test_rds_iid__bad_cases():
             core.rds_iid(given)
 
 
-@mock_rds
+@mock_aws
 def test_find_rds_instances(test_projects):
     "an rds instance is found with the correct rds iid."
     stackname = "dummy1--bar"
@@ -304,7 +304,7 @@ def test_find_rds_instances(test_projects):
         actual = core.find_rds_instances(stackname)
         assert actual[0]['DBInstanceIdentifier'] == expected
 
-@mock_rds
+@mock_aws
 def test_find_rds_instances__replacement(test_projects):
     "the correct rds iid is generated when `rds.num-replacements` is set in project's context."
     stackname = "dummy1--bar"

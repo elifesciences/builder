@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from moto import mock_route53
+from moto import mock_aws
 from pytz import utc
 
 from buildercore import cfngen, core, lifecycle
@@ -128,7 +128,7 @@ class TestBuildercoreLifecycle(base.BaseCase):
         }
         return instance
 
-@mock_route53
+@mock_aws
 def test_get_create_update_delete_dns_a_record():
     zone_name = "example.org"
     name = "bar--foo.example.org"
@@ -194,7 +194,7 @@ def test_get_create_update_delete_dns_a_record():
     expected = (expected_zone_id, expected_name, expected_record)
     assert lifecycle._get_dns_a_record(zone_name, name) == expected
 
-@mock_route53
+@mock_aws
 def test_get_dns_a_record():
     "boto3 route53 fetching of dns records is a little dodgy and will return similar/adjacent records if we're not really careful"
     zone_name = "example.org"
