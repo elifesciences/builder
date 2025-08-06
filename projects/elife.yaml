@@ -683,42 +683,6 @@ journal:
         - guestPort: 80
           hostPort: 1240
 
-elife-metrics:
-    description: journal-level metrics
-    subdomain: metrics # metrics.elifesciences.org
-    repo: https://github.com/elifesciences/elife-metrics
-    formula-repo: https://github.com/elifesciences/elife-metrics-formula
-    aws:
-        ec2:
-            ports:
-                - 22
-                - 80:
-                    cidr-ip: 10.0.0.0/16 # internal access only
-                - 443
-                - 1234: # caddy metrics
-                    cidr-ip: 10.0.0.0/16
-                - 9100: # prometheus node_exporter
-                    cidr-ip: 10.0.0.0/16 # internal access only
-    aws-alt:
-        prod:
-            description: production environment for metrics. RDS backed.
-            ext:
-                size: 20 # GB
-            rds:
-                # lsh@2022-03-01: upgraded from a db.t2.small.
-                # it was seeing a constant > 20% CPU usage and wasn't regenerating credits well.
-                type: db.t3.medium
-                multi-az: true
-                version: '13.16'
-                storage: 30
-    vagrant:
-        ports:
-            1240: 80
-    lima:
-        portForwards:
-        - guestPort: 80
-          hostPort: 1240
-
 elife-bot:
     repo: https://github.com/elifesciences/elife-bot
     formula-repo: https://github.com/elifesciences/elife-bot-formula
