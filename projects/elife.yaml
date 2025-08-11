@@ -837,6 +837,8 @@ journal-cms:
                 # storage can be increased but not decreased.
                 # journal-cms--prod once needed this amount.
                 storage: 48 # GB
+                params:
+                    sort_buffer_size: 4194304
             ext:
                 size: 60 # GB
     vagrant:
