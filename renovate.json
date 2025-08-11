@@ -8,6 +8,12 @@
   ],
   "packageRules": [
     {
+      "matchDepNames": [
+        "python"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
       "matchPackageNames": [
         "boto3",
         "botocore"
