@@ -823,6 +823,8 @@ journal-cms:
                 version: '8.0'
                 storage: 48 # GB
                 backup-retention: 2 # days
+                params:
+                    sort_buffer_size: 4194304
             ext:
                 size: 60 # GB
         prod:
