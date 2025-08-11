@@ -36,7 +36,7 @@ python-slugify==8.0.4
 pytz==2025.2
 PyYAML==6.0.2
 requests==2.32.4
-responses==0.25.7
+responses==0.25.8
 ruamel.yaml==0.18.14
 ruamel.yaml.clib==0.2.12
 ruff==0.12.8
