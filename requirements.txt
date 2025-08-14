@@ -13,7 +13,7 @@ python-terraform @ git+https://github.com/beelit94/python-terraform.git@0.14.0
 deepmerge==2.0
 distlib==0.4.0
 exceptiongroup==1.3.0
-filelock==3.18.0
+filelock==3.19.1
 gevent==25.5.1
 greenlet==3.2.4
 idna==3.10
