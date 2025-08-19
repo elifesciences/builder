@@ -412,7 +412,7 @@ defaults:
             description: Ubuntu 22.04 (noble) but isolated from the master-server and any external pillar data (Vault)
             ec2:
                 masterless: true
-                ami: ami-05a870656a6c20041 # GENERATED created from basebox--2204
+                ami: ami-00e720e128c5bfd29 # GENERATED created from basebox--2204
 
         standalone:
             description: same as default configuration, but isolated from the master-server and any external pillar data (Vault)
