@@ -16,7 +16,8 @@
     {
       "matchPackageNames": [
         "boto3",
-        "botocore"
+        "botocore",
+        "s3transfer"
       ],
       "groupName": "boto3",
       "commitMessageTopic": "Boto3"
