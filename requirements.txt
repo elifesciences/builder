@@ -28,7 +28,7 @@ packaging==25.0
 parallel-ssh==2.14.0
 platformdirs==4.4.0
 pluggy==1.6.0
-pycparser==2.22
+pycparser==2.23
 pytest==8.4.2
 pytest-cov==7.0.0
 python-dateutil==2.9.0.post0
