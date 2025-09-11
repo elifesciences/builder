@@ -164,13 +164,13 @@ class TestBuildContext(base.BaseCase):
 class TestUpdates(base.BaseCase):
     def test_empty_template_delta(self):
         context = self._base_context()
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (delta_plus, _delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(delta_plus, {'Outputs': {}, 'Resources': {}, 'Parameters': {}})
 
     def test_template_delta_includes_cloudfront(self):
         "we can add CDNs (that takes an hour or more) without downtime"
         context = self._base_context()
-        stackname, environment_name = core.parse_stackname(context['stackname'])
+        _stackname, _environment_name = core.parse_stackname(context['stackname'])
         context['full_hostname'] = "test--dummy1.example.org"
         context['cloudfront'] = {
             "subdomains": [
@@ -186,13 +186,13 @@ class TestUpdates(base.BaseCase):
             "default-ttl": 300,
             "logging": False,
         }
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (delta_plus, _delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertCountEqual(list(delta_plus['Resources'].keys()), ['CloudFrontCDN', 'CloudFrontCDNDNS1', 'ExtDNS'])
         self.assertEqual(list(delta_plus['Outputs'].keys()), ['DomainName'])
 
     def test_template_delta_does_not_include_cloudfront_if_there_are_no_modifications(self):
         context = self._base_context('project-with-cloudfront-minimal')
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (delta_plus, _delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_plus['Resources'].keys()), [])
         self.assertEqual(list(delta_plus['Outputs'].keys()), [])
 
@@ -200,7 +200,7 @@ class TestUpdates(base.BaseCase):
         "we do not want to mess with running VMs"
         context = self._base_context()
         context['ec2']['cluster_size'] = 2
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (delta_plus, _delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_plus['Resources'].keys()), [])
         self.assertEqual(list(delta_plus['Outputs'].keys()), [])
 
@@ -208,7 +208,7 @@ class TestUpdates(base.BaseCase):
         "we accept to reboot VMs if an instance type change is requested"
         context = self._base_context()
         context['ec2']['type'] = 't2.xlarge'
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (_delta_plus, delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_edit['Resources'].keys()), ['EC2Instance1'])
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
 
@@ -216,7 +216,7 @@ class TestUpdates(base.BaseCase):
         "we don't want random reboot or recreations of instances"
         context = self._base_context()
         context['ec2']['ami'] = 'ami-1234567'
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (delta_plus, _delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_plus['Resources'].keys()), [])
         self.assertEqual(list(delta_plus['Outputs'].keys()), [])
 
@@ -224,7 +224,7 @@ class TestUpdates(base.BaseCase):
         "it's useful to open and close ports"
         context = self._base_context()
         context['ec2']['ports'] = [110]
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (_delta_plus, delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_edit['Resources'].keys()), ['StackSecurityGroup'])
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
 
@@ -232,7 +232,7 @@ class TestUpdates(base.BaseCase):
         "we want to update RDS instances in place to avoid data loss"
         context = self._base_context('dummy2')
         context['rds']['multi-az'] = True
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (_delta_plus, delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_edit['Resources'].keys()), ['AttachedDB'])
         self.assertEqual(delta_edit['Resources']['AttachedDB']['Properties']['MultiAZ'], True)
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
@@ -241,7 +241,7 @@ class TestUpdates(base.BaseCase):
         "we don't want to update RDS instances more than necessary, since it takes time and may cause reboots or replacements"
         context = self._base_context('dummy2')
         updated_context = self._base_context('dummy2', in_memory=False, existing_context=context)
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(updated_context)
+        (delta_plus, _delta_edit, delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(updated_context)
         self.assertEqual(list(delta_plus['Resources'].keys()), [])
         self.assertEqual(list(delta_minus['Resources'].keys()), [])
         self.assertEqual(list(delta_plus['Outputs'].keys()), [])
@@ -253,7 +253,7 @@ class TestUpdates(base.BaseCase):
         context['cloudfront']['subdomains'] = [
             "custom-subdomain.example.org"
         ]
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (_delta_plus, delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertCountEqual(list(delta_edit['Resources'].keys()), ['CloudFrontCDN', 'CloudFrontCDNDNS1'])
         self.assertEqual(delta_edit['Resources']['CloudFrontCDNDNS1']['Properties']['Name'], 'custom-subdomain.example.org.')
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
@@ -262,7 +262,7 @@ class TestUpdates(base.BaseCase):
         "we want to update ELBs in place given how long it takes to recreate them"
         context = self._base_context('project-with-cluster')
         context['elb']['healthcheck']['protocol'] = 'tcp'
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (_delta_plus, delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_edit['Resources'].keys()), ['ElasticLoadBalancer'])
         self.assertEqual(delta_edit['Resources']['ElasticLoadBalancer']['Properties']['HealthCheck']['Target'], 'TCP:80')
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
@@ -272,7 +272,7 @@ class TestUpdates(base.BaseCase):
         context = self._base_context('project-with-cluster')
         context['elb']['protocol'] = 'https'
         context['elb']['certificate'] = 'DUMMY_CERTIFICATE'
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (_delta_plus, delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertCountEqual(list(delta_edit['Resources'].keys()), ['ElasticLoadBalancer', 'ELBSecurityGroup'])
         self.assertEqual(list(delta_edit['Outputs'].keys()), [])
 
@@ -283,7 +283,7 @@ class TestUpdates(base.BaseCase):
             'size': 10,
             'device': '/dev/sdh',
         }
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (delta_plus, _delta_edit, _delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertCountEqual(list(delta_plus['Resources'].keys()), ['MountPoint1', 'ExtraStorage1'])
         self.assertEqual(delta_plus['Resources']['ExtraStorage1']['Properties']['Size'], '10')
         self.assertEqual(delta_plus['Resources']['MountPoint1']['Properties']['Device'], '/dev/sdh')
@@ -292,7 +292,7 @@ class TestUpdates(base.BaseCase):
     def test_template_delta_includes_removal_of_subdomains(self):
         context = self._base_context('dummy2')
         context['subdomains'] = []
-        (delta_plus, delta_edit, delta_minus, cloudformation_delta, new_terraform_template_file) = cfngen.template_delta(context)
+        (_delta_plus, _delta_edit, delta_minus, _cloudformation_delta, _new_terraform_template_file) = cfngen.template_delta(context)
         self.assertEqual(list(delta_minus['Resources'].keys()), ['CnameDNS1'])
         self.assertEqual(list(delta_minus['Outputs'].keys()), [])
 

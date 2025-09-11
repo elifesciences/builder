@@ -21,7 +21,7 @@ def _regenerate_resource(resource):
 def regenerate(stackname, config_path):
     """update each of the resources for the given `stackname` in stack config file `config_path`."""
     stack_map = stack_config.read_stack_file(config_path)
-    defaults, stack_map = stack_config.parse_stack_map(stack_map)
+    _defaults, stack_map = stack_config.parse_stack_map(stack_map)
     ensure(stackname in stack_map, "stack %r not found. known stacks: %s" % (stackname, ", ".join(stack_map.keys())))
     stack = stack_map[stackname]
 

@@ -108,7 +108,7 @@ class TestBuildercoreLifecycle(base.BaseCase):
         lifecycle.stop_if_running_for('dummy1--test', 30)
 
     def _generate_context(self, stackname):
-        (pname, instance_id) = parse_stackname(stackname)
+        (pname, _instance_id) = parse_stackname(stackname)
         context = cfngen.build_context(pname, stackname=stackname)
         self.contexts[stackname] = context
 

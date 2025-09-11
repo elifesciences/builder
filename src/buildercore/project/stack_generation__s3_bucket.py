@@ -80,7 +80,7 @@ def generate_stack(config_path):
     the name of each stack if the name of the s3 bucket.
     buckets that have AWS CloudFormation tagging are excluded."""
     stack_map = project_config.read_stack_file(config_path)
-    defaults, _ = project_config.parse_stack_map(stack_map)
+    _defaults, _ = project_config.parse_stack_map(stack_map)
 
     name = 'aws-bucket-list'
     output = cached_output(name)
