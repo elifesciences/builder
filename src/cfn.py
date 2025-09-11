@@ -113,7 +113,7 @@ def update_infrastructure(stackname, skip=None, start=None):
     skip = skip.split(",") if skip else []
     start = start.split(",") if isinstance(start, str) else start or []
 
-    (pname, _) = core.parse_stackname(stackname)
+    (_pname, _) = core.parse_stackname(stackname)
     more_context = {}
     context, delta, current_context = cfngen.regenerate_stack(stackname, **more_context)
 

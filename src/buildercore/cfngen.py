@@ -1103,7 +1103,7 @@ def download_cloudformation_template(stackname):
 def regenerate_stack(stackname, **more_context):
     current_context = context_handler.load_context(stackname)
     download_cloudformation_template(stackname)
-    (pname, instance_id) = core.parse_stackname(stackname)
+    (pname, _instance_id) = core.parse_stackname(stackname)
     more_context['stackname'] = stackname
 
     # lsh@2019-09-27: usage of `instance_id` here is wrong. `instance_id` looks like "foobar" in "journal--foobar"
