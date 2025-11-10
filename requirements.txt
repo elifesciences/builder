@@ -29,7 +29,7 @@ parallel-ssh==2.16.0.post1
 platformdirs==4.5.0
 pluggy==1.6.0
 pycparser==2.23
-pytest==8.4.2
+pytest==9.0.0
 pytest-cov==7.0.0
 python-dateutil==2.9.0.post0
 python-slugify==8.0.4
