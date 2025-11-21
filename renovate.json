@@ -3,9 +3,7 @@
   "extends": [
     "config:recommended"
   ],
-  "assignees": [
-    "scottaubrey"
-  ],
+  "assigneesFromCodeOwners": true,
   "packageRules": [
     {
       "matchDepNames": [
