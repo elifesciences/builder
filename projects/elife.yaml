@@ -457,7 +457,7 @@ defaults:
               arch: "aarch64"
         cpus: 2
         memory: 2GiB
-        disk: 10GiB
+        disk: 15GiB
 
 basebox:
     formula-repo: https://github.com/elifesciences/basebox-formula
