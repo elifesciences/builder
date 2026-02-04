@@ -54,12 +54,12 @@ def _update_remote_bvars(stackname, buildvars):
 @requires_aws_stack
 def read(stackname):
     "returns the unencoded build variables found on ec2 nodes for `stackname`."
-    return stack_all_ec2_nodes(stackname, lambda: read_from_current_host(), username=BOOTSTRAP_USER)
+    return stack_all_ec2_nodes(stackname, read_from_current_host, username=BOOTSTRAP_USER)
 
 @format_output('python')
 @requires_aws_stack
 def valid(stackname):
-    return stack_all_ec2_nodes(stackname, lambda: _retrieve_build_vars(), username=BOOTSTRAP_USER)
+    return stack_all_ec2_nodes(stackname, _retrieve_build_vars, username=BOOTSTRAP_USER)
 
 @requires_aws_stack
 def fix(stackname):
