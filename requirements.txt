@@ -50,6 +50,6 @@ troposphere==4.10.0
 Unidecode==1.4.0
 urllib3==2.6.3
 Werkzeug==3.1.5
-xmltodict==1.0.2
+xmltodict==1.0.3
 zope.event==6.1
 zope.interface==8.2
