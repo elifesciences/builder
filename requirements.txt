@@ -46,7 +46,7 @@ ssh-python==1.2.0.post1
 ssh2-python==1.2.0.post1
 threadbare==4.1.0
 tomli==2.4.0
-troposphere==4.10.0
+troposphere==4.10.1
 Unidecode==1.4.0
 urllib3==2.6.3
 Werkzeug==3.1.6
