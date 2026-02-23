@@ -50,8 +50,8 @@ if ! (./.project.py --format json --env=lima $project 2>&1 >/dev/null); then
 fi
 project_config="$(./.project.py --format json --env=lima $project)"
 
-dependant_formulas=$(echo "$project_config" | yq -o j  '(.["formula-dependencies"] // [])|map({"url": ., "name": .|split("/")[-1]})' | jq -c)
-project_formula=$(echo "$project_config" | yq -o j  '.["formula-repo"]|{"url": ., "name": .|split("/")[-1]}' | jq -c)
+dependant_formulas=$(echo "$project_config" | yq -o j '.["formula-dependencies"] // []' | jq -c '[.[] | {"url": ., "name": (. | split("/") | last)}]')
+project_formula=$(echo "$project_config" | yq -o j '.["formula-repo"]' | jq -c '{"url": ., "name": (. | split("/") | last)}')
 all_formulas=$(echo "[$project_formula]$dependant_formulas" | jq -s 'add' | jq -c)
 first_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[0]')
 all_the_rest_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[1:]')
@@ -59,8 +59,8 @@ all_the_rest_dependant_formula=$(echo "$dependant_formulas" | jq -c '.[1:]')
 readarray -t all_formulas_array < <(echo "$all_formulas" | jq -c '.[]')
 
 for formula in "${all_formulas_array[@]}"; do
-    formula_name=$(echo $formula | jq -r .name)
-    formula_url=$(echo $formula | jq -r .url)
+    formula_name=$(echo "$formula" | jq -r .name)
+    formula_url=$(echo "$formula" | jq -r .url)
     formula_path="$DIR/cloned-projects/$formula_name"
 
     if [ ! -d "$formula_path/.git" ]; then
