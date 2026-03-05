@@ -881,6 +881,8 @@ elife-dashboard:
             rds:
                 multi-az: true
                 version: '13.16'
+                params:
+                    "rds.logical_replication": 1
             sqs:
                 # legacy custom name
                 event-property-incoming-queue:
