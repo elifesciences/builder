@@ -60,7 +60,7 @@ class TestBuildercoreTrop(base.BaseCase):
             ]
         )
 
-    def test_rds_param_groups(self):
+    def test_rds_param_groups_postgres(self):
         extra = {
             'stackname': 'project-with-db-params--1',
         }
@@ -78,6 +78,29 @@ class TestBuildercoreTrop(base.BaseCase):
                 "Parameters": {
                     "key1": "val1",
                     "key2": "val2",
+                }
+            }
+        }
+        self.assertEqual(cfntemplate['Resources']['RDSDBParameterGroup'], expected)
+
+    def test_rds_param_groups_mysql(self):
+        extra = {
+            'stackname': 'project-with-db-params-mysql--1',
+        }
+        context = cfngen.build_context('project-with-db-params-mysql', **extra)
+        expected_params = {'key1': 'val3', 'key2': 'val4'}
+        # params are read in from project file
+        self.assertEqual(context['rds_params'], expected_params)
+        # rendered template has a db parameter group attached to it
+        cfntemplate = json.loads(trop.render(context))
+        expected = {
+            "Type": "AWS::RDS::DBParameterGroup",
+            "Properties": {
+                "Description": "project-with-db-params-mysql (1) custom parameters",
+                "Family": "mysql5.4",
+                "Parameters": {
+                    "key1": "val3",
+                    "key2": "val4",
                 }
             }
         }

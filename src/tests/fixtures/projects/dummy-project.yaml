@@ -825,6 +825,18 @@ project-with-db-params:
                 key1: val1
                 key2: val2
 
+project-with-db-params-mysql:
+    repo: ssh://git@github.com/elifesciences/dummy3
+    aws:
+        ec2:
+            ports: [80]
+        rds:
+            engine: MySQL
+            version: '5.4'
+            params:
+                key1: val3
+                key2: val4
+
 project-with-rds-only:
     repo: ssh://git@github.com/elifesciences/dummy3
     aws:
