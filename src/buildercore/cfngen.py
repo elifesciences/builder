@@ -921,6 +921,7 @@ REMOVABLE_TITLE_PATTERNS = [
     '^.+Topic$',
     '^AttachedDB\\d*$',
     '^AttachedDBSubnet$',
+    '^RDSDBParameterGroup$',
     '^VPCSecurityGroup$',
     '^KeyName$',
     '^WAF$',
