@@ -74,7 +74,7 @@ class TestBuildercoreTrop(base.BaseCase):
             "Type": "AWS::RDS::DBParameterGroup",
             "Properties": {
                 "Description": "project-with-db-params (1) custom parameters",
-                "Family": "postgres9.4",
+                "Family": "postgres9",
                 "Parameters": {
                     "key1": "val1",
                     "key2": "val2",
