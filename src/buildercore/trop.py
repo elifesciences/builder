@@ -510,9 +510,10 @@ def rdsdbparams(context, template):
     lu = partial(utils.lu, context)
     engine = lu('rds.engine')
     version = str(lu('rds.version'))
+    family_version = version if engine != "postgres" else version.split('.', maxsplit=1)[0]
     name = RDS_DB_PG
     dbpg = rds.DBParameterGroup(name, **{
-        'Family': "%s%s" % (engine.lower(), version), # "mysql5.6", "postgres9.4"
+        'Family': "%s%s" % (engine.lower(), family_version), # "mysql5.6", "postgres9.4"
         'Description': '%s (%s) custom parameters' % (context['project_name'], context['instance_id']),
         'Parameters': context['rds_params']
     })
