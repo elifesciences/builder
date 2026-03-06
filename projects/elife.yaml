@@ -1335,7 +1335,11 @@ bioprotocol:
             bioprotocol--{instance}:
                 subscriptions:
                     - bus-articles--{instance}
-    aws-alt: {}
+    aws-alt:
+        ci:
+            unique: true
+            subdomains:
+                - ci-bp
     vagrant:
         ports:
             1280: 80
