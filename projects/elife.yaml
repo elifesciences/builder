@@ -1067,6 +1067,10 @@ observer:
                 storage: 15
                 multi-az: true
                 version: '13.16'
+        ci:
+            unique: true
+            subdomains:
+                - ci-observer
     vagrant:
         ports:
             1239: 80
