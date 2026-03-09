@@ -886,6 +886,10 @@ elife-dashboard:
                 event-property-incoming-queue:
                     subscriptions:
                         - elife-bot-event-property--prod
+        ci:
+            unique: true
+            subdomains:
+                - ci-ppp-dash
     vagrant:
         ports:
             1324: 80
