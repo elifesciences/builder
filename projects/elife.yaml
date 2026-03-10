@@ -575,6 +575,10 @@ lax:
                     bot_lax_adaptor:
                         protocol: https
                         port: 8001
+        ci:
+            unique: true
+            subdomains:
+                - ci-lax
     vagrant:
         ports:
             1239: 80
