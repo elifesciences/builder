@@ -816,6 +816,9 @@ journal-cms:
         ci:
             ext:
                 size: 7 # GB
+            unique: true
+            subdomains:
+                - ci-journal-cms
         continuumtest:
             description: production-like environment.
             rds:
