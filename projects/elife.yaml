@@ -1078,6 +1078,8 @@ observer:
                 storage: 15
                 multi-az: true
                 version: '13.16'
+                params: 
+                    "rds.logical_replication": 1
         ci:
             unique: true
             subdomains:
