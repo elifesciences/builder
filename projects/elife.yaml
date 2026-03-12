@@ -1077,9 +1077,7 @@ observer:
             rds:
                 storage: 15
                 multi-az: true
-                version: '13.16'
-                params: 
-                    "rds.logical_replication": 1
+                version: '14.19'
         ci:
             unique: true
             subdomains:
