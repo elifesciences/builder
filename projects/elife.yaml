@@ -1136,9 +1136,7 @@ profiles:
         prod:
             rds:
                 multi-az: true
-                version: '13.16'
-                params:
-                    "rds.logical_replication": 1
+                version: '14.19'
     vagrant:
         ports:
             1265: 80
