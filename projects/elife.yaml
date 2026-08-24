@@ -839,7 +839,7 @@ journal-cms:
             rds:
                 type: db.t3.medium
                 engine: MySQL
-                version: '8.0'
+                version: '8.4'
                 multi-az: true
                 # storage can be increased but not decreased.
                 # journal-cms--prod once needed this amount.
